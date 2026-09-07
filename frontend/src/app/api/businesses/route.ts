@@ -5,6 +5,7 @@ import { getPool, isEnabled } from "../../graph/db";
 import { ensureSchema } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
 import { ensureUserWorkspace } from "../../compliance/server";
+import { assertCanAddBusinesses, gateJson } from "../../../lib/billing/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export async function GET() {
               (SELECT rs.score FROM readiness_scores rs
                  JOIN submissions s ON s.id = rs.submission_id
                  WHERE s.business_id = b.id
-                 ORDER BY rs.created_at DESC LIMIT 1) AS readiness_score
+                 ORDER BY rs.created_at DESC LIMIT 1) AS readiness_score,
               (SELECT COUNT(*) FROM obligations o WHERE o.business_id=b.id AND o.status='OVERDUE') AS overdue_count,
               (SELECT COUNT(*) FROM matters m WHERE m.business_id=b.id AND m.status NOT IN ('COMPLETED','ARCHIVED')) AS active_matter_count
        FROM businesses b
@@ -80,6 +81,13 @@ export async function POST(request: Request) {
   try {
     const id = randomUUID();
     const workspaceId = await ensureUserWorkspace(pool, user);
+    try {
+      await assertCanAddBusinesses(pool, { workspaceId, email: user.email, adding: 1 });
+    } catch (gateErr) {
+      const gated = gateJson(gateErr);
+      if (gated) return gated;
+      throw gateErr;
+    }
     // Also persist the user mirror so dashboards always have a row, even if
     // the user hits this endpoint before triggering any other capture.
     await pool.query(
