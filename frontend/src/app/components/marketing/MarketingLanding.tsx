@@ -13,6 +13,7 @@ type Language = "EN" | "ES";
 const copy = {
   EN: {
     how: "How it works",
+    pricing: "Pricing",
     professionals: "For professionals",
     login: "Login",
     started: "Sign up",
@@ -46,6 +47,7 @@ const copy = {
   },
   ES: {
     how: "Cómo funciona",
+    pricing: "Planes",
     professionals: "Para profesionales",
     login: "Iniciar sesión",
     started: "Registrarse",
@@ -110,6 +112,7 @@ export default function MarketingLanding() {
           </Link>
           <nav className={styles.desktopNav} aria-label="Main navigation">
             <a href="#how-it-works">{c.how}</a>
+            <Link href="/pricing">{c.pricing}</Link>
             <a href="#professionals">{c.professionals}</a>
           </nav>
           <div className={styles.desktopActions}>
@@ -135,6 +138,9 @@ export default function MarketingLanding() {
             <a href="#how-it-works" onClick={() => setNavOpen(false)}>
               {c.how}
             </a>
+            <Link href="/pricing" onClick={() => setNavOpen(false)}>
+              {c.pricing}
+            </Link>
             <a href="#professionals" onClick={() => setNavOpen(false)}>
               {c.professionals}
             </a>
