@@ -6,6 +6,8 @@ import {
   type PlanId,
 } from "@/lib/billing/catalog";
 import { appUrl, getStripe } from "@/lib/billing/stripe";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { getPool } from "../../../graph/db";
 
 export const runtime = "nodejs";
 
@@ -19,24 +21,21 @@ function parsePeriod(raw: string | undefined): BillingPeriod | null {
   return null;
 }
 
-/**
- * Optional: attach Supabase user as client_reference_id when available.
- * Skips silently if @/lib/supabase/server is not present.
- */
-async function tryClientReferenceId(): Promise<string | undefined> {
-  try {
-    // Dynamic import keeps this route usable without Supabase wired yet.
-    const mod = await import("@/lib/supabase/server");
-    const createClient =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mod as any).createClient ?? (mod as any).createServerClient;
-    if (typeof createClient !== "function") return undefined;
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    return data?.user?.id ?? undefined;
-  } catch {
-    return undefined;
-  }
+async function resolveWorkspaceId(userId: string): Promise<string | null> {
+  const pool = getPool();
+  if (!pool) return null;
+  const { rows } = await pool.query(
+    `
+    SELECT w.id
+    FROM workspaces w
+    JOIN workspace_members wm ON wm.workspace_id = w.id
+    WHERE wm.user_id = $1
+    ORDER BY CASE WHEN wm.role = 'OWNER' THEN 0 ELSE 1 END, w.created_at ASC
+    LIMIT 1
+    `,
+    [userId]
+  );
+  return (rows[0]?.id as string | undefined) ?? null;
 }
 
 export async function POST(req: NextRequest) {
@@ -74,7 +73,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Pilot is one_time only; subscriptions use monthly/yearly.
   if (planId === "pilot" && period !== "one_time") {
     return NextResponse.json(
       { error: "Pilot requires period one_time." },
@@ -84,6 +82,22 @@ export async function POST(req: NextRequest) {
   if (planId !== "pilot" && period === "one_time") {
     return NextResponse.json(
       { error: "one_time is only valid for pilot." },
+      { status: 400 }
+    );
+  }
+
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Sign in required before checkout so your plan can be saved." },
+      { status: 401 }
+    );
+  }
+
+  const workspaceId = await resolveWorkspaceId(user.id);
+  if (!workspaceId) {
+    return NextResponse.json(
+      { error: "No workspace found for your account. Finish signup first." },
       { status: 400 }
     );
   }
@@ -107,7 +121,12 @@ export async function POST(req: NextRequest) {
 
   const base = appUrl();
   const mode = period === "one_time" ? "payment" : "subscription";
-  const clientReferenceId = await tryClientReferenceId();
+  const meta = {
+    planId,
+    period,
+    workspace_id: workspaceId,
+    user_id: user.id,
+  };
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -116,18 +135,20 @@ export async function POST(req: NextRequest) {
       success_url: `${base}/pricing?success=1`,
       cancel_url: `${base}/pricing?cancel=1`,
       allow_promotion_codes: true,
-      client_reference_id: clientReferenceId,
-      metadata: {
-        planId,
-        period,
-      },
+      client_reference_id: workspaceId,
+      customer_email: user.email || undefined,
+      metadata: meta,
       ...(mode === "subscription"
         ? {
             subscription_data: {
-              metadata: { planId, period },
+              metadata: meta,
             },
           }
-        : {}),
+        : {
+            payment_intent_data: {
+              metadata: meta,
+            },
+          }),
     });
 
     if (!session.url) {
