@@ -1,0 +1,190 @@
+{
+  "account": "acct_1NYV5hHS9D3i7NQZ",
+  "account_name": "Aiacquaintance",
+  "currency": "usd",
+  "rbac_roles": [
+    "OWNER",
+    "ADMIN",
+    "MEMBER",
+    "VIEWER"
+  ],
+  "workspace_kinds": [
+    "INDIVIDUAL",
+    "PROFESSIONAL"
+  ],
+  "plans": {
+    "free": {
+      "entitlements": {
+        "max_businesses": 1,
+        "max_seats": 1,
+        "deliverables": false,
+        "radar": false,
+        "white_label": false,
+        "workspace_kind": "INDIVIDUAL"
+      },
+      "test": {
+        "product": "prod_VDWC8bFq8sA8Ox",
+        "prices": {
+          "monthly": "price_1UD5AgHS9D3i7NQZhu1XOOhl"
+        }
+      },
+      "live": {
+        "product": "prod_VDWDzLz4YErBsR",
+        "prices": {
+          "monthly": "price_1UD5BjHS9D3i7NQZfhlbFOx9"
+        }
+      },
+      "lookup_keys": {
+        "monthly": "smartpr_free_monthly"
+      }
+    },
+    "core": {
+      "amount_usd": {
+        "monthly": 99,
+        "yearly": 990
+      },
+      "entitlements": {
+        "max_businesses": 1,
+        "max_seats": 1,
+        "deliverables": true,
+        "radar": false,
+        "white_label": false,
+        "workspace_kind": "INDIVIDUAL"
+      },
+      "test": {
+        "product": "prod_VDWCVPbVA2u4FC",
+        "prices": {
+          "monthly": "price_1UD5AlHS9D3i7NQZWOYhVoY2",
+          "yearly": "price_1UD5AlHS9D3i7NQZNzSyMOmn"
+        }
+      },
+      "live": {
+        "product": "prod_VDWDUpU9Y6A3pZ",
+        "prices": {
+          "monthly": "price_1UD5BWHS9D3i7NQZ1onBY2cM",
+          "yearly": "price_1UD5BXHS9D3i7NQZZro2BX5G"
+        }
+      },
+      "lookup_keys": {
+        "monthly": "smartpr_core_monthly",
+        "yearly": "smartpr_core_yearly"
+      }
+    },
+    "operator": {
+      "amount_usd": {
+        "monthly": 249,
+        "yearly": 2490
+      },
+      "entitlements": {
+        "max_businesses": 5,
+        "max_seats": 5,
+        "deliverables": true,
+        "radar": false,
+        "white_label": false,
+        "workspace_kind": "INDIVIDUAL"
+      },
+      "test": {
+        "product": "prod_VDWCDgMcvMJobv",
+        "prices": {
+          "monthly": "price_1UD5AlHS9D3i7NQZiAjF4hvs",
+          "yearly": "price_1UD5AlHS9D3i7NQZPp2dMG2u"
+        }
+      },
+      "live": {
+        "product": "prod_VDWDFU7J4eGwq8",
+        "prices": {
+          "monthly": "price_1UD5BYHS9D3i7NQZv22gs6V0",
+          "yearly": "price_1UD5BgHS9D3i7NQZQxPwlzD9"
+        }
+      },
+      "lookup_keys": {
+        "monthly": "smartpr_operator_monthly",
+        "yearly": "smartpr_operator_yearly"
+      }
+    },
+    "partner": {
+      "amount_usd": {
+        "monthly": 499,
+        "yearly": 4990
+      },
+      "entitlements": {
+        "max_businesses": 25,
+        "max_seats": 10,
+        "deliverables": true,
+        "radar": true,
+        "white_label": false,
+        "workspace_kind": "PROFESSIONAL"
+      },
+      "test": {
+        "product": "prod_VDWCzFKJkIpFc0",
+        "prices": {
+          "monthly": "price_1UD5AlHS9D3i7NQZwMoJMJtV",
+          "yearly": "price_1UD5AmHS9D3i7NQZAi0q065Y"
+        }
+      },
+      "live": {
+        "product": "prod_VDWDio6B89x4aa",
+        "prices": {
+          "monthly": "price_1UD5BhHS9D3i7NQZ1YT8xl2R",
+          "yearly": "price_1UD5BiHS9D3i7NQZ3szQR9j5"
+        }
+      },
+      "lookup_keys": {
+        "monthly": "smartpr_partner_monthly",
+        "yearly": "smartpr_partner_yearly"
+      }
+    },
+    "pilot": {
+      "amount_usd": {
+        "one_time": 7500
+      },
+      "note": "Starter amount for readiness pilot; adjust in Dashboard as needed.",
+      "entitlements": {
+        "deliverables": true,
+        "radar": false,
+        "sku_type": "one_time"
+      },
+      "test": {
+        "product": "prod_VDWChPZiQSoPbq",
+        "prices": {
+          "one_time": "price_1UD5AmHS9D3i7NQZhqshuOXp"
+        }
+      },
+      "live": {
+        "product": "prod_VDWDMzcBo6lyZP",
+        "prices": {
+          "one_time": "price_1UD5BjHS9D3i7NQZIA2oeKUi"
+        }
+      },
+      "lookup_keys": {
+        "one_time": "smartpr_pilot_onetime"
+      }
+    },
+    "enterprise": {
+      "amount_usd": null,
+      "note": "Contract / invoice only \u2014 no fixed Checkout price.",
+      "entitlements": {
+        "max_businesses": "unlimited",
+        "max_seats": "unlimited",
+        "deliverables": true,
+        "radar": true,
+        "white_label": true,
+        "workspace_kind": "PROFESSIONAL"
+      },
+      "test": {
+        "product": "prod_VDWCBYm1uH2voo",
+        "prices": {}
+      },
+      "live": {
+        "product": "prod_VDWDhQOIAqvakS",
+        "prices": {}
+      },
+      "lookup_keys": {}
+    }
+  },
+  "env_suggested": {
+    "STRIPE_PRICE_CORE_MONTHLY": "use test or live monthly price id",
+    "STRIPE_PRICE_CORE_YEARLY": "...",
+    "STRIPE_LOOKUP_KEY_PREFIX": "smartpr_"
+  }
+}
