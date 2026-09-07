@@ -7,6 +7,7 @@ import {
   ensureUserWorkspace,
   scheduleObligationNotifications,
 } from "../../../compliance/server";
+import { assertCanAddBusinesses, gateJson } from "../../../../lib/billing/access";
 import { daysUntil, deriveObligationStatus, nextActionForStatus, validDateOnly } from "../../../compliance/dates";
 import { DUE_DATE_SOURCES, type ImportedEvidence } from "../../../compliance/types";
 
@@ -42,6 +43,16 @@ export async function POST(request: Request) {
   try {
     await client.query("BEGIN");
     const workspaceId = await ensureUserWorkspace(client, user);
+    try {
+      await assertCanAddBusinesses(client, { workspaceId, email: user.email, adding: 1 });
+    } catch (gateErr) {
+      const gated = gateJson(gateErr);
+      if (gated) {
+        await client.query("ROLLBACK");
+        return gated;
+      }
+      throw gateErr;
+    }
     const { obligations: blueprints, knowledgeSource } = await determineObligations(
       client,
       { ...profile, name: legalName },

@@ -4,6 +4,8 @@
 import { getPool, isEnabled } from "../../../../graph/db";
 import { createSupabaseServer, getCurrentUser } from "../../../../../lib/supabase/server";
 import { parseStoragePath, signedFilingUrl } from "../../../../forms/artifacts/storage.ts";
+import { ensureUserWorkspace } from "../../../../compliance/server";
+import { assertCanUseDeliverables, gateJson } from "../../../../../lib/billing/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +17,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!isEnabled()) return Response.json({ error: "no_database" }, { status: 503 });
   const pool = getPool();
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
+
+  try {
+    const ws = await ensureUserWorkspace(pool, user);
+    await assertCanUseDeliverables(pool, { workspaceId: ws, email: user.email });
+  } catch (gateErr) {
+    const gated = gateJson(gateErr);
+    if (gated) return gated;
+    throw gateErr;
+  }
 
   const { rows } = await pool.query<{ storage_path: string; filename: string }>(
     `SELECT storage_path, filename FROM deliverables WHERE id = $1 AND user_id = $2`,
