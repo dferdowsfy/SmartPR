@@ -2,16 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { resolvePlanId } from "@/lib/billing/entitlements";
 import { getStripe } from "@/lib/billing/stripe";
+import { getPool } from "../../../graph/db";
 
 export const runtime = "nodejs";
 
-/**
- * Persist subscription state.
- *
- * Schema: see data/billing_schema.sql (workspace_subscriptions).
- * Tries `getPool` from `frontend/src/app/graph/db` when available;
- * otherwise logs and no-ops with a TODO.
- */
 async function upsertSubscription(row: {
   workspaceId: string | null;
   plan: string;
@@ -21,61 +15,81 @@ async function upsertSubscription(row: {
   stripePriceId: string | null;
   currentPeriodEnd: Date | null;
 }): Promise<void> {
-  // TODO: map client_reference_id / customer metadata → workspace_id
-  // and upsert into workspace_subscriptions once workspaces are linked.
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = (await import("../../../graph/db")) as any;
-    const getPool: (() => { query: Function }) | undefined = db.getPool;
-    if (!getPool || !row.workspaceId) {
-      console.info("[billing/webhook] skip DB write", {
-        reason: !getPool ? "getPool unavailable" : "no workspaceId",
-        plan: row.plan,
-        status: row.status,
-        stripeSubscriptionId: row.stripeSubscriptionId,
-      });
-      return;
-    }
-    const pool = getPool();
-    await pool.query(
-      `
-      INSERT INTO workspace_subscriptions (
-        workspace_id, plan, status,
-        stripe_customer_id, stripe_subscription_id, stripe_price_id,
-        current_period_end, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      ON CONFLICT (workspace_id) DO UPDATE SET
-        plan = EXCLUDED.plan,
-        status = EXCLUDED.status,
-        stripe_customer_id = COALESCE(EXCLUDED.stripe_customer_id, workspace_subscriptions.stripe_customer_id),
-        stripe_subscription_id = COALESCE(EXCLUDED.stripe_subscription_id, workspace_subscriptions.stripe_subscription_id),
-        stripe_price_id = COALESCE(EXCLUDED.stripe_price_id, workspace_subscriptions.stripe_price_id),
-        current_period_end = EXCLUDED.current_period_end,
-        updated_at = NOW()
-      `,
-      [
-        row.workspaceId,
-        row.plan,
-        row.status,
-        row.stripeCustomerId,
-        row.stripeSubscriptionId,
-        row.stripePriceId,
-        row.currentPeriodEnd,
-      ]
-    );
-  } catch (err) {
-    // Import missing or DB not ready — log and continue (MVP-safe).
-    console.info("[billing/webhook] DB upsert skipped", {
-      error: err instanceof Error ? err.message : String(err),
+  const pool = getPool();
+  if (!pool || !row.workspaceId) {
+    console.info("[billing/webhook] skip DB write", {
+      reason: !pool ? "getPool unavailable" : "no workspaceId",
       plan: row.plan,
       status: row.status,
+      stripeSubscriptionId: row.stripeSubscriptionId,
     });
+    return;
   }
+
+  const kind =
+    row.plan === "partner" || row.plan === "enterprise"
+      ? "PROFESSIONAL"
+      : "INDIVIDUAL";
+
+  await pool.query(`UPDATE workspaces SET kind = $2 WHERE id = $1`, [
+    row.workspaceId,
+    kind,
+  ]);
+
+  await pool.query(
+    `
+    INSERT INTO workspace_subscriptions (
+      workspace_id, plan, status,
+      stripe_customer_id, stripe_subscription_id, stripe_price_id,
+      current_period_end, updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+    ON CONFLICT (workspace_id) DO UPDATE SET
+      plan = EXCLUDED.plan,
+      status = EXCLUDED.status,
+      stripe_customer_id = COALESCE(EXCLUDED.stripe_customer_id, workspace_subscriptions.stripe_customer_id),
+      stripe_subscription_id = COALESCE(EXCLUDED.stripe_subscription_id, workspace_subscriptions.stripe_subscription_id),
+      stripe_price_id = COALESCE(EXCLUDED.stripe_price_id, workspace_subscriptions.stripe_price_id),
+      current_period_end = EXCLUDED.current_period_end,
+      updated_at = NOW()
+    `,
+    [
+      row.workspaceId,
+      row.plan,
+      row.status,
+      row.stripeCustomerId,
+      row.stripeSubscriptionId,
+      row.stripePriceId,
+      row.currentPeriodEnd,
+    ]
+  );
 }
 
-function priceFromSubscription(
-  sub: Stripe.Subscription
-): string | null {
+async function workspaceFromStripeIds(input: {
+  workspaceId?: string | null;
+  subscriptionId?: string | null;
+  customerId?: string | null;
+}): Promise<string | null> {
+  if (input.workspaceId) return input.workspaceId;
+  const pool = getPool();
+  if (!pool) return null;
+  if (input.subscriptionId) {
+    const { rows } = await pool.query(
+      `SELECT workspace_id FROM workspace_subscriptions WHERE stripe_subscription_id = $1 LIMIT 1`,
+      [input.subscriptionId]
+    );
+    if (rows[0]?.workspace_id) return rows[0].workspace_id as string;
+  }
+  if (input.customerId) {
+    const { rows } = await pool.query(
+      `SELECT workspace_id FROM workspace_subscriptions WHERE stripe_customer_id = $1 LIMIT 1`,
+      [input.customerId]
+    );
+    if (rows[0]?.workspace_id) return rows[0].workspace_id as string;
+  }
+  return null;
+}
+
+function priceFromSubscription(sub: Stripe.Subscription): string | null {
   const item = sub.items?.data?.[0];
   const price = item?.price;
   if (!price) return null;
@@ -83,7 +97,6 @@ function priceFromSubscription(
 }
 
 function periodEnd(sub: Stripe.Subscription): Date | null {
-  // current_period_end is unix seconds on Subscription
   const end = (sub as Stripe.Subscription & { current_period_end?: number })
     .current_period_end;
   if (typeof end !== "number") return null;
@@ -94,7 +107,8 @@ async function handleCheckoutCompleted(
   session: Stripe.Checkout.Session
 ): Promise<void> {
   const planFromMeta = session.metadata?.planId ?? null;
-  let priceId: string | null = null;
+  const workspaceFromMeta =
+    session.metadata?.workspace_id ?? session.client_reference_id ?? null;
 
   if (session.mode === "subscription" && session.subscription) {
     const stripe = getStripe();
@@ -103,17 +117,23 @@ async function handleCheckoutCompleted(
         ? session.subscription
         : session.subscription.id;
     const sub = await stripe.subscriptions.retrieve(subId);
-    priceId = priceFromSubscription(sub);
+    const priceId = priceFromSubscription(sub);
     const plan =
       resolvePlanId({ planId: planFromMeta, priceId }) ?? "core";
+    const customerId =
+      typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id ?? null;
+    const workspaceId = await workspaceFromStripeIds({
+      workspaceId: workspaceFromMeta,
+      subscriptionId: sub.id,
+      customerId,
+    });
     await upsertSubscription({
-      workspaceId: session.client_reference_id,
+      workspaceId,
       plan,
       status: sub.status,
-      stripeCustomerId:
-        typeof session.customer === "string"
-          ? session.customer
-          : session.customer?.id ?? null,
+      stripeCustomerId: customerId,
       stripeSubscriptionId: sub.id,
       stripePriceId: priceId,
       currentPeriodEnd: periodEnd(sub),
@@ -121,18 +141,22 @@ async function handleCheckoutCompleted(
     return;
   }
 
-  // one_time (pilot)
   if (session.mode === "payment") {
     const plan =
       resolvePlanId({ planId: planFromMeta, priceId: null }) ?? "pilot";
+    const customerId =
+      typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id ?? null;
+    const workspaceId = await workspaceFromStripeIds({
+      workspaceId: workspaceFromMeta,
+      customerId,
+    });
     await upsertSubscription({
-      workspaceId: session.client_reference_id,
+      workspaceId,
       plan,
       status: "active",
-      stripeCustomerId:
-        typeof session.customer === "string"
-          ? session.customer
-          : session.customer?.id ?? null,
+      stripeCustomerId: customerId,
       stripeSubscriptionId: null,
       stripePriceId: null,
       currentPeriodEnd: null,
@@ -150,13 +174,19 @@ async function handleSubscriptionChange(
       planId: sub.metadata?.planId ?? null,
       priceId,
     }) ?? "free";
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null;
+  const workspaceId = await workspaceFromStripeIds({
+    workspaceId: sub.metadata?.workspace_id ?? null,
+    subscriptionId: sub.id,
+    customerId,
+  });
 
   await upsertSubscription({
-    workspaceId: sub.metadata?.workspace_id ?? null,
+    workspaceId,
     plan: deleted ? "free" : plan,
     status: deleted ? "canceled" : sub.status,
-    stripeCustomerId:
-      typeof sub.customer === "string" ? sub.customer : sub.customer?.id ?? null,
+    stripeCustomerId: customerId,
     stripeSubscriptionId: sub.id,
     stripePriceId: priceId,
     currentPeriodEnd: deleted ? null : periodEnd(sub),
@@ -206,6 +236,7 @@ export async function POST(req: NextRequest) {
           event.data.object as Stripe.Checkout.Session
         );
         break;
+      case "customer.subscription.created":
       case "customer.subscription.updated":
         await handleSubscriptionChange(
           event.data.object as Stripe.Subscription,
@@ -218,8 +249,21 @@ export async function POST(req: NextRequest) {
           true
         );
         break;
+      case "invoice.paid":
+      case "invoice.payment_failed": {
+        // Recurring renewals / failures: subscription object may be on invoice.
+        const invoice = event.data.object as Stripe.Invoice;
+        const subRef = (invoice as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null }).subscription;
+        if (!subRef) break;
+        const subId = typeof subRef === "string" ? subRef : subRef.id;
+        const sub = await stripe.subscriptions.retrieve(subId);
+        await handleSubscriptionChange(
+          sub,
+          event.type === "invoice.payment_failed" && sub.status === "canceled"
+        );
+        break;
+      }
       default:
-        // Ignore other event types for MVP.
         break;
     }
   } catch (err) {
