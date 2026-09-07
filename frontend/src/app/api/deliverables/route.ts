@@ -13,6 +13,8 @@ import { createSupabaseServer, getCurrentUser } from "../../../lib/supabase/serv
 import { rateLimitAllow } from "../../../lib/rateLimit";
 import { userCanAccessBusiness } from "../../compliance/server";
 import { uploadDeliverable } from "../../forms/artifacts/storage.ts";
+import { ensureUserWorkspace } from "../../compliance/server";
+import { assertCanUseDeliverables, gateJson } from "../../../lib/billing/access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -54,6 +56,23 @@ export async function POST(req: Request) {
   // whose records a deliverable gets filed under.
   if (businessId && !(await userCanAccessBusiness(pool, user.id, businessId))) {
     return Response.json({ archived: false, reason: "business_not_found" }, { status: 404 });
+  }
+
+  try {
+    const workspaceId = businessId
+      ? (
+          await pool.query<{ workspace_id: string | null }>(
+            `SELECT workspace_id FROM businesses WHERE id = $1 LIMIT 1`,
+            [businessId]
+          )
+        ).rows[0]?.workspace_id
+      : null;
+    const ws = workspaceId || (await ensureUserWorkspace(pool, user));
+    await assertCanUseDeliverables(pool, { workspaceId: ws, email: user.email });
+  } catch (gateErr) {
+    const gated = gateJson(gateErr);
+    if (gated) return gated;
+    throw gateErr;
   }
 
   const supabase = await createSupabaseServer();
