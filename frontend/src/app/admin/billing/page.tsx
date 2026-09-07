@@ -24,13 +24,14 @@ export default function AdminBillingPage() {
   const [plan, setPlan] = useState<(typeof PLANS)[number]>("enterprise");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     const res = await fetch("/api/admin/billing", { cache: "no-store" });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setError(data.error || "failed");
+      setError(data.message || data.error || `Load failed (${res.status})`);
       return;
     }
     setRows(data.users || []);
@@ -45,19 +46,27 @@ export default function AdminBillingPage() {
     setBusy(true);
     setMsg(null);
     setError(null);
+    setTempPassword(null);
     try {
       const res = await fetch("/api/admin/billing", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email, plan, status: "active" }),
+        body: JSON.stringify({
+          email,
+          plan,
+          status: "active",
+          createIfMissing: true,
+        }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.message || data.error || "grant failed");
+        setError(data.message || data.error || `Grant failed (${res.status})`);
         return;
       }
-      setMsg(`Granted ${data.plan} to ${data.email}`);
-      setEmail("");
+      setMsg(data.message || `Granted ${data.plan} to ${data.email}`);
+      if (data.temporaryPassword) {
+        setTempPassword(String(data.temporaryPassword));
+      }
       await load();
     } finally {
       setBusy(false);
@@ -66,7 +75,7 @@ export default function AdminBillingPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f4f1ea", color: "#1a1a1a" }}>
-      <TopNav active="admin" />
+      <TopNav />
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 64px" }}>
         <p style={{ marginBottom: 8 }}>
           <Link href="/admin/requirements">← Admin</Link>
@@ -75,11 +84,11 @@ export default function AdminBillingPage() {
           Billing &amp; plans
         </h1>
         <p style={{ marginBottom: 24, opacity: 0.8 }}>
-          Grant complimentary plans by email (no Stripe charge). Admins are still controlled by{" "}
-          <code>ADMIN_EMAILS</code> on Railway.
+          Grant a plan by email. If they don’t have an account yet, one is created and the temporary
+          password is shown once below.
         </p>
 
-        <form onSubmit={grant} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
+        <form onSubmit={grant} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
           <input
             type="email"
             required
@@ -111,12 +120,32 @@ export default function AdminBillingPage() {
               fontWeight: 600,
             }}
           >
-            {busy ? "Saving…" : "Grant plan"}
+            {busy ? "Saving…" : "Create / grant"}
           </button>
         </form>
 
-        {error && <p style={{ color: "#b00020", marginBottom: 12 }}>{error}</p>}
+        {error && (
+          <p style={{ color: "#b00020", marginBottom: 12, fontWeight: 600 }}>{error}</p>
+        )}
         {msg && <p style={{ color: "#245c5c", marginBottom: 12 }}>{msg}</p>}
+        {tempPassword && (
+          <div
+            style={{
+              marginBottom: 20,
+              padding: 16,
+              borderRadius: 12,
+              background: "#fff8e6",
+              border: "1px solid #e6c86a",
+            }}
+          >
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Temporary password (copy now)</div>
+            <code style={{ fontSize: 20, letterSpacing: 1 }}>{tempPassword}</code>
+            <div style={{ marginTop: 8, fontSize: 13, opacity: 0.8 }}>
+              Send this to the user with their email. It is not stored in plain text and won’t appear
+              again.
+            </div>
+          </div>
+        )}
 
         <div style={{ overflowX: "auto", background: "#fff", borderRadius: 12, border: "1px solid #e5e0d6" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
