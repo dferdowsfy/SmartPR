@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { SmartPRLogo } from "../../components/brand/SmartPRLogo";
+import { SmartPRLogo } from "../components/brand/SmartPRLogo";
 import { PLANS, type PlanDefinition, type PlanId } from "@/lib/billing/catalog";
 import styles from "./pricing.module.css";
 
