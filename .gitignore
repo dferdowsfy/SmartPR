@@ -41,7 +41,10 @@ deliverables/
 *.pdf
 
 # The canonical government template library is source, not generated output.
-!RealForms/*.pdf
+# Matched at any depth: the library actually lives at frontend/RealForms/, so a
+# root-anchored pattern silently dropped new official forms (the ones already
+# tracked had been force-added).
+!**/RealForms/*.pdf
 
 # Populated working copies produced by `npm run forms:demo` / `npm run forms:verify`
 generated-filings-demo/
