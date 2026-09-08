@@ -170,7 +170,7 @@ export default function ClinicChecker({ language: initialLanguage }: { language:
               }}
               aria-pressed={language === l}
             >
-              {l.toUpperCase()}
+              {l}
             </button>
           ))}
         </div>
@@ -380,32 +380,32 @@ export default function ClinicChecker({ language: initialLanguage }: { language:
               </li>
             ))}
           </ol>
-          <h3>
+          <h3 className={styles.faqQuestion}>
             {t(
               'Does every clinic need a CNC in Puerto Rico?',
               '¿Toda clínica necesita un CNC en Puerto Rico?',
             )}
           </h3>
-          <p className={styles.resultIntro}>
+          <p className={styles.faqAnswer}>
             {t(
               'Not necessarily. CNC requirements depend on facility type and services. Confirm with the Department of Health whether a Certificado de Necesidad y Conveniencia may apply to your plans — do not treat this checklist as a determination.',
               'No necesariamente. Los requisitos de CNC dependen del tipo de facilidad y los servicios. Confirma con el Departamento de Salud si un Certificado de Necesidad y Conveniencia puede aplicar a tus planes; no trates esta lista como una determinación.',
             )}
           </p>
-          <h3>
+          <h3 className={styles.faqQuestion}>
             {t(
               'Are clinic permits the same in every municipality?',
               '¿Los permisos de clínica son iguales en todos los municipios?',
             )}
           </h3>
-          <p className={styles.resultIntro}>
+          <p className={styles.faqAnswer}>
             {t(
               'Do not assume the same process applies everywhere. Confirm municipal registration, the proposed clinical use of the space and the office responsible for your location before committing to a lease or construction.',
               'No supongas que el mismo proceso aplica en todos los lugares. Confirma los trámites municipales, el uso clínico propuesto y la oficina responsable de tu local antes de comprometerte con un alquiler u obras.',
             )}
           </p>
-          <h3>{t('Does this checklist approve my clinic?', '¿Esta lista aprueba mi clínica?')}</h3>
-          <p className={styles.resultIntro}>
+          <h3 className={styles.faqQuestion}>{t('Does this checklist approve my clinic?', '¿Esta lista aprueba mi clínica?')}</h3>
+          <p className={styles.faqAnswer}>
             {t(
               'No. This is a preliminary preparation tool, not a permit, legal determination or guarantee of approval. Confirm requirements with the responsible agencies. Complete the five questions above to see which preparation topics match your plans.',
               'No. Es una herramienta de preparación preliminar, no un permiso, determinación legal ni garantía de aprobación. Confirma los requisitos con las agencias responsables. Contesta las cinco preguntas para identificar los temas de preparación relacionados con tus planes.',
