@@ -11,6 +11,7 @@
 import { createHash, randomUUID } from "crypto";
 import { getPool, isEnabled } from "./db";
 import { COMPLIANCE_SCHEMA_SQL } from "../compliance/schema";
+import { splitSqlStatements } from "./sqlStatements";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../compliance/dates";
 import { renewalMetadataForDocuments, scheduleObligationNotifications } from "../compliance/server";
 import type {
@@ -167,7 +168,54 @@ CREATE OR REPLACE VIEW v_submission_comparison AS
   ) rs ON true;
 `;
 
+export interface SchemaStatementFailure {
+  /** First line of the offending statement — enough to identify it in the script. */
+  statement: string;
+  error: string;
+}
+
 let schemaReady: Promise<void> | null = null;
+let schemaStatementFailures: SchemaStatementFailure[] = [];
+
+/** Statements that failed the last time the schema was applied (empty = clean). */
+export function schemaFailures(): SchemaStatementFailure[] {
+  return schemaStatementFailures;
+}
+
+/**
+ * Apply the schema one statement at a time.
+ *
+ * This used to be a single `pool.query()` over the whole concatenated script,
+ * which made schema creation all-or-nothing: ONE rejected statement aborted the
+ * batch, so no table was ever created, and because `ensureSchema()` sits on the
+ * login path every user was locked out with an opaque 503. Applying statements
+ * individually means an unusable statement costs only the object it defines,
+ * and the failure is reported precisely instead of anonymously.
+ */
+async function applySchema(pool: NonNullable<ReturnType<typeof getPool>>): Promise<void> {
+  // Fail fast and loudly on a dead connection: without this probe each of the
+  // ~100 statements below would separately wait out the connection timeout
+  // before we could report what is really one problem.
+  await pool.query("SELECT 1");
+
+  const failures: SchemaStatementFailure[] = [];
+  for (const statement of splitSqlStatements(`${SCHEMA_SQL}\n${COMPLIANCE_SCHEMA_SQL}`)) {
+    try {
+      await pool.query(statement);
+    } catch (e) {
+      failures.push({
+        statement: statement.split("\n")[0].slice(0, 120),
+        error: (e as Error).message,
+      });
+    }
+  }
+  schemaStatementFailures = failures;
+  if (failures.length) {
+    console.error(`[graph] ${failures.length} schema statement(s) failed:`);
+    for (const f of failures) console.error(`[graph]   ${f.statement} -> ${f.error}`);
+  }
+}
+
 // Exported so the user-account / business / snapshot / deliverable APIs can
 // guarantee their tables exist before issuing queries — even if no capture
 // event has run yet this process.
@@ -178,7 +226,7 @@ export async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     const pool = getPool();
     schemaReady = pool
-      ? pool.query(`${SCHEMA_SQL}\n${COMPLIANCE_SCHEMA_SQL}`).then(() => undefined).catch((e) => {
+      ? applySchema(pool).catch((e) => {
           schemaReady = null;
           throw e;
         })

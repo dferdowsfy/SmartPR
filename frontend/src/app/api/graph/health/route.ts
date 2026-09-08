@@ -1,14 +1,23 @@
-// Knowledge-graph health check.
+// Knowledge-graph + platform health check.
 //
 // Lets you confirm, in one request, that DATABASE_URL is set, the database is
-// reachable, and the capture tables exist (with current row counts). Safe to
-// call anytime — read-only, and returns a clear status when no DB is configured.
+// reachable, and the tables exist (with current row counts). Safe to call
+// anytime — read-only by default, and returns a clear status when no DB is
+// configured.
+//
+// `?ensure=1` additionally applies the (idempotent, fixed-text) schema and
+// reports exactly which statements the database rejected. That is the same
+// work the login path does, exposed on its own so a broken schema can be
+// diagnosed without first being able to log in.
 
 import { getPool, isEnabled } from "../../../graph/db";
+import { ensureSchema, schemaFailures } from "../../../graph/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Capture tables, plus the four the login bootstrap itself depends on — a
+// health check that stayed green while login was broken was worse than none.
 const TABLES = [
   "submissions",
   "question_responses",
@@ -16,9 +25,15 @@ const TABLES = [
   "document_validations",
   "readiness_scores",
   "scenario_patterns",
+  "users",
+  "businesses",
+  "workspaces",
+  "workspace_members",
 ];
 
-export async function GET() {
+const LOGIN_CRITICAL = ["users", "businesses", "workspaces", "workspace_members"];
+
+export async function GET(request: Request) {
   if (!isEnabled()) {
     return Response.json({
       connected: false,
@@ -30,6 +45,15 @@ export async function GET() {
   const pool = getPool();
   if (!pool) {
     return Response.json({ connected: false, configured: true, message: "Could not initialize the connection pool." }, { status: 500 });
+  }
+
+  let ensureError: string | null = null;
+  if (new URL(request.url).searchParams.get("ensure")) {
+    try {
+      await ensureSchema();
+    } catch (err) {
+      ensureError = (err as Error).message;
+    }
   }
 
   try {
@@ -44,13 +68,19 @@ export async function GET() {
       }
     }
     const allPresent = TABLES.every((t) => tables[t] !== "missing");
+    const canLogIn = LOGIN_CRITICAL.every((t) => tables[t] !== "missing");
     return Response.json({
       connected: true,
       configured: true,
       tablesReady: allPresent,
+      loginReady: canLogIn,
       message: allPresent
-        ? "Connected. All capture tables exist."
-        : "Connected. Tables will be created automatically on the first captured event.",
+        ? "Connected. All tables exist."
+        : canLogIn
+          ? "Connected. Login tables exist; some capture tables are still missing."
+          : "Connected, but tables the login bootstrap needs are missing. Call ?ensure=1 to apply the schema and see what the database rejected.",
+      ensureError,
+      schemaFailures: schemaFailures(),
       tables,
     });
   } catch (err) {
