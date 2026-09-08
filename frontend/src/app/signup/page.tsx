@@ -104,7 +104,7 @@ function SignupForm() {
       });
       if (signupError) throw signupError;
       const acquisition = new URLSearchParams(nextPath.split("?")[1] || "");
-      if (acquisition.get("acquisition") === "restaurant" && data.user && data.user.identities?.length) {
+      if ((acquisition.get("acquisition") === "restaurant" || acquisition.get("acquisition") === "clinic") && data.user && data.user.identities?.length) {
         trackAcquisition("account_created", acquisition.get("source") || "direct", language.toLowerCase());
       }
       if (data.session) {
