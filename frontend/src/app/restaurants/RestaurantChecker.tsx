@@ -48,7 +48,7 @@ export default function RestaurantChecker({ language: initialLanguage }: { langu
     <header className={styles.header}>
       <Link href="/" aria-label="SmartPR"><SmartPRLogo className={styles.logo} /></Link>
       <div className={styles.languages} aria-label={t('Language', 'Idioma')}>
-        {(['en', 'es'] as const).map(l => <button key={l} onClick={() => { setLanguage(l); window.history.replaceState(null, '', `${l === 'es' ? '/es/restaurantes' : '/restaurants'}${window.location.search}`); }} aria-pressed={language === l}>{l}</button>)}
+        {(['en', 'es'] as const).map(l => <button key={l} onClick={() => { setLanguage(l); window.history.replaceState(null, '', `${l === 'es' ? '/es/restaurantes' : '/restaurants'}${window.location.search}`); }} aria-pressed={language === l} aria-label={l === 'en' ? 'English' : 'Español'} title={l === 'en' ? 'English' : 'Español'}>{l}</button>)}
       </div>
     </header>
     <main className={styles.main}>

@@ -74,16 +74,19 @@
 }
 
 .language button {
-  min-width: 2.4rem;
+  min-width: 2.75rem;
   height: 2rem;
+  padding: 0 0.55rem;
   border: 0;
   background: transparent;
   color: #5a5a5a;
-  font-family: var(--font-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: none;
+  font-feature-settings: normal;
+  font-variant-ligatures: none;
   cursor: pointer;
 }
 
@@ -180,10 +183,12 @@
 }
 
 .mobileAccountRow .language button {
-  min-width: 2rem;
-  height: 1.75rem;
+  min-width: 2.75rem;
+  height: 1.85rem;
+  padding: 0 0.5rem;
   color: #6b6963;
-  font-size: 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
 }
 
 .mobileAccountRow .language button[aria-pressed="true"] {

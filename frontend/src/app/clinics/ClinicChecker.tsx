@@ -169,6 +169,8 @@ export default function ClinicChecker({ language: initialLanguage }: { language:
                 );
               }}
               aria-pressed={language === l}
+              aria-label={l === 'en' ? 'English' : 'Español'}
+              title={l === 'en' ? 'English' : 'Español'}
             >
               {l}
             </button>
