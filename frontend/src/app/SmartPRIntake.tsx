@@ -61,6 +61,8 @@ import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue 
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft } from '../lib/guestDraft';
+import { readRestaurantHandoff } from './restaurants/model';
+import { trackAcquisition } from './restaurants/analytics';
 import { jsPDF } from 'jspdf';
 import {
   CheckCircle, AlertTriangle, Info, FileText,
@@ -1485,6 +1487,18 @@ export default function SmartPRIntake() {
     if (me === undefined || guestRestoredRef.current) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('resume')) return;
+    const restaurant = readRestaurantHandoff(params, KB.municipalities.map(m => m.name));
+    if (restaurant && !params.get('business')) {
+      guestRestoredRef.current = true;
+      setProfile(prev => ({ ...prev, ...restaurant.profile }));
+      setDiscoveryAnswers({ restaurant_premises_stage: restaurant.context.premises, restaurant_renovation_plan: restaurant.context.renovation });
+      setRequirements([]);
+      setPotentialDecisions({});
+      setCurrentStep(1);
+      setLanguage(restaurant.language);
+      trackAcquisition('intake_opened', params.get('source') || 'direct', restaurant.language);
+      return;
+    }
     const draft = loadGuestDraft();
     if (!draft) return;
     guestRestoredRef.current = true;

@@ -56,7 +56,7 @@ test("LLC does not receive Certificate of Incorporation", () => {
   assert.equal(classified.some((r) => r.document_id === "DOC_CERT_INCORPORATION"), false);
   const canonical = { business: { entityType: "limited_liability_company" } } as CanonicalApplicationData;
   const exclusive = exclusiveFormationRequirements(canonical, classified);
-  const added = entityTypeRequirements(canonical, exclusive, (d) => ({
+  const added = entityTypeRequirements<{ document_id: string; code?: string; name?: string; reason?: string }>(canonical, exclusive, (d) => ({
     document_id: d.document_id,
     code: d.code,
     name: d.name,

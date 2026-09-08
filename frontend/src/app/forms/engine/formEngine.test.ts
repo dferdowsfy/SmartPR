@@ -361,7 +361,7 @@ test("entity-type augmentation adds foreign/LLP requirements additively", () => 
 
 test("LLC formation replaces Certificate of Incorporation", () => {
   const llc = canonical({ entityType: "limited_liability_company" });
-  const existing = [{ document_id: "DOC_CERT_INCORPORATION" as const, code: "certificate_of_incorporation" }];
+  const existing = [{ document_id: "DOC_CERT_INCORPORATION", code: "certificate_of_incorporation" }];
   const exclusive = exclusiveFormationRequirements(llc, existing);
   assert.equal(exclusive.some((r) => r.document_id === "DOC_CERT_INCORPORATION"), false);
   const added = entityTypeRequirements(llc, exclusive, (d) => d);

@@ -8,6 +8,7 @@ import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/clie
 import { authRedirectUrl } from "../../lib/siteUrl";
 import styles from "./signup.module.css";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
+import { trackAcquisition } from "../restaurants/analytics";
 import { GUEST_INTAKE, sanitizeNext } from "../../lib/safeNext";
 
 type Intent = "start" | "manage";
@@ -40,7 +41,7 @@ function SignupForm() {
   const params = useSearchParams();
   const initialIntent = params.get("intent") === "manage" ? "manage" : "start";
   const [intent, setIntent] = useState<Intent>(initialIntent);
-  const [language, setLanguage] = useState<Language>("EN");
+  const [language, setLanguage] = useState<Language>(params.get("lang") === "es" ? "ES" : "EN");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -102,6 +103,10 @@ function SignupForm() {
         },
       });
       if (signupError) throw signupError;
+      const acquisition = new URLSearchParams(nextPath.split("?")[1] || "");
+      if (acquisition.get("acquisition") === "restaurant" && data.user && data.user.identities?.length) {
+        trackAcquisition("account_created", acquisition.get("source") || "direct", language.toLowerCase());
+      }
       if (data.session) {
         await bootstrapPlatform();
         setComplete("session");

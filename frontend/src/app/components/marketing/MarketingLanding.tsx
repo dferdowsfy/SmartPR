@@ -233,6 +233,7 @@ export default function MarketingLanding() {
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <span>© 2026 SmartPR</span>
+          <Link href={language === "ES" ? "/es/restaurantes" : "/restaurants"}>{language === "ES" ? "Abrir un restaurante" : "Restaurant opening checklist"}</Link>
           <Link href="/privacy">{c.privacy}</Link>
           <a href="#how-it-works">{c.how}</a>
           <LanguageToggle language={language} onChange={setLanguage} />
