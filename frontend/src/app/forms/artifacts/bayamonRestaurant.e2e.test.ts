@@ -111,9 +111,13 @@ test("the restaurant's filing package holds the right artifacts and no others", 
   // Whatever the status, the label never claims the filing was accepted.
   assert.doesNotMatch(itemStatusLabel(irs), /approved|granted|officially accepted/i);
 
-  assert.equal(patente.availability, "municipal_requirements_only");
-  assert.equal(patente.canGenerateWorkingCopy, false);
-  assert.match(patente.message.en, /official digital form for this municipality has not yet been verified/);
+  // The official OCAM PA02 is a statewide form — one layout for every
+  // municipality — so the patente is a real generatable artifact rather than a
+  // requirements-only placeholder. The municipal caveat rides along in notes:
+  // the form is statewide, the rates and the filing counter are not.
+  assert.equal(patente.availability, "official_form_available");
+  assert.equal(patente.canGenerateWorkingCopy, true);
+  assert.equal(patente.formCode, "PA02");
 
   // Hacienda is absent: a restaurant with no licence-triggering activity.
   assert.equal(pkg.items.some((i) => i.formCode === "SC2309"), false);

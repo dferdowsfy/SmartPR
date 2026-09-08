@@ -21,6 +21,7 @@ import { CORPREG05 } from "../definitions/pr/department-of-state/CORPREG05.ts";
 import { CORPREG06 } from "../definitions/pr/department-of-state/CORPREG06.ts";
 import { CORPLLC02 } from "../definitions/pr/department-of-state/CORPLLC02.ts";
 import { SS4 } from "../definitions/federal/irs/SS4.ts";
+import { PA02 } from "../definitions/pr/municipal/PA02.ts";
 import type { DigitalFormDefinition, FormVerificationStatus } from "./types.ts";
 
 export interface RegistryEntry {
@@ -46,6 +47,7 @@ const DEFINITIONS: DigitalFormDefinition[] = [
   CORPREG06,
   CORPLLC02,
   SS4,
+  PA02,
 ];
 
 function entryFromDefinition(def: DigitalFormDefinition): RegistryEntry {
@@ -81,7 +83,9 @@ const PLACEHOLDER_ENTRIES: RegistryEntry[] = [
   ph("FORM_PR_DOS_DBA", "DOC_DBA_REGISTRATION", "dba", "DBA / Trade Name Registration"),
   ph("FORM_PR_MERCHANT_REGISTRATION", "DOC_MERCHANT_REGISTRATION", "merchant", "Merchant Registration"),
   ph("FORM_PR_PERMISO_UNICO", "DOC_PERMISO_UNICO", "permiso_unico", "Permiso Único"),
-  ph("FORM_PR_PATENTE_MUNICIPAL", "DOC_PATENTE_MUNICIPAL", "patente", "Patente Municipal"),
+  // FORM_PR_PATENTE_MUNICIPAL is no longer a placeholder: the official OCAM
+  // PA02 PDF is in RealForms with a human-reviewed mapping, so it is served by
+  // the real PA02 schema above.
   ph("FORM_PR_HEALTH_PERMIT", "DOC_HEALTH_PERMIT", "health", "Health Permit"),
   ph("FORM_PR_ALCOHOL_LICENSE", "DOC_ALCOHOL_LICENSE", "alcohol", "Alcohol License"),
   ph("FORM_PR_TOURISM_REGISTRATION", "DOC_TOURISM_REGISTRATION", "tourism", "Tourism Registration"),

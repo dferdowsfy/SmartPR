@@ -32,10 +32,15 @@ export interface MunicipalImplementation {
 /**
  * Verified municipality implementations.
  *
- * Intentionally empty: SmartPR holds no municipality-verified official patente
- * artifact yet. The PA02/PA03/PA04 layouts in the library are genericized
- * working copies, which is not the same thing as a municipality's official
- * form — registering one here would be a false claim of coverage.
+ * Intentionally empty: SmartPR holds no MUNICIPALITY-SPECIFIC official artifact.
+ * The PA03/PA04 layouts in the library are genericized working copies, which is
+ * not the same thing as a municipality's official form — registering one here
+ * would be a false claim of coverage.
+ *
+ * PA02 is not an omission from this table. It is an official STATEWIDE OCAM
+ * form with an identical printed layout in every municipality, so it is served
+ * directly as a statewide artifact (see applicability.ts) and never needs a
+ * per-municipality entry here.
  */
 export const MUNICIPAL_IMPLEMENTATIONS: MunicipalImplementation[] = [];
 

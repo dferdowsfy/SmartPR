@@ -327,8 +327,8 @@ test("a genericized municipal template cannot be generated as a filing artifact"
 test("official artifacts are the only ones flagged as official", () => {
   assert.equal(isOfficialArtifact(getTemplate("CORPREG01")!), true);
   assert.equal(isOfficialArtifact(getTemplate("SC2309")!), true);
-  assert.equal(isOfficialArtifact(getTemplate("PA03")!), false);
-  assert.equal(isOfficialArtifact(getTemplate("PA02")!), false, "a genericized municipal layout is never an official artifact");
+  assert.equal(isOfficialArtifact(getTemplate("PA03")!), false, "a genericized municipal layout is never an official artifact");
+  assert.equal(isOfficialArtifact(getTemplate("PA02")!), true, "OCAM PA02 is a statewide official form confirmed against the agency source");
   assert.equal(isOfficialArtifact(getTemplate("CORPLLC02")!), true);
   assert.equal(isOfficialArtifact(getTemplate("SS4")!), true, "the IRS SS-4 came from the issuing agency");
   assert.doesNotThrow(() => assertGenerationAllowed(getTemplate("CORPREG01")!, "filing"));
@@ -356,7 +356,7 @@ test("the adapter table rejects a genericized template registered as an official
       municipality: "San Juan",
       requirementCode: "DOC_PATENTE_MUNICIPAL",
       kind: "official_form",
-      formCode: "PA02",
+      formCode: "PA03",
       verified: true,
     },
   ]);
@@ -415,12 +415,23 @@ test("ongoing-compliance artifacts never enter a formation package", () => {
   assert.ok(!compliance.some((a) => a.requirementCode === "DOC_MUNICIPAL_TAXPAYER_MAINTENANCE"));
 });
 
-test("the municipal patente resolves to requirements-only, not to a generic form", () => {
+test("the municipal patente resolves to the official statewide OCAM form", () => {
+  // OCAM publishes PA02 as one standardized statewide form: the printed layout
+  // is identical in every municipality and `Municipio` is a blank applicant
+  // field. It is therefore served directly, not through the municipality
+  // adapter — that adapter is for artifacts that genuinely differ by
+  // municipality (PA03/PA04), which the guardrail test below still covers.
   const artifacts = resolveApplicableArtifacts(corporationProfile());
   const patente = artifacts.find((a) => a.requirementCode === "DOC_PATENTE_MUNICIPAL");
   assert.ok(patente);
-  assert.equal(patente.availability, "municipal_requirements_only");
-  assert.equal(isPresentableAsOfficial(patente), false);
+  assert.equal(patente.availability, "official_form_available");
+  assert.equal(patente.formCode, "PA02");
+  assert.equal(isPresentableAsOfficial(patente), true);
+  // The form is statewide; the rates and the filing counter are not.
+  assert.ok(
+    patente.notes?.some((note) => /each municipality's own ordinance/.test(note)),
+    "the municipal-rate caveat must survive"
+  );
 });
 
 // --- 10. filing package ------------------------------------------------------
@@ -439,10 +450,9 @@ test("the filing package reports population counts and required answers", () => 
 
   const patente = pkg.items.find((i) => i.requirementCode === "DOC_PATENTE_MUNICIPAL");
   assert.ok(patente);
-  assert.equal(patente.canGenerateWorkingCopy, false);
-  assert.equal(patente.status, "requirements_prepared");
-  assert.match(patente.message.en, /has not yet been verified/);
-  assert.ok(patente.populatedCount > 0, "municipal information is still measured without a form");
+  assert.equal(patente.canGenerateWorkingCopy, true, "the official statewide PA02 is producible");
+  assert.equal(patente.formCode, "PA02");
+  assert.ok(patente.populatedCount > 0, "municipal information reaches the form");
 });
 
 test("no SmartPR-authored status copy claims a government decision", () => {

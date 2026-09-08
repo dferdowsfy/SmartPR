@@ -172,8 +172,25 @@ export function resolveApplicableArtifacts(
 
   // --- Municipality --------------------------------------------------------
   if (phase === "formation" && hasPhysicalLocation) {
-    out.push(municipalArtifact("DOC_PATENTE_MUNICIPAL", "Patente Municipal", municipality, "PA02",
-      "The business will operate from a physical location in a Puerto Rico municipality."));
+    // PA02 does NOT route through the municipality adapter. OCAM publishes it as
+    // one standardized STATEWIDE intake form whose printed layout is identical
+    // in every municipality — `Municipio` is a blank applicant field, not a
+    // per-municipality variant (catalog.ts carries the provenance note). The
+    // adapter exists for artifacts that genuinely differ by municipality, which
+    // PA03/PA04 below still do.
+    const patente = statewideEntry(
+      "PA02",
+      "DOC_PATENTE_MUNICIPAL",
+      "The business will operate from a physical location in a Puerto Rico municipality."
+    );
+    // The FORM is statewide; the money and the counter are not. Say so.
+    patente.municipality = municipality;
+    patente.notes = [
+      ...(patente.notes ?? []),
+      "Patente rates, due dates and exemptions are set by each municipality's own ordinance — confirm the amount owed with the municipality's finance office.",
+      "The completed PA02 is filed at the municipality's collections office; SmartPR produces the populated, signable PDF.",
+    ];
+    out.push(patente);
   }
   if (phase === "ongoing_compliance" && options.requestingFilingExtension) {
     out.push(municipalArtifact("DOC_PATENTE_DECLARATION_EXTENSION", "Municipal declaration extension request", municipality, "PA03",

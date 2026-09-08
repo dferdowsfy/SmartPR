@@ -401,7 +401,7 @@ test("every displayable form holding an official template can actually produce i
 
   // Guards against the set silently emptying (e.g. a catalog rename), which
   // would make this test vacuously pass.
-  assert.deepEqual(checked.sort(), ["CORPLLC02", "CORPREG01", "SS4"]);
+  assert.deepEqual(checked.sort(), ["CORPLLC02", "CORPREG01", "PA02", "SS4"]);
 });
 
 // --- Safety invariants -------------------------------------------------------
@@ -430,7 +430,9 @@ test("generating a deliverable never modifies the canonical original on disk", a
 });
 
 test("a genericized municipal template cannot be delivered as a filing artifact", async () => {
-  for (const formCode of ["PA02", "PA03", "PA04"]) {
+  // PA02 is deliberately absent: it is an official statewide OCAM form, not a
+  // genericized municipal layout. PA03/PA04 remain genericized working copies.
+  for (const formCode of ["PA03", "PA04"]) {
     await assert.rejects(
       () => generateWorkingCopy({ formCode, profile: applicantProfile(), purpose: "filing" }),
       ArtifactGenerationError,
