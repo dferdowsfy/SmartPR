@@ -56,6 +56,25 @@ export async function GET(request: Request) {
     }
   }
 
+  // Probe the connection BEFORE the per-table loop. Without this, a refused
+  // login or an unreachable host was swallowed by the per-table catch below
+  // and misreported as ten "missing" tables on a healthy connection — which is
+  // exactly how a wrong database password hid behind `connected: true`.
+  try {
+    await pool.query("SELECT 1");
+  } catch (err) {
+    return Response.json(
+      {
+        connected: false,
+        configured: true,
+        loginReady: false,
+        message: "Could not query the database: " + (err as Error).message,
+        ensureError,
+      },
+      { status: 503 }
+    );
+  }
+
   try {
     const tables: Record<string, number | "missing"> = {};
     for (const t of TABLES) {
