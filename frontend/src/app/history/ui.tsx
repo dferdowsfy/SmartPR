@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
@@ -21,16 +21,31 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLang] = useState<"en" | "es">("en");
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((d) => setUser(d.user || null)).catch(() => setUser(null));
   }, []);
 
+  // Only listen for outside clicks while open, and ignore the opening click.
   useEffect(() => {
-    const close = () => setMenuOpen(false);
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, []);
+    if (!menuOpen) return;
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (menuRef.current && target && !menuRef.current.contains(target)) {
+        setMenuOpen(false);
+      }
+    };
+    const timer = window.setTimeout(() => {
+      document.addEventListener("mousedown", onPointerDown);
+      document.addEventListener("touchstart", onPointerDown);
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     try { const s = localStorage.getItem("smartpr-lang"); if (s === "es" || s === "en") setLang(s); } catch {}
@@ -79,21 +94,52 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
           {langToggle}
           {extraActions}
           {user === undefined ? null : user ? (
-            <>
-              <button className="avatar" type="button" aria-label="Account menu" aria-haspopup="menu" aria-expanded={menuOpen} onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }} title="Account">{initials}</button>
-              <div className={`user-menu ${menuOpen ? "open" : ""}`} onClick={(e) => e.stopPropagation()}>
+            <div className="account-menu" ref={menuRef}>
+              <button
+                className="avatar"
+                type="button"
+                aria-label="Account menu"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((o) => !o)}
+                title={user.name || user.email || "Account"}
+              >
+                {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatar} alt="" className="avatar-img" />
+                ) : (
+                  <span className="avatar-initial">{initials}</span>
+                )}
+              </button>
+              <div className={`user-menu ${menuOpen ? "open" : ""}`} role="menu">
                 <div className="uhead">
                   <div className="uname">{user.name || user.email}</div>
                   <div className="uemail">{user.email}</div>
                 </div>
-                <Link className="uitem" href="/calendar"><CalendarDays className="i" /> Calendar</Link>
-                <Link className="uitem" href="/history"><RefreshCw className="i" /> History</Link>
-                <Link className="uitem" href="/settings"><Settings className="i" /> Settings</Link>
-                {user.isAdmin && <Link className="uitem" href="/admin/knowledge-base"><ShieldCheck className="i" /> Knowledge Graph</Link>}
-                {user.isAdmin && <Link className="uitem" href="/admin/requirements"><ShieldCheck className="i" /> Admin Review</Link>}
-                <button type="button" className="uitem" onClick={signOutNow}><LogOut className="i" /> Sign out</button>
+                <Link className="uitem" role="menuitem" href="/settings" onClick={() => setMenuOpen(false)}>
+                  <Settings className="i" /> Settings
+                </Link>
+                <Link className="uitem" role="menuitem" href="/calendar" onClick={() => setMenuOpen(false)}>
+                  <CalendarDays className="i" /> Calendar
+                </Link>
+                <Link className="uitem" role="menuitem" href="/history" onClick={() => setMenuOpen(false)}>
+                  <RefreshCw className="i" /> History
+                </Link>
+                {user.isAdmin && (
+                  <Link className="uitem" role="menuitem" href="/admin/knowledge-base" onClick={() => setMenuOpen(false)}>
+                    <ShieldCheck className="i" /> Knowledge Graph
+                  </Link>
+                )}
+                {user.isAdmin && (
+                  <Link className="uitem" role="menuitem" href="/admin/requirements" onClick={() => setMenuOpen(false)}>
+                    <ShieldCheck className="i" /> Admin Review
+                  </Link>
+                )}
+                <button type="button" className="uitem uitem-danger" role="menuitem" onClick={signOutNow}>
+                  <LogOut className="i" /> Log out
+                </button>
               </div>
-            </>
+            </div>
           ) : (
             <Link href="/auth/login" className="nav-tab">Sign in</Link>
           )}
