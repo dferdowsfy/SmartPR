@@ -204,7 +204,9 @@ async function applySchema(pool: NonNullable<ReturnType<typeof getPool>>): Promi
       await pool.query(statement);
     } catch (e) {
       failures.push({
-        statement: statement.split("\n")[0].slice(0, 120),
+        // Leading `--` comments are stripped so the label names the DDL that
+        // failed rather than the prose above it.
+        statement: (statement.replace(/^(?:\s*--[^\n]*\n)*/, "").split("\n")[0] || statement).slice(0, 120),
         error: (e as Error).message,
       });
     }
