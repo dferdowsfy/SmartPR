@@ -205,6 +205,12 @@ button { font-family: inherit; }
   color: var(--ink);
 }
 .user-menu.open { display: block; }
+.user-menu-fixed {
+  position: fixed;
+  left: auto;
+  z-index: 10000;
+  display: block;
+}
 .user-menu .uitem {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 8px;
@@ -1857,6 +1863,7 @@ button { font-family: inherit; }
 .spr-filing-sticky .appbar {
   position: relative;
   top: auto;
+  z-index: 70;
 }
 /* Non-sticky header variant: the same chrome, but it scrolls away with the
    page instead of collapsing into a pinned bar. Used by pages (like
