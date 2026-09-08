@@ -10,7 +10,8 @@ export async function POST(request: Request) {
     const data = JSON.parse(raw);
     if (!['visit', 'checklist_completed', 'signup_clicked', 'account_created', 'intake_opened'].includes(data?.event)) return new Response(null, { status: 400 });
     const source = typeof data.source === 'string' ? data.source.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) : 'direct';
-    console.info(JSON.stringify({ channel: 'smartpr_acquisition', campaign: 'restaurant', event: data.event, source: source || 'direct', language: data.language === 'es' ? 'es' : 'en', at: new Date().toISOString() }));
+    const campaign = data.campaign === 'clinic' ? 'clinic' : 'restaurant';
+    console.info(JSON.stringify({ channel: 'smartpr_acquisition', campaign, event: data.event, source: source || 'direct', language: data.language === 'es' ? 'es' : 'en', at: new Date().toISOString() }));
     return new Response(null, { status: 204 });
   } catch { return new Response(null, { status: 400 }); }
 }

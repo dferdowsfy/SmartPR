@@ -62,6 +62,7 @@ import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflo
 import { classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft } from '../lib/guestDraft';
 import { readRestaurantHandoff } from './restaurants/model';
+import { readClinicHandoff } from './clinics/model';
 import { trackAcquisition } from './restaurants/analytics';
 import { jsPDF } from 'jspdf';
 import {
@@ -1497,6 +1498,18 @@ export default function SmartPRIntake() {
       setCurrentStep(1);
       setLanguage(restaurant.language);
       trackAcquisition('intake_opened', params.get('source') || 'direct', restaurant.language);
+      return;
+    }
+    const clinic = readClinicHandoff(params, KB.municipalities.map(m => m.name));
+    if (clinic && !params.get('business')) {
+      guestRestoredRef.current = true;
+      setProfile(prev => ({ ...prev, ...clinic.profile }));
+      setDiscoveryAnswers({ clinic_premises_stage: clinic.context.premises, clinic_renovation_plan: clinic.context.renovation, clinic_lab_pharmacy: clinic.context.labPharmacy, clinic_kind: clinic.context.clinic_kind });
+      setRequirements([]);
+      setPotentialDecisions({});
+      setCurrentStep(1);
+      setLanguage(clinic.language);
+      trackAcquisition('intake_opened', params.get('source') || 'direct', clinic.language);
       return;
     }
     const draft = loadGuestDraft();

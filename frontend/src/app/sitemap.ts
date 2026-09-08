@@ -17,6 +17,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
       alternates: { languages: { en: `${site}/restaurants`, es: `${site}/es/restaurantes` } },
     },
+    {
+      url: `${site}/clinics`,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+      alternates: { languages: { en: `${site}/clinics`, es: `${site}/es/clinicas` } },
+    },
+    {
+      url: `${site}/es/clinicas`,
+      changeFrequency: 'weekly',
+      priority: 0.9,
+      alternates: { languages: { en: `${site}/clinics`, es: `${site}/es/clinicas` } },
+    },
     { url: `${site}/pricing`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${site}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
   ];
