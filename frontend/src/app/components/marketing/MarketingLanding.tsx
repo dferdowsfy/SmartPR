@@ -85,7 +85,14 @@ function LanguageToggle({ language, onChange }: { language: Language; onChange: 
   return (
     <div className={styles.language} aria-label={language === "ES" ? "Idioma" : "Language"}>
       {(["EN", "ES"] as const).map((lang) => (
-        <button key={lang} type="button" aria-pressed={language === lang} onClick={() => onChange(lang)}>
+        <button
+          key={lang}
+          type="button"
+          aria-pressed={language === lang}
+          aria-label={lang === "EN" ? "English" : "Español"}
+          title={lang === "EN" ? "English" : "Español"}
+          onClick={() => onChange(lang)}
+        >
           {lang.toLowerCase()}
         </button>
       ))}
