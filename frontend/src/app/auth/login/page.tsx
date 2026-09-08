@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser, isAuthConfigured } from "../../../lib/supabase/client";
-import { authRedirectUrl } from "../../../lib/siteUrl";
+import { passwordResetRedirectUrl } from "../../../lib/siteUrl";
 import { SmartPRLogo } from "../../components/brand/SmartPRLogo";
 import { GUEST_INTAKE, guestContinuePath, sanitizeNext } from "../../../lib/safeNext";
 
@@ -41,7 +41,7 @@ function LoginInner() {
   }
 
   const supabase = createSupabaseBrowser();
-  const resetRedirectTo = authRedirectUrl("/auth/reset");
+  const resetRedirectTo = passwordResetRedirectUrl();
   const swapMode = (m: Mode) => { setMode(m); setErr(null); setInfo(null); };
 
   const bootstrapPlatform = async () => {
