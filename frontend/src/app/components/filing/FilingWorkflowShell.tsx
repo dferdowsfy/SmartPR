@@ -292,11 +292,9 @@ export function FilingWorkflowShell({
   return (
     <div className="spr-product-shell">
       <div className={stickyClass}>
-        <div className="spr-filing-top" inert={collapseInert ? true : undefined} aria-hidden={collapseInert}>
-          <div className="spr-filing-top-inner">
-            <TopNav active="businesses" />
-          </div>
-        </div>
+        {/* Keep account nav outside the collapsing overflow region so the
+            avatar menu is never clipped by matter chrome / compact collapse. */}
+        <TopNav active="businesses" />
         <div className="spr-filing-chrome">
           <div className="spr-matter-header-collapse" inert={collapseInert ? true : undefined} aria-hidden={collapseInert}>
             <header className="spr-matter-header">
