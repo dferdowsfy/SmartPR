@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
@@ -21,7 +22,17 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLang] = useState<"en" | "es">("en");
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuPanelRef = useRef<HTMLDivElement | null>(null);
+  const avatarBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  const placeMenu = useCallback(() => {
+    const btn = avatarBtnRef.current;
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    setMenuPos({ top: Math.round(r.bottom + 8), right: Math.round(window.innerWidth - r.right) });
+  }, []);
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((d) => setUser(d.user || null)).catch(() => setUser(null));
@@ -32,9 +43,9 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
     if (!menuOpen) return;
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node | null;
-      if (menuRef.current && target && !menuRef.current.contains(target)) {
-        setMenuOpen(false);
-      }
+      if (!target) return;
+      if (menuRef.current?.contains(target) || menuPanelRef.current?.contains(target)) return;
+      setMenuOpen(false);
     };
     const timer = window.setTimeout(() => {
       document.addEventListener("mousedown", onPointerDown);
@@ -46,6 +57,24 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
       document.removeEventListener("touchstart", onPointerDown);
     };
   }, [menuOpen]);
+
+  // Keep the open menu pinned to the avatar in viewport space so Start's
+  // collapsing sticky header (overflow:hidden + later chrome paint) can't clip it.
+  useLayoutEffect(() => {
+    if (!menuOpen) {
+      setMenuPos(null);
+      return;
+    }
+    placeMenu();
+    const onReposition = () => placeMenu();
+    window.addEventListener("resize", onReposition);
+    // capture scroll from nested intake panes too
+    window.addEventListener("scroll", onReposition, true);
+    return () => {
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+    };
+  }, [menuOpen, placeMenu]);
 
   useEffect(() => {
     try { const s = localStorage.getItem("smartpr-lang"); if (s === "es" || s === "en") setLang(s); } catch {}
@@ -96,6 +125,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
           {user === undefined ? null : user ? (
             <div className="account-menu" ref={menuRef}>
               <button
+                ref={avatarBtnRef}
                 className="avatar"
                 type="button"
                 aria-label="Account menu"
@@ -111,34 +141,44 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
                   <span className="avatar-initial">{initials}</span>
                 )}
               </button>
-              <div className={`user-menu ${menuOpen ? "open" : ""}`} role="menu">
-                <div className="uhead">
-                  <div className="uname">{user.name || user.email}</div>
-                  <div className="uemail">{user.email}</div>
-                </div>
-                <Link className="uitem" role="menuitem" href="/settings" onClick={() => setMenuOpen(false)}>
-                  <Settings className="i" /> Settings
-                </Link>
-                <Link className="uitem" role="menuitem" href="/calendar" onClick={() => setMenuOpen(false)}>
-                  <CalendarDays className="i" /> Calendar
-                </Link>
-                <Link className="uitem" role="menuitem" href="/history" onClick={() => setMenuOpen(false)}>
-                  <RefreshCw className="i" /> History
-                </Link>
-                {user.isAdmin && (
-                  <Link className="uitem" role="menuitem" href="/admin/knowledge-base" onClick={() => setMenuOpen(false)}>
-                    <ShieldCheck className="i" /> Knowledge Graph
-                  </Link>
-                )}
-                {user.isAdmin && (
-                  <Link className="uitem" role="menuitem" href="/admin/requirements" onClick={() => setMenuOpen(false)}>
-                    <ShieldCheck className="i" /> Admin Review
-                  </Link>
-                )}
-                <button type="button" className="uitem uitem-danger" role="menuitem" onClick={signOutNow}>
-                  <LogOut className="i" /> Log out
-                </button>
-              </div>
+              {menuOpen && menuPos && typeof document !== "undefined"
+                ? createPortal(
+                    <div
+                      ref={menuPanelRef}
+                      className="user-menu open user-menu-fixed"
+                      role="menu"
+                      style={{ top: menuPos.top, right: menuPos.right }}
+                    >
+                      <div className="uhead">
+                        <div className="uname">{user.name || user.email}</div>
+                        <div className="uemail">{user.email}</div>
+                      </div>
+                      <Link className="uitem" role="menuitem" href="/settings" onClick={() => setMenuOpen(false)}>
+                        <Settings className="i" /> Settings
+                      </Link>
+                      <Link className="uitem" role="menuitem" href="/calendar" onClick={() => setMenuOpen(false)}>
+                        <CalendarDays className="i" /> Calendar
+                      </Link>
+                      <Link className="uitem" role="menuitem" href="/history" onClick={() => setMenuOpen(false)}>
+                        <RefreshCw className="i" /> History
+                      </Link>
+                      {user.isAdmin && (
+                        <Link className="uitem" role="menuitem" href="/admin/knowledge-base" onClick={() => setMenuOpen(false)}>
+                          <ShieldCheck className="i" /> Knowledge Graph
+                        </Link>
+                      )}
+                      {user.isAdmin && (
+                        <Link className="uitem" role="menuitem" href="/admin/requirements" onClick={() => setMenuOpen(false)}>
+                          <ShieldCheck className="i" /> Admin Review
+                        </Link>
+                      )}
+                      <button type="button" className="uitem uitem-danger" role="menuitem" onClick={signOutNow}>
+                        <LogOut className="i" /> Log out
+                      </button>
+                    </div>,
+                    document.body,
+                  )
+                : null}
             </div>
           ) : (
             <Link href="/auth/login" className="nav-tab">Sign in</Link>
