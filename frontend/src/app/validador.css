@@ -176,8 +176,10 @@ button { font-family: inherit; }
   color: var(--on-navy-2);
 }
 .icon-btn:hover { background: var(--navy-soft); color: var(--on-navy); }
+.appbar-actions { position: relative; }
+.account-menu { position: relative; display: inline-flex; align-items: center; }
 .avatar {
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 32px; height: 32px; border-radius: 50%;
   background: linear-gradient(135deg, #FCD34D, #F59E0B);
   color: #422006; font-weight: 650; font-size: 12px;
   display: grid; place-items: center;
@@ -186,9 +188,14 @@ button { font-family: inherit; }
   cursor: pointer;
   position: relative;
   border: 0;
+  overflow: hidden;
+  padding: 0;
 }
+.avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-initial { display: grid; place-items: center; width: 100%; height: 100%; }
+.avatar-fallback-icon { width: 16px; height: 16px; }
 .user-menu {
-  position: absolute; right: 24px; top: 56px;
+  position: absolute; right: 0; top: calc(100% + 8px);
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -205,6 +212,8 @@ button { font-family: inherit; }
   border: 0; background: transparent; width: 100%; text-align: left;
 }
 .user-menu .uitem:hover { background: var(--bg-tint); }
+.user-menu .uitem .i { width: 16px; height: 16px; flex-shrink: 0; }
+.user-menu .uitem-danger { color: #8a2f2f; }
 .user-menu .uhead {
   padding: 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px;
 }
