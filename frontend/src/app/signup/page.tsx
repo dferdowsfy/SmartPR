@@ -34,7 +34,7 @@ const esLabels: Record<string, string> = {
 };
 
 function LanguageToggle({ language, onChange }: { language: Language; onChange: (language: Language) => void }) {
-  return <div className={styles.language}>{(["EN", "ES"] as const).map((item) => <button key={item} type="button" aria-pressed={language === item} onClick={() => onChange(item)}>{item}</button>)}</div>;
+  return <div className={styles.language}>{(["EN", "ES"] as const).map((item) => <button key={item} type="button" aria-pressed={language === item} onClick={() => onChange(item)}>{item.toLowerCase()}</button>)}</div>;
 }
 
 function SignupForm() {

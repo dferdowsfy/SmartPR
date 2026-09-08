@@ -79,9 +79,11 @@
   border: 0;
   background: transparent;
   color: #5a5a5a;
+  font-family: var(--font-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: none;
   cursor: pointer;
 }
 
