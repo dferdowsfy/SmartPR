@@ -5,10 +5,10 @@
 //
 // Resolution order:
 //   1. NEXT_PUBLIC_SITE_URL (explicit override — set this on Railway for prod)
-//   2. Production default: the deployed Railway URL
-//   3. Development default: http://localhost:8080
+//   2. Production default: www.getsmartpr.com
+//   3. Development default: http://localhost:3000
 
-const PROD_DEFAULT = "https://smartbusiness-adminemailsdferdowsgmailcom.up.railway.app";
+const PROD_DEFAULT = "https://www.getsmartpr.com";
 const DEV_DEFAULT = "http://localhost:3000";
 
 export function getSiteUrl(): string {
@@ -17,7 +17,17 @@ export function getSiteUrl(): string {
   return process.env.NODE_ENV === "production" ? PROD_DEFAULT : DEV_DEFAULT;
 }
 
+/** OAuth / magic-link: go through /auth/callback so the server can exchange the code. */
 export function authRedirectUrl(nextPath: string): string {
   const safeNext = nextPath && nextPath.startsWith("/") ? nextPath : "/";
   return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+}
+
+/**
+ * Password recovery must NOT use the server /auth/callback route as redirectTo.
+ * Implicit recovery links put tokens in the URL hash; servers never see the hash.
+ * Point straight at the client reset page so tokens can be consumed in-browser.
+ */
+export function passwordResetRedirectUrl(): string {
+  return `${getSiteUrl()}/auth/reset`;
 }
