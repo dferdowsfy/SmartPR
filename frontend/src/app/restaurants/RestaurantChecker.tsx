@@ -54,8 +54,8 @@ export default function RestaurantChecker({ language: initialLanguage }: { langu
     <main className={styles.main}>
       <aside className={styles.intro}>
         <p className={styles.eyebrow}>{t('PUERTO RICO · RESTAURANT OPENING CHECKER', 'PUERTO RICO · GUÍA PARA ABRIR TU RESTAURANTE')}</p>
-        <h1>{t('Your next chapter starts with a clear plan.', 'Tu próxima etapa empieza con un plan claro.')}</h1>
-        <p className={styles.lead}>{t('Opening a restaurant, café or bakery? Find the preparation steps worth checking before you invest more time and money.', '¿Vas a abrir un restaurante, café o panadería? Identifica qué debes verificar antes de invertir más tiempo y dinero.')}</p>
+        <h1>{t('Opening a restaurant in Puerto Rico? Start with a clear plan.', '¿Vas a abrir un restaurante en Puerto Rico? Empieza con un plan claro.')}</h1>
+        <p className={styles.lead}>{t('Answer five questions to preview the permits, licenses, municipal steps and location issues worth checking before you invest more time and money.', 'Contesta cinco preguntas para conocer los permisos, licencias, trámites municipales y asuntos del local que debes verificar antes de invertir más tiempo y dinero.')}</p>
         <div className={styles.promises}>
           <p><ClipboardList size={20} />{t('A checklist shaped by your plans', 'Una lista según tus planes')}</p>
           <p><MapPin size={20} />{t('Start with your municipality', 'Comienza con tu municipio')}</p>
@@ -85,6 +85,15 @@ export default function RestaurantChecker({ language: initialLanguage }: { langu
           <Link className={styles.primary} href={signup} onClick={() => trackAcquisition('signup_clicked', source, language)}>{t('Create account & continue my plan', 'Crear cuenta y continuar mi plan')}<ArrowRight size={20} /></Link>
           <button className={styles.back} onClick={() => setResult(null)}>{t('Edit my answers', 'Editar mis respuestas')}</button>
         </div>}
+      </section>
+      <section className={styles.panel} style={{ gridColumn: '1 / -1' }} aria-labelledby="restaurant-guide">
+        <h2 id="restaurant-guide">{t('How to prepare to open a restaurant in Puerto Rico', 'Cómo prepararte para abrir un restaurante en Puerto Rico')}</h2>
+        <p className={styles.resultIntro}>{t('Start with your location and planned activities. A café, bakery or restaurant may follow different steps depending on its premises, municipality, alcohol sales and proposed construction.', 'Comienza con el local y las actividades propuestas. Los pasos para un café, panadería o restaurante pueden variar según el local, municipio, venta de alcohol y obras propuestas.')}</p>
+        <ol className={styles.results}>{['location', 'permit', 'merchant'].map((key, i) => <li key={key}><span className={styles.number}>{i + 1}</span><div><h3>{content[key][language][0]}</h3><p>{content[key][language][1]}</p><a href={content[key].source} target="_blank" rel="noreferrer">{t('Official source', 'Fuente oficial')}</a></div></li>)}</ol>
+        <h3>{t('Are restaurant permits the same in every municipality?', '¿Los permisos son iguales en todos los municipios?')}</h3>
+        <p className={styles.resultIntro}>{t('Do not assume the same process applies everywhere. Confirm municipal registration, the proposed use of the space and the office responsible for your location before committing to a lease or construction.', 'No supongas que el mismo proceso aplica en todos los lugares. Confirma los trámites municipales, el uso propuesto y la oficina responsable de tu local antes de comprometerte con un alquiler u obras.')}</p>
+        <h3>{t('Does this checklist approve my restaurant?', '¿Esta lista aprueba mi restaurante?')}</h3>
+        <p className={styles.resultIntro}>{t('No. This is a preliminary preparation tool, not a permit, legal determination or guarantee of approval. Confirm requirements with the responsible agencies. Complete the five questions above to see which preparation topics match your plans.', 'No. Es una herramienta de preparación preliminar, no un permiso, determinación legal ni garantía de aprobación. Confirma los requisitos con las agencias responsables. Contesta las cinco preguntas para identificar los temas de preparación relacionados con tus planes.')}</p>
       </section>
     </main>
     <footer className={styles.footer}><span>© 2026 SmartPR</span><Link href="/privacy">{t('Privacy policy', 'Política de privacidad')}</Link><Link href={es ? '/restaurants' : '/es/restaurantes'}>{es ? 'English version' : 'Versión en español'}</Link></footer>

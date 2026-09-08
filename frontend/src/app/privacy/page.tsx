@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
 
 export const metadata = {
+  alternates: { canonical: '/privacy' },
   title: "Privacy Policy — SmartPR",
   description: "How SmartPR collects, uses, and protects information.",
 };
