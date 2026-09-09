@@ -7,32 +7,43 @@
   "templateRevision": "OCAM PA02 - Rev. Mayo 2009",
   "pageCount": 2,
   "hasAcroForm": true,
-  "inspectedAt": "2026-08-19T16:27:40.712Z",
+  "inspectedAt": "2026-09-09T02:57:32.201Z",
   "status": "mapped",
   "notes": [
-    "OCAM PA02 is a statewide standardized intake form — the layout is identical across Puerto Rico municipalities; only the printed 'Municipio' value differs, and that is a blank applicant-supplied field on the form itself, not baked into the layout.",
-    "Source confirmed directly against the official form by the SmartPR product owner (2026-09-03); reclassified from genericized_working_copy to official_source on that basis. See catalog.ts for the full note.",
-    "The bottom 'USO OFICIAL SOLAMENTE' box and the 'JURAMENTO' block are never written by SmartPR — see each field's ownership below. This is enforced in population.ts independent of this file.",
-    "Two fields in the original auto-generated mapping (Tipo de Negocio (Sección Uso Oficial) and Nombre Corto) had been semantically matched to business fields by the inspection tool despite sitting inside the USO OFICIAL box; corrected to government_only during human review."
+    "OCAM (Oficina del Comisionado de Asuntos Municipales) publishes PA02 as one standardized statewide intake form — the printed layout does not vary by municipality; `Municipio` is a blank field the applicant fills in, same as every other applicant field.",
+    "Source confirmed directly against the official form by the SmartPR product owner (2026-09-03). Previously carried as `genericized_municipal_template`/`genericized_working_copy` out of caution about provenance; that caution is resolved for this revision.",
+    "45 native AcroForm fields. The bottom 'USO OFICIAL SOLAMENTE' box and the 'JURAMENTO' (sworn statement / notarization) block are never populated by SmartPR — see form-mappings/PA02.json field ownership.",
+    "Two fields in the original auto-generated mapping ('Tipo de Negocio (Sección Uso Oficial)' and 'Nombre Corto') had been semantically matched to business fields by the inspection tool despite sitting inside the USO OFICIAL box; corrected to government_only during human review. Recorded here because a re-run of `forms:inspect` overwrites this mapping's own notes with exactly this list."
   ],
   "fields": [
     {
       "pdfField": "Municipio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 502.32, "y": 718.68, "width": 83.28, "height": 21.67 },
+      "rect": {
+        "x": 502.32,
+        "y": 718.68,
+        "width": 83.28,
+        "height": 21.67
+      },
       "canonicalField": "location.municipality",
       "transform": "none",
       "confidence": 0.95,
       "reviewed": true,
       "ownership": "smartpr_derived",
-      "reviewNote": "Auto-populated from the business project's municipality — never asked twice."
+      "reviewNote": "Auto-populated from the business project's municipality — never asked twice.",
+      "defaultValue": ""
     },
     {
       "pdfField": "Año Natural",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 102.24, "y": 720.79, "width": 23.83, "height": 14.19 },
+      "rect": {
+        "x": 102.24,
+        "y": 720.79,
+        "width": 23.83,
+        "height": 14.19
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -44,7 +55,12 @@
       "pdfField": "Mes desde Rango",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 244.31, "y": 721.97, "width": 51.95, "height": 14.65 },
+      "rect": {
+        "x": 244.31,
+        "y": 721.97,
+        "width": 51.95,
+        "height": 14.65
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -56,7 +72,12 @@
       "pdfField": "Mes hasta Rango",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 367.32, "y": 722.24, "width": 60.77, "height": 17.76 },
+      "rect": {
+        "x": 367.32,
+        "y": 722.24,
+        "width": 60.77,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -68,7 +89,12 @@
       "pdfField": "Año hasta Rango",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 450, "y": 723.12, "width": 33.36, "height": 17.76 },
+      "rect": {
+        "x": 450,
+        "y": 723.12,
+        "width": 33.36,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -80,7 +106,12 @@
       "pdfField": "Porciento Patente Exenta",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 125.43, "y": 657.79, "width": 49.87, "height": 25.09 },
+      "rect": {
+        "x": 125.43,
+        "y": 657.79,
+        "width": 49.87,
+        "height": 25.09
+      },
       "defaultValue": "0",
       "canonicalField": null,
       "transform": "none",
@@ -93,7 +124,12 @@
       "pdfField": "Tipo de Patente",
       "pdfFieldType": "radio_group",
       "page": 1,
-      "rect": { "x": 52.29, "y": 659.61, "width": 15.55, "height": 16.37 },
+      "rect": {
+        "x": 52.29,
+        "y": 659.61,
+        "width": 15.55,
+        "height": 16.37
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -105,7 +141,12 @@
       "pdfField": "Número de Teléfono del Negocio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 307.22, "y": 656.42, "width": 118.95, "height": 15.46 },
+      "rect": {
+        "x": 307.22,
+        "y": 656.42,
+        "width": 118.95,
+        "height": 15.46
+      },
       "canonicalField": "business.phone",
       "transform": "none",
       "confidence": 0.9,
@@ -116,7 +157,12 @@
       "pdfField": "Número de Seguro Social Patronal",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 430.44, "y": 656.16, "width": 155.16, "height": 25.92 },
+      "rect": {
+        "x": 430.44,
+        "y": 656.16,
+        "width": 155.16,
+        "height": 25.92
+      },
       "canonicalField": "business.ein",
       "transform": "none",
       "confidence": 0.8,
@@ -128,7 +174,12 @@
       "pdfField": "Año desde Rango",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 315, "y": 722.06, "width": 25.47, "height": 15.31 },
+      "rect": {
+        "x": 315,
+        "y": 722.06,
+        "width": 25.47,
+        "height": 15.31
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -140,7 +191,12 @@
       "pdfField": "Año",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 190.32, "y": 656.16, "width": 114.6, "height": 25.92 },
+      "rect": {
+        "x": 190.32,
+        "y": 656.16,
+        "width": 114.6,
+        "height": 25.92
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -152,7 +208,12 @@
       "pdfField": "Número de Identificación Municipal",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 277.32, "y": 613.2, "width": 150.6, "height": 28.8 },
+      "rect": {
+        "x": 277.32,
+        "y": 613.2,
+        "width": 150.6,
+        "height": 28.8
+      },
       "canonicalField": "operations.municipal_taxpayer_id",
       "transform": "none",
       "confidence": 0.86,
@@ -164,7 +225,12 @@
       "pdfField": "Seguro Social del Dueño y/o Reg Inc",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 430.56, "y": 613.2, "width": 154.92, "height": 28.8 },
+      "rect": {
+        "x": 430.56,
+        "y": 613.2,
+        "width": 154.92,
+        "height": 28.8
+      },
       "canonicalField": "owner.tax_id",
       "transform": "none",
       "confidence": 0.6,
@@ -177,7 +243,12 @@
       "pdfField": "Nombre del Individuo, Industria, Negocio u Oficina de Servicio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.44, "y": 613.2, "width": 255.36, "height": 28.8 },
+      "rect": {
+        "x": 19.44,
+        "y": 613.2,
+        "width": 255.36,
+        "height": 28.8
+      },
       "canonicalField": "business.legal_name",
       "transform": "none",
       "confidence": 0.95,
@@ -188,7 +259,12 @@
       "pdfField": "Dirección Física del Negocio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.44, "y": 570.12, "width": 474.48, "height": 27.98 },
+      "rect": {
+        "x": 19.44,
+        "y": 570.12,
+        "width": 474.48,
+        "height": 27.98
+      },
       "canonicalField": "location.physical_address",
       "transform": "none",
       "confidence": 0.9,
@@ -199,7 +275,12 @@
       "pdfField": "Zona Postal Dirección Física",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 496.44, "y": 570.12, "width": 89.04, "height": 28.8 },
+      "rect": {
+        "x": 496.44,
+        "y": 570.12,
+        "width": 89.04,
+        "height": 28.8
+      },
       "canonicalField": "location.postal_code",
       "transform": "none",
       "confidence": 0.85,
@@ -210,7 +291,12 @@
       "pdfField": "Clase de Industria, Negocio o Servicio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.32, "y": 523.68, "width": 120.6, "height": 22.92 },
+      "rect": {
+        "x": 19.32,
+        "y": 523.68,
+        "width": 120.6,
+        "height": 22.92
+      },
       "canonicalField": "business.activity_description",
       "transform": "none",
       "confidence": 0.8,
@@ -221,7 +307,12 @@
       "pdfField": "Número de Empleados",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 284.76, "y": 523.68, "width": 74.28, "height": 20.47 },
+      "rect": {
+        "x": 284.76,
+        "y": 523.68,
+        "width": 74.28,
+        "height": 20.47
+      },
       "canonicalField": "operations.employee_count",
       "transform": "integer",
       "confidence": 0.94,
@@ -232,7 +323,12 @@
       "pdfField": "Nómina Anual",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 361.32, "y": 523.68, "width": 84.12, "height": 22.92 },
+      "rect": {
+        "x": 361.32,
+        "y": 523.68,
+        "width": 84.12,
+        "height": 22.92
+      },
       "canonicalField": "operations.estimated_payroll",
       "transform": "currency",
       "confidence": 0.9,
@@ -243,7 +339,12 @@
       "pdfField": "Tipo de Negocio",
       "pdfFieldType": "radio_group",
       "page": 1,
-      "rect": { "x": 164.69, "y": 541.95, "width": 11.46, "height": 14.73 },
+      "rect": {
+        "x": 164.69,
+        "y": 541.95,
+        "width": 11.46,
+        "height": 14.73
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -255,7 +356,12 @@
       "pdfField": "Fecha de Establecimiento (Mes)",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 470.99, "y": 524.06, "width": 17.63, "height": 19.55 },
+      "rect": {
+        "x": 470.99,
+        "y": 524.06,
+        "width": 17.63,
+        "height": 19.55
+      },
       "canonicalField": "business.start_date",
       "transform": "month_number",
       "confidence": 0.85,
@@ -266,7 +372,12 @@
       "pdfField": "Fecha de Establecimiento (Dia)",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 502.85, "y": 524.06, "width": 22.53, "height": 20.37 },
+      "rect": {
+        "x": 502.85,
+        "y": 524.06,
+        "width": 22.53,
+        "height": 20.37
+      },
       "canonicalField": "business.start_date",
       "transform": "date_day",
       "confidence": 0.85,
@@ -277,7 +388,12 @@
       "pdfField": "Fecha de Establecimiento (Año)",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 542.89, "y": 524.06, "width": 41.33, "height": 21.18 },
+      "rect": {
+        "x": 542.89,
+        "y": 524.06,
+        "width": 41.33,
+        "height": 21.18
+      },
       "canonicalField": "business.start_date",
       "transform": "date_year",
       "confidence": 0.85,
@@ -288,7 +404,12 @@
       "pdfField": "Nombre del Dueño o Representante",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.32, "y": 486.36, "width": 425.28, "height": 23.04 },
+      "rect": {
+        "x": 19.32,
+        "y": 486.36,
+        "width": 425.28,
+        "height": 23.04
+      },
       "canonicalField": "owner.full_name",
       "transform": "none",
       "confidence": 0.9,
@@ -299,7 +420,12 @@
       "pdfField": "Posición del Dueño o Representante",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 511.65, "y": 486.36, "width": 73.59, "height": 21.39 },
+      "rect": {
+        "x": 511.65,
+        "y": 486.36,
+        "width": 73.59,
+        "height": 21.39
+      },
       "canonicalField": "owner.title",
       "transform": "none",
       "confidence": 0.84,
@@ -310,7 +436,12 @@
       "pdfField": "Dirección Postal del Negocio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.44, "y": 443.4, "width": 474.48, "height": 28.8 },
+      "rect": {
+        "x": 19.44,
+        "y": 443.4,
+        "width": 474.48,
+        "height": 28.8
+      },
       "canonicalField": "location.mailing_address",
       "transform": "none",
       "confidence": 0.84,
@@ -321,7 +452,12 @@
       "pdfField": "Zona Postal Dirección Negocio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 496.44, "y": 443.4, "width": 89.04, "height": 28.8 },
+      "rect": {
+        "x": 496.44,
+        "y": 443.4,
+        "width": 89.04,
+        "height": 28.8
+      },
       "canonicalField": "location.mailing_postal_code",
       "transform": "none",
       "confidence": 0.82,
@@ -333,7 +469,12 @@
       "pdfField": "Dirección Residencial del Dueño o Representante",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.44, "y": 400.32, "width": 474.48, "height": 28.8 },
+      "rect": {
+        "x": 19.44,
+        "y": 400.32,
+        "width": 474.48,
+        "height": 28.8
+      },
       "canonicalField": "owner.address",
       "transform": "none",
       "confidence": 0.65,
@@ -345,7 +486,12 @@
       "pdfField": "Zona Postal Dirección Postal Negocio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 496.44, "y": 400.32, "width": 89.04, "height": 28.8 },
+      "rect": {
+        "x": 496.44,
+        "y": 400.32,
+        "width": 89.04,
+        "height": 28.8
+      },
       "canonicalField": "owner.postal_code",
       "transform": "none",
       "confidence": 0.6,
@@ -357,7 +503,12 @@
       "pdfField": "Dirección de la Oficina Principal del Negocio, Industria u Oficina de Servicio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 19.44, "y": 357.12, "width": 474.48, "height": 28.8 },
+      "rect": {
+        "x": 19.44,
+        "y": 357.12,
+        "width": 474.48,
+        "height": 28.8
+      },
       "canonicalField": "location.mailing_address",
       "transform": "none",
       "confidence": 0.6,
@@ -369,7 +520,12 @@
       "pdfField": "Zona Postal Dirección Oficina Pricinpal del Negocio",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 496.44, "y": 357.12, "width": 89.04, "height": 28.8 },
+      "rect": {
+        "x": 496.44,
+        "y": 357.12,
+        "width": 89.04,
+        "height": 28.8
+      },
       "canonicalField": "location.mailing_postal_code",
       "transform": "none",
       "confidence": 0.6,
@@ -380,7 +536,12 @@
       "pdfField": "Número AFF",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 443.76, "y": 323.88, "width": 102.24, "height": 17.76 },
+      "rect": {
+        "x": 443.76,
+        "y": 323.88,
+        "width": 102.24,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -392,7 +553,12 @@
       "pdfField": "Ciudad Juramentación",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 382.32, "y": 268.68, "width": 93.36, "height": 17.76 },
+      "rect": {
+        "x": 382.32,
+        "y": 268.68,
+        "width": 93.36,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -404,7 +570,12 @@
       "pdfField": "Año Juramentación",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 291.12, "y": 268.68, "width": 31.08, "height": 17.76 },
+      "rect": {
+        "x": 291.12,
+        "y": 268.68,
+        "width": 31.08,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -416,7 +587,12 @@
       "pdfField": "Mes Juramentación",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 223.2, "y": 268.68, "width": 53.52, "height": 17.76 },
+      "rect": {
+        "x": 223.2,
+        "y": 268.68,
+        "width": 53.52,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -428,7 +604,12 @@
       "pdfField": "Día Juramentación",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 183.84, "y": 268.68, "width": 26.76, "height": 17.76 },
+      "rect": {
+        "x": 183.84,
+        "y": 268.68,
+        "width": 26.76,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -440,7 +621,12 @@
       "pdfField": "Ciudad donde Habita Juramentación",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 122.16, "y": 287.04, "width": 182.28, "height": 17.4 },
+      "rect": {
+        "x": 122.16,
+        "y": 287.04,
+        "width": 182.28,
+        "height": 17.4
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -452,7 +638,12 @@
       "pdfField": "Comentario",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 348.24, "y": 99.6, "width": 235.44, "height": 50.16 },
+      "rect": {
+        "x": 348.24,
+        "y": 99.6,
+        "width": 235.44,
+        "height": 50.16
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -464,7 +655,12 @@
       "pdfField": "Nombre Corto",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 210.76, "y": 40.68, "width": 134.48, "height": 22.56 },
+      "rect": {
+        "x": 210.76,
+        "y": 40.68,
+        "width": 134.48,
+        "height": 22.56
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -476,7 +672,12 @@
       "pdfField": "Nombre del Contribuyente",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 147.89, "y": 64.04, "width": 197.39, "height": 19.55 },
+      "rect": {
+        "x": 147.89,
+        "y": 64.04,
+        "width": 197.39,
+        "height": 19.55
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -488,7 +689,12 @@
       "pdfField": "Zona Geográfica",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 145.32, "y": 99.6, "width": 200.16, "height": 28.8 },
+      "rect": {
+        "x": 145.32,
+        "y": 99.6,
+        "width": 200.16,
+        "height": 28.8
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -500,7 +706,12 @@
       "pdfField": "Tipo de Negocio (Sección Uso Oficial)",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 214.08, "y": 136.76, "width": 130.39, "height": 25.27 },
+      "rect": {
+        "x": 214.08,
+        "y": 136.76,
+        "width": 130.39,
+        "height": 25.27
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -512,7 +723,12 @@
       "pdfField": "Titulo del Oficial que Juramento",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 348.12, "y": 196.2, "width": 159.96, "height": 17.76 },
+      "rect": {
+        "x": 348.12,
+        "y": 196.2,
+        "width": 159.96,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -524,7 +740,12 @@
       "pdfField": "Jurado Por (Nombre)",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 138.72, "y": 305.85, "width": 155.76, "height": 17.76 },
+      "rect": {
+        "x": 138.72,
+        "y": 305.85,
+        "width": 155.76,
+        "height": 17.76
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,
@@ -536,7 +757,12 @@
       "pdfField": "Jurado por (Apellido)",
       "pdfFieldType": "text",
       "page": 1,
-      "rect": { "x": 297.74, "y": 305.4, "width": 279.49, "height": 17.52 },
+      "rect": {
+        "x": 297.74,
+        "y": 305.4,
+        "width": 279.49,
+        "height": 17.52
+      },
       "canonicalField": null,
       "transform": "none",
       "confidence": 0,

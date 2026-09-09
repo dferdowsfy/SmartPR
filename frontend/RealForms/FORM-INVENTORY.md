@@ -5,7 +5,7 @@ behind each claim. **A form appears under "Implemented" only when a user can
 complete it in Requirements AND SmartPR emits the populated official artifact.**
 Anything short of that is stated plainly rather than rounded up.
 
-Last researched: 2026-09-08.
+Last researched: 2026-09-09.
 
 Statuses used here:
 
@@ -28,6 +28,7 @@ Statuses used here:
 | CORPLLC02 — Certificate of Formation (LLC) | PR Dept. of State | `DOC_ARTICLES_ORGANIZATION` | Official PDF (overlay) | `deliverableOutput.e2e.test.ts` |
 | SS-4 — Application for EIN | IRS (federal) | `DOC_EIN` | Official PDF (AcroForm) | `deliverableOutput.e2e.test.ts` |
 | **PA02 — Solicitud de Patente Provisional** | OCAM (statewide municipal) | `DOC_PATENTE_MUNICIPAL` | Official PDF (AcroForm) | `pa02.e2e.test.ts` |
+| **NC001 — Solicitud de Registro de Nombre Comercial (Trade Name / DBA)** | PR Dept. of State | `DOC_DBA_REGISTRATION` | Official PDF (overlay) | `nc001.e2e.test.ts` |
 
 ### PA02 notes (added 2026-09-08)
 
@@ -50,42 +51,31 @@ derived canonical data with no single settable path, so a UI field would either
 write the owner's home address back into the *business's* address or collect a
 value that never reaches the PDF. Population fills the line without one.
 
----
+### NC001 notes (added 2026-09-09)
 
-## Ready to implement
+Implementing NC001 required a real engine change, not just a new mapping:
+`populateArtifact()`'s `pdf_overlay` branch used to read **only** the
+canonical profile, unlike the AcroForm branch — it never consulted
+`formData`. `directOverlayValues()` (mirroring the existing `directAcroValues`)
+now supplies that, resolving each direct value's placement from the SAME
+mapping row the canonical pass uses (matched by `pdfField`) rather than a
+second, duplicated coordinate table. That change also removes one of
+SC2309's two blockers below.
 
-### NC001 — Solicitud de Registro de Nombre Comercial (Trade Name / DBA)
+NC001's 24 overlay coordinates were not eyeballed: every x/y was read from the
+PDF's own text-content layer (pdfjs-dist `getTextContent`), then the populated
+PDF was re-rendered to an image and visually checked page by page — four
+placements printed on top of a ruled line on the first pass and were nudged
+clear. `reviewed: false` throughout, same standard `overlayMaps.ts` uses
+elsewhere — a stronger basis than a pure visual estimate, still not a human
+sign-off against the live agency form.
 
-* **Agency:** PR Department of State, Registro de Marcas y Nombres Comerciales
-* **Requirement:** `DOC_DBA_REGISTRATION` (registry placeholder `FORM_PR_DOS_DBA`)
-* **Official source:** <http://app.estado.gobierno.pr/formularios/marcas/nc001.pdf>
-  — retained at `RealForms/NC001-Solicitud-Registro-Nombre-Comercial.pdf`
-* **Statutory basis:** Act 75-1992 (trade names); registration lasts 10 years.
-* **Fee:** $150 Comprobante de Rentas Internas, cifra de cuenta **1705**.
-* **Structure:** 6 pages — p1 application, p2 sworn declaration (notary),
-  p3 trade-name description, p4–6 instructions (not fillable).
-  **0 AcroForm fields** → requires coordinate overlay.
+Four things are left blank **on purpose**, each covered by a test:
 
-Every applicant data element is identified and the page geometry is clean
-(612×792, unambiguous label anchors):
-
-p1 — trade name; applicant name + phone; natural-person vs juristic-entity
-selection; state/country of organization *or* citizenship (conditional on that
-selection); principal place of business (physical + postal); principal business
-phone; nature of business; used-in-commerce **since date** *or* not-yet-used
-selection; two-specimen enclosure; applicant signature line (signature — never
-auto-filled). p3 — words claimed; disclaimer of non-registrable components.
-
-**Blocker (specific and shared):** `populateArtifact()`'s `pdf_overlay` branch
-reads **only** the canonical profile — unlike the AcroForm branch, it never
-consults `formData`. NC001 needs several genuinely applicant-only values that
-do not belong in the reusable business profile (first-use-in-commerce date, the
-disclaimer text, the application date). Implementing NC001 therefore requires
-first adding form-data support to the overlay branch — a `directOverlayValues`
-analogue of the existing `directAcroValues`.
-
-That single engine change also unblocks SC2309 below, so it is the highest-
-leverage next step in this area.
+* **Page 2's sworn declaration (JURAMENTO / notary block)** and **both
+  signature lines** — never SmartPR's to complete.
+* **`Núm. Reg. / Reg. No.`** — assigned by the Department of State when it
+  registers the filing.
 
 > Do **not** conflate the first-use-in-commerce date with `business.start_date`.
 > They are different legal facts and the registry treats the use date as sworn
@@ -123,8 +113,10 @@ checkboxes, and the comments line.
   detail blocks (students, average age, grades, class hours / congregants,
   service days, service hours).
 
-**Two blockers:** ~30 new hand-measured overlay coordinates, **and** the same
-overlay/`formData` engine gap described under NC001.
+**Remaining blocker:** ~30 new hand-measured overlay coordinates. The
+overlay/`formData` engine gap that used to block this alongside NC001 is
+resolved — `directOverlayValues()` now exists and reads placements from
+SC2309's own mapping rows the same way it does for NC001.
 
 > Also verify currency before investing: Hacienda has moved license
 > **application and renewal** into SURI (see below). This paper revision may
@@ -186,7 +178,10 @@ in the original brief. Neither has a registry placeholder yet.
 
 ## Recommended next step
 
-Add `formData` support to the overlay branch of `populateArtifact()`, mirroring
-`directAcroValues`. It is a contained change that converts NC001 from "ready"
-to implementable and removes one of SC2309's two blockers — more leverage than
-starting any new form from scratch.
+SC 2309's field coverage is the largest remaining gap on an already-sourced,
+already-unblocked-at-the-engine-level form: ~30 overlay coordinates using the
+same measure-then-visually-verify method NC001 used, plus confirming with
+Hacienda that the paper form is still current (see the SURI caveat above)
+before investing that effort. After that, the next highest-value target is
+researching one of the "still to research" placeholders below —
+`FORM_PR_PERMISO_UNICO` is the highest-frequency one with no source held yet.

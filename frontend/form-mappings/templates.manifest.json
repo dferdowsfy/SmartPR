@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T16:27:40.775Z",
+  "generatedAt": "2026-09-09T02:57:32.250Z",
   "templates": [
     {
       "formCode": "CORPREG01",
@@ -50,6 +50,18 @@
       "sourceStatus": "official_source"
     },
     {
+      "formCode": "NC001",
+      "sourceFile": "RealForms/NC001-Solicitud-Registro-Nombre-Comercial.pdf",
+      "checksum": "sha256:f93cdea9a6f10c9a30bb1cd27f1261f95f81bc8cb9e9875367d7fcd47929499e",
+      "byteLength": 150904,
+      "pageCount": 6,
+      "hasAcroForm": false,
+      "nativeFieldCount": 0,
+      "populationMethod": "pdf_overlay",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
       "formCode": "PA02",
       "sourceFile": "RealForms/PA02-Solicitud-de-Patente-Provisional.pdf",
       "checksum": "sha256:494e67a6a3be72304e966bbc4d0efa10d1e2142a66b7d99e8528aa12eb2ffdfa",
@@ -58,8 +70,8 @@
       "hasAcroForm": true,
       "nativeFieldCount": 45,
       "populationMethod": "acroform",
-      "artifactType": "genericized_municipal_template",
-      "sourceStatus": "genericized_working_copy"
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
     },
     {
       "formCode": "PA03",

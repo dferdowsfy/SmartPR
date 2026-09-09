@@ -1,0 +1,436 @@
+{
+  "formCode": "NC001",
+  "sourceFile": "RealForms/NC001-Solicitud-Registro-Nombre-Comercial.pdf",
+  "artifactType": "official_pdf_form",
+  "populationMethod": "pdf_overlay",
+  "templateChecksum": "sha256:f93cdea9a6f10c9a30bb1cd27f1261f95f81bc8cb9e9875367d7fcd47929499e",
+  "pageCount": 6,
+  "hasAcroForm": false,
+  "inspectedAt": "2026-09-09T02:57:32.178Z",
+  "status": "mapped",
+  "notes": [
+    "No native AcroForm fields — populated by coordinate overlay over the untouched background.",
+    "6 pages: page 1 is the application, page 2 the sworn declaration (notary block), page 3 the trade-name description; pages 4-6 are instructions only and carry no mapped fields.",
+    "The JURAMENTO/notary block and both signature lines are never written by SmartPR — see NC001_OVERLAY in overlayMaps.ts for field ownership.",
+    "Registration lasts 10 years under Act 75-1992. The $150 filing fee (Comprobante de Rentas Internas, cifra de cuenta 1705) is paid at filing, not printed on the form.",
+    "Coordinates were not read off ruled-line glyphs alone: every x/y was taken from the PDF's own text-content layer, then the populated PDF was re-rendered to an image and visually checked page by page — four placements printed on top of a ruled line on the first pass and were nudged clear. Still reviewed: false, same standard the rest of overlayMaps.ts uses."
+  ],
+  "fields": [
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "trade_name",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 131,
+        "y": 584.5,
+        "width": 430,
+        "height": 12,
+        "fontSize": 10
+      },
+      "reviewNote": "'NOMBRE COMERCIAL :' blank (right of the colon at x=120.5,y=583.4). Written via directOverlayValues — the trade name is the asset being registered, not an existing canonical fact."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "reg_number",
+      "canonicalField": null,
+      "ownership": "government_only",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 420,
+        "y": 649.4,
+        "width": 150,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'Núm. Reg. / Reg. No.' — assigned by the Department of State when it processes the filing. Never written by SmartPR."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "application_date",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 396,
+        "y": 681.5,
+        "width": 160,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'Fecha/Date' line — the date the application is filed. Defaults to today's date in the capture UI; the applicant can change it."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "applicant_name",
+      "canonicalField": "owner.full_name",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 1,
+        "x": 250,
+        "y": 538.2,
+        "width": 125,
+        "height": 10,
+        "fontSize": 8
+      },
+      "reviewNote": "Left portion of the 'NOMBRE DEL SOLICITANTE Y NÚM. DE TELÉFONO :' blank. The 'Tel.' caption at x=382.5,y=548.8 sits directly above where the phone portion of this same line goes — see applicant_phone."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "applicant_phone",
+      "canonicalField": "business.phone",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 1,
+        "x": 385,
+        "y": 538.2,
+        "width": 180,
+        "height": 10,
+        "fontSize": 8
+      },
+      "reviewNote": "Right portion of the same blank as applicant_name, under the 'Tel.' caption."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "entity_kind_natural_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 134,
+        "y": 477.1,
+        "width": 15,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "Mark inside the '(_____)' before 'PERSONA NATURAL (Individual/Person)'. Written via directOverlayValues from the entity_kind radio; mutually exclusive with entity_kind_juridica_mark."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "entity_kind_juridica_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 134,
+        "y": 466.7,
+        "width": 15,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "Mark inside the '(_____)' before 'PERSONA JURIDICA (Juristic Entity)'."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "state_or_country_or_citizenship",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 22.5,
+        "y": 405,
+        "width": 560,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "Blank between the bilingual 'INDIQUE EL ESTADO O PAÍS... / INDIQUE LA CIUDADANÍA' instruction (ends y=417.1) and the address section header (starts y=382.5)."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "principal_address",
+      "canonicalField": "location.physical_address",
+      "ownership": "smartpr_derived",
+      "confidence": 0.75,
+      "placement": {
+        "page": 1,
+        "x": 22.5,
+        "y": 360,
+        "width": 560,
+        "height": 40,
+        "fontSize": 9,
+        "maxLines": 3,
+        "lineHeight": 14
+      },
+      "reviewNote": "The form asks for physical AND postal address in one combined block; only the operating (physical) address is written here. A mismatched mailing address is a known limitation."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "principal_phone",
+      "canonicalField": "business.phone",
+      "ownership": "smartpr_derived",
+      "confidence": 0.85,
+      "placement": {
+        "page": 1,
+        "x": 280,
+        "y": 309.5,
+        "width": 300,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'TELÉFONO DE LA OFICINA PRINCIPAL DE NEGOCIOS:' blank."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "nature_of_business",
+      "canonicalField": "business.activity_description",
+      "ownership": "smartpr_derived",
+      "confidence": 0.8,
+      "placement": {
+        "page": 1,
+        "x": 22.5,
+        "y": 245,
+        "width": 560,
+        "height": 55,
+        "fontSize": 9,
+        "maxLines": 4,
+        "lineHeight": 14
+      },
+      "reviewNote": "'IDENTIFIQUE LA ACTIVIDAD EMPRESARIAL O PROPÓSITOS DEL NEGOCIO:' blank (label ends y=269.0, next section starts y=177.8)."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "used_since_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 26,
+        "y": 177.8,
+        "width": 12,
+        "height": 9,
+        "fontSize": 9
+      },
+      "reviewNote": "Mark inside the '(____)' before 'EL NOMBRE COMERCIAL SE USA EN EL COMERCIO... DESDE'. Mutually exclusive with not_used_mark."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "used_since_date",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 430,
+        "y": 177.8,
+        "width": 95,
+        "height": 9,
+        "fontSize": 8
+      },
+      "reviewNote": "The '(mes/día/año)' blank on the same line, estimated from the string's proportional width — validate visually with the mapping preview before production use, more so than the label-anchored fields above."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "not_used_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 26,
+        "y": 147.8,
+        "width": 12,
+        "height": 9,
+        "fontSize": 9
+      },
+      "reviewNote": "Mark inside the '(____)' before 'EL NOMBRE COMERCIAL NO HA SIDO USADO...'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "applicant_signature_p1",
+      "canonicalField": null,
+      "ownership": "signature",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 238.5,
+        "y": 60,
+        "width": 249,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'Nombre, firma y título del solicitante' — the filer's own wet/e-signature. Never written."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "applicant_name_p2",
+      "canonicalField": "owner.full_name",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 2,
+        "x": 200,
+        "y": 730,
+        "width": 220,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "The applicant's name repeated at the top of the sworn-declaration page, above the 'Nombre del Solicitante' caption (y=718.0). Same canonical source as the page-1 applicant_name field, resolved independently — not re-typed, not routed through formData."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "declaration_body",
+      "canonicalField": null,
+      "ownership": "notary",
+      "confidence": 0,
+      "placement": {
+        "page": 2,
+        "x": 22.5,
+        "y": 686.9,
+        "width": 547,
+        "height": 120,
+        "fontSize": 9
+      },
+      "reviewNote": "The printed sworn-statement text itself (declara y dice que...). Not a blank to fill; recorded only so the block's extent is documented as never-written."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "applicant_signature_p2",
+      "canonicalField": null,
+      "ownership": "signature",
+      "confidence": 0,
+      "placement": {
+        "page": 2,
+        "x": 346.5,
+        "y": 520,
+        "width": 209,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'Nombre, firma y título del solicitante' on the declaration page. Never written."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "affidavit_number",
+      "canonicalField": null,
+      "ownership": "notary",
+      "confidence": 0,
+      "placement": {
+        "page": 2,
+        "x": 100,
+        "y": 455.3,
+        "width": 150,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'Affidavit Núm.' — assigned by the notary at signing. Never written."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "sworn_date",
+      "canonicalField": null,
+      "ownership": "notary",
+      "confidence": 0,
+      "placement": {
+        "page": 2,
+        "x": 60,
+        "y": 413.8,
+        "width": 260,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'Jurado y suscrito ante mí, hoy ___ de ___ de 20__' — completed by the notary at the moment of signing. Never written."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "notary_seal",
+      "canonicalField": null,
+      "ownership": "notary",
+      "confidence": 0,
+      "placement": {
+        "page": 2,
+        "x": 22.5,
+        "y": 332,
+        "width": 60,
+        "height": 30,
+        "fontSize": 9
+      },
+      "reviewNote": "'Sello Notarial' / Notary Seal. Never written."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "notary_signature",
+      "canonicalField": null,
+      "ownership": "notary",
+      "confidence": 0,
+      "placement": {
+        "page": 2,
+        "x": 346.4,
+        "y": 332,
+        "width": 209,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "'*Firma del Notario Público'. Never written."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "words_claimed",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 3,
+        "x": 22.5,
+        "y": 616,
+        "width": 560,
+        "height": 70,
+        "fontSize": 9,
+        "maxLines": 4,
+        "lineHeight": 17
+      },
+      "reviewNote": "'PALABRAS (Words):' — the words claimed as part of the trade name. The form's own instructions say the applicant may leave this blank if not applicable."
+    },
+    {
+      "reviewed": false,
+      "transform": "none",
+      "pdfField": "disclaimer_non_registrable",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 3,
+        "x": 22.5,
+        "y": 493,
+        "width": 560,
+        "height": 70,
+        "fontSize": 9,
+        "maxLines": 4,
+        "lineHeight": 17
+      },
+      "reviewNote": "'RENUNCIA DE COMPONENTES NO REGISTRABLES' — disclaimer of non-registrable components. Optional, same as words_claimed."
+    }
+  ]
+}

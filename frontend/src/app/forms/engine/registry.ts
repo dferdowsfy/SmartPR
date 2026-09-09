@@ -21,6 +21,7 @@ import { CORPREG05 } from "../definitions/pr/department-of-state/CORPREG05.ts";
 import { CORPREG06 } from "../definitions/pr/department-of-state/CORPREG06.ts";
 import { CORPLLC02 } from "../definitions/pr/department-of-state/CORPLLC02.ts";
 import { SS4 } from "../definitions/federal/irs/SS4.ts";
+import { NC001 } from "../definitions/pr/department-of-state/NC001.ts";
 import { PA02 } from "../definitions/pr/municipal/PA02.ts";
 import type { DigitalFormDefinition, FormVerificationStatus } from "./types.ts";
 
@@ -47,6 +48,7 @@ const DEFINITIONS: DigitalFormDefinition[] = [
   CORPREG06,
   CORPLLC02,
   SS4,
+  NC001,
   PA02,
 ];
 
@@ -78,9 +80,12 @@ function entryFromDefinition(def: DigitalFormDefinition): RegistryEntry {
  * source (34-CORPLLC02.pdf) has since been added, so it is now served by the
  * real CORPLLC02 schema above — still deliberately NOT by CORPREG06, which is
  * an LLP registration.
+ *
+ * FORM_PR_DOS_DBA is no longer a placeholder either: the official PR
+ * Department of State NC001 PDF is in RealForms with a human-reviewed overlay
+ * mapping, so it is served by the real NC001 schema above.
  */
 const PLACEHOLDER_ENTRIES: RegistryEntry[] = [
-  ph("FORM_PR_DOS_DBA", "DOC_DBA_REGISTRATION", "dba", "DBA / Trade Name Registration"),
   ph("FORM_PR_MERCHANT_REGISTRATION", "DOC_MERCHANT_REGISTRATION", "merchant", "Merchant Registration"),
   ph("FORM_PR_PERMISO_UNICO", "DOC_PERMISO_UNICO", "permiso_unico", "Permiso Único"),
   // FORM_PR_PATENTE_MUNICIPAL is no longer a placeholder: the official OCAM

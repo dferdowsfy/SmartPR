@@ -469,8 +469,237 @@ export const CORPLLC02_OVERLAY: FieldMapping[] = [
   }),
 ];
 
+/**
+ * NC001 — Solicitud de Registro de Nombre Comercial (Trade Name / DBA), 6
+ * pages, 612 x 792 pt (only pages 1-3 are fillable; 4-6 are instructions).
+ *
+ * Unlike the forms above, coordinates here were not read off ruled-line
+ * glyphs alone: every x/y was taken from the PDF's own text-content layer
+ * (one label per line, no ambiguity), then the populated PDF was re-rendered
+ * to an image and visually checked page by page — four placements printed on
+ * top of a ruled line on the first pass and were nudged clear. Still
+ * `reviewed: false`, same standard as the rest of this file.
+ *
+ * `ownership` is used explicitly here (applicant / signature / notary /
+ * government_only) for every never-written field, rather than omitting them
+ * the way the CORPREG* maps above do — the fuller PA02-style convention, kept
+ * so the mapping documents where every one of those blocks sits instead of
+ * only what SmartPR writes.
+ */
+export const NC001_OVERLAY: FieldMapping[] = [
+  overlay({
+    pdfField: "trade_name",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 131, y: 584.5, width: 430, height: 12, fontSize: 10 },
+    reviewNote:
+      "'NOMBRE COMERCIAL :' blank (right of the colon at x=120.5,y=583.4). Written via directOverlayValues — the trade name is the asset being registered, not an existing canonical fact.",
+  }),
+  overlay({
+    pdfField: "reg_number",
+    canonicalField: null,
+    ownership: "government_only",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 1, x: 420, y: 649.4, width: 150, height: 10, fontSize: 9 },
+    reviewNote: "'Núm. Reg. / Reg. No.' — assigned by the Department of State when it processes the filing. Never written by SmartPR.",
+  }),
+  overlay({
+    pdfField: "application_date",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 396, y: 681.5, width: 160, height: 10, fontSize: 9 },
+    reviewNote: "'Fecha/Date' line — the date the application is filed. Defaults to today's date in the capture UI; the applicant can change it.",
+  }),
+  overlay({
+    pdfField: "applicant_name",
+    canonicalField: "owner.full_name",
+    ownership: "smartpr_derived",
+    confidence: 0.7,
+    placement: { page: 1, x: 250, y: 538.2, width: 125, height: 10, fontSize: 8 },
+    reviewNote:
+      "Left portion of the 'NOMBRE DEL SOLICITANTE Y NÚM. DE TELÉFONO :' blank. The 'Tel.' caption at x=382.5,y=548.8 sits directly above where the phone portion of this same line goes — see applicant_phone.",
+  }),
+  overlay({
+    pdfField: "applicant_phone",
+    canonicalField: "business.phone",
+    ownership: "smartpr_derived",
+    confidence: 0.7,
+    placement: { page: 1, x: 385, y: 538.2, width: 180, height: 10, fontSize: 8 },
+    reviewNote: "Right portion of the same blank as applicant_name, under the 'Tel.' caption.",
+  }),
+  overlay({
+    pdfField: "entity_kind_natural_mark",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 134, y: 477.1, width: 15, height: 10, fontSize: 9 },
+    reviewNote:
+      "Mark inside the '(_____)' before 'PERSONA NATURAL (Individual/Person)'. Written via directOverlayValues from the entity_kind radio; mutually exclusive with entity_kind_juridica_mark.",
+  }),
+  overlay({
+    pdfField: "entity_kind_juridica_mark",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 134, y: 466.7, width: 15, height: 10, fontSize: 9 },
+    reviewNote: "Mark inside the '(_____)' before 'PERSONA JURIDICA (Juristic Entity)'.",
+  }),
+  overlay({
+    pdfField: "state_or_country_or_citizenship",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 22.5, y: 405, width: 560, height: 10, fontSize: 9 },
+    reviewNote:
+      "Blank between the bilingual 'INDIQUE EL ESTADO O PAÍS... / INDIQUE LA CIUDADANÍA' instruction (ends y=417.1) and the address section header (starts y=382.5).",
+  }),
+  overlay({
+    pdfField: "principal_address",
+    canonicalField: "location.physical_address",
+    ownership: "smartpr_derived",
+    confidence: 0.75,
+    placement: { page: 1, x: 22.5, y: 360, width: 560, height: 40, fontSize: 9, maxLines: 3, lineHeight: 14 },
+    reviewNote:
+      "The form asks for physical AND postal address in one combined block; only the operating (physical) address is written here. A mismatched mailing address is a known limitation.",
+  }),
+  overlay({
+    pdfField: "principal_phone",
+    canonicalField: "business.phone",
+    ownership: "smartpr_derived",
+    confidence: 0.85,
+    placement: { page: 1, x: 280, y: 309.5, width: 300, height: 10, fontSize: 9 },
+    reviewNote: "'TELÉFONO DE LA OFICINA PRINCIPAL DE NEGOCIOS:' blank.",
+  }),
+  overlay({
+    pdfField: "nature_of_business",
+    canonicalField: "business.activity_description",
+    ownership: "smartpr_derived",
+    confidence: 0.8,
+    placement: { page: 1, x: 22.5, y: 245, width: 560, height: 55, fontSize: 9, maxLines: 4, lineHeight: 14 },
+    reviewNote: "'IDENTIFIQUE LA ACTIVIDAD EMPRESARIAL O PROPÓSITOS DEL NEGOCIO:' blank (label ends y=269.0, next section starts y=177.8).",
+  }),
+  overlay({
+    pdfField: "used_since_mark",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 26, y: 177.8, width: 12, height: 9, fontSize: 9 },
+    reviewNote:
+      "Mark inside the '(____)' before 'EL NOMBRE COMERCIAL SE USA EN EL COMERCIO... DESDE'. Mutually exclusive with not_used_mark.",
+  }),
+  overlay({
+    pdfField: "used_since_date",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 430, y: 177.8, width: 95, height: 9, fontSize: 8 },
+    reviewNote:
+      "The '(mes/día/año)' blank on the same line, estimated from the string's proportional width — validate visually with the mapping preview before production use, more so than the label-anchored fields above.",
+  }),
+  overlay({
+    pdfField: "not_used_mark",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 26, y: 147.8, width: 12, height: 9, fontSize: 9 },
+    reviewNote: "Mark inside the '(____)' before 'EL NOMBRE COMERCIAL NO HA SIDO USADO...'.",
+  }),
+  overlay({
+    pdfField: "applicant_signature_p1",
+    canonicalField: null,
+    ownership: "signature",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 1, x: 238.5, y: 60, width: 249, height: 10, fontSize: 9 },
+    reviewNote: "'Nombre, firma y título del solicitante' — the filer's own wet/e-signature. Never written.",
+  }),
+  overlay({
+    pdfField: "applicant_name_p2",
+    canonicalField: "owner.full_name",
+    ownership: "smartpr_derived",
+    confidence: 0.7,
+    placement: { page: 2, x: 200, y: 730, width: 220, height: 10, fontSize: 9 },
+    reviewNote:
+      "The applicant's name repeated at the top of the sworn-declaration page, above the 'Nombre del Solicitante' caption (y=718.0). Same canonical source as the page-1 applicant_name field, resolved independently — not re-typed, not routed through formData.",
+  }),
+  overlay({
+    pdfField: "declaration_body",
+    canonicalField: null,
+    ownership: "notary",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 2, x: 22.5, y: 686.9, width: 547, height: 120, fontSize: 9 },
+    reviewNote: "The printed sworn-statement text itself (declara y dice que...). Not a blank to fill; recorded only so the block's extent is documented as never-written.",
+  }),
+  overlay({
+    pdfField: "applicant_signature_p2",
+    canonicalField: null,
+    ownership: "signature",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 2, x: 346.5, y: 520, width: 209, height: 10, fontSize: 9 },
+    reviewNote: "'Nombre, firma y título del solicitante' on the declaration page. Never written.",
+  }),
+  overlay({
+    pdfField: "affidavit_number",
+    canonicalField: null,
+    ownership: "notary",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 2, x: 100, y: 455.3, width: 150, height: 10, fontSize: 9 },
+    reviewNote: "'Affidavit Núm.' — assigned by the notary at signing. Never written.",
+  }),
+  overlay({
+    pdfField: "sworn_date",
+    canonicalField: null,
+    ownership: "notary",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 2, x: 60, y: 413.8, width: 260, height: 10, fontSize: 9 },
+    reviewNote: "'Jurado y suscrito ante mí, hoy ___ de ___ de 20__' — completed by the notary at the moment of signing. Never written.",
+  }),
+  overlay({
+    pdfField: "notary_seal",
+    canonicalField: null,
+    ownership: "notary",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 2, x: 22.5, y: 332, width: 60, height: 30, fontSize: 9 },
+    reviewNote: "'Sello Notarial' / Notary Seal. Never written.",
+  }),
+  overlay({
+    pdfField: "notary_signature",
+    canonicalField: null,
+    ownership: "notary",
+    confidence: 0,
+    reviewed: true,
+    placement: { page: 2, x: 346.4, y: 332, width: 209, height: 10, fontSize: 9 },
+    reviewNote: "'*Firma del Notario Público'. Never written.",
+  }),
+  overlay({
+    pdfField: "words_claimed",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 3, x: 22.5, y: 616, width: 560, height: 70, fontSize: 9, maxLines: 4, lineHeight: 17 },
+    reviewNote: "'PALABRAS (Words):' — the words claimed as part of the trade name. The form's own instructions say the applicant may leave this blank if not applicable.",
+  }),
+  overlay({
+    pdfField: "disclaimer_non_registrable",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 3, x: 22.5, y: 493, width: 560, height: 70, fontSize: 9, maxLines: 4, lineHeight: 17 },
+    reviewNote: "'RENUNCIA DE COMPONENTES NO REGISTRABLES' — disclaimer of non-registrable components. Optional, same as words_claimed.",
+  }),
+];
+
 export const OVERLAY_MAPS: Record<string, FieldMapping[]> = {
   CORPREG01: CORPREG01_OVERLAY,
   CORPLLC02: CORPLLC02_OVERLAY,
   SC2309: SC2309_OVERLAY,
+  NC001: NC001_OVERLAY,
 };

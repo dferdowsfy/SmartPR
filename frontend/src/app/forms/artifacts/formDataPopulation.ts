@@ -87,6 +87,82 @@ function pa02Values(data: FormData): DirectAcroValue[] {
   return values;
 }
 
+export interface DirectOverlayValue {
+  /** Matches a `pdfField` id in the form's mapping JSON, which supplies the placement. */
+  pdfField: string;
+  value: string;
+  /** Prevent the raw value from being copied into population metadata. */
+  sensitive?: boolean;
+}
+
+function pushOverlay(values: DirectOverlayValue[], pdfField: string, value: string, sensitive = false) {
+  if (value) values.push({ pdfField, value, sensitive });
+}
+
+const NC001_MONTHS_ES: Record<string, string> = {
+  "1": "enero", "2": "febrero", "3": "marzo", "4": "abril", "5": "mayo", "6": "junio",
+  "7": "julio", "8": "agosto", "9": "septiembre", "10": "octubre", "11": "noviembre", "12": "diciembre",
+};
+
+/** "YYYY-MM-DD" -> "<mes> D, YYYY". Any other shape is passed through as typed. */
+function nc001SpanishDate(raw: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (!match) return raw;
+  const [, year, month, day] = match;
+  const monthName = NC001_MONTHS_ES[String(Number(month))] ?? month;
+  return `${monthName} ${Number(day)}, ${year}`;
+}
+
+/**
+ * NC001 (Solicitud de Registro de Nombre Comercial) fields answered on the
+ * form itself: the trade name being registered, entity-kind mark, the
+ * first-use-in-commerce declaration and date, the state/country of
+ * organization or citizenship line, and the page-3 trade-name description —
+ * none of these belong in the shared canonical business profile (a trade name
+ * is the very thing being registered, not an existing profile fact).
+ *
+ * `pdfField` ids here are a contract with form-mappings/NC001.json: each one
+ * must match a mapping row's `pdfField` so population.ts can find that row's
+ * `placement`. Renaming an id on either side silently stops it reaching the
+ * overlay — see nc001.e2e.test.ts, which reads values back out of the
+ * generated PDF rather than trusting either side alone.
+ */
+function nc001Values(data: FormData): DirectOverlayValue[] {
+  const values: DirectOverlayValue[] = [];
+
+  pushOverlay(values, "trade_name", textValue(data, "trade_name"));
+  pushOverlay(values, "state_or_country_or_citizenship", textValue(data, "state_or_country_or_citizenship"));
+  pushOverlay(values, "words_claimed", textValue(data, "words_claimed"));
+  pushOverlay(values, "disclaimer_non_registrable", textValue(data, "disclaimer_non_registrable"));
+  const applicationDate = textValue(data, "application_date");
+  if (applicationDate) pushOverlay(values, "application_date", nc001SpanishDate(applicationDate));
+
+  const entityKind = textValue(data, "entity_kind");
+  if (entityKind === "natural") pushOverlay(values, "entity_kind_natural_mark", "X");
+  if (entityKind === "juridica") pushOverlay(values, "entity_kind_juridica_mark", "X");
+
+  const usedSince = textValue(data, "used_since");
+  if (usedSince === "yes") {
+    pushOverlay(values, "used_since_mark", "X");
+    pushOverlay(values, "used_since_date", nc001SpanishDate(textValue(data, "used_since_date")));
+  } else if (usedSince === "no") {
+    pushOverlay(values, "not_used_mark", "X");
+  }
+
+  return values;
+}
+
+/**
+ * Values collected by the schema-driven builder that do not belong in the
+ * shared canonical business profile. Only known form codes are accepted; a
+ * client cannot name arbitrary PDF fields.
+ */
+export function directOverlayValues(formCode: string, data: FormData | undefined): DirectOverlayValue[] {
+  if (!data) return [];
+  if (formCode === "NC001") return nc001Values(data);
+  return [];
+}
+
 /**
  * Values collected by the schema-driven builder that do not belong in the
  * shared canonical business profile. Only known form codes are accepted; a

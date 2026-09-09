@@ -1,0 +1,42 @@
+{
+  "formCode": "NC001",
+  "sourceFile": "RealForms/NC001-Solicitud-Registro-Nombre-Comercial.pdf",
+  "checksum": "sha256:f93cdea9a6f10c9a30bb1cd27f1261f95f81bc8cb9e9875367d7fcd47929499e",
+  "pageCount": 6,
+  "pageSizes": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 2,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 3,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 4,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 5,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 6,
+      "width": 612,
+      "height": 792
+    }
+  ],
+  "hasAcroForm": false,
+  "fieldCount": 0,
+  "fields": [],
+  "inspectedAt": "2026-09-09T02:57:32.178Z"
+}

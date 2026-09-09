@@ -12,15 +12,16 @@
 //                 coordinates, for official PDFs with no native fields
 // ============================================================================
 
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
 
 import { canonicalFieldLabel, readCanonicalField } from "./canonicalFields.ts";
-import { directAcroValues } from "./formDataPopulation.ts";
+import { directAcroValues, directOverlayValues } from "./formDataPopulation.ts";
 import type { CanonicalApplicationData, FormData } from "../engine/types.ts";
 import type {
   FieldMapping,
   FormMappingDocument,
   MappingTransform,
+  OverlayPlacement,
   PopulatedFieldRecord,
   PopulationResult,
   UnansweredFieldRecord,
@@ -205,6 +206,40 @@ function wrapText(
   return lines.slice(0, maxLines);
 }
 
+/**
+ * Draw one value at one overlay placement. Shared by the canonical-mapping
+ * pass and the direct-formData pass below so both draw identically.
+ */
+function drawOverlayValue(
+  page: PDFPage,
+  placement: OverlayPlacement,
+  value: string,
+  font: PDFFont,
+  measure: (s: string, size: number) => number,
+  options: PopulateOptions
+): void {
+  const size = placement.fontSize ?? 9;
+  const lineHeight = placement.lineHeight ?? size * 1.15;
+  // Helvetica (WinAnsi) cannot encode every character a profile may hold;
+  // substitute rather than abort the whole document.
+  const safe = value.replace(/[^\x20-\x7E\xA0-\xFF]/g, " ");
+  const lines = wrapText(safe, placement.width, size, placement.maxLines ?? 1, measure);
+  lines.forEach((line, index) => {
+    const y = placement.y - index * lineHeight;
+    if (options.highlightPopulatedValues) {
+      page.drawRectangle({
+        x: placement.x - 1,
+        y: y - 2,
+        width: placement.width,
+        height: size + 3,
+        color: rgb(0.85, 0.93, 1),
+        opacity: 0.45,
+      });
+    }
+    page.drawText(line, { x: placement.x, y, size, font, color: rgb(0.05, 0.1, 0.25) });
+  });
+}
+
 export interface PopulateOptions {
   /** Draw a light tint behind overlay text so a reviewer sees what SmartPR added. */
   highlightPopulatedValues?: boolean;
@@ -334,27 +369,45 @@ export async function populateArtifact(
         unanswered.push(unansweredRecord(mapping, "requires_user_entry"));
         continue;
       }
-      const size = placement.fontSize ?? 9;
-      const lineHeight = placement.lineHeight ?? size * 1.15;
-      // Helvetica (WinAnsi) cannot encode every character a profile may hold;
-      // substitute rather than abort the whole document.
-      const safe = resolved.value.replace(/[^\x20-\x7E\xA0-\xFF]/g, " ");
-      const lines = wrapText(safe, placement.width, size, placement.maxLines ?? 1, measure);
-      lines.forEach((line, index) => {
-        const y = placement.y - index * lineHeight;
-        if (options.highlightPopulatedValues) {
-          page.drawRectangle({
-            x: placement.x - 1,
-            y: y - 2,
-            width: placement.width,
-            height: size + 3,
-            color: rgb(0.85, 0.93, 1),
-            opacity: 0.45,
-          });
-        }
-        page.drawText(line, { x: placement.x, y, size, font, color: rgb(0.05, 0.1, 0.25) });
-      });
+      drawOverlayValue(page, placement, resolved.value, font, measure, options);
       populated.push({ pdfField: mapping.pdfField, canonicalField: mapping.canonicalField, value: resolved.value });
+    }
+
+    // Form-specific answers, drawn the same way as the canonical pass above.
+    // This is what lets an overlay form (no native AcroForm fields, so no
+    // `directAcroValues` equivalent existed) accept applicant-only values that
+    // do not belong in the reusable business profile — e.g. NC001's trade
+    // name, which is the very thing being registered, not an existing
+    // profile fact. Placement comes from the SAME mapping row as the
+    // canonical pass (matched by pdfField): geometry lives once, in the
+    // mapping JSON, never duplicated here.
+    //
+    // Same hard backstop as the acroform branch: a pdfField this form's own
+    // mapping marks government_only/signature/notary is never drawn here
+    // either, even if directOverlayValues() names it by mistake.
+    const blockedOverlayFields = new Set(
+      doc.fields.filter((mapping) => ownershipBlocksWrite(mapping)).map((mapping) => mapping.pdfField)
+    );
+    for (const direct of directOverlayValues(doc.formCode, formData)) {
+      if (blockedOverlayFields.has(direct.pdfField)) continue;
+      const mapping = doc.fields.find((candidate) => candidate.pdfField === direct.pdfField);
+      const placement = mapping?.placement;
+      if (!placement) continue; // no mapping row for this id — nothing to draw against
+      const page = pages[placement.page - 1];
+      if (!page || !direct.value) continue;
+
+      drawOverlayValue(page, placement, direct.value, font, measure, options);
+
+      const prior = populated.findIndex((entry) => entry.pdfField === direct.pdfField);
+      if (prior >= 0) populated.splice(prior, 1);
+      for (let index = unanswered.length - 1; index >= 0; index -= 1) {
+        if (unanswered[index].pdfField === direct.pdfField) unanswered.splice(index, 1);
+      }
+      populated.push({
+        pdfField: direct.pdfField,
+        canonicalField: mapping?.canonicalField ?? null,
+        value: direct.sensitive ? "[provided]" : direct.value,
+      });
     }
   } else {
     // docx_merge / structured_portal_data / none are handled outside the PDF path.
