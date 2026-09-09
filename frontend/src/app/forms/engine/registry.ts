@@ -23,6 +23,7 @@ import { CORPLLC02 } from "../definitions/pr/department-of-state/CORPLLC02.ts";
 import { SS4 } from "../definitions/federal/irs/SS4.ts";
 import { NC001 } from "../definitions/pr/department-of-state/NC001.ts";
 import { PA02 } from "../definitions/pr/municipal/PA02.ts";
+import { SC2309 } from "../definitions/pr/department-hacienda/SC2309.ts";
 import type { DigitalFormDefinition, FormVerificationStatus } from "./types.ts";
 
 export interface RegistryEntry {
@@ -50,6 +51,7 @@ const DEFINITIONS: DigitalFormDefinition[] = [
   SS4,
   NC001,
   PA02,
+  SC2309,
 ];
 
 function entryFromDefinition(def: DigitalFormDefinition): RegistryEntry {
