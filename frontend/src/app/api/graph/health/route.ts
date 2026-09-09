@@ -10,7 +10,7 @@
 // work the login path does, exposed on its own so a broken schema can be
 // diagnosed without first being able to log in.
 
-import { getPool, isEnabled } from "../../../graph/db";
+import { describeConnection, getPool, isEnabled } from "../../../graph/db";
 import { ensureSchema, schemaFailures } from "../../../graph/store";
 
 export const runtime = "nodejs";
@@ -70,6 +70,8 @@ export async function GET(request: Request) {
         loginReady: false,
         message: "Could not query the database: " + (err as Error).message,
         ensureError,
+        // Derived facts only — never the password, host or project reference.
+        connection: describeConnection(),
       },
       { status: 503 }
     );
