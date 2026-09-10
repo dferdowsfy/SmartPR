@@ -35,6 +35,15 @@ const copy = {
     portfolioTitle: "One business or fifty.",
     portfolioBody:
       "SmartPR supports individual owners, gestores, permitting firms, CPAs, law firms, consultants, and operators managing multiple Puerto Rico entities — each with its own filing, documents, and readiness.",
+    filingsEyebrow: "Annual filings",
+    filingsTitle: "Never miss an annual filing again.",
+    filingsBody:
+      "Opening is the easy part. Every year the Informe Anual, the Patente, the CRIM come back — and nobody reminds you. SmartPR tracks every recurring filing, reminds you 90, 60, 30 and 7 days before it's due, and queues next year's filing the moment you complete this one.",
+    filingsPoints: [
+      ["01", "Reminders that reach you", "Due-date alerts land in your SmartPR inbox before the deadline, not after."],
+      ["02", "One view for every business", "Every yearly filing across your whole portfolio, with its status, in a single list."],
+      ["03", "Next year queues itself", "Complete this year's filing and the next cycle — with its reminders — is created automatically."],
+    ],
     ready: "ready",
     next: "Next",
     continue: "Continue",
@@ -69,6 +78,15 @@ const copy = {
     portfolioTitle: "Un negocio o cincuenta.",
     portfolioBody:
       "SmartPR apoya a dueños, gestores, firmas de permisos, CPAs, bufetes, consultores y operadores con varias entidades en Puerto Rico — cada una con su propio trámite, documentos y preparación.",
+    filingsEyebrow: "Radicaciones anuales",
+    filingsTitle: "Que no se te pase ni una radicación.",
+    filingsBody:
+      "Abrir es lo fácil. Todos los años vuelven el Informe Anual, la Patente, el CRIM — y nadie te avisa. SmartPR lleva todas tus radicaciones recurrentes, te recuerda a los 90, 60, 30 y 7 días, y cuando completas la de este año, la del próximo queda montada sola.",
+    filingsPoints: [
+      ["01", "Avisos que sí te llegan", "Las alertas caen en tu buzón de SmartPR antes del vencimiento, no después."],
+      ["02", "Todo en una sola vista", "Cada radicación anual de todos tus negocios, con su estatus, en una sola lista."],
+      ["03", "El próximo año se monta solo", "Completas la de este año y el próximo ciclo — con sus avisos — se crea automático."],
+    ],
     ready: "listo",
     next: "Siguiente",
     continue: "Continuar",
@@ -191,6 +209,23 @@ export default function MarketingLanding() {
             <h2>{c.stepsTitle}</h2>
             <ol className={styles.cards}>
               {c.steps.map(([n, title, body]) => (
+                <li key={n} className={styles.card}>
+                  <span>{n}</span>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.filingsEyebrow}</p>
+            <h2>{c.filingsTitle}</h2>
+            <p className={styles.lead}>{c.filingsBody}</p>
+            <ol className={styles.cards}>
+              {c.filingsPoints.map(([n, title, body]) => (
                 <li key={n} className={styles.card}>
                   <span>{n}</span>
                   <h3>{title}</h3>

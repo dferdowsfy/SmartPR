@@ -78,6 +78,10 @@ function CalendarContent() {
           <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245c5c]">Due dates</p><h1 className="mt-1 text-3xl font-bold text-[#161616]">Compliance calendar</h1><p className="mt-1 text-sm text-slate-500">Portfolio-level deadlines linked to the relevant business and obligation.</p></div>
           <select value={business} onChange={(event) => setBusiness(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-[#161616]"><option value="">All businesses</option>{data?.businesses?.map((item) => <option key={item.id} value={item.id}>{item.legal_name}</option>)}</select>
         </div>
+        <div className="mt-3 text-sm">
+          <Link href="/filings" className="font-semibold text-[#245c5c] hover:underline">View annual filings →</Link>
+          <span className="ml-2 text-slate-400">yearly renewals like Informe Anual and Patente, in one place.</span>
+        </div>
         <div className="mt-6 flex flex-wrap gap-2">{HORIZONS.map((days) => {
           const active = horizon === days;
           const count = horizonCounts.get(days) ?? 0;

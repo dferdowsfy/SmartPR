@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw } from "lucide-react";
+import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw, FileText } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
+import { NotificationBell } from "../components/NotificationBell";
 
 interface MeUser { id: string; email: string | null; name: string | null; avatar: string | null; isAdmin?: boolean }
 
@@ -18,7 +19,7 @@ function signOutNow() {
   window.location.assign("/auth/signout");
 }
 
-export function TopNav({ active, extraActions }: { active: "dashboard" | "businesses" | "calendar" | "history" | "graph" | "admin" | "settings"; extraActions?: ReactNode }) {
+export function TopNav({ active, extraActions }: { active: "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings"; extraActions?: ReactNode }) {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLang] = useState<"en" | "es">("en");
@@ -114,7 +115,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
 
         <nav className="nav-tabs" aria-label="Sections">
           <Link href="/?entry=new-business" className="nav-tab">{navStart}</Link>
-          <Link href="/businesses" className={`nav-tab ${active === "businesses" || active === "calendar" || active === "history" || active === "settings" ? "active" : ""}`}>
+          <Link href="/businesses" className={`nav-tab ${active === "businesses" || active === "calendar" || active === "filings" || active === "history" || active === "settings" ? "active" : ""}`}>
             {navMyBiz}
           </Link>
         </nav>
@@ -123,6 +124,8 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
           {langToggle}
           {extraActions}
           {user === undefined ? null : user ? (
+            <>
+            <NotificationBell />
             <div className="account-menu" ref={menuRef}>
               <button
                 ref={avatarBtnRef}
@@ -156,6 +159,9 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
                       <Link className="uitem" role="menuitem" href="/settings" onClick={() => setMenuOpen(false)}>
                         <Settings className="i" /> Settings
                       </Link>
+                      <Link className="uitem" role="menuitem" href="/filings" onClick={() => setMenuOpen(false)}>
+                        <FileText className="i" /> Annual filings
+                      </Link>
                       <Link className="uitem" role="menuitem" href="/calendar" onClick={() => setMenuOpen(false)}>
                         <CalendarDays className="i" /> Calendar
                       </Link>
@@ -180,6 +186,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
                   )
                 : null}
             </div>
+            </>
           ) : (
             <Link href="/auth/login" className="nav-tab">Sign in</Link>
           )}
