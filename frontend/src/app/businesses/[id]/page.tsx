@@ -10,6 +10,10 @@ import {
 import { TopNav, ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
 import { StatusBadge } from "../../components/compliance/StatusBadge";
 import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } from "../../compliance/types";
+import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
+import { getDefinition } from "../../forms/engine/registry";
+import { buildCanonicalFromIntake } from "../../forms/engine/intake";
+import type { Lang, FormData as GovFormData } from "../../forms/engine/types";
 
 interface BusinessRecord {
   id: string; public_id: string | null; name: string; legal_name: string | null; entity_number: string | null;
@@ -19,7 +23,7 @@ interface BusinessRecord {
 }
 interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null }
 interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string }
-interface Evidence { id: string; original_filename: string; obligation_name: string | null; review_status: string; created_at: string }
+interface Evidence { id: string; obligation_id: string | null; original_filename: string; obligation_name: string | null; review_status: string; created_at: string }
 interface Submission { id: string; created_at: string; business_type: string | null; municipality: string | null; readiness_score: number | null }
 interface Deliverable { id: string; filename: string; kind: string; generated_at: string }
 interface Notification { id: string; message: string; scheduled_for: string; status: string }
@@ -184,8 +188,8 @@ function DetailField({ label, value }: { label: string; value: string | null | u
   );
 }
 
-function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
-  item: Obligation; submissionId?: string | null; reload: () => void; onMarkComplete?: (id: string) => void;
+function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
+  item: Obligation; business: BusinessRecord; evidence: Evidence[]; reload: () => void; onMarkComplete?: (id: string) => void;
 }) {
   const [date, setDate] = useState(item.due_date || "");
   const [source, setSource] = useState<DueDateSource>(item.due_date_source === "UNKNOWN" ? "USER_PROVIDED" : item.due_date_source);
@@ -197,6 +201,40 @@ function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // "Complete document" opens the official government form in a modal right
+  // here on the business page — the user never leaves this screen.
+  const [formOpen, setFormOpen] = useState(false);
+  const definition = item.form_id ? getDefinition(item.form_id) : undefined;
+  const draftKey = `gov-draft-${item.id}-${item.form_id ?? "none"}`;
+  const lang: Lang = useMemo(() => {
+    try {
+      if (typeof window === "undefined") return "en";
+      return window.localStorage.getItem("smartpr-lang") === "es" ? "es" : "en";
+    } catch { return "en"; }
+  }, []);
+  const canonical = useMemo(() => buildCanonicalFromIntake({
+    legalName: business.legal_name || business.name,
+    business_structure: business.business_structure ?? undefined,
+    municipality: business.municipality ?? undefined,
+    formationStatus: business.onboarding_mode === "EXISTING" ? "formed_in_puerto_rico" : undefined,
+  }), [business]);
+  const initialDraft = useMemo((): GovFormData | undefined => {
+    try {
+      if (typeof window === "undefined") return undefined;
+      const raw = window.localStorage.getItem(draftKey);
+      return raw ? (JSON.parse(raw) as GovFormData) : undefined;
+    } catch { return undefined; }
+  }, [draftKey]);
+  // The completed PDF for this row, newest first — shown persistently in the
+  // row once the document is finished (and visible in Documents regardless).
+  const rowEvidence = useMemo(
+    () => evidence
+      .filter((entry) => entry.obligation_id === item.id)
+      .slice()
+      .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")),
+    [evidence, item.id]
+  );
+  const completedPdf = rowEvidence[0];
   const completed = item.status === "COMPLETED" || justCompleted;
   const update = async (payload: Record<string, unknown>) => {
     setBusy(true); setMessage(null);
@@ -224,6 +262,21 @@ function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
     } finally {
       setUploading(false);
     }
+  };
+  // The modal hands back the finished official PDF. Save it as evidence on
+  // this obligation (the same store the Upload button uses), clear the draft,
+  // and refresh so the row shows the completed document. Throwing keeps the
+  // modal open with the error; the applicant's answers are never lost.
+  const handlePdfReady = async ({ blob, filename }: { blob: Blob; filename: string }) => {
+    const form = new FormData();
+    form.append("file", new File([blob], filename, { type: "application/pdf" }));
+    form.append("obligation_id", item.id);
+    const response = await fetch("/api/evidence", { method: "POST", body: form });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Could not save the completed document.");
+    try { window.localStorage.removeItem(draftKey); } catch { /* draft finished */ }
+    setMessage(null);
+    reload();
   };
   const saveDate = () => {
     setDateDialogOpen(false);
@@ -270,13 +323,13 @@ function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
               ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
               onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadFile(file); }}
             />
-            {item.form_id && submissionId && item.requirement_id && (
-              <a
-                href={`/?entry=new-business&resume=${submissionId}&govForm=${item.form_id}&req=${item.requirement_id}`}
+            {definition && (
+              <button
+                type="button" onClick={() => setFormOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#245c5c] px-3 py-1 text-xs font-semibold text-white"
               >
                 <FileText className="h-3.5 w-3.5" />Complete document
-              </a>
+              </button>
             )}
             <button
               type="button" onClick={() => { setDate(item.due_date || ""); setMessage(null); setDateDialogOpen(true); }}
@@ -294,6 +347,15 @@ function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
           <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">Mark renewed / complete</button>
         )}
       </div>
+      {completedPdf && (
+        <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <FileText className="h-4 w-4 shrink-0 text-emerald-700" />
+          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-emerald-900" title={completedPdf.original_filename}>
+            Completed document: {completedPdf.original_filename}
+          </span>
+          <DownloadButton kind="evidence" id={completedPdf.id} />
+        </div>
+      )}
       {message && !dateDialogOpen && <p className="mt-2 text-xs text-red-600">{message}</p>}
       {dateDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDateDialogOpen(false)}>
@@ -328,6 +390,23 @@ function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
             </div>
           </div>
         </div>
+      )}
+      {formOpen && definition && (
+        <GovernmentFormModal
+          definition={definition}
+          requirementCode={item.requirement_id ?? item.id}
+          canonical={canonical}
+          lang={lang}
+          initialData={initialDraft}
+          onClose={() => setFormOpen(false)}
+          onSaveDraft={(_formId, data) => {
+            try { window.localStorage.setItem(draftKey, JSON.stringify(data)); } catch { /* private mode */ }
+          }}
+          onCanonicalChange={() => { /* no intake profile to write back to on this page */ }}
+          onComplete={() => { /* the PDF handoff in onPdfReady is the save */ }}
+          onPdfReady={handlePdfReady}
+          confirmLabels={["Save completed document", "Guardar documento completado"]}
+        />
       )}
     </div>
   );
@@ -397,14 +476,6 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     const history = matters.filter((matter) => matter.status === "COMPLETED");
 
     return { totalApplicable, completed: completed.length, readiness, missing, calendar, activeMatters, history };
-  }, [data]);
-
-  // Short public id for every link out of this page; falls back to the UUID
-  // until the API returns public_id.
-  const submissionByMatterId = useMemo(() => {
-    const map = new Map<string, string | null>();
-    for (const matter of data?.matters ?? []) map.set(matter.id, matter.submission_id);
-    return map;
   }, [data]);
 
   if (loadError) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-sm text-rose-700">Couldn&apos;t load this business right now. <button type="button" onClick={() => void load()} className="font-semibold underline">Try again</button></div></div>;
@@ -659,8 +730,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             <div className="space-y-3 p-5">
               {outstandingDisplay.length ? outstandingDisplay.map((item) => (
                 <ObligationRow
-                  key={item.id} item={item} reload={load} onMarkComplete={markRecentlyCompleted}
-                  submissionId={item.matter_id ? submissionByMatterId.get(item.matter_id) ?? null : null}
+                  key={item.id} item={item} business={business} evidence={evidence} reload={load} onMarkComplete={markRecentlyCompleted}
                 />
               )) : <Empty text="No outstanding requirements." />}
               {otherCompleted.length > 0 && (
@@ -668,8 +738,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Completed</div>
                   {otherCompleted.map((item) => (
                     <ObligationRow
-                      key={item.id} item={item} reload={load}
-                      submissionId={item.matter_id ? submissionByMatterId.get(item.matter_id) ?? null : null}
+                      key={item.id} item={item} business={business} evidence={evidence} reload={load}
                     />
                   ))}
                 </>

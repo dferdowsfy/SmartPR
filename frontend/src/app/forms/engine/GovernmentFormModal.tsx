@@ -57,11 +57,26 @@ export interface GovernmentFormModalProps {
   onComplete: (app: GeneratedApplication, data: FormData) => void;
   /** Applicant's own confirmation that they filed with the agency. */
   onMarkSubmitted?: (formId: string) => void;
+  /**
+   * Optional hook for hosts (e.g. the business profile page) that want the
+   * finished PDF bytes instead of just a download. When provided, confirming
+   * the document awaits this callback with the populated official PDF (or the
+   * SmartPR preparation worksheet when no official artifact exists) before the
+   * application is recorded and the modal closes. A rejection keeps the modal
+   * open and surfaces the error.
+   */
+  onPdfReady?: (pdf: { blob: Blob; filename: string }) => Promise<void>;
+  /**
+   * Optional [en, es] override for the ready-step confirm button, for hosts
+   * whose save destination isn't the intake's deliverables list.
+   */
+  confirmLabels?: [string, string];
 }
 
 export function GovernmentFormModal(props: GovernmentFormModalProps) {
-  const { definition, canonical, lang, initialData, initialMode, existingApplicationId, applicationStatus, onClose, onSaveDraft, onCanonicalChange, onComplete, onMarkSubmitted } = props;
+  const { definition, canonical, lang, initialData, initialMode, existingApplicationId, applicationStatus, onClose, onSaveDraft, onCanonicalChange, onComplete, onMarkSubmitted, onPdfReady, confirmLabels } = props;
   const L = (en: string, es: string) => (lang === "es" ? es : en);
+  const confirmLabel = confirmLabels ? (lang === "es" ? confirmLabels[1] : confirmLabels[0]) : L("Confirm and Add to Deliverables", "Confirmar y añadir a entregables");
 
   const [data, setData] = useState<FormData>(() => prefillFromCanonical(definition, canonical, initialData ?? {}));
   const [mode, setMode] = useState<"edit" | "review" | "view" | "ready">(initialMode ?? "edit");
@@ -72,6 +87,9 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   const [pendingApp, setPendingApp] = useState<{ app: GeneratedApplication; data: FormData } | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  // Confirm-step state when a host consumes the finished PDF via onPdfReady.
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   const fee = useMemo(() => governmentFeeText(definition.id, canonical, lang), [definition.id, canonical, lang]);
 
@@ -232,8 +250,34 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
     setMode("ready");
   };
 
-  const handleConfirmSave = () => {
-    if (!pendingApp) return;
+  const handleConfirmSave = async () => {
+    if (!pendingApp || confirming) return;
+    if (onPdfReady) {
+      // Hand the finished PDF to the host (upload, attach, …) before the
+      // application is recorded and the modal closes.
+      setConfirming(true);
+      setConfirmError(null);
+      try {
+        const filename = `${definition.officialFormNumber}_${localize(definition.title, lang).replace(/\s+/g, "_")}.pdf`;
+        let blob: Blob;
+        if (hasRealArtifact) {
+          try {
+            blob = (await requestOfficialPdf()).blob;
+          } catch {
+            blob = generatePreparationPdf(definition, pendingApp.data, canonical, lang);
+          }
+        } else {
+          blob = generatePreparationPdf(definition, pendingApp.data, canonical, lang);
+        }
+        await onPdfReady({ blob, filename });
+      } catch (err) {
+        // Stay open: the applicant's work is safe, only the handoff failed.
+        setConfirmError(err instanceof Error ? err.message : String(err));
+        setConfirming(false);
+        return;
+      }
+      setConfirming(false);
+    }
     onComplete(pendingApp.app, persistableFormData(definition, pendingApp.data));
     setPendingApp(null);
     onClose();
@@ -412,9 +456,17 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
             </div>
           )}
           {mode === "ready" ? (
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => { setPendingApp(null); setMode("edit"); }} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Back to edit", "Volver a editar")}</button>
-              <button type="button" disabled={!pendingApp} onClick={handleConfirmSave} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--brand-1, #0a2540)", color: "white", cursor: pendingApp ? "pointer" : "default", opacity: pendingApp ? 1 : 0.6 }}>{L("Confirm and Add to Deliverables", "Confirmar y añadir a entregables")}</button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {confirmError && (
+                <div style={{ fontSize: 12, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 10px" }}>
+                  {L("Couldn't save the completed document — your answers are safe. Try again.", "No se pudo guardar el documento completado — sus respuestas están a salvo. Inténtelo de nuevo.")}{" "}
+                  <span style={{ color: "#b91c1c" }}>{confirmError}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" disabled={confirming} onClick={() => { setPendingApp(null); setMode("edit"); }} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: confirming ? "default" : "pointer", opacity: confirming ? 0.6 : 1 }}>{L("Back to edit", "Volver a editar")}</button>
+              <button type="button" disabled={!pendingApp || confirming} onClick={() => void handleConfirmSave()} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--brand-1, #0a2540)", color: "white", cursor: pendingApp && !confirming ? "pointer" : "default", opacity: pendingApp && !confirming ? 1 : 0.6 }}>{confirming ? L("Saving…", "Guardando…") : confirmLabel}</button>
+              </div>
             </div>
           ) : readOnly ? (
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
