@@ -15,6 +15,7 @@ import {
   type PotentialDef,
 } from './potentialRequirements';
 import { buildExtraction, type ExtractionResult } from './documentFields';
+import { IntakeQuestion } from './components/intake/IntakeQuestion';
 import {
   ISSUED_DOCUMENT_GUIDANCE,
   ISSUED_DOCUMENT_GUIDANCE_ES,
@@ -68,7 +69,7 @@ import { jsPDF } from 'jspdf';
 import {
   CheckCircle, AlertTriangle, Info, FileText,
   ArrowRight, RefreshCw, Download, Building2, Archive, ExternalLink,
-  ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, XCircle, Eye,
+  ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, Eye,
   Star, ChevronDown, Sparkles,
 } from 'lucide-react';
 
@@ -4194,58 +4195,29 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               )}
 
               {currentQuestion && (
-                <div className="spr-follow-up">
-                  <div className="spr-kicker">{L('Question', language)} {activeGuidedQuestionNumber} {L('of', language)} {intakeQuestionTotal}</div>
-                  <h2>{L(currentQuestion.text, language)}</h2>
-                  {currentQuestion.whyWeAsk && (
-                    <p className="spr-question-context">
-                      <strong>{L('Why we ask', language)}</strong>
-                      <span>{L(currentQuestion.whyWeAsk, language)}</span>
-                    </p>
-                  )}
-                  {currentQuestion.options ? (
-                    <div className={`spr-answer-row ${currentQuestion.options.length >= 3 ? 'spr-answer-row-three' : ''}`}>
-                      {currentQuestion.options.map((option) => (
-                        <button key={option.value} onClick={() => handleQuestionAnswer(option.value)}>
-                          {L(option.label, language)}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="spr-answer-row">
-                      <button onClick={() => handleQuestionAnswer(true)}><CheckCircle className="i" /> {t('yes')}</button>
-                      <button onClick={() => handleQuestionAnswer(false)}><XCircle className="i" /> {t('no')}</button>
-                    </div>
-                  )}
-                </div>
+                <IntakeQuestion
+                  language={language}
+                  questionNumber={activeGuidedQuestionNumber}
+                  questionTotal={intakeQuestionTotal}
+                  title={L(currentQuestion.text, language)}
+                  contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
+                  contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
+                  options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
+                  onAnswer={(value) => handleQuestionAnswer(value)}
+                />
               )}
 
               {currentPotentialQuestion && (
-                <div className="spr-follow-up">
-                  <div className="spr-kicker">
-                    {L('Question', language)} {guidedQuestions.length + currentPotentialQuestionIndex + 1} {L('of', language)} {intakeQuestionTotal}
-                  </div>
-                  <h2>{L(currentPotentialQuestion.followUp, language)}</h2>
-                  <p className="spr-question-context">
-                    <strong>{L(currentPotentialQuestion.document, language)}</strong>
-                    <span>{L(currentPotentialQuestion.why, language)}</span>
-                  </p>
-                  <div className="spr-answer-row">
-                    <button onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'applies')}>
-                      <CheckCircle className="i" /> {t('yes')}
-                    </button>
-                    <button onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'not_applies')}>
-                      <XCircle className="i" /> {t('no')}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'not_sure')}
-                    className="spr-not-sure"
-                  >
-                    {L('Not Sure', language)}
-                  </button>
-                </div>
+                <IntakeQuestion
+                  language={language}
+                  questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
+                  questionTotal={intakeQuestionTotal}
+                  title={L(currentPotentialQuestion.followUp, language)}
+                  contextTitle={L(currentPotentialQuestion.document, language)}
+                  contextBody={L(currentPotentialQuestion.why, language)}
+                  onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
+                  onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
+                />
               )}
             </div>
 
