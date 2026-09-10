@@ -1426,6 +1426,20 @@ button { font-family: inherit; }
   cursor: pointer;
 }
 .spr-answer-row button:hover { border-color: var(--spr-blue); color: var(--spr-blue); }
+/* Tertiary "not sure" escape hatch under the Yes/No row — same flow, quieter. */
+.spr-not-sure {
+  margin-top: 10px;
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--spr-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.spr-not-sure:hover { color: var(--spr-copy); }
 
 @media (max-width: 760px) {
   .spr-answer-row-three { grid-template-columns: 1fr; }

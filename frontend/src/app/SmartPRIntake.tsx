@@ -4230,17 +4230,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     <strong>{L(currentPotentialQuestion.document, language)}</strong>
                     <span>{L(currentPotentialQuestion.why, language)}</span>
                   </p>
-                  <div className="spr-answer-row spr-answer-row-three">
+                  <div className="spr-answer-row">
                     <button onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'applies')}>
-                      <CheckCircle className="i" /> {L('Applies', language)}
+                      <CheckCircle className="i" /> {t('yes')}
                     </button>
                     <button onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'not_applies')}>
-                      <XCircle className="i" /> {L('Does Not Apply', language)}
-                    </button>
-                    <button onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'not_sure')}>
-                      <AlertTriangle className="i" /> {L('Not Sure', language)}
+                      <XCircle className="i" /> {t('no')}
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handlePotentialAnswer(currentPotentialQuestion, 'not_sure')}
+                    className="spr-not-sure"
+                  >
+                    {L('Not Sure', language)}
+                  </button>
                 </div>
               )}
             </div>
