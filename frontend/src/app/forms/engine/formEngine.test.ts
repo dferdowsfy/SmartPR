@@ -71,6 +71,21 @@ test("selectFormsForRequirements shows only the applicable variant, not all six"
   assert.equal(dosVariants.length, 1);
 });
 
+test("LUMA interconnection routes to the customer-orientation attestation for any entity type", () => {
+  // No entityType gate: a sole proprietor's warehouse adds solar the same as a
+  // corporation's. Without this row the requirement card falls through to
+  // upload-only and the fillable LUMA form never surfaces.
+  for (const entityType of ["sole_proprietorship", "limited_liability_company", "stock_corporation"] as const) {
+    assert.equal(
+      resolveFormId("DOC_LUMA_INTERCONNECTION", canonical({ entityType })),
+      "FORM_PR_LUMA_INTERCONNECTION"
+    );
+  }
+  const entry = getRegistryEntry("FORM_PR_LUMA_INTERCONNECTION");
+  assert.equal(entry?.requirementId, "DOC_LUMA_INTERCONNECTION");
+  assert.equal(entry?.displayForm, true);
+});
+
 test("CORPREG06 is mapped to DOC_LLP_REGISTRATION, never DOC_ARTICLES_ORGANIZATION", () => {
   const def = getDefinition("FORM_PR_DOS_CORPREG06");
   assert.equal(def?.requirementId, "DOC_LLP_REGISTRATION");

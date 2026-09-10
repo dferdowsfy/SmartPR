@@ -658,6 +658,9 @@ export const ES: Record<string, string> = {
   "This is the exact PDF that will be added to your deliverables — nothing is saved until you confirm below.":
     "Este es el PDF exacto que se agregará a tus entregables — nada se guarda hasta que confirmes abajo.",
   "View": "Ver",
+  "Complete LUMA form": "Completa el formulario de LUMA",
+  "Already have the signed attestation?": "¿Ya tienes la confirmación firmada?",
+  "Upload signed attestation": "Sube la confirmación firmada",
   "Waiting for confirmation": "Esperando confirmación",
   "Your business name": "El nombre de tu negocio",
   "expired": "vencido",

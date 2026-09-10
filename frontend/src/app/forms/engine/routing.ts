@@ -35,6 +35,9 @@ export const ROUTES: RouteRule[] = [
   // The EIN application is federal and applies to every entity type, so this
   // row intentionally carries no entityType gate.
   { requirementId: "DOC_EIN", formId: "FORM_IRS_SS4" },
+  // The LUMA customer-orientation attestation applies to any business adding
+  // grid-connected solar, regardless of entity type — same no-gate pattern.
+  { requirementId: "DOC_LUMA_INTERCONNECTION", formId: "FORM_PR_LUMA_INTERCONNECTION" },
 ];
 
 /**

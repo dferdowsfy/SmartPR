@@ -46,6 +46,12 @@ const PATTERNS: NamePattern[] = [
     secondary: { prompt: "Already registered?", label: "Upload certificate", helper: "Accepted: PDF, JPG, PNG" },
   },
   {
+    test: /luma|interconexi/i,
+    icon: "blue",
+    primaryStart: "Complete LUMA form",
+    secondary: { prompt: "Already have the signed attestation?", label: "Upload signed attestation", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
     test: /permiso ?[uú]nico|single business permit/i,
     icon: "purple",
     primaryStart: "Complete permit application",

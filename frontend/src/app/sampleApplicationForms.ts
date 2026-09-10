@@ -165,6 +165,7 @@ export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
   merchant_registration: "Complete merchant registration in SURI. After Hacienda issues the certificate, upload the official Merchant Registration Certificate to complete this requirement.",
   permiso_unico: "Complete the application through OGPe's Single Business Portal or the applicable municipality. After approval, upload the issued Permiso Único to complete this requirement.",
   ein_letter: "SmartPR prepares the IRS Form SS-4 application for you. The EIN itself is agency-issued: after the IRS processes the application, upload the CP 575 notice or other accepted IRS EIN confirmation to complete this requirement.",
+  doc_luma_interconnection: "SmartPR prepares LUMA's customer orientation attestation for you — print it, sign it by hand, and upload the signed copy. LUMA still requires the signed document as part of its interconnection registration.",
 };
 
 export const ISSUED_DOCUMENT_GUIDANCE_ES: Record<string, string> = {
@@ -172,6 +173,7 @@ export const ISSUED_DOCUMENT_GUIDANCE_ES: Record<string, string> = {
   merchant_registration: "Completa el registro de comerciante en SURI. Después de que Hacienda emita el certificado, sube el Certificado de Registro de Comerciante oficial para completar este requisito.",
   permiso_unico: "Completa la solicitud a través del Portal Único de Negocios de OGPe o el municipio correspondiente. Después de la aprobación, sube el Permiso Único emitido para completar este requisito.",
   ein_letter: "SmartPR prepara la solicitud del Formulario SS-4 del IRS por ti. El EIN en sí lo emite la agencia: después de que el IRS procese la solicitud, sube el aviso CP 575 u otra confirmación de EIN aceptada por el IRS para completar este requisito.",
+  doc_luma_interconnection: "SmartPR te prepara la Confirmación de Orientación al Cliente de LUMA — imprímela, fírmala a mano y sube la copia firmada. LUMA sigue exigiendo el documento firmado como parte de su registro de interconexión.",
 };
 
 export function getSampleApplication(requirementCode: string): SampleApplicationDefinition | null {
