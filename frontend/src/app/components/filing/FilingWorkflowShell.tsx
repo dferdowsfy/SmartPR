@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
+  ArrowUpRight,
   Building2,
   Check,
   CheckCircle2,
@@ -267,14 +268,14 @@ export function FilingWorkflowShell({
     ? businessName
     : language === "es" ? "Negocio nuevo" : "New Business";
   const labels = language === "es" ? {
-    profile: "Perfil del negocio",
+    profile: "Ver perfil del negocio",
   } : {
-    profile: "Business profile",
+    profile: "View business profile",
   };
 
   const actions = (
     <div className="spr-matter-actions">
-      {businessId && <Link href={`/businesses/${businessId}`} className="spr-business-profile-link">{labels.profile}</Link>}
+      {businessId && <Link href={`/businesses/${businessId}`} className="spr-business-profile-link">{labels.profile}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
     </div>
   );
 

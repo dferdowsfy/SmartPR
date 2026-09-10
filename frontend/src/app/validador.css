@@ -2030,17 +2030,24 @@ button { font-family: inherit; }
 }
 .spr-matter-actions { flex: 0 0 auto; gap: 9px; }
 .spr-business-profile-link {
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 9px;
-  color: #526579;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid #cfdeda;
+  background: #ffffff;
+  color: #245c5c;
   display: inline-flex;
   align-items: center;
-  font-size: 12px;
-  font-weight: 650;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(22, 22, 22, 0.06);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.spr-business-profile-link:hover { background: #f1f5f9; color: var(--spr-shell-navy); }
+.spr-business-profile-link:hover { border-color: #245c5c; background: #eef5f4; color: #173f3f; }
+.spr-business-profile-link:active { transform: translateY(1px); }
 .spr-context-language {
   padding: 3px;
   border: 1px solid #dbe3ea;
