@@ -1,0 +1,47 @@
+{
+  "formCode": "AGRICORP01",
+  "sourceFile": "RealForms/AGRI-Bonafide-Corporacion-2021.pdf",
+  "checksum": "sha256:f831ce62d9a3bd44d7b9a076fb5a345f32bd880301793144000ebbd22f529ae7",
+  "pageCount": 7,
+  "pageSizes": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 2,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 3,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 4,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 5,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 6,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 7,
+      "width": 612,
+      "height": 1008
+    }
+  ],
+  "hasAcroForm": false,
+  "fieldCount": 0,
+  "fields": [],
+  "inspectedAt": "2026-09-10T09:46:34.248Z"
+}

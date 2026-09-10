@@ -40,14 +40,15 @@ import { mirrorAnswersToProfile, questionIdForAnswerKey } from './ai/intake/ques
 // exclusively from the rules engine.
 import { resolveIntakeFacts, type ResolutionResult } from './ai/intake/relationships';
 import type { IntakePatch } from './ai/intake/validateInterpretation';
-import { getDefinition } from './forms/engine/registry';
-import { selectFormForRequirement } from './forms/engine/routing';
+import { getDefinition, type RegistryEntry } from './forms/engine/registry';
+import { selectFormForRequirement, selectEntriesForRequirement } from './forms/engine/routing';
 import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms/engine/intake';
 import { requirementFormState, actionsForFormState } from './forms/engine/application';
 import { generatePreparationPdf } from './forms/engine/pdfGenerator';
 import { getTemplate, isOfficialArtifact } from './forms/artifacts/catalog';
 import { entityTypeRequirements, exclusiveFormationRequirements, type MinimalRequirement } from './forms/engine/requirementAugment';
 import type { CanonicalApplicationData, EntityType, FormData as GovFormData, GeneratedApplication } from './forms/engine/types';
+import { localize } from './forms/engine/types';
 import {
   FilingWorkflowShell,
   type FilingStage,
@@ -1136,6 +1137,9 @@ export default function SmartPRIntake() {
   const [govFormDrafts, setGovFormDrafts] = useState<Record<string, GovFormData>>({});
   const [preparedGovApplications, setPreparedGovApplications] = useState<Record<string, GeneratedApplication>>({});
   const [activeGovForm, setActiveGovForm] = useState<{ formId: string; requirementCode: string; mode: 'edit' | 'view' } | null>(null);
+  // Multi-form package picker (today: the EPA NPDES Form 1 + Form 2C package).
+  // Holds the requirement code; the per-form rows resolve live at render time.
+  const [activeGovPackage, setActiveGovPackage] = useState<{ requirementCode: string } | null>(null);
   const [canonicalOverride, setCanonicalOverride] = useState<CanonicalApplicationData | null>(null);
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -3418,6 +3422,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     return template && isOfficialArtifact(template) ? entry : null;
   };
 
+  // Resolve EVERY displayable government-form entry for a requirement — the
+  // full package for multi-form requirements (EPA NPDES Form 1 + Form 2C),
+  // a single entry otherwise. Same official-artifact gate as the singular
+  // helper above.
+  const govFormEntriesForReq = (req: Requirement): RegistryEntry[] => {
+    if (!req.document_id) return [];
+    const entries: RegistryEntry[] = [];
+    for (const entry of selectEntriesForRequirement(req.document_id, canonicalApplication, presentRequirementIds)) {
+      const template = getTemplate(entry.officialFormNumber);
+      if (template && isOfficialArtifact(template)) entries.push(entry);
+    }
+    return entries;
+  };
+
   const openGovForm = (formId: string, requirementCode: string, mode: 'edit' | 'view') => {
     setActiveGovForm({ formId, requirementCode, mode });
   };
@@ -3453,6 +3471,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // user never has to leave SmartPR to prepare the requirement — only an
     // agency's own review/issuance is outside SmartPR's control.
     const govEntry = govFormEntryForReq(req);
+    // Multi-form package (today only the EPA NPDES Form 1 + Form 2C pair).
+    // The card renders the whole package — never just the first form.
+    const govEntries = govFormEntriesForReq(req);
+    const isFormPackage = govEntries.length > 1;
     const prepared = govEntry ? preparedGovApplications[govEntry.id] : undefined;
     const hasDraft = govEntry ? !!govFormDrafts[govEntry.id] : false;
     const fState = govEntry ? requirementFormState(prepared) : null;
@@ -3478,6 +3500,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     } else if (isConditional || isReviewCondition) {
       action = { kind: 'none', label: '' };
       bucket = 'none';
+    } else if (isFormPackage) {
+      // The NPDES application is filed as a package: the picker lists both
+      // EPA forms with their own per-form progress.
+      action = { kind: 'form', label: L(primaryStartLabelFor(name), language), onClick: () => setActiveGovPackage({ requirementCode: req.code }) };
+      secondary = secondaryUpload();
+      bucket = 'needs_action';
     } else if (govEntry && formActions.includes('start_form')) {
       action = { kind: 'form', label: L(primaryStartLabelFor(name), language), onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
       secondary = secondaryUpload();
@@ -4698,6 +4726,66 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         </main>
       )}
       </FilingWorkflowShell>
+
+      {/* Multi-form package picker (today: the EPA NPDES Form 1 + Form 2C
+          package). Lists every form in the package with its own progress so
+          the requirement never silently routes to just one form. */}
+      {activeGovPackage && (() => {
+        const pkgReq = requirements.find((r) => r.code === activeGovPackage.requirementCode);
+        const pkgEntries = pkgReq ? govFormEntriesForReq(pkgReq) : [];
+        if (!pkgReq || pkgEntries.length === 0) return null;
+        const close = () => setActiveGovPackage(null);
+        return (
+          <div role="dialog" aria-modal="true" data-requirement={pkgReq.code} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }} onClick={close}>
+            <div style={{ background: "var(--surface, white)", borderRadius: 12, maxWidth: 640, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}>
+                <h2 style={{ fontSize: 18, margin: "0 0 6px" }}>{L("EPA NPDES permit package", language)}</h2>
+                <p style={{ fontSize: 13, color: "#475569", margin: 0 }}>
+                  {L("The NPDES application is two EPA forms filed together. Complete both, then print, hand-sign, and submit the package to EPA Region 2.", language)}
+                </p>
+              </div>
+              <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {pkgEntries.map((pkgEntry) => {
+                  const pkgDef = getDefinition(pkgEntry.id);
+                  const prepared = preparedGovApplications[pkgEntry.id];
+                  const hasDraft = !!govFormDrafts[pkgEntry.id];
+                  const pkgState = requirementFormState(prepared);
+                  const pkgActions = pkgState === "no_record" && hasDraft ? ["edit_form"] : actionsForFormState(pkgState);
+                  const open = (mode: "edit" | "view") => {
+                    close();
+                    openGovForm(pkgEntry.id, pkgReq.code, mode);
+                  };
+                  let btnLabel: string;
+                  let btnMode: "edit" | "view";
+                  if (pkgActions.includes("start_form")) { btnLabel = L("Start form", language); btnMode = "edit"; }
+                  else if (pkgActions.includes("review_updates")) { btnLabel = L("Review updates", language); btnMode = "edit"; }
+                  else if (pkgActions.includes("edit_form")) { btnLabel = L("Continue application", language); btnMode = "edit"; }
+                  else { btnLabel = L("View form", language); btnMode = "view"; }
+                  const statusLabel =
+                    pkgState === "no_record" ? (hasDraft ? L("Draft in progress", language) : L("Not started", language))
+                    : pkgState === "draft" ? L("Draft in progress", language)
+                    : pkgState === "prepared" ? L("Ready to print and sign", language)
+                    : pkgState === "submitted" ? L("Submitted", language)
+                    : pkgState === "approved" ? L("Approved", language)
+                    : L("Needs review", language);
+                  return (
+                    <div key={pkgEntry.id} style={{ border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{pkgDef ? localize(pkgDef.title, language) : pkgEntry.officialFormNumber}</div>
+                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{statusLabel}</div>
+                      </div>
+                      <button type="button" className="btn btn-primary" onClick={() => open(btnMode)}>{btnLabel}</button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ padding: "12px 20px 16px", display: "flex", justifyContent: "flex-end" }}>
+                <button type="button" className="btn btn-secondary" onClick={close}>{L("Close", language)}</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {activeGovForm && getDefinition(activeGovForm.formId) && (
         <GovernmentFormModal

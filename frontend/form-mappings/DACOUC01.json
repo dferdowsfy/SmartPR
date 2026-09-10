@@ -1,0 +1,329 @@
+{
+  "formCode": "DACOUC01",
+  "sourceFile": "RealForms/DACO-Solicitud-Urbanizador-Constructor-v2.pdf",
+  "artifactType": "official_pdf_form",
+  "populationMethod": "pdf_overlay",
+  "templateChecksum": "sha256:345dc3222b7e52e751a5ca61850fddb61ac7d0e3267d52a65d72e922ed17a4f4",
+  "templateRevision": "Rev. Ene 2019 v2",
+  "pageCount": 9,
+  "hasAcroForm": false,
+  "inspectedAt": "2026-09-10T09:46:34.111Z",
+  "status": "mapped",
+  "notes": [
+    "9-page DACO license application for developers (urbanizadores) and builders (constructores). SmartPR maps the key applicant fields on page 1 only: name, phone, physical and mailing addresses, the two license-request checkbox rows, activity type (constructor / urbanizador / ambos / otros), and organization type.",
+    "No native AcroForm fields — populated by coordinate overlay over the untouched background. 18 overlay rows, every x/y taken from the PDF's own text-content layer (the two long address blanks are vector ruled lines found by dark-run scan) and checked against a rendered populated copy.",
+    "Questions 8–15 (professional licenses, corporation details, officers/directors, financial standing, projects, annex checklist) are not mapped — the filer completes them on the printed PDF.",
+    "Pages 8–9 (declaración jurada before a notary, and the corporate project-responsibility form with officer signature + notary affidavit) are never written by SmartPR — see DACOUC01_OVERLAY in overlayMaps.ts for field ownership.",
+    "The thin ruled lines above fields 5, 6, 7 and 8 are section dividers, not writable blanks (verified against the render).",
+    "Fees per the annex checklist in the official document set (page 6): regular license $75, provisional license $50.",
+    "KB discrepancy (do not change the KB without review): documents.json lists DOC_CONTRACTOR_LICENSE's agency as 'Department of State', but the official application is issued by DACO."
+  ],
+  "fields": [
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "applicant_name",
+      "canonicalField": "business.legal_name",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 1,
+        "x": 75,
+        "y": 806,
+        "width": 178,
+        "height": 12,
+        "fontSize": 10
+      },
+      "reviewNote": "'1. Nombre del Solicitante' underscore run x=[75.0,255.0] @ y=805.9 — the licensed applicant. Prefilled from the SmartPR profile; correctable in the form."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "applicant_phone",
+      "canonicalField": "business.phone",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 1,
+        "x": 350,
+        "y": 806,
+        "width": 112,
+        "height": 12,
+        "fontSize": 10
+      },
+      "reviewNote": "'2. Teléfono' underscore run x=[349.9,463.9] @ y=805.9 — applicant phone. Prefilled from the SmartPR profile."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "physical_address",
+      "canonicalField": "location.physical_address",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 1,
+        "x": 72,
+        "y": 765,
+        "width": 485,
+        "height": 12,
+        "fontSize": 10
+      },
+      "reviewNote": "Vector ruled line x=[70.6,559.2] @ y=763.7 directly above '3. Dirección (calle, número, pueblo)' (found by dark-run scan at 150 dpi, not in the text layer). Physical address of the applicant."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "postal_address",
+      "canonicalField": "location.mailing_address",
+      "ownership": "smartpr_derived",
+      "confidence": 0.7,
+      "placement": {
+        "page": 1,
+        "x": 72,
+        "y": 716.5,
+        "width": 485,
+        "height": 12,
+        "fontSize": 10
+      },
+      "reviewNote": "Vector ruled line x=[70.6,559.2] @ y=715.2 directly above '4. Dirección Postal / Zip Code' (dark-run scan, not in the text layer). Mailing address of the applicant."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "license_provisional_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 73,
+        "y": 628.5,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=72.0 @ y=626.0 before 'Provisional' — first checkbox row of '5. Licencia Solicitada' (kind of request). Mutually exclusive with license_renovacion_mark and license_ambos_mark."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "license_renovacion_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 234.1,
+        "y": 628.5,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=233.1 @ y=626.0 before 'Renovación' — first checkbox row of '5. Licencia Solicitada'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "license_ambos_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 372.5,
+        "y": 628.5,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=371.5 @ y=626.0 before 'Ambos' — first checkbox row of '5. Licencia Solicitada'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "license_regular_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 73,
+        "y": 602.8,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=72.0 @ y=600.3 before 'Regular' — second checkbox row of '5. Licencia Solicitada' (license class; $75 per the annex checklist). Mutually exclusive with license_class_provisional_mark."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "license_class_provisional_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 247.7,
+        "y": 602.8,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=246.7 @ y=600.3 before 'Provisional' — second checkbox row of '5. Licencia Solicitada' (license class; $50 per the annex checklist)."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "activity_constructor_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 73,
+        "y": 524.9,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=72.0 @ y=522.4 before 'Constructor' — '6. Tipo de actividad a que se dedica'. Mutually exclusive with the other activity marks."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "activity_urbanizador_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 179.2,
+        "y": 524.9,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=178.2 @ y=522.4 before 'Urbanizador' — '6. Tipo de actividad a que se dedica'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "activity_ambos_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 294.4,
+        "y": 524.9,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=293.4 @ y=522.4 before 'Ambos' — '6. Tipo de actividad a que se dedica'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "activity_otros_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 377.3,
+        "y": 524.9,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=376.3 @ y=522.4 before 'Otros___' — '6. Tipo de actividad a que se dedica'. Paired with activity_otros_text on the trailing blank."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "activity_otros_text",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 416,
+        "y": 524.9,
+        "width": 100,
+        "height": 12,
+        "fontSize": 10
+      },
+      "reviewNote": "Trailing blank of the 'Otros_________________' run (run x=[389.6,518.3] @ y=522.4; 'Otros' label ends ≈x=416) — specify the other activity when activity_type=otro."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "org_individuo_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 73,
+        "y": 447,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=72.0 @ y=444.5 before 'Individuo' — '7. Tipo de Organización (escoger una opción)'. Mutually exclusive with the other org marks."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "org_sociedad_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 179.2,
+        "y": 447,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=178.2 @ y=444.5 before 'Sociedad' — '7. Tipo de Organización'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "org_corporacion_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 285.4,
+        "y": 447,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=284.4 @ y=444.5 before 'Corporación' — '7. Tipo de Organización'."
+    },
+    {
+      "reviewed": true,
+      "transform": "none",
+      "pdfField": "org_sociedad_especial_mark",
+      "canonicalField": null,
+      "ownership": "applicant",
+      "confidence": 0,
+      "placement": {
+        "page": 1,
+        "x": 391.7,
+        "y": 447,
+        "width": 10,
+        "height": 10,
+        "fontSize": 9
+      },
+      "reviewNote": "☐ glyph x=390.7 @ y=444.5 before 'Sociedad Especial' — '7. Tipo de Organización'."
+    }
+  ]
+}

@@ -1,0 +1,2139 @@
+{
+  "formCode": "PA01",
+  "sourceFile": "RealForms/PA01-Declaracion-Volumen-Negocios-Rev-Feb-2025.pdf",
+  "artifactType": "official_pdf_form",
+  "populationMethod": "acroform",
+  "templateChecksum": "sha256:d7b273d1bcbeb2cd8c06c7b5ad1334db61b95fe9d23418e621228cbef445aba6",
+  "templateRevision": "OGP PA01 – REV FEBRERO 2025",
+  "pageCount": 5,
+  "hasAcroForm": true,
+  "inspectedAt": "2026-09-10T09:46:34.212Z",
+  "status": "mapped",
+  "notes": [
+    "The ANNUAL municipal patente declaration every Puerto Rico business files — distinct from PA02, the one-time provisional application for new businesses. Both live under DOC_PATENTE_MUNICIPAL; routing.ts sends already-operating businesses to PA01 and new businesses to PA02.",
+    "Provenance: genuine OGP-issued REV FEBRERO 2025 — the header «GOBIERNO DE PUERTO RICO / OGP PA01 – REV FEBRERO 2025» was verified inside the PDF. The only accessible copy is third-party-hosted (Colegio de CPA); no OGP/OCAM direct host was found.",
+    "36 native AcroForm fields mapped on pages 1–2 (the filing header). The tipo-de-patente and tipo-de-negocio choices are independent checkboxes in the PDF, not a radio group — the population layer checks exactly one of each set and unchecks the rest.",
+    "Deliberately NOT mapped: the Encasillado 1 computation summary, the pages 2–4 financial schedules, the «¿Nueva Dirección?» checkboxes and the certification-paragraph date blanks. Those are the taxpayer's (or their CPA's) computation from the books — SmartPR leaves them blank for completion by hand; see form-mappings/PA01.json field ownership.",
+    "The «Número de Seguro Social o Número de Identificación Patronal» blank is shared: SmartPR prints the business EIN into it ONLY for Corporación/Sociedad; for Individuo/Entidad Ignorada it stays blank so the filer hand-writes their own SSN. Never auto-filled from the profile.",
+    "The CERTIFICACION signature line and its date are never written by SmartPR — signed by hand at filing."
+  ],
+  "fields": [
+    {
+      "pdfField": "Planilla Enmendada",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 19.56,
+        "y": 684.36,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Amended-return checkbox. Answered on the SmartPR form and written via directAcroValues."
+    },
+    {
+      "pdfField": "Planilla Final",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 118.8,
+        "y": 684.36,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Final-return checkbox (business closed). Answered on the SmartPR form and written via directAcroValues."
+    },
+    {
+      "pdfField": "Municipio de",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 487.92,
+        "y": 707.42,
+        "width": 101.52,
+        "height": 19.34
+      },
+      "canonicalField": "location.municipality",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Auto-populated from the business project's municipality — never asked twice."
+    },
+    {
+      "pdfField": "Normal",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 19.56,
+        "y": 629.4,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Patente: Normal. One of four independent checkboxes; written via directAcroValues which unchecks the other three."
+    },
+    {
+      "pdfField": "Exenta",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 66.6,
+        "y": 629.4,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Patente: Exenta. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Oficio",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 149.28,
+        "y": 629.4,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Patente: Oficio (assessed ex officio by the municipality). Written via directAcroValues."
+    },
+    {
+      "pdfField": "Otros",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 19.56,
+        "y": 614.88,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Patente: Otros. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Año Fiscal",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 208.08,
+        "y": 610.47,
+        "width": 59.88,
+        "height": 15.87
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Fiscal-year designation as the filer writes it (e.g. the year their return covers). Optional SmartPR field, written via directAcroValues."
+    },
+    {
+      "pdfField": "Núm de Teléfono del Negocio",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 274.45,
+        "y": 610.47,
+        "width": 119.39,
+        "height": 16.44
+      },
+      "canonicalField": "business.phone",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Auto-populated from the canonical business phone."
+    },
+    {
+      "pdfField": "Número de Seguro Social o Número de Identificación Patronal",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 401.42,
+        "y": 610.27,
+        "width": 157.79,
+        "height": 17.32
+      },
+      "canonicalField": "owner.tax_id",
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "One shared blank for the SSN (individuo) or the EIN (entidad jurídica). Sensitive: never auto-filled from the profile. SmartPR prints the business EIN via directAcroValues ONLY for Corporación/Sociedad; Individuo and Entidad Ignorada stay blank so the filer hand-writes their own SSN.",
+      "sensitive": true
+    },
+    {
+      "pdfField": "Nombre de la Persona Sujeta al Pago de Patente",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 19.62,
+        "y": 563.26,
+        "width": 373.78,
+        "height": 17.76
+      },
+      "canonicalField": "owner.full_name",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "The taxpayer: owner or authorized representative, from the canonical profile."
+    },
+    {
+      "pdfField": "Número de Identificación Municipal",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 399.65,
+        "y": 565.02,
+        "width": 148.08,
+        "height": 17.32
+      },
+      "canonicalField": "operations.municipal_taxpayer_id",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Municipal taxpayer ID assigned with the first patente; blank for first-time filers."
+    },
+    {
+      "pdfField": "Correo electrónico de la persona contacto",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 190.34,
+        "y": 540.17,
+        "width": 399.94,
+        "height": 15.99
+      },
+      "canonicalField": "owner.email",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Contact email from the canonical profile."
+    },
+    {
+      "pdfField": "Dirección Física del Negocio u Oficina de Servicio",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 14.76,
+        "y": 503.64,
+        "width": 379.08,
+        "height": 19.2
+      },
+      "canonicalField": "location.physical_address",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Physical business address from the canonical profile."
+    },
+    {
+      "pdfField": "Zona Postal",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 396.56,
+        "y": 504.51,
+        "width": 86.16,
+        "height": 18.33
+      },
+      "canonicalField": "location.postal_code",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Postal code of the physical address."
+    },
+    {
+      "pdfField": "undefined",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 489.48,
+        "y": 509.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "undefined_2",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 514.32,
+        "y": 509.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "Clase de Industria Negocio o Servicio",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 20.5,
+        "y": 458.39,
+        "width": 152.83,
+        "height": 16.88
+      },
+      "canonicalField": "business.activity_description",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Business activity from the canonical profile."
+    },
+    {
+      "pdfField": "Individuo",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 212.76,
+        "y": 465.12,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Negocio: Individuo. Written via directAcroValues which unchecks the other three."
+    },
+    {
+      "pdfField": "Sociedad",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 212.76,
+        "y": 453.6,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Negocio: Sociedad. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Corporación",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 303.12,
+        "y": 465.12,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Negocio: Corporación. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Entidad Ignorada",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 303.48,
+        "y": 453.6,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Tipo de Negocio: Entidad Ignorada. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Fecha en que Estableció el Negocio Mes Día Año",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 406.72,
+        "y": 451.44,
+        "width": 40.18,
+        "height": 13.15
+      },
+      "canonicalField": "business.start_date",
+      "transform": "date_month",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Establishment month, split from the canonical start date."
+    },
+    {
+      "pdfField": "Dirección Postal del Negocio",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 19.18,
+        "y": 411.38,
+        "width": 374.66,
+        "height": 19.08
+      },
+      "canonicalField": "location.mailing_address",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Business mailing address from the canonical profile."
+    },
+    {
+      "pdfField": "Zona Postal_2",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 400.98,
+        "y": 411.82,
+        "width": 81.3,
+        "height": 19.53
+      },
+      "canonicalField": "location.mailing_postal_code",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Postal code of the business mailing address."
+    },
+    {
+      "pdfField": "undefined_3",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 489.48,
+        "y": 421.2,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "undefined_4",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 514.32,
+        "y": 421.2,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "Zona Postal_3",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 401.42,
+        "y": 371.31,
+        "width": 80.86,
+        "height": 17.76
+      },
+      "canonicalField": "location.mailing_postal_code",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Postal code of the principal-office mailing address."
+    },
+    {
+      "pdfField": "undefined_5",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 489.48,
+        "y": 377.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "undefined_6",
+      "pdfFieldType": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 514.32,
+        "y": 377.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "Volumen de Negocios Del encasillado 6 Línea 27 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 497.73,
+        "y": 347.58,
+        "width": 89.5,
+        "height": 13.54
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Tipo de Patente Fijado por la Legislatura Municipal Del encasillado 6 Línea 29 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 497.11,
+        "y": 331.18,
+        "width": 89.79,
+        "height": 14.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Patente a Pagar Del encasillado 6 Línea 29 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.37,
+        "y": 313.46,
+        "width": 91.25,
+        "height": 13.88
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Penalidad Del Encasillado 6 Línea 32 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.49,
+        "y": 298.51,
+        "width": 91.85,
+        "height": 12.99
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Descuento Del encasillado 6 Línea 33 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.36,
+        "y": 280.99,
+        "width": 91.77,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Pago en exceso de años anteriores",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.27,
+        "y": 263.71,
+        "width": 92.24,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Pago con la solicitud de prórroga",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.2,
+        "y": 247.44,
+        "width": 91.85,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "34 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.85,
+        "y": 214.53,
+        "width": 92.55,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Total a pagar Del encasillado 6 Línea 35 Página 4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.98,
+        "y": 196.59,
+        "width": 92.03,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Acreditar al año",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.12,
+        "y": 163.46,
+        "width": 93.21,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "A reintegrar De haber remanente",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.35,
+        "y": 145.2,
+        "width": 92.61,
+        "height": 14.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Certifico que como entidad ignorada según definido en la Sección 101001 en la Ley 12011 según enmendada conocida como Código",
+      "pdfFieldType": "checkbox",
+      "page": 2,
+      "rect": {
+        "x": 19.56,
+        "y": 759.6,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "Choice field (checkbox); options: unknown. Needs an explicit option mapping."
+    },
+    {
+      "pdfField": "Fecha",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 27.56,
+        "y": 640.12,
+        "width": 61.85,
+        "height": 16.04
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "ownership": "signature",
+      "reviewNote": "Date next to the certification signature. Completed by the signer at signing; never written by SmartPR."
+    },
+    {
+      "pdfField": "Firma de la persona sujeta al pago de patente",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 355.8,
+        "y": 643.96,
+        "width": 175.56,
+        "height": 15.71
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "ownership": "signature",
+      "reviewNote": "The taxpayer's signature line on the CERTIFICACION (page 2). Never written by SmartPR — signed by hand."
+    },
+    {
+      "pdfField": "Página 2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 495.42,
+        "y": 560.42,
+        "width": 94.02,
+        "height": 16.43
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "undefined_7",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 493.92,
+        "y": 470.89,
+        "width": 95.52,
+        "height": 19.74
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "undefined_8",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 332.37,
+        "y": 279.75,
+        "width": 67.71,
+        "height": 16.46
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "undefined_9",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.61,
+        "y": 98.12,
+        "width": 68.43,
+        "height": 19.18
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "undefined_10",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 495.57,
+        "y": 150.67,
+        "width": 93.87,
+        "height": 21.25
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "5 Intereses recibidos o devengados sobre préstamos",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 412.92,
+        "y": 389.41,
+        "width": 68.41,
+        "height": 13.91
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "15 Ingreso bruto del año de contabilidad inmediatamente anterior al actual",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.12,
+        "y": 750,
+        "width": 88.6,
+        "height": 15.62
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "16 Total de depósitos de la organización en Puerto Rico 17 Total de depósitos de sucursal es en este municipio",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 413.46,
+        "y": 713.07,
+        "width": 70.04,
+        "height": 17.01
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "fill_8",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.65,
+        "y": 659.75,
+        "width": 89.59,
+        "height": 17.52
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "fill_11",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 412.21,
+        "y": 509.33,
+        "width": 72.48,
+        "height": 16.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "fill_10",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.21,
+        "y": 549.23,
+        "width": 90.48,
+        "height": 17.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Negocio no financiero",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.6,
+        "y": 475.02,
+        "width": 90.08,
+        "height": 16.94
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow1",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.96,
+        "y": 175.8,
+        "width": 144.84,
+        "height": 20.88
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow1",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.6,
+        "y": 175.8,
+        "width": 139.56,
+        "height": 20.88
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow1_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.96,
+        "y": 175.8,
+        "width": 144.84,
+        "height": 20.88
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow1_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.6,
+        "y": 175.8,
+        "width": 139.56,
+        "height": 20.88
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 153.72,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 153.72,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow2_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 153.72,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow2_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 153.72,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow3",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 131.64,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow3",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 131.64,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow3_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 131.64,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow3_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 131.64,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow4",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 109.56,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow4",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 109.56,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow4_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 109.56,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow4_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 109.56,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow5",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 87.48,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow5",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 87.48,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow5_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 87.48,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow5_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 87.48,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow6",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 65.4,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow6",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 65.4,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Municipios o JurisdiccionesRow6_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 65.4,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Volumen de negocios servicios prestadosRow6_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 65.4,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "canonicalField": "operations.estimated_gross_receipts",
+      "transform": "currency",
+      "confidence": 0.8,
+      "reviewed": false,
+      "reviewNote": "Gross receipts are usually reported for a closed fiscal year — confirm the period before filing."
+    },
+    {
+      "pdfField": "Text1",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 96.03,
+        "y": 706.86,
+        "width": 29.45,
+        "height": 13.61
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "«Para el Año Natural»: the contributive year this declaration covers. Confirmed by the applicant on the SmartPR form and written via directAcroValues."
+    },
+    {
+      "pdfField": "Text2",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 251.26,
+        "y": 707.74,
+        "width": 28.57,
+        "height": 14.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "«Otro Año Contributivo — desde (mes)»: only for a non-calendar contributive year. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Text3",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 291.45,
+        "y": 706.97,
+        "width": 57.71,
+        "height": 14.49
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "«Otro Año Contributivo — desde (año)»: only for a non-calendar contributive year. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Text4",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 372.02,
+        "y": 707.74,
+        "width": 30.34,
+        "height": 14.49
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "«Otro Año Contributivo — hasta (mes)»: only for a non-calendar contributive year. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Text5",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 416.84,
+        "y": 707.3,
+        "width": 67.87,
+        "height": 14.93
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "«Otro Año Contributivo — hasta (año)»: only for a non-calendar contributive year. Written via directAcroValues."
+    },
+    {
+      "pdfField": "Text6",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 58.73,
+        "y": 612.36,
+        "width": 77.58,
+        "height": 14.49
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "Exemption percentage printed after «Exenta». Collected on the SmartPR form when the applicant chooses Exenta; written via directAcroValues."
+    },
+    {
+      "pdfField": "Text7",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 108.63,
+        "y": 629.14,
+        "width": 28.13,
+        "height": 14.94
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": true,
+      "ownership": "applicant",
+      "reviewNote": "«Otros:» specification line. Collected on the SmartPR form when the applicant chooses Otros; written via directAcroValues."
+    },
+    {
+      "pdfField": "Text8",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 455.25,
+        "y": 451.19,
+        "width": 37.84,
+        "height": 13.61
+      },
+      "canonicalField": "business.start_date",
+      "transform": "date_day",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Establishment day, split from the canonical start date."
+    },
+    {
+      "pdfField": "Text9",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 503.82,
+        "y": 450.75,
+        "width": 44.03,
+        "height": 15.38
+      },
+      "canonicalField": "business.start_date",
+      "transform": "date_year",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Establishment year, split from the canonical start date."
+    },
+    {
+      "pdfField": "Text10",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 18.55,
+        "y": 370.39,
+        "width": 338.55,
+        "height": 18.03
+      },
+      "canonicalField": "location.mailing_address",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "«Dirección Postal de la Oficina Principal»: the principal office's mailing address. Defaults to the canonical mailing address; the filer corrects it by hand when the principal office differs."
+    },
+    {
+      "pdfField": "Text11",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 156.44,
+        "y": 160.62,
+        "width": 28.91,
+        "height": 12.51
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text12",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 144,
+        "y": 68.33,
+        "width": 28.91,
+        "height": 12.84
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text13",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 183.27,
+        "y": 68,
+        "width": 29.56,
+        "height": 12.84
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text14",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 223.2,
+        "y": 67.02,
+        "width": 28.91,
+        "height": 14.47
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text15",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 495.88,
+        "y": 540.39,
+        "width": 93.48,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text16",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 496.32,
+        "y": 516.54,
+        "width": 93.92,
+        "height": 17.58
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text17",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 373.48,
+        "width": 67.87,
+        "height": 14.94
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text18",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 356.7,
+        "width": 67.87,
+        "height": 14.93
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text19",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 412.86,
+        "y": 339.92,
+        "width": 68.31,
+        "height": 15.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text20",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 332.06,
+        "y": 260.97,
+        "width": 68.75,
+        "height": 17.58
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text21",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 228.64,
+        "width": 68.75,
+        "height": 16.7
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text22",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 208.77,
+        "width": 69.19,
+        "height": 17.58
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text23",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 413.3,
+        "y": 694.49,
+        "width": 70.96,
+        "height": 15.38
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text24",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 497.67,
+        "y": 588.52,
+        "width": 91.27,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text25",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 412.86,
+        "y": 474.36,
+        "width": 71.4,
+        "height": 16.7
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text26",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.08,
+        "y": 439.27,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text27",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.21,
+        "y": 300.64,
+        "width": 46.65,
+        "height": 16.26
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text28",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.66,
+        "y": 281.19,
+        "width": 45.78,
+        "height": 15.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text29",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.66,
+        "y": 263.53,
+        "width": 45.78,
+        "height": 16.26
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text30",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.77,
+        "y": 245.42,
+        "width": 46.21,
+        "height": 16.7
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text31",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.77,
+        "y": 229.97,
+        "width": 45.77,
+        "height": 14.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text32",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.35,
+        "y": 212.75,
+        "width": 46.63,
+        "height": 14.93
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text33",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.2,
+        "y": 161.97,
+        "width": 89.51,
+        "height": 16.7
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text34",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.53,
+        "y": 139.98,
+        "width": 88.62,
+        "height": 15.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text35",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.08,
+        "y": 112.28,
+        "width": 89.49,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text36",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 393.88,
+        "y": 697.58,
+        "width": 89.95,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text37",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.2,
+        "y": 676.39,
+        "width": 90.83,
+        "height": 15.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text38",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.64,
+        "y": 652.54,
+        "width": 90.83,
+        "height": 16.26
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text39",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.08,
+        "y": 629.58,
+        "width": 90.83,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text40",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.32,
+        "y": 600.44,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text41",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.32,
+        "y": 532,
+        "width": 90.83,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text42",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.08,
+        "y": 526.26,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text43",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.64,
+        "y": 502.85,
+        "width": 91.27,
+        "height": 16.7
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text44",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.76,
+        "y": 509.04,
+        "width": 90.39,
+        "height": 15.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text45",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.08,
+        "y": 474.15,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text46",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.64,
+        "y": 440.59,
+        "width": 90.83,
+        "height": 16.26
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text47",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.53,
+        "y": 407.48,
+        "width": 89.07,
+        "height": 15.38
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text48",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.97,
+        "y": 382.75,
+        "width": 89.51,
+        "height": 16.26
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text49",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 499.41,
+        "y": 348.63,
+        "width": 89.06,
+        "height": 15.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    },
+    {
+      "pdfField": "Text50",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.97,
+        "y": 278.86,
+        "width": 89.51,
+        "height": 14.94
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0,
+      "reviewed": false,
+      "reviewNote": "No semantic match — needs human mapping or is answered on the artifact itself."
+    }
+  ]
+}

@@ -1,0 +1,1866 @@
+{
+  "formCode": "EPAFORM1",
+  "sourceFile": "RealForms/EPA-NPDES-Form-1-2023.pdf",
+  "artifactType": "official_pdf_form",
+  "populationMethod": "acroform",
+  "templateChecksum": "sha256:fc0c1eea94e98f14bb5bc87aa732ae1de5946ec0e48ab7c012af506e23488abf",
+  "templateRevision": "Revised 07/2023 (OMB No. 2040-0004, expires 07/31/2026)",
+  "pageCount": 23,
+  "hasAcroForm": true,
+  "inspectedAt": "2026-09-10T09:46:34.405Z",
+  "status": "mapped",
+  "notes": [
+    "Puerto Rico is NOT an NPDES-delegated state: EPA Region 2 issues NPDES permits in Puerto Rico directly, so this federal form is the correct PR artifact. Puerto Rico's Junta de Calidad Ambiental handles the separate state water-quality certification, not the NPDES permit itself.",
+    "Form 1 is the general-information cover every NPDES applicant files. For existing manufacturing, commercial, mining, or silvicultural dischargers it must accompany Form 2C — see EPAFORM2C.",
+    "The printed form is 4 pages (Sections 1–11). Pages 1–19 of the PDF are instructions only and carry no mapped fields.",
+    "Deliberately NOT mapped: the Section 11 checklist of completed sections (the filer marks it by hand from the finished package) and the entire certification block — printed name, official title, date signed and signature — which the responsible official completes by hand. EPA does not accept electronic signatures on this form.",
+    "Section 5 (Indian Land) is mapped as an applicant yes/no — no PR facility is on Indian land, but the filer answers it, not SmartPR."
+  ],
+  "fields": [
+    {
+      "pdfField": "ng publicly owned",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 274.23,
+        "y": 593.74,
+        "width": 10.12,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.1.1 (POTW → Form 2A) screening box — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "ng treatment works",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 498.39,
+        "y": 593.48,
+        "width": 10.12,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.1.2 (sludge-only → Form 2S) screening box — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "yes-no-1.2.1",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 125.35,
+        "y": 483.5,
+        "width": 10.2,
+        "height": 10.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.2.1 (CAFO → Form 2B) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "yes-no-1.2.2",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 369.3,
+        "y": 483.76,
+        "width": 10.2,
+        "height": 10.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.2.2 (existing manufacturing discharger → Form 2C) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "yes-no-1.2.3",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 124.88,
+        "y": 423.07,
+        "width": 10.25,
+        "height": 10.02
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.2.3 (new facility → Form 2D) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "yes-no-1.2.4",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 368.09,
+        "y": 423.59,
+        "width": 10.2,
+        "height": 10.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.2.4 (nonprocess wastewater only → Form 2E) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "yes-no-1.2.5",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 124.54,
+        "y": 340,
+        "width": 10.2,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.2.5 (stormwater → Form 2F) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "yes-no-1.2.6",
+      "pdfFieldType": "checkbox",
+      "page": 20,
+      "rect": {
+        "x": 368.32,
+        "y": 340.16,
+        "width": 10.2,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 1.2.6 (domestic sewage → Form 2S) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "Facility Name21",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 121.2,
+        "y": 223.88,
+        "width": 435.17,
+        "height": 17.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Orphan field with no widget annotation — writing it is a no-op. The visible Section 2.1 facility-name line is covered by the header 'Facility Name' field."
+    },
+    {
+      "pdfField": "EPA Identification Number2.2",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 121.2,
+        "y": 187.6,
+        "width": 435.17,
+        "height": 21.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Orphan field with no widget annotation — writing it is a no-op. The visible Section 2.2 blank is covered by 'EPA Identification Number'."
+    },
+    {
+      "pdfField": "Name first and last",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 121.19,
+        "y": 138.78,
+        "width": 143.7,
+        "height": 18.48
+      },
+      "canonicalField": "owner.full_name",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 2.3 facility contact — the person EPA calls about this application.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Title",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 269.6,
+        "y": 138.78,
+        "width": 177.34,
+        "height": 18.48
+      },
+      "canonicalField": "owner.title",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 2.3 facility contact title.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Phone number",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 450.25,
+        "y": 138.78,
+        "width": 106.83,
+        "height": 18.48
+      },
+      "canonicalField": "owner.phone",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 2.3 facility contact phone.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Email address",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 120.49,
+        "y": 93.73,
+        "width": 436.24,
+        "height": 23.39
+      },
+      "canonicalField": "owner.email",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Section 2.3 facility contact email."
+    },
+    {
+      "pdfField": "EPA Identification Number",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 54.32,
+        "y": 726.92,
+        "width": 122.64,
+        "height": 20.04
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `epa_id_number`. Section 2.2 — assigned by EPA. Leave blank for a first-time applicant; a renewing discharger enters it. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "NPDES Permit Number",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 179.11,
+        "y": 726.92,
+        "width": 126.28,
+        "height": 20.04
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `npdes_permit_number`. Header — the existing NPDES permit number when renewing/reapplying. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Facility Name",
+      "pdfFieldType": "text",
+      "page": 20,
+      "rect": {
+        "x": 306.44,
+        "y": 726.92,
+        "width": 124.56,
+        "height": 20.04
+      },
+      "canonicalField": "business.legal_name",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Form 1 header (repeats on all 4 pages) and Section 2.1 — the facility/site name. Defaults to the business legal name; confirm on the printed form if the site trades under another name.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Street route number or other specific identifier",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 121.23,
+        "y": 593.7,
+        "width": 435.89,
+        "height": 18.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `location_address.street`. Section 2.5 — street half of the split facility location; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "County name",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 121.69,
+        "y": 563.42,
+        "width": 106.68,
+        "height": 16.73
+      },
+      "canonicalField": "location.municipality",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 2.5 — Puerto Rico has municipios, not counties; the municipio name goes here (SS-4 precedent).",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "County code",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 230.26,
+        "y": 564.55,
+        "width": 195.26,
+        "height": 15.63
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 2.5 county code — Puerto Rico municipios carry no county code; leave blank or confirm with Region 2."
+    },
+    {
+      "pdfField": "City or town_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.69,
+        "y": 535.14,
+        "width": 107.73,
+        "height": 15.33
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `location_address.city`. Section 2.5 — city half of the split facility location; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "State_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 231.03,
+        "y": 535.09,
+        "width": 194.92,
+        "height": 15.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `location_address.state`. Section 2.5 — state half of the split facility location; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "ZIP code_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 428.21,
+        "y": 535.14,
+        "width": 128.94,
+        "height": 14.98
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `location_address.zip`. Section 2.5 — ZIP half of the split facility location; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Street or PO box",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.92,
+        "y": 669.4,
+        "width": 436.59,
+        "height": 18.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `mailing_address.street`. Section 2.4 — street/P.O. box half of the split facility mailing address; written via directAcroValues from the structured canonical address.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "City or town",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.92,
+        "y": 641.12,
+        "width": 145.1,
+        "height": 18.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `mailing_address.city`. Section 2.4 — city half of the split facility mailing address; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "State",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 268.27,
+        "y": 641.12,
+        "width": 167.16,
+        "height": 18.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `mailing_address.state`. Section 2.4 — state half of the split facility mailing address; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "ZIP code",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 440.35,
+        "y": 641.12,
+        "width": 117.01,
+        "height": 18.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `mailing_address.zip`. Section 2.4 — ZIP half of the split facility mailing address; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "SIC Codes31",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 483.89,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `sic_code_1`. Section 3.1 — primary SIC code. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Description optional31",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 483.82,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `sic_desc_1`. Section 3.1 — optional SIC description. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "SIC Codes31_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 461.86,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `sic_code_2`. Section 3.1 — additional SIC code. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Description optional31_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 461.37,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `sic_desc_2`. Section 3.1 — optional SIC description. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "SIC Codes31_3",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 439.78,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Third SIC row — SmartPR collects two SIC codes; the filer adds further codes here by hand."
+    },
+    {
+      "pdfField": "Description optional31_3",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 439.01,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Third SIC description row — complete by hand when used."
+    },
+    {
+      "pdfField": "SIC Codes31_4",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 418.45,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fourth SIC row — SmartPR collects two SIC codes; the filer adds further codes here by hand."
+    },
+    {
+      "pdfField": "Description optional31_4",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 416.47,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fourth SIC description row — complete by hand when used."
+    },
+    {
+      "pdfField": "NAICS Codes32",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 379.39,
+        "width": 108.05,
+        "height": 20.88
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `naics_code_1`. Section 3.2 — primary NAICS code. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Description optional32",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 379.39,
+        "width": 324.55,
+        "height": 20.88
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `naics_desc_1`. Section 3.2 — optional NAICS description. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "NAICS Codes32_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 357.31,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `naics_code_2`. Section 3.2 — additional NAICS code. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Description optional32_2",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 357.31,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `naics_desc_2`. Section 3.2 — optional NAICS description. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "NAICS Codes32_3",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 335.23,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Third NAICS row — SmartPR collects two NAICS codes; the filer adds further codes here by hand."
+    },
+    {
+      "pdfField": "Description optional32_3",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 335.66,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Third NAICS description row — complete by hand when used."
+    },
+    {
+      "pdfField": "NAICS Codes32_4",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 120.63,
+        "y": 313.15,
+        "width": 108.05,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fourth NAICS row — SmartPR collects two NAICS codes; the filer adds further codes here by hand."
+    },
+    {
+      "pdfField": "Description optional32_4",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 232.01,
+        "y": 314.42,
+        "width": 324.55,
+        "height": 20.76
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fourth NAICS description row — complete by hand when used."
+    },
+    {
+      "pdfField": "Name of Operator41",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 121.39,
+        "y": 259.39,
+        "width": 436.03,
+        "height": 24.97
+      },
+      "canonicalField": "business.legal_name",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 4.1 — the operator is the applicant business itself in the standard SmartPR case; correct on the printed form when the operator differs.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "yes-no-4.2",
+      "pdfFieldType": "checkbox",
+      "page": 21,
+      "rect": {
+        "x": 126.77,
+        "y": 227.22,
+        "width": 10.2,
+        "height": 10.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 4.2 (is the operator also the owner) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "Operator Status",
+      "pdfFieldType": "checkbox",
+      "page": 21,
+      "rect": {
+        "x": 126.77,
+        "y": 196.05,
+        "width": 10.38,
+        "height": 10.37
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 4.3 operator-status radio (5 options) is one checkbox-construct field the PDF library cannot select within — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "Other public specify",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 469.93,
+        "y": 194.55,
+        "width": 68.52,
+        "height": 13.44
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 4.3 'Other public (specify)' — pairs with the hand-marked operator-status radio; complete by hand."
+    },
+    {
+      "pdfField": "Other specify",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 304.31,
+        "y": 178.98,
+        "width": 68.4,
+        "height": 13.44
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 4.3 'Other (specify)' — pairs with the hand-marked operator-status radio; complete by hand."
+    },
+    {
+      "pdfField": "Phone Number of Operator44",
+      "pdfFieldType": "text",
+      "page": 21,
+      "rect": {
+        "x": 121.45,
+        "y": 142.76,
+        "width": 435.71,
+        "height": 20.76
+      },
+      "canonicalField": "business.phone",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 4.4 operator phone.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Street or PO Box",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 120.54,
+        "y": 677.71,
+        "width": 436.47,
+        "height": 18.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `operator_address.street`. Section 4.5 — street half of the split operator address (defaults to the business mailing address); written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "City or town_3",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 120.81,
+        "y": 646.86,
+        "width": 122.05,
+        "height": 15.85
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `operator_address.city`. Section 4.5 — city half of the split operator address; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "State_3",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 246,
+        "y": 646.86,
+        "width": 158.21,
+        "height": 15.85
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `operator_address.state`. Section 4.5 — state half of the split operator address; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "ZIP code_3",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 406.3,
+        "y": 646.86,
+        "width": 150.2,
+        "height": 15.85
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `operator_address.zip`. Section 4.5 — ZIP half of the split operator address; written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Email address of operator",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 120.86,
+        "y": 619.25,
+        "width": 433.32,
+        "height": 15.06
+      },
+      "canonicalField": "owner.email",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "ownership": "smartpr_derived",
+      "reviewNote": "Section 4.5 operator email."
+    },
+    {
+      "pdfField": "yes-no-5.1",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 130.14,
+        "y": 573.47,
+        "width": 10.2,
+        "height": 10.05
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 5.1 (Indian land) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "NPDES discharges to surface",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 126.93,
+        "y": 524.09,
+        "width": 10.2,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_npdes_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "water",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 142.52,
+        "y": 498.99,
+        "width": 104.88,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_npdes_number`. Section 6.1 — the NPDES (surface-water discharge) permit number blank. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "RCRA",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 264.37,
+        "y": 524.09,
+        "width": 10.03,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_rcra_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "RCRA hazardous wastes",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 279.35,
+        "y": 499.08,
+        "width": 127.68,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_rcra_number`. Section 6.1 — RCRA permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "UIC underground",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 422.4,
+        "y": 523.83,
+        "width": 10.03,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_uic_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "fluids",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 437.73,
+        "y": 498.73,
+        "width": 109.44,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_uic_number`. Section 6.1 — UIC permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "PSD",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 127.1,
+        "y": 485.44,
+        "width": 10.29,
+        "height": 10.19
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_psd_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "PSD air emissions",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 142.35,
+        "y": 471.77,
+        "width": 109.44,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_psd_number`. Section 6.1 — PSD permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nonattainment",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 264.37,
+        "y": 485.36,
+        "width": 10.03,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_nonattainment_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nonattainment program CAA",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 279.53,
+        "y": 471.77,
+        "width": 123.12,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_nonattainment_number`. Section 6.1 — nonattainment (CAA) permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "NESHAPs",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 422.22,
+        "y": 485.18,
+        "width": 10.03,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_neshaps_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "NESHAPs CAA",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 438.08,
+        "y": 471.42,
+        "width": 104.88,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_neshaps_number`. Section 6.1 — NESHAPs permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Ocean dumping",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 126.91,
+        "y": 457.83,
+        "width": 10.38,
+        "height": 10.37
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_ocean_dumping_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Ocean dumping MPRSA",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 142.81,
+        "y": 444.03,
+        "width": 109.44,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_ocean_dumping_number`. Section 6.1 — ocean dumping (MPRSA) permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Dredge",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 264.35,
+        "y": 457.91,
+        "width": 10.03,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_dredge_number`. Section 6.1 — checked when a permit number is supplied. Written via directAcroValues (setChoice).",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Dredge or fill CWA Sect",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 279.69,
+        "y": 444.86,
+        "width": 127.68,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `existing_dredge_number`. Section 6.1 — dredge-or-fill (CWA §404) permit number. Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Other",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 422.56,
+        "y": 457.21,
+        "width": 10.03,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 6.1 Other checkbox — complete by hand with its specify blank."
+    },
+    {
+      "pdfField": "Other specify_2",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 436.84,
+        "y": 444.15,
+        "width": 114,
+        "height": 10.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 6.1 'Other (specify)' — pairs with the hand-marked Other checkbox; complete by hand."
+    },
+    {
+      "pdfField": "yes or no-7.1",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 126.81,
+        "y": 383,
+        "width": 10.38,
+        "height": 10.37
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 7.1 (topographic map attached) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "Describe the nature of your business",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 122.86,
+        "y": 216.85,
+        "width": 432.24,
+        "height": 133.08
+      },
+      "canonicalField": "business.activity_description",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 8.1 nature of business, from the canonical activity description.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "yes or no9.1",
+      "pdfFieldType": "checkbox",
+      "page": 22,
+      "rect": {
+        "x": 127.94,
+        "y": 171.75,
+        "width": 10.12,
+        "height": 10.1
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 9.1 (facility uses cooling water) yes/no pair shares one field name the PDF library cannot address separately — mark by hand on the printed form."
+    },
+    {
+      "pdfField": "Identify the source of cooling water",
+      "pdfFieldType": "text",
+      "page": 22,
+      "rect": {
+        "x": 123.45,
+        "y": 88.33,
+        "width": 432.12,
+        "height": 45.36
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "SmartPR schema field `cooling_water_source`. Section 9.2 — completed only when the facility uses cooling water (the 9.1 yes/no is marked by hand). Written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "10.1-1",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 127.37,
+        "y": 671.08,
+        "width": 10.11,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 10.1 variance checkbox (fundamentally different factors) — mark by hand."
+    },
+    {
+      "pdfField": "10.1-3",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 325.3,
+        "y": 671.08,
+        "width": 10.11,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 10.1 variance checkbox (water-quality related effluent limitations) — mark by hand."
+    },
+    {
+      "pdfField": "10.1-2",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 127.5,
+        "y": 643.59,
+        "width": 10.11,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 10.1 variance checkbox (non-conventional pollutants) — mark by hand."
+    },
+    {
+      "pdfField": "10.1-4",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 325.17,
+        "y": 643.58,
+        "width": 10.11,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 10.1 variance checkbox (thermal discharges) — mark by hand."
+    },
+    {
+      "pdfField": "Not applicable",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 127.63,
+        "y": 616.24,
+        "width": 10.11,
+        "height": 10.23
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 10.1 'Not applicable' — mark by hand when no variance is requested."
+    },
+    {
+      "pdfField": "Section 1",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 523.57,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 2",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 500.36,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 3",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 477.93,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 4",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 455.63,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 5",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 433.58,
+        "width": 10.47,
+        "height": 10.45
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 6",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 411.72,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 7",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 387.13,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 8",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 362.23,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 9",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 339.57,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 10",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 317.79,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 11",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 126.7,
+        "y": 295.16,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 1 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.35,
+        "y": 524.27,
+        "width": 10.29,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 2 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.17,
+        "y": 500.67,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 3 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.26,
+        "y": 477.8,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 4 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.08,
+        "y": 456.07,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 5 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.17,
+        "y": 433.82,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 6 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.17,
+        "y": 411.65,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 7 w/topographic",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.35,
+        "y": 386.96,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 8 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358,
+        "y": 362.05,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 9 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.13,
+        "y": 340.06,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 10 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.13,
+        "y": 317.45,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 11 w/attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 358.13,
+        "y": 295.2,
+        "width": 10.47,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Section 7 w/additional attachments",
+      "pdfFieldType": "checkbox",
+      "page": 23,
+      "rect": {
+        "x": 467.56,
+        "y": 392.56,
+        "width": 10.46,
+        "height": 10.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Section 11.1 checklist — the filer marks which sections are completed and submitted, from the finished package, by hand."
+    },
+    {
+      "pdfField": "Name print or type first and last name",
+      "pdfFieldType": "text",
+      "page": 23,
+      "rect": {
+        "x": 121.91,
+        "y": 135.39,
+        "width": 222.68,
+        "height": 25.82
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1.0,
+      "reviewed": true,
+      "reviewNote": "Section 11.2 certification — the responsible official completes and hand-signs this block on the printed form. EPA does not accept electronic signatures on Form 1.",
+      "ownership": "signature"
+    },
+    {
+      "pdfField": "Official title",
+      "pdfFieldType": "text",
+      "page": 23,
+      "rect": {
+        "x": 353.54,
+        "y": 135.39,
+        "width": 200.61,
+        "height": 25.17
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1.0,
+      "reviewed": true,
+      "reviewNote": "Section 11.2 certification — the responsible official completes and hand-signs this block on the printed form. EPA does not accept electronic signatures on Form 1.",
+      "ownership": "signature"
+    },
+    {
+      "pdfField": "Signature",
+      "pdfFieldType": "text",
+      "page": 23,
+      "rect": {
+        "x": 121.41,
+        "y": 84.51,
+        "width": 225.56,
+        "height": 28.06
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1.0,
+      "reviewed": true,
+      "reviewNote": "Section 11.2 certification — the responsible official completes and hand-signs this block on the printed form. EPA does not accept electronic signatures on Form 1.",
+      "ownership": "signature"
+    },
+    {
+      "pdfField": "Date signed",
+      "pdfFieldType": "text",
+      "page": 23,
+      "rect": {
+        "x": 351.74,
+        "y": 83.98,
+        "width": 78.48,
+        "height": 29.52
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1.0,
+      "reviewed": true,
+      "reviewNote": "Section 11.2 certification — the responsible official completes and hand-signs this block on the printed form. EPA does not accept electronic signatures on Form 1.",
+      "ownership": "signature"
+    },
+    {
+      "pdfField": "Click to beginning of Form",
+      "pdfFieldType": "button",
+      "page": 23,
+      "rect": {
+        "x": 384.54,
+        "y": 47.97,
+        "width": 170.8,
+        "height": 34.19
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "PDF navigation button on the last page, not a data field."
+    },
+    {
+      "pdfField": "Print all pages Button_all",
+      "pdfFieldType": "button",
+      "page": 1,
+      "rect": {
+        "x": 486.75,
+        "y": 748.21,
+        "width": 72,
+        "height": 20
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "PDF print button on the cover page, not a data field."
+    },
+    {
+      "pdfField": "Print Form Only",
+      "pdfFieldType": "button",
+      "page": 1,
+      "rect": {
+        "x": 407.86,
+        "y": 748.14,
+        "width": 72.66,
+        "height": 20
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "PDF print button on the cover page, not a data field."
+    }
+  ]
+}

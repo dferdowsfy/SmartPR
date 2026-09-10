@@ -401,13 +401,13 @@ test("every displayable form holding an official template can actually produce i
 
   // Guards against the set silently emptying (e.g. a catalog rename), which
   // would make this test vacuously pass.
-  assert.deepEqual(checked.sort(), ["CORPLLC02", "CORPREG01", "LUMAINT01", "NC001", "PA02", "SS4"]);
+  assert.deepEqual(checked.sort(), ["CBP301", "CORPLLC02", "CORPREG01", "DACOUC01", "EPAFORM1", "EPAFORM2C", "LUMAINT01", "NC001", "PA01", "PA02", "SS4"]);
 });
 
 // --- Safety invariants -------------------------------------------------------
 
 test("generating a deliverable never modifies the canonical original on disk", async () => {
-  const codes = ["CORPREG01", "CORPLLC02", "SS4", "SC2309", "NC001", "PA02", "PA03", "PA04"];
+  const codes = ["CORPREG01", "CORPLLC02", "SS4", "SC2309", "NC001", "PA01", "PA02", "PA03", "PA04"];
   const before = codes.map((code) => {
     const template = getTemplate(code);
     return sha256(new Uint8Array(readFileSync(resolveRepoPath(template!.sourceFile!))));

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T04:29:07.376Z",
+  "generatedAt": "2026-09-10T09:46:36.417Z",
   "templates": [
     {
       "formCode": "CORPREG01",
@@ -74,6 +74,18 @@
       "sourceStatus": "official_source"
     },
     {
+      "formCode": "DACOUC01",
+      "sourceFile": "RealForms/DACO-Solicitud-Urbanizador-Constructor-v2.pdf",
+      "checksum": "sha256:345dc3222b7e52e751a5ca61850fddb61ac7d0e3267d52a65d72e922ed17a4f4",
+      "byteLength": 376832,
+      "pageCount": 9,
+      "hasAcroForm": false,
+      "nativeFieldCount": 0,
+      "populationMethod": "pdf_overlay",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
       "formCode": "PA02",
       "sourceFile": "RealForms/PA02-Solicitud-de-Patente-Provisional.pdf",
       "checksum": "sha256:494e67a6a3be72304e966bbc4d0efa10d1e2142a66b7d99e8528aa12eb2ffdfa",
@@ -81,6 +93,66 @@
       "pageCount": 2,
       "hasAcroForm": true,
       "nativeFieldCount": 45,
+      "populationMethod": "acroform",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
+      "formCode": "PA01",
+      "sourceFile": "RealForms/PA01-Declaracion-Volumen-Negocios-Rev-Feb-2025.pdf",
+      "checksum": "sha256:d7b273d1bcbeb2cd8c06c7b5ad1334db61b95fe9d23418e621228cbef445aba6",
+      "byteLength": 229690,
+      "pageCount": 5,
+      "hasAcroForm": true,
+      "nativeFieldCount": 130,
+      "populationMethod": "acroform",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
+      "formCode": "AGRIIND01",
+      "sourceFile": "RealForms/AGRI-Bonafide-Individuo.pdf",
+      "checksum": "sha256:3b0d0c755b243818ac02ffaeb54f2cee48ef3568a8751ab415df1e856925e7e2",
+      "byteLength": 905312,
+      "pageCount": 6,
+      "hasAcroForm": true,
+      "nativeFieldCount": 136,
+      "populationMethod": "acroform",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
+      "formCode": "AGRICORP01",
+      "sourceFile": "RealForms/AGRI-Bonafide-Corporacion-2021.pdf",
+      "checksum": "sha256:f831ce62d9a3bd44d7b9a076fb5a345f32bd880301793144000ebbd22f529ae7",
+      "byteLength": 891529,
+      "pageCount": 7,
+      "hasAcroForm": false,
+      "nativeFieldCount": 0,
+      "populationMethod": "pdf_overlay",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
+      "formCode": "EPAFORM1",
+      "sourceFile": "RealForms/EPA-NPDES-Form-1-2023.pdf",
+      "checksum": "sha256:fc0c1eea94e98f14bb5bc87aa732ae1de5946ec0e48ab7c012af506e23488abf",
+      "byteLength": 3700583,
+      "pageCount": 23,
+      "hasAcroForm": true,
+      "nativeFieldCount": 112,
+      "populationMethod": "acroform",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
+      "formCode": "EPAFORM2C",
+      "sourceFile": "RealForms/EPA-NPDES-Form-2C-2023.pdf",
+      "checksum": "sha256:2ab2481ba812f2e235058cf87e4f5af6e1d9e37430cd09d747c6466df1e61787",
+      "byteLength": 5554779,
+      "pageCount": 48,
+      "hasAcroForm": true,
+      "nativeFieldCount": 3067,
       "populationMethod": "acroform",
       "artifactType": "official_pdf_form",
       "sourceStatus": "official_source"
@@ -108,6 +180,18 @@
       "populationMethod": "acroform",
       "artifactType": "genericized_municipal_template",
       "sourceStatus": "genericized_working_copy"
+    },
+    {
+      "formCode": "CBP301",
+      "sourceFile": "RealForms/CBP-Form-301.pdf",
+      "checksum": "sha256:cbeb823dda2f9a3943821f12541020f79273214ed8e4f1b0623cdd71cce204e9",
+      "byteLength": 1045051,
+      "pageCount": 5,
+      "hasAcroForm": true,
+      "nativeFieldCount": 114,
+      "populationMethod": "acroform",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
     }
   ]
 }

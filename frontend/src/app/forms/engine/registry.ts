@@ -23,7 +23,14 @@ import { CORPLLC02 } from "../definitions/pr/department-of-state/CORPLLC02.ts";
 import { SS4 } from "../definitions/federal/irs/SS4.ts";
 import { NC001 } from "../definitions/pr/department-of-state/NC001.ts";
 import { LUMAINT01 } from "../definitions/pr/luma/LUMAINT01.ts";
+import { DACOUC01 } from "../definitions/pr/daco/DACOUC01.ts";
 import { PA02 } from "../definitions/pr/municipal/PA02.ts";
+import { AGRIIND01 } from "../definitions/pr/agriculture/AGRIIND01.ts";
+import { AGRICORP01 } from "../definitions/pr/agriculture/AGRICORP01.ts";
+import { PA01 } from "../definitions/pr/municipal/PA01.ts";
+import { CBP301 } from "../definitions/federal/cbp/CBP301.ts";
+import { EPAFORM1 } from "../definitions/federal/epa/EPAFORM1.ts";
+import { EPAFORM2C } from "../definitions/federal/epa/EPAFORM2C.ts";
 import type { DigitalFormDefinition, FormVerificationStatus } from "./types.ts";
 
 export interface RegistryEntry {
@@ -51,7 +58,14 @@ const DEFINITIONS: DigitalFormDefinition[] = [
   SS4,
   NC001,
   LUMAINT01,
+  DACOUC01,
   PA02,
+  PA01,
+  AGRIIND01,
+  AGRICORP01,
+  CBP301,
+  EPAFORM1,
+  EPAFORM2C,
 ];
 
 function entryFromDefinition(def: DigitalFormDefinition): RegistryEntry {
@@ -92,7 +106,9 @@ const PLACEHOLDER_ENTRIES: RegistryEntry[] = [
   ph("FORM_PR_PERMISO_UNICO", "DOC_PERMISO_UNICO", "permiso_unico", "Permiso Único"),
   // FORM_PR_PATENTE_MUNICIPAL is no longer a placeholder: the official OCAM
   // PA02 PDF is in RealForms with a human-reviewed mapping, so it is served by
-  // the real PA02 schema above.
+  // the real PA02 schema above. FORM_PR_PATENTE_ANUAL is likewise real: the
+  // official OGP PA01 (REV FEBRERO 2025) PDF is in RealForms with a
+  // human-reviewed mapping, served by the real PA01 schema above.
   ph("FORM_PR_HEALTH_PERMIT", "DOC_HEALTH_PERMIT", "health", "Health Permit"),
   ph("FORM_PR_ALCOHOL_LICENSE", "DOC_ALCOHOL_LICENSE", "alcohol", "Alcohol License"),
   ph("FORM_PR_TOURISM_REGISTRATION", "DOC_TOURISM_REGISTRATION", "tourism", "Tourism Registration"),
@@ -103,7 +119,10 @@ const PLACEHOLDER_ENTRIES: RegistryEntry[] = [
   ph("FORM_PR_TRANSPORT_PERMIT", "DOC_TRANSPORT_PERMIT", "transport", "Transportation Permit"),
   ph("FORM_PR_CHILDCARE_LICENSE", "DOC_CHILDCARE_LICENSE", "childcare", "Childcare License"),
   ph("FORM_PR_PESTICIDE_LICENSE", "DOC_PESTICIDE_LICENSE", "pesticide", "Pesticide Applicator License"),
-  ph("FORM_PR_AGRICULTURE_REGISTRATION", "DOC_AGRICULTURE_REGISTRATION", "agriculture", "Agriculture Registration"),
+  // FORM_PR_AGRICULTURE_REGISTRATION is no longer a placeholder: the official
+  // Department of Agriculture DA-OCAB-05 PDFs (Individuos and Corporaciones
+  // variants) are in RealForms with human-reviewed mappings, served by the
+  // real AGRIIND01 and AGRICORP01 schemas above.
   ph("FORM_PR_NOISE_VARIANCE", "DOC_NOISE_VARIANCE", "noise", "Noise Variance"),
   ph("FORM_PR_SAN_JUAN_USE_PERMIT", "DOC_SAN_JUAN_USE_PERMIT", "san_juan_use", "San Juan Municipal Use Permit"),
 ];

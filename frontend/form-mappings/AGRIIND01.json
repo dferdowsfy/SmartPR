@@ -1,0 +1,2336 @@
+{
+  "formCode": "AGRIIND01",
+  "sourceFile": "RealForms/AGRI-Bonafide-Individuo.pdf",
+  "artifactType": "official_pdf_form",
+  "populationMethod": "acroform",
+  "templateChecksum": "sha256:3b0d0c755b243818ac02ffaeb54f2cee48ef3568a8751ab415df1e856925e7e2",
+  "templateRevision": "Rev. ABRIL 2021",
+  "pageCount": 6,
+  "hasAcroForm": true,
+  "inspectedAt": "2026-09-10T09:46:34.239Z",
+  "status": "mapped",
+  "notes": [
+    "Official form: 'SOLICITUD AGRICULTOR BONA FIDE (PARA INDIVIDUOS) POR LA LEY NÚM. 60 DE 1 DE JULIO DE 2019', Modelo DA-OCAB-05, Rev. ABRIL 2021 — the natural-person variant of the Bona Fide Farmer certification. (The juridical-entity variant is AGRICORP01.)",
+    "6 pages, 136 native AcroForm text fields, all human-reviewed against the PDF's text layer — see form-mappings/AGRIIND01.json field ownership.",
+    "Never written by SmartPR: the three SSN boxes (personal, patronal, spouse — personal government identifiers the filer writes by hand, PA02 precedent), the 'Firma del Agricultor o Representante Autorizado' signature line, the entire section 23 (agronomist: 14a/14b income computation, RECOMENDACIÓN, Cumple/No Cumple, numbered 1-10 evaluation, agronomist signature), section 24 (regional director observations and signature), and the 'Para Uso Interno' header (OFICINA REGIONAL, MUNICIPIO, Núm. Solicitud).",
+    "The Km. blanks (19a and 19b) have no AcroForm widgets at all — they can only be completed by hand on the printed form.",
+    "No fee is printed on the form; confirm any filing cost with the Department of Agriculture's regional office."
+  ],
+  "fields": [
+    {
+      "pdfField": "REGIONAL",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 318.84,
+        "y": 860.88,
+        "width": 94.8,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Receiving-office routing ('OFICINA REGIONAL') at the form header — completed by the Department's regional office staff, not the applicant.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "MUNICIPIO",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 272.4,
+        "y": 835.2,
+        "width": 141.84,
+        "height": 24.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Form-header receiving-office routing ('MUNICIPIO') — agency staff only. Not the applicant's finca municipality, which is captured separately on pages 2-4.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "Núm Solicitud",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 151.08,
+        "y": 769.68,
+        "width": 95.52,
+        "height": 22.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "'Para Uso Interno' — the request number is assigned by the Department of Agriculture.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "AÑO SOLICITADO",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 345.36,
+        "y": 661.32,
+        "width": 50.64,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Year the certification is requested for — confirmed on the SmartPR form (defaults to the current year), written via directAcroValues (agriBonafideIndividuoValues), not the canonical profile.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "RENOVACIÓN",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 197.52,
+        "y": 571.56,
+        "width": 54.36,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Mark box: SmartPR writes 'X' here when the applicant selects Renovación, and clears it otherwise. See agriBonafideIndividuoValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "CASO NUEVO",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 483.12,
+        "y": 571.56,
+        "width": 56.76,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Mark box: SmartPR writes 'X' here when the applicant selects Caso Nuevo, and clears it otherwise. See agriBonafideIndividuoValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "1 Nombre del Agricultor",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 244.2,
+        "y": 552.48,
+        "width": 294.24,
+        "height": 18.12
+      },
+      "canonicalField": "owner.full_name",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Auto-populated from the canonical profile — never asked twice.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "2 Seguro Social Personal",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 245.52,
+        "y": 524.4,
+        "width": 123.84,
+        "height": 26.64
+      },
+      "canonicalField": "owner.tax_id",
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Personal government identifier — SmartPR never auto-fills or stores it (PA02 precedent). The filer writes it by hand on the printed form.",
+      "ownership": "applicant",
+      "sensitive": true
+    },
+    {
+      "pdfField": "Patronal",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 426.48,
+        "y": 524.4,
+        "width": 111.96,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Patronal SSN box — the filer writes the number by hand on the printed form. SmartPR never prints personal government identifiers.",
+      "ownership": "applicant",
+      "sensitive": true
+    },
+    {
+      "pdfField": "3 Sexo",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 139.2,
+        "y": 496.32,
+        "width": 46.08,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Written verbatim from the SmartPR select (Masculino/Femenino) via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Estado Civil",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 293.76,
+        "y": 496.32,
+        "width": 96.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Written verbatim from the SmartPR select (Soltero/Casado/Divorciado/Viudo) via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "4 Fecha de nacimiento",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 236.76,
+        "y": 467.88,
+        "width": 300.24,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Applicant's date of birth — written Spanish-formatted ('mes día, año') via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "5 Dirección Postal 1",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 210.12,
+        "y": 439.8,
+        "width": 324.24,
+        "height": 26.64
+      },
+      "canonicalField": "location.mailing_address",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Auto-populated from the canonical mailing address as one formatted line — never asked twice.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "5 Dirección Postal 2",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 89.88,
+        "y": 412.08,
+        "width": 444.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Postal-address continuation line — no UI field (the canonical address already flows into line 1 as one formatted line). Hand-write a continuation here if the address needs a second line.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "6 Dirección Residencial 1",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 241.32,
+        "y": 385.08,
+        "width": 294.24,
+        "height": 26.28
+      },
+      "canonicalField": "owner.address",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Auto-populated from the canonical owner residential address — never asked twice.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "6 Dirección Residencial 2",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 89.88,
+        "y": 357.48,
+        "width": 444.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Residential-address continuation line — no UI field; hand-write a continuation here if needed.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "7 Teléfono",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 160.44,
+        "y": 330.36,
+        "width": 127.44,
+        "height": 26.4
+      },
+      "canonicalField": "owner.phone",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Auto-populated from the canonical owner phone — never asked twice.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Celular",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 370.32,
+        "y": 330.36,
+        "width": 138.12,
+        "height": 26.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Second phone, collected on the SmartPR form (the canonical profile holds only one phone) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fax",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 136.8,
+        "y": 302.4,
+        "width": 151.08,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Collected on the SmartPR form (optional) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Email",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 366.48,
+        "y": 302.4,
+        "width": 143.28,
+        "height": 26.64
+      },
+      "canonicalField": "owner.email",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Auto-populated from the canonical owner email — never asked twice.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "8 Ocupación",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 178.32,
+        "y": 274.32,
+        "width": 168.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Applicant's occupation, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "9 Experiencia Agrícola años",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 274.08,
+        "y": 246,
+        "width": 72.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Years of agricultural experience, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre del Cónyuge",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 269.28,
+        "y": 203.88,
+        "width": 270.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's name, collected on the SmartPR form (shown only when estado civil = Casado) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Seguro Social",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 231.12,
+        "y": 175.68,
+        "width": 306.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's personal government identifier — never auto-filled or stored. The filer writes it by hand on the printed form (PA02 precedent).",
+      "ownership": "applicant",
+      "sensitive": true
+    },
+    {
+      "pdfField": "Ocupación",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 210.48,
+        "y": 147.6,
+        "width": 81.96,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's occupation, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Sexo",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 381.36,
+        "y": 147.6,
+        "width": 84.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's sex — written verbatim (Masculino/Femenino) via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha de Nacimiento",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 270.12,
+        "y": 119.28,
+        "width": 264.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's date of birth — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Patrono",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 197.04,
+        "y": 91.32,
+        "width": 342.24,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's employer, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Ingreso Anual cónyuge",
+      "pdfFieldType": "text",
+      "page": 1,
+      "rect": {
+        "x": 288.96,
+        "y": 63.24,
+        "width": 126.12,
+        "height": 26.64
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Spouse's annual income, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "16Negocio Nuevo",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 184.08,
+        "y": 885.96,
+        "width": 36.12,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Mark box: SmartPR writes 'X' when the applicant marks Negocio Nuevo, and clears it otherwise.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "1 Nuevos a crearse",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 268.92,
+        "y": 853.32,
+        "width": 42.24,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Jobs to be created (new business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "2 Actuales",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 215.76,
+        "y": 832.2,
+        "width": 58.68,
+        "height": 20.16
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Current jobs (new business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fijos",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 193.44,
+        "y": 811.08,
+        "width": 81,
+        "height": 20.16
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Permanent jobs (new business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Temporeros",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 238.32,
+        "y": 789.96,
+        "width": 36.12,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Temporary jobs (new business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "17Negocio Existente",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 202.56,
+        "y": 768.84,
+        "width": 48.12,
+        "height": 20.16
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Mark box: SmartPR writes 'X' when the applicant marks Negocio Existente, and clears it otherwise.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "1 Nuevos a crearse_2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 268.92,
+        "y": 736.2,
+        "width": 42.24,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Jobs to be created (existing business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "2 Actuales_2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 215.76,
+        "y": 715.32,
+        "width": 36.12,
+        "height": 19.92
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Current jobs (existing business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fijos_2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 197.4,
+        "y": 694.68,
+        "width": 42.12,
+        "height": 19.68
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Permanent jobs (existing business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Temporeros_2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 238.44,
+        "y": 673.56,
+        "width": 36.12,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Temporary jobs (existing business), collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "18Inversión en Negocio Presente Año",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 304.56,
+        "y": 635.88,
+        "width": 235.32,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Investment in the business this year, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "19aLocalización de la Finca Núm de Carr",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 339,
+        "y": 571.68,
+        "width": 47.28,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 highway number. The Km blank beside it has NO AcroForm widget (verified against the widget inventory) — the filer hand-writes Km on the printed form if needed.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Hm",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 490.08,
+        "y": 571.68,
+        "width": 42,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 hectómetro — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Bo",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 131.04,
+        "y": 538.68,
+        "width": 171.96,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 barrio — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Sector",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 374.4,
+        "y": 538.68,
+        "width": 162.12,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 sector (optional) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Municipio",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 173.76,
+        "y": 506.28,
+        "width": 360.12,
+        "height": 20.28
+      },
+      "canonicalField": "location.municipality",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Finca 1 municipality — auto-populated from the canonical profile municipality; the filer can correct it on the SmartPR form.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Núm Catastro de estar disponible",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 319.32,
+        "y": 473.88,
+        "width": 216.48,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 catastro number, if available — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Cantidad de Cuerdas",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 239.64,
+        "y": 441.48,
+        "width": 120.24,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 total cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Propias",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 155.4,
+        "y": 409.08,
+        "width": 87.84,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 owned cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha en que se adquirió",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 442.56,
+        "y": 409.08,
+        "width": 66.24,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Date finca 1 was acquired — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Usufructos",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 176.4,
+        "y": 376.68,
+        "width": 70.08,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 usufruct cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha de otorgación",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 412.92,
+        "y": 376.68,
+        "width": 96.36,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Usufruct grant date — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Arrendadas",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 179.52,
+        "y": 344.28,
+        "width": 63.96,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 leased cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha de vencimiento",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 422.28,
+        "y": 344.28,
+        "width": 84.24,
+        "height": 20.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Lease expiration date — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow1",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 28.56,
+        "y": 229.92,
+        "width": 550.32,
+        "height": 47.28
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 farm-business table, row 1 (free text: crop/business, cuerdas, estimated production, development level) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 28.56,
+        "y": 180.96,
+        "width": 550.32,
+        "height": 47.16
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 farm-business table, row 2 (free text) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 29.16,
+        "y": 131.76,
+        "width": 116.52,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 table, row 3, column 1 (Negocio Agrícola) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_2",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 148.44,
+        "y": 131.76,
+        "width": 112.92,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 table, row 3, column 2 (Cantidad de cuerdas) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_3",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 264.12,
+        "y": 131.76,
+        "width": 154.92,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 table, row 3, column 3 (Producción Anual Estimada) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_4",
+      "pdfFieldType": "text",
+      "page": 2,
+      "rect": {
+        "x": 421.8,
+        "y": 131.76,
+        "width": 157.08,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 1 table, row 3, column 4 (Nivel de desarrollo en la Finca) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Hm_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 486.48,
+        "y": 902.52,
+        "width": 47.4,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 hectómetro — written via directAcroValues. (19b's carretera/Km blanks have no AcroForm widgets — hand-write them on the printed form.)",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Bo_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 131.04,
+        "y": 869.52,
+        "width": 213.84,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 barrio — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Sector_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 389.52,
+        "y": 869.52,
+        "width": 145.8,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 sector (optional) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Municipio_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 173.76,
+        "y": 837.12,
+        "width": 360.12,
+        "height": 28.8
+      },
+      "canonicalField": "location.municipality",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Finca 2 municipality — auto-populated from the canonical profile municipality; the filer can correct it on the SmartPR form.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Núm Catastro de estar disponible_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 319.32,
+        "y": 804.72,
+        "width": 216.48,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 catastro number, if available — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Cantidad de Cuerdas_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 239.64,
+        "y": 772.32,
+        "width": 126.24,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 total cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Propias_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 155.4,
+        "y": 739.92,
+        "width": 87.84,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 owned cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha en que se adquirió_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 442.56,
+        "y": 739.92,
+        "width": 66.24,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Date finca 2 was acquired — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Usufructos_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 176.4,
+        "y": 707.52,
+        "width": 70.08,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 usufruct cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha de otorgación_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 412.92,
+        "y": 707.52,
+        "width": 96.36,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 usufruct grant date — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Arrendadas_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 179.52,
+        "y": 675.36,
+        "width": 69.96,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 leased cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Fecha de vencimiento_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 422.28,
+        "y": 675.36,
+        "width": 90.24,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 lease expiration date — Spanish-formatted via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow1_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 30.48,
+        "y": 549.36,
+        "width": 550.32,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 farm-business table, row 1 (free text) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow2_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 30.48,
+        "y": 484.2,
+        "width": 550.32,
+        "height": 63.36
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 farm-business table, row 2 (free text) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_5",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 31.08,
+        "y": 418.92,
+        "width": 116.52,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 table, row 3, column 1 (Negocio Agrícola) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_6",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 150.36,
+        "y": 418.92,
+        "width": 117.48,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 table, row 3, column 2 (Cantidad de cuerdas) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_7",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 270.6,
+        "y": 418.92,
+        "width": 150.36,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 table, row 3, column 3 (Producción Anual Estimada) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_8",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 423.72,
+        "y": 418.92,
+        "width": 157.08,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Finca 2 table, row 3, column 4 (Nivel de desarrollo en la Finca) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Licencia de Pescador Comercial del DRNA",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 356.04,
+        "y": 357.48,
+        "width": 84.48,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "DRNA commercial fisherman license number, collected on the SmartPR form when the applicant fishes — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Registro de Embarcación del DRNA",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 329.76,
+        "y": 325.08,
+        "width": 114.12,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "DRNA vessel registration, if applicable — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Laboratorio de Investigaciones Pesqueras",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 352.56,
+        "y": 271.32,
+        "width": 72.84,
+        "height": 20.16
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Pounds of fish/shellfish per the Fisheries Research Laboratory statistics — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow1",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 30.48,
+        "y": 144.84,
+        "width": 550.32,
+        "height": 47.16
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fishing-activity table, row 1 (free text) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 31.08,
+        "y": 95.64,
+        "width": 110.76,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fishing table, row 2, column 1 (Negocio Agrícola) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2_2",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 144.6,
+        "y": 95.64,
+        "width": 105.24,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fishing table, row 2, column 2 (Clase de Pescado o Marisco) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2_3",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 252.6,
+        "y": 95.64,
+        "width": 145.8,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fishing table, row 2, column 3 (Producción Anual Estimada, libras) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2_4",
+      "pdfFieldType": "text",
+      "page": 3,
+      "rect": {
+        "x": 401.16,
+        "y": 95.64,
+        "width": 179.64,
+        "height": 47.4
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Fishing table, row 2, column 4 (Información sobre las Salidas Alta Mar) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Localización de la Planta de Elaboración",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 351.48,
+        "y": 859.8,
+        "width": 180.24,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Processing-plant location, collected on the SmartPR form — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Municipio_3",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 166.08,
+        "y": 827.28,
+        "width": 114,
+        "height": 28.8
+      },
+      "canonicalField": "location.municipality",
+      "transform": "none",
+      "confidence": 0.95,
+      "reviewed": true,
+      "reviewNote": "Plant municipality — auto-populated from the canonical profile municipality; the filer can correct it on the SmartPR form.",
+      "ownership": "smartpr_derived"
+    },
+    {
+      "pdfField": "Cantidad de Cuerdas_3",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 411.84,
+        "y": 827.28,
+        "width": 122.04,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Plant cuerdas — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Tenencia Legal",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 198.48,
+        "y": 794.88,
+        "width": 336.12,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Plant legal tenure — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow1",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 30.48,
+        "y": 660.36,
+        "width": 550.32,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "By-products table, row 1 (free text) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 30.48,
+        "y": 595.08,
+        "width": 550.32,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "By-products table, row 2 (free text) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 31.08,
+        "y": 529.8,
+        "width": 116.76,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "By-products table, row 3, column 1 (Nombre de los Subproductos que Elabora) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3_2",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 150.6,
+        "y": 529.8,
+        "width": 135.24,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Row 3, column 2 (Nombre y Dirección de los Agricultores) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3_3",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 288.6,
+        "y": 529.8,
+        "width": 136.68,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Row 3, column 3 (Producto Agrícola de PR y cantidad que le compra al agricultor) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3_4",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 428.04,
+        "y": 529.8,
+        "width": 152.76,
+        "height": 63.48
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 0.9,
+      "reviewed": true,
+      "reviewNote": "Row 3, column 4 (Nivel de desarrollo de la Planta Elaboradora) — written via directAcroValues.",
+      "ownership": "applicant"
+    },
+    {
+      "pdfField": "Firma del Agricultor o",
+      "pdfFieldType": "text",
+      "page": 4,
+      "rect": {
+        "x": 323.76,
+        "y": 144.48,
+        "width": 186.12,
+        "height": 28.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "The farmer's (or authorized representative's) signature line — always hand-signed on the printed form; never written by SmartPR.",
+      "ownership": "signature"
+    },
+    {
+      "pdfField": "14a Ingreso Bruto Anual A  B",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 277.2,
+        "y": 844.2,
+        "width": 102.24,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "14a header box inside section 23, which the printed form reserves for the Department's agronomist — agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 257.64,
+        "y": 788.64,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved against the widget rect vs. the text layer (257.64, 788.64, page 5): the 'Ingresos Agrícolas: $' box of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_2",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 503.04,
+        "y": 788.64,
+        "width": 36,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (503.04, 788.64, page 5): the 'Ingresos No Agrícolas o Agrícolas No Elegibles: $' box of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_3",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 259.56,
+        "y": 774.48,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (259.56, 774.48, page 5): the 'Ingreso Bruto: $' box in column A of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_4",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 501.48,
+        "y": 774.48,
+        "width": 36.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (501.48, 774.48, page 5): the 'Sueldo del Solicitante: $' box in column B of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_5",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 503.16,
+        "y": 760.32,
+        "width": 36.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (503.16, 760.32, page 5): the 'Sueldo del Cónyuge: $' box of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_6",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 503.16,
+        "y": 746.4,
+        "width": 36.12,
+        "height": 13.08
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (503.16, 746.40, page 5): the 'Renta: $' box of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_7",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 256.44,
+        "y": 704.16,
+        "width": 48.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (256.44, 704.16, page 5): the 'Otros: $' box in column A of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_8",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 504.36,
+        "y": 732.24,
+        "width": 36.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (504.36, 732.24, page 5): the 'Ingreso Bruto: $' box in column B of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_9",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 505.08,
+        "y": 718.2,
+        "width": 36.12,
+        "height": 13.2
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (505.08, 718.20, page 5): the 'Pensiones: $' box of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_10",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 502.8,
+        "y": 704.16,
+        "width": 36.24,
+        "height": 13.2
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved (502.80, 704.16, page 5): the 'Otros: $' box in column B of the 14a table — agency agronomist only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "14b Porcentaje de Ingreso Agrícola",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 295.8,
+        "y": 675,
+        "width": 120.36,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "14b is computed by the agency agronomist inside section 23 — agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "RECOMENDACIÓN 1",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 195.36,
+        "y": 620.64,
+        "width": 342.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Recommendation mark — completed by the agency agronomist, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "RECOMENDACIÓN 2",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 592.8,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Recommendation mark — completed by the agency agronomist, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "1",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 566.28,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "2",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 539.88,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "3",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 513.12,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "4",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 486.72,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "5",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 460.2,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "6",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 433.56,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "7",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 407.04,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "8",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 380.4,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "9",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 354,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "10",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 327.48,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Numbered recommendation write-up line in section 23 — the agency agronomist's evaluation, never SmartPR's.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "Cumple",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 102.48,
+        "y": 272.28,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Agency compliance determination (Cumple) — marked by the area agronomist, never SmartPR.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "No Cumple",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 102.48,
+        "y": 243.96,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Agency compliance determination (No Cumple) — marked by the area agronomist, never SmartPR.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "undefined_11",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.76,
+        "y": 143.16,
+        "width": 60,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Resolved against the widget rect vs. the text layer (71.76, 143.16, page 5): the (Día)/(Mes)/(Año) date line before the area agronomist's signature — agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "Firma del Agrónomo de Área",
+      "pdfFieldType": "text",
+      "page": 5,
+      "rect": {
+        "x": 350.64,
+        "y": 143.16,
+        "width": 186.12,
+        "height": 13.32
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "The area agronomist's signature — agency staff, never written by SmartPR.",
+      "ownership": "signature"
+    },
+    {
+      "pdfField": "1_2",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 836.28,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "2_2",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 809.4,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "3_2",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 782.76,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "1_3",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 702.72,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "2_3",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 675.96,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "3_3",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 649.32,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "4_2",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 622.68,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "1_4",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 542.64,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "2_4",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 515.76,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "3_4",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 489.24,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 observation line ('OBSERVACIONES Y/O VALIDACIÓN DEL DIRECTOR REGIONAL') — the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "Día",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.76,
+        "y": 339.12,
+        "width": 60,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "Section 24 date line — completed with the regional director's validation, agency only.",
+      "ownership": "government_only"
+    },
+    {
+      "pdfField": "Firma del Director Regional",
+      "pdfFieldType": "text",
+      "page": 6,
+      "rect": {
+        "x": 350.64,
+        "y": 339.12,
+        "width": 186.12,
+        "height": 25.8
+      },
+      "canonicalField": null,
+      "transform": "none",
+      "confidence": 1,
+      "reviewed": true,
+      "reviewNote": "The regional director's signature — agency staff, never written by SmartPR.",
+      "ownership": "signature"
+    }
+  ]
+}

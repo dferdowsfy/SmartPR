@@ -52,6 +52,21 @@ const PATTERNS: NamePattern[] = [
     secondary: { prompt: "Already have the signed attestation?", label: "Upload signed attestation", helper: "Accepted: PDF, JPG, PNG" },
   },
   {
+    test: /contractor|constructor|urbanizador/i,
+    icon: "blue",
+    primaryStart: "Complete DACO form",
+    secondary: { prompt: "Already have the license?", label: "Upload contractor license", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
+    // One card serves BOTH patente filings (PA01 annual declaration for
+    // operating businesses, PA02 provisional application for new ones), so the
+    // copy stays form-neutral: "filed" covers both.
+    test: /patente/i,
+    icon: "blue",
+    primaryStart: "Complete patente form",
+    secondary: { prompt: "Already filed?", label: "Upload filed document", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
     test: /permiso ?[uú]nico|single business permit/i,
     icon: "purple",
     primaryStart: "Complete permit application",
@@ -68,6 +83,28 @@ const PATTERNS: NamePattern[] = [
     icon: "gray",
     primaryStart: "Complete application",
     secondary: { prompt: "Already have this?", label: "Upload proof of insurance", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
+    test: /agricult|bona fide/i,
+    icon: "green",
+    primaryStart: "Complete bona fide farmer application",
+    secondary: { prompt: "Already have your bona fide farmer certification?", label: "Upload certification", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
+    test: /customs broker|customs bond|fianza de aduana/i,
+    icon: "blue",
+    primaryStart: "Complete CBP bond form",
+    secondary: { prompt: "Already have a customs bond?", label: "Upload customs bond", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
+    // The NPDES industrial application is a two-form EPA package (Form 3510-1
+    // + Form 3510-2C) under one requirement, so the copy stays package-level:
+    // "package" covers both forms, and the upload prompt covers a signed or
+    // already-filed package.
+    test: /npdes|wastewater|descarga industrial/i,
+    icon: "blue",
+    primaryStart: "Complete EPA NPDES package",
+    secondary: { prompt: "Already have the signed/filed package?", label: "Upload signed package", helper: "Accepted: PDF, JPG, PNG" },
   },
   {
     test: /(incorpor|corporat|registr.* state|estado|articles)/i,

@@ -92,6 +92,27 @@ test("CORPREG06 is mapped to DOC_LLP_REGISTRATION, never DOC_ARTICLES_ORGANIZATI
   assert.notEqual(def?.requirementId, "DOC_ARTICLES_ORGANIZATION");
 });
 
+test("patente municipal routes PA01 for operating businesses, PA02 for new ones", () => {
+  // One requirement id, two filings: the annual Declaración de Volumen de
+  // Negocios (PA01) for businesses already operating in PR, the provisional
+  // application (PA02) for new businesses. Without these rows the requirement
+  // card falls through to upload-only and neither fillable form surfaces.
+  const operating = canonical({ formationStatus: "formed_in_puerto_rico" });
+  assert.equal(resolveFormId("DOC_PATENTE_MUNICIPAL", operating), "FORM_PR_PATENTE_ANUAL");
+
+  const forming = canonical({ formationStatus: "not_formed" });
+  assert.equal(resolveFormId("DOC_PATENTE_MUNICIPAL", forming), "FORM_PR_PATENTE_MUNICIPAL");
+
+  const foreign = canonical({ formationStatus: "formed_outside_puerto_rico" });
+  assert.equal(resolveFormId("DOC_PATENTE_MUNICIPAL", foreign), "FORM_PR_PATENTE_MUNICIPAL");
+
+  const annualEntry = getRegistryEntry("FORM_PR_PATENTE_ANUAL");
+  assert.equal(annualEntry?.requirementId, "DOC_PATENTE_MUNICIPAL");
+  assert.equal(annualEntry?.displayForm, true);
+  const provEntry = getRegistryEntry("FORM_PR_PATENTE_MUNICIPAL");
+  assert.equal(provEntry?.displayForm, true);
+});
+
 // --- 8: shared intake pre-population ---------------------------------------
 
 test("8. shared intake values pre-populate the correct fields", () => {

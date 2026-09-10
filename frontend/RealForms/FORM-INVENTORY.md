@@ -29,6 +29,13 @@ Statuses used here:
 | SS-4 — Application for EIN | IRS (federal) | `DOC_EIN` | Official PDF (AcroForm) | `deliverableOutput.e2e.test.ts` |
 | **PA02 — Solicitud de Patente Provisional** | OCAM (statewide municipal) | `DOC_PATENTE_MUNICIPAL` | Official PDF (AcroForm) | `pa02.e2e.test.ts` |
 | **NC001 — Solicitud de Registro de Nombre Comercial (Trade Name / DBA)** | PR Dept. of State | `DOC_DBA_REGISTRATION` | Official PDF (overlay) | `nc001.e2e.test.ts` |
+| **DACOUC01 — Solicitud de Licencia para Urbanizador y/o Constructor (DACO, Rev. Ene 2019 v2)** | DACO (Dept. de Asuntos del Consumidor) | `DOC_CONTRACTOR_LICENSE` | Official PDF (overlay) | `dacouc01.e2e.test.ts` |
+| **PA01 — Declaración de Volumen de Negocios (OGP PA01 – REV FEBRERO 2025)** | Municipal finance office (OGP statewide form) | `DOC_PATENTE_MUNICIPAL` | Official PDF (AcroForm) | `pa01.e2e.test.ts` |
+| **AGRIIND01 — Solicitud Agricultor Bona Fide (Para Individuos), DA-OCAB-05 Rev. ABRIL 2021** | Departamento de Agricultura (Gobierno de Puerto Rico) | `DOC_AGRICULTURE_REGISTRATION` | Official PDF (AcroForm) | `agriind01.e2e.test.ts` |
+| **AGRICORP01 — Solicitud Agricultor Bona Fide (Corporaciones, Sociedades Especiales o Sucesiones), DA-OCAB-05 (Corporaciones) Rev. ABRIL 2021** | Departamento de Agricultura (Gobierno de Puerto Rico) | `DOC_AGRICULTURE_REGISTRATION` | Official PDF (overlay) | `agricorp01.e2e.test.ts` |
+| **CBP301 — CBP Form 301, Customs Bond (04/24)** | U.S. Customs and Border Protection (CBP), Dept. of Homeland Security (federal) | `DOC_CUSTOMS_BROKER_BOND` | Official PDF (AcroForm) | `cbp301.e2e.test.ts` |
+| **EPAFORM1 — EPA Form 3510-1, NPDES Application: General Information (Rev. 07/2023)** | U.S. EPA Region 2 — Caribbean Environmental Protection Division, Guaynabo (federal) | `DOC_NPDES_INDUSTRIAL` | Official PDF (AcroForm) | `epaform1.e2e.test.ts` |
+| **EPAFORM2C — EPA Form 3510-2C, NPDES Application for Existing Industrial Dischargers (Rev. 07/2023)** | U.S. EPA Region 2 — Caribbean Environmental Protection Division, Guaynabo (federal) | `DOC_NPDES_INDUSTRIAL` | Official PDF (AcroForm) | `epaform2c.e2e.test.ts` |
 
 ### PA02 notes (added 2026-09-08)
 
@@ -80,6 +87,273 @@ Four things are left blank **on purpose**, each covered by a test:
 > Do **not** conflate the first-use-in-commerce date with `business.start_date`.
 > They are different legal facts and the registry treats the use date as sworn
 > testimony.
+
+### DACOUC01 notes (added 2026-09-10)
+
+The contractor-license application is issued by **DACO (Departamento de
+Asuntos del Consumidor)**, Rev. Ene 2019 v2, sourced from docs.pr.gov (the
+Gobierno de PR document repository). **KB discrepancy — flagged, not changed:**
+`documents.json` lists `DOC_CONTRACTOR_LICENSE`'s agency as "Department of
+State"; the official form is DACO's. Do not change the KB entry without
+review.
+
+Same key-field scope as LUMAINT01: 18 overlay coordinates on page 1 only
+(applicant name, phone, physical and mailing addresses, the two
+license-request checkbox rows, activity type, organization type). Every x/y
+was read from the PDF's own text-content layer (the two long address blanks
+are vector ruled lines found by dark-run scan at 150 dpi), then the
+populated PDF was re-rendered and visually checked — `reviewed: true`
+throughout. The thin ruled lines above fields 5, 6, 7 and 8 are section
+dividers, not writable blanks (verified against the render).
+
+Three things are left blank **on purpose**, each covered by a test:
+
+* **Pages 8–9** — the DECLARACIÓN JURADA (sworn before a notary) and the
+  FORMULARIO DE RESPONSABILIDAD POR PROYECTOS A EJECUTARSE (officer
+  signature + notary affidavit).
+* **Questions 8–15** — individual professional licenses, corporation/society
+  details, officers and directors, financial standing, projects, and the
+  annex checklist: deep conditional applicant data beyond the key-field
+  scope. The filer completes them on the printed PDF.
+* **The form has no official-use box** — nothing to wall off there.
+
+Fees per the annex checklist in the official document set (page 6):
+regular license $75, provisional license $50. `requiresPortalVerification`
+is true — fees change and the paper revision is from 2019.
+
+### PA01 notes (added 2026-09-10)
+
+PA01 is the **annual** municipal patente declaration — the Declaración de
+Volumen de Negocios every Puerto Rico business files each contributive year.
+It is a different filing from PA02 (the one-time provisional application for
+new businesses); both live under `DOC_PATENTE_MUNICIPAL`, and routing sends
+already-operating businesses to PA01 and new businesses to PA02.
+
+**Provenance caveat:** the file is a genuine OGP-issued REV FEBRERO 2025 —
+the header "GOBIERNO DE PUERTO RICO / OGP PA01 – REV FEBRERO 2025" was
+verified inside the PDF — but the only accessible copy is third-party-hosted
+(Colegio de CPA); no OGP/OCAM direct host was found.
+
+SmartPR maps the 36 native AcroForm fields of the page-1 filing header (plus
+the page-2 certification signature block, marked never-write). The
+tipo-de-patente and tipo-de-negocio choices are independent checkboxes in the
+PDF, not a radio group — population checks exactly one of each set and
+explicitly unchecks the rest.
+
+Left blank **on purpose**, each covered by a test:
+
+* **Encasillado 1 and the pages 2–4 computation schedules** — the taxpayer's
+  (or their CPA's) computation from the business's books. Not mapped at all;
+  the filer completes them by hand.
+* **CERTIFICACION signature line and date** — signed by hand at filing.
+* **The filer's social security number** — the identifier blank is shared, so
+  SmartPR prints the business EIN into it only for Corporación/Sociedad. For
+  Individuo/Entidad Ignorada it stays blank for the filer to hand-write their
+  own SSN; SmartPR never stores or prints a person's identifier.
+
+---
+
+### AGRIIND01 notes (added 2026-09-10)
+
+AGRIIND01 is the **natural-person** variant of the Bona Fide Farmer
+certification: "SOLICITUD AGRICULTOR BONA FIDE (PARA INDIVIDUOS) POR LA LEY NÚM.
+60 DE 1 DE JULIO DE 2019", Modelo DA-OCAB-05, Rev. ABRIL 2021. The
+juridical-entity (corporación) variant is implemented as AGRICORP01 (below).
+Routing sends `sole_proprietorship` here explicitly, and an
+ungated row is the honest catch-all for `other`/unmatched entity types.
+
+6 pages, 136 native AcroForm text fields, all human-reviewed against the PDF's
+text layer (`form-mappings/AGRIIND01.json`: 136/136 reviewed, 84 applicant, 8
+smartpr_derived, 41 government_only, 3 signature). The mapping notes record
+every field literally named `undefined` in the raw inventory (the section-23
+14a income-table dollar boxes and the agronomist date line on page 5), and
+confirm the 19(a)/19(b) Km. blanks have **no AcroForm widgets** — they can
+only be completed by hand on the printed form.
+
+Left blank **on purpose**, each covered by a test:
+
+* **The three SSN boxes** (personal, patronal, spouse) — personal government
+  identifiers SmartPR does not store (PA02 precedent). The filer writes them by
+  hand; an acknowledgement checkbox gates the form instead.
+* **"Firma del Agricultor o Representante Autorizado" and the date line** —
+  signed by hand at filing.
+* **Section 23** (the agronomist's 14a/14b income computation, RECOMENDACIÓN,
+  the numbered 1–10 evaluation, Cumple/No Cumple, agronomist signature) and
+  **section 24** (regional director observations and signature) — the agency's
+  evaluation, never SmartPR's to complete.
+* **The "Para Uso Interno" header** (OFICINA REGIONAL, MUNICIPIO, Núm.
+  Solicitud) — internal agency fields.
+
+Deliberate UI simplifications (each still maps the PDF's available fields):
+
+* Fishing (20) and the processing plant (21) use one or two free-text rows
+  each instead of multi-column business tables.
+* The finca "negocios en la finca" tables use two free-text rows plus a third
+  row split across the form's four columns.
+* There is deliberately no `owner_address` field: the canonical owner's
+  address is derived data with no single settable path, so a UI field would
+  collect a value that never reaches the PDF (PA02 precedent). Population
+  fills it without one.
+
+No fee is printed on the form; the notices advise confirming any cost with
+the Department of Agriculture's regional office.
+
+### AGRICORP01 notes (added 2026-09-10)
+
+AGRICORP01 is the **juridical-entity** variant of the Bona Fide Farmer
+certification: "SOLICITUD AGRICULTOR BONA FIDE (CORPORACIONES, SOCIEDADES
+ESPECIALES O SUCESIONES) POR LA LEY NÚM. 60 DE 1 DE JULIO DE 2019", Modelo
+DA-OCAB-05 (Corporaciones), Rev. ABRIL 2021. Routing sends the eight
+corporation/partnership entity types here explicitly, above the individuo
+fallback rows (first match wins).
+
+7 pages, flat PDF with no AcroForm fields — populated by coordinate overlay
+(`form-mappings/AGRICORP01.json`: 167/167 reviewed, 153 applicant, 7
+smartpr_derived, 4 government_only, 3 signature). Every placement was
+measured from the PDF's text layer and visually verified against a populated
+render at 150 DPI; no nudges were needed.
+
+Unlike AGRIIND01, the employer identifier (2. Seguro Social Patronal) and the
+section-6 member SSNs ARE written to the PDF, passed as `sensitive: true` —
+population metadata records only `[provided]`, never the raw number (SS-4
+precedent). The individuo variant's personal SSN boxes stay blank instead.
+
+Left blank **on purpose**, each covered by a test:
+
+* **"Firma del Agricultor o Representante Autorizado"** — hand-signed at
+  filing; an acknowledgement checkbox gates the form instead.
+* **The "Para Uso Interno" header** (OFICINA REGIONAL, MUNICIPIO, Núm.
+  Solicitud) — internal agency fields.
+* **Section 14** (the agronomist's income computation, RECOMENDACIÓN,
+  Cumple/No Cumple, agronomist signature) and **section 15** (regional
+  director observations, date, signature) — the agency's evaluation, never
+  SmartPR's to complete.
+* **The Sucesión entity-kind box** has no canonical mapping — the filer marks
+  it by hand on the printed form when it applies.
+
+Deliberate UI simplifications: section 13's 15 ruled lines are one multi-line
+narrative; section 6 is 6 member rows (name + SSN); the signature date is
+split into the form's numeric Día/Mes/Año blanks.
+
+No fee is printed on the form; the notices advise confirming any cost with
+the Department of Agriculture's regional office.
+
+### CBP301 notes (added 2026-09-10)
+
+CBP301 is the **federal** CBP Form 301 "CUSTOMS BOND" under 19 CFR Part 113 —
+"CBP Form 301 (04/24)" on the form face, posted by CBP (cbp.gov) 04/30/2024.
+It is the first federal (non-PR) form in the library and routes from
+`DOC_CUSTOMS_BROKER_BOND` (import/export, freight forwarding, logistics,
+wholesale distribution) with no entity-type gate. 5 pages, 114 fillable
+AcroForm widgets, all inventoried in `form-mappings/CBP301.json`; the
+checkbox↔limit-of-liability pairings were verified by widget-rect proximity
+against the PDF's own text layer (activity 15/16/17 pair with
+LimitofLiability16/17/18 — there is no LimitofLiability15), and the ambiguous
+`nameaddress[0]`/`namephysical[0]` widgets were placed by rect (principal
+block vs. surety block).
+
+Two caveats travel with this artifact and are **not** hidden — they are in the
+catalog usage notes and the form's own notices:
+
+* **OMB approval expired-but-valid:** CBP's own page notes "The OMB Date is
+  expired, however this form is still valid for use and is under review by OMB
+  awaiting a new expiration date" (OMB No. 1651-0050, expired 08/31/2025).
+* **Paper is the legacy path:** in practice continuous bonds are filed
+  electronically through CBP's eBond process in ACE, arranged by the
+  importer's customs broker and surety. The form is presented as a preparation
+  copy for the broker/surety, and the notices advise confirming with them
+  which path they use before filing paper.
+
+Key-field scope only: page-1 Section I (single-transaction vs. continuous +
+dates), one Section II activity + its limit of liability (the form says
+"Check one box only" — population enforces exactly one checked box and
+clears stale amounts on unselected activities), principal identity, and the
+surety identity basics.
+
+Left blank **on purpose**, each covered by a test:
+
+* **Both signature lines** (principal and surety) — signed by hand.
+* **BOND NUMBER (Assigned by CBP)** — the CBP USE ONLY box; assigned by CBP.
+* **The seal-declaration checkboxes** ("affix seal … 19 CFR 113.25"), the
+  **surety-requested mailing address**, and **page 2** (co-principal,
+  co-surety, Section III trade names) — the filer, broker or surety completes
+  these by hand.
+
+No fee is printed on the form — the bond premium is set by the surety, not by
+CBP.
+
+### EPAFORM1 notes (added 2026-09-10)
+
+EPAFORM1 is **EPA Form 3510-1, "Application for Permit to Discharge Wastewater:
+General Information"**, Revised 07/31/2023, OMB No. 2040-0004 (expires
+07/31/2026). It is the general-information cover **every** NPDES applicant
+files; for an existing manufacturing, commercial, mining, or silvicultural
+discharger it must accompany Form 2C — the two forms are one package under
+`DOC_NPDES_INDUSTRIAL`, and routing exposes both (the requirement card opens a
+package picker, never just one form).
+
+**Jurisdiction note:** Puerto Rico is NOT an NPDES-delegated state. EPA Region
+2's Caribbean Environmental Protection Division (Guaynabo) issues NPDES permits
+in Puerto Rico directly, so this federal form is the correct PR artifact. (The
+Junta de Calidad Ambiental handles the separate state water-quality
+certification, not the NPDES permit itself.)
+
+23 PDF pages, 112 native AcroForm fields, all human-reviewed
+(`form-mappings/EPAFORM1.json`). Pages 1–19 are instructions; the application
+itself is PDF pages 20–23 (Sections 1–11). SmartPR writes the applicant-owned
+text fields via the native AcroForm — EPA ID and NPDES permit numbers,
+SIC/NAICS codes, the split facility/mailing/operator address boxes (the PDF
+has separate street/city/state/ZIP boxes, so population splits the canonical
+address instead of stuffing a multiline string), the cooling-water source, and
+any existing-permit numbers, which check the matching Section 6 box
+automatically. Facility/contact/operator identity and the nature-of-business
+text resolve from the canonical profile.
+
+Left blank **on purpose**, each covered by a test:
+
+* **Every Yes/No and multi-option radio** (Section 1 screening, 4.2, 4.3
+  operator status, 5.1 Indian land, 7.1 topographic map, 9.1 cooling water) —
+  the Yes/No pairs share one field name per pair in a checkbox construct the
+  PDF library cannot address separately. The filer marks them by hand on the
+  printed form.
+* **Section 10 variance requests** and the **Section 11.1 checklist** of
+  completed sections — marked by hand from the finished package.
+* **The Section 11.2 certification block** (printed name, official title,
+  date signed, signature) — the responsible official completes and hand-signs
+  it. EPA does not accept electronic signatures on this form.
+
+### EPAFORM2C notes (added 2026-09-10)
+
+EPAFORM2C is **EPA Form 3510-2C, "Application for an NPDES Permit to Discharge
+Wastewater: Existing Manufacturing, Commercial, Mining, and Silvicultural
+Dischargers"**, Revised 07/31/2023, OMB No. 2040-0004 (expires 07/31/2026).
+It is the substantive application, filed **together with Form 1** — same
+package, same Region 2 permitting authority as above.
+
+48 PDF pages, 3,067 native AcroForm fields — the largest form in the library.
+Scope is deliberately narrow and honest: SmartPR maps only the non-technical
+applicant fields — the running header (facility name from the canonical
+profile; EPA ID and NPDES permit numbers) and the Section 1.1 outfall basics
+for the **first two outfalls** (outfall number and receiving-water name). The
+mapping JSON reviews exactly those fields plus the never-write fields; the
+remaining ~3,050 engineering/lab widgets keep the inspector defaults and are
+never written.
+
+Left blank **on purpose**, each covered by a test:
+
+* **All effluent-characteristics tables (Sections 7+)** — quantitative lab
+  sampling data prepared with the facility's environmental engineer.
+* **The outfall latitude/longitude boxes** — both boxes share one field name
+  per row, so they cannot be written separately.
+* **The Section 1 screening yes/no boxes** — anonymous widgets the PDF
+  library cannot address.
+* **Any third or further outfall row** — added by hand when it applies.
+* **The Section 12.2 certification block** (printed name, official title,
+  date signed, signature) — hand-signed under penalty of law. EPA does not
+  accept electronic signatures on this form.
+
+No application fee is printed on either form; the notices advise confirming
+any fee and the current submittal channel with EPA Region 2 before filing.
 
 ---
 

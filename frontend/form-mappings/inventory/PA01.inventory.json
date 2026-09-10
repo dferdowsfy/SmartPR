@@ -1,0 +1,1598 @@
+{
+  "formCode": "PA01",
+  "sourceFile": "RealForms/PA01-Declaracion-Volumen-Negocios-Rev-Feb-2025.pdf",
+  "checksum": "sha256:d7b273d1bcbeb2cd8c06c7b5ad1334db61b95fe9d23418e621228cbef445aba6",
+  "pageCount": 5,
+  "pageSizes": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 2,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 3,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 4,
+      "width": 612,
+      "height": 792
+    },
+    {
+      "page": 5,
+      "width": 612,
+      "height": 792
+    }
+  ],
+  "hasAcroForm": true,
+  "fieldCount": 130,
+  "fields": [
+    {
+      "name": "Planilla Enmendada",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 19.56,
+        "y": 684.36,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Planilla Final",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 118.8,
+        "y": 684.36,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipio de",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 487.92,
+        "y": 707.42,
+        "width": 101.52,
+        "height": 19.34
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Normal",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 19.56,
+        "y": 629.4,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Exenta",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 66.6,
+        "y": 629.4,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Oficio",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 149.28,
+        "y": 629.4,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Otros",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 19.56,
+        "y": 614.88,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Año Fiscal",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 208.08,
+        "y": 610.47,
+        "width": 59.88,
+        "height": 15.87
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Núm de Teléfono del Negocio",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 274.45,
+        "y": 610.47,
+        "width": 119.39,
+        "height": 16.44
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Número de Seguro Social o Número de Identificación Patronal",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 401.42,
+        "y": 610.27,
+        "width": 157.79,
+        "height": 17.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de la Persona Sujeta al Pago de Patente",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 19.62,
+        "y": 563.26,
+        "width": 373.78,
+        "height": 17.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Número de Identificación Municipal",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 399.65,
+        "y": 565.02,
+        "width": 148.08,
+        "height": 17.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Correo electrónico de la persona contacto",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 190.34,
+        "y": 540.17,
+        "width": 399.94,
+        "height": 15.99
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Dirección Física del Negocio u Oficina de Servicio",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 14.76,
+        "y": 503.64,
+        "width": 379.08,
+        "height": 19.2
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Zona Postal",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 396.56,
+        "y": 504.51,
+        "width": 86.16,
+        "height": 18.33
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 489.48,
+        "y": 509.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_2",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 514.32,
+        "y": 509.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Clase de Industria Negocio o Servicio",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 20.5,
+        "y": 458.39,
+        "width": 152.83,
+        "height": 16.88
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Individuo",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 212.76,
+        "y": 465.12,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Sociedad",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 212.76,
+        "y": 453.6,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Corporación",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 303.12,
+        "y": 465.12,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Entidad Ignorada",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 303.48,
+        "y": 453.6,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha en que Estableció el Negocio Mes Día Año",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 406.72,
+        "y": 451.44,
+        "width": 40.18,
+        "height": 13.15
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Dirección Postal del Negocio",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 19.18,
+        "y": 411.38,
+        "width": 374.66,
+        "height": 19.08
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Zona Postal_2",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 400.98,
+        "y": 411.82,
+        "width": 81.3,
+        "height": 19.53
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_3",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 489.48,
+        "y": 421.2,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_4",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 514.32,
+        "y": 421.2,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Zona Postal_3",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 401.42,
+        "y": 371.31,
+        "width": 80.86,
+        "height": 17.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_5",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 489.48,
+        "y": 377.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_6",
+      "type": "checkbox",
+      "page": 1,
+      "rect": {
+        "x": 514.32,
+        "y": 377.16,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de Negocios Del encasillado 6 Línea 27 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 497.73,
+        "y": 347.58,
+        "width": 89.5,
+        "height": 13.54
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Tipo de Patente Fijado por la Legislatura Municipal Del encasillado 6 Línea 29 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 497.11,
+        "y": 331.18,
+        "width": 89.79,
+        "height": 14.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Patente a Pagar Del encasillado 6 Línea 29 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.37,
+        "y": 313.46,
+        "width": 91.25,
+        "height": 13.88
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Penalidad Del Encasillado 6 Línea 32 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.49,
+        "y": 298.51,
+        "width": 91.85,
+        "height": 12.99
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Descuento Del encasillado 6 Línea 33 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.36,
+        "y": 280.99,
+        "width": 91.77,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Pago en exceso de años anteriores",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.27,
+        "y": 263.71,
+        "width": 92.24,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Pago con la solicitud de prórroga",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 496.2,
+        "y": 247.44,
+        "width": 91.85,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "34 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.85,
+        "y": 214.53,
+        "width": 92.55,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Total a pagar Del encasillado 6 Línea 35 Página 4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.98,
+        "y": 196.59,
+        "width": 92.03,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Acreditar al año",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.12,
+        "y": 163.46,
+        "width": 93.21,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "A reintegrar De haber remanente",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 495.35,
+        "y": 145.2,
+        "width": 92.61,
+        "height": 14.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Certifico que como entidad ignorada según definido en la Sección 101001 en la Ley 12011 según enmendada conocida como Código",
+      "type": "checkbox",
+      "page": 2,
+      "rect": {
+        "x": 19.56,
+        "y": 759.6,
+        "width": 9.96,
+        "height": 9.96
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 27.56,
+        "y": 640.12,
+        "width": 61.85,
+        "height": 16.04
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Firma de la persona sujeta al pago de patente",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 355.8,
+        "y": 643.96,
+        "width": 175.56,
+        "height": 15.71
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Página 2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 495.42,
+        "y": 560.42,
+        "width": 94.02,
+        "height": 16.43
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_7",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 493.92,
+        "y": 470.89,
+        "width": 95.52,
+        "height": 19.74
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_8",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 332.37,
+        "y": 279.75,
+        "width": 67.71,
+        "height": 16.46
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_9",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.61,
+        "y": 98.12,
+        "width": 68.43,
+        "height": 19.18
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_10",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 495.57,
+        "y": 150.67,
+        "width": 93.87,
+        "height": 21.25
+      },
+      "readOnly": false
+    },
+    {
+      "name": "5 Intereses recibidos o devengados sobre préstamos",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 412.92,
+        "y": 389.41,
+        "width": 68.41,
+        "height": 13.91
+      },
+      "readOnly": false
+    },
+    {
+      "name": "15 Ingreso bruto del año de contabilidad inmediatamente anterior al actual",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.12,
+        "y": 750,
+        "width": 88.6,
+        "height": 15.62
+      },
+      "readOnly": false
+    },
+    {
+      "name": "16 Total de depósitos de la organización en Puerto Rico 17 Total de depósitos de sucursal es en este municipio",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 413.46,
+        "y": 713.07,
+        "width": 70.04,
+        "height": 17.01
+      },
+      "readOnly": false
+    },
+    {
+      "name": "fill_8",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.65,
+        "y": 659.75,
+        "width": 89.59,
+        "height": 17.52
+      },
+      "readOnly": false
+    },
+    {
+      "name": "fill_11",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 412.21,
+        "y": 509.33,
+        "width": 72.48,
+        "height": 16.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "fill_10",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.21,
+        "y": 549.23,
+        "width": 90.48,
+        "height": 17.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio no financiero",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.6,
+        "y": 475.02,
+        "width": 90.08,
+        "height": 16.94
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow1",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.96,
+        "y": 175.8,
+        "width": 144.84,
+        "height": 20.88
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow1",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.6,
+        "y": 175.8,
+        "width": 139.56,
+        "height": 20.88
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow1_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.96,
+        "y": 175.8,
+        "width": 144.84,
+        "height": 20.88
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow1_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.6,
+        "y": 175.8,
+        "width": 139.56,
+        "height": 20.88
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 153.72,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 153.72,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow2_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 153.72,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow2_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 153.72,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow3",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 131.64,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow3",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 131.64,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow3_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 131.64,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow3_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 131.64,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow4",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 109.56,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow4",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 109.56,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow4_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 109.56,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow4_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 109.56,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow5",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 87.48,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow5",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 87.48,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow5_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 87.48,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow5_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 87.48,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow6",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 14.52,
+        "y": 65.4,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow6",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 161.16,
+        "y": 65.4,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipios o JurisdiccionesRow6_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 302.52,
+        "y": 65.4,
+        "width": 144.84,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Volumen de negocios servicios prestadosRow6_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 449.16,
+        "y": 65.4,
+        "width": 139.56,
+        "height": 20.76
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text1",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 96.03,
+        "y": 706.86,
+        "width": 29.45,
+        "height": 13.61
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text2",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 251.26,
+        "y": 707.74,
+        "width": 28.57,
+        "height": 14.05
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text3",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 291.45,
+        "y": 706.97,
+        "width": 57.71,
+        "height": 14.49
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text4",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 372.02,
+        "y": 707.74,
+        "width": 30.34,
+        "height": 14.49
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text5",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 416.84,
+        "y": 707.3,
+        "width": 67.87,
+        "height": 14.93
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text6",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 58.73,
+        "y": 612.36,
+        "width": 77.58,
+        "height": 14.49
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text7",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 108.63,
+        "y": 629.14,
+        "width": 28.13,
+        "height": 14.94
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text8",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 455.25,
+        "y": 451.19,
+        "width": 37.84,
+        "height": 13.61
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text9",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 503.82,
+        "y": 450.75,
+        "width": 44.03,
+        "height": 15.38
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text10",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 18.55,
+        "y": 370.39,
+        "width": 338.55,
+        "height": 18.03
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text11",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 156.44,
+        "y": 160.62,
+        "width": 28.91,
+        "height": 12.51
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text12",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 144,
+        "y": 68.33,
+        "width": 28.91,
+        "height": 12.84
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text13",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 183.27,
+        "y": 68,
+        "width": 29.56,
+        "height": 12.84
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text14",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 223.2,
+        "y": 67.02,
+        "width": 28.91,
+        "height": 14.47
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text15",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 495.88,
+        "y": 540.39,
+        "width": 93.48,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text16",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 496.32,
+        "y": 516.54,
+        "width": 93.92,
+        "height": 17.58
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text17",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 373.48,
+        "width": 67.87,
+        "height": 14.94
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text18",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 356.7,
+        "width": 67.87,
+        "height": 14.93
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text19",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 412.86,
+        "y": 339.92,
+        "width": 68.31,
+        "height": 15.82
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text20",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 332.06,
+        "y": 260.97,
+        "width": 68.75,
+        "height": 17.58
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text21",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 228.64,
+        "width": 68.75,
+        "height": 16.7
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text22",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 413.3,
+        "y": 208.77,
+        "width": 69.19,
+        "height": 17.58
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text23",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 413.3,
+        "y": 694.49,
+        "width": 70.96,
+        "height": 15.38
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text24",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 497.67,
+        "y": 588.52,
+        "width": 91.27,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text25",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 412.86,
+        "y": 474.36,
+        "width": 71.4,
+        "height": 16.7
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text26",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.08,
+        "y": 439.27,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text27",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.21,
+        "y": 300.64,
+        "width": 46.65,
+        "height": 16.26
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text28",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.66,
+        "y": 281.19,
+        "width": 45.78,
+        "height": 15.82
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text29",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.66,
+        "y": 263.53,
+        "width": 45.78,
+        "height": 16.26
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text30",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.77,
+        "y": 245.42,
+        "width": 46.21,
+        "height": 16.7
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text31",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.77,
+        "y": 229.97,
+        "width": 45.77,
+        "height": 14.05
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text32",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 437.35,
+        "y": 212.75,
+        "width": 46.63,
+        "height": 14.93
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text33",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.2,
+        "y": 161.97,
+        "width": 89.51,
+        "height": 16.7
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text34",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.53,
+        "y": 139.98,
+        "width": 88.62,
+        "height": 15.82
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text35",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 498.08,
+        "y": 112.28,
+        "width": 89.49,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text36",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 393.88,
+        "y": 697.58,
+        "width": 89.95,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text37",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.2,
+        "y": 676.39,
+        "width": 90.83,
+        "height": 15.82
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text38",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.64,
+        "y": 652.54,
+        "width": 90.83,
+        "height": 16.26
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text39",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.08,
+        "y": 629.58,
+        "width": 90.83,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text40",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.32,
+        "y": 600.44,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text41",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.32,
+        "y": 532,
+        "width": 90.83,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text42",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.08,
+        "y": 526.26,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text43",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.64,
+        "y": 502.85,
+        "width": 91.27,
+        "height": 16.7
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text44",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 394.76,
+        "y": 509.04,
+        "width": 90.39,
+        "height": 15.82
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text45",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.08,
+        "y": 474.15,
+        "width": 90.39,
+        "height": 17.14
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text46",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 497.64,
+        "y": 440.59,
+        "width": 90.83,
+        "height": 16.26
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text47",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.53,
+        "y": 407.48,
+        "width": 89.07,
+        "height": 15.38
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text48",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.97,
+        "y": 382.75,
+        "width": 89.51,
+        "height": 16.26
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text49",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 499.41,
+        "y": 348.63,
+        "width": 89.06,
+        "height": 15.82
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Text50",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 498.97,
+        "y": 278.86,
+        "width": 89.51,
+        "height": 14.94
+      },
+      "readOnly": false
+    }
+  ],
+  "inspectedAt": "2026-09-10T09:46:34.212Z"
+}

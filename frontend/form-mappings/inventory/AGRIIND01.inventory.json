@@ -1,0 +1,1675 @@
+{
+  "formCode": "AGRIIND01",
+  "sourceFile": "RealForms/AGRI-Bonafide-Individuo.pdf",
+  "checksum": "sha256:3b0d0c755b243818ac02ffaeb54f2cee48ef3568a8751ab415df1e856925e7e2",
+  "pageCount": 6,
+  "pageSizes": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 2,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 3,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 4,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 5,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 6,
+      "width": 612,
+      "height": 1008
+    }
+  ],
+  "hasAcroForm": true,
+  "fieldCount": 136,
+  "fields": [
+    {
+      "name": "REGIONAL",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 318.84,
+        "y": 860.88,
+        "width": 94.8,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "MUNICIPIO",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 272.4,
+        "y": 835.2,
+        "width": 141.84,
+        "height": 24.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Núm Solicitud",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 151.08,
+        "y": 769.68,
+        "width": 95.52,
+        "height": 22.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "AÑO SOLICITADO",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 345.36,
+        "y": 661.32,
+        "width": 50.64,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "RENOVACIÓN",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 197.52,
+        "y": 571.56,
+        "width": 54.36,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "CASO NUEVO",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 483.12,
+        "y": 571.56,
+        "width": 56.76,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1 Nombre del Agricultor",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 244.2,
+        "y": 552.48,
+        "width": 294.24,
+        "height": 18.12
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2 Seguro Social Personal",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 245.52,
+        "y": 524.4,
+        "width": 123.84,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Patronal",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 426.48,
+        "y": 524.4,
+        "width": 111.96,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "3 Sexo",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 139.2,
+        "y": 496.32,
+        "width": 46.08,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Estado Civil",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 293.76,
+        "y": 496.32,
+        "width": 96.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "4 Fecha de nacimiento",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 236.76,
+        "y": 467.88,
+        "width": 300.24,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "5 Dirección Postal 1",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 210.12,
+        "y": 439.8,
+        "width": 324.24,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "5 Dirección Postal 2",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 89.88,
+        "y": 412.08,
+        "width": 444.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "6 Dirección Residencial 1",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 241.32,
+        "y": 385.08,
+        "width": 294.24,
+        "height": 26.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "6 Dirección Residencial 2",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 89.88,
+        "y": 357.48,
+        "width": 444.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "7 Teléfono",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 160.44,
+        "y": 330.36,
+        "width": 127.44,
+        "height": 26.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Celular",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 370.32,
+        "y": 330.36,
+        "width": 138.12,
+        "height": 26.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fax",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 136.8,
+        "y": 302.4,
+        "width": 151.08,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Email",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 366.48,
+        "y": 302.4,
+        "width": 143.28,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "8 Ocupación",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 178.32,
+        "y": 274.32,
+        "width": 168.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "9 Experiencia Agrícola años",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 274.08,
+        "y": 246,
+        "width": 72.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre del Cónyuge",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 269.28,
+        "y": 203.88,
+        "width": 270.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Seguro Social",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 231.12,
+        "y": 175.68,
+        "width": 306.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Ocupación",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 210.48,
+        "y": 147.6,
+        "width": 81.96,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Sexo",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 381.36,
+        "y": 147.6,
+        "width": 84.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha de Nacimiento",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 270.12,
+        "y": 119.28,
+        "width": 264.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Patrono",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 197.04,
+        "y": 91.32,
+        "width": 342.24,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Ingreso Anual cónyuge",
+      "type": "text",
+      "page": 1,
+      "rect": {
+        "x": 288.96,
+        "y": 63.24,
+        "width": 126.12,
+        "height": 26.64
+      },
+      "readOnly": false
+    },
+    {
+      "name": "16Negocio Nuevo",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 184.08,
+        "y": 885.96,
+        "width": 36.12,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1 Nuevos a crearse",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 268.92,
+        "y": 853.32,
+        "width": 42.24,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2 Actuales",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 215.76,
+        "y": 832.2,
+        "width": 58.68,
+        "height": 20.16
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fijos",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 193.44,
+        "y": 811.08,
+        "width": 81,
+        "height": 20.16
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Temporeros",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 238.32,
+        "y": 789.96,
+        "width": 36.12,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "17Negocio Existente",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 202.56,
+        "y": 768.84,
+        "width": 48.12,
+        "height": 20.16
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1 Nuevos a crearse_2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 268.92,
+        "y": 736.2,
+        "width": 42.24,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2 Actuales_2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 215.76,
+        "y": 715.32,
+        "width": 36.12,
+        "height": 19.92
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fijos_2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 197.4,
+        "y": 694.68,
+        "width": 42.12,
+        "height": 19.68
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Temporeros_2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 238.44,
+        "y": 673.56,
+        "width": 36.12,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "18Inversión en Negocio Presente Año",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 304.56,
+        "y": 635.88,
+        "width": 235.32,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "19aLocalización de la Finca Núm de Carr",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 339,
+        "y": 571.68,
+        "width": 47.28,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Hm",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 490.08,
+        "y": 571.68,
+        "width": 42,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Bo",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 131.04,
+        "y": 538.68,
+        "width": 171.96,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Sector",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 374.4,
+        "y": 538.68,
+        "width": 162.12,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipio",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 173.76,
+        "y": 506.28,
+        "width": 360.12,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Núm Catastro de estar disponible",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 319.32,
+        "y": 473.88,
+        "width": 216.48,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Cantidad de Cuerdas",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 239.64,
+        "y": 441.48,
+        "width": 120.24,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Propias",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 155.4,
+        "y": 409.08,
+        "width": 87.84,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha en que se adquirió",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 442.56,
+        "y": 409.08,
+        "width": 66.24,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Usufructos",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 176.4,
+        "y": 376.68,
+        "width": 70.08,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha de otorgación",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 412.92,
+        "y": 376.68,
+        "width": 96.36,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Arrendadas",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 179.52,
+        "y": 344.28,
+        "width": 63.96,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha de vencimiento",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 422.28,
+        "y": 344.28,
+        "width": 84.24,
+        "height": 20.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow1",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 28.56,
+        "y": 229.92,
+        "width": 550.32,
+        "height": 47.28
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 28.56,
+        "y": 180.96,
+        "width": 550.32,
+        "height": 47.16
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 29.16,
+        "y": 131.76,
+        "width": 116.52,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_2",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 148.44,
+        "y": 131.76,
+        "width": 112.92,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_3",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 264.12,
+        "y": 131.76,
+        "width": 154.92,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_4",
+      "type": "text",
+      "page": 2,
+      "rect": {
+        "x": 421.8,
+        "y": 131.76,
+        "width": 157.08,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Hm_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 486.48,
+        "y": 902.52,
+        "width": 47.4,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Bo_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 131.04,
+        "y": 869.52,
+        "width": 213.84,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Sector_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 389.52,
+        "y": 869.52,
+        "width": 145.8,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipio_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 173.76,
+        "y": 837.12,
+        "width": 360.12,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Núm Catastro de estar disponible_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 319.32,
+        "y": 804.72,
+        "width": 216.48,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Cantidad de Cuerdas_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 239.64,
+        "y": 772.32,
+        "width": 126.24,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Propias_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 155.4,
+        "y": 739.92,
+        "width": 87.84,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha en que se adquirió_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 442.56,
+        "y": 739.92,
+        "width": 66.24,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Usufructos_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 176.4,
+        "y": 707.52,
+        "width": 70.08,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha de otorgación_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 412.92,
+        "y": 707.52,
+        "width": 96.36,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Arrendadas_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 179.52,
+        "y": 675.36,
+        "width": 69.96,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Fecha de vencimiento_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 422.28,
+        "y": 675.36,
+        "width": 90.24,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow1_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 30.48,
+        "y": 549.36,
+        "width": 550.32,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow2_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 30.48,
+        "y": 484.2,
+        "width": 550.32,
+        "height": 63.36
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_5",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 31.08,
+        "y": 418.92,
+        "width": 116.52,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_6",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 150.36,
+        "y": 418.92,
+        "width": 117.48,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_7",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 270.6,
+        "y": 418.92,
+        "width": 150.36,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Cantidad de cuerdas Producción Anual Estimada Arrobas libras mazos millares becerros cuartillos Nivel de desarrollo en la Finca Describa las condiciones de los negocios en la fincaRow3_8",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 423.72,
+        "y": 418.92,
+        "width": 157.08,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Licencia de Pescador Comercial del DRNA",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 356.04,
+        "y": 357.48,
+        "width": 84.48,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Registro de Embarcación del DRNA",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 329.76,
+        "y": 325.08,
+        "width": 114.12,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Laboratorio de Investigaciones Pesqueras",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 352.56,
+        "y": 271.32,
+        "width": 72.84,
+        "height": 20.16
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow1",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 30.48,
+        "y": 144.84,
+        "width": 550.32,
+        "height": 47.16
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 31.08,
+        "y": 95.64,
+        "width": 110.76,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2_2",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 144.6,
+        "y": 95.64,
+        "width": 105.24,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2_3",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 252.6,
+        "y": 95.64,
+        "width": 145.8,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Negocio Agrícola Clase de Pescado o Marisco Producción Anual Estimada Libras de Pescado Marisco Anual Información sobre las Salidas Alta Mar Lugar de Desembarco Acompañantes Embarcación entre otrasRow2_4",
+      "type": "text",
+      "page": 3,
+      "rect": {
+        "x": 401.16,
+        "y": 95.64,
+        "width": 179.64,
+        "height": 47.4
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Localización de la Planta de Elaboración",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 351.48,
+        "y": 859.8,
+        "width": 180.24,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Municipio_3",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 166.08,
+        "y": 827.28,
+        "width": 114,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Cantidad de Cuerdas_3",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 411.84,
+        "y": 827.28,
+        "width": 122.04,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Tenencia Legal",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 198.48,
+        "y": 794.88,
+        "width": 336.12,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow1",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 30.48,
+        "y": 660.36,
+        "width": 550.32,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 30.48,
+        "y": 595.08,
+        "width": 550.32,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 31.08,
+        "y": 529.8,
+        "width": 116.76,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3_2",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 150.6,
+        "y": 529.8,
+        "width": 135.24,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3_3",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 288.6,
+        "y": 529.8,
+        "width": 136.68,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Nombre de los Subproductos que Elabora Nombre y Dirección de los Agricultores compra materia prima Indique el Producto Agrícola de PR y la Cantidad que le compra al agricultor Nivel de desarrollo de la Planta ElaboradoraRow3_4",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 428.04,
+        "y": 529.8,
+        "width": 152.76,
+        "height": 63.48
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Firma del Agricultor o",
+      "type": "text",
+      "page": 4,
+      "rect": {
+        "x": 323.76,
+        "y": 144.48,
+        "width": 186.12,
+        "height": 28.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "14a Ingreso Bruto Anual A  B",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 277.2,
+        "y": 844.2,
+        "width": 102.24,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 257.64,
+        "y": 788.64,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_2",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 503.04,
+        "y": 788.64,
+        "width": 36,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_3",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 259.56,
+        "y": 774.48,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_4",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 501.48,
+        "y": 774.48,
+        "width": 36.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_5",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 503.16,
+        "y": 760.32,
+        "width": 36.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_6",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 503.16,
+        "y": 746.4,
+        "width": 36.12,
+        "height": 13.08
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_7",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 256.44,
+        "y": 704.16,
+        "width": 48.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_8",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 504.36,
+        "y": 732.24,
+        "width": 36.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_9",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 505.08,
+        "y": 718.2,
+        "width": 36.12,
+        "height": 13.2
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_10",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 502.8,
+        "y": 704.16,
+        "width": 36.24,
+        "height": 13.2
+      },
+      "readOnly": false
+    },
+    {
+      "name": "14b Porcentaje de Ingreso Agrícola",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 295.8,
+        "y": 675,
+        "width": 120.36,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "RECOMENDACIÓN 1",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 195.36,
+        "y": 620.64,
+        "width": 342.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "RECOMENDACIÓN 2",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 592.8,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 566.28,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 539.88,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "3",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 513.12,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "4",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 486.72,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "5",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 460.2,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "6",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 433.56,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "7",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 407.04,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "8",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 380.4,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "9",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 354,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "10",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.88,
+        "y": 327.48,
+        "width": 468.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Cumple",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 102.48,
+        "y": 272.28,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "No Cumple",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 102.48,
+        "y": 243.96,
+        "width": 42.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "undefined_11",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 71.76,
+        "y": 143.16,
+        "width": 60,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Firma del Agrónomo de Área",
+      "type": "text",
+      "page": 5,
+      "rect": {
+        "x": 350.64,
+        "y": 143.16,
+        "width": 186.12,
+        "height": 13.32
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1_2",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 836.28,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2_2",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 809.4,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "3_2",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 782.76,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1_3",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 702.72,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2_3",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 675.96,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "3_3",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 649.32,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "4_2",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 622.68,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "1_4",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 542.64,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "2_4",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 515.76,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "3_4",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.88,
+        "y": 489.24,
+        "width": 468.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Día",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 71.76,
+        "y": 339.12,
+        "width": 60,
+        "height": 25.8
+      },
+      "readOnly": false
+    },
+    {
+      "name": "Firma del Director Regional",
+      "type": "text",
+      "page": 6,
+      "rect": {
+        "x": 350.64,
+        "y": 339.12,
+        "width": 186.12,
+        "height": 25.8
+      },
+      "readOnly": false
+    }
+  ],
+  "inspectedAt": "2026-09-10T09:46:34.239Z"
+}

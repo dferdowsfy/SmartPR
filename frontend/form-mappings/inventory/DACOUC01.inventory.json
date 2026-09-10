@@ -1,0 +1,57 @@
+{
+  "formCode": "DACOUC01",
+  "sourceFile": "RealForms/DACO-Solicitud-Urbanizador-Constructor-v2.pdf",
+  "checksum": "sha256:345dc3222b7e52e751a5ca61850fddb61ac7d0e3267d52a65d72e922ed17a4f4",
+  "pageCount": 9,
+  "pageSizes": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 2,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 3,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 4,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 5,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 6,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 7,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 8,
+      "width": 612,
+      "height": 1008
+    },
+    {
+      "page": 9,
+      "width": 612,
+      "height": 1008
+    }
+  ],
+  "hasAcroForm": false,
+  "fieldCount": 0,
+  "fields": [],
+  "inspectedAt": "2026-09-10T09:46:34.111Z"
+}
