@@ -5,6 +5,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServer } from "../../../lib/supabase/server";
 import { bootstrapPlatformUser } from "../../../lib/auth/bootstrap";
+import { convertLeadForUser } from "../../../lib/leads";
+import { getPool, isEnabled } from "../../graph/db";
 import { claimSubmissionsByEmail } from "../../graph/auth-actions";
 import { authCallbackPath } from "../../../lib/safeNext";
 
@@ -26,6 +28,16 @@ export async function GET(req: NextRequest) {
         await bootstrapPlatformUser(u).catch((bootstrapError) => {
           console.error("[auth-callback] platform bootstrap failed:", (bootstrapError as Error).message);
         });
+        // Link any landing-page lead to this account and tell the founder.
+        // Best-effort: a notification failure must never break sign-in.
+        try {
+          if (isEnabled()) {
+            const pool = getPool();
+            if (pool) await convertLeadForUser(pool, u);
+          }
+        } catch (leadError) {
+          console.error("[auth-callback] lead conversion", (leadError as Error).message);
+        }
         await claimSubmissionsByEmail(u.id, u.email ?? null);
       }
     }

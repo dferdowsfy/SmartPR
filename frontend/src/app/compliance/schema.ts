@@ -123,6 +123,23 @@ CREATE TABLE IF NOT EXISTS evidence (
 CREATE INDEX IF NOT EXISTS idx_evidence_business ON evidence (business_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_evidence_obligation ON evidence (obligation_id);
 
+CREATE TABLE IF NOT EXISTS leads (
+  id UUID PRIMARY KEY,
+  email TEXT NOT NULL,
+  name TEXT,
+  phone TEXT,
+  source TEXT NOT NULL DEFAULT 'landing_start_assessment',
+  language TEXT,
+  utm JSONB NOT NULL DEFAULT '{}'::jsonb,
+  user_id UUID,
+  status TEXT NOT NULL DEFAULT 'CAPTURED' CHECK (status IN ('CAPTURED','CONVERTED')),
+  notified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  converted_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_email ON leads (lower(email));
+CREATE INDEX IF NOT EXISTS idx_leads_created ON leads (created_at DESC);
+
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY,
   user_id UUID NOT NULL,

@@ -119,7 +119,7 @@ function PricingPageInner() {
             <Link href="/pricing" className={styles.navActive}>
               Pricing
             </Link>
-            <Link href="/#for-professionals">For professionals</Link>
+            <Link href="/#professionals">For professionals</Link>
           </nav>
           <div className={styles.headerActions}>
             <Link href="/auth/login" className={styles.loginLink}>

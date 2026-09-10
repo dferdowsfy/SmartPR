@@ -563,3 +563,101 @@
     padding-inline: 0.35rem;
   }
 }
+
+/* Lead-capture dialog shown before the assessment for signed-out visitors. */
+button.primary {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.leadOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(12, 18, 18, 0.5);
+}
+
+.leadDialog {
+  width: 100%;
+  max-width: 26rem;
+  border-radius: 18px;
+  background: #fffdf8;
+  padding: 1.6rem;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+}
+
+.leadTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #161616;
+}
+
+.leadBody {
+  margin: 0.4rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #5a5a5a;
+}
+
+.leadField {
+  display: block;
+  margin-top: 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #3d3d3d;
+}
+
+.leadField input {
+  display: block;
+  width: 100%;
+  margin-top: 0.3rem;
+  border: 1px solid #d8d2c4;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #161616;
+}
+
+.leadField input:focus {
+  outline: 2px solid #245c5c;
+  outline-offset: 1px;
+  border-color: #245c5c;
+}
+
+.leadError {
+  margin: 0.7rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b3261e;
+}
+
+.leadActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+
+.leadCancel {
+  border: 1px solid #d8d2c4;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #5a5a5a;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.leadCancel:hover {
+  background: #f4f1ea;
+}

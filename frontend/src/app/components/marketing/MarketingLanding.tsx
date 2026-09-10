@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import styles from "./marketing.module.css";
 import { SmartPRLogo } from "../brand/SmartPRLogo";
 import FilingPathStory from "./FilingPathStory";
+import { createSupabaseBrowser } from "../../../lib/supabase/client";
 
 type Language = "EN" | "ES";
 
@@ -49,6 +50,13 @@ const copy = {
     continue: "Continue",
     closeTitle: "Tell SmartPR what you want to build.",
     closeBody: "We'll map what comes next.",
+    leadTitle: "Before you start",
+    leadBody: "Leave your name and email so we can save your progress and follow up. That's it — no spam, ever.",
+    leadName: "Name",
+    leadEmail: "Email",
+    leadPhone: "Phone (optional)",
+    leadInvalidEmail: "Enter a valid email to continue.",
+    leadCancel: "Cancel",
     rows: [
       { name: "Amigos Restaurant", muni: "Bayamón", type: "Restaurant", ready: 78, next: "Upload lease agreement" },
       { name: "HealthPR", muni: "San Juan", type: "Healthcare", ready: 40, next: "Complete Department of State formation" },
@@ -92,6 +100,13 @@ const copy = {
     continue: "Continuar",
     closeTitle: "Dígale a SmartPR lo que quiere construir.",
     closeBody: "Trazamos lo que sigue.",
+    leadTitle: "Antes de empezar",
+    leadBody: "Déjanos tu nombre y tu email para guardarte el progreso y darte seguimiento. Eso es todo — cero spam.",
+    leadName: "Nombre",
+    leadEmail: "Email",
+    leadPhone: "Teléfono (opcional)",
+    leadInvalidEmail: "Escribe un email válido para continuar.",
+    leadCancel: "Cancelar",
     rows: [
       { name: "Amigos Restaurant", muni: "Bayamón", type: "Restaurante", ready: 78, next: "Subir contrato de arrendamiento" },
       { name: "HealthPR", muni: "San Juan", type: "Salud", ready: 40, next: "Completar constitución en el Departamento de Estado" },
@@ -122,10 +137,75 @@ export default function MarketingLanding() {
   const router = useRouter();
   const [language, setLanguage] = useState<Language>("EN");
   const [navOpen, setNavOpen] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
+  const [leadName, setLeadName] = useState("");
+  const [leadEmail, setLeadEmail] = useState("");
+  const [leadPhone, setLeadPhone] = useState("");
+  const [leadBusy, setLeadBusy] = useState(false);
+  const [leadError, setLeadError] = useState<string | null>(null);
   const c = copy[language];
 
-  function start() {
+  function goToAssessment() {
     router.push("/?entry=new-business");
+  }
+
+  // Every "start" entry point funnels through here. Signed-in visitors are
+  // tracked silently against their account; signed-out visitors give the
+  // minimum (name + email) before the assessment begins. Tracking never
+  // blocks the assessment itself.
+  async function start() {
+    try {
+      const supabase = createSupabaseBrowser();
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) {
+        try {
+          await fetch("/api/leads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ source: "landing_start_assessment", language: language.toLowerCase() }),
+          });
+        } catch {
+          // Tracking is best-effort; the assessment matters more.
+        }
+        goToAssessment();
+        return;
+      }
+    } catch {
+      // If the session check itself fails, don't strand the visitor.
+      goToAssessment();
+      return;
+    }
+    setLeadError(null);
+    setLeadOpen(true);
+  }
+
+  async function submitLead(event: React.FormEvent) {
+    event.preventDefault();
+    const email = leadEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setLeadError(c.leadInvalidEmail);
+      return;
+    }
+    setLeadBusy(true);
+    try {
+      await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: leadName.trim(),
+          email,
+          phone: leadPhone.trim() || undefined,
+          source: "landing_start_assessment",
+          language: language.toLowerCase(),
+        }),
+      });
+    } catch {
+      // A failed capture must never block the assessment.
+    } finally {
+      setLeadBusy(false);
+    }
+    setLeadOpen(false);
+    goToAssessment();
   }
 
   return (
@@ -143,9 +223,9 @@ export default function MarketingLanding() {
           <div className={styles.desktopActions}>
             <LanguageToggle language={language} onChange={setLanguage} />
             <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
-            <Link className={styles.primary} href="/?entry=new-business">
+            <button type="button" className={styles.primary} onClick={() => void start()}>
               {c.started}
-            </Link>
+            </button>
           </div>
           <button
             className={styles.menuButton}
@@ -173,9 +253,9 @@ export default function MarketingLanding() {
               <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
               <LanguageToggle language={language} onChange={setLanguage} />
             </div>
-            <Link href="/?entry=new-business">
+            <button type="button" className={styles.primary} onClick={() => { setNavOpen(false); void start(); }}>
               {c.started}
-            </Link>
+            </button>
           </div>
         ) : null}
       </header>
@@ -191,9 +271,9 @@ export default function MarketingLanding() {
               </h1>
               <p className={styles.heroLead}>{c.heroSub}</p>
               <div className={styles.heroActions}>
-                <Link className={styles.primary} href="/?entry=new-business">
+                <button type="button" className={styles.primary} onClick={() => void start()}>
                   {c.heroCta}
-                </Link>
+                </button>
                 <a className={styles.ghost} href="#how-it-works">
                   {c.seeHow} <span aria-hidden>→</span>
                 </a>
@@ -204,7 +284,7 @@ export default function MarketingLanding() {
           <FilingPathStory language={language} />
         </div>
 
-        <section className={styles.section}>
+        <section id="how-it-works" className={styles.section}>
           <div className={styles.sectionInner}>
             <h2>{c.stepsTitle}</h2>
             <ol className={styles.cards}>
@@ -252,7 +332,7 @@ export default function MarketingLanding() {
                   <p className={styles.meta}>
                     {row.ready}% {c.ready} · {c.next}: {row.next}
                   </p>
-                  <button type="button" className={styles.continue} onClick={start}>
+                  <button type="button" className={styles.continue} onClick={() => void start()}>
                     {c.continue}
                   </button>
                 </li>
@@ -265,12 +345,54 @@ export default function MarketingLanding() {
           <div className={styles.close}>
             <h2>{c.closeTitle}</h2>
             <p className={styles.lead}>{c.closeBody}</p>
-            <Link className={styles.primary} href="/?entry=new-business">
+            <button type="button" className={styles.primary} onClick={() => void start()}>
               {c.started}
-            </Link>
+            </button>
           </div>
         </section>
       </main>
+
+      {leadOpen && (
+        <div className={styles.leadOverlay} onClick={() => { if (!leadBusy) setLeadOpen(false); }}>
+          <div
+            role="dialog" aria-modal="true" aria-label={c.leadTitle}
+            className={styles.leadDialog}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 className={styles.leadTitle}>{c.leadTitle}</h2>
+            <p className={styles.leadBody}>{c.leadBody}</p>
+            <form onSubmit={submitLead}>
+              <label className={styles.leadField}>{c.leadName}
+                <input
+                  value={leadName} onChange={(event) => setLeadName(event.target.value)}
+                  placeholder={c.leadName} autoComplete="name" maxLength={120}
+                />
+              </label>
+              <label className={styles.leadField}>{c.leadEmail}
+                <input
+                  type="email" value={leadEmail} onChange={(event) => setLeadEmail(event.target.value)}
+                  placeholder="tu@email.com" autoComplete="email" maxLength={160} required
+                />
+              </label>
+              <label className={styles.leadField}>{c.leadPhone}
+                <input
+                  type="tel" value={leadPhone} onChange={(event) => setLeadPhone(event.target.value)}
+                  autoComplete="tel" maxLength={40}
+                />
+              </label>
+              {leadError && <p className={styles.leadError}>{leadError}</p>}
+              <div className={styles.leadActions}>
+                <button type="button" className={styles.leadCancel} disabled={leadBusy} onClick={() => setLeadOpen(false)}>
+                  {c.leadCancel}
+                </button>
+                <button type="submit" className={styles.primary} disabled={leadBusy}>
+                  {leadBusy ? "…" : c.heroCta}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>

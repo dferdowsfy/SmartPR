@@ -44,7 +44,10 @@ export default function NewMatterPage({ params }: { params: Promise<{ id: string
     const result = await response.json().catch(() => ({}));
     setBusy(false);
     if (!response.ok) { setError(result.error || "Could not start this filing."); return; }
-    router.push(`/?business=${id}&matter=${result.matter_id}&entry=filing`);
+    // The root page only mounts the intake for entry=new-business (entry=filing
+    // used to land visitors on the plain landing page — a dead end — even
+    // though the matter and its due date were already saved).
+    router.push(`/?business=${id}&matter=${result.matter_id}&entry=new-business`);
   };
 
   return (
