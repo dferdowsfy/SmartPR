@@ -14,9 +14,11 @@ const STYLE: Record<ObligationStatus, string> = {
 
 export function StatusBadge({ status }: { status: ObligationStatus | string }) {
   const known = status in STYLE ? status as ObligationStatus : "UNKNOWN";
+  // Never show the internal "UNKNOWN" state name to users.
+  const text = known === "UNKNOWN" ? "NEEDS INFO" : known.replaceAll("_", " ");
   return (
     <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide ${STYLE[known]}`}>
-      {known.replaceAll("_", " ")}
+      {text}
     </span>
   );
 }

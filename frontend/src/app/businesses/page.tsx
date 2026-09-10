@@ -24,6 +24,7 @@ function useLang(): "en" | "es" {
 
 interface Business {
   id: string;
+  public_id: string | null;
   legal_name: string;
   entity_number: string | null;
   business_structure: string | null;
@@ -110,8 +111,8 @@ function MoreMenu({ business, lang, onRenamed, onArchived }: { business: Busines
       </button>
       {open && (
         <div role="menu" className="absolute right-0 top-12 z-10 w-52 overflow-hidden rounded-xl border border-[#161616]/12 bg-white py-1.5 shadow-lg shadow-slate-950/[0.06]">
-          <Link role="menuitem" href={`/businesses/${business.id}`} className="block px-4 py-2 text-sm text-[#161616] hover:bg-[#f4f1ea]">{es ? "Ver perfil del negocio" : "View business profile"}</Link>
-          <Link role="menuitem" href={`/businesses/${business.id}/matters/new`} className="block px-4 py-2 text-sm text-[#161616] hover:bg-[#f4f1ea]">{es ? "Comenzar nueva radicación" : "Start new filing"}</Link>
+          <Link role="menuitem" href={`/businesses/${business.public_id || business.id}`} className="block px-4 py-2 text-sm text-[#161616] hover:bg-[#f4f1ea]">{es ? "Ver perfil del negocio" : "View business profile"}</Link>
+          <Link role="menuitem" href={`/businesses/${business.public_id || business.id}/matters/new`} className="block px-4 py-2 text-sm text-[#161616] hover:bg-[#f4f1ea]">{es ? "Comenzar nueva radicación" : "Start new filing"}</Link>
           <button role="menuitem" type="button" onClick={() => void rename()} className="block w-full px-4 py-2 text-left text-sm text-[#161616] hover:bg-[#f4f1ea]">{es ? "Renombrar negocio" : "Rename business"}</button>
           <button role="menuitem" type="button" onClick={() => void archive()} className="block w-full px-4 py-2 text-left text-sm text-rose-700 hover:bg-rose-50">{es ? "Archivar negocio" : "Archive business"}</button>
         </div>
@@ -155,7 +156,7 @@ function BusinessCard({ business, lang, onChanged }: { business: Business; lang:
         {/* Actions */}
         <div className="flex items-center gap-2 sm:border-l sm:border-[#161616]/10 sm:pl-6">
           <Link
-            href={`/businesses/${business.id}`}
+            href={`/businesses/${business.public_id || business.id}`}
             className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#245c5c] px-5 text-sm font-semibold text-[#f6f3ea] transition-colors hover:bg-[#1c4949] sm:w-[150px]"
           >
             {lang === "es" ? "Continuar" : "Continue"} <ArrowRight className="h-4 w-4" />

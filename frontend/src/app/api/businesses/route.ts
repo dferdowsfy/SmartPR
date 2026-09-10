@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { getPool, isEnabled } from "../../graph/db";
-import { ensureSchema } from "../../graph/store";
+import { ensureSchema, ensureUniquePublicId } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
 import { ensureUserWorkspace } from "../../compliance/server";
 import { assertCanAddBusinesses, gateJson } from "../../../lib/billing/access";
@@ -27,7 +27,7 @@ export async function GET() {
     // Each business is enriched with the latest readiness score across its
     // submissions, plus a count of submissions, so the listing reads at a glance.
     const { rows } = await pool.query(
-      `SELECT b.id, b.name, b.legal_name, b.entity_number, b.business_structure,
+      `SELECT b.id, b.public_id, b.name, b.legal_name, b.entity_number, b.business_structure,
               b.business_type, b.industry, b.municipality, b.physical_address,
               b.onboarding_mode, b.notes, b.created_at, b.archived,
               (SELECT COUNT(*) FROM submissions s WHERE s.business_id = b.id) AS submission_count,
@@ -96,16 +96,18 @@ export async function POST(request: Request) {
       [user.id, user.email ?? null, (user.user_metadata?.full_name as string) || null]
     ).catch((e) => console.error("[businesses] user upsert (non-fatal):", (e as Error).message));
 
+    const publicId = await ensureUniquePublicId(pool);
     await pool.query(
       `INSERT INTO businesses
          (id, user_id, workspace_id, name, legal_name, notes, entity_number,
-          business_structure, business_type, industry, municipality, physical_address, onboarding_mode)
-       VALUES ($1,$2,$3,$4,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+          business_structure, business_type, industry, municipality, physical_address, onboarding_mode, public_id)
+       VALUES ($1,$2,$3,$4,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [id, user.id, workspaceId, name, body.notes ?? null, body.entity_number ?? null,
         body.business_structure ?? null, body.business_type ?? null, body.industry ?? null,
-        body.municipality ?? null, body.physical_address ?? null, body.onboarding_mode ?? "NEW"]
+        body.municipality ?? null, body.physical_address ?? null, body.onboarding_mode ?? "NEW",
+        publicId]
     );
-    return Response.json({ id, name, notes: body.notes ?? null });
+    return Response.json({ id, public_id: publicId, name, notes: body.notes ?? null });
   } catch (err) {
     const msg = (err as Error).message || "Unknown database error";
     console.error("[businesses] create failed:", msg);

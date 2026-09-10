@@ -6,6 +6,7 @@ import { TopNav } from "../history/ui";
 
 interface PortfolioBusiness {
   id: string;
+  public_id: string | null;
   legal_name: string;
   municipality: string | null;
   readiness_score: number | null;
@@ -64,7 +65,7 @@ export default function DashboardPage() {
                   {row.readiness_score == null ? "In progress" : `${row.readiness_score}% ready`}
                 </p>
                 <Link
-                  href={`/businesses/${row.id}`}
+                  href={`/businesses/${row.public_id || row.id}`}
                   className="justify-self-start text-sm text-[#245c5c] underline-offset-4 hover:underline sm:justify-self-end"
                 >
                   Continue

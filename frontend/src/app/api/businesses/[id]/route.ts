@@ -1,9 +1,12 @@
 // Single business: detail (with submissions + readiness timeline) and delete.
 
 import { getPool, isEnabled } from "../../../graph/db";
-import { ensureSchema } from "../../../graph/store";
+import { ensureSchema, resolveBusinessUuid } from "../../../graph/store";
 import { getCurrentUser } from "../../../../lib/supabase/server";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../../../compliance/dates";
+import { buildCanonicalFromIntake } from "../../../forms/engine/intake";
+import { selectEntriesForRequirement } from "../../../forms/engine/routing";
+import { getTemplate, isOfficialArtifact } from "../../../forms/artifacts/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,14 +21,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   await ensureSchema();
 
   try {
+    // The path id may be the short public id or the full UUID.
+    const businessUuid = await resolveBusinessUuid(pool, id);
+    if (!businessUuid) return Response.json({ error: "not_found" }, { status: 404 });
     const { rows: bizRows } = await pool.query(
-      `SELECT b.id, b.name, b.legal_name, b.entity_number, b.business_structure,
+      `SELECT b.id, b.public_id, b.name, b.legal_name, b.entity_number, b.business_structure,
               b.business_type, b.industry, b.municipality, b.physical_address,
               b.onboarding_mode, b.notes, b.created_at, b.updated_at
          FROM businesses b
          LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$2
         WHERE b.id=$1 AND b.archived=false AND (b.user_id=$2 OR wm.user_id IS NOT NULL)`,
-      [id, user.id]
+      [businessUuid, user.id]
     );
     const business = bizRows[0];
     if (!business) return Response.json({ error: "not_found" }, { status: 404 });
@@ -38,15 +44,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
          LEFT JOIN LATERAL (SELECT score, status FROM readiness_scores r WHERE r.submission_id = s.id
                             ORDER BY created_at DESC LIMIT 1) rs ON true
         WHERE s.business_id = $1 AND s.user_id = $2 ORDER BY s.created_at DESC`,
-      [id, user.id]),
+      [businessUuid, user.id]),
       pool.query(
       `SELECT id, kind, filename, generated_at, size_bytes, submission_id
          FROM deliverables WHERE business_id = $1 AND user_id = $2 ORDER BY generated_at DESC`,
-      [id, user.id]),
+      [businessUuid, user.id]),
       pool.query(
         `SELECT id, matter_type, title, status, readiness_score, opened_at, due_date::text,
                 due_date_source, source_reference, completed_at, submission_id, created_at
-           FROM matters WHERE business_id=$1 ORDER BY created_at DESC`, [id]),
+           FROM matters WHERE business_id=$1 ORDER BY created_at DESC`, [businessUuid]),
       pool.query(
         `SELECT o.*, o.due_date::text AS due_date,
                 CASE
@@ -57,19 +63,40 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
                   ELSE 'NONE' END AS evidence_state,
                 m.title AS matter_title, m.matter_type, m.readiness_score
            FROM obligations o LEFT JOIN matters m ON m.id=o.matter_id
-          WHERE o.business_id=$1 ORDER BY o.due_date NULLS LAST, o.created_at DESC`, [id]),
+          WHERE o.business_id=$1 ORDER BY o.due_date NULLS LAST, o.created_at DESC`, [businessUuid]),
       pool.query(
         `SELECT e.id, e.obligation_id, e.matter_id, e.original_filename, e.mime_type,
                 e.size_bytes, e.document_type, e.review_status, e.extracted_fields,
                 e.extraction_confidence, e.issue_date::text, e.expiration_date::text,
                 e.date_source, e.source_reference, e.created_at, o.name AS obligation_name
            FROM evidence e LEFT JOIN obligations o ON o.id=e.obligation_id
-          WHERE e.business_id=$1 ORDER BY e.created_at DESC`, [id]),
+          WHERE e.business_id=$1 ORDER BY e.created_at DESC`, [businessUuid]),
       pool.query(
         `SELECT id, obligation_id, type, scheduled_for, status, message
            FROM notifications WHERE business_id=$1 AND user_id=$2
-          ORDER BY scheduled_for DESC LIMIT 50`, [id, user.id]),
+          ORDER BY scheduled_for DESC LIMIT 50`, [businessUuid, user.id]),
     ]);
+    // Resolve which obligations carry a real, fillable government form so the
+    // client can offer "Complete document". Same five-condition gate the
+    // intake requirement cards use: requirement present, registry entry,
+    // applicability matches the business's entity type, official artifact.
+    const canonical = buildCanonicalFromIntake({
+      legalName: business.legal_name || business.name,
+      business_structure: business.business_structure ?? undefined,
+      municipality: business.municipality ?? undefined,
+      formationStatus: business.onboarding_mode === "EXISTING" ? "formed_in_puerto_rico" : undefined,
+    });
+    const presentRequirementIds = new Set(
+      obligationResult.rows.map((row) => row.requirement_id).filter((value): value is string => Boolean(value))
+    );
+    const formIdForRequirement = (requirementId: string | null): string | null => {
+      if (!requirementId) return null;
+      for (const entry of selectEntriesForRequirement(requirementId, canonical, presentRequirementIds)) {
+        const template = getTemplate(entry.officialFormNumber);
+        if (template && isOfficialArtifact(template)) return entry.id;
+      }
+      return null;
+    };
     const obligations = obligationResult.rows.map((row) => {
       const dueDate = validDateOnly(row.due_date);
       const status = deriveObligationStatus({
@@ -78,7 +105,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         evidenceState: row.evidence_state,
         expectsRenewal: Boolean(row.renewal_frequency_months || dueDate),
       });
-      return { ...row, status, next_action: row.next_action || nextActionForStatus(status) };
+      return {
+        ...row,
+        status,
+        next_action: row.next_action || nextActionForStatus(status),
+        form_id: formIdForRequirement(row.requirement_id ?? null),
+      };
     });
     const activeScores = matterResult.rows
       .filter((row) => row.status !== "ARCHIVED" && row.readiness_score != null)
@@ -114,6 +146,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const values = allowed.map((key) => typeof body[key] === "string" ? String(body[key]).trim() || null : null);
   if (!values.some((value) => value !== null)) return Response.json({ error: "No supported fields supplied." }, { status: 400 });
   await ensureSchema();
+  const businessUuid = await resolveBusinessUuid(pool, id);
+  if (!businessUuid) return Response.json({ error: "not_found" }, { status: 404 });
   const result = await pool.query(
     `UPDATE businesses SET
        legal_name=COALESCE($3,legal_name), name=COALESCE($3,name), entity_number=COALESCE($4,entity_number),
@@ -134,10 +168,13 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   const pool = getPool();
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
   try {
+    await ensureSchema();
+    const businessUuid = await resolveBusinessUuid(pool, id);
+    if (!businessUuid) return Response.json({ error: "not_found" }, { status: 404 });
     // Soft delete keeps the user's compliance record intact.
     const { rowCount } = await pool.query(
       `UPDATE businesses SET archived = true, archived_at = now(), updated_at = now() WHERE id = $1 AND user_id = $2`,
-      [id, user.id]
+      [businessUuid, user.id]
     );
     if (!rowCount) return Response.json({ error: "not_found" }, { status: 404 });
     return Response.json({ archived: true });

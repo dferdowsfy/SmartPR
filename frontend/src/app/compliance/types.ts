@@ -77,4 +77,4 @@ export interface ImportedEvidence {
 }
 
 export const DUE_DATE_UNKNOWN_MESSAGE =
-  "Due date unknown — upload current documentation or enter the date.";
+  "No due date set — upload current documentation or enter the date.";

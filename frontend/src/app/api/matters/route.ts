@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { getPool, isEnabled } from "../../graph/db";
-import { ensureSchema } from "../../graph/store";
+import { ensureSchema, ensureUniquePublicId, resolveBusinessUuid } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
 import { ensureUserWorkspace, userCanAccessBusiness } from "../../compliance/server";
 import { DUE_DATE_SOURCES, MATTER_TYPES, type DueDateSource, type MatterType } from "../../compliance/types";
@@ -48,26 +48,37 @@ export async function POST(request: Request) {
     await client.query("BEGIN");
     const workspaceId = await ensureUserWorkspace(client, user);
     let businessId = body.business_id ?? null;
+    let businessPublicId: string | null = null;
     let businessName = (body.legal_name || "").trim();
     if (body.create_business) {
       businessId = randomUUID();
+      businessPublicId = await ensureUniquePublicId(client);
       businessName ||= "Untitled business";
       await client.query(
         `INSERT INTO businesses
-           (id, user_id, workspace_id, name, legal_name, onboarding_mode)
-         VALUES ($1,$2,$3,$4,$4,'NEW')`,
-        [businessId, user.id, workspaceId, businessName]
+           (id, user_id, workspace_id, name, legal_name, onboarding_mode, public_id)
+         VALUES ($1,$2,$3,$4,$4,'NEW',$5)`,
+        [businessId, user.id, workspaceId, businessName, businessPublicId]
       );
+    } else if (businessId) {
+      // Accept either the short public id or the full UUID.
+      const resolved = await resolveBusinessUuid(client, businessId);
+      if (!resolved) {
+        await client.query("ROLLBACK");
+        return Response.json({ error: "Business not found." }, { status: 404 });
+      }
+      businessId = resolved;
     }
     if (!businessId || !(await userCanAccessBusiness(client, user.id, businessId))) {
       await client.query("ROLLBACK");
       return Response.json({ error: "Business not found." }, { status: 404 });
     }
     if (!businessName) {
-      const row = await client.query<{ name: string }>(
-        `SELECT COALESCE(legal_name, name) AS name FROM businesses WHERE id = $1`, [businessId]
+      const row = await client.query<{ name: string; public_id: string | null }>(
+        `SELECT COALESCE(legal_name, name) AS name, public_id FROM businesses WHERE id = $1`, [businessId]
       );
       businessName = row.rows[0]?.name || "Business";
+      businessPublicId = row.rows[0]?.public_id ?? businessPublicId;
     }
     const matterId = randomUUID();
     await client.query(
@@ -81,7 +92,7 @@ export async function POST(request: Request) {
         body.source_reference ?? null]
     );
     await client.query("COMMIT");
-    return Response.json({ business_id: businessId, business_name: businessName, matter_id: matterId, matter_type: matterType });
+    return Response.json({ business_id: businessId, business_public_id: businessPublicId, business_name: businessName, matter_id: matterId, matter_type: matterType });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     console.error("[matters] create", (error as Error).message);

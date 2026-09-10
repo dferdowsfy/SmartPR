@@ -12,6 +12,7 @@ interface Reminder {
   scheduled_for: string;
   status: string;
   business_id: string;
+  business_public_id: string | null;
   obligation_id: string | null;
   business_name: string;
 }
@@ -180,7 +181,7 @@ export function NotificationBell() {
                       </div>
                       {reminder.obligation_id && (
                         <Link
-                          href={`/businesses/${reminder.business_id}#obligation-${reminder.obligation_id}`}
+                          href={`/businesses/${reminder.business_public_id || reminder.business_id}#obligation-${reminder.obligation_id}`}
                           onClick={() => setOpen(false)}
                           className="mt-1 inline-block text-xs font-semibold text-[#245c5c] hover:underline"
                         >

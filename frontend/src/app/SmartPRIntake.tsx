@@ -3440,6 +3440,25 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     setActiveGovForm({ formId, requirementCode, mode });
   };
 
+  // Deep link from a business-profile requirement row
+  // (?resume=<submissionId>&govForm=<registryEntryId>&req=<requirementCode>).
+  // Once the resumed requirements load, re-verify the requirement still routes
+  // to that official form on this client, then open it directly.
+  const govFormDeepLinkOpenedRef = useRef(false);
+  useEffect(() => {
+    if (govFormDeepLinkOpenedRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const formId = params.get("govForm");
+    const reqCode = params.get("req");
+    if (!formId || !reqCode || !requirements.length) return;
+    const req = requirements.find((r) => r.code === reqCode);
+    if (!req) return;
+    const entry = govFormEntryForReq(req);
+    if (!entry || entry.id !== formId) return;
+    govFormDeepLinkOpenedRef.current = true;
+    openGovForm(entry.id, req.code, "edit");
+  }, [requirements]);
+
   // Derive the single primary action for a requirement card. Priority order
   // (never show two competing actions at once): completed > a SmartPR-guided
   // government form still in progress > a known external government step >

@@ -16,7 +16,7 @@ export async function GET() {
   try {
     const [businessRows, obligationRows, mattersCount, notificationRows, dueMatterRows] = await Promise.all([
       pool.query(
-        `SELECT b.id, COALESCE(b.legal_name,b.name) AS legal_name, b.entity_number,
+        `SELECT b.id, b.public_id, COALESCE(b.legal_name,b.name) AS legal_name, b.entity_number,
                 b.business_structure, b.business_type, b.industry, b.municipality,
                 b.physical_address, b.onboarding_mode, b.created_at,
                 (SELECT ROUND(AVG(m.readiness_score))::int FROM matters m
@@ -29,7 +29,7 @@ export async function GET() {
         [user.id]
       ),
       pool.query(
-        `SELECT o.id, o.business_id, o.matter_id, o.requirement_id, o.name, o.agency,
+        `SELECT o.id, o.business_id, b.public_id AS business_public_id, o.matter_id, o.requirement_id, o.name, o.agency,
                 o.status, o.due_date::text, o.due_date_source, o.due_date_confidence,
                 o.source_reference, o.renewal_frequency_months, o.mandatory, o.next_action,
                 o.completed_at, b.legal_name, b.name AS legacy_name, b.municipality,
@@ -56,7 +56,7 @@ export async function GET() {
         [user.id]
       ),
       pool.query(
-        `SELECT n.id, n.type, n.message, n.scheduled_for, n.status, n.business_id, n.obligation_id,
+        `SELECT n.id, n.type, n.message, n.scheduled_for, n.status, n.business_id, b.public_id AS business_public_id, n.obligation_id,
                 COALESCE(b.legal_name,b.name) AS business_name
            FROM notifications n JOIN businesses b ON b.id=n.business_id
           WHERE n.user_id=$1 AND n.status IN ('PENDING','DELIVERED') AND n.scheduled_for <= now()

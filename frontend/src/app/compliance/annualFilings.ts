@@ -6,6 +6,7 @@
 export interface FilingLike {
   id: string;
   business_id: string;
+  business_public_id?: string | null;
   business_name: string;
   name: string;
   agency: string | null;
@@ -37,6 +38,7 @@ export function sortFilings<T extends FilingLike>(filings: T[]): T[] {
 
 export interface BusinessFilingGroup {
   business_id: string;
+  business_public_id?: string | null;
   business_name: string;
   filings: FilingLike[];
 }
@@ -47,7 +49,7 @@ export function groupAnnualFilings(items: FilingLike[]): BusinessFilingGroup[] {
     if (!isAnnualFiling(item)) continue;
     const existing = groups.get(item.business_id);
     if (existing) existing.filings.push(item);
-    else groups.set(item.business_id, { business_id: item.business_id, business_name: item.business_name, filings: [item] });
+    else groups.set(item.business_id, { business_id: item.business_id, business_public_id: item.business_public_id, business_name: item.business_name, filings: [item] });
   }
   const out = [...groups.values()];
   for (const group of out) group.filings = sortFilings(group.filings);

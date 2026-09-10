@@ -1,23 +1,24 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2,
-  ChevronDown, Download, FileText, FolderOpen, MapPin, ShieldAlert,
+  ChevronDown, Download, FileText, FolderOpen, MapPin, ShieldAlert, Upload,
 } from "lucide-react";
 import { TopNav, ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
 import { StatusBadge } from "../../components/compliance/StatusBadge";
 import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } from "../../compliance/types";
 
 interface BusinessRecord {
-  id: string; name: string; legal_name: string | null; entity_number: string | null;
+  id: string; public_id: string | null; name: string; legal_name: string | null; entity_number: string | null;
   municipality: string | null; business_type: string | null; onboarding_mode: "NEW" | "EXISTING";
   business_structure: string | null; industry: string | null; physical_address: string | null;
   notes: string | null; created_at: string | null;
 }
 interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null }
-interface Obligation { id: string; name: string; agency: string | null; matter_title: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string }
+interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string }
 interface Evidence { id: string; original_filename: string; obligation_name: string | null; review_status: string; created_at: string }
 interface Submission { id: string; created_at: string; business_type: string | null; municipality: string | null; readiness_score: number | null }
 interface Deliverable { id: string; filename: string; kind: string; generated_at: string }
@@ -65,7 +66,7 @@ function requirementStatusText(status: ObligationStatus): string {
 }
 
 function dateLabel(value?: string | null) {
-  if (!value) return "Unknown";
+  if (!value) return "No date set";
   return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
@@ -73,7 +74,7 @@ function dateLabel(value?: string | null) {
 // StatusBadge (soft red = urgent, gold/amber = approaching, green = fine).
 function TimeBadge({ dueDate, completed }: { dueDate: string | null; completed: boolean }) {
   if (completed) return <span className="inline-flex whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-700">DONE</span>;
-  if (!dueDate) return <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-600">UNKNOWN</span>;
+  if (!dueDate) return <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-600">NO DATE</span>;
   const days = Math.ceil((new Date(`${dueDate}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
   let text: string; let cls: string;
   if (days < 0) { text = "Overdue"; cls = "border-red-300 bg-red-50 text-red-700"; }
@@ -183,15 +184,19 @@ function DetailField({ label, value }: { label: string; value: string | null | u
   );
 }
 
-function ObligationRow({ item, reload, onMarkComplete }: { item: Obligation; reload: () => void; onMarkComplete?: (id: string) => void }) {
+function ObligationRow({ item, submissionId, reload, onMarkComplete }: {
+  item: Obligation; submissionId?: string | null; reload: () => void; onMarkComplete?: (id: string) => void;
+}) {
   const [date, setDate] = useState(item.due_date || "");
   const [source, setSource] = useState<DueDateSource>(item.due_date_source === "UNKNOWN" ? "USER_PROVIDED" : item.due_date_source);
-  const [reference, setReference] = useState(item.source_reference || "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // Optimistic flag so the row visibly flips to "completed" the moment the
   // user clicks, instead of silently vanishing once the list re-sorts.
   const [justCompleted, setJustCompleted] = useState(false);
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const completed = item.status === "COMPLETED" || justCompleted;
   const update = async (payload: Record<string, unknown>) => {
     setBusy(true); setMessage(null);
@@ -206,6 +211,30 @@ function ObligationRow({ item, reload, onMarkComplete }: { item: Obligation; rel
     onMarkComplete?.(item.id);
     void update({ complete: true });
   };
+  const uploadFile = async (file: File) => {
+    setUploading(true); setMessage(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("obligation_id", item.id);
+      const response = await fetch("/api/evidence", { method: "POST", body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) { setMessage(result.error || "Could not upload."); return; }
+      reload();
+    } finally {
+      setUploading(false);
+    }
+  };
+  const saveDate = () => {
+    setDateDialogOpen(false);
+    void update({
+      due_date: date,
+      due_date_source: source,
+      // Preserve any existing rule reference. The internal rule id is never
+      // shown or edited here.
+      source_reference: item.source_reference || undefined,
+    });
+  };
   return (
     <div id={`obligation-${item.id}`} className={`rounded-xl border px-4 py-3 transition-colors ${completed ? "border-emerald-300 bg-emerald-50" : "border-slate-200"}`}>
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
@@ -217,39 +246,96 @@ function ObligationRow({ item, reload, onMarkComplete }: { item: Obligation; rel
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="text-right"><div className="text-sm font-semibold text-slate-700">{dateLabel(item.due_date)}</div><div className="text-[10px] uppercase tracking-wide text-slate-400">{item.due_date_source.replaceAll("_", " ")}</div></div>
+          <div className="text-right">
+            <div className="text-sm font-semibold text-slate-700">{dateLabel(item.due_date)}</div>
+            {item.due_date && item.due_date_source !== "UNKNOWN" && (
+              <div className="text-[10px] uppercase tracking-wide text-slate-400">{item.due_date_source.replaceAll("_", " ")}</div>
+            )}
+          </div>
           <StatusBadge status={completed ? "COMPLETED" : (item.status as ObligationStatus)} />
         </div>
       </div>
       {!item.due_date && !completed && <p className="mt-2 text-xs text-slate-500">{DUE_DATE_UNKNOWN_MESSAGE}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-        <span className="text-xs font-medium text-slate-600">{completed ? "Marked as complete" : `Next: ${item.next_action}`}</span>
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+        <span className="mr-auto text-xs font-medium text-slate-600">{completed ? "Marked as complete" : item.next_action}</span>
         {!completed && (
-          <details className="ml-auto text-xs">
-            <summary className="cursor-pointer font-semibold text-[#245c5c]">Update date</summary>
-            <div className="mt-2 grid min-w-[270px] gap-2 rounded-xl border border-slate-200 bg-[#f4f1ea] p-3">
-              <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-1.5" />
-              <select value={source} onChange={(event) => setSource(event.target.value as DueDateSource)} className="rounded-lg border border-slate-300 bg-white px-2 py-1.5"><option value="USER_PROVIDED">User provided</option><option value="DOCUMENT_EXTRACTED">Document extracted</option><option value="EXTERNALLY_VERIFIED">Externally verified</option><option value="REGULATORY_RULE">Regulatory rule</option></select>
-              <input value={reference} onChange={(event) => setReference(event.target.value)} placeholder="Source reference (required for rules)" className="rounded-lg border border-slate-300 bg-white px-2 py-1.5" />
-              <button disabled={busy || !date} onClick={() => update({ due_date: date, due_date_source: source, source_reference: reference || undefined })} className="rounded-lg bg-[#161616] px-3 py-1.5 font-semibold text-white disabled:opacity-50">Save verified date</button>
-              {message && <span className="text-red-600">{message}</span>}
-            </div>
-          </details>
+          <>
+            <button
+              type="button" disabled={uploading || busy} onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#245c5c] px-3 py-1 text-xs font-semibold text-[#245c5c] disabled:opacity-50"
+            >
+              <Upload className="h-3.5 w-3.5" />{uploading ? "Uploading…" : "Upload"}
+            </button>
+            <input
+              ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
+              onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadFile(file); }}
+            />
+            {item.form_id && submissionId && item.requirement_id && (
+              <a
+                href={`/?entry=new-business&resume=${submissionId}&govForm=${item.form_id}&req=${item.requirement_id}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#245c5c] px-3 py-1 text-xs font-semibold text-white"
+              >
+                <FileText className="h-3.5 w-3.5" />Complete document
+              </a>
+            )}
+            <button
+              type="button" onClick={() => { setDate(item.due_date || ""); setMessage(null); setDateDialogOpen(true); }}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600"
+            >
+              <CalendarDays className="h-3.5 w-3.5" />Update date
+            </button>
+          </>
         )}
         {completed ? (
-          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
             <CheckCircle2 className="h-3.5 w-3.5" />Completed
           </span>
         ) : (
           <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">Mark renewed / complete</button>
         )}
       </div>
+      {message && !dateDialogOpen && <p className="mt-2 text-xs text-red-600">{message}</p>}
+      {dateDialogOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDateDialogOpen(false)}>
+          <div
+            role="dialog" aria-modal="true" aria-label="Update due date"
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="font-bold text-[#161616]">Update due date</h3>
+            <p className="mt-0.5 text-xs text-slate-500">{item.name}</p>
+            <label className="mt-4 block text-xs font-semibold text-slate-600">Due date
+              <input
+                type="date" value={date} onChange={(event) => setDate(event.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-[#161616]"
+              />
+            </label>
+            <label className="mt-3 block text-xs font-semibold text-slate-600">Date source
+              <select
+                value={source} onChange={(event) => setSource(event.target.value as DueDateSource)}
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-[#161616]"
+              >
+                <option value="USER_PROVIDED">User provided</option>
+                <option value="DOCUMENT_EXTRACTED">Document extracted</option>
+                <option value="EXTERNALLY_VERIFIED">Externally verified</option>
+                <option value="REGULATORY_RULE">Regulatory rule</option>
+              </select>
+            </label>
+            {message && <p className="mt-2 text-xs text-red-600">{message}</p>}
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" onClick={() => setDateDialogOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600">Cancel</button>
+              <button type="button" disabled={busy || !date} onClick={saveDate} className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save date</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function BusinessDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [data, setData] = useState<Detail | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [showAllRequirements, setShowAllRequirements] = useState(false);
@@ -266,6 +352,13 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     .then((result) => { setData(result); setLoadError(false); })
     .catch(() => setLoadError(true)), [id]);
   useEffect(() => { void load(); }, [load]);
+
+  // Normalize to the short public URL once the business loads, so the address
+  // bar never carries the full UUID. The anchor (if any) is preserved.
+  useEffect(() => {
+    const publicId = data?.business?.public_id;
+    if (publicId && id !== publicId) router.replace(`/businesses/${publicId}${window.location.hash}`);
+  }, [data, id, router]);
 
   const completeMatter = async (matterId: string) => {
     const response = await fetch(`/api/matters/${matterId}`, {
@@ -306,6 +399,14 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     return { totalApplicable, completed: completed.length, readiness, missing, calendar, activeMatters, history };
   }, [data]);
 
+  // Short public id for every link out of this page; falls back to the UUID
+  // until the API returns public_id.
+  const submissionByMatterId = useMemo(() => {
+    const map = new Map<string, string | null>();
+    for (const matter of data?.matters ?? []) map.set(matter.id, matter.submission_id);
+    return map;
+  }, [data]);
+
   if (loadError) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-sm text-rose-700">Couldn&apos;t load this business right now. <button type="button" onClick={() => void load()} className="font-semibold underline">Try again</button></div></div>;
   if (!data) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">Loading compliance profile…</div></div>;
   if (data.error || !data.business) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">Business not found.</div></div>;
@@ -316,6 +417,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const notifications = data.notifications ?? [];
   const deliverables = data.deliverables ?? [];
   const unreadNotifications = notifications.filter((item) => item.status === "PENDING" || item.status === "DELIVERED").length;
+  const shortId = business.public_id || id;
 
   const readinessInfo = readinessLabel(derived.readiness);
   const topMissing = derived.missing.slice(0, 3);
@@ -360,7 +462,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 Business details
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showBusinessDetails ? "rotate-180" : ""}`} />
               </button>
-              <Link href={`/businesses/${id}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-[#245c5c] px-5 py-3 text-sm font-medium text-[#f6f3ea]">Start New Filing / Renewal</Link>
+              <Link href={`/businesses/${shortId}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-[#245c5c] px-5 py-3 text-sm font-medium text-[#f6f3ea]">Start New Filing / Renewal</Link>
             </div>
           </div>
 
@@ -453,7 +555,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   ))}
                 </div>
               ) : <Empty text={DUE_DATE_UNKNOWN_MESSAGE} />}
-              <Link href={`/calendar?business=${id}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">View full calendar</Link>
+              <Link href={`/calendar?business=${shortId}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">View full calendar</Link>
             </div>
           </section>
         </div>
@@ -555,11 +657,21 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               <button type="button" onClick={() => setShowAllRequirements(false)} className="text-sm font-semibold text-[#245c5c] hover:underline">Hide</button>
             </div>
             <div className="space-y-3 p-5">
-              {outstandingDisplay.length ? outstandingDisplay.map((item) => <ObligationRow key={item.id} item={item} reload={load} onMarkComplete={markRecentlyCompleted} />) : <Empty text="No outstanding requirements." />}
+              {outstandingDisplay.length ? outstandingDisplay.map((item) => (
+                <ObligationRow
+                  key={item.id} item={item} reload={load} onMarkComplete={markRecentlyCompleted}
+                  submissionId={item.matter_id ? submissionByMatterId.get(item.matter_id) ?? null : null}
+                />
+              )) : <Empty text="No outstanding requirements." />}
               {otherCompleted.length > 0 && (
                 <>
                   <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Completed</div>
-                  {otherCompleted.map((item) => <ObligationRow key={item.id} item={item} reload={load} />)}
+                  {otherCompleted.map((item) => (
+                    <ObligationRow
+                      key={item.id} item={item} reload={load}
+                      submissionId={item.matter_id ? submissionByMatterId.get(item.matter_id) ?? null : null}
+                    />
+                  ))}
                 </>
               )}
             </div>

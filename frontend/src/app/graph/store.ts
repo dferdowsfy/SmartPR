@@ -14,13 +14,14 @@ import { COMPLIANCE_SCHEMA_SQL } from "../compliance/schema";
 import { splitSqlStatements } from "./sqlStatements";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../compliance/dates";
 import { renewalMetadataForDocuments, scheduleObligationNotifications } from "../compliance/server";
+import { generateShortId } from "../../lib/shortId";
 import type {
   CaptureEvent,
   SubmissionEvent,
   ValidationEvent,
   ReadinessEvent,
 } from "./types";
-import type { PoolClient } from "pg";
+import type { Pool, PoolClient } from "pg";
 
 // Mirror of data/graph_schema.sql, applied once per process (idempotent).
 const SCHEMA_SQL = `
@@ -228,13 +229,57 @@ export async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     const pool = getPool();
     schemaReady = pool
-      ? applySchema(pool).catch((e) => {
-          schemaReady = null;
-          throw e;
-        })
+      ? applySchema(pool)
+          .then(() => backfillBusinessPublicIds(pool))
+          .catch((e) => {
+            schemaReady = null;
+            throw e;
+          })
       : Promise.resolve();
   }
   return schemaReady;
+}
+
+// ---- short public business ids -------------------------------------------
+// Businesses get a short, URL-friendly public id (8 chars) so links read
+// /businesses/k7d2mq9x instead of carrying a full UUID. The UUID remains the
+// internal primary key; every API that takes a business id accepts either.
+
+/** Resolve a raw business id param (public_id or UUID) to the canonical UUID. */
+export async function resolveBusinessUuid(
+  pool: Pool | PoolClient,
+  rawId: string
+): Promise<string | null> {
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id FROM businesses WHERE public_id = $1 OR id::text = $1 LIMIT 1`,
+    [rawId]
+  );
+  return rows[0]?.id ?? null;
+}
+
+/** Generate a public_id that is not already taken. */
+export async function ensureUniquePublicId(pool: Pool | PoolClient): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = generateShortId();
+    const { rows } = await pool.query(`SELECT 1 FROM businesses WHERE public_id = $1 LIMIT 1`, [candidate]);
+    if (!rows.length) return candidate;
+  }
+  // Astronomically unlikely (32^8 space); fall back to a longer id.
+  return generateShortId(12);
+}
+
+/** One-time backfill: every business created before public_id existed gets one. */
+async function backfillBusinessPublicIds(pool: Pool): Promise<void> {
+  const { rows } = await pool.query<{ id: string }>(
+    `SELECT id FROM businesses WHERE public_id IS NULL LIMIT 500`
+  );
+  for (const row of rows) {
+    const publicId = await ensureUniquePublicId(pool);
+    await pool.query(`UPDATE businesses SET public_id = $2 WHERE id = $1 AND public_id IS NULL`, [
+      row.id,
+      publicId,
+    ]);
+  }
 }
 
 function hash(value: unknown): string {

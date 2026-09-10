@@ -32,6 +32,10 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS physical_address TEXT;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS onboarding_mode TEXT NOT NULL DEFAULT 'NEW' CHECK (onboarding_mode IN ('NEW','EXISTING'));
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+-- Short public id for clean URLs (/businesses/k7d2mq9x instead of a UUID).
+-- Backfilled in code (ensureSchema) so every id is unique.
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS public_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_public_id ON businesses (public_id);
 UPDATE businesses SET legal_name = name WHERE legal_name IS NULL;
 CREATE INDEX IF NOT EXISTS idx_businesses_workspace ON businesses (workspace_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_municipality ON businesses (municipality);

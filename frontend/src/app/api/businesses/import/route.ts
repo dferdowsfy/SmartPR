@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { getPool, isEnabled } from "../../../graph/db";
-import { ensureSchema } from "../../../graph/store";
+import { ensureSchema, ensureUniquePublicId } from "../../../graph/store";
 import { getCurrentUser } from "../../../../lib/supabase/server";
 import {
   determineObligations,
@@ -59,16 +59,17 @@ export async function POST(request: Request) {
       body.answers ?? {}
     );
     const businessId = randomUUID();
+    const businessPublicId = await ensureUniquePublicId(client);
     const matterId = randomUUID();
     const submissionId = randomUUID();
     await client.query(
       `INSERT INTO businesses
          (id, user_id, workspace_id, name, legal_name, entity_number, business_structure,
-          business_type, industry, municipality, physical_address, onboarding_mode)
-       VALUES ($1,$2,$3,$4,$4,$5,$6,$7,$8,$9,$10,'EXISTING')`,
+          business_type, industry, municipality, physical_address, onboarding_mode, public_id)
+       VALUES ($1,$2,$3,$4,$4,$5,$6,$7,$8,$9,$10,'EXISTING',$11)`,
       [businessId, user.id, workspaceId, legalName, text(profile.entity_number),
         text(profile.business_structure), text(profile.business_type), text(profile.industry),
-        text(profile.municipality), text(profile.physical_address)]
+        text(profile.municipality), text(profile.physical_address), businessPublicId]
     );
     await client.query(
       `INSERT INTO matters
@@ -224,7 +225,7 @@ export async function POST(request: Request) {
         JSON.stringify({ profile: { ...profile, name: legalName }, discoveryAnswers: body.answers ?? {}, currentStep: 3, importSource: knowledgeSource })]
     );
     await client.query("COMMIT");
-    return Response.json({ business_id: businessId, matter_id: matterId, submission_id: submissionId, readiness_score: readiness });
+    return Response.json({ business_id: businessId, business_public_id: businessPublicId, matter_id: matterId, submission_id: submissionId, readiness_score: readiness });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     console.error("[business-import]", (error as Error).message);

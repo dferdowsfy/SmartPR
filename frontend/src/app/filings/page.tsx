@@ -96,7 +96,7 @@ function FilingsContent() {
                     return (
                       <Link
                         key={filing.id}
-                        href={`/businesses/${filing.business_id}#obligation-${filing.id}`}
+                        href={`/businesses/${group.business_public_id || filing.business_id}#obligation-${filing.id}`}
                         className={`grid gap-3 px-5 py-4 hover:bg-[#f4f1ea] sm:grid-cols-[80px_1fr_auto] sm:items-center ${filed ? "opacity-60" : ""}`}
                       >
                         <div className="rounded-xl bg-slate-100 py-2 text-center">
