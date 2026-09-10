@@ -1,0 +1,17 @@
+{
+  "formCode": "LUMAINT01",
+  "sourceFile": "RealForms/LUMA-Confirmacion-Orientacion-Cliente-Rev10-2021.pdf",
+  "checksum": "sha256:7e9d931074b7456799851b4418f9b7f970c3b4b6564485cdcb0ff393594ed893",
+  "pageCount": 1,
+  "pageSizes": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 792
+    }
+  ],
+  "hasAcroForm": false,
+  "fieldCount": 0,
+  "fields": [],
+  "inspectedAt": "2026-09-10T04:29:07.260Z"
+}

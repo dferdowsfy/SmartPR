@@ -22,6 +22,7 @@ import { CORPREG06 } from "../definitions/pr/department-of-state/CORPREG06.ts";
 import { CORPLLC02 } from "../definitions/pr/department-of-state/CORPLLC02.ts";
 import { SS4 } from "../definitions/federal/irs/SS4.ts";
 import { NC001 } from "../definitions/pr/department-of-state/NC001.ts";
+import { LUMAINT01 } from "../definitions/pr/luma/LUMAINT01.ts";
 import { PA02 } from "../definitions/pr/municipal/PA02.ts";
 import type { DigitalFormDefinition, FormVerificationStatus } from "./types.ts";
 
@@ -49,6 +50,7 @@ const DEFINITIONS: DigitalFormDefinition[] = [
   CORPLLC02,
   SS4,
   NC001,
+  LUMAINT01,
   PA02,
 ];
 

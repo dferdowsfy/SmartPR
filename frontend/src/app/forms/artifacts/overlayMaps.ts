@@ -697,9 +697,171 @@ export const NC001_OVERLAY: FieldMapping[] = [
   }),
 ];
 
+/**
+ * LUMAINT01 — Confirmación de Orientación al Cliente sobre el proceso de
+ * interconexión de Generación Distribuida (GD), Rev. 10-2021. 1 page,
+ * 612 × 792 pt.
+ *
+ * Coordinates were taken from the PDF's own text-content layer (bbox export):
+ * the top blanks are underscore text runs (their x-ranges measured directly),
+ * the bottom fields are vector ruled lines (detected by horizontal dark-run
+ * scan at 150 dpi and converted to points). Every x/y below was then checked
+ * against renders of a populated working copy (150 dpi full page plus a
+ * 300 dpi zoom on the regulation checkboxes, whose X mark was nudged until it
+ * sat centered inside the box glyph). All 14 rows are marked reviewed: true
+ * on that basis.
+ *
+ * The customer signature line (ownership "signature") is never written by
+ * SmartPR. Dirección/Fecha beneath it are writable: the customer still signs
+ * by hand, SmartPR only pre-fills what it already knows.
+ */
+export const LUMAINT01_OVERLAY: FieldMapping[] = [
+  overlay({
+    reviewed: true,
+    pdfField: "customer_name",
+    canonicalField: "owner.full_name",
+    ownership: "smartpr_derived",
+    confidence: 0.7,
+    placement: { page: 1, x: 87, y: 659, width: 193, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Yo, ___ (Nombre y Apellidos)' underscore run x=[84.9,282.1] @ y=658.6 — the LUMA account holder / customer. Prefilled from the SmartPR profile; correctable in the form.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "account_number",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 138, y: 630.5, width: 127, height: 12, fontSize: 10 },
+    reviewNote:
+      "'cuenta número ___' underscore run x=[136.4,267.2] @ y=631.0 — the customer's LUMA account number. Not in the canonical profile; the applicant must provide it.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "installer_name",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 329, y: 630.5, width: 221, height: 12, fontSize: 10 },
+    reviewNote:
+      "'certifico que ___ (Nombre y Apellidos)' underscore run x=[326.7,552.0] @ y=631.0 — the certified installer who oriented the customer.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "installer_company",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 307, y: 603.5, width: 150, height: 12, fontSize: 10 },
+    reviewNote:
+      "'representante de la compañía ___' underscore run x=[305.9,458.7] @ y=603.4 — the installer's company, when the orienting party is a company representative.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "regulation_distribution_mark",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 91, y: 513, width: 10, height: 10, fontSize: 9 },
+    reviewNote:
+      "Checkbox glyph at x=[90.1,96.1] @ y=510.6 before 'Reglamento para Interconectar Generadores con el Sistema de Distribución Eléctrica'. Written via directOverlayValues from the regulation radio; mutually exclusive with regulation_transmission_mark.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "regulation_transmission_mark",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 91, y: 478, width: 10, height: 10, fontSize: 9 },
+    reviewNote:
+      "Checkbox glyph at x=[90.1,96.1] @ y=475.5 before 'Reglamento para Interconectar Generadores con el Sistema de Transmisión o Subtransmisión Eléctrica'. Mutually exclusive with regulation_distribution_mark.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "project_name",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 258, y: 223.5, width: 271, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Nombre del Proyecto:' ruled line y=222.2 x=[255.8,531.4] — project or owner name as registered with LUMA.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "project_number",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 258, y: 200.5, width: 66, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Número del Proyecto:' ruled line y=199.0 x=[255.8,325.9] — the LUMA project number, if already assigned.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "capacity_kw",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 417, y: 200.5, width: 112, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Capacidad (kW):' ruled line y=199.0 x=[414.7,531.4] — system capacity in kW AC. Prefill from the solar intake (Q_SOLAR_SIZE) in the capture UI.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "project_address",
+    canonicalField: "location.physical_address",
+    ownership: "smartpr_derived",
+    confidence: 0.7,
+    placement: { page: 1, x: 258, y: 178.5, width: 271, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Dirección Física del Proyecto:' ruled line y=177.1 x=[255.8,531.4] — physical address where the GD system is installed. Prefilled from the SmartPR profile.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "project_address_line2",
+    canonicalField: null,
+    ownership: "smartpr_derived",
+    confidence: 0.5,
+    placement: { page: 1, x: 258, y: 160, width: 271, height: 12, fontSize: 9 },
+    reviewNote:
+      "Unlabeled ruled line y=158.9 x=[255.8,531.4] directly beneath the project address — continuation for long addresses. Optional.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "customer_signature",
+    canonicalField: null,
+    ownership: "signature",
+    confidence: 0,
+    placement: { page: 1, x: 258, y: 142, width: 271, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Firma del Cliente:' ruled line y=140.6 — the customer's wet signature. Never written by SmartPR; sign by hand.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "customer_address",
+    canonicalField: "location.physical_address",
+    ownership: "smartpr_derived",
+    confidence: 0.7,
+    placement: { page: 1, x: 258, y: 124, width: 271, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Dirección:' ruled line y=122.4 x=[255.8,531.4] beneath the signature — the signer's address. Prefilled from the SmartPR profile.",
+  }),
+  overlay({
+    reviewed: true,
+    pdfField: "signature_date",
+    canonicalField: null,
+    ownership: "applicant",
+    confidence: 0,
+    placement: { page: 1, x: 257, y: 103, width: 272, height: 12, fontSize: 10 },
+    reviewNote:
+      "'Fecha:' ruled line y=101.8 x=[254.9,531.4] — date of signing. Defaults to today in the capture UI.",
+  }),
+];
+
 export const OVERLAY_MAPS: Record<string, FieldMapping[]> = {
   CORPREG01: CORPREG01_OVERLAY,
   CORPLLC02: CORPLLC02_OVERLAY,
   SC2309: SC2309_OVERLAY,
   NC001: NC001_OVERLAY,
+  LUMAINT01: LUMAINT01_OVERLAY,
 };

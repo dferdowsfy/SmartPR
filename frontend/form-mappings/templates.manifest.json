@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-09T02:57:32.250Z",
+  "generatedAt": "2026-09-10T04:29:07.376Z",
   "templates": [
     {
       "formCode": "CORPREG01",
@@ -55,6 +55,18 @@
       "checksum": "sha256:f93cdea9a6f10c9a30bb1cd27f1261f95f81bc8cb9e9875367d7fcd47929499e",
       "byteLength": 150904,
       "pageCount": 6,
+      "hasAcroForm": false,
+      "nativeFieldCount": 0,
+      "populationMethod": "pdf_overlay",
+      "artifactType": "official_pdf_form",
+      "sourceStatus": "official_source"
+    },
+    {
+      "formCode": "LUMAINT01",
+      "sourceFile": "RealForms/LUMA-Confirmacion-Orientacion-Cliente-Rev10-2021.pdf",
+      "checksum": "sha256:7e9d931074b7456799851b4418f9b7f970c3b4b6564485cdcb0ff393594ed893",
+      "byteLength": 75416,
+      "pageCount": 1,
       "hasAcroForm": false,
       "nativeFieldCount": 0,
       "populationMethod": "pdf_overlay",

@@ -153,6 +153,40 @@ function nc001Values(data: FormData): DirectOverlayValue[] {
 }
 
 /**
+ * LUMAINT01 (Confirmación de Orientación al Cliente — interconexión de GD)
+ * fields answered on the form itself: the LUMA account number, the installer
+ * who gave the orientation, the applicable-regulation mark, and the project
+ * details. The customer name, project address and signer address resolve from
+ * the canonical profile via their mapping rows' canonicalField (generic
+ * pass in population.ts) — they are not repeated here.
+ *
+ * `pdfField` ids here are a contract with form-mappings/LUMAINT01.json: each
+ * one must match a mapping row's `pdfField` so population.ts can find that
+ * row's `placement`. The customer_signature row is ownership "signature" and
+ * is blocked from writing by the backstop in population.ts even if named here.
+ */
+function lumaInt01Values(data: FormData): DirectOverlayValue[] {
+  const values: DirectOverlayValue[] = [];
+
+  pushOverlay(values, "account_number", textValue(data, "account_number"));
+  pushOverlay(values, "installer_name", textValue(data, "installer_name"));
+  pushOverlay(values, "installer_company", textValue(data, "installer_company"));
+  pushOverlay(values, "project_name", textValue(data, "project_name"));
+  pushOverlay(values, "project_number", textValue(data, "project_number"));
+  pushOverlay(values, "capacity_kw", textValue(data, "capacity_kw"));
+  pushOverlay(values, "project_address_line2", textValue(data, "project_address_line2"));
+
+  const signatureDate = textValue(data, "signature_date");
+  if (signatureDate) pushOverlay(values, "signature_date", nc001SpanishDate(signatureDate));
+
+  const regulation = textValue(data, "regulation");
+  if (regulation === "distribution") pushOverlay(values, "regulation_distribution_mark", "X");
+  if (regulation === "transmission") pushOverlay(values, "regulation_transmission_mark", "X");
+
+  return values;
+}
+
+/**
  * Values collected by the schema-driven builder that do not belong in the
  * shared canonical business profile. Only known form codes are accepted; a
  * client cannot name arbitrary PDF fields.
@@ -160,6 +194,7 @@ function nc001Values(data: FormData): DirectOverlayValue[] {
 export function directOverlayValues(formCode: string, data: FormData | undefined): DirectOverlayValue[] {
   if (!data) return [];
   if (formCode === "NC001") return nc001Values(data);
+  if (formCode === "LUMAINT01") return lumaInt01Values(data);
   return [];
 }
 
