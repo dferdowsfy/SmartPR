@@ -60,5 +60,10 @@
 {"id": "DOC_TSA_KNOWN_SHIPPER", "name": "TSA Known Shipper / Indirect Air Carrier", "agency": "Transportation Security Administration (TSA)", "category": "Regulatory"},
 {"id": "DOC_AIRPORT_CONCESSION", "name": "Airport-Area Concession Agreement", "agency": "Aerostar Airport Holdings / Autoridad de los Puertos", "category": "Regulatory"},
 {"id": "DOC_HOA_AUTHORIZATION", "name": "Condo / HOA Short-Term Rental Authorization", "agency": "Property Owner / Homeowners Association", "category": "Property"},
-{"id": "DOC_ROOM_TAX_RETURN", "name": "Room Tax Monthly Return", "agency": "Compañía de Turismo", "category": "Regulatory"}
+{"id": "DOC_ROOM_TAX_RETURN", "name": "Room Tax Monthly Return", "agency": "Compañía de Turismo", "category": "Regulatory"},
+{"id": "DOC_LUMA_INTERCONNECTION", "name": "LUMA Interconnection Registration", "agency": "LUMA Energy", "category": "Regulatory"},
+{"id": "DOC_NET_METERING_AGREEMENT", "name": "Net Metering Agreement", "agency": "LUMA Energy", "category": "Regulatory"},
+{"id": "DOC_OGPE_CONSTRUCTION_PERMIT", "name": "OGPe Construction Permit", "agency": "OGPe", "category": "Regulatory"},
+{"id": "DOC_OWNER_AFFIDAVIT", "name": "Property Owner Authorization Affidavit", "agency": "Notary Public", "category": "Property"},
+{"id": "DOC_OPPE_INSTALLER_REG", "name": "OPPE Installer Registration Evidence", "agency": "OPPE", "category": "Professional"}
 ]

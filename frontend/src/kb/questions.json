@@ -466,4 +466,46 @@
 "question": "Is the property part of a condominium, HOA, or other residential association?",
 "type": "boolean"
 }
+,
+{
+"id": "Q_SOLAR_MOUNTING",
+"question": "Will the solar system be roof-mounted or ground-mounted?",
+"type": "single_select",
+"options": [
+"Roof-mounted",
+"Ground-mounted"
+]
+}
+,
+{
+"id": "Q_SOLAR_SIZE",
+"question": "What is the planned solar system capacity?",
+"type": "single_select",
+"options": [
+"1 MW or less",
+"Over 1 MW"
+]
+}
+,
+{
+"id": "Q_SOLAR_STRUCTURE",
+"question": "Will the system be installed on an existing structure?",
+"type": "boolean"
+}
+,
+{
+"id": "Q_SOLAR_OWNERSHIP",
+"question": "Does the business own the property where the solar system will be installed?",
+"type": "single_select",
+"options": [
+"Own",
+"Lease"
+]
+}
+,
+{
+"id": "Q_SOLAR_BATTERY",
+"question": "Will battery energy storage be installed with the solar system?",
+"type": "boolean"
+}
 ]

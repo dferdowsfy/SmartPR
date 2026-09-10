@@ -228,6 +228,12 @@ export function buildEngineInput(
   const p = profile || {};
   const da = answers || {};
   const on = (...keys: string[]) => keys.some((k) => p[k] === true || da[k] === true);
+  // String-valued answers (select-type questions): pass the raw value through
+  // so rules comparing against option labels keep working.
+  const strVal = (key: string): string | undefined => {
+    const v = (p[key] ?? da[key]) as unknown;
+    return typeof v === "string" && v !== "" ? v : undefined;
+  };
   const loc = (p.location_type as string) || "";
   const empCount = Number(p.number_of_employees || 0);
   // The intake spells online-only two ways depending on which dropdown the
@@ -272,6 +278,12 @@ export function buildEngineInput(
     Q_NONPROFIT_STATUS: on("nonprofit_status"),
     Q_RENOVATIONS: on("renovations"),
     Q_VEHICLE_REPAIR: on("vehicles_repaired", "vehicle_repair"),
+    Q_RENEWABLE_INSTALL: on("renewable_install"),
+    Q_SOLAR_MOUNTING: strVal("solar_mounting"),
+    Q_SOLAR_SIZE: strVal("solar_size"),
+    Q_SOLAR_STRUCTURE: on("solar_existing_structure"),
+    Q_SOLAR_OWNERSHIP: strVal("solar_property_ownership"),
+    Q_SOLAR_BATTERY: on("solar_battery"),
   };
 
   // Pass through direct KB-question answers (admin-created questions are

@@ -64,6 +64,12 @@ export const QUESTION_KEY_MAP: Record<string, QuestionKeyBinding> = {
   Q_NONPROFIT_STATUS: { writeKey: "nonprofit_status" },
   Q_RENOVATIONS: { writeKey: "renovations" },
   Q_VEHICLE_REPAIR: { writeKey: "vehicle_repair", aliases: ["vehicles_repaired"] },
+  Q_RENEWABLE_INSTALL: { writeKey: "renewable_install" },
+  Q_SOLAR_MOUNTING: { writeKey: "solar_mounting" },
+  Q_SOLAR_SIZE: { writeKey: "solar_size" },
+  Q_SOLAR_STRUCTURE: { writeKey: "solar_existing_structure" },
+  Q_SOLAR_OWNERSHIP: { writeKey: "solar_property_ownership" },
+  Q_SOLAR_BATTERY: { writeKey: "solar_battery" },
 };
 
 /**

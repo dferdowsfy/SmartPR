@@ -91,6 +91,12 @@ const QUESTION_HINTS: Record<string, string[]> = {
   Q_TOURISM_ACTIVITY: ["tour", "tourism", "tourist", "excursion", "kayak", "snorkel", "diving", "turismo"],
   Q_COMMERCIAL_VEHICLES: ["vehicle", "truck", "van", "fleet", "delivery", "transport", "camion"],
   Q_VEHICLE_REPAIR: ["repair", "mechanic", "auto", "body shop", "garage", "taller"],
+  Q_RENEWABLE_INSTALL: ["solar", "placas solares", "paneles solares", "paneles", "placas", "renewable", "energia solar", "energía solar", "fotovoltaico", "fotovoltaic"],
+  Q_SOLAR_MOUNTING: ["rooftop", "roof", "techo", "ground", "suelo", "terreno", "mounted"],
+  Q_SOLAR_SIZE: ["mw", "megawatt", "kilowatt", "kw", "capacity", "capacidad"],
+  Q_SOLAR_STRUCTURE: ["existing", "existente", "structure", "estructura", "building", "edificio"],
+  Q_SOLAR_OWNERSHIP: ["own", "lease", "rent", "dueño", "propietario", "arrendar", "alquilar", "propiedad"],
+  Q_SOLAR_BATTERY: ["battery", "bateria", "batería", "storage", "almacenamiento", "powerwall"],
   Q_HAZARDOUS_MATERIALS: ["hazardous", "chemical", "toxic", "flammable", "quimico"],
   Q_HAZARDOUS_FLUIDS: ["fluid", "oil", "fuel", "solvent", "gasoline"],
   Q_CHEMICALS_USED: ["chemical", "cleaning", "solvent", "dye", "quimico"],
@@ -129,6 +135,9 @@ const BUSINESS_TYPE_SYNONYMS: Record<string, string[]> = {
   BT_GUEST_HOUSE: ["airbnb", "bed and breakfast", "b&b", "short term rental", "hostal"],
   BT_BEAUTY_SALON: ["hair salon", "barbershop", "barber shop", "peluqueria", "salon"],
   BT_DAYCARE: ["childcare", "child care", "nursery", "preschool", "cuido"],
+  BT_SOLAR_INSTALLER: ["solar installer", "solar company", "solar panels", "placas solares", "instalador solar", "compañia solar"],
+  BT_BATTERY_STORAGE_INSTALLER: ["battery installer", "battery storage", "baterias", "almacenamiento"],
+  BT_RENEWABLE_ENERGY_COMPANY: ["renewable energy", "energia renovable", "energia limpia"],
 };
 
 /** Coarse industry detection used to top up thin candidate lists. */
@@ -140,6 +149,7 @@ const INDUSTRY_HINTS: Record<string, string[]> = {
   IND_BEAUTY: ["salon", "barber", "spa", "beauty", "nails", "hair"],
   IND_EDUCATION: ["school", "daycare", "childcare", "tutoring", "training", "academy"],
   IND_RETAIL: ["retail", "store", "shop", "boutique", "tienda"],
+  IND_ENERGY: ["energy", "solar", "energia", "placas", "electric", "utilities"],
 };
 
 function detectIndustryIds(descNorm: string): string[] {

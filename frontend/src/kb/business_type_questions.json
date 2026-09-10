@@ -6418,5 +6418,65 @@
   {
     "business_type_id": "BT_CHARITY",
     "question_id": "Q_CLIENTS_VISIT"
+  },
+  {
+    "business_type_id": "BT_SOLAR_INSTALLER",
+    "question_id": "Q_SOLAR_MOUNTING"
+  },
+  {
+    "business_type_id": "BT_SOLAR_INSTALLER",
+    "question_id": "Q_SOLAR_SIZE"
+  },
+  {
+    "business_type_id": "BT_SOLAR_INSTALLER",
+    "question_id": "Q_SOLAR_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_SOLAR_INSTALLER",
+    "question_id": "Q_SOLAR_OWNERSHIP"
+  },
+  {
+    "business_type_id": "BT_SOLAR_INSTALLER",
+    "question_id": "Q_SOLAR_BATTERY"
+  },
+  {
+    "business_type_id": "BT_BATTERY_STORAGE_INSTALLER",
+    "question_id": "Q_SOLAR_MOUNTING"
+  },
+  {
+    "business_type_id": "BT_BATTERY_STORAGE_INSTALLER",
+    "question_id": "Q_SOLAR_SIZE"
+  },
+  {
+    "business_type_id": "BT_BATTERY_STORAGE_INSTALLER",
+    "question_id": "Q_SOLAR_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_BATTERY_STORAGE_INSTALLER",
+    "question_id": "Q_SOLAR_OWNERSHIP"
+  },
+  {
+    "business_type_id": "BT_BATTERY_STORAGE_INSTALLER",
+    "question_id": "Q_SOLAR_BATTERY"
+  },
+  {
+    "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
+    "question_id": "Q_SOLAR_MOUNTING"
+  },
+  {
+    "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
+    "question_id": "Q_SOLAR_SIZE"
+  },
+  {
+    "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
+    "question_id": "Q_SOLAR_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
+    "question_id": "Q_SOLAR_OWNERSHIP"
+  },
+  {
+    "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
+    "question_id": "Q_SOLAR_BATTERY"
   }
 ]

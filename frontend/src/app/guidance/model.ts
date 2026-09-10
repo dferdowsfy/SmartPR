@@ -1,6 +1,6 @@
 // Published document-node content. No AI generation and no obligation matching.
 export type LocalizedText = { en: string; es: string };
-export type GuidanceFactKey = "Q_ALCOHOL_SOLD" | "Q_PHYSICAL_LOCATION" | "Q_EMPLOYEES_HIRED" | "Q_EXISTING_LEASE" | "Q_FOOD_PREPARED" | "Q_FOOD_SOLD" | "Q_CUSTOMERS_VISIT" | "entityType" | "municipality" | "businessType";
+export type GuidanceFactKey = "Q_ALCOHOL_SOLD" | "Q_PHYSICAL_LOCATION" | "Q_EMPLOYEES_HIRED" | "Q_EXISTING_LEASE" | "Q_FOOD_PREPARED" | "Q_FOOD_SOLD" | "Q_CUSTOMERS_VISIT" | "Q_RENEWABLE_INSTALL" | "Q_SOLAR_MOUNTING" | "Q_SOLAR_SIZE" | "Q_SOLAR_OWNERSHIP" | "entityType" | "municipality" | "businessType";
 export interface GuidanceCondition {
   key: GuidanceFactKey;
   equals?: string | boolean;
@@ -35,7 +35,7 @@ export interface GuidanceConcept {
 }
 
 const GENERIC = /applies based on what SmartPR knows|issued or required by|is required by|keeps? (your |the )?(business |compliance profile )?(compliant|current)|keeps? you compliant|guide you through the exact steps|comply with local regulations|keep it on file|mantiene tu perfil de cumplimiento|emitido o requerido por/i;
-const KEYS = new Set<GuidanceFactKey>(["Q_ALCOHOL_SOLD", "Q_PHYSICAL_LOCATION", "Q_EMPLOYEES_HIRED", "Q_EXISTING_LEASE", "Q_FOOD_PREPARED", "Q_FOOD_SOLD", "Q_CUSTOMERS_VISIT", "entityType", "municipality", "businessType"]);
+const KEYS = new Set<GuidanceFactKey>(["Q_ALCOHOL_SOLD", "Q_PHYSICAL_LOCATION", "Q_EMPLOYEES_HIRED", "Q_EXISTING_LEASE", "Q_FOOD_PREPARED", "Q_FOOD_SOLD", "Q_CUSTOMERS_VISIT", "Q_RENEWABLE_INSTALL", "Q_SOLAR_MOUNTING", "Q_SOLAR_SIZE", "Q_SOLAR_OWNERSHIP", "entityType", "municipality", "businessType"]);
 const CONTENT_FIELDS = ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const;
 
 /** Untrusted published JSON must fail closed, not crash the Requirements page. */
