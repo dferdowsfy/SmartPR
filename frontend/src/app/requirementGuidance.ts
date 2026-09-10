@@ -98,9 +98,10 @@ function provisional(concept: GuidanceConcept, ctx: GuidanceContext, reasons: st
   const render = (value: string) => value.replace(/\{municipality\}/g, String(ctx.municipality ?? "")).trim();
   const regulatoryReason = render(concept.regulatoryReason[lang]), purpose = render(concept.purpose[lang]);
   const nextAction = render(concept.nextAction[lang]), consequenceOrNextStep = render(concept.consequenceOrNextStep[lang]);
+  const desc = caseDescriptor(ctx);
   const caveat = es
-    ? "Aún no se ha confirmado que este requisito aplique a tu caso específico; verifícalo antes de actuar."
-    : "Whether this requirement applies to your specific case is not confirmed yet; verify it before acting.";
+    ? `Aún no se ha confirmado que este requisito aplique a tu caso específico${desc ? ` (${desc})` : ""}; verifícalo antes de actuar.`
+    : `Whether this requirement applies to your specific case${desc ? ` (${desc})` : ""} is not confirmed yet; verify it before acting.`;
   const why = `${caveat} ${regulatoryReason}`;
   return {
     requirementId: concept.requirementId, status: "GUIDANCE_NEEDS_REVIEW", reviewReasons: reasons,
@@ -112,17 +113,45 @@ function provisional(concept: GuidanceConcept, ctx: GuidanceContext, reasons: st
   };
 }
 
+/** Short, factual case descriptor from confirmed profile facts — never inferred.
+ *  Used to make honest fallbacks contextual instead of generic. */
+function caseDescriptor(ctx: GuidanceContext): string {
+  const es = ctx.language === "es";
+  const bt = (ctx.businessTypeName ?? "").trim();
+  const muni = (ctx.municipality ?? "").trim();
+  if (bt && muni) return es ? `${bt} en ${muni}` : `${bt} in ${muni}`;
+  if (bt) return bt;
+  if (muni) return es ? `tu negocio en ${muni}` : `your business in ${muni}`;
+  return "";
+}
+
 function review(req: GuidanceRequirement, ctx: GuidanceContext, reasons: string[]): RequirementGuidance {
   const es = ctx.language === "es";
-  const why = es ? "SmartPR ha identificado este requisito, pero su fundamento regulatorio aún no se ha validado por completo." : "SmartPR has identified this requirement, but the regulatory rationale has not yet been fully validated.";
+  const desc = caseDescriptor(ctx);
+  const agency = (req.agency ?? "").trim();
+  // Contextual but honest: name the confirmed facts that surfaced this
+  // requirement (business type, municipality, agency) — never invent the
+  // regulatory rationale SmartPR has not validated.
+  const why = desc
+    ? es
+      ? `«${req.name}» surgió por tu caso específico (${desc}). SmartPR aún no tiene validada la base regulatoria exacta — confírmala${agency ? ` con ${agency}` : ""} antes de actuar.`
+      : `“${req.name}” came up because of your specific case (${desc}). SmartPR hasn't validated the exact regulatory basis yet — confirm it${agency ? ` with ${agency}` : ""} before acting.`
+    : es
+      ? "SmartPR ha identificado este requisito, pero su fundamento regulatorio aún no se ha validado por completo."
+      : "SmartPR has identified this requirement, but the regulatory rationale has not yet been fully validated.";
+  const triggeredBy: string[] = [];
+  if ((ctx.businessTypeName ?? "").trim()) triggeredBy.push(es ? `Tipo de negocio: ${ctx.businessTypeName!.trim()}` : `Business type: ${ctx.businessTypeName!.trim()}`);
+  if ((ctx.municipality ?? "").trim()) triggeredBy.push(es ? `Municipio: ${ctx.municipality!.trim()}` : `Municipality: ${ctx.municipality!.trim()}`);
   return {
     requirementId: req.document_id ?? req.code, status: "GUIDANCE_NEEDS_REVIEW", reviewReasons: reasons,
     triggerFacts: [], regulatoryReason: "", purpose: "", nextAction: "", consequenceOrNextStep: "", dependencies: [], sources: [], sourceVersion: null,
     summary: why, whyThisApplies: why,
-    whatThisIs: es ? "La finalidad específica está pendiente de validación." : "The specific purpose is awaiting validation.",
-    whatYouNeedToDo: es ? "Confirma el fundamento y la aplicabilidad antes de actuar sobre este requisito." : "Confirm the rationale and applicability before acting on this requirement.",
+    whatThisIs: es ? "La descripción validada de este documento aún está pendiente." : "A validated description of this document is still pending.",
+    whatYouNeedToDo: es
+      ? `Confirma${agency ? ` con ${agency}` : ""} qué se exige exactamente en tu caso antes de actuar.`
+      : `Confirm${agency ? ` with ${agency}` : ""} exactly what is required in your case before acting.`,
     whatHappensNext: es ? "No se ha validado qué autoriza o acredita su cumplimiento." : "What completion authorizes or establishes has not been validated.",
-    triggeredBy: [], satisfiesOrUnlocks: [], sourceReferences: [], lastVerified: null,
+    triggeredBy, satisfiesOrUnlocks: [], sourceReferences: [], lastVerified: null,
   };
 }
 

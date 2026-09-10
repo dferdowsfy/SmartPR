@@ -113,6 +113,7 @@ export function IncentivesSidebar({
         .inc-status.possible{background:#fff5df;color:#9a6700}
         .inc-status.info{background:#fff5df;color:#9a6700}
         .inc-review{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border,#d9d4ca);background:var(--surface,#fff);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:650;color:var(--accent,#0f766e);cursor:pointer}
+        .inc-pursued-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 8px;font-size:10.5px;font-weight:800;margin-left:6px;background:#e7f5f1;color:#0f766e;vertical-align:middle}
         .inc-review:hover{border-color:var(--accent,#0f766e)}
         .inc-pursuing{border-top:1px solid var(--border,#d9d4ca);padding-top:12px;margin-top:2px}
         .inc-pursuing-head{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted,#69665f);margin-bottom:8px}
@@ -159,10 +160,13 @@ export function IncentivesSidebar({
         {!loading && topMatches.map((item) => {
           const status = statusPresentation(item, language);
           const benefit = item.potentialBenefit[0]?.amountDescription || item.potentialBenefit[0]?.description || "";
+          const isPursued = pursuedIncentives.some((p) => p.programId === item.programId);
           return (
             <div key={item.programId} className="inc-match">
               <div className={`inc-status ${status.tone}`}>{status.label}</div>
-              <div className="inc-match-name">{item.programName}</div>
+              <div className="inc-match-name">{item.programName}
+                {isPursued && <span className="inc-pursued-chip"><Check size={11} aria-hidden="true" /> {es ? "Añadido" : "Added"}</span>}
+              </div>
               {benefit && <div className="inc-match-benefit">{benefit}</div>}
               <button type="button" className="inc-review" onClick={() => onReview(item)}>
                 {es ? "Revisar" : "Review"} <ArrowRight size={12} aria-hidden="true" />

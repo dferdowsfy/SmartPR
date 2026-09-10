@@ -202,3 +202,32 @@ test("each validated purpose teaches something requirement-specific, with no app
     for (const other of Object.keys(signatures).filter(k => k !== id)) assert.doesNotMatch(buildRequirementGuidance(req(other), ctx).purpose, pattern);
   }
 });
+
+test("unvalidated requirements get a contextual 'why', never generic filler", () => {
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_OWNER_AFFIDAVIT"), { ...ctx, language });
+    assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW");
+    // Contextual: names the confirmed facts of this specific case...
+    assert.match(g.whyThisApplies, /Bar/);
+    assert.match(g.whyThisApplies, /Bayamón/);
+    // ...but stays honest about what SmartPR has not validated.
+    assert.match(g.whyThisApplies, language === "es" ? /aún no tiene validada/ : /hasn't validated/);
+    assert.doesNotMatch(g.whyThisApplies, /Old generic text/);
+    assert.deepEqual(
+      g.triggeredBy,
+      language === "es" ? ["Tipo de negocio: Bar", "Municipio: Bayamón"] : ["Business type: Bar", "Municipality: Bayamón"]
+    );
+  }
+  // No case facts at all: the honest generic remains, never invented context.
+  const bare = buildRequirementGuidance(req("DOC_OWNER_AFFIDAVIT"), { ...ctx, municipality: null, businessTypeName: null });
+  assert.match(bare.whyThisApplies, /not yet been fully validated/);
+  assert.doesNotMatch(bare.whyThisApplies, /Bar|Bayamón/);
+  assert.deepEqual(bare.triggeredBy, []);
+});
+
+test("provisional caveat names the case instead of speaking generically", () => {
+  // DOC_LUMA_INTERCONNECTION is solar-gated: provisional for the bar profile.
+  const g = buildRequirementGuidance(req("DOC_LUMA_INTERCONNECTION"), { ...ctx, language: "es" });
+  assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW");
+  assert.match(g.whyThisApplies, /Bar en Bayamón/);
+});

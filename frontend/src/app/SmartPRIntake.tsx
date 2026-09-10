@@ -3770,10 +3770,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       return next;
     });
     setActiveIncentiveResult(result);
+    const known = new Set(requirements.map((r) => r.document_id).filter(Boolean));
+    const newDocs = result.requiredSupportingEvidence.filter((doc) => !known.has(doc.id));
     setRequirements((current) => {
-      const known = new Set(current.map((r) => r.document_id).filter(Boolean));
+      const knownNow = new Set(current.map((r) => r.document_id).filter(Boolean));
       const additions: Requirement[] = result.requiredSupportingEvidence
-        .filter((doc) => !known.has(doc.id))
+        .filter((doc) => !knownNow.has(doc.id))
         .map((doc) => {
           const kbDoc = KB.documents.find((d) => d.id === doc.id);
           return {
@@ -3791,7 +3793,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         });
       return additions.length ? [...current, ...additions] : current;
     });
-  }, [language]);
+    // Visible confirmation: the pursue action is otherwise only a subtle
+    // footer badge swap inside the workflow panel.
+    setUploadNotice({
+      kind: 'success',
+      title: language === 'es' ? `«${result.programName}» añadido` : `“${result.programName}” added`,
+      detail: newDocs.length > 0
+        ? (language === 'es'
+            ? `Lo estás persiguiendo — ${newDocs.length} documento(s) de respaldo añadidos a tus requisitos.`
+            : `You're now pursuing it — ${newDocs.length} supporting document(s) added to your requirements.`)
+        : (language === 'es' ? 'Lo estás persiguiendo.' : `You're now pursuing it.`),
+    });
+  }, [language, requirements]);
   const handleRemovePursuedIncentive = React.useCallback((programId: string) => {
     setPursuedIncentives((current) => current.filter((item) => item.programId !== programId));
   }, []);
