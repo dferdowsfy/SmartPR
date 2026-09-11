@@ -127,6 +127,10 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   // rather than flashing a loading state, and is replaced once the new one lands.
   const [realArtifact, setRealArtifact] = useState<PopulatedArtifact | null>(null);
   const [realArtifactError, setRealArtifactError] = useState<string | null>(null);
+  // Set when /populate answers 402: the filled official PDF sits behind the
+  // paywall. The modal stays usable (worksheet fallback remains free); only
+  // the official-PDF preview/download is replaced by the upgrade panel.
+  const [paywallCode, setPaywallCode] = useState<string | null>(null);
 
   // One in-flight population per (form, profile), shared by the preview below
   // and the download button. Without this the download would either fire its
@@ -144,8 +148,14 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
         body: JSON.stringify({ profile: canonical, formData: data }),
       });
       if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}) as { error?: string });
-        throw new Error(errBody.error ?? `HTTP ${res.status}`);
+        const errBody = await res.json().catch(() => ({}) as { error?: string; code?: string });
+        const err = new Error(errBody.error ?? `HTTP ${res.status}`) as Error & {
+          status?: number;
+          code?: string;
+        };
+        err.status = res.status;
+        err.code = errBody.code;
+        throw err;
       }
       return {
         blob: await res.blob(),
@@ -169,7 +179,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   const wantsRealArtifact = offersDownload && hasRealArtifact;
   // Derived, not stored: loading is exactly "expecting a real artifact but
   // don't have one or a failure yet".
-  const realArtifactLoading = wantsRealArtifact && !realArtifact && !realArtifactError;
+  const realArtifactLoading = wantsRealArtifact && !realArtifact && !realArtifactError && !paywallCode;
 
   useEffect(() => {
     if (!wantsRealArtifact) return;
@@ -177,8 +187,19 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
     // never overwrite a fresher result — `cancelled` guards every setState.
     let cancelled = false;
     void requestOfficialPdf().then(
-      (artifact) => { if (!cancelled) { setRealArtifact(artifact); setRealArtifactError(null); } },
-      (err: unknown) => { if (!cancelled) setRealArtifactError(err instanceof Error ? err.message : String(err)); }
+      (artifact) => { if (!cancelled) { setRealArtifact(artifact); setRealArtifactError(null); setPaywallCode(null); } },
+      (err: unknown) => {
+        if (cancelled) return;
+        const code = err instanceof Error ? (err as Error & { code?: string }).code ?? null : null;
+        const status = err instanceof Error ? (err as Error & { status?: number }).status ?? null : null;
+        if (status === 402 && (code === "plan_deliverables_locked" || code === "auth_required")) {
+          setPaywallCode(code);
+          setRealArtifactError(null);
+        } else {
+          setPaywallCode(null);
+          setRealArtifactError(err instanceof Error ? err.message : String(err));
+        }
+      }
     );
     return () => {
       cancelled = true;
@@ -196,6 +217,8 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   // loaded, the SmartPR-drafted fallback otherwise.
   const showingRealArtifact = hasRealArtifact && !!realArtifactUrl;
   const displayedPreviewUrl = realArtifactUrl ?? readyPreviewUrl;
+  // Paywall: the filled official PDF requires a plan with deliverables.
+  const paywalled = paywallCode !== null && wantsRealArtifact;
 
   // The submission step belongs to a prepared application only: right after the
   // applicant completes it, or when they reopen one they already prepared.
@@ -359,7 +382,12 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
           {(mode === "ready" || (mode === "view" && wantsRealArtifact)) && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
-                {showingRealArtifact
+                {paywalled
+                  ? L(
+                        "The official filled PDF is a paid deliverable.",
+                        "El PDF oficial completado es un entregable pago."
+                      )
+                  : showingRealArtifact
                   ? mode === "ready"
                     ? L(
                         "This is the official government PDF — your data populated into the original form, nothing else changed. Nothing is saved until you confirm below.",
@@ -381,7 +409,47 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
                         "Este es el documento exacto que se añadirá a sus entregables — no se guarda nada hasta que confirme abajo."
                       )}
               </div>
-              {hasRealArtifact && realArtifactLoading && !realArtifactUrl ? (
+              {paywalled ? (
+                <div
+                  style={{
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 12,
+                    background: "#f8fafc",
+                    padding: "32px 24px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div style={{ fontSize: 17, fontWeight: 700, color: "#0f2a43", marginBottom: 8 }}>
+                    {L("Filled government forms are a paid feature", "Los formularios oficiales completados son una función paga")}
+                  </div>
+                  <div style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.65, maxWidth: 420, margin: "0 auto 20px" }}>
+                    {paywallCode === "auth_required"
+                      ? L(
+                          "Create your free account, then choose a plan to generate the official filled PDF — ready to file. Your assessment and requirements checklist stay free.",
+                          "Cree su cuenta gratis y elija un plan para generar el PDF oficial completado — listo para radicar. Su evaluación y lista de requisitos siguen siendo gratis."
+                        )
+                      : L(
+                          "Your free plan covers the assessment and your requirements checklist. Upgrade to generate the official filled PDF — ready to file.",
+                          "Su plan gratis cubre la evaluación y su lista de requisitos. Suba de plan para generar el PDF oficial completado — listo para radicar."
+                        )}
+                  </div>
+                  <a
+                    href="/pricing"
+                    style={{
+                      display: "inline-block",
+                      background: "#0f2a43",
+                      color: "#ffffff",
+                      fontSize: 15,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      padding: "12px 28px",
+                      borderRadius: 8,
+                    }}
+                  >
+                    {L("See plans", "Ver planes")}
+                  </a>
+                </div>
+              ) : hasRealArtifact && realArtifactLoading && !realArtifactUrl ? (
                 <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 13 }}>
                   {L("Populating the official government PDF…", "Completando el PDF oficial del gobierno…")}
                 </div>

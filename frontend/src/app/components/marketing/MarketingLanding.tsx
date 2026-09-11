@@ -223,9 +223,9 @@ export default function MarketingLanding() {
           <div className={styles.desktopActions}>
             <LanguageToggle language={language} onChange={setLanguage} />
             <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
-            <button type="button" className={styles.primary} onClick={() => void start()}>
+            <Link href="/signup" className={styles.primary}>
               {c.started}
-            </button>
+            </Link>
           </div>
           <button
             className={styles.menuButton}
@@ -253,9 +253,9 @@ export default function MarketingLanding() {
               <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
               <LanguageToggle language={language} onChange={setLanguage} />
             </div>
-            <button type="button" className={styles.primary} onClick={() => { setNavOpen(false); void start(); }}>
+            <Link href="/signup" className={styles.primary} onClick={() => setNavOpen(false)}>
               {c.started}
-            </button>
+            </Link>
           </div>
         ) : null}
       </header>

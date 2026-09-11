@@ -7,7 +7,8 @@ import { randomUUID } from "node:crypto";
 
 import { createSupabaseServer, getCurrentUser } from "../../../../../../lib/supabase/server";
 import { getPool } from "../../../../../graph/db";
-import { userCanAccessBusiness } from "../../../../../compliance/server";
+import { ensureUserWorkspace, userCanAccessBusiness } from "../../../../../compliance/server";
+import { assertCanUseDeliverables, gateJson } from "../../../../../../lib/billing/access";
 import { ArtifactGenerationError, generateWorkingCopy } from "../../../../../forms/artifacts/library";
 import { recordGeneratedFiling } from "../../../../../forms/artifacts/persistence";
 import { emptyCanonicalData, type CanonicalApplicationData, type FormData } from "../../../../../forms/engine/types";
@@ -17,11 +18,33 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, ctx: { params: Promise<{ formCode: string }> }) {
   const { formCode } = await ctx.params;
-  // Generation itself is pure Node fs/pdf-lib and needs nothing from an
-  // account — the main intake flow works anonymously (see archiveDeliverable's
-  // same no-op-when-anonymous pattern). Only persisting the result to Supabase
-  // Storage below actually requires a signed-in user.
+  // Filled government forms are a paid deliverable: the free tier covers the
+  // assessment and the requirements checklist, but generating the populated
+  // official PDF requires a plan with the deliverables entitlement.
+  // NOTE: this only holds when ADMIN_EMAILS is set in production — with it
+  // unset, isAdminEmail() treats every signed-in user as an admin (bypass).
   const user = await getCurrentUser();
+  const pool = getPool();
+  if (!user) {
+    return Response.json(
+      {
+        error: "Create a free account and choose a plan to generate filled government forms.",
+        code: "auth_required",
+        upgradeUrl: "/pricing",
+      },
+      { status: 402 }
+    );
+  }
+  if (pool) {
+    try {
+      const workspaceId = await ensureUserWorkspace(pool, user);
+      await assertCanUseDeliverables(pool, { workspaceId, email: user.email });
+    } catch (err) {
+      const gated = gateJson(err);
+      if (gated) return gated;
+      throw err;
+    }
+  }
 
   let body: { profile?: Partial<CanonicalApplicationData>; formData?: FormData; businessId?: string; instanceId?: string; archive?: boolean };
   try {
@@ -42,7 +65,6 @@ export async function POST(request: Request, ctx: { params: Promise<{ formCode: 
   const warnings: string[] = [];
   let archived = false;
   if (body.archive && body.businessId && user) {
-    const pool = getPool();
     const owns = pool ? await userCanAccessBusiness(pool, user.id, body.businessId) : false;
     if (!owns) {
       warnings.push("Not archived: this business does not belong to your account.");
