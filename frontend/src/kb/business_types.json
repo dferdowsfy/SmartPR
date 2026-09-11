@@ -838,5 +838,11 @@
     "industry_id": "IND_NONPROFIT",
     "name": "Charity",
     "description": "Charity operating in Puerto Rico."
+  },
+  {
+    "id": "BT_TIRE_RECYCLING",
+    "industry_id": "IND_MANUFACTURING",
+    "name": "Tire Recycling & Manufacturing",
+    "description": "Tire recycling plant that collects used tires and manufactures recycled rubber products (granulated rubber, rubber mulch, rubber tiles, mats) in Puerto Rico. Reciclaje de neumaticos y gomas, waste tire processing, rubber product manufacturing."
   }
 ]

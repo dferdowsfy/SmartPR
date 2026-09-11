@@ -6478,5 +6478,53 @@
   {
     "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
     "question_id": "Q_SOLAR_BATTERY"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_PHYSICAL_LOCATION"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_LOCATION_TYPE"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_EMPLOYEES_HIRED"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_EMPLOYEE_COUNT"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_PRODUCTS_MANUFACTURED"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_HAZARDOUS_MATERIALS"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_HAZARDOUS_STORAGE"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_HAZMAT_TRANSPORT"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_CHEMICALS_USED"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_ENVIRONMENTAL_IMPACT"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_PRODUCTS_DISTRIBUTED"
   }
 ]

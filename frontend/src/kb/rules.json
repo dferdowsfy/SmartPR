@@ -610,5 +610,7 @@
 {"id": "RULE_0612", "rule_type": "question_trigger", "business_type_id": null, "question_id": "Q_SOLAR_MOUNTING", "expected_answer": "Ground-mounted", "municipality_flag": null, "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT"},
 {"id": "RULE_0613", "rule_type": "question_trigger", "business_type_id": null, "question_id": "Q_SOLAR_SIZE", "expected_answer": "Over 1 MW", "municipality_flag": null, "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT"},
 {"id": "RULE_0614", "rule_type": "question_trigger", "business_type_id": null, "question_id": "Q_SOLAR_OWNERSHIP", "expected_answer": "Lease", "municipality_flag": null, "requires_document_id": "DOC_OWNER_AFFIDAVIT"},
-{"id": "RULE_0615", "rule_type": "question_trigger", "business_type_id": null, "question_id": "Q_SOLAR_BATTERY", "expected_answer": "true", "municipality_flag": null, "requires_document_id": "DOC_FIRE_CERT"}
+{"id": "RULE_0615", "rule_type": "question_trigger", "business_type_id": null, "question_id": "Q_SOLAR_BATTERY", "expected_answer": "true", "municipality_flag": null, "requires_document_id": "DOC_FIRE_CERT"},
+{"id": "RULE_0616", "rule_type": "business_type", "business_type_id": "BT_TIRE_RECYCLING", "question_id": null, "expected_answer": null, "municipality_flag": null, "requires_document_id": "DOC_ENVIRONMENTAL_PERMIT"},
+{"id": "RULE_0617", "rule_type": "business_type", "business_type_id": "BT_TIRE_RECYCLING", "question_id": null, "expected_answer": null, "municipality_flag": null, "requires_document_id": "DOC_FIRE_CERT"}
 ]
