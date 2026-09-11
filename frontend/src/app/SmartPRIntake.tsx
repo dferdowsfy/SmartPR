@@ -1828,6 +1828,32 @@ export default function SmartPRIntake() {
     }));
   };
 
+  /**
+   * Changing industry invalidates everything downstream of it: the business
+   * type, the guided questions and their answers, potential-item decisions,
+   * and any requirements already computed. Reset all of it so the intake can
+   * never sit in a half-answered state with a dead "See my requirements"
+   * button. Industry-independent facts (name, municipality, structure) stay.
+   */
+  const handleIndustryChange = (nextIndustry: string) => {
+    setProfile((current) => ({ ...current,
+      industry: nextIndustry,
+      business_type: '',
+      customers_visit: null, food_prepared_or_sold: null,
+      alcohol_sold: null, professional_licenses_required: null, healthcare_services: null, hazardous_materials: null, employees_hired: null,
+      physical_location: null, products_manufactured: null, vehicles_used: null, commercial_signage: null, outdoor_seating: null,
+      live_entertainment: null, short_term_rental: null, medical_waste: null, import_export: null,
+    }));
+    setDiscoveryAnswers({});
+    setPotentialDecisions({});
+    setRequirements([]);
+    setFindings([]);
+    setReadinessScore(null);
+    setCanonicalOverride(null);
+    setCurrentQuestionIndex(0);
+    setAiPrefilledKeys([]);
+  };
+
   const progress = Math.round(((currentStep - 1) / 8) * 100);
 
 // Quick loaders for demo readiness - instantly shows different requirements per business type
@@ -4116,7 +4142,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   <select
                     id="spr-industry"
                     value={profile.industry}
-                    onChange={e => setProfile({ ...profile, industry: e.target.value, business_type: '' })}
+                    onChange={e => handleIndustryChange(e.target.value)}
                   >
                     <option value="">{t('selectIndustry')}</option>
                     {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
