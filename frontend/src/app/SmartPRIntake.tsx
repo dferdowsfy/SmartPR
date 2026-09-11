@@ -138,6 +138,13 @@ interface Requirement {
   agencyUrl?: string | null;
   /** Guidance text for non-governmental issuers (landlord, insurer, notary). */
   agencyNote?: string | null;
+  /** Direct form-PDF / filing-portal URL for this document (null when no
+   * single official download exists — see downloadNote). */
+  downloadUrl?: string | null;
+  /** form_pdf | filing_portal | form_page | guidance_page | none */
+  downloadKind?: string | null;
+  /** How to obtain the document when downloadUrl is null. */
+  downloadNote?: string | null;
   /** Set only when this requirement was added because the user chose to
    * pursue an incentive that needs it — never on requirements the rules
    * engine would have surfaced anyway. Shown as a small contextual label. */
@@ -3670,21 +3677,42 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             <span>{issuedDocumentGuidance}</span>
           </div>
         )}
-        {(req.agencyUrl || req.agencyNote) && (
-          <div className="issued-document-guidance" style={{ marginTop: 8 }}>
-            <Info className="i" style={{ width: 13, height: 13 }} />
-            {req.agencyUrl ? (
-              <span>
-                <a href={req.agencyUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
-                  {L('Where to get this', language)} →
-                </a>{' '}
-                <span style={{ color: 'var(--muted)' }}>{req.agency}</span>
-              </span>
-            ) : (
-              <span>{req.agencyNote}</span>
-            )}
-          </div>
-        )}
+        {(() => {
+          const dlLabel =
+            req.downloadKind === 'form_pdf' ? 'Download form'
+            : req.downloadKind === 'filing_portal' ? 'File online'
+            : req.downloadKind === 'form_page' ? 'Get the form'
+            : req.downloadKind === 'guidance_page' ? 'How to file'
+            : 'Where to get this';
+          const howNote = req.downloadNote || req.agencyNote;
+          const showDl = !!(req.downloadUrl || req.agencyUrl || howNote);
+          return showDl ? (
+            <div className="issued-document-guidance" style={{ marginTop: 8 }}>
+              <Info className="i" style={{ width: 13, height: 13 }} />
+              {req.downloadUrl ? (
+                <span>
+                  <a href={req.downloadUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
+                    {L(dlLabel, language)} →
+                  </a>
+                  {req.agencyUrl && (
+                    <span style={{ color: 'var(--muted)' }}>
+                      {' · '}<a href={req.agencyUrl} target="_blank" rel="noopener noreferrer">{req.agency}</a>
+                    </span>
+                  )}
+                </span>
+              ) : req.agencyUrl ? (
+                <span>
+                  <a href={req.agencyUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
+                    {L(dlLabel, language)} →
+                  </a>{' '}
+                  <span style={{ color: 'var(--muted)' }}>{req.agency}</span>
+                </span>
+              ) : (
+                <span>{howNote}</span>
+              )}
+            </div>
+          ) : null;
+        })()}
       </div>
     );
 

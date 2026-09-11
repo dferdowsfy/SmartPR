@@ -5,7 +5,10 @@
   "agency": "Department of State",
   "category": "State",
   "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado"
+  "agency_canonical": "Departamento de Estado",
+  "download_url": "https://docs.pr.gov/files/Estado/Corporaciones/Formularios/1-CORPREG01.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Bilingual official PDF, Dept. of State. Filing also available online via the Estado portal."
  },
  {
   "id": "DOC_ARTICLES_ORGANIZATION",
@@ -13,7 +16,10 @@
   "agency": "Department of State",
   "category": "State",
   "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado"
+  "agency_canonical": "Departamento de Estado",
+  "download_url": "https://rceweb.estado.pr.gov/es",
+  "download_kind": "filing_portal",
+  "download_note": "New LLCs/corps register through the Dept. of State's electronic registry (Registro de Corporaciones y Otras Personas Jurídicas); no public blank LLC PDF on the forms page."
  },
  {
   "id": "DOC_FOREIGN_CORPORATION_AUTHORIZATION",
@@ -21,7 +27,10 @@
   "agency": "Department of State",
   "category": "State",
   "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado"
+  "agency_canonical": "Departamento de Estado",
+  "download_url": "https://docs.pr.gov/files/Estado/Corporaciones/Formularios/3-CORPREG03.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Bilingual official PDF, Dept. of State. Requires attached certificate of existence from home jurisdiction."
  },
  {
   "id": "DOC_LLP_REGISTRATION",
@@ -29,7 +38,10 @@
   "agency": "Department of State",
   "category": "State",
   "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado"
+  "agency_canonical": "Departamento de Estado",
+  "download_url": "https://docs.pr.gov/files/Estado/Corporaciones/Formularios/6-CORPREG06.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Bilingual official PDF, Dept. of State. Registration valid 1 year from filing."
  },
  {
   "id": "DOC_DBA_REGISTRATION",
@@ -37,7 +49,10 @@
   "agency": "Department of State",
   "category": "State",
   "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado"
+  "agency_canonical": "Departamento de Estado",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No reachable online form on 2026-09-11: PR trade-name filings go through the Dept of State's online Sistema de Registro de Marcas y Nombres Comerciales, whose portal (prtmfiling.estado.pr.gov) was unreachable. File or inquire via the Dept of State corporate registry."
  },
  {
   "id": "DOC_EIN",
@@ -45,7 +60,10 @@
   "agency": "IRS",
   "category": "Federal",
   "agency_url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
-  "agency_canonical": "IRS"
+  "agency_canonical": "IRS",
+  "download_url": "https://www.irs.gov/businesses/small-businesses-self-employed/get-an-employer-identification-number",
+  "download_kind": "filing_portal",
+  "download_note": "Apply free online; the IRS issues the EIN confirmation (CP 575) on completion. Paper path: Form SS-4 PDF at irs.gov/pub/irs-pdf/fss4.pdf."
  },
  {
   "id": "DOC_MERCHANT_REGISTRATION",
@@ -53,7 +71,10 @@
   "agency": "Departamento de Hacienda",
   "category": "State",
   "agency_url": "https://hacienda.pr.gov/",
-  "agency_canonical": "Departamento de Hacienda"
+  "agency_canonical": "Departamento de Hacienda",
+  "download_url": "https://suri.hacienda.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "No paper form: Hacienda administers merchant registration solely through SURI since 2018; the certificate is issued/printed from the portal."
  },
  {
   "id": "DOC_SURI_REGISTRATION",
@@ -61,7 +82,10 @@
   "agency": "Departamento de Hacienda",
   "category": "State",
   "agency_url": "https://hacienda.pr.gov/",
-  "agency_canonical": "Departamento de Hacienda"
+  "agency_canonical": "Departamento de Hacienda",
+  "download_url": "https://suri.hacienda.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Create the SURI account directly on Hacienda's SURI portal."
  },
  {
   "id": "DOC_PERMISO_UNICO",
@@ -69,7 +93,10 @@
   "agency": "OGPe",
   "category": "Regulatory",
   "agency_url": "https://www.permisos.ddec.pr.gov/",
-  "agency_canonical": "OGPe"
+  "agency_canonical": "OGPe",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "No standalone form: OGPe's official applicant manual states filing is 100% electronic via the Single Business Portal at ogpe.pr.gov."
  },
  {
   "id": "DOC_ZONING",
@@ -77,7 +104,10 @@
   "agency": "OGPe",
   "category": "Regulatory",
   "agency_url": "https://www.permisos.ddec.pr.gov/",
-  "agency_canonical": "OGPe"
+  "agency_canonical": "OGPe",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Filed electronically through OGPe's Single Business Portal; no standalone form."
  },
  {
   "id": "DOC_OCCUPANCY",
@@ -85,7 +115,10 @@
   "agency": "OGPe",
   "category": "Regulatory",
   "agency_url": "https://www.permisos.ddec.pr.gov/",
-  "agency_canonical": "OGPe"
+  "agency_canonical": "OGPe",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Use/occupancy handled inside the OGPe Single Business Portal; no standalone form."
  },
  {
   "id": "DOC_PATENTE_MUNICIPAL",
@@ -94,7 +127,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No statewide form: each municipality's finance office issues its own PA02 (provisional) / PA01 (annual declaration) — e.g. Aguada, Caguas, Guaynabo publish their own PDFs. Get it from the business municipality's finance office."
  },
  {
   "id": "DOC_MUNICIPAL_REGISTRATION",
@@ -103,7 +139,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Municipality-dependent: register/file with the business municipality's finance or permits office; no single official form."
  },
  {
   "id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
@@ -112,7 +151,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Issued by the business municipality (finance office); no centralized form. Request a debt/compliance certification there."
  },
  {
   "id": "DOC_HEALTH_PERMIT",
@@ -120,7 +162,10 @@
   "agency": "Departamento de Salud",
   "category": "Regulatory",
   "agency_url": "https://www.salud.pr.gov/",
-  "agency_canonical": "Departamento de Salud"
+  "agency_canonical": "Departamento de Salud",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Sanitary/health endorsement is processed inside OGPe's Permiso Único (Secretaría Auxiliar de Salud Ambiental); no standalone form."
  },
  {
   "id": "DOC_FIRE_CERT",
@@ -128,7 +173,10 @@
   "agency": "Cuerpo de Bomberos",
   "category": "Regulatory",
   "agency_url": "https://bomberos.pr.gov/permisos",
-  "agency_canonical": "Cuerpo de Bomberos"
+  "agency_canonical": "Cuerpo de Bomberos",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Certificación de Prevención de Incendios (CPI) processed through OGPe; an inspection by the Cuerpo de Bomberos underlies it."
  },
  {
   "id": "DOC_CFPM",
@@ -136,7 +184,10 @@
   "agency": "Departamento de Salud",
   "category": "Professional",
   "agency_url": "https://www.salud.pr.gov/",
-  "agency_canonical": "Departamento de Salud"
+  "agency_canonical": "Departamento de Salud",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No government form: CFPM is a private ANSI-accredited certification (e.g., ServSafe). Obtain through an accredited provider; the certificate is uploadable evidence."
  },
  {
   "id": "DOC_ALCOHOL_LICENSE",
@@ -144,7 +195,10 @@
   "agency": "Departamento de Hacienda",
   "category": "State",
   "agency_url": "https://hacienda.pr.gov/",
-  "agency_canonical": "Departamento de Hacienda"
+  "agency_canonical": "Departamento de Hacienda",
+  "download_url": "https://suri.hacienda.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Internal Revenue license application and renewal moved into SURI; the paper SC 2309 is legacy."
  },
  {
   "id": "DOC_PROFESSIONAL_LICENSE",
@@ -152,7 +206,10 @@
   "agency": "Department of State Examining Boards",
   "category": "Professional",
   "agency_url": "https://www.didaxispr.com/dept/estado-juntas",
-  "agency_canonical": "Juntas Examinadoras (Departamento de Estado)"
+  "agency_canonical": "Juntas Examinadoras (Departamento de Estado)",
+  "download_url": "https://www.didaxispr.com/dept/estado-juntas",
+  "download_kind": "filing_portal",
+  "download_note": "Official Dept of State portal (operated by Didaxis) for examining-board credential requests: exams, licenses, certifications, renewals."
  },
  {
   "id": "DOC_CONTRACTOR_LICENSE",
@@ -160,7 +217,10 @@
   "agency": "Department of State",
   "category": "Professional",
   "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado"
+  "agency_canonical": "Departamento de Estado",
+  "download_url": "https://docs.pr.gov/files/DACO/Licencias/Solicitud-Urbanizador-Constructor-v2.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Official DACO PDF on docs.pr.gov. Matches the DACOUC01 source SmartPR maps as a fillable artifact."
  },
  {
   "id": "DOC_TOURISM_REGISTRATION",
@@ -168,7 +228,10 @@
   "agency": "Compañía de Turismo",
   "category": "Regulatory",
   "agency_url": "https://tourism.pr.gov/",
-  "agency_canonical": "Compañía de Turismo"
+  "agency_canonical": "Compañía de Turismo",
+  "download_url": "https://roomtax.tourism.pr.gov/",
+  "download_kind": "filing_portal",
+  "download_note": "Register as a hostelero/room-tax contributor with CTPR's División de Impuestos de Habitación to get your hotelier ID (required before monthly room-tax returns)."
  },
  {
   "id": "DOC_INSURANCE",
@@ -177,7 +240,10 @@
   "category": "Insurance",
   "agency_url": null,
   "agency_canonical": "Insurance Carrier",
-  "agency_note": "Not government-issued — request the declaration page or coverage letter from the business's own insurance carrier."
+  "agency_note": "Not government-issued — request the declaration page or coverage letter from the business's own insurance carrier.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No government form: obtained from the business's licensed insurance carrier/agent (e.g., ACORD certificate). Upload the issued certificate as evidence."
  },
  {
   "id": "DOC_WORKERS_COMP",
@@ -185,7 +251,10 @@
   "agency": "Corporación del Fondo del Seguro del Estado",
   "category": "Insurance",
   "agency_url": "https://www.cfse.pr.gov/en",
-  "agency_canonical": "Corporación del Fondo del Seguro del Estado"
+  "agency_canonical": "Corporación del Fondo del Seguro del Estado",
+  "download_url": "https://www.cfse.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Mandatory state workers-comp policy: use CFSE's Servicios en línea para Patronos (payroll declaration, policy payment, compliance certificates)."
  },
  {
   "id": "DOC_LEASE_AGREEMENT",
@@ -194,7 +263,10 @@
   "category": "Property",
   "agency_url": null,
   "agency_canonical": "Property Owner",
-  "agency_note": "Not government-issued — provided by the landlord/property owner (e.g., lease, written authorization)."
+  "agency_note": "Not government-issued — provided by the landlord/property owner (e.g., lease, written authorization).",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Private contract between tenant and property owner; no government form. Upload the signed lease as evidence."
  },
  {
   "id": "DOC_PROPERTY_DEED",
@@ -202,7 +274,10 @@
   "agency": "Property Registry",
   "category": "Property",
   "agency_url": "http://ridpr.pr.gov/",
-  "agency_canonical": "Registro de la Propiedad"
+  "agency_canonical": "Registro de la Propiedad",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Created by a PR notary (notario) at purchase; recorded at the Property Registry (ridpr.pr.gov). Obtain a certificación registral from the registry if needed."
  },
  {
   "id": "DOC_FLOOR_PLANS",
@@ -211,7 +286,10 @@
   "category": "Property",
   "agency_url": null,
   "agency_canonical": "Licensed Architect / Engineer",
-  "agency_note": "Not government-issued — a private licensed professional prepares/seals it; verify their license via the Dept. of State Examining Boards portal."
+  "agency_note": "Not government-issued — a private licensed professional prepares/seals it; verify their license via the Dept. of State Examining Boards portal.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Prepared and sealed by a licensed architect/engineer; no government form. Upload the sealed plans as evidence."
  },
  {
   "id": "DOC_ENVIRONMENTAL_PERMIT",
@@ -219,7 +297,10 @@
   "agency": "Junta de Calidad Ambiental / DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/otrora-jca/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No single form: DRNA authorizations are program-specific (air, water, waste, tree cutting). Most business environmental compliance is folded into OGPe's Permiso Único; program-specific forms live under drna.pr.gov permit pages."
  },
  {
   "id": "DOC_MEDICAL_WASTE_PERMIT",
@@ -227,7 +308,10 @@
   "agency": "Junta de Calidad Ambiental",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/otrora-jca/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Program-specific DRNA/JCA authorization; no single public form verified. Consult DRNA for the applicable permit."
  },
  {
   "id": "DOC_SIGN_PERMIT",
@@ -236,7 +320,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Handled via OGPe Permiso Único or the municipality depending on location; no standalone official form."
  },
  {
   "id": "DOC_OUTDOOR_SEATING_AUTH",
@@ -245,7 +332,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Municipality-dependent authorization; apply at the municipal permits office. No centralized form."
  },
  {
   "id": "DOC_ENTERTAINMENT_PERMIT",
@@ -254,7 +344,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Municipality/Hacienda-dependent; no single official form. Check the municipal permits office."
  },
  {
   "id": "DOC_IMPORT_EXPORT_REG",
@@ -262,7 +355,10 @@
   "agency": "Departamento de Hacienda",
   "category": "State",
   "agency_url": "https://hacienda.pr.gov/",
-  "agency_canonical": "Departamento de Hacienda"
+  "agency_canonical": "Departamento de Hacienda",
+  "download_url": "https://suri.hacienda.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Import declarations and monthly import returns are filed through SURI (Hacienda)."
  },
  {
   "id": "DOC_HOME_DECLARATION",
@@ -271,7 +367,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Government",
-  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Municipality-dependent; some municipalities fold it into the Permiso Único domiciliario in OGPe. Check the municipal permits office."
  },
  {
   "id": "DOC_CRIM_CLEARANCE",
@@ -279,7 +378,10 @@
   "agency": "CRIM",
   "category": "Regulatory",
   "agency_url": "https://www.crimpr.net/",
-  "agency_canonical": "CRIM"
+  "agency_canonical": "CRIM",
+  "download_url": "https://portal.crim360.com/crimpr/",
+  "download_kind": "filing_portal",
+  "download_note": "CRIM certifications (debt clearance, account statements) are requested through the official CRIM360 portal."
  },
  {
   "id": "DOC_TRANSPORT_PERMIT",
@@ -287,7 +389,10 @@
   "agency": "Comisión de Servicio Público",
   "category": "Regulatory",
   "agency_url": "https://ntsp.pr.gov/",
-  "agency_canonical": "NTSP (Negociado de Transporte y Otros Servicios Públicos)"
+  "agency_canonical": "NTSP (Negociado de Transporte y Otros Servicios Públicos)",
+  "download_url": "https://ntsp.pr.gov",
+  "download_kind": "guidance_page",
+  "download_note": "Official NTSP site for franchise/transport-service authorizations; many filings processed via renovacionesonline.com (per NTSP guidance)."
  },
  {
   "id": "DOC_VEHICLE_REGISTRATION",
@@ -295,7 +400,10 @@
   "agency": "DTOP",
   "category": "State",
   "agency_url": "https://dtop.pr.gov/",
-  "agency_canonical": "DTOP"
+  "agency_canonical": "DTOP",
+  "download_url": "https://www.cesco.pr.gov/solicitudes-y-formularios",
+  "download_kind": "form_page",
+  "download_note": "Official CESCO page listing driver/vehicle service forms and requests (registration, transfers, duplicates, renewals)."
  },
  {
   "id": "DOC_CHILDCARE_LICENSE",
@@ -303,7 +411,10 @@
   "agency": "Departamento de la Familia / Educación",
   "category": "Regulatory",
   "agency_url": "https://www.familia.pr.gov/",
-  "agency_canonical": "Departamento de la Familia"
+  "agency_canonical": "Departamento de la Familia",
+  "download_url": "https://childcare.familia.pr.gov/",
+  "download_kind": "guidance_page",
+  "download_note": "Licensing under Law 173-2016 is handled by the Dept of Family licensing offices (orientations + regional application). ACUDEN's portal is the official entry point."
  },
  {
   "id": "DOC_BACKGROUND_CHECK",
@@ -311,7 +422,10 @@
   "agency": "Policía de Puerto Rico",
   "category": "Regulatory",
   "agency_url": "https://policia.pr.gov/",
-  "agency_canonical": "Policía de Puerto Rico"
+  "agency_canonical": "Policía de Puerto Rico",
+  "download_url": "https://pr.gov/antecedentes-penales",
+  "download_kind": "filing_portal",
+  "download_note": "Official pr.gov online application/validation wizard for the Policía PR criminal-background certificate. Free online."
  },
  {
   "id": "DOC_PESTICIDE_LICENSE",
@@ -320,7 +434,10 @@
   "category": "Regulatory",
   "agency_url": "https://www.agricultura.gobierno.pr/",
   "agency_canonical": "Departamento de Agricultura",
-  "agency_note": "UNVERIFIED BY FETCH — the agency site (www.agricultura.gobierno.pr, listed as official in its Wikipedia infobox) was unresponsive/blocked during verification; confirm before shipping this link."
+  "agency_note": "UNVERIFIED BY FETCH — the agency site (www.agricultura.gobierno.pr, listed as official in its Wikipedia infobox) was unresponsive/blocked during verification; confirm before shipping this link.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No single online form verified: restricted-use pesticide applicators are trained/examined through the UPR Servicio de Extensión Agrícola and certified by the Dept of Agriculture."
  },
  {
   "id": "DOC_AGRICULTURE_REGISTRATION",
@@ -329,7 +446,10 @@
   "category": "Regulatory",
   "agency_url": "https://www.agricultura.gobierno.pr/",
   "agency_canonical": "Departamento de Agricultura",
-  "agency_note": "UNVERIFIED BY FETCH — the agency site (www.agricultura.gobierno.pr, listed as official in its Wikipedia infobox) was unresponsive/blocked during verification; confirm before shipping this link."
+  "agency_note": "UNVERIFIED BY FETCH — the agency site (www.agricultura.gobierno.pr, listed as official in its Wikipedia infobox) was unresponsive/blocked during verification; confirm before shipping this link.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No single online form verified: the Certificación de Agricultor Bona Fide is issued by the Dept of Agriculture through its regional offices."
  },
  {
   "id": "DOC_FIREARMS_LICENSE",
@@ -337,7 +457,10 @@
   "agency": "Policía de Puerto Rico",
   "category": "Regulatory",
   "agency_url": "https://policia.pr.gov/",
-  "agency_canonical": "Policía de Puerto Rico"
+  "agency_canonical": "Policía de Puerto Rico",
+  "download_url": "https://biblioteca.policia.pr.gov/Document/StreamPdf?fileGuid=8ec019e3-5139-4714-a018-94e1035cab48.pdf&DocTitle=PPR-329%20SOLICITUD%20DE%20LICENCIA%20DE%20ARMAS",
+  "download_kind": "form_pdf",
+  "download_note": "Official Policía PR Form PPR-329 (rev. 4/2020) for the firearms license under Law 168-2019."
  },
  {
   "id": "DOC_NONPROFIT_REGISTRATION",
@@ -345,7 +468,10 @@
   "agency": "IRS / Department of State",
   "category": "Federal",
   "agency_url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
-  "agency_canonical": "IRS / Department of State"
+  "agency_canonical": "IRS / Department of State",
+  "download_url": "https://docs.pr.gov/files/Estado/Corporaciones/Formularios/2-CORPREG02.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "PR side: Dept of State nonprofit-corporation categories form. Federal 501(c)(3): apply via IRS Form 1023 on Pay.gov (no blank PDF)."
  },
  {
   "id": "DOC_TRAFFIC_IMPACT_STUDY",
@@ -353,7 +479,10 @@
   "agency": "Departamento de Transportación y Obras Públicas (DTOP) / Municipal Engineering",
   "category": "Municipal",
   "agency_url": "https://dtop.pr.gov/",
-  "agency_canonical": "DTOP"
+  "agency_canonical": "DTOP",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Engineering study prepared by a licensed engineer for DTOP/municipal review; no government form."
  },
  {
   "id": "DOC_STORMWATER_PLAN",
@@ -361,7 +490,10 @@
   "agency": "EPA / Junta de Calidad Ambiental (JCA)",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": "https://www.epa.gov/npdes/submitting-notice-intent-noi-notice-termination-not-or-low-erosivity-waiver-lew-under",
+  "download_kind": "guidance_page",
+  "download_note": "The SWPPP itself is prepared by the project engineer; federal stormwater coverage in PR is obtained by filing the NOI electronically through EPA's CGP-NeT (CDX)."
  },
  {
   "id": "DOC_NOISE_VARIANCE",
@@ -369,7 +501,10 @@
   "agency": "Junta de Calidad Ambiental + Municipal Permits Office",
   "category": "Municipal",
   "agency_url": "https://www.drna.pr.gov/otrora-jca/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No single form verified: noise-level variances are petitioned to DRNA under the Reglamento para el Control de la Contaminación por Ruidos (municipalities may also have local noise ordinances)."
  },
  {
   "id": "DOC_WASTE_COLLECTION_CONTRACT",
@@ -377,7 +512,10 @@
   "agency": "Autoridad de Desperdicios Sólidos / Municipal",
   "category": "Municipal",
   "agency_url": "https://www.drna.pr.gov/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Private contract with an authorized waste hauler or municipal service; no government form."
  },
  {
   "id": "DOC_PARKING_COMPLIANCE",
@@ -386,7 +524,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Permits Office",
-  "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr)."
+  "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr).",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Issued via the municipal permits office / OGPe Permiso Único process; no standalone form."
  },
  {
   "id": "DOC_LOADING_ZONE_PERMIT",
@@ -395,7 +536,10 @@
   "category": "Municipal",
   "agency_url": null,
   "agency_canonical": "Municipal Permits Office",
-  "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr)."
+  "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr).",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Municipality-dependent (traffic/permits office); no centralized form."
  },
  {
   "id": "DOC_SAN_JUAN_USE_PERMIT",
@@ -403,7 +547,10 @@
   "agency": "Municipio de San Juan — Permisos Municipales",
   "category": "Municipal",
   "agency_url": "https://tramite.sanjuan.pr/",
-  "agency_canonical": "Municipio de San Juan"
+  "agency_canonical": "Municipio de San Juan",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Use permits in the Municipio Autónomo de San Juan are processed by its Oficina de Permisos (Edificio Trilito, Ave. José de Diego 940) through the Single Business Portal."
  },
  {
   "id": "DOC_FACADE_PRESERVATION",
@@ -411,7 +558,10 @@
   "agency": "Instituto de Cultura Puertorriqueña (ICP) / OECH",
   "category": "Regulatory",
   "agency_url": "https://icp.pr.gov/",
-  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)"
+  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)",
+  "download_url": "https://www.icp.pr.gov/wp-content/uploads/2018/06/requisitos-endosos-phe-1.pdf",
+  "download_kind": "guidance_page",
+  "download_note": "Official ICP requirements sheet for Patrimonio Histórico Edificado endorsements (façade interventions, exterior painting, signage in historic zones). Actual application is filed with ICP's PHE program."
  },
  {
   "id": "DOC_HISTORIC_DISTRICT_REVIEW",
@@ -419,7 +569,10 @@
   "agency": "Instituto de Cultura Puertorriqueña (ICP) / OECH",
   "category": "Regulatory",
   "agency_url": "https://icp.pr.gov/",
-  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)"
+  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)",
+  "download_url": "https://www.icp.pr.gov/wp-content/uploads/2018/06/requisitos-endosos-phe-1.pdf",
+  "download_kind": "guidance_page",
+  "download_note": "Official ICP requirements for historic-property endorsements; the recommendation is required before OGPe/municipal permits in historic zones."
  },
  {
   "id": "DOC_SIGN_VARIANCE_HISTORIC",
@@ -427,7 +580,10 @@
   "agency": "Instituto de Cultura Puertorriqueña (ICP) + Municipal Permits Office",
   "category": "Regulatory",
   "agency_url": "https://icp.pr.gov/",
-  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)"
+  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)",
+  "download_url": "https://www.icp.pr.gov/wp-content/uploads/2018/06/requisitos-endosos-phe-1.pdf",
+  "download_kind": "guidance_page",
+  "download_note": "Official ICP requirements sheet including 'Recomendación de Instalación de Rótulo o Anuncio' (signage in historic zones)."
  },
  {
   "id": "DOC_ISLAND_FERRY_MANIFEST",
@@ -435,7 +591,10 @@
   "agency": "Autoridad de Transporte Marítimo (ATM)",
   "category": "Regulatory",
   "agency_url": "https://www.ati.pr.gov/",
-  "agency_canonical": "ATI (Autoridad de Transporte Integrado)"
+  "agency_canonical": "ATI (Autoridad de Transporte Integrado)",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No public form verified: cargo manifests for the Vieques/Culebra ferries are coordinated with the ATI maritime operator (ati.pr.gov)."
  },
  {
   "id": "DOC_NPDES_INDUSTRIAL",
@@ -443,7 +602,10 @@
   "agency": "EPA / Junta de Calidad Ambiental (JCA)",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": "https://www.epa.gov/npdes/npdes-applications-and-forms-epa-applications",
+  "download_kind": "form_page",
+  "download_note": "Official EPA page with fillable PDFs: Form 1 (all applicants) + Form 2C (existing industrial) / 2D (new). PR is an EPA-issued-permit jurisdiction."
  },
  {
   "id": "DOC_HAZMAT_HANDLER",
@@ -451,7 +613,10 @@
   "agency": "EPA / Junta de Calidad Ambiental (JCA)",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": "https://www.epa.gov/hwgenerators/hazardous-waste-site-identification-epa-region-2",
+  "download_kind": "filing_portal",
+  "download_note": "EPA Region 2 (covers PR) page: file EPA Form 8700-12 by mail or electronically via myRCRAid/RCRAInfo to obtain the RCRA Site ID."
  },
  {
   "id": "DOC_PORT_FACILITY_PERMIT",
@@ -459,7 +624,10 @@
   "agency": "Autoridad de los Puertos de Puerto Rico",
   "category": "Regulatory",
   "agency_url": "https://prpa.pr.gov/",
-  "agency_canonical": "Autoridad de los Puertos"
+  "agency_canonical": "Autoridad de los Puertos",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "No single form verified: issued by the Autoridad de los Puertos for operations inside port facilities; contact the Authority for the applicable permit."
  },
  {
   "id": "DOC_AIR_EMISSION_PERMIT",
@@ -467,7 +635,10 @@
   "agency": "EPA / Junta de Calidad Ambiental (JCA)",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
-  "agency_canonical": "DRNA"
+  "agency_canonical": "DRNA",
+  "download_url": "https://www.drna.pr.gov/acai/permisos/",
+  "download_kind": "form_page",
+  "download_note": "PR runs its own Part 70 air program via DRNA (not federal EPA Title V). Official page with permit-form downloads and filing instructions (email to secretariaaire@drna.pr.gov + pre-intervention ticket)."
  },
  {
   "id": "DOC_CUSTOMS_BROKER_BOND",
@@ -475,7 +646,10 @@
   "agency": "U.S. Customs and Border Protection (CBP)",
   "category": "Regulatory",
   "agency_url": "https://www.cbp.gov/",
-  "agency_canonical": "U.S. Customs and Border Protection (CBP)"
+  "agency_canonical": "U.S. Customs and Border Protection (CBP)",
+  "download_url": "https://www.cbp.gov/document/forms/cbp-form-301-customs-bond",
+  "download_kind": "form_page",
+  "download_note": "Official CBP page with direct Form 301 PDF download (1MB, updated 04/30/2024). Form also filed electronically via CBP surety process."
  },
  {
   "id": "DOC_TSA_KNOWN_SHIPPER",
@@ -483,7 +657,10 @@
   "agency": "Transportation Security Administration (TSA)",
   "category": "Regulatory",
   "agency_url": "https://www.tsa.gov/",
-  "agency_canonical": "Transportation Security Administration (TSA)"
+  "agency_canonical": "Transportation Security Administration (TSA)",
+  "download_url": "https://www.tsa.gov/for-industry/cargo-screening-program",
+  "download_kind": "filing_portal",
+  "download_note": "TSA cargo programs page: Indirect Air Carrier applications go through the online Indirect Air Carrier Management System (IACMS); known-shipper status via the carrier."
  },
  {
   "id": "DOC_AIRPORT_CONCESSION",
@@ -491,7 +668,10 @@
   "agency": "Aerostar Airport Holdings / Autoridad de los Puertos",
   "category": "Regulatory",
   "agency_url": "https://prpa.pr.gov/",
-  "agency_canonical": "Autoridad de los Puertos"
+  "agency_canonical": "Autoridad de los Puertos",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Private agreement with Aerostar Airport Holdings / Autoridad de los Puertos; no government form."
  },
  {
   "id": "DOC_HOA_AUTHORIZATION",
@@ -500,7 +680,10 @@
   "category": "Property",
   "agency_url": null,
   "agency_canonical": "Property Owner / Homeowners Association",
-  "agency_note": "Not government-issued — provided by the owner or the HOA board (authorization letter, HOA approval)."
+  "agency_note": "Not government-issued — provided by the owner or the HOA board (authorization letter, HOA approval).",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Letter/authorization from the condo board or HOA; no government form."
  },
  {
   "id": "DOC_ROOM_TAX_RETURN",
@@ -508,7 +691,10 @@
   "agency": "Compañía de Turismo",
   "category": "Regulatory",
   "agency_url": "https://tourism.pr.gov/",
-  "agency_canonical": "Compañía de Turismo"
+  "agency_canonical": "Compañía de Turismo",
+  "download_url": "https://roomtax.tourism.pr.gov/",
+  "download_kind": "filing_portal",
+  "download_note": "Official CTPR portal for filing the monthly room-tax declaration and paying online."
  },
  {
   "id": "DOC_LUMA_INTERCONNECTION",
@@ -516,7 +702,10 @@
   "agency": "LUMA Energy",
   "category": "Regulatory",
   "agency_url": "https://lumapr.com/miluma/",
-  "agency_canonical": "LUMA Energy"
+  "agency_canonical": "LUMA Energy",
+  "download_url": "https://lumapr.com/wp-content/uploads/2023/11/Confirmacion-de-Orientacion-al-Cliente-Rev10.2021.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Official LUMA form (Rev. 10/2021); the interconnection/net-metering registration package is also filed through LUMA's GD portal."
  },
  {
   "id": "DOC_NET_METERING_AGREEMENT",
@@ -524,7 +713,10 @@
   "agency": "LUMA Energy",
   "category": "Regulatory",
   "agency_url": "https://lumapr.com/miluma/",
-  "agency_canonical": "LUMA Energy"
+  "agency_canonical": "LUMA Energy",
+  "download_url": "https://lumapr.com/wp-content/uploads/2023/11/Acuerdo-Interconexion-y-Medicion-Neta-Distribucion-Corporaciones-aka-Anejo-F2-Revised-11.8.22-1.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Official LUMA interconnection/net-metering agreement for corporations (Anejo F2, rev. 11/8/22)."
  },
  {
   "id": "DOC_OGPE_CONSTRUCTION_PERMIT",
@@ -532,7 +724,10 @@
   "agency": "OGPe",
   "category": "Regulatory",
   "agency_url": "https://www.permisos.ddec.pr.gov/",
-  "agency_canonical": "OGPe"
+  "agency_canonical": "OGPe",
+  "download_url": "https://www.ogpe.pr.gov",
+  "download_kind": "filing_portal",
+  "download_note": "Construction permits are filed 100% electronically via OGPe's Single Business Portal."
  },
  {
   "id": "DOC_OWNER_AFFIDAVIT",
@@ -541,7 +736,10 @@
   "category": "Property",
   "agency_url": null,
   "agency_canonical": "Notary Public",
-  "agency_note": "Not government-downloadable — issued by a Puerto Rico notary public of the user's choice."
+  "agency_note": "Not government-downloadable — issued by a Puerto Rico notary public of the user's choice.",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Sworn statement executed before a PR notary; no government form. The notary prepares it."
  },
  {
   "id": "DOC_OPPE_INSTALLER_REG",
@@ -549,6 +747,9 @@
   "agency": "OPPE",
   "category": "Professional",
   "agency_url": "https://ddec.pr.gov/",
-  "agency_canonical": "OPPE (ahora PPPE-DDEC)"
+  "agency_canonical": "OPPE (ahora PPPE-DDEC)",
+  "download_url": "https://docs.pr.gov/files/DDEC/PPPE/Solicitud%20de%20Certificaci%C3%B3n%20de%20Instalador%20de%20Sistemas%20El%C3%A9ctricos%20Renovables.pdf",
+  "download_kind": "form_pdf",
+  "download_note": "Official PPPE (DDEC energy program) application for renewable-systems installer certification, rev. Feb 2025; submitted by email to energia@ddec.pr.gov or in person."
  }
 ]

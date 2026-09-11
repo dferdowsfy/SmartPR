@@ -29,4 +29,28 @@ describe("agency URL coverage", () => {
     const bad = reqs.filter((r) => !r.agencyUrl && !r.agencyNote);
     assert.deepEqual(bad.map((r) => r.document_id), []);
   });
+
+  it("every document has a download_url or a download_note (how to obtain)", () => {
+    const docs = KB.documents as Array<{ id: string; download_url?: string | null; download_note?: string }>;
+    const bad = docs.filter((d) => !d.download_url && !d.download_note);
+    assert.deepEqual(bad.map((d) => d.id), [], `${bad.length} docs lack both download_url and download_note`);
+  });
+
+  it("download_url values are well-formed https links with a known kind", () => {
+    const docs = KB.documents as Array<{ id: string; download_url?: string | null; download_kind?: string }>;
+    const kinds = new Set(["form_pdf", "filing_portal", "form_page", "guidance_page", "none"]);
+    const bad = docs.filter((d) => (d.download_url && !/^https:\/\//.test(d.download_url)) || !kinds.has(d.download_kind ?? ""));
+    assert.deepEqual(bad.map((d) => d.id), []);
+  });
+
+  it("computed requirements carry downloadUrl/downloadKind or a note", () => {
+    const reqs = computeRequirementsFromKB(
+      { business_type: "Restaurant", municipality: "San Juan", industry: "Food & Beverage", location_type: "Commercial Facility", number_of_employees: 8 } as any,
+      { alcohol_sold: true },
+      {}
+    ) as Array<{ document_id: string; downloadUrl?: string | null; downloadKind?: string | null; downloadNote?: string | null; agencyUrl?: string | null; agencyNote?: string | null }>;
+    assert.ok(reqs.length > 0);
+    const bad = reqs.filter((r) => !r.downloadUrl && !r.downloadNote && !r.agencyUrl && !r.agencyNote);
+    assert.deepEqual(bad.map((r) => r.document_id), []);
+  });
 });

@@ -425,7 +425,7 @@ export function computeRequirementsFromKB(
 ): UIRequirement[] {
   const { requirements } = runRulesEngineForProfile(profile, answers, resolved);
   const docById = new Map(
-    (KB.documents as Array<{ id: string; agency_url?: string | null; agency_note?: string }>).map((d) => [d.id, d])
+    (KB.documents as Array<{ id: string; agency_url?: string | null; agency_note?: string; download_url?: string | null; download_kind?: string; download_note?: string }>).map((d) => [d.id, d])
   );
   return classifyEngineRequirements(requirements, {
     kb: KB,
@@ -451,6 +451,9 @@ export function computeRequirementsFromKB(
       acceptsOfficialUpload: r.acceptsOfficialUpload,
       agencyUrl: docById.get(r.document_id)?.agency_url ?? null,
       agencyNote: docById.get(r.document_id)?.agency_note ?? null,
+      downloadUrl: docById.get(r.document_id)?.download_url ?? null,
+      downloadKind: docById.get(r.document_id)?.download_kind ?? null,
+      downloadNote: docById.get(r.document_id)?.download_note ?? null,
     }))
     .sort((a, b) => orderIndex(a.document_id!) - orderIndex(b.document_id!));
 }
