@@ -49,6 +49,37 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+/**
+ * Branded HTML body for founder alerts. Table layout + inline styles so it
+ * renders in Gmail/phone mail clients. The same design is mirrored in
+ * supabase/functions/signup-alert (the Supabase-side signup hook) so both
+ * senders look identical.
+ */
+export function buildAlertHtml(subject: string, fields: Record<string, string>): string {
+  const rows = Object.entries(fields)
+    .map(
+      ([k, v]) =>
+        `<tr>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #eef1f4;color:#5b6b7b;font-size:13px;width:38%;vertical-align:top;">${escapeHtml(k)}</td>` +
+        `<td style="padding:10px 12px;border-bottom:1px solid #eef1f4;color:#12212f;font-size:13px;vertical-align:top;">${escapeHtml(v)}</td>` +
+        `</tr>`
+    )
+    .join("");
+  return (
+    `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f2f5f7;">` +
+    `<div style="max-width:560px;margin:0 auto;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">` +
+    `<div style="background:#0f2a43;border-radius:12px 12px 0 0;padding:20px 24px;">` +
+    `<div style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:.2px;">SmartPR</div>` +
+    `<div style="color:#9fb4c7;font-size:14px;margin-top:2px;">${escapeHtml(subject)}</div>` +
+    `</div>` +
+    `<div style="background:#ffffff;border-radius:0 0 12px 12px;padding:8px 12px 16px;">` +
+    `<table role="presentation" style="width:100%;border-collapse:collapse;">${rows}</table>` +
+    `</div>` +
+    `<div style="color:#8a99a8;font-size:12px;text-align:center;margin-top:12px;">Sent automatically by SmartPR founder alerts</div>` +
+    `</div></body></html>`
+  );
+}
+
 export async function notifyFounder(subject: string, fields: Record<string, string>): Promise<void> {
   const line = `[founder-notify] ${subject} :: ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   console.info(line);
@@ -57,10 +88,8 @@ export async function notifyFounder(subject: string, fields: Record<string, stri
     console.error("[founder-notify] skipped: GMAIL_SMTP_APP_PASSWORD is not set");
     return;
   }
-  const rows = Object.entries(fields)
-    .map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(v)}</td></tr>`)
-    .join("");
   const text = Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join("\n");
+  const html = buildAlertHtml(subject, fields);
   try {
     // nodemailer throws on delivery failure (unlike fetch, there is no
     // silent 200-with-error-payload case), so try/catch is the check.
@@ -69,7 +98,7 @@ export async function notifyFounder(subject: string, fields: Record<string, stri
       to: FOUNDER_EMAIL,
       subject: `[SmartPR] ${subject}`,
       text: `[SmartPR] ${subject}\n\n${text}`,
-      html: `<h2>${escapeHtml(`[SmartPR] ${subject}`)}</h2><table>${rows}</table>`,
+      html,
     });
   } catch (err) {
     // Notification failed — the lead is already stored; never break the flow.

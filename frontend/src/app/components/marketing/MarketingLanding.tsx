@@ -366,18 +366,24 @@ export default function MarketingLanding() {
                 <input
                   value={leadName} onChange={(event) => setLeadName(event.target.value)}
                   placeholder={c.leadName} autoComplete="name" maxLength={120}
+                  enterKeyHint="next"
+                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}
                 />
               </label>
               <label className={styles.leadField}>{c.leadEmail}
                 <input
                   type="email" value={leadEmail} onChange={(event) => setLeadEmail(event.target.value)}
                   placeholder="tu@email.com" autoComplete="email" maxLength={160} required
+                  enterKeyHint="next"
+                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}
                 />
               </label>
               <label className={styles.leadField}>{c.leadPhone}
                 <input
                   type="tel" value={leadPhone} onChange={(event) => setLeadPhone(event.target.value)}
                   autoComplete="tel" maxLength={40}
+                  enterKeyHint="go"
+                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }}
                 />
               </label>
               {leadError && <p className={styles.leadError}>{leadError}</p>}
