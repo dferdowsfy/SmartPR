@@ -71,10 +71,17 @@ export interface GovernmentFormModalProps {
    * whose save destination isn't the intake's deliverables list.
    */
   confirmLabels?: [string, string];
+  /**
+   * When the host already knows the workspace can't use deliverables (e.g.
+   * from /api/billing/entitlements), open the modal directly on the upgrade
+   * panel instead of the form. The server-side /populate gate remains the
+   * source of truth; this only controls what the user sees first.
+   */
+  initialPaywallCode?: "auth_required" | "plan_deliverables_locked";
 }
 
 export function GovernmentFormModal(props: GovernmentFormModalProps) {
-  const { definition, canonical, lang, initialData, initialMode, existingApplicationId, applicationStatus, onClose, onSaveDraft, onCanonicalChange, onComplete, onMarkSubmitted, onPdfReady, confirmLabels } = props;
+  const { definition, canonical, lang, initialData, initialMode, existingApplicationId, applicationStatus, onClose, onSaveDraft, onCanonicalChange, onComplete, onMarkSubmitted, onPdfReady, confirmLabels, initialPaywallCode } = props;
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const confirmLabel = confirmLabels ? (lang === "es" ? confirmLabels[1] : confirmLabels[0]) : L("Confirm and Add to Deliverables", "Confirmar y añadir a entregables");
 
@@ -127,10 +134,13 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   // rather than flashing a loading state, and is replaced once the new one lands.
   const [realArtifact, setRealArtifact] = useState<PopulatedArtifact | null>(null);
   const [realArtifactError, setRealArtifactError] = useState<string | null>(null);
-  // Set when /populate answers 402: the filled official PDF sits behind the
-  // paywall. The modal stays usable (worksheet fallback remains free); only
-  // the official-PDF preview/download is replaced by the upgrade panel.
-  const [paywallCode, setPaywallCode] = useState<string | null>(null);
+  // Set when /populate answers 402, or upfront via initialPaywallCode: the
+  // completed document sits behind the paywall. No download, no confirm, no
+  // worksheet fallback while set — the upgrade panel is the only action.
+  const [paywallCode, setPaywallCode] = useState<string | null>(() => initialPaywallCode ?? null);
+  // Host already knew the workspace was locked: open directly on the upgrade
+  // panel instead of making the user fill the form first.
+  const upfrontLocked = initialPaywallCode != null;
 
   // One in-flight population per (form, profile), shared by the preview below
   // and the download button. Without this the download would either fire its
@@ -217,8 +227,9 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   // loaded, the SmartPR-drafted fallback otherwise.
   const showingRealArtifact = hasRealArtifact && !!realArtifactUrl;
   const displayedPreviewUrl = realArtifactUrl ?? readyPreviewUrl;
-  // Paywall: the filled official PDF requires a plan with deliverables.
-  const paywalled = paywallCode !== null && wantsRealArtifact;
+  // Paywall: completed documents (official populated PDFs and preparation
+  // worksheets alike) require a plan with deliverables.
+  const paywalled = paywallCode !== null;
 
   // The submission step belongs to a prepared application only: right after the
   // applicant completes it, or when they reopen one they already prepared.
@@ -275,6 +286,9 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
 
   const handleConfirmSave = async () => {
     if (!pendingApp || confirming) return;
+    // Belt and suspenders: the footer hides the confirm button when paywalled,
+    // but never let a locked session produce a document through this path.
+    if (paywalled) return;
     if (onPdfReady) {
       // Hand the finished PDF to the host (upload, attach, …) before the
       // application is recorded and the modal closes.
@@ -318,6 +332,10 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   };
 
   const downloadPdf = async () => {
+    // Locked sessions get no document at all — not even the client-generated
+    // preparation worksheet. The button is hidden when paywalled; this is the
+    // backstop.
+    if (paywalled) return;
     const filename = `${definition.officialFormNumber}_${localize(definition.title, lang).replace(/\s+/g, "_")}.pdf`;
 
     // No official file in the template library for this form: the SmartPR
@@ -345,6 +363,51 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   };
 
   const readOnly = mode === "view";
+
+  // The upgrade panel, shared by the upfront-locked open and the 402-after-
+  // confirm case. Rendered as a function (not a component) so it stays inside
+  // the modal's closure over L and paywallCode.
+  const renderPaywallPanel = () => (
+    <div
+      style={{
+        border: "1px solid #e2e8f0",
+        borderRadius: 12,
+        background: "#f8fafc",
+        padding: "32px 24px",
+        textAlign: "center",
+      }}
+    >
+      <div style={{ fontSize: 17, fontWeight: 700, color: "#0f2a43", marginBottom: 8 }}>
+        {L("Filled government forms are a paid feature", "Los formularios oficiales completados son una función paga")}
+      </div>
+      <div style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.65, maxWidth: 420, margin: "0 auto 20px" }}>
+        {paywallCode === "auth_required"
+          ? L(
+              "Create your free account, then choose a plan to generate the official filled PDF — ready to file. Your assessment and requirements checklist stay free.",
+              "Cree su cuenta gratis y elija un plan para generar el PDF oficial completado — listo para radicar. Su evaluación y lista de requisitos siguen siendo gratis."
+            )
+          : L(
+              "Your free plan covers the assessment and your requirements checklist. Upgrade to generate the official filled PDF — ready to file.",
+              "Su plan gratis cubre la evaluación y su lista de requisitos. Suba de plan para generar el PDF oficial completado — listo para radicar."
+            )}
+      </div>
+      <a
+        href="/pricing"
+        style={{
+          display: "inline-block",
+          background: "#0f2a43",
+          color: "#ffffff",
+          fontSize: 15,
+          fontWeight: 600,
+          textDecoration: "none",
+          padding: "12px 28px",
+          borderRadius: 8,
+        }}
+      >
+        {L("See plans", "Ver planes")}
+      </a>
+    </div>
+  );
 
   return (
     <div role="dialog" aria-modal="true" data-requirement={props.requirementCode} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
@@ -379,6 +442,8 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
 
         {/* Body */}
         <div style={{ padding: 20, maxHeight: "62vh", overflowY: "auto" }}>
+          {upfrontLocked ? renderPaywallPanel() : (
+          <>
           {(mode === "ready" || (mode === "view" && wantsRealArtifact)) && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
@@ -409,47 +474,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
                         "Este es el documento exacto que se añadirá a sus entregables — no se guarda nada hasta que confirme abajo."
                       )}
               </div>
-              {paywalled ? (
-                <div
-                  style={{
-                    border: "1px solid #e2e8f0",
-                    borderRadius: 12,
-                    background: "#f8fafc",
-                    padding: "32px 24px",
-                    textAlign: "center",
-                  }}
-                >
-                  <div style={{ fontSize: 17, fontWeight: 700, color: "#0f2a43", marginBottom: 8 }}>
-                    {L("Filled government forms are a paid feature", "Los formularios oficiales completados son una función paga")}
-                  </div>
-                  <div style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.65, maxWidth: 420, margin: "0 auto 20px" }}>
-                    {paywallCode === "auth_required"
-                      ? L(
-                          "Create your free account, then choose a plan to generate the official filled PDF — ready to file. Your assessment and requirements checklist stay free.",
-                          "Cree su cuenta gratis y elija un plan para generar el PDF oficial completado — listo para radicar. Su evaluación y lista de requisitos siguen siendo gratis."
-                        )
-                      : L(
-                          "Your free plan covers the assessment and your requirements checklist. Upgrade to generate the official filled PDF — ready to file.",
-                          "Su plan gratis cubre la evaluación y su lista de requisitos. Suba de plan para generar el PDF oficial completado — listo para radicar."
-                        )}
-                  </div>
-                  <a
-                    href="/pricing"
-                    style={{
-                      display: "inline-block",
-                      background: "#0f2a43",
-                      color: "#ffffff",
-                      fontSize: 15,
-                      fontWeight: 600,
-                      textDecoration: "none",
-                      padding: "12px 28px",
-                      borderRadius: 8,
-                    }}
-                  >
-                    {L("See plans", "Ver planes")}
-                  </a>
-                </div>
-              ) : hasRealArtifact && realArtifactLoading && !realArtifactUrl ? (
+              {paywalled ? renderPaywallPanel() : hasRealArtifact && realArtifactLoading && !realArtifactUrl ? (
                 <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 13 }}>
                   {L("Populating the official government PDF…", "Completando el PDF oficial del gobierno…")}
                 </div>
@@ -500,10 +525,18 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
               </ul>
             </div>
           )}
+          </>
+          )}
         </div>
 
         {/* Footer actions */}
         <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 8 }}>
+          {paywalled ? (
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" onClick={handleClose} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Close", "Cerrar")}</button>
+            </div>
+          ) : (
+          <>
           {offersDownload && (
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-start", alignItems: "center", flexWrap: "wrap" }}>
               <button type="button" onClick={() => void downloadPdf()} disabled={downloading} style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", cursor: downloading ? "default" : "pointer", opacity: downloading ? 0.6 : 1 }}>
@@ -550,6 +583,8 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
               onComplete={handleComplete}
               onClose={handleClose}
             />
+          )}
+          </>
           )}
         </div>
       </div>

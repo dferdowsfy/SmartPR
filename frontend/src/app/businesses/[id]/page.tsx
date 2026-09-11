@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2,
-  ChevronDown, Download, ExternalLink, FileText, FolderOpen, MapPin, ShieldAlert, Upload,
+  ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, ShieldAlert, Upload,
 } from "lucide-react";
+import { useDeliverablesAccess } from "../../../lib/billing/useDeliverablesAccess";
 import { TopNav, ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
 import { StatusBadge } from "../../components/compliance/StatusBadge";
 import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } from "../../compliance/types";
@@ -193,6 +194,8 @@ function DetailField({ label, value }: { label: string; value: string | null | u
 function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   item: Obligation; business: BusinessRecord; evidence: Evidence[]; reload: () => void; onMarkComplete?: (id: string) => void;
 }) {
+  const { canUseDeliverables, paywallCode } = useDeliverablesAccess();
+  const deliverablesLocked = canUseDeliverables === false;
   const [date, setDate] = useState(item.due_date || "");
   const [source, setSource] = useState<DueDateSource>(item.due_date_source === "UNKNOWN" ? "USER_PROVIDED" : item.due_date_source);
   const [busy, setBusy] = useState(false);
@@ -350,7 +353,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
                 type="button" onClick={() => setFormOpen(true)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#245c5c] px-3 py-1 text-xs font-semibold text-white"
               >
-                <FileText className="h-3.5 w-3.5" />Complete document
+                {deliverablesLocked ? <Lock className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}{L("Complete document", lang)}
               </button>
             )}
             <button
@@ -424,6 +427,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           requirementCode={item.requirement_id ?? item.id}
           canonical={canonical}
           lang={lang}
+          initialPaywallCode={deliverablesLocked ? (paywallCode ?? "plan_deliverables_locked") : undefined}
           initialData={initialDraft}
           onClose={() => setFormOpen(false)}
           onSaveDraft={(_formId, data) => {

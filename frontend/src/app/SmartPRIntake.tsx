@@ -63,6 +63,7 @@ import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue 
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft } from '../lib/guestDraft';
+import { useDeliverablesAccess } from '../lib/billing/useDeliverablesAccess';
 import { readRestaurantHandoff } from './restaurants/model';
 import { readClinicHandoff } from './clinics/model';
 import { trackAcquisition } from './restaurants/analytics';
@@ -1108,6 +1109,11 @@ function ExtractionPanel({ ext, docType, language }: { ext: ExtractionResult; do
 
 export default function SmartPRIntake() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
+  // Deliverables paywall, surfaced upfront: locked users see a lock on the
+  // "complete form" buttons and the modal opens on the upgrade panel.
+  // The server-side /populate gate remains the source of truth.
+  const { canUseDeliverables, paywallCode } = useDeliverablesAccess();
+  const deliverablesLocked = canUseDeliverables === false;
   const [profile, setProfile] = useState<BusinessProfile>({
     name: '',
     business_stage: 'new',
@@ -3593,19 +3599,19 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     } else if (isFormPackage) {
       // The NPDES application is filed as a package: the picker lists both
       // EPA forms with their own per-form progress.
-      action = { kind: 'form', label: L(primaryStartLabelFor(name), language), onClick: () => setActiveGovPackage({ requirementCode: req.code }) };
+      action = { kind: 'form', label: L(primaryStartLabelFor(name), language), locked: deliverablesLocked, onClick: () => setActiveGovPackage({ requirementCode: req.code }) };
       secondary = secondaryUpload();
       bucket = 'needs_action';
     } else if (govEntry && formActions.includes('start_form')) {
-      action = { kind: 'form', label: L(primaryStartLabelFor(name), language), onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
+      action = { kind: 'form', label: L(primaryStartLabelFor(name), language), locked: deliverablesLocked, onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
       secondary = secondaryUpload();
       bucket = 'needs_action';
     } else if (govEntry && formActions.includes('edit_form')) {
-      action = { kind: 'form', label: L('Continue application', language), onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
+      action = { kind: 'form', label: L('Continue application', language), locked: deliverablesLocked, onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
       secondary = secondaryUpload();
       bucket = 'in_progress';
     } else if (govEntry && formActions.includes('review_updates')) {
-      action = { kind: 'form', label: L('Review updates', language), onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
+      action = { kind: 'form', label: L('Review updates', language), locked: deliverablesLocked, onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
       secondary = secondaryUpload();
       bucket = 'in_progress';
     } else if (govEntry && (formActions.includes('view_submission') || formActions.includes('view_form'))) {
@@ -4923,6 +4929,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           requirementCode={activeGovForm.requirementCode}
           canonical={canonicalApplication}
           lang={language}
+          initialPaywallCode={deliverablesLocked ? (paywallCode ?? "plan_deliverables_locked") : undefined}
           initialData={preparedGovApplications[activeGovForm.formId]?.data as GovFormData ?? govFormDrafts[activeGovForm.formId]}
           initialMode={activeGovForm.mode}
           existingApplicationId={preparedGovApplications[activeGovForm.formId]?.id}

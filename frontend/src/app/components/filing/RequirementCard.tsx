@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Upload } from "lucide-react";
+import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
@@ -11,6 +11,9 @@ export interface RequirementAction {
   label: string;
   helper?: string;
   onClick?: () => void;
+  /** True when completing the document requires a paid plan — the button
+   * shows a lock instead of the arrow. The modal opens on the upgrade panel. */
+  locked?: boolean;
 }
 
 export interface RequirementSecondaryAction {
@@ -94,7 +97,7 @@ function ActionButton({ action }: { action: RequirementAction }) {
       {action.kind === "upload" && <Upload size={15} />}
       {isForm && <ClipboardList size={15} />}
       <span>{action.label}</span>
-      {isForm && <ArrowRight size={15} />}
+      {isForm && action.locked ? <Lock size={15} aria-hidden="true" /> : isForm ? <ArrowRight size={15} /> : null}
     </button>
   );
 }
