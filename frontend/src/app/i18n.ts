@@ -693,6 +693,8 @@ export const ES: Record<string, string> = {
   "File online": "Radicar en línea",
   "Get the form": "Obtener el formulario",
   "How to file": "Cómo radicar",
+  "Open again": "Abrir de nuevo",
+  "Got it? Upload the finished document when you come back.": "¿Lo tienes? Sube el documento terminado cuando regreses.",
   "Your business name": "El nombre de tu negocio",
   "expired": "vencido",
   "files": "archivos",

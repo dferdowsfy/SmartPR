@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2,
-  ChevronDown, Download, FileText, FolderOpen, MapPin, ShieldAlert, Upload,
+  ChevronDown, Download, ExternalLink, FileText, FolderOpen, MapPin, ShieldAlert, Upload,
 } from "lucide-react";
 import { TopNav, ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
 import { StatusBadge } from "../../components/compliance/StatusBadge";
@@ -13,6 +13,8 @@ import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } f
 import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { buildCanonicalFromIntake } from "../../forms/engine/intake";
+import { getDocumentDownload, downloadKindLabel } from "../../kb";
+import { L } from "../../i18n";
 import type { Lang, FormData as GovFormData } from "../../forms/engine/types";
 
 interface BusinessRecord {
@@ -22,7 +24,7 @@ interface BusinessRecord {
   notes: string | null; created_at: string | null;
 }
 interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null }
-interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string }
+interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string; downloaded_at?: string | null }
 interface Evidence { id: string; obligation_id: string | null; original_filename: string; obligation_name: string | null; review_status: string; created_at: string }
 interface Submission { id: string; created_at: string; business_type: string | null; municipality: string | null; readiness_score: number | null }
 interface Deliverable { id: string; filename: string; kind: string; generated_at: string }
@@ -201,6 +203,17 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // Official download/filing destination tracking: the row's visible button
+  // opens the destination in a new tab; the click is recorded server-side so
+  // the row can nudge the user back and a 3-day bell reminder is scheduled.
+  const [downloaded, setDownloaded] = useState(!!item.downloaded_at);
+  const dl = useMemo(() => getDocumentDownload(item.requirement_id), [item.requirement_id]);
+  const recordDownload = useCallback(() => {
+    setDownloaded(true);
+    fetch(`/api/obligations/${item.id}/download`, { method: "POST" })
+      .then(() => reload())
+      .catch(() => { /* best-effort; the destination already opened */ });
+  }, [item.id, reload]);
   // "Complete document" opens the official government form in a modal right
   // here on the business page — the user never leaves this screen.
   const [formOpen, setFormOpen] = useState(false);
@@ -319,6 +332,15 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
             >
               <Upload className="h-3.5 w-3.5" />{uploading ? "Uploading…" : "Upload"}
             </button>
+            {dl && (
+              <a
+                href={dl.url} target="_blank" rel="noopener noreferrer" onClick={recordDownload}
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#245c5c] px-3 py-1 text-xs font-bold text-[#245c5c]"
+              >
+                {downloaded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                {downloaded ? L("Open again", lang) : L(downloadKindLabel(dl.kind), lang)}
+              </a>
+            )}
             <input
               ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
               onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadFile(file); }}
@@ -347,6 +369,11 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">Mark renewed / complete</button>
         )}
       </div>
+      {downloaded && !completed && (
+        <p className="mt-2 text-xs font-semibold text-[#245c5c]">
+          ✓ {L("Got it? Upload the finished document when you come back.", lang)}
+        </p>
+      )}
       {completedPdf && (
         <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
           <FileText className="h-4 w-4 shrink-0 text-emerald-700" />

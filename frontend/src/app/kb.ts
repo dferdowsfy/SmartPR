@@ -63,6 +63,33 @@ const LEGACY_CODE: Record<string, string> = ACTIVE_JURISDICTION.docMappings.lega
 // Explicit null/draft/review content always overrides the bundled concept.
 const BUNDLED_GUIDANCE = new Map(KB.documents.map(d => [d.id, d.requirement_guidance]));
 
+export interface DocumentDownload {
+  url: string;
+  kind: string;
+}
+
+/** Direct official download/filing destination for a KB document (form PDF,
+ * filing portal, form page, or guidance page). Null when the document is
+ * private, preparer-created, notarial, or municipality-specific — those carry
+ * a how-to-obtain note instead. */
+export function getDocumentDownload(documentId: string | null | undefined): DocumentDownload | null {
+  if (!documentId) return null;
+  const doc = (KB.documents as Array<{ id: string; download_url?: string | null; download_kind?: string }>).find(
+    (d) => d.id === documentId
+  );
+  if (!doc?.download_url) return null;
+  return { url: doc.download_url, kind: doc.download_kind || "guidance_page" };
+}
+
+/** Kind-specific action label for a direct download/filing destination. */
+export function downloadKindLabel(kind: string): string {
+  return kind === "form_pdf" ? "Download form"
+    : kind === "filing_portal" ? "File online"
+    : kind === "form_page" ? "Get the form"
+    : kind === "guidance_page" ? "How to file"
+    : "Where to get this";
+}
+
 interface KbMeta {
   source: "static" | "snapshot";
   version: number;

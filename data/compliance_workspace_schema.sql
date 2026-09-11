@@ -98,6 +98,9 @@ CREATE TABLE IF NOT EXISTS obligations (
   UNIQUE(matter_id,requirement_id,cycle_index)
 );
 CREATE INDEX IF NOT EXISTS idx_obligations_business_status ON obligations(business_id,status);
+-- Tracks when the user opened the requirement's official download/filing
+-- destination in a new tab. Powers the "downloaded, now upload" return nudge.
+ALTER TABLE obligations ADD COLUMN IF NOT EXISTS downloaded_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_obligations_due ON obligations(due_date) WHERE completed_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_obligations_requirement ON obligations(requirement_id);
 

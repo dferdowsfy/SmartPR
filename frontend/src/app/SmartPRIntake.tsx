@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
-import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry } from './kb';
+import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel } from './kb';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { buildRequirementGuidance } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
@@ -1160,6 +1160,23 @@ export default function SmartPRIntake() {
   }, [docPreviewUrl]);
   // Schema-driven government-form engine state (CORPREG01–CORPREG06).
   const [govFormDrafts, setGovFormDrafts] = useState<Record<string, GovFormData>>({});
+  // Official-form / filing-portal click tracking: which requirement codes the
+  // user has opened in a new tab. This is the return path — the row flips to a
+  // "downloaded, now upload" state so the user has a reason to come back.
+  const [downloadedCodes, setDownloadedCodes] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('smartpr-downloaded-docs') || '{}');
+      if (saved && typeof saved === 'object') setDownloadedCodes(saved);
+    } catch { /* best-effort */ }
+  }, []);
+  const handleDownloadClick = (code: string) => {
+    setDownloadedCodes((current) => {
+      const next = { ...current, [code]: Date.now() };
+      try { localStorage.setItem('smartpr-downloaded-docs', JSON.stringify(next)); } catch { /* best-effort */ }
+      return next;
+    });
+  };
   const [preparedGovApplications, setPreparedGovApplications] = useState<Record<string, GeneratedApplication>>({});
   const [activeGovForm, setActiveGovForm] = useState<{ formId: string; requirementCode: string; mode: 'edit' | 'view' } | null>(null);
   // Multi-form package picker (today: the EPA NPDES Form 1 + Form 2C package).
@@ -3678,40 +3695,29 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </div>
         )}
         {(() => {
-          const dlLabel =
-            req.downloadKind === 'form_pdf' ? 'Download form'
-            : req.downloadKind === 'filing_portal' ? 'File online'
-            : req.downloadKind === 'form_page' ? 'Get the form'
-            : req.downloadKind === 'guidance_page' ? 'How to file'
-            : 'Where to get this';
-          const howNote = req.downloadNote || req.agencyNote;
-          const showDl = !!(req.downloadUrl || req.agencyUrl || howNote);
-          return showDl ? (
+          const note = req.downloadNote || req.agencyNote;
+          // The direct download/filing destination is now a visible button on
+          // the row; the disclosure keeps only how-to-obtain guidance and the
+          // agency fallback link.
+          const agencyLink = !req.downloadUrl && req.agencyUrl ? (
+            <span>
+              <a href={req.agencyUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
+                {L('Where to get this', language)} →
+              </a>
+              {req.agency && <span style={{ color: 'var(--muted)' }}> · {req.agency}</span>}
+            </span>
+          ) : null;
+          if (!note && !agencyLink) return null;
+          return (
             <div className="issued-document-guidance" style={{ marginTop: 8 }}>
               <Info className="i" style={{ width: 13, height: 13 }} />
-              {req.downloadUrl ? (
-                <span>
-                  <a href={req.downloadUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
-                    {L(dlLabel, language)} →
-                  </a>
-                  {req.agencyUrl && (
-                    <span style={{ color: 'var(--muted)' }}>
-                      {' · '}<a href={req.agencyUrl} target="_blank" rel="noopener noreferrer">{req.agency}</a>
-                    </span>
-                  )}
-                </span>
-              ) : req.agencyUrl ? (
-                <span>
-                  <a href={req.agencyUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
-                    {L(dlLabel, language)} →
-                  </a>{' '}
-                  <span style={{ color: 'var(--muted)' }}>{req.agency}</span>
-                </span>
-              ) : (
-                <span>{howNote}</span>
-              )}
+              <span>
+                {note}
+                {note && agencyLink ? ' ' : null}
+                {agencyLink}
+              </span>
             </div>
-          ) : null;
+          );
         })()}
       </div>
     );
@@ -3758,6 +3764,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     );
     const hasExtra = !!(prepared || samplePrepared || (ext && analysis) || processingStates[req.code] || ((state === 'review' || reviewingCode === req.code) && analysis));
 
+    // Visible direct-download / file-online button. The official destination
+    // lives on the row as a real button — never hidden in the disclosure —
+    // and the click is tracked so the row can nudge the user back to upload.
+    const wasDownloaded = !!downloadedCodes[req.code];
+    const download = req.downloadUrl ? {
+      label: wasDownloaded ? L('Open again', language) : L(downloadKindLabel(req.downloadKind || 'guidance_page'), language),
+      url: req.downloadUrl,
+      downloaded: wasDownloaded,
+      downloadedHint: L('Got it? Upload the finished document when you come back.', language),
+      onDownload: () => handleDownloadClick(req.code),
+    } : undefined;
+
     return {
       req, bucket, state,
       name,
@@ -3769,6 +3787,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       why,
       action,
       secondary,
+      download,
       extra: hasExtra ? extra : undefined,
       contextLabel: req.incentiveLabel ?? null,
     };
@@ -3779,7 +3798,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .filter(r => r.applicability !== 'not_applicable')
       .map(computeReqCard),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality]
+    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes]
   );
   const tabNeedsActionCount = reqCards.filter(c => c.bucket === 'needs_action').length;
   const tabInProgressCount = reqCards.filter(c => c.bucket === 'in_progress').length;
@@ -4497,6 +4516,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 why={c.why}
                 action={c.action}
                 secondary={c.secondary}
+                download={c.download}
                 extra={c.extra}
                 contextLabel={c.contextLabel}
               />
@@ -4530,6 +4550,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       why={c.why}
                       action={c.action}
                       secondary={c.secondary}
+                      download={c.download}
                       extra={c.extra}
                       contextLabel={c.contextLabel}
                     />

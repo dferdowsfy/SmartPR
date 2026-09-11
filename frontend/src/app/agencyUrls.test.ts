@@ -54,3 +54,27 @@ describe("agency URL coverage", () => {
     assert.deepEqual(bad.map((r) => r.document_id), []);
   });
 });
+
+describe("getDocumentDownload", () => {
+  it("resolves a document id to its direct official destination", async () => {
+    const { getDocumentDownload, downloadKindLabel } = await import("./kb");
+    const dl = getDocumentDownload("DOC_EIN");
+    assert.ok(dl);
+    assert.equal(dl.kind, "filing_portal");
+    assert.ok(/^https:\/\//.test(dl.url));
+    assert.equal(downloadKindLabel(dl.kind), "File online");
+    assert.equal(downloadKindLabel("form_pdf"), "Download form");
+    assert.equal(downloadKindLabel("form_page"), "Get the form");
+    assert.equal(downloadKindLabel("guidance_page"), "How to file");
+  });
+
+  it("returns null for documents with no central download and for unknown ids", async () => {
+    const { getDocumentDownload } = await import("./kb");
+    const docs = KB.documents as Array<{ id: string; download_url?: string | null }>;
+    const noUrl = docs.find((d) => !d.download_url);
+    assert.ok(noUrl, "expected at least one document without a download_url");
+    assert.equal(getDocumentDownload(noUrl.id), null);
+    assert.equal(getDocumentDownload("DOC_DOES_NOT_EXIST"), null);
+    assert.equal(getDocumentDownload(null), null);
+  });
+});

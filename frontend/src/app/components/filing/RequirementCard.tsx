@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, Upload } from "lucide-react";
+import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Upload } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
@@ -28,6 +28,19 @@ export interface RequirementBadge {
   tone: "amber" | "blue" | "gray";
 }
 
+export interface RequirementDownload {
+  /** Visible button label, already localized by the caller
+   * (e.g. "Download form" / "Open again"). */
+  label: string;
+  url: string;
+  /** True once the user has clicked through at least once. */
+  downloaded: boolean;
+  /** Localized nudge shown after download, e.g. "Got it? Upload the
+   * finished document when you're back." */
+  downloadedHint: string;
+  onDownload: () => void;
+}
+
 export interface RequirementCardProps {
   index: number;
   icon: ReactNode;
@@ -44,6 +57,10 @@ export interface RequirementCardProps {
    * the document. Omitted once the requirement is completed, or when upload
    * is already the primary (only) action. */
   secondary?: RequirementSecondaryAction;
+  /** Visible "Download form / File online" button rendered in the action
+   * column — the direct official destination for this requirement, never
+   * hidden inside the "Why do I need this?" disclosure. */
+  download?: RequirementDownload;
   /** Extraction panels, AI findings, multi-stage processing — rendered full
    * width below the card's three zones, unchanged in substance from before. */
   extra?: ReactNode;
@@ -94,6 +111,7 @@ export function RequirementCard({
   why,
   action,
   secondary,
+  download,
   extra,
   id,
   contextLabel,
@@ -118,6 +136,23 @@ export function RequirementCard({
 
         <div className="rq-card-right">
           <ActionButton action={action} />
+          {download && action.kind !== "completed" && (
+            <>
+              <a
+                href={download.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rq-download-btn"
+                onClick={download.onDownload}
+              >
+                {download.downloaded ? <CheckCircle2 size={15} /> : <ExternalLink size={15} />}
+                <span>{download.label}</span>
+              </a>
+              {download.downloaded && (
+                <span className="rq-downloaded-hint">{download.downloadedHint}</span>
+              )}
+            </>
+          )}
           {action.helper && (action.kind === "form" || action.kind === "upload") && (
             <span className="rq-cta-helper">{action.helper}</span>
           )}

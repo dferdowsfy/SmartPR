@@ -85,5 +85,11 @@ export async function POST(request: Request) {
     [evidenceId, user.id, obligation.business_id, obligation.matter_id, obligation.id,
       file.name, path, file.type || null, file.size, obligation.name]
   );
+  // The user came back with the document — retire the download follow-up nudge.
+  await pool.query(
+    `UPDATE notifications SET status='CANCELLED'
+      WHERE obligation_id=$1 AND type='DOWNLOAD_FOLLOWUP' AND status='PENDING'`,
+    [obligation.id]
+  );
   return Response.json({ ok: true, evidence_id: evidenceId });
 }
