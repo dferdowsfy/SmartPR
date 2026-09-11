@@ -1,69 +1,554 @@
 [
-{"id": "DOC_CERT_INCORPORATION", "name": "Certificate of Incorporation", "agency": "Department of State", "category": "State"},
-{"id": "DOC_ARTICLES_ORGANIZATION", "name": "Articles of Organization", "agency": "Department of State", "category": "State"},
-{"id": "DOC_FOREIGN_CORPORATION_AUTHORIZATION", "name": "Certificate of Authorization to Do Business (Foreign Corporation)", "agency": "Department of State", "category": "State"},
-{"id": "DOC_LLP_REGISTRATION", "name": "Limited Liability Partnership Registration", "agency": "Department of State", "category": "State"},
-{"id": "DOC_DBA_REGISTRATION", "name": "DBA / Trade Name Registration", "agency": "Department of State", "category": "State"},
-{"id": "DOC_EIN", "name": "IRS EIN Confirmation Letter", "agency": "IRS", "category": "Federal"},
-{"id": "DOC_MERCHANT_REGISTRATION", "name": "Merchant Registration Certificate (Registro de Comerciante)", "agency": "Departamento de Hacienda", "category": "State"},
-{"id": "DOC_SURI_REGISTRATION", "name": "SURI Account Registration", "agency": "Departamento de Hacienda", "category": "State"},
-{"id": "DOC_PERMISO_UNICO", "name": "Permiso Único", "agency": "OGPe", "category": "Regulatory"},
-{"id": "DOC_ZONING", "name": "Zoning / Use Certification", "agency": "OGPe", "category": "Regulatory"},
-{"id": "DOC_OCCUPANCY", "name": "Occupancy Documentation", "agency": "OGPe", "category": "Regulatory"},
-{"id": "DOC_PATENTE_MUNICIPAL", "name": "Patente Municipal", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_MUNICIPAL_REGISTRATION", "name": "Municipal Registration", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_MUNICIPAL_TAX_COMPLIANCE", "name": "Municipal Tax Compliance Certificate", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_HEALTH_PERMIT", "name": "Health / Sanitary Permit", "agency": "Departamento de Salud", "category": "Regulatory"},
-{"id": "DOC_FIRE_CERT", "name": "Fire Safety Certification (Certificado de Bomberos)", "agency": "Cuerpo de Bomberos", "category": "Regulatory"},
-{"id": "DOC_CFPM", "name": "Certified Food Protection Manager (CFPM)", "agency": "Departamento de Salud", "category": "Professional"},
-{"id": "DOC_ALCOHOL_LICENSE", "name": "Alcohol Beverage License", "agency": "Departamento de Hacienda", "category": "State"},
-{"id": "DOC_PROFESSIONAL_LICENSE", "name": "Professional License", "agency": "Department of State Examining Boards", "category": "Professional"},
-{"id": "DOC_CONTRACTOR_LICENSE", "name": "Contractor License", "agency": "Department of State", "category": "Professional"},
-{"id": "DOC_TOURISM_REGISTRATION", "name": "Tourism Registration", "agency": "Compañía de Turismo", "category": "Regulatory"},
-{"id": "DOC_INSURANCE", "name": "General Liability Insurance Certificate", "agency": "Insurance Carrier", "category": "Insurance"},
-{"id": "DOC_WORKERS_COMP", "name": "Workers Compensation Insurance (CFSE)", "agency": "Corporación del Fondo del Seguro del Estado", "category": "Insurance"},
-{"id": "DOC_LEASE_AGREEMENT", "name": "Lease Agreement", "agency": "Property Owner", "category": "Property"},
-{"id": "DOC_PROPERTY_DEED", "name": "Property Deed (Escritura)", "agency": "Property Registry", "category": "Property"},
-{"id": "DOC_FLOOR_PLANS", "name": "Floor Plans", "agency": "Licensed Architect / Engineer", "category": "Property"},
-{"id": "DOC_ENVIRONMENTAL_PERMIT", "name": "Environmental Permit", "agency": "Junta de Calidad Ambiental / DRNA", "category": "Regulatory"},
-{"id": "DOC_MEDICAL_WASTE_PERMIT", "name": "Medical Waste Management Permit", "agency": "Junta de Calidad Ambiental", "category": "Regulatory"},
-{"id": "DOC_SIGN_PERMIT", "name": "Sign / Rótulo Permit", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_OUTDOOR_SEATING_AUTH", "name": "Outdoor Seating Authorization", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_ENTERTAINMENT_PERMIT", "name": "Entertainment Permit", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_IMPORT_EXPORT_REG", "name": "Import / Export Registration", "agency": "Departamento de Hacienda", "category": "State"},
-{"id": "DOC_HOME_DECLARATION", "name": "Home Business Declaration", "agency": "Municipal Government", "category": "Municipal"},
-{"id": "DOC_CRIM_CLEARANCE", "name": "CRIM Property Tax Clearance", "agency": "CRIM", "category": "Regulatory"},
-{"id": "DOC_TRANSPORT_PERMIT", "name": "Transportation / PUC Permit", "agency": "Comisión de Servicio Público", "category": "Regulatory"},
-{"id": "DOC_VEHICLE_REGISTRATION", "name": "Commercial Vehicle Registration", "agency": "DTOP", "category": "State"},
-{"id": "DOC_CHILDCARE_LICENSE", "name": "Childcare / Education License", "agency": "Departamento de la Familia / Educación", "category": "Regulatory"},
-{"id": "DOC_BACKGROUND_CHECK", "name": "Background Check Documentation (Certificado de Antecedentes Penales)", "agency": "Policía de Puerto Rico", "category": "Regulatory"},
-{"id": "DOC_PESTICIDE_LICENSE", "name": "Pesticide Applicator License", "agency": "Departamento de Agricultura", "category": "Regulatory"},
-{"id": "DOC_AGRICULTURE_REGISTRATION", "name": "Bona Fide Farmer Registration", "agency": "Departamento de Agricultura", "category": "Regulatory"},
-{"id": "DOC_FIREARMS_LICENSE", "name": "Weapons / Firearms Dealer License", "agency": "Policía de Puerto Rico", "category": "Regulatory"},
-{"id": "DOC_NONPROFIT_REGISTRATION", "name": "Nonprofit Registration / 501(c)(3) Determination", "agency": "IRS / Department of State", "category": "Federal"},
-{"id": "DOC_TRAFFIC_IMPACT_STUDY", "name": "Traffic Impact Study (Estudio de Impacto Vehicular)", "agency": "Departamento de Transportación y Obras Públicas (DTOP) / Municipal Engineering", "category": "Municipal"},
-{"id": "DOC_STORMWATER_PLAN", "name": "Stormwater Management Plan (NPDES MS4)", "agency": "EPA / Junta de Calidad Ambiental (JCA)", "category": "Regulatory"},
-{"id": "DOC_NOISE_VARIANCE", "name": "Noise Variance / Endoso de Ruido", "agency": "Junta de Calidad Ambiental + Municipal Permits Office", "category": "Municipal"},
-{"id": "DOC_WASTE_COLLECTION_CONTRACT", "name": "Commercial Solid Waste Collection Contract", "agency": "Autoridad de Desperdicios Sólidos / Municipal", "category": "Municipal"},
-{"id": "DOC_PARKING_COMPLIANCE", "name": "Off-Street Parking Compliance Certificate", "agency": "Municipal Permits Office", "category": "Municipal"},
-{"id": "DOC_LOADING_ZONE_PERMIT", "name": "Commercial Loading / Unloading Zone Permit", "agency": "Municipal Permits Office", "category": "Municipal"},
-{"id": "DOC_SAN_JUAN_USE_PERMIT", "name": "San Juan Municipal Use Permit (Permiso Municipal de Uso)", "agency": "Municipio de San Juan — Permisos Municipales", "category": "Municipal"},
-{"id": "DOC_FACADE_PRESERVATION", "name": "Historic Facade Preservation Plan", "agency": "Instituto de Cultura Puertorriqueña (ICP) / OECH", "category": "Regulatory"},
-{"id": "DOC_HISTORIC_DISTRICT_REVIEW", "name": "Historic District Structural Review", "agency": "Instituto de Cultura Puertorriqueña (ICP) / OECH", "category": "Regulatory"},
-{"id": "DOC_SIGN_VARIANCE_HISTORIC", "name": "Historic-District Sign Variance", "agency": "Instituto de Cultura Puertorriqueña (ICP) + Municipal Permits Office", "category": "Regulatory"},
-{"id": "DOC_ISLAND_FERRY_MANIFEST", "name": "ATM Ferry Logistics Manifest (Vieques/Culebra)", "agency": "Autoridad de Transporte Marítimo (ATM)", "category": "Regulatory"},
-{"id": "DOC_NPDES_INDUSTRIAL", "name": "NPDES Industrial Discharge Permit", "agency": "EPA / Junta de Calidad Ambiental (JCA)", "category": "Regulatory"},
-{"id": "DOC_HAZMAT_HANDLER", "name": "RCRA Hazardous Waste Handler ID (40 CFR 262)", "agency": "EPA / Junta de Calidad Ambiental (JCA)", "category": "Regulatory"},
-{"id": "DOC_PORT_FACILITY_PERMIT", "name": "Port Facility Operating Authorization", "agency": "Autoridad de los Puertos de Puerto Rico", "category": "Regulatory"},
-{"id": "DOC_AIR_EMISSION_PERMIT", "name": "Title V Air Emission Permit", "agency": "EPA / Junta de Calidad Ambiental (JCA)", "category": "Regulatory"},
-{"id": "DOC_CUSTOMS_BROKER_BOND", "name": "CBP Customs Broker Bond", "agency": "U.S. Customs and Border Protection (CBP)", "category": "Regulatory"},
-{"id": "DOC_TSA_KNOWN_SHIPPER", "name": "TSA Known Shipper / Indirect Air Carrier", "agency": "Transportation Security Administration (TSA)", "category": "Regulatory"},
-{"id": "DOC_AIRPORT_CONCESSION", "name": "Airport-Area Concession Agreement", "agency": "Aerostar Airport Holdings / Autoridad de los Puertos", "category": "Regulatory"},
-{"id": "DOC_HOA_AUTHORIZATION", "name": "Condo / HOA Short-Term Rental Authorization", "agency": "Property Owner / Homeowners Association", "category": "Property"},
-{"id": "DOC_ROOM_TAX_RETURN", "name": "Room Tax Monthly Return", "agency": "Compañía de Turismo", "category": "Regulatory"},
-{"id": "DOC_LUMA_INTERCONNECTION", "name": "LUMA Interconnection Registration", "agency": "LUMA Energy", "category": "Regulatory"},
-{"id": "DOC_NET_METERING_AGREEMENT", "name": "Net Metering Agreement", "agency": "LUMA Energy", "category": "Regulatory"},
-{"id": "DOC_OGPE_CONSTRUCTION_PERMIT", "name": "OGPe Construction Permit", "agency": "OGPe", "category": "Regulatory"},
-{"id": "DOC_OWNER_AFFIDAVIT", "name": "Property Owner Authorization Affidavit", "agency": "Notary Public", "category": "Property"},
-{"id": "DOC_OPPE_INSTALLER_REG", "name": "OPPE Installer Registration Evidence", "agency": "OPPE", "category": "Professional"}
+ {
+  "id": "DOC_CERT_INCORPORATION",
+  "name": "Certificate of Incorporation",
+  "agency": "Department of State",
+  "category": "State",
+  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+  "agency_canonical": "Departamento de Estado"
+ },
+ {
+  "id": "DOC_ARTICLES_ORGANIZATION",
+  "name": "Articles of Organization",
+  "agency": "Department of State",
+  "category": "State",
+  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+  "agency_canonical": "Departamento de Estado"
+ },
+ {
+  "id": "DOC_FOREIGN_CORPORATION_AUTHORIZATION",
+  "name": "Certificate of Authorization to Do Business (Foreign Corporation)",
+  "agency": "Department of State",
+  "category": "State",
+  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+  "agency_canonical": "Departamento de Estado"
+ },
+ {
+  "id": "DOC_LLP_REGISTRATION",
+  "name": "Limited Liability Partnership Registration",
+  "agency": "Department of State",
+  "category": "State",
+  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+  "agency_canonical": "Departamento de Estado"
+ },
+ {
+  "id": "DOC_DBA_REGISTRATION",
+  "name": "DBA / Trade Name Registration",
+  "agency": "Department of State",
+  "category": "State",
+  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+  "agency_canonical": "Departamento de Estado"
+ },
+ {
+  "id": "DOC_EIN",
+  "name": "IRS EIN Confirmation Letter",
+  "agency": "IRS",
+  "category": "Federal",
+  "agency_url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+  "agency_canonical": "IRS"
+ },
+ {
+  "id": "DOC_MERCHANT_REGISTRATION",
+  "name": "Merchant Registration Certificate (Registro de Comerciante)",
+  "agency": "Departamento de Hacienda",
+  "category": "State",
+  "agency_url": "https://hacienda.pr.gov/",
+  "agency_canonical": "Departamento de Hacienda"
+ },
+ {
+  "id": "DOC_SURI_REGISTRATION",
+  "name": "SURI Account Registration",
+  "agency": "Departamento de Hacienda",
+  "category": "State",
+  "agency_url": "https://hacienda.pr.gov/",
+  "agency_canonical": "Departamento de Hacienda"
+ },
+ {
+  "id": "DOC_PERMISO_UNICO",
+  "name": "Permiso Único",
+  "agency": "OGPe",
+  "category": "Regulatory",
+  "agency_url": "https://www.permisos.ddec.pr.gov/",
+  "agency_canonical": "OGPe"
+ },
+ {
+  "id": "DOC_ZONING",
+  "name": "Zoning / Use Certification",
+  "agency": "OGPe",
+  "category": "Regulatory",
+  "agency_url": "https://www.permisos.ddec.pr.gov/",
+  "agency_canonical": "OGPe"
+ },
+ {
+  "id": "DOC_OCCUPANCY",
+  "name": "Occupancy Documentation",
+  "agency": "OGPe",
+  "category": "Regulatory",
+  "agency_url": "https://www.permisos.ddec.pr.gov/",
+  "agency_canonical": "OGPe"
+ },
+ {
+  "id": "DOC_PATENTE_MUNICIPAL",
+  "name": "Patente Municipal",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_MUNICIPAL_REGISTRATION",
+  "name": "Municipal Registration",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+  "name": "Municipal Tax Compliance Certificate",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_HEALTH_PERMIT",
+  "name": "Health / Sanitary Permit",
+  "agency": "Departamento de Salud",
+  "category": "Regulatory",
+  "agency_url": "https://www.salud.pr.gov/",
+  "agency_canonical": "Departamento de Salud"
+ },
+ {
+  "id": "DOC_FIRE_CERT",
+  "name": "Fire Safety Certification (Certificado de Bomberos)",
+  "agency": "Cuerpo de Bomberos",
+  "category": "Regulatory",
+  "agency_url": "https://bomberos.pr.gov/permisos",
+  "agency_canonical": "Cuerpo de Bomberos"
+ },
+ {
+  "id": "DOC_CFPM",
+  "name": "Certified Food Protection Manager (CFPM)",
+  "agency": "Departamento de Salud",
+  "category": "Professional",
+  "agency_url": "https://www.salud.pr.gov/",
+  "agency_canonical": "Departamento de Salud"
+ },
+ {
+  "id": "DOC_ALCOHOL_LICENSE",
+  "name": "Alcohol Beverage License",
+  "agency": "Departamento de Hacienda",
+  "category": "State",
+  "agency_url": "https://hacienda.pr.gov/",
+  "agency_canonical": "Departamento de Hacienda"
+ },
+ {
+  "id": "DOC_PROFESSIONAL_LICENSE",
+  "name": "Professional License",
+  "agency": "Department of State Examining Boards",
+  "category": "Professional",
+  "agency_url": "https://www.didaxispr.com/dept/estado-juntas",
+  "agency_canonical": "Juntas Examinadoras (Departamento de Estado)"
+ },
+ {
+  "id": "DOC_CONTRACTOR_LICENSE",
+  "name": "Contractor License",
+  "agency": "Department of State",
+  "category": "Professional",
+  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+  "agency_canonical": "Departamento de Estado"
+ },
+ {
+  "id": "DOC_TOURISM_REGISTRATION",
+  "name": "Tourism Registration",
+  "agency": "Compañía de Turismo",
+  "category": "Regulatory",
+  "agency_url": "https://tourism.pr.gov/",
+  "agency_canonical": "Compañía de Turismo"
+ },
+ {
+  "id": "DOC_INSURANCE",
+  "name": "General Liability Insurance Certificate",
+  "agency": "Insurance Carrier",
+  "category": "Insurance",
+  "agency_url": null,
+  "agency_canonical": "Insurance Carrier",
+  "agency_note": "Not government-issued — request the declaration page or coverage letter from the business's own insurance carrier."
+ },
+ {
+  "id": "DOC_WORKERS_COMP",
+  "name": "Workers Compensation Insurance (CFSE)",
+  "agency": "Corporación del Fondo del Seguro del Estado",
+  "category": "Insurance",
+  "agency_url": "https://www.cfse.pr.gov/en",
+  "agency_canonical": "Corporación del Fondo del Seguro del Estado"
+ },
+ {
+  "id": "DOC_LEASE_AGREEMENT",
+  "name": "Lease Agreement",
+  "agency": "Property Owner",
+  "category": "Property",
+  "agency_url": null,
+  "agency_canonical": "Property Owner",
+  "agency_note": "Not government-issued — provided by the landlord/property owner (e.g., lease, written authorization)."
+ },
+ {
+  "id": "DOC_PROPERTY_DEED",
+  "name": "Property Deed (Escritura)",
+  "agency": "Property Registry",
+  "category": "Property",
+  "agency_url": "http://ridpr.pr.gov/",
+  "agency_canonical": "Registro de la Propiedad"
+ },
+ {
+  "id": "DOC_FLOOR_PLANS",
+  "name": "Floor Plans",
+  "agency": "Licensed Architect / Engineer",
+  "category": "Property",
+  "agency_url": null,
+  "agency_canonical": "Licensed Architect / Engineer",
+  "agency_note": "Not government-issued — a private licensed professional prepares/seals it; verify their license via the Dept. of State Examining Boards portal."
+ },
+ {
+  "id": "DOC_ENVIRONMENTAL_PERMIT",
+  "name": "Environmental Permit",
+  "agency": "Junta de Calidad Ambiental / DRNA",
+  "category": "Regulatory",
+  "agency_url": "https://www.drna.pr.gov/otrora-jca/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_MEDICAL_WASTE_PERMIT",
+  "name": "Medical Waste Management Permit",
+  "agency": "Junta de Calidad Ambiental",
+  "category": "Regulatory",
+  "agency_url": "https://www.drna.pr.gov/otrora-jca/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_SIGN_PERMIT",
+  "name": "Sign / Rótulo Permit",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_OUTDOOR_SEATING_AUTH",
+  "name": "Outdoor Seating Authorization",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_ENTERTAINMENT_PERMIT",
+  "name": "Entertainment Permit",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_IMPORT_EXPORT_REG",
+  "name": "Import / Export Registration",
+  "agency": "Departamento de Hacienda",
+  "category": "State",
+  "agency_url": "https://hacienda.pr.gov/",
+  "agency_canonical": "Departamento de Hacienda"
+ },
+ {
+  "id": "DOC_HOME_DECLARATION",
+  "name": "Home Business Declaration",
+  "agency": "Municipal Government",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Government",
+  "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates."
+ },
+ {
+  "id": "DOC_CRIM_CLEARANCE",
+  "name": "CRIM Property Tax Clearance",
+  "agency": "CRIM",
+  "category": "Regulatory",
+  "agency_url": "https://www.crimpr.net/",
+  "agency_canonical": "CRIM"
+ },
+ {
+  "id": "DOC_TRANSPORT_PERMIT",
+  "name": "Transportation / PUC Permit",
+  "agency": "Comisión de Servicio Público",
+  "category": "Regulatory",
+  "agency_url": "https://ntsp.pr.gov/",
+  "agency_canonical": "NTSP (Negociado de Transporte y Otros Servicios Públicos)"
+ },
+ {
+  "id": "DOC_VEHICLE_REGISTRATION",
+  "name": "Commercial Vehicle Registration",
+  "agency": "DTOP",
+  "category": "State",
+  "agency_url": "https://dtop.pr.gov/",
+  "agency_canonical": "DTOP"
+ },
+ {
+  "id": "DOC_CHILDCARE_LICENSE",
+  "name": "Childcare / Education License",
+  "agency": "Departamento de la Familia / Educación",
+  "category": "Regulatory",
+  "agency_url": "https://www.familia.pr.gov/",
+  "agency_canonical": "Departamento de la Familia"
+ },
+ {
+  "id": "DOC_BACKGROUND_CHECK",
+  "name": "Background Check Documentation (Certificado de Antecedentes Penales)",
+  "agency": "Policía de Puerto Rico",
+  "category": "Regulatory",
+  "agency_url": "https://policia.pr.gov/",
+  "agency_canonical": "Policía de Puerto Rico"
+ },
+ {
+  "id": "DOC_PESTICIDE_LICENSE",
+  "name": "Pesticide Applicator License",
+  "agency": "Departamento de Agricultura",
+  "category": "Regulatory",
+  "agency_url": "https://www.agricultura.gobierno.pr/",
+  "agency_canonical": "Departamento de Agricultura",
+  "agency_note": "UNVERIFIED BY FETCH — the agency site (www.agricultura.gobierno.pr, listed as official in its Wikipedia infobox) was unresponsive/blocked during verification; confirm before shipping this link."
+ },
+ {
+  "id": "DOC_AGRICULTURE_REGISTRATION",
+  "name": "Bona Fide Farmer Registration",
+  "agency": "Departamento de Agricultura",
+  "category": "Regulatory",
+  "agency_url": "https://www.agricultura.gobierno.pr/",
+  "agency_canonical": "Departamento de Agricultura",
+  "agency_note": "UNVERIFIED BY FETCH — the agency site (www.agricultura.gobierno.pr, listed as official in its Wikipedia infobox) was unresponsive/blocked during verification; confirm before shipping this link."
+ },
+ {
+  "id": "DOC_FIREARMS_LICENSE",
+  "name": "Weapons / Firearms Dealer License",
+  "agency": "Policía de Puerto Rico",
+  "category": "Regulatory",
+  "agency_url": "https://policia.pr.gov/",
+  "agency_canonical": "Policía de Puerto Rico"
+ },
+ {
+  "id": "DOC_NONPROFIT_REGISTRATION",
+  "name": "Nonprofit Registration / 501(c)(3) Determination",
+  "agency": "IRS / Department of State",
+  "category": "Federal",
+  "agency_url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+  "agency_canonical": "IRS / Department of State"
+ },
+ {
+  "id": "DOC_TRAFFIC_IMPACT_STUDY",
+  "name": "Traffic Impact Study (Estudio de Impacto Vehicular)",
+  "agency": "Departamento de Transportación y Obras Públicas (DTOP) / Municipal Engineering",
+  "category": "Municipal",
+  "agency_url": "https://dtop.pr.gov/",
+  "agency_canonical": "DTOP"
+ },
+ {
+  "id": "DOC_STORMWATER_PLAN",
+  "name": "Stormwater Management Plan (NPDES MS4)",
+  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "category": "Regulatory",
+  "agency_url": "https://www.drna.pr.gov/acai/permisos/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_NOISE_VARIANCE",
+  "name": "Noise Variance / Endoso de Ruido",
+  "agency": "Junta de Calidad Ambiental + Municipal Permits Office",
+  "category": "Municipal",
+  "agency_url": "https://www.drna.pr.gov/otrora-jca/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_WASTE_COLLECTION_CONTRACT",
+  "name": "Commercial Solid Waste Collection Contract",
+  "agency": "Autoridad de Desperdicios Sólidos / Municipal",
+  "category": "Municipal",
+  "agency_url": "https://www.drna.pr.gov/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_PARKING_COMPLIANCE",
+  "name": "Off-Street Parking Compliance Certificate",
+  "agency": "Municipal Permits Office",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Permits Office",
+  "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr)."
+ },
+ {
+  "id": "DOC_LOADING_ZONE_PERMIT",
+  "name": "Commercial Loading / Unloading Zone Permit",
+  "agency": "Municipal Permits Office",
+  "category": "Municipal",
+  "agency_url": null,
+  "agency_canonical": "Municipal Permits Office",
+  "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr)."
+ },
+ {
+  "id": "DOC_SAN_JUAN_USE_PERMIT",
+  "name": "San Juan Municipal Use Permit (Permiso Municipal de Uso)",
+  "agency": "Municipio de San Juan — Permisos Municipales",
+  "category": "Municipal",
+  "agency_url": "https://tramite.sanjuan.pr/",
+  "agency_canonical": "Municipio de San Juan"
+ },
+ {
+  "id": "DOC_FACADE_PRESERVATION",
+  "name": "Historic Facade Preservation Plan",
+  "agency": "Instituto de Cultura Puertorriqueña (ICP) / OECH",
+  "category": "Regulatory",
+  "agency_url": "https://icp.pr.gov/",
+  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)"
+ },
+ {
+  "id": "DOC_HISTORIC_DISTRICT_REVIEW",
+  "name": "Historic District Structural Review",
+  "agency": "Instituto de Cultura Puertorriqueña (ICP) / OECH",
+  "category": "Regulatory",
+  "agency_url": "https://icp.pr.gov/",
+  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)"
+ },
+ {
+  "id": "DOC_SIGN_VARIANCE_HISTORIC",
+  "name": "Historic-District Sign Variance",
+  "agency": "Instituto de Cultura Puertorriqueña (ICP) + Municipal Permits Office",
+  "category": "Regulatory",
+  "agency_url": "https://icp.pr.gov/",
+  "agency_canonical": "ICP (Instituto de Cultura Puertorriqueña)"
+ },
+ {
+  "id": "DOC_ISLAND_FERRY_MANIFEST",
+  "name": "ATM Ferry Logistics Manifest (Vieques/Culebra)",
+  "agency": "Autoridad de Transporte Marítimo (ATM)",
+  "category": "Regulatory",
+  "agency_url": "https://www.ati.pr.gov/",
+  "agency_canonical": "ATI (Autoridad de Transporte Integrado)"
+ },
+ {
+  "id": "DOC_NPDES_INDUSTRIAL",
+  "name": "NPDES Industrial Discharge Permit",
+  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "category": "Regulatory",
+  "agency_url": "https://www.drna.pr.gov/acai/permisos/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_HAZMAT_HANDLER",
+  "name": "RCRA Hazardous Waste Handler ID (40 CFR 262)",
+  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "category": "Regulatory",
+  "agency_url": "https://www.drna.pr.gov/acai/permisos/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_PORT_FACILITY_PERMIT",
+  "name": "Port Facility Operating Authorization",
+  "agency": "Autoridad de los Puertos de Puerto Rico",
+  "category": "Regulatory",
+  "agency_url": "https://prpa.pr.gov/",
+  "agency_canonical": "Autoridad de los Puertos"
+ },
+ {
+  "id": "DOC_AIR_EMISSION_PERMIT",
+  "name": "Title V Air Emission Permit",
+  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "category": "Regulatory",
+  "agency_url": "https://www.drna.pr.gov/acai/permisos/",
+  "agency_canonical": "DRNA"
+ },
+ {
+  "id": "DOC_CUSTOMS_BROKER_BOND",
+  "name": "CBP Customs Broker Bond",
+  "agency": "U.S. Customs and Border Protection (CBP)",
+  "category": "Regulatory",
+  "agency_url": "https://www.cbp.gov/",
+  "agency_canonical": "U.S. Customs and Border Protection (CBP)"
+ },
+ {
+  "id": "DOC_TSA_KNOWN_SHIPPER",
+  "name": "TSA Known Shipper / Indirect Air Carrier",
+  "agency": "Transportation Security Administration (TSA)",
+  "category": "Regulatory",
+  "agency_url": "https://www.tsa.gov/",
+  "agency_canonical": "Transportation Security Administration (TSA)"
+ },
+ {
+  "id": "DOC_AIRPORT_CONCESSION",
+  "name": "Airport-Area Concession Agreement",
+  "agency": "Aerostar Airport Holdings / Autoridad de los Puertos",
+  "category": "Regulatory",
+  "agency_url": "https://prpa.pr.gov/",
+  "agency_canonical": "Autoridad de los Puertos"
+ },
+ {
+  "id": "DOC_HOA_AUTHORIZATION",
+  "name": "Condo / HOA Short-Term Rental Authorization",
+  "agency": "Property Owner / Homeowners Association",
+  "category": "Property",
+  "agency_url": null,
+  "agency_canonical": "Property Owner / Homeowners Association",
+  "agency_note": "Not government-issued — provided by the owner or the HOA board (authorization letter, HOA approval)."
+ },
+ {
+  "id": "DOC_ROOM_TAX_RETURN",
+  "name": "Room Tax Monthly Return",
+  "agency": "Compañía de Turismo",
+  "category": "Regulatory",
+  "agency_url": "https://tourism.pr.gov/",
+  "agency_canonical": "Compañía de Turismo"
+ },
+ {
+  "id": "DOC_LUMA_INTERCONNECTION",
+  "name": "LUMA Interconnection Registration",
+  "agency": "LUMA Energy",
+  "category": "Regulatory",
+  "agency_url": "https://lumapr.com/miluma/",
+  "agency_canonical": "LUMA Energy"
+ },
+ {
+  "id": "DOC_NET_METERING_AGREEMENT",
+  "name": "Net Metering Agreement",
+  "agency": "LUMA Energy",
+  "category": "Regulatory",
+  "agency_url": "https://lumapr.com/miluma/",
+  "agency_canonical": "LUMA Energy"
+ },
+ {
+  "id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+  "name": "OGPe Construction Permit",
+  "agency": "OGPe",
+  "category": "Regulatory",
+  "agency_url": "https://www.permisos.ddec.pr.gov/",
+  "agency_canonical": "OGPe"
+ },
+ {
+  "id": "DOC_OWNER_AFFIDAVIT",
+  "name": "Property Owner Authorization Affidavit",
+  "agency": "Notary Public",
+  "category": "Property",
+  "agency_url": null,
+  "agency_canonical": "Notary Public",
+  "agency_note": "Not government-downloadable — issued by a Puerto Rico notary public of the user's choice."
+ },
+ {
+  "id": "DOC_OPPE_INSTALLER_REG",
+  "name": "OPPE Installer Registration Evidence",
+  "agency": "OPPE",
+  "category": "Professional",
+  "agency_url": "https://ddec.pr.gov/",
+  "agency_canonical": "OPPE (ahora PPPE-DDEC)"
+ }
 ]

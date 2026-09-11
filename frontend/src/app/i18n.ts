@@ -688,6 +688,7 @@ export const ES: Record<string, string> = {
   "Needs review": "Necesita revisión",
   "The NPDES application is two EPA forms filed together. Complete both, then print, hand-sign, and submit the package to EPA Region 2.": "La solicitud NPDES son dos formularios de la EPA que se someten juntos. Complete ambos, luego imprima, firme a mano y someta el paquete a la Región 2 de la EPA.",
   "Waiting for confirmation": "Esperando confirmación",
+  "Where to get this": "Dónde conseguirlo",
   "Your business name": "El nombre de tu negocio",
   "expired": "vencido",
   "files": "archivos",

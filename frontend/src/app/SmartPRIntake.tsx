@@ -133,6 +133,11 @@ interface Requirement {
   stage?: RequirementStage;
   triggerFacts?: string[];
   acceptsOfficialUpload?: boolean;
+  /** Official "where to get this document" URL from the KB (null when the
+   * issuer is non-governmental — see agencyNote). */
+  agencyUrl?: string | null;
+  /** Guidance text for non-governmental issuers (landlord, insurer, notary). */
+  agencyNote?: string | null;
   /** Set only when this requirement was added because the user chose to
    * pursue an incentive that needs it — never on requirements the rules
    * engine would have surfaced anyway. Shown as a small contextual label. */
@@ -3651,6 +3656,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <div className="issued-document-guidance" style={{ marginTop: 8 }}>
             <Info className="i" style={{ width: 13, height: 13 }} />
             <span>{issuedDocumentGuidance}</span>
+          </div>
+        )}
+        {(req.agencyUrl || req.agencyNote) && (
+          <div className="issued-document-guidance" style={{ marginTop: 8 }}>
+            <Info className="i" style={{ width: 13, height: 13 }} />
+            {req.agencyUrl ? (
+              <span>
+                <a href={req.agencyUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600 }}>
+                  {L('Where to get this', language)} →
+                </a>{' '}
+                <span style={{ color: 'var(--muted)' }}>{req.agency}</span>
+              </span>
+            ) : (
+              <span>{req.agencyNote}</span>
+            )}
           </div>
         )}
       </div>
