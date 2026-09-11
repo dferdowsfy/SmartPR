@@ -25,6 +25,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^1.17.0",
     "next": "16.2.9",
+    "nodemailer": "^10.0.8",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.10.38",
     "pg": "^8.21.0",
@@ -35,6 +36,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

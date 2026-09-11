@@ -2,23 +2,48 @@
 //
 // When someone clicks "Start my application" on the landing page we capture
 // the minimum needed to follow up (name + email) before the assessment
-// begins. The founder gets an email for every new lead and every signup via
-// Resend (server-side transactional email). Notifications are fire-and-forget:
+// begins. The founder gets an email for every new lead and every signup,
+// sent directly from the SmartPR Google Workspace mailbox
+// (darius@getsmartpr.com) via Gmail SMTP. Notifications are fire-and-forget:
 // they never throw and never block the user flow.
 //
-// Required env: RESEND_API_KEY. Optional: RESEND_FROM (defaults to
-// "SmartPR <notifications@getsmartpr.com>"). The sending domain must be
-// verified in Resend before mail will deliver.
+// Required env: GMAIL_SMTP_APP_PASSWORD (a Google "app password" for the
+// mailbox — create at myaccount.google.com → Security → 2-Step Verification
+// → App passwords). Optional: GMAIL_SMTP_USER (defaults to
+// darius@getsmartpr.com), GMAIL_FROM (defaults to
+// "SmartPR <darius@getsmartpr.com>").
 //
 // History: this previously used FormSubmit's ajax endpoint, which rejects
 // server-side requests (no browser Origin header) with HTTP 200 +
 // {"success":"false"} — so every notification silently died. Never use
 // FormSubmit from the server again.
 import { randomUUID } from "crypto";
+import nodemailer from "nodemailer";
 import type { Pool } from "pg";
 
 const FOUNDER_EMAIL = "dferdows@gmail.com";
-const RESEND_FROM = process.env.RESEND_FROM || "SmartPR <notifications@getsmartpr.com>";
+const SMTP_USER = process.env.GMAIL_SMTP_USER || "darius@getsmartpr.com";
+const MAIL_FROM = process.env.GMAIL_FROM || "SmartPR <darius@getsmartpr.com>";
+
+interface Mailer {
+  sendMail(options: Record<string, unknown>): Promise<unknown>;
+}
+
+// Test seam: tests replace the SMTP transport with a fake.
+let mailerOverride: Mailer | null = null;
+export function setMailerForTests(mailer: Mailer | null): void {
+  mailerOverride = mailer;
+}
+
+function getMailer(): Mailer {
+  if (mailerOverride) return mailerOverride;
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: { user: SMTP_USER, pass: process.env.GMAIL_SMTP_APP_PASSWORD || "" },
+  });
+}
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
@@ -27,10 +52,9 @@ function escapeHtml(s: string): string {
 export async function notifyFounder(subject: string, fields: Record<string, string>): Promise<void> {
   const line = `[founder-notify] ${subject} :: ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   console.info(line);
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    // Loud on purpose: a missing key means the founder hears nothing.
-    console.error("[founder-notify] skipped: RESEND_API_KEY is not set");
+  if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
+    // Loud on purpose: a missing credential means the founder hears nothing.
+    console.error("[founder-notify] skipped: GMAIL_SMTP_APP_PASSWORD is not set");
     return;
   }
   const rows = Object.entries(fields)
@@ -38,35 +62,18 @@ export async function notifyFounder(subject: string, fields: Record<string, stri
     .join("");
   const text = Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join("\n");
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: RESEND_FROM,
-          to: [FOUNDER_EMAIL],
-          subject: `[SmartPR] ${subject}`,
-          html: `<h2>${escapeHtml(`[SmartPR] ${subject}`)}</h2><table>${rows}</table>`,
-          text: `[SmartPR] ${subject}\n\n${text}`,
-        }),
-        signal: controller.signal,
-      });
-      // Check the body, not just the status: some providers answer HTTP 200
-      // with an error payload (this exact bug killed every notification
-      // sent through the previous provider).
-      const body = (await response.json().catch(() => ({}))) as { error?: unknown; id?: string };
-      if (!response.ok || body.error) {
-        console.error(
-          `[founder-notify] delivery failed: HTTP ${response.status} ${JSON.stringify(body).slice(0, 300)}`
-        );
-      }
-    } finally {
-      clearTimeout(timeout);
-    }
-  } catch {
+    // nodemailer throws on delivery failure (unlike fetch, there is no
+    // silent 200-with-error-payload case), so try/catch is the check.
+    await getMailer().sendMail({
+      from: MAIL_FROM,
+      to: FOUNDER_EMAIL,
+      subject: `[SmartPR] ${subject}`,
+      text: `[SmartPR] ${subject}\n\n${text}`,
+      html: `<h2>${escapeHtml(`[SmartPR] ${subject}`)}</h2><table>${rows}</table>`,
+    });
+  } catch (err) {
     // Notification failed — the lead is already stored; never break the flow.
+    console.error(`[founder-notify] delivery failed: ${(err as Error)?.message || err}`);
   }
 }
 
