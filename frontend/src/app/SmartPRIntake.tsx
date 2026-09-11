@@ -348,9 +348,10 @@ const BUSINESS_TYPES: Record<string, string[]> = {
   ]
 };
 
-// Snapshot-first: when a published knowledge-base snapshot defines discovery
-// questions for this business type, they win; the hardcoded lists below are
-// the fallback (and the only source until the first snapshot is published).
+// Discovery questions are data-driven: a published knowledge-base snapshot
+// wins when it defines them; otherwise the bundled knowledge-graph links
+// (business_type_questions.json via kb.ts) supply the per-type contextual
+// set; the hardcoded lists below are the last-resort fallback.
 function getQuestionsForBusinessType(businessType: string): DiscoveryQuestion[] {
   const fromSnapshot = discoveryQuestionsForBusinessType(businessType);
   if (fromSnapshot) return fromSnapshot;
@@ -1767,7 +1768,10 @@ export default function SmartPRIntake() {
     if (q.id === "customers_receive_services") updates.customers_visit = yes;
     if (q.id === "needles_or_invasive") updates.hazardous_materials = yes;
     if (q.id === "biohazard_waste") updates.medical_waste = yes;
-    if (q.id === "products_manufactured_on_site") updates.products_manufactured = yes;
+    if (q.id === "products_manufactured_on_site" || q.id === "products_manufactured") updates.products_manufactured = yes;
+    if (q.id === "import_export") updates.import_export = yes;
+    if (q.id === "commercial_signage") updates.commercial_signage = yes;
+    if (q.id === "short_term_rental") updates.short_term_rental = yes;
     if (q.id === "commercial_vehicles" || q.id === "vehicles_repaired") updates.vehicles_used = yes;
     if (q.id === "goods_stored") updates.physical_location = yes;
     if (q.id === "children_present" || q.id === "classes_on_site") updates.physical_location = yes;

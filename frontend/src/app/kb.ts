@@ -20,6 +20,8 @@ import {
 import type { PotentialDecision } from "./potentialRequirements";
 import { classifyEngineRequirements, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
 import type { EntityType } from "./forms/engine/types";
+import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
+import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
 
@@ -154,23 +156,95 @@ export async function initKbFromServer(): Promise<boolean> {
 }
 
 /**
- * Discovery questions for a business type from the SNAPSHOT (admin-controlled).
- * Returns null when no snapshot / no mapping — callers fall back to the
- * hardcoded lists. `ui_key` keeps legacy answer keys working; new questions
- * use their KB id, which buildEngineInput passes straight to the engine.
+ * Discovery questions for a business type.
+ *
+ * Source priority:
+ *   1. Published snapshot (admin-controlled) — wins when it has links.
+ *   2. Bundled knowledge-graph links (business_type_questions.json) — the
+ *      curated per-type question set, mapped through intakeCompat so answers
+ *      keep writing the same wizard keys the engine already reads.
+ *   3. null — callers fall back to the hardcoded lists.
+ *
+ * `ui_key` keeps legacy answer keys working for snapshot questions; bundled
+ * questions use QUESTION_KEY_MAP's writeKey (falling back to
+ * intakeCompat.uiKeyByQuestionId), and new questions without a mapping use
+ * their KB id, which buildEngineInput passes straight to the engine.
  */
-export function discoveryQuestionsForBusinessType(businessTypeName?: string): { id: string; text: string }[] | null {
-  if (kbMeta.source !== "snapshot" || kbMeta.btq.length === 0 || !businessTypeName) return null;
+export interface DiscoveryQuestionDef {
+  id: string;
+  text: string;
+  options?: { value: string; label: string }[];
+}
+
+export function discoveryQuestionsForBusinessType(businessTypeName?: string): DiscoveryQuestionDef[] | null {
+  if (!businessTypeName) return null;
+  // 1. Published snapshot (admin-controlled).
+  if (kbMeta.source === "snapshot" && kbMeta.btq.length > 0) {
+    const fromSnapshot = snapshotDiscoveryQuestions(businessTypeName);
+    if (fromSnapshot) return fromSnapshot;
+  }
+  // 2. Bundled knowledge-graph links.
+  return bundledDiscoveryQuestions(businessTypeName);
+}
+
+function snapshotDiscoveryQuestions(businessTypeName: string): DiscoveryQuestionDef[] | null {
   const resolved = resolveBusinessTypeName(businessTypeName);
   const bt = resolved ? KB.businessTypes.find((b) => b.name.toLowerCase() === resolved.toLowerCase()) : null;
   if (!bt) return null;
   const qById = new Map(KB.questions.map((q) => [q.id, q]));
-  const out: { id: string; text: string }[] = [];
+  const out: DiscoveryQuestionDef[] = [];
   for (const link of kbMeta.btq) {
     if (link.business_type_id !== bt.id) continue;
     const q = qById.get(link.question_id) as (KnowledgeBase["questions"][number] & { stage?: string; ui_key?: string }) | undefined;
     if (!q || q.stage === "profile") continue;
     out.push({ id: q.ui_key ?? q.id, text: q.question });
+  }
+  return out.length > 0 ? out : null;
+}
+
+interface BundledBtqLink { business_type_id: string; question_id: string; }
+const BUNDLED_BTQ = businessTypeQuestionsJson as unknown as BundledBtqLink[];
+
+/**
+ * Per-type discovery questions from the bundled knowledge graph. Profile-stage
+ * facts (structure, location, employee count) are answered in the
+ * business-basics step and never asked again here.
+ */
+function bundledDiscoveryQuestions(businessTypeName: string): DiscoveryQuestionDef[] | null {
+  const resolved = resolveBusinessTypeName(businessTypeName);
+  const bt = resolved ? KB.businessTypes.find((b) => b.name.toLowerCase() === resolved.toLowerCase()) : null;
+  if (!bt) return null;
+  const compat = (ACTIVE_JURISDICTION as unknown as {
+    intakeCompat?: { uiKeyByQuestionId?: Record<string, string>; profileStageQuestionIds?: string[] };
+  }).intakeCompat;
+  const uiKeyById = compat?.uiKeyByQuestionId ?? {};
+  // Facts already captured in business basics — never ask as discovery.
+  const profileStage = new Set(compat?.profileStageQuestionIds ?? []);
+  profileStage.add("Q_EMPLOYEE_COUNT"); // basics asks number_of_employees
+  const qById = new Map(
+    (KB.questions as (KnowledgeBase["questions"][number] & { options?: string[] })[]).map((q) => [q.id, q])
+  );
+  const out: DiscoveryQuestionDef[] = [];
+  for (const link of BUNDLED_BTQ) {
+    if (link.business_type_id !== bt.id) continue;
+    if (profileStage.has(link.question_id)) continue;
+    const q = qById.get(link.question_id);
+    if (!q) continue;
+    // Canonical answer key: QUESTION_KEY_MAP's writeKey first (it matches what
+    // the AI interpreter writes and what buildEngineInput reads, so
+    // pre-answered questions are recognized as answered), then intakeCompat's
+    // uiKey, then the raw KB id for new questions (buildEngineInput passes
+    // those straight to the engine).
+    const def: DiscoveryQuestionDef = {
+      id: QUESTION_KEY_MAP[link.question_id]?.writeKey ?? uiKeyById[link.question_id] ?? link.question_id,
+      text: q.question,
+    };
+    // Single-select options are plain labels in the KB; rules compare answers
+    // against those labels, so value and label stay identical.
+    if (Array.isArray(q.options) && q.options.length > 0) {
+      def.options = q.options.map((o) => ({ value: o, label: o }));
+    }
+    out.push(def);
   }
   return out.length > 0 ? out : null;
 }
