@@ -21,6 +21,7 @@ import type { PotentialDecision } from "./potentialRequirements";
 import { classifyEngineRequirements, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
 import type { EntityType } from "./forms/engine/types";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
+import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
@@ -174,6 +175,25 @@ export interface DiscoveryQuestionDef {
   id: string;
   text: string;
   options?: { value: string; label: string }[];
+}
+
+/**
+ * Business-type names for an industry, data-driven from the knowledge graph
+ * (industries.json -> business_types.json), so newly added types (e.g.
+ * BT_TIRE_RECYCLING) appear in the intake dropdown without a code change.
+ * Returns null when the industry isn't found — callers fall back to the
+ * hardcoded lists.
+ */
+export function businessTypeNamesForIndustry(industryName?: string): string[] | null {
+  if (!industryName) return null;
+  const norm = industryName.trim().toLowerCase();
+  const industries = industriesJson as Array<{ id: string; name: string }>;
+  const industry = industries.find((i) => i.name.trim().toLowerCase() === norm);
+  if (!industry) return null;
+  const types = (KB.businessTypes as Array<{ industry_id?: string; name: string }>).filter(
+    (b) => b.industry_id === industry.id
+  );
+  return types.length > 0 ? types.map((b) => b.name) : null;
 }
 
 export function discoveryQuestionsForBusinessType(businessTypeName?: string): DiscoveryQuestionDef[] | null {

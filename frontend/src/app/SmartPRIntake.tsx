@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
-import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor } from './kb';
+import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry } from './kb';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { buildRequirementGuidance } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
@@ -361,6 +361,18 @@ function getQuestionsForBusinessType(businessType: string): DiscoveryQuestion[] 
   const fromSnapshot = discoveryQuestionsForBusinessType(businessType);
   if (fromSnapshot) return fromSnapshot;
   return hardcodedQuestionsForBusinessType(businessType);
+}
+
+// Business-type dropdown options are the union of the hardcoded lists and the
+// knowledge-graph types (industries.json -> business_types.json): hardcoded
+// first so existing options never move or disappear, KB-only types (e.g.
+// BT_TIRE_RECYCLING) appended so newly added types show up without a code
+// change.
+function businessTypeOptionsFor(industry: string | undefined): string[] {
+  const hardcoded = BUSINESS_TYPES[industry || ''] ?? [industry || 'Other'];
+  const seen = new Set(hardcoded.map((n) => n.toLowerCase()));
+  const kbNames = businessTypeNamesForIndustry(industry) ?? [];
+  return [...hardcoded, ...kbNames.filter((n) => !seen.has(n.toLowerCase()))];
 }
 
 function hardcodedQuestionsForBusinessType(businessType: string): DiscoveryQuestion[] {
@@ -4187,7 +4199,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     }}
                   >
                     <option value="">{t('selectBusinessType')}</option>
-                    {(BUSINESS_TYPES[profile.industry] || [profile.industry || 'Other']).map(bt => (
+                    {(businessTypeOptionsFor(profile.industry)).map(bt => (
                       <option key={bt} value={bt}>{bt}</option>
                     ))}
                   </select>
