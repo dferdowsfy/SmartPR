@@ -2,30 +2,65 @@
 //
 // When someone clicks "Start my application" on the landing page we capture
 // the minimum needed to follow up (name + email) before the assessment
-// begins. The founder gets an email for every new lead and every signup —
-// via FormSubmit, the same no-key channel the permit quiz already uses.
-// Notifications are fire-and-forget: they never throw and never block the
-// user flow.
+// begins. The founder gets an email for every new lead and every signup via
+// Resend (server-side transactional email). Notifications are fire-and-forget:
+// they never throw and never block the user flow.
+//
+// Required env: RESEND_API_KEY. Optional: RESEND_FROM (defaults to
+// "SmartPR <notifications@getsmartpr.com>"). The sending domain must be
+// verified in Resend before mail will deliver.
+//
+// History: this previously used FormSubmit's ajax endpoint, which rejects
+// server-side requests (no browser Origin header) with HTTP 200 +
+// {"success":"false"} — so every notification silently died. Never use
+// FormSubmit from the server again.
 import { randomUUID } from "crypto";
 import type { Pool } from "pg";
 
 const FOUNDER_EMAIL = "dferdows@gmail.com";
+const RESEND_FROM = process.env.RESEND_FROM || "SmartPR <notifications@getsmartpr.com>";
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
 
 export async function notifyFounder(subject: string, fields: Record<string, string>): Promise<void> {
   const line = `[founder-notify] ${subject} :: ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   console.info(line);
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    // Loud on purpose: a missing key means the founder hears nothing.
+    console.error("[founder-notify] skipped: RESEND_API_KEY is not set");
+    return;
+  }
+  const rows = Object.entries(fields)
+    .map(([k, v]) => `<tr><td><strong>${escapeHtml(k)}</strong></td><td>${escapeHtml(v)}</td></tr>`)
+    .join("");
+  const text = Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join("\n");
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await fetch(`https://formsubmit.co/ajax/${FOUNDER_EMAIL}`, {
+      const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ _subject: `[SmartPR] ${subject}`, ...fields }),
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: RESEND_FROM,
+          to: [FOUNDER_EMAIL],
+          subject: `[SmartPR] ${subject}`,
+          html: `<h2>${escapeHtml(`[SmartPR] ${subject}`)}</h2><table>${rows}</table>`,
+          text: `[SmartPR] ${subject}\n\n${text}`,
+        }),
         signal: controller.signal,
       });
-      if (!response.ok) {
-        console.error(`[founder-notify] delivery failed: HTTP ${response.status}`);
+      // Check the body, not just the status: some providers answer HTTP 200
+      // with an error payload (this exact bug killed every notification
+      // sent through the previous provider).
+      const body = (await response.json().catch(() => ({}))) as { error?: unknown; id?: string };
+      if (!response.ok || body.error) {
+        console.error(
+          `[founder-notify] delivery failed: HTTP ${response.status} ${JSON.stringify(body).slice(0, 300)}`
+        );
       }
     } finally {
       clearTimeout(timeout);
