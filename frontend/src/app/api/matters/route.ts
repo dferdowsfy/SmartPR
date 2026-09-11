@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { getPool, isEnabled } from "../../graph/db";
 import { ensureSchema, ensureUniquePublicId, resolveBusinessUuid } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
+import { notifyNewBusiness } from "../../../lib/leads";
 import { ensureUserWorkspace, userCanAccessBusiness } from "../../compliance/server";
 import { DUE_DATE_SOURCES, MATTER_TYPES, type DueDateSource, type MatterType } from "../../compliance/types";
 import { validDateOnly } from "../../compliance/dates";
@@ -92,6 +93,16 @@ export async function POST(request: Request) {
         body.source_reference ?? null]
     );
     await client.query("COMMIT");
+    if (body.create_business) {
+      // Founder alert is fire-and-forget: never block the response on email.
+      void notifyNewBusiness({
+        businessName,
+        publicId: businessPublicId,
+        onboardingMode: "NEW",
+        ownerName: (user.user_metadata?.full_name as string) || null,
+        ownerEmail: user.email ?? null,
+      });
+    }
     return Response.json({ business_id: businessId, business_public_id: businessPublicId, business_name: businessName, matter_id: matterId, matter_type: matterType });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);

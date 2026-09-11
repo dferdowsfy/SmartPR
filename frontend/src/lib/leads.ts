@@ -83,6 +83,76 @@ interface LeadUser {
   user_metadata?: Record<string, unknown> | null;
 }
 
+function easternNow(): string {
+  return (
+    new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
+      dateStyle: "medium",
+      timeStyle: "short",
+    }) + " ET"
+  );
+}
+
+function splitName(user: LeadUser): { first: string; last: string } {
+  const meta = user.user_metadata ?? {};
+  const first = typeof meta.first_name === "string" ? meta.first_name.trim() : "";
+  const last = typeof meta.last_name === "string" ? meta.last_name.trim() : "";
+  if (first || last) return { first, last };
+  const full =
+    (typeof meta.full_name === "string" && meta.full_name.trim()) ||
+    (typeof meta.name === "string" && meta.name.trim()) ||
+    "";
+  if (full) {
+    const parts = full.split(/\s+/);
+    return { first: parts[0] || "", last: parts.slice(1).join(" ") };
+  }
+  return { first: "", last: "" };
+}
+
+/** The person-level fields every signup/lead alert carries. */
+function personFields(user: LeadUser, source: string): Record<string, string> {
+  const { first, last } = splitName(user);
+  return {
+    "First name": first || "—",
+    "Last name": last || "—",
+    Email: (user.email || "").trim().toLowerCase(),
+    "Signed up": easternNow(),
+    Source: source,
+  };
+}
+
+export interface NewBusinessAlert {
+  businessName: string;
+  businessType?: string | null;
+  industry?: string | null;
+  municipality?: string | null;
+  onboardingMode?: string | null;
+  publicId?: string | null;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+}
+
+/**
+ * Fired when a user starts a business (new-business intake or manual
+ * creation). This is where "what they're trying to do" shows up: the
+ * business type, industry, and municipality are the distilled intent from
+ * the intake. The raw natural-language prompt is not persisted, so it
+ * cannot be included reliably.
+ */
+export async function notifyNewBusiness(b: NewBusinessAlert): Promise<void> {
+  await notifyFounder("New business started", {
+    "Business name": b.businessName,
+    "Business type": b.businessType || "—",
+    Industry: b.industry || "—",
+    Municipality: b.municipality || "—",
+    "New or existing": b.onboardingMode === "EXISTING" ? "Existing business" : "New business",
+    Owner: b.ownerName || "—",
+    "Owner email": b.ownerEmail || "—",
+    Started: easternNow(),
+    "View in SmartPR": b.publicId ? `https://www.getsmartpr.com/businesses/${b.publicId}` : "—",
+  });
+}
+
 function displayName(user: LeadUser, fallback: string | null): string {
   const meta = user.user_metadata ?? {};
   const first = typeof meta.first_name === "string" ? meta.first_name : "";
@@ -138,20 +208,18 @@ export async function convertLeadForUser(pool: Pool, user: LeadUser): Promise<vo
        VALUES ($1,$2,$3,$4,'CONVERTED','signup_direct',now(),now())`,
       [randomUUID(), email, name, user.id]
     );
-    await notifyFounder("New signup", {
-      Name: name,
-      Email: email,
-      Detail: "Signed up directly (no prior lead capture).",
-    });
+    await notifyFounder(
+      "New signup",
+      personFields(user, "Signed up directly (no prior lead capture).")
+    );
     return;
   }
   // Attach the account even when the lead was already converted elsewhere.
   await pool.query(`UPDATE leads SET user_id = COALESCE(user_id, $2) WHERE id = $1`, [existing.id, user.id]);
   if (await markLeadConverted(pool, existing.id, user.id)) {
-    await notifyFounder("Lead converted to signup", {
-      Name: existing.name || displayName(user, null),
-      Email: email,
-      Detail: "Started as a landing-page lead, now created an account.",
-    });
+    await notifyFounder(
+      "Lead converted to signup",
+      personFields(user, "Started as a landing-page lead, now created an account.")
+    );
   }
 }

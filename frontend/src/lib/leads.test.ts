@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
-import { notifyFounder, setMailerForTests } from "./leads.ts";
+import { notifyFounder, notifyNewBusiness, setMailerForTests } from "./leads.ts";
 
 // notifyFounder sends through the Workspace mailbox via SMTP. These tests
 // swap the real transport for a fake and verify the recipient, the subject,
@@ -67,5 +67,30 @@ describe("notifyFounder", () => {
       errors.some((m) => m.includes("GMAIL_SMTP_APP_PASSWORD is not set")),
       `expected a missing-credential log, got: ${JSON.stringify(errors)}`
     );
+  });
+
+  it("new-business alert carries the business details and a view link", async () => {
+    await notifyNewBusiness({
+      businessName: "OAFA Rubber",
+      businessType: "Tire Recycling & Manufacturing",
+      industry: "Manufacturing",
+      municipality: "Yabucoa",
+      onboardingMode: "NEW",
+      publicId: "k7d2mq9x",
+      ownerName: "Luis Infanzon",
+      ownerEmail: "luis@example.com",
+    });
+    assert.equal(sent.length, 1);
+    assert.match(String(sent[0].subject), /\[SmartPR\] New business started/);
+    const text = String(sent[0].text);
+    for (const expected of [
+      "OAFA Rubber",
+      "Tire Recycling & Manufacturing",
+      "Yabucoa",
+      "Luis Infanzon",
+      "https://www.getsmartpr.com/businesses/k7d2mq9x",
+    ]) {
+      assert.ok(text.includes(expected), `expected alert to include "${expected}"`);
+    }
   });
 });

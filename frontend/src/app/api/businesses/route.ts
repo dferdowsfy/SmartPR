@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { getPool, isEnabled } from "../../graph/db";
 import { ensureSchema, ensureUniquePublicId } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
+import { notifyNewBusiness } from "../../../lib/leads";
 import { ensureUserWorkspace } from "../../compliance/server";
 import { assertCanAddBusinesses, gateJson } from "../../../lib/billing/access";
 
@@ -107,6 +108,17 @@ export async function POST(request: Request) {
         body.municipality ?? null, body.physical_address ?? null, body.onboarding_mode ?? "NEW",
         publicId]
     );
+    // Founder alert is fire-and-forget: never block the response on email.
+    void notifyNewBusiness({
+      businessName: name,
+      businessType: body.business_type,
+      industry: body.industry,
+      municipality: body.municipality,
+      onboardingMode: body.onboarding_mode ?? "NEW",
+      publicId,
+      ownerName: (user.user_metadata?.full_name as string) || null,
+      ownerEmail: user.email ?? null,
+    });
     return Response.json({ id, public_id: publicId, name, notes: body.notes ?? null });
   } catch (err) {
     const msg = (err as Error).message || "Unknown database error";
