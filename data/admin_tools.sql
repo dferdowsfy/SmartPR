@@ -3,6 +3,8 @@
 -- Gives the founder full user/plan management from the Supabase dashboard:
 --
 --   Table Editor -> admin_user_overview   (find any user, see workspace+plan)
+--   Table Editor -> workspace_subscriptions (plan is a dropdown: free|core|
+--     operator|partner|pilot|enterprise — click any plan cell to change it)
 --   SQL Editor:
 --     SELECT admin_set_plan('user@example.com', 'core');
 --       -- plans: free|core|operator|partner|pilot|enterprise
@@ -66,7 +68,7 @@ BEGIN
     RAISE EXCEPTION 'User "%" has no workspace.', p_email;
   END IF;
   INSERT INTO workspace_subscriptions (workspace_id, plan, status, updated_at)
-  VALUES (v_workspace_id, v_plan, CASE WHEN v_plan = 'free' THEN 'free' ELSE 'active' END, NOW())
+  VALUES (v_workspace_id, v_plan::plan_id, CASE WHEN v_plan = 'free' THEN 'free' ELSE 'active' END, NOW())
   ON CONFLICT (workspace_id) DO UPDATE SET
     plan = EXCLUDED.plan,
     status = EXCLUDED.status,
