@@ -7,6 +7,7 @@ import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw, FileText } from
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
 import { NotificationBell } from "../components/NotificationBell";
+import { readLang, setLang } from "../useLang";
 
 interface MeUser { id: string; email: string | null; name: string | null; avatar: string | null; isAdmin?: boolean }
 
@@ -22,7 +23,7 @@ function signOutNow() {
 export function TopNav({ active, extraActions }: { active: "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings"; extraActions?: ReactNode }) {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lang, setLang] = useState<"en" | "es">("en");
+  const [lang, setLangState] = useState<"en" | "es">("en");
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
@@ -78,19 +79,26 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
   }, [menuOpen, placeMenu]);
 
   useEffect(() => {
-    try { const s = localStorage.getItem("smartpr-lang"); if (s === "es" || s === "en") setLang(s); } catch {}
+    setLangState(readLang());
     const handler = (e: Event) => {
       const l = (e as CustomEvent<string>).detail;
-      if (l === "en" || l === "es") setLang(l as "en" | "es");
+      if (l === "en" || l === "es") setLangState(l);
+    };
+    const storageHandler = (e: StorageEvent) => {
+      if (e.key === "smartpr-lang") setLangState(readLang());
     };
     window.addEventListener("smartpr-lang-change", handler);
-    return () => window.removeEventListener("smartpr-lang-change", handler);
+    window.addEventListener("storage", storageHandler);
+    return () => {
+      window.removeEventListener("smartpr-lang-change", handler);
+      window.removeEventListener("storage", storageHandler);
+    };
   }, []);
 
+  // Broadcast so every mounted page's useLang() re-renders instantly.
   const changeLang = (l: "en" | "es") => {
+    setLangState(l);
     setLang(l);
-    try { localStorage.setItem("smartpr-lang", l); } catch {}
-    window.dispatchEvent(new CustomEvent("smartpr-lang-change", { detail: l }));
   };
 
   const initials = (user?.name || user?.email || "?").slice(0, 1).toUpperCase();

@@ -16,6 +16,7 @@ import { getDefinition } from "../../forms/engine/registry";
 import { buildCanonicalFromIntake } from "../../forms/engine/intake";
 import { getDocumentDownload, downloadKindLabel } from "../../kb";
 import { L } from "../../i18n";
+import { useLang } from "../../useLang";
 import type { Lang, FormData as GovFormData } from "../../forms/engine/types";
 
 interface BusinessRecord {
@@ -223,12 +224,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   const [formOpen, setFormOpen] = useState(false);
   const definition = item.form_id ? getDefinition(item.form_id) : undefined;
   const draftKey = `gov-draft-${item.id}-${item.form_id ?? "none"}`;
-  const lang: Lang = useMemo(() => {
-    try {
-      if (typeof window === "undefined") return "en";
-      return window.localStorage.getItem("smartpr-lang") === "es" ? "es" : "en";
-    } catch { return "en"; }
-  }, []);
+  const lang = useLang();
   const canonical = useMemo(() => buildCanonicalFromIntake({
     legalName: business.legal_name || business.name,
     business_structure: business.business_structure ?? undefined,
@@ -460,12 +456,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
 export default function BusinessDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const lang: Lang = useMemo(() => {
-    try {
-      if (typeof window === "undefined") return "en";
-      return window.localStorage.getItem("smartpr-lang") === "es" ? "es" : "en";
-    } catch { return "en"; }
-  }, []);
+  const lang = useLang();
   const [data, setData] = useState<Detail | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [showAllRequirements, setShowAllRequirements] = useState(false);
@@ -677,7 +668,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   ))}
                 </div>
               ) : <Empty text={L(DUE_DATE_UNKNOWN_MESSAGE, lang)} />}
-              <Link href={`/calendar?business=${shortId}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">{L("View full calendar", lang)}</Link>
+              <Link href={`/calendar?business=${business.id}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">{L("View full calendar", lang)}</Link>
             </div>
           </section>
         </div>

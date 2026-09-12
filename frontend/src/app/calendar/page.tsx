@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { TopNav } from "../history/ui";
 import { StatusBadge } from "../components/compliance/StatusBadge";
-import { L, type Lang } from "../i18n";
+import { L } from "../i18n";
+import { useLang } from "../useLang";
 import type { ObligationStatus } from "../compliance/types";
 
 interface EventItem {
@@ -29,29 +30,12 @@ interface Portfolio {
 const HORIZONS = [7, 30, 60, 90, 365] as const;
 type Horizon = (typeof HORIZONS)[number] | "all";
 
-function useLang(): Lang {
-  const [lang, setLang] = useState<Lang>("en");
-  useEffect(() => {
-    try {
-      const s = window.localStorage.getItem("smartpr-lang");
-      if (s === "es" || s === "en") setLang(s);
-    } catch { /* private mode */ }
-    const handler = (e: Event) => {
-      const l = (e as CustomEvent<string>).detail;
-      if (l === "en" || l === "es") setLang(l);
-    };
-    window.addEventListener("smartpr-lang-change", handler);
-    return () => window.removeEventListener("smartpr-lang-change", handler);
-  }, []);
-  return lang;
-}
-
 function CalendarContent() {
   const searchParams = useSearchParams();
   const lang = useLang();
   const es = lang === "es";
   const [data, setData] = useState<Portfolio | null>(null);
-  const [horizon, setHorizon] = useState<Horizon>(30);
+  const [horizon, setHorizon] = useState<Horizon>("all");
   const [business, setBusiness] = useState(() => searchParams.get("business") || "");
   useEffect(() => {
     fetch("/api/portfolio").then((response) => response.json()).then(setData).catch(() => setData({}));
@@ -60,7 +44,8 @@ function CalendarContent() {
     const today = new Date();
     return (data?.items ?? []).filter((item) => {
       if (!item.due_date || item.status === "COMPLETED") return false;
-      if (business && item.business_id !== business) return false;
+      // Accept either the UUID or the short public id (?business= can carry either).
+      if (business && item.business_id !== business && item.business_public_id !== business) return false;
       if (horizon === "all") return true;
       const days = Math.ceil((new Date(`${item.due_date}T23:59:59`).getTime() - today.getTime()) / 86400000);
       return days <= horizon;
@@ -73,7 +58,8 @@ function CalendarContent() {
     const today = new Date();
     const withinBusiness = (data?.items ?? []).filter((item) => {
       if (!item.due_date || item.status === "COMPLETED") return false;
-      if (business && item.business_id !== business) return false;
+      // Accept either the UUID or the short public id (?business= can carry either).
+      if (business && item.business_id !== business && item.business_public_id !== business) return false;
       return true;
     });
     const counts = new Map<Horizon, number>();

@@ -6,7 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { FileCheck2 } from "lucide-react";
 import { TopNav } from "../history/ui";
 import { StatusBadge } from "../components/compliance/StatusBadge";
-import { L, type Lang } from "../i18n";
+import { L } from "../i18n";
+import { useLang } from "../useLang";
 import {
   countFilings,
   filingYear,
@@ -17,23 +18,6 @@ import {
 interface Portfolio {
   businesses?: { id: string; legal_name: string }[];
   items?: FilingLike[];
-}
-
-function useLang(): Lang {
-  const [lang, setLang] = useState<Lang>("en");
-  useEffect(() => {
-    try {
-      const s = window.localStorage.getItem("smartpr-lang");
-      if (s === "es" || s === "en") setLang(s);
-    } catch { /* private mode */ }
-    const handler = (e: Event) => {
-      const l = (e as CustomEvent<string>).detail;
-      if (l === "en" || l === "es") setLang(l);
-    };
-    window.addEventListener("smartpr-lang-change", handler);
-    return () => window.removeEventListener("smartpr-lang-change", handler);
-  }, []);
-  return lang;
 }
 
 function FilingsContent() {
@@ -47,7 +31,7 @@ function FilingsContent() {
   }, []);
 
   const filings = useMemo(() => {
-    const items = (data?.items ?? []).filter((item) => !business || item.business_id === business);
+    const items = (data?.items ?? []).filter((item) => !business || item.business_id === business || item.business_public_id === business);
     return items;
   }, [data, business]);
 

@@ -7,20 +7,7 @@ import {
   MoreVertical, Plus, Search, Store, Utensils,
 } from "lucide-react";
 import { TopNav } from "../history/ui";
-
-function useLang(): "en" | "es" {
-  const [lang, setLang] = useState<"en" | "es">("en");
-  useEffect(() => {
-    try { const s = localStorage.getItem("smartpr-lang"); if (s === "es" || s === "en") setLang(s); } catch {}
-    const handler = (e: Event) => {
-      const l = (e as CustomEvent<string>).detail;
-      if (l === "en" || l === "es") setLang(l as "en" | "es");
-    };
-    window.addEventListener("smartpr-lang-change", handler);
-    return () => window.removeEventListener("smartpr-lang-change", handler);
-  }, []);
-  return lang;
-}
+import { useLang } from "../useLang";
 
 interface Business {
   id: string;

@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TopNav } from "../../../../history/ui";
 import { MATTER_TYPES, type DueDateSource, type MatterType } from "../../../../compliance/types";
-import { L, type Lang } from "../../../../i18n";
+import { L } from "../../../../i18n";
+import { useLang } from "../../../../useLang";
 
 const LABELS: Partial<Record<MatterType, string>> = {
   NEW_BUSINESS_FORMATION: "New business formation",
@@ -32,12 +33,7 @@ const SOURCE_LABELS: Record<DueDateSource, string> = {
 export default function NewMatterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const lang: Lang = useMemo(() => {
-    try {
-      if (typeof window === "undefined") return "en";
-      return window.localStorage.getItem("smartpr-lang") === "es" ? "es" : "en";
-    } catch { return "en"; }
-  }, []);
+  const lang = useLang();
   const [matterType, setMatterType] = useState<MatterType>("PERMISO_UNICO_RENEWAL");
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
