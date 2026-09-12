@@ -35,7 +35,7 @@ const kb: KnowledgeBase = {
     // unlocks it — see requirementGuidance below and compliance/server.ts's
     // renewal lookup, which reads this array.
     renewals: [
-      { document_id: "DOC_ROOM_TAX_RETURN", frequency_months: 1, citation: "Act 272-2003 (Room Occupancy Tax), 13 L.P.R.A. § 10001 et seq." },
+      { document_id: "DOC_ROOM_TAX_RETURN", frequency_months: 1, citation: "Act 272-2003, Art. 28(A)-(B), 13 L.P.R.A. § 2271s." },
     ],
   },
 };

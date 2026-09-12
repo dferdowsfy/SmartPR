@@ -65,16 +65,6 @@ const CORPORATION_TYPES: EntityType[] = [
 const LLC_FORMATION = "DOC_ARTICLES_ORGANIZATION";
 const CORP_FORMATION = "DOC_CERT_INCORPORATION";
 
-const DOCUMENT_FLAG: Record<string, string> = {
-  DOC_HISTORIC_DISTRICT_REVIEW: "historic",
-  DOC_SIGN_VARIANCE_HISTORIC: "historic",
-  DOC_FACADE_PRESERVATION: "historic",
-  DOC_ENVIRONMENTAL_PERMIT: "coastal",
-  DOC_TRAFFIC_IMPACT_STUDY: "metro",
-  DOC_PARKING_COMPLIANCE: "metro",
-  DOC_STORMWATER_PLAN: "metro",
-};
-
 const REVIEW_CONDITION_IDS = new Set([
   "DOC_HISTORIC_DISTRICT_REVIEW",
   "DOC_ADDITIONAL_MUNICIPAL_REVIEW",
@@ -134,6 +124,9 @@ export function applyEntityFormationExclusivity<T extends { document_id?: string
   if (CORPORATION_TYPES.includes(type as EntityType)) {
     return requirements.filter((item) => item.document_id !== LLC_FORMATION);
   }
+  if (type === "sole_proprietorship" || type === "partnership") {
+    return requirements.filter((item) => item.document_id !== CORP_FORMATION && item.document_id !== LLC_FORMATION);
+  }
   return requirements;
 }
 
@@ -176,20 +169,31 @@ export function classifyEngineRequirements(
   const out: ClassifiedRequirement[] = [];
 
   for (const row of exclusive) {
-    const flag = DOCUMENT_FLAG[row.document_id] || flagForRule(options.kb, row.source_rule_id) || null;
-    const decision = decisionForFlag(options.potentialDecisions, flag);
+    // A decision negates only its own matched basis. The same document can
+    // have several independent triggers, including non-geographic ones.
+    const bases = row.matched_rules?.length ? row.matched_rules : [{ rule_id: row.source_rule_id, reason: row.reason }];
+    const basisIds = bases.map(basis => basis.rule_id);
+    const flags = basisIds.map(id => {
+      const flag = flagForRule(options.kb, id);
+      // Preserve the existing facade review's site-historic confirmation:
+      // a capital-city flag alone never established a historic property.
+      return row.document_id === "DOC_FACADE_PRESERVATION" && flag === "capital" ? "historic" : flag;
+    });
     const kind = kindForDocument(row.document_id, row.document_name, row.category);
     const recommended = options.recommendedIds?.has(row.document_id) ?? false;
 
     let applicability: Applicability = recommended ? "recommended" : "required";
     const triggerFacts: string[] = [];
 
-    if (flag) {
-      triggerFacts.push(`municipality_flag:${flag}`);
-      if (decision === "not_applies") applicability = "not_applicable";
-      else if (decision === "applies") applicability = recommended ? "recommended" : "required";
-      else applicability = "conditional";
-    }
+    const basisStates = flags.map((flag, index) => {
+      triggerFacts.push(flag ? `municipality_flag:${flag}` : `rule:${basisIds[index]}`);
+      if (!flag) return "required";
+      const decision = decisionForFlag(options.potentialDecisions, flag);
+      return decision === "not_applies" ? "not_applicable" : decision === "applies" ? "required" : "conditional";
+    });
+    if (basisStates.includes("required")) applicability = recommended ? "recommended" : "required";
+    else if (basisStates.includes("conditional")) applicability = "conditional";
+    else applicability = "not_applicable";
 
     if (row.document_id === CORP_FORMATION && options.entityType === "limited_liability_company") {
       continue;
@@ -200,14 +204,18 @@ export function classifyEngineRequirements(
       triggerFacts.push("entityType:unknown");
     }
 
+    const selectedState = basisStates.includes("required") ? "required"
+      : basisStates.includes("conditional") ? "conditional" : "not_applicable";
+    const independentIndex = flags.findIndex(flag => flag === null);
+    const basis = bases[independentIndex >= 0 ? independentIndex : basisStates.indexOf(selectedState)];
     const mandatory = applicability === "required" && !recommended;
     out.push({
       document_id: row.document_id,
       document_name: row.document_name,
       agency: row.agency,
       category: row.category,
-      reason: row.reason,
-      source_rule_id: row.source_rule_id,
+      reason: basis.reason,
+      source_rule_id: basis.rule_id,
       code: options.legacyCode?.[row.document_id] || row.document_id.toLowerCase(),
       mandatory,
       applicability,

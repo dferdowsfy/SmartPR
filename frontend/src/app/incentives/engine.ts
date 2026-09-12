@@ -260,11 +260,19 @@ function resultFor(
     }));
   }
   const blocked = lifecycleBlocks(program, now);
-  const eligibility = classificationFor(evaluations, blocked);
+  // Scope matching discovers a program; it cannot substitute for missing
+  // substantive eligibility rules. Do not ask applicants to fill a KB gap.
+  const needsCriteriaReview = !program.criteria.some(criterion =>
+    criterion.required && criterion.material && !["industry", "municipality"].includes(criterion.factKey)
+  );
+  const classified = classificationFor(evaluations, blocked);
+  const eligibility = needsCriteriaReview && classified === "likely_eligible" ? "potentially_eligible" : classified;
   const satisfied = evaluations.filter((item) => item.status === "satisfied");
   const failed = evaluations.filter((item) => item.status === "not_satisfied");
   const missing = evaluations.filter((item) => item.status === "missing" || item.status === "not_evaluable");
-  const why = blocked || whySurfaced(program, evaluations, eligibility);
+  const why = blocked || (needsCriteriaReview && eligibility !== "not_eligible"
+    ? `${program.name} needs review: substantive eligibility criteria are missing from the knowledge base. Industry or geography alone cannot establish eligibility.`
+    : whySurfaced(program, evaluations, eligibility));
 
   return {
     programId: program.id,
@@ -289,7 +297,7 @@ function resultFor(
     sourceEffectiveDate: program.sources.map((source) => source.effectiveDate).find(Boolean) ?? program.effectiveFrom,
     lastVerifiedAt: program.lastVerifiedAt,
     sourceVersion: program.sourceVersion,
-    confidenceScore: confidenceFor(evaluations, eligibility),
+    confidenceScore: needsCriteriaReview ? 0 : confidenceFor(evaluations, eligibility),
     whySurfaced: why,
     explanation: `${why} This is an eligibility screen, not an award or approval decision.`,
     lifecycleStatus: program.status,

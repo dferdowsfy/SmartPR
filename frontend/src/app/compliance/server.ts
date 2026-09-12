@@ -2,6 +2,8 @@ import { randomUUID } from "crypto";
 import type { Pool, PoolClient } from "pg";
 import { ACTIVE_JURISDICTION } from "../jurisdictions";
 import { buildEngineInput } from "../kb";
+import { applyEntityFormationExclusivity } from "../requirementApplicability";
+import { entityTypeFromLegacyStructure } from "../forms/engine/intake";
 import { runRulesEngine, type KnowledgeBase } from "../rulesEngine";
 import { REMINDER_WINDOWS_DAYS, subtractDays } from "./dates";
 import type { ObligationBlueprint } from "./types";
@@ -148,7 +150,10 @@ export async function determineObligations(
     if (documentId) renewalByDocument.set(documentId, renewal);
   }
 
-  const obligations = result.requirements.map<ObligationBlueprint>((requirement) => {
+  const entityType = entityTypeFromLegacyStructure(
+    typeof profile.business_structure === "string" ? profile.business_structure : String(answers.Q_BUSINESS_STRUCTURE ?? "")
+  );
+  const obligations = applyEntityFormationExclusivity(result.requirements, entityType).map<ObligationBlueprint>((requirement) => {
     const renewal = renewalByDocument.get(requirement.document_id);
     const rawFrequency = renewal?.frequency_months;
     const frequency = typeof rawFrequency === "number" && Number.isInteger(rawFrequency) && rawFrequency > 0

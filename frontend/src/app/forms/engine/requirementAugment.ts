@@ -8,6 +8,7 @@
 // and LLP registration remain additive.
 // ============================================================================
 
+import { applyEntityFormationExclusivity } from "../../requirementApplicability";
 import type { CanonicalApplicationData } from "./types.ts";
 
 export interface MinimalRequirement {
@@ -62,7 +63,6 @@ const AUGMENTS: AugmentDef[] = [
   },
 ];
 
-const CORP_FORMATION = "DOC_CERT_INCORPORATION";
 const CORPORATION_TYPES = new Set([
   "stock_corporation",
   "close_corporation",
@@ -96,12 +96,5 @@ export function exclusiveFormationRequirements<T extends MinimalRequirement>(
   canonical: CanonicalApplicationData,
   existing: T[]
 ): T[] {
-  const entityType = canonical.business.entityType;
-  if (entityType === "limited_liability_company") {
-    return existing.filter((item) => item.document_id !== CORP_FORMATION);
-  }
-  if (CORPORATION_TYPES.has(entityType)) {
-    return existing.filter((item) => item.document_id !== "DOC_ARTICLES_ORGANIZATION");
-  }
-  return existing;
+  return applyEntityFormationExclusivity(existing, canonical.business.entityType);
 }
