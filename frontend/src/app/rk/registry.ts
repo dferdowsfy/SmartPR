@@ -157,7 +157,7 @@ const INCENTIVE_PROGRAM_FIELDS: FieldSpec[] = [
   { key: "municipality_ids", label: "Available in municipalities", kind: "entity_ref_list", refType: "municipality" },
   { key: "geography_level", label: "Geography level", kind: "select", options: ["Federal", "Puerto Rico", "Municipal", "Other"], required: true },
   { key: "geography_notes", label: "Geography notes", kind: "textarea" },
-  { key: "criterion_ids", label: "Eligibility criteria", kind: "entity_ref_list", refType: "eligibility_criterion", required: true },
+  { key: "criterion_ids", label: "Eligibility criteria", kind: "entity_ref_list", refType: "eligibility_criterion", help: "Required unless the program has industry/geography scope (scope-only programs are discovery-only and capped at potentially_eligible)." },
   { key: "evidence_type_ids", label: "Supporting evidence", kind: "entity_ref_list", refType: "evidence_type" },
   { key: "benefit_ids", label: "Benefits", kind: "entity_ref_list", refType: "benefit", required: true },
   { key: "application_window_id", label: "Application window", kind: "entity_ref", refType: "application_window" },
@@ -697,6 +697,10 @@ export function validateNodeData(nodeType: NodeType, data: Record<string, unknow
   }
   for (const f of cfg.fields) {
     if (!f.required) continue;
+    // F06: criterion_ids is conditionally required for incentive programs —
+    // scope-only (discovery) programs are valid; the explicit check below
+    // enforces the "criteria OR scope" rule, so the generic check must skip it.
+    if (INCENTIVE_NODE_TYPES.includes(nodeType) && f.key === "criterion_ids") continue;
     const v = data[f.key];
     if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
       problems.push(`Missing required field: ${f.label}`);
@@ -716,7 +720,13 @@ export function validateNodeData(nodeType: NodeType, data: Record<string, unknow
   }
   if (INCENTIVE_NODE_TYPES.includes(nodeType)) {
     if (!list(data.authorized_by_ids).length) problems.push("Incentives need at least one authoritative source.");
-    if (!list(data.criterion_ids).length) problems.push("Incentives need at least one eligibility criterion.");
+    // F06 mirrors compileIncentiveCatalog: zero substantive criteria is valid
+    // only when industry/geography scope exists (discovery-only program, capped
+    // at potentially_eligible). A program with neither is vacuous and rejected.
+    const hasScope = list(data.industry_ids).length > 0 || list(data.municipality_ids).length > 0;
+    if (!list(data.criterion_ids).length && !hasScope) {
+      problems.push("Incentives need at least one eligibility criterion or industry/geography scope.");
+    }
     if (!list(data.benefit_ids).length) problems.push("Incentives need at least one source-backed benefit.");
     if (data.program_status === "active" && (!s(data.last_verified_at) || !s(data.source_version))) {
       problems.push("Active incentives need a last verified date and source version.");

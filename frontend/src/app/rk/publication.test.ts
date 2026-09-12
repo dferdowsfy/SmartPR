@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSeedNodes } from "./seed-data.ts";
 import { validatePublicationGraph, type CompileNode } from "./compile.ts";
-import { NODE_TYPE_CONFIGS } from "./registry.ts";
+import { NODE_TYPE_CONFIGS, validateNodeData } from "./registry.ts";
 
 const seed = (): CompileNode[] =>
   buildSeedNodes().map((n) => ({
@@ -116,5 +116,46 @@ test("projected edges are deduplicated at emission (F18)", () => {
   assert.equal(
     edges.filter((e) => e.edgeType === "depends_on" && e.toEntity === "DOC_CERT_INCORPORATION").length,
     1
+  );
+});
+
+test("validateNodeData accepts a scope-only incentive program (F06 discovery-only)", () => {
+  // PR_ACT60_TOURISM has industry scope but no substantive criteria; the
+  // engine caps it at potentially_eligible. Publication validation must agree
+  // with compileIncentiveCatalog instead of demanding criteria.
+  const nodes = seed();
+  const program = nodes.find(
+    (n) => n.nodeType === "tax_incentive" && (n.data.criterion_ids as unknown[] ?? []).length === 0
+      && (n.data.industry_ids as unknown[] ?? []).length > 0
+  )!;
+  const problems = validateNodeData(program.nodeType, program.data);
+  assert.ok(
+    !problems.some((p) => p.toLowerCase().includes("eligibility criterion")),
+    `scope-only program should not be flagged for criteria: ${JSON.stringify(problems)}`
+  );
+});
+
+test("validateNodeData rejects a vacuous incentive program (F06)", () => {
+  // Neither criteria nor industry/geography scope: nothing to discover or
+  // evaluate, so the program must not be publishable.
+  const nodes = seed();
+  const program = nodes.find((n) => n.nodeType === "tax_incentive")!;
+  const vacuous = { ...program.data, criterion_ids: [], industry_ids: [], municipality_ids: [] };
+  const problems = validateNodeData(program.nodeType, vacuous);
+  assert.ok(
+    problems.some((p) => p.includes("eligibility criterion") && p.includes("scope")),
+    `vacuous program must be rejected: ${JSON.stringify(problems)}`
+  );
+});
+
+test("validateNodeData accepts an incentive program with substantive criteria (F06)", () => {
+  const nodes = seed();
+  const program = nodes.find(
+    (n) => n.nodeType === "tax_incentive" && (n.data.criterion_ids as unknown[] ?? []).length > 0
+  )!;
+  const problems = validateNodeData(program.nodeType, program.data);
+  assert.ok(
+    !problems.some((p) => p.toLowerCase().includes("eligibility criterion")),
+    `program with criteria should not be flagged: ${JSON.stringify(problems)}`
   );
 });

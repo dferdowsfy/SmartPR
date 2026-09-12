@@ -10,7 +10,8 @@
 // ============================================================================
 
 import { buildSeedNodes } from "../src/app/rk/seed-data";
-import { NODE_TYPE_CONFIGS, prerequisiteClosure, type TraversalNode } from "../src/app/rk/registry";
+import { NODE_TYPE_CONFIGS, NODE_TYPES, prerequisiteClosure, type TraversalNode } from "../src/app/rk/registry";
+import { EDGE_TYPES } from "../src/app/rk/types";
 
 const nodes = buildSeedNodes() as TraversalNode[];
 const byType = new Map<string, number>();
@@ -43,7 +44,7 @@ const dependsOn = (() => {
 const alcoholPrereqs = prerequisiteClosure(nodes, "DOC_ALCOHOL_LICENSE");
 
 console.log("== mechanical metrics ==");
-console.log(`nodes: ${nodes.length} | edges: ${totalEdges} | edge labels populated: ${edgeLabels.size}/24 | node types populated: ${byType.size}/24`);
+console.log(`nodes: ${nodes.length} | edges: ${totalEdges} | edge labels populated: ${edgeLabels.size}/${EDGE_TYPES.length} | node types populated: ${byType.size}/${NODE_TYPES.length}`);
 console.log(`dangling edge targets: ${dangling}`);
 console.log(`rules with direct citation: ${rulesWithCitation}/${rules.length}`);
 console.log(`documents with citation: ${docsWithCitation}/${docs.length}`);
@@ -63,7 +64,7 @@ const dims: Dim[] = [
   { name: "Referential integrity", before: 2, now: 4,
     why: `0 dangling targets across ${totalEdges} edges; publish gate + edge-parity tests run in CI-equivalent suites.` },
   { name: "Source provenance", before: 1, now: 4,
-    why: `${rulesWithCitation}/${rules.length} rules carry provision-level citations (19 rule-specific, rest inherited from 59/70 verified documents, confidence-labeled statute/page). 99 rules on 11 unverified documents still uncited; inherited citations are document-level, not clause-level.` },
+    why: `${rulesWithCitation}/${rules.length} rules carry provision-level citations (${rules.filter((n) => n.data.citation_source === "rule").length} rule-specific, rest inherited from ${docsWithCitation}/${docs.length} verified documents, confidence-labeled statute/page). ${rules.length - rulesWithCitation} rules on ${docs.length - docsWithCitation} unverified documents still uncited; inherited citations are document-level, not clause-level.` },
   { name: "Temporal/version modeling", before: 2, now: 3,
     why: "Recurring obligations modeled as renewal nodes with cadence + citation; effective intervals validated for inversion but still not enforced at evaluation." },
   { name: "Rule integration", before: 2, now: 4,

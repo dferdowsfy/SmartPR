@@ -81,7 +81,12 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE"
+    "requires_document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+    "citation": "Código Municipal de Puerto Rico, Ley 107-2020, Art. 7.200 — patente municipal sobre el volumen de negocios; OGP Carta Circular 002-2022 establece las disposiciones normativas",
+    "citation_url": "https://docs.pr.gov/files/OGP/Website_OGP/CartasCirculares/CC2022/CC-002-2022.pdf",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0007",
@@ -426,7 +431,11 @@
     "question_id": "Q_OUTDOOR_SEATING",
     "expected_answer": "true",
     "municipality_flag": null,
-    "requires_document_id": "DOC_OUTDOOR_SEATING_AUTH"
+    "requires_document_id": "DOC_OUTDOOR_SEATING_AUTH",
+    "citation": "Código de Orden Público del Municipio de San Juan, Art. 2.301 (Espacios Públicos) — los cafés al aire libre en aceras y espacios públicos requieren autorización municipal",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_OUTDOOR_SEATING_AUTH",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0032",
@@ -3670,7 +3679,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_PARKING_COMPLIANCE"
+    "requires_document_id": "DOC_PARKING_COMPLIANCE",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula estacionamiento y multas en la vía pública municipal",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_PARKING_COMPLIANCE",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0272",
@@ -3707,7 +3720,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0275",
@@ -3772,7 +3789,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0280",
@@ -3781,7 +3802,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0281",
@@ -3790,7 +3815,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0282",
@@ -3799,7 +3828,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0283",
@@ -3808,7 +3841,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0284",
@@ -3831,7 +3868,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0286",
@@ -3938,7 +3979,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "capital",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0295",
@@ -3947,7 +3992,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "capital",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0296",
@@ -3956,7 +4005,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "capital",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0297",
@@ -3965,7 +4018,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "capital",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0298",
@@ -3974,7 +4031,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "capital",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0299",
@@ -4053,7 +4114,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0305",
@@ -4076,7 +4141,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0307",
@@ -4211,7 +4280,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0317",
@@ -4248,7 +4321,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0320",
@@ -4299,7 +4376,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0324",
@@ -4350,7 +4431,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0328",
@@ -4443,7 +4528,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0335",
@@ -4592,7 +4681,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0346",
@@ -4629,7 +4722,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0349",
@@ -4666,7 +4763,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0352",
@@ -4675,7 +4776,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0353",
@@ -4698,7 +4803,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0355",
@@ -4707,7 +4816,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0356",
@@ -4744,7 +4857,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0359",
@@ -4781,7 +4898,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0362",
@@ -4832,7 +4953,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0366",
@@ -4869,7 +4994,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0369",
@@ -4892,7 +5021,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0371",
@@ -4915,7 +5048,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0373",
@@ -4924,7 +5061,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0374",
@@ -4933,7 +5074,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0375",
@@ -4970,7 +5115,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0378",
@@ -4993,7 +5142,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0380",
@@ -5016,7 +5169,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0382",
@@ -5067,7 +5224,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0386",
@@ -5090,7 +5251,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0388",
@@ -5113,7 +5278,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0390",
@@ -5248,7 +5417,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0400",
@@ -5299,7 +5472,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0404",
@@ -5350,7 +5527,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0408",
@@ -5387,7 +5568,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0411",
@@ -5424,7 +5609,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0414",
@@ -5461,7 +5650,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0417",
@@ -5498,7 +5691,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0420",
@@ -5521,7 +5718,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0422",
@@ -5544,7 +5745,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0424",
@@ -5623,7 +5828,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0430",
@@ -5646,7 +5855,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0432",
@@ -5697,7 +5910,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0436",
@@ -5720,7 +5937,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0438",
@@ -5771,7 +5992,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0442",
@@ -5794,7 +6019,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0444",
@@ -5817,7 +6046,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0446",
@@ -5854,7 +6087,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0449",
@@ -5877,7 +6114,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0451",
@@ -5900,7 +6141,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0453",
@@ -5937,7 +6182,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0456",
@@ -5960,7 +6209,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0458",
@@ -5997,7 +6250,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0461",
@@ -6020,7 +6277,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0463",
@@ -6071,7 +6332,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0467",
@@ -6108,7 +6373,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0470",
@@ -6131,7 +6400,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0472",
@@ -6154,7 +6427,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0474",
@@ -6163,7 +6440,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0475",
@@ -6186,7 +6467,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0477",
@@ -6209,7 +6494,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0479",
@@ -6737,7 +7026,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0521",
@@ -6760,7 +7053,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0523",
@@ -6769,7 +7066,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0524",
@@ -6806,7 +7107,11 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": "metro",
-    "requires_document_id": "DOC_LOADING_ZONE_PERMIT"
+    "requires_document_id": "DOC_LOADING_ZONE_PERMIT",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page",
+    "citation_inherited_from": "DOC_LOADING_ZONE_PERMIT",
+    "citation_source": "document"
   },
   {
     "id": "RULE_0527",

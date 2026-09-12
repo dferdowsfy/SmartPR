@@ -193,7 +193,10 @@
     "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Issued by the business municipality (finance office); no centralized form. Request a debt/compliance certification there."
+    "download_note": "Issued by the business municipality (finance office); no centralized form. Request a debt/compliance certification there.",
+    "citation": "Código Municipal de Puerto Rico, Ley 107-2020, Art. 7.200 — patente municipal sobre el volumen de negocios; OGP Carta Circular 002-2022 establece las disposiciones normativas",
+    "citation_url": "https://docs.pr.gov/files/OGP/Website_OGP/CartasCirculares/CC2022/CC-002-2022.pdf",
+    "citation_confidence": "page"
   },
   {
     "id": "DOC_HEALTH_PERMIT",
@@ -360,7 +363,10 @@
     "agency_note": "Not government-issued — a private licensed professional prepares/seals it; verify their license via the Dept. of State Examining Boards portal.",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Prepared and sealed by a licensed architect/engineer; no government form. Upload the sealed plans as evidence."
+    "download_note": "Prepared and sealed by a licensed architect/engineer; no government form. Upload the sealed plans as evidence.",
+    "citation": "23 LPRA § 42b — Certificación de planos: todo plano radicado debe estar certificado por arquitecto o ingeniero licenciado",
+    "citation_url": "https://law.justia.com/codes/puerto-rico/2021/titulo-23/capitulo-1/42b/",
+    "citation_confidence": "statute"
   },
   {
     "id": "DOC_ENVIRONMENTAL_PERMIT",
@@ -415,7 +421,9 @@
     "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Municipality-dependent authorization; apply at the municipal permits office. No centralized form."
+    "download_note": "Municipality-dependent authorization; apply at the municipal permits office. No centralized form.",
+    "citation": "Código de Orden Público del Municipio de San Juan, Art. 2.301 (Espacios Públicos) — los cafés al aire libre en aceras y espacios públicos requieren autorización municipal",
+    "citation_confidence": "page"
   },
   {
     "id": "DOC_ENTERTAINMENT_PERMIT",
@@ -654,7 +662,9 @@
     "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr).",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Issued via the municipal permits office / OGPe Permiso Único process; no standalone form."
+    "download_note": "Issued via the municipal permits office / OGPe Permiso Único process; no standalone form.",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula estacionamiento y multas en la vía pública municipal",
+    "citation_confidence": "page"
   },
   {
     "id": "DOC_LOADING_ZONE_PERMIT",
@@ -666,7 +676,9 @@
     "agency_note": "No single URL — most permits are filed through OGPe's Single Business Portal (sbp.ogpe.pr.gov); autonomous municipalities run their own offices (e.g., San Juan: tramite.sanjuan.pr).",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Municipality-dependent (traffic/permits office); no centralized form."
+    "download_note": "Municipality-dependent (traffic/permits office); no centralized form.",
+    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula el uso de la vía pública, incluyendo zonas de carga y descarga",
+    "citation_confidence": "page"
   },
   {
     "id": "DOC_SAN_JUAN_USE_PERMIT",

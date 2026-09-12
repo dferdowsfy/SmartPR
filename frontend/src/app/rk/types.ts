@@ -74,6 +74,36 @@ export type EdgeType =
   | "derives"
   | "contradicts";
 
+/** Runtime vocabulary of edge labels (mirrors the EdgeType union above). */
+export const EDGE_TYPES: EdgeType[] = [
+  "requires",
+  "applies_to",
+  "asks",
+  "belongs_to",
+  "issued_by",
+  "derived_from",
+  "exempts",
+  "renews",
+  "inspects",
+  "depends_on",
+  "administered_by",
+  "authorized_by",
+  "available_in",
+  "provides",
+  "requires_application_to",
+  "has_deadline",
+  "compatible_with",
+  "conflicts_with",
+  "prerequisite_for",
+  "evaluated_against",
+  "satisfies",
+  "supports",
+  "supersedes",
+  "superseded_by",
+  "derives",
+  "contradicts",
+];
+
 export type SourceType =
   | "bill"
   | "law"
