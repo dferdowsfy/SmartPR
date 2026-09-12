@@ -16,6 +16,7 @@ function LoginInner() {
   const nextPath = sanitizeNext(sp.get("next"), "/businesses");
   const signupNextPath = sanitizeNext(sp.get("next"), GUEST_INTAKE);
   const signupHref = `/signup?intent=start&next=${encodeURIComponent(signupNextPath)}`;
+  const inviteToken = sp.get("invite");
 
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -26,10 +27,37 @@ function LoginInner() {
     sp.get("verified") === "1" ? "Your email is verified. Please log in to continue." : null,
   );
   const [showResend, setShowResend] = useState(false);
+  const [inviteAccepted, setInviteAccepted] = useState<string | null>(null);
 
   useEffect(() => {
     if (sp.get("mode") === "signup") router.replace(signupHref);
   }, [router, signupHref, sp]);
+
+  // Invited user landing back here with a session (e.g. after a magic-link
+  // round-trip): accept the invite, then continue.
+  useEffect(() => {
+    if (!inviteToken) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (cancelled || !data.session) return;
+      const res = await fetch("/api/invites/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: inviteToken }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (cancelled) return;
+      if (res.ok) {
+        setInviteAccepted(result.workspaceName || "the workspace");
+        router.push(nextPath);
+      } else {
+        setErr(result.error || "Could not accept the invitation.");
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteToken]);
 
   if (!isAuthConfigured()) {
     return (
@@ -55,6 +83,27 @@ function LoginInner() {
     return false;
   };
 
+  const acceptInvite = async (): Promise<boolean> => {
+    if (!inviteToken) return true;
+    try {
+      const res = await fetch("/api/invites/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: inviteToken }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(result.error || "Signed in, but the workspace invitation could not be accepted.");
+        return false;
+      }
+      setInviteAccepted(result.workspaceName || "the workspace");
+      return true;
+    } catch {
+      setErr("Signed in, but the workspace invitation could not be accepted.");
+      return false;
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === "link" && !email) return;
@@ -63,9 +112,14 @@ function LoginInner() {
     setBusy(true); setErr(null); setInfo(null);
     try {
       if (mode === "link") {
+        // Preserve the invite across the magic-link round-trip: the callback
+        // drops the user back here, and the session effect above accepts it.
+        const linkNext = inviteToken
+          ? `/auth/login?invite=${encodeURIComponent(inviteToken)}&next=${encodeURIComponent(nextPath)}`
+          : nextPath;
         const { error } = await supabase.auth.signInWithOtp({
           email: email.trim(),
-          options: { emailRedirectTo: authRedirectUrl(nextPath) },
+          options: { emailRedirectTo: authRedirectUrl(linkNext) },
         });
         if (error) { setErr(error.message); return; }
         setInfo(`Sign-in link sent to ${email.trim()}. Check your inbox — the link expires in 60 minutes.`);
@@ -92,7 +146,9 @@ function LoginInner() {
         }
         return;
       }
-      if (await bootstrapPlatform()) router.push(nextPath);
+      if (await bootstrapPlatform()) {
+        if (await acceptInvite()) router.push(nextPath);
+      }
     } catch (e) {
       setErr((e as Error).message || "Login failed");
     } finally {
@@ -129,6 +185,17 @@ function LoginInner() {
           : mode === "link" ? "Enter your email and we'll send a one-click sign-in link. No password needed."
           : "Enter the email on your account and we'll send a reset link."}
       </p>
+
+      {inviteToken && !inviteAccepted && (
+        <div className="mb-6 rounded-lg border border-[#245c5c]/30 bg-[#245c5c]/8 px-4 py-3 text-sm text-[#161616]">
+          You&apos;ve been invited to join a SmartPR workspace. Log in with the invited email address to accept.
+        </div>
+      )}
+      {inviteAccepted && (
+        <div className="mb-6 rounded-lg border border-[#1f5a3a]/30 bg-[#1f5a3a]/8 px-4 py-3 text-sm text-[#1f5a3a]">
+          You&apos;ve joined {inviteAccepted}.
+        </div>
+      )}
 
       <form onSubmit={submit} className="space-y-4">
         <div>

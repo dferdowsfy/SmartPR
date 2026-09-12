@@ -29,9 +29,10 @@ export function authRedirectUrl(nextPath: string): string {
  * server can consume the token; the callback then signs the user out and
  * redirects to /auth/login?verified=1 (preserving the post-login destination).
  */
-export function verificationRedirectUrl(nextPath: string): string {
+export function verificationRedirectUrl(nextPath: string, inviteToken?: string): string {
   const safeNext = nextPath && nextPath.startsWith("/") ? nextPath : "/";
-  const loginNext = `/auth/login?verified=1&next=${encodeURIComponent(safeNext)}`;
+  let loginNext = `/auth/login?verified=1&next=${encodeURIComponent(safeNext)}`;
+  if (inviteToken) loginNext += `&invite=${encodeURIComponent(inviteToken)}`;
   return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(loginNext)}`;
 }
 

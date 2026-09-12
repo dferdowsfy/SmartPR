@@ -113,3 +113,94 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
   const user = await getCurrentUser();
   return isUserAdmin(user?.email);
 }
+
+// ============================================================================
+// Super admin vs workspace roles.
+//
+// "Super admin" = a platform administrator (the "admin" group above — the
+// SmartPR team). This is NOT the same as the workspace-level ADMIN role.
+// Management UIs (company/team/branding/plan administration) are gated on
+// super admin ONLY; a workspace ADMIN (a "regular admin" of their company)
+// does not get access to them.
+// ============================================================================
+
+/** Platform super admin: the SmartPR team. Not the workspace ADMIN role. */
+export async function isSuperAdmin(
+  email: string | null | undefined
+): Promise<boolean> {
+  return isUserAdmin(email);
+}
+
+/** Super-admin check for the currently signed-in user. */
+export async function isCurrentUserSuperAdmin(): Promise<boolean> {
+  const user = await getCurrentUser();
+  return isSuperAdmin(user?.email);
+}
+
+export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+
+const ROLE_RANK: Record<WorkspaceRole, number> = {
+  OWNER: 4,
+  ADMIN: 3,
+  MEMBER: 2,
+  VIEWER: 1,
+};
+
+/** Numeric rank for hierarchy comparisons (higher = more powerful). */
+export function roleRank(role: string | null | undefined): number {
+  return ROLE_RANK[(role as WorkspaceRole) ?? ""] ?? 0;
+}
+
+/** The caller's role in a workspace, or null when not a member. */
+export async function getWorkspaceRole(
+  userId: string,
+  workspaceId: string
+): Promise<WorkspaceRole | null> {
+  try {
+    const pool = getPool();
+    if (!pool) return null;
+    const { rows } = await pool.query<{ role: WorkspaceRole }>(
+      `SELECT role FROM workspace_members WHERE workspace_id = $1 AND user_id = $2`,
+      [workspaceId, userId]
+    );
+    return rows[0]?.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** True when the role may mutate workspace data (create/edit businesses, filings, uploads). */
+export function canEditWorkspace(role: string | null | undefined): boolean {
+  return roleRank(role) >= ROLE_RANK.MEMBER;
+}
+
+/** True when the role may manage the team (invite, change roles, remove). */
+export function canManageTeam(role: string | null | undefined): boolean {
+  return roleRank(role) >= ROLE_RANK.ADMIN;
+}
+
+type DbLike = { query: (text: string, params?: unknown[]) => Promise<{ rows: Array<{ role?: string }> }> };
+
+/**
+ * Role enforcement for workspace mutations. Returns null when the user may
+ * edit, or an error string when blocked (VIEWERs and non-members cannot
+ * mutate). Callers turn the error into a 403 response.
+ */
+export async function assertCanEditWorkspace(
+  db: DbLike,
+  userId: string,
+  workspaceId: string
+): Promise<string | null> {
+  try {
+    const { rows } = await db.query(
+      `SELECT role FROM workspace_members WHERE workspace_id = $1 AND user_id = $2`,
+      [workspaceId, userId]
+    );
+    const role = rows[0]?.role;
+    if (!role) return "not a member of this workspace";
+    if (!canEditWorkspace(role)) return "your role does not allow editing";
+    return null;
+  } catch {
+    return "could not verify workspace role";
+  }
+}

@@ -2,8 +2,9 @@
 // (Sign in vs avatar/Sign out) without round-tripping through middleware.
 
 import { getCurrentUser, isAuthConfigured } from "../../../lib/supabase/server";
-import { isUserAdmin } from "../../../lib/admin";
+import { isUserAdmin, getWorkspaceRole, canEditWorkspace } from "../../../lib/admin";
 import { bootstrapPlatformUser } from "../../../lib/auth/bootstrap";
+import { getPool } from "../../graph/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,19 @@ export async function GET() {
   } catch (error) {
     console.error("[api-me] platform bootstrap failed:", (error as Error).message);
   }
+  let workspaceRole: string | null = null;
+  let canEdit = true;
+  if (workspaceId) {
+    try {
+      const pool = getPool();
+      if (pool) {
+        workspaceRole = await getWorkspaceRole(user.id, workspaceId);
+        canEdit = canEditWorkspace(workspaceRole);
+      }
+    } catch {
+      // Non-fatal: default to editable.
+    }
+  }
   return Response.json({
     configured: true,
     workspace_ready: Boolean(workspaceId),
@@ -28,6 +42,8 @@ export async function GET() {
       avatar: (user.user_metadata?.avatar_url as string) || null,
       isAdmin: await isUserAdmin(user.email),
       workspace_id: workspaceId,
+      workspace_role: workspaceRole,
+      can_edit: canEdit,
       business_name: (user.user_metadata?.business_name as string) || null,
       onboarding_intent: (user.user_metadata?.onboarding_intent as string) || null,
       professional_role: (user.user_metadata?.professional_role as string) || null,

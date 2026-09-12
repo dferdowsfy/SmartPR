@@ -57,6 +57,7 @@ function SignupForm() {
   const [workspaceReady, setWorkspaceReady] = useState(false);
 
   const requestedNext = params.get("next");
+  const inviteToken = params.get("invite");
   const nextPath = sanitizeNext(requestedNext, intent === "manage" ? "/businesses/import" : GUEST_INTAKE);
   const valid = useMemo(() => firstName.trim().length > 0 && lastName.trim().length > 0 && /\S+@\S+\.\S+/.test(email) && password.length >= 8 && agreed, [agreed, email, firstName, lastName, password]);
   const isSpanish = language === "ES";
@@ -90,7 +91,7 @@ function SignupForm() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: verificationRedirectUrl(nextPath),
+          emailRedirectTo: verificationRedirectUrl(nextPath, inviteToken || undefined),
           data: {
             full_name: `${firstName.trim()} ${lastName.trim()}`,
             first_name: firstName.trim(),
@@ -136,7 +137,7 @@ function SignupForm() {
       <section className={styles.formPanel}>
         <div className={styles.topBar}>
           <Link className={styles.mobileLogo} href="/"><SmartPRLogo className={styles.logo} size="auth" /></Link>
-          <div><Link href={`/auth/login?next=${encodeURIComponent(nextPath)}`}>{t("Log in")}</Link><LanguageToggle language={language} onChange={setLanguage} /></div>
+          <div><Link href={`/auth/login?next=${encodeURIComponent(nextPath)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""}`}>{t("Log in")}</Link><LanguageToggle language={language} onChange={setLanguage} /></div>
         </div>
         <div className={styles.formWrap}>
           {complete ? <div className={styles.success}>
@@ -151,7 +152,7 @@ function SignupForm() {
                 {isSpanish ? "Reintentar conexión →" : "Retry workspace connection →"}
               </button>
             ) : (
-              <Link className={styles.submitButton} href={complete === "session" ? nextPath : `/auth/login?next=${encodeURIComponent(nextPath)}`}>
+              <Link className={styles.submitButton} href={complete === "session" ? nextPath : `/auth/login?next=${encodeURIComponent(nextPath)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""}`}>
                 {complete === "session" ? (isSpanish ? "Continuar a SmartPR →" : "Continue to SmartPR →") : (isSpanish ? "Ir a iniciar sesión →" : "Go to log in →")}
               </Link>
             )}
@@ -179,7 +180,7 @@ function SignupForm() {
             <label className={styles.terms}><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>{t("I agree to the")} <Link href="/privacy">{t("Privacy Policy")}</Link>.</span></label>
             {error && <div className={styles.error} role="alert">{error}</div>}
             <button className={styles.submitButton} disabled={!valid || busy} type="submit">{busy ? t("Creating account…") : t("Create Account")}</button>
-            <p className={styles.existing}>{t("Already have an account?")} <Link href={`/auth/login?next=${encodeURIComponent(nextPath)}`}>{t("Log in")}</Link></p>
+            <p className={styles.existing}>{t("Already have an account?")} <Link href={`/auth/login?next=${encodeURIComponent(nextPath)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""}`}>{t("Log in")}</Link></p>
           </form>}
         </div>
         <Link className={styles.back} href={GUEST_INTAKE}>{isSpanish ? "Continuar sin cuenta" : "Continue without an account"}</Link>

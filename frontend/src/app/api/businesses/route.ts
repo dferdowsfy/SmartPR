@@ -7,6 +7,7 @@ import { getCurrentUser } from "../../../lib/supabase/server";
 import { notifyNewBusiness } from "../../../lib/leads";
 import { ensureUserWorkspace } from "../../compliance/server";
 import { assertCanAddBusinesses, gateJson } from "../../../lib/billing/access";
+import { assertCanEditWorkspace } from "../../../lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +83,10 @@ export async function POST(request: Request) {
   try {
     const id = randomUUID();
     const workspaceId = await ensureUserWorkspace(pool, user);
+    const roleBlock = await assertCanEditWorkspace(pool, user.id, workspaceId);
+    if (roleBlock) {
+      return Response.json({ error: `Not allowed: ${roleBlock}.` }, { status: 403 });
+    }
     try {
       await assertCanAddBusinesses(pool, { workspaceId, email: user.email, adding: 1 });
     } catch (gateErr) {
