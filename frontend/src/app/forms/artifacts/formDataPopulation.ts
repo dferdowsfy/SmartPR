@@ -423,12 +423,126 @@ function dacoUc01Values(data: FormData): DirectOverlayValue[] {
   return values;
 }
 
+/**
+ * SC2309 (Modelo SC 2309 "Solicitud de Licencias", Rev. 28 ago 14 /
+ * Rep. 26 jun 17) fields answered on the form itself.
+ *
+ * `pdfField` ids here are a contract with form-mappings/SC2309.json: each
+ * one must match a mapping row's `pdfField` so population.ts can find that
+ * row's `placement`. Rows the mapping marks signature / notary /
+ * government_only are blocked from writing by the backstop in
+ * population.ts even if named here — firma_declarante, notario_bloque,
+ * numero_affidavit, numero_solicitud and uso_oficial_bloque are never
+ * pushed below.
+ *
+ * Canonical pass (population.ts, generic): nombre, numero_registro_-
+ * comerciante, nombre_comercial, numero_identificacion_patronal,
+ * numero_telefono, direccion_postal, localizacion_negocio and the
+ * tipo_contribuyente marks resolve from the shared profile via their
+ * mapping rows' canonicalField. Everything below is applicant-answered.
+ */
+function sc2309Values(data: FormData): DirectOverlayValue[] {
+  const values: DirectOverlayValue[] = [];
+
+  const check = (answerId: string, pdfField: string) => {
+    if (data[answerId] === true) pushOverlay(values, pdfField, "X");
+  };
+
+  // Parte I — applicant-entered identity (SSNs are sensitive: masked in records)
+  pushOverlay(values, "numero_seguro_social", textValue(data, "numero_seguro_social"), true);
+  pushOverlay(values, "codigo_postal", textValue(data, "codigo_postal"));
+
+  // Información Adicional Individuos
+  pushOverlay(values, "fecha_nac_dia", textValue(data, "fecha_nac_dia"));
+  pushOverlay(values, "fecha_nac_mes", textValue(data, "fecha_nac_mes"));
+  pushOverlay(values, "fecha_nac_anio", textValue(data, "fecha_nac_anio"));
+  pushOverlay(values, "lugar_nacimiento", textValue(data, "lugar_nacimiento"));
+  const estadoCivil = textValue(data, "estado_civil");
+  if (estadoCivil === "casado") pushOverlay(values, "estado_civil_casado_mark", "X");
+  if (estadoCivil === "soltero") pushOverlay(values, "estado_civil_soltero_mark", "X");
+  pushOverlay(values, "numero_dependientes", textValue(data, "numero_dependientes"));
+  pushOverlay(values, "nombre_conyuge", textValue(data, "nombre_conyuge"));
+  pushOverlay(values, "ssn_conyuge", textValue(data, "ssn_conyuge"), true);
+  pushOverlay(values, "tarjeta_residencia_num", textValue(data, "tarjeta_residencia_num"));
+  pushOverlay(values, "tarjeta_residencia_fecha", textValue(data, "tarjeta_residencia_fecha"));
+  pushOverlay(values, "cert_naturalizacion_num", textValue(data, "cert_naturalizacion_num"));
+  pushOverlay(values, "puerto_entrada", textValue(data, "puerto_entrada"));
+
+  // Información Adicional Sociedades y Corporaciones — up to three ruled rows
+  const duenos = data["duenos"];
+  if (Array.isArray(duenos)) {
+    duenos.slice(0, 3).forEach((row, i) => {
+      if (!row || typeof row !== "object") return;
+      const rec = row as unknown as Record<string, unknown>;
+      const str = (v: unknown) => (typeof v === "string" ? v.trim().slice(0, 200) : "");
+      const n = i + 1;
+      pushOverlay(values, `duenos_${n}_nombre`, str(rec["nombre"]));
+      pushOverlay(values, `duenos_${n}_titulo`, str(rec["titulo"]));
+      pushOverlay(values, `duenos_${n}_ssn`, str(rec["ssn"]), true);
+    });
+  }
+
+  // Parte II — license marks
+  check("lic_bebidas", "lic_bebidas_mark");
+  check("lic_gasolina", "lic_gasolina_mark");
+  check("lic_cigarrillos", "lic_cigarrillos_mark");
+  check("lic_cemento", "lic_cemento_mark");
+  check("lic_vehiculos", "lic_vehiculos_mark");
+  check("lic_promotor", "lic_promotor_mark");
+  check("lic_metales", "lic_metales_mark");
+  check("lic_armas", "lic_armas_mark");
+  check("lic_pasatiempo", "lic_pasatiempo_mark");
+  check("lic_tragamonedas", "lic_tragamonedas_mark");
+  pushOverlay(values, "tragamonedas_detalle", textValue(data, "tragamonedas_detalle"));
+  check("lic_aceite", "lic_aceite_mark");
+  check("lic_puerto_libre", "lic_puerto_libre_mark");
+  check("lic_portador", "lic_portador_mark");
+  check("lic_otras", "lic_otras_mark");
+  pushOverlay(values, "otras_detalle", textValue(data, "otras_detalle"));
+
+  const periodo = textValue(data, "periodo");
+  if (periodo === "corto") pushOverlay(values, "periodo_corto_mark", "X");
+  if (periodo === "largo") pushOverlay(values, "periodo_largo_mark", "X");
+  pushOverlay(values, "comentarios", textValue(data, "comentarios"));
+
+  // Parte III — business data
+  const tieneLicencia = textValue(data, "tiene_licencia");
+  if (tieneLicencia === "si") pushOverlay(values, "tiene_licencia_si_mark", "X");
+  if (tieneLicencia === "no") pushOverlay(values, "tiene_licencia_no_mark", "X");
+  pushOverlay(values, "numeros_licencias", textValue(data, "numeros_licencias"));
+  pushOverlay(values, "cant_billar", textValue(data, "cant_billar"));
+  pushOverlay(values, "cant_entretenimiento", textValue(data, "cant_entretenimiento"));
+  pushOverlay(values, "cant_vellonera", textValue(data, "cant_vellonera"));
+  pushOverlay(values, "otros_equipo_detalle", textValue(data, "otros_equipo_detalle"));
+  pushOverlay(values, "otros_equipo_cantidad", textValue(data, "otros_equipo_cantidad"));
+  const cerca = textValue(data, "cerca_escuela_iglesia");
+  if (cerca === "si") pushOverlay(values, "cerca_escuela_iglesia_si_mark", "X");
+  if (cerca === "no") pushOverlay(values, "cerca_escuela_iglesia_no_mark", "X");
+  pushOverlay(values, "distancia_metros", textValue(data, "distancia_metros"));
+  pushOverlay(values, "escuela_num_estudiantes", textValue(data, "escuela_num_estudiantes"));
+  pushOverlay(values, "escuela_edad_promedio", textValue(data, "escuela_edad_promedio"));
+  pushOverlay(values, "escuela_grados", textValue(data, "escuela_grados"));
+  pushOverlay(values, "escuela_horarios", textValue(data, "escuela_horarios"));
+  pushOverlay(values, "iglesia_num_feligreses", textValue(data, "iglesia_num_feligreses"));
+  pushOverlay(values, "iglesia_dias_servicio", textValue(data, "iglesia_dias_servicio"));
+  pushOverlay(values, "iglesia_horarios", textValue(data, "iglesia_horarios"));
+
+  // Parte IV — sworn declaration (the Firma line and notary block are never written)
+  pushOverlay(values, "declarante_nombre", textValue(data, "declarante_nombre"));
+  pushOverlay(values, "declarante_titulo", textValue(data, "declarante_titulo"));
+  const fecha = textValue(data, "declarante_fecha");
+  if (fecha) pushOverlay(values, "declarante_fecha", nc001SpanishDate(fecha));
+
+  return values;
+}
+
 export function directOverlayValues(formCode: string, data: FormData | undefined): DirectOverlayValue[] {
   if (!data) return [];
   if (formCode === "NC001") return nc001Values(data);
   if (formCode === "LUMAINT01") return lumaInt01Values(data);
   if (formCode === "DACOUC01") return dacoUc01Values(data);
   if (formCode === "AGRICORP01") return agriBonafideCorpValues(data);
+  if (formCode === "SC2309") return sc2309Values(data);
   return [];
 }
 

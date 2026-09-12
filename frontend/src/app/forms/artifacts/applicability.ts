@@ -206,7 +206,7 @@ export function resolveApplicableArtifacts(
   if (triggers.length > 0) {
     const entry = statewideEntry(
       "SC2309",
-      "DOC_HACIENDA_LICENSE",
+      "DOC_ALCOHOL_LICENSE",
       `Activities that may require a Hacienda internal-revenue licence were reported: ${triggers.join(", ")}.`
     );
     out.push(entry);

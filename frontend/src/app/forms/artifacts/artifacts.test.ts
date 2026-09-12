@@ -34,6 +34,8 @@ import { buildFilingPackage } from "./filingPackage.ts";
 import { containsApprovalLanguage, STATUS_COPY } from "./statusVocabulary.ts";
 import { generatedFilingRef, parseStoragePath, templateRevisionStorageRef, templateStorageRef, uploadCanonicalTemplate } from "./storage.ts";
 import { emptyCanonicalData, type CanonicalApplicationData } from "../engine/types.ts";
+import { getDefinition } from "../engine/registry.ts";
+import { prefillFromCanonical } from "../engine/canonicalMapping.ts";
 
 // --- fixtures ---------------------------------------------------------------
 
@@ -266,12 +268,18 @@ test("conditional marks follow the profile: perpetual term is marked, others are
 test("SC 2309 licence marks are driven by reported activities", async () => {
   const profile = corporationProfile();
   profile.activities.alcoholSales = true;
-  const result = await generateWorkingCopy({ formCode: "SC2309", profile, purpose: "filing" });
+  const definition = getDefinition("FORM_PR_HACIENDA_SC2309");
+  assert.ok(definition, "the SC2309 schema must be registered");
+  // The real flow: the UI prefills the Parte II checkboxes from the reported
+  // activities, the filer confirms, and the confirmed answers reach the PDF.
+  const formData = prefillFromCanonical(definition, profile);
+  assert.equal(formData["lic_bebidas"], true, "alcohol sales must pre-mark the bebidas checkbox");
+  const result = await generateWorkingCopy({ formCode: "SC2309", profile, purpose: "filing", formData });
   const fields = result.populated.map((p) => p.pdfField);
-  assert.ok(fields.includes("parte2_bebidas_alcoholicas"));
-  assert.ok(!fields.includes("parte2_gasolina"));
-  assert.ok(fields.includes("parte1_tipo_corporacion"));
-  assert.ok(!fields.includes("parte1_tipo_llc"));
+  assert.ok(fields.includes("lic_bebidas_mark"));
+  assert.ok(!fields.includes("lic_gasolina_mark"));
+  assert.ok(fields.includes("tipo_corporacion_mark"));
+  assert.ok(!fields.includes("tipo_llc_mark"));
 });
 
 // --- 6. the canonical template is never touched ------------------------------

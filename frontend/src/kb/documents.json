@@ -249,7 +249,7 @@
     "agency_canonical": "Departamento de Hacienda",
     "download_url": "https://suri.hacienda.pr.gov",
     "download_kind": "filing_portal",
-    "download_note": "Internal Revenue license application and renewal moved into SURI; the paper SC 2309 is legacy.",
+    "download_note": "Hacienda's license-requirements page still directs every license type to complete Modelo SC 2309 'Solicitud de Licencias' (verified 2026-09-12); license applications and renewals are also handled through the SURI portal — confirm the filing route for your license type with Hacienda or your district office.",
     "depends_on_document_ids": [
       "DOC_CRIM_CLEARANCE",
       "DOC_ASUME_CLEARANCE",

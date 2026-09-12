@@ -50,6 +50,11 @@ export const ROUTES: RouteRule[] = [
   // foreign-registration row above.
   { requirementId: "DOC_PATENTE_MUNICIPAL", formationStatus: "formed_in_puerto_rico", formId: "FORM_PR_PATENTE_ANUAL" },
   { requirementId: "DOC_PATENTE_MUNICIPAL", formId: "FORM_PR_PATENTE_MUNICIPAL" },
+  // The Hacienda Modelo SC 2309 license application applies to any business
+  // carrying the alcohol-license requirement — the form's Parte II covers
+  // every internal-revenue license type, and the applicant marks the ones
+  // requested. No entity-type gate.
+  { requirementId: "DOC_ALCOHOL_LICENSE", formId: "FORM_PR_HACIENDA_SC2309" },
   // The DACO urbanizador/constructor license application applies to any
   // contractor business type carrying the requirement — no entity-type gate.
   { requirementId: "DOC_CONTRACTOR_LICENSE", formId: "FORM_PR_DACO_URBANIZADOR_CONSTRUCTOR" },

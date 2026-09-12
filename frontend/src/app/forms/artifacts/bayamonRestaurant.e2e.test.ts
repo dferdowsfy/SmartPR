@@ -16,6 +16,8 @@ import { loadMunicipalities } from "./kbLoader.ts";
 import { generateWorkingCopy, loadAllMappings, outstandingQuestionsForProfile } from "./library.ts";
 import { resolveRepoPath, sha256 } from "./paths.ts";
 import { emptyCanonicalData, type CanonicalApplicationData } from "../engine/types.ts";
+import { getDefinition } from "../engine/registry.ts";
+import { prefillFromCanonical } from "../engine/canonicalMapping.ts";
 
 const DESCRIPTION = "I want to open a restaurant in Bayamón with 10 employees and outdoor seating.";
 
@@ -165,10 +167,16 @@ test("adding alcohol sales to the same restaurant adds the Hacienda application"
   assert.ok(hacienda, "SC 2309 becomes applicable once alcohol sales are reported");
   assert.equal(hacienda.agency, "Departamento de Hacienda");
 
-  const result = await generateWorkingCopy({ formCode: "SC2309", profile, purpose: "filing" });
+  // The real flow: reported activities prefill the Parte II checkboxes, the
+  // filer confirms, and the confirmed answers reach the official PDF.
+  const definition = getDefinition("FORM_PR_HACIENDA_SC2309");
+  assert.ok(definition, "the SC2309 schema must be registered");
+  const formData = prefillFromCanonical(definition, profile);
+  assert.equal(formData["lic_bebidas"], true, "alcohol sales must pre-mark the bebidas checkbox");
+  const result = await generateWorkingCopy({ formCode: "SC2309", profile, purpose: "filing", formData });
   const fields = result.populated.map((p) => p.pdfField);
-  assert.ok(fields.includes("parte2_bebidas_alcoholicas"));
-  assert.ok(fields.includes("parte1_nombre"));
+  assert.ok(fields.includes("lic_bebidas_mark"));
+  assert.ok(fields.includes("nombre"));
 });
 
 test("the package never tells the restaurant its filing was approved", () => {

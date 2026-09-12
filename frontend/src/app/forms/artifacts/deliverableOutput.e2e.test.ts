@@ -401,7 +401,7 @@ test("every displayable form holding an official template can actually produce i
 
   // Guards against the set silently emptying (e.g. a catalog rename), which
   // would make this test vacuously pass.
-  assert.deepEqual(checked.sort(), ["CBP301", "CORPLLC02", "CORPREG01", "DACOUC01", "EPAFORM1", "EPAFORM2C", "LUMAINT01", "NC001", "PA01", "PA02", "SS4"]);
+  assert.deepEqual(checked.sort(), ["CBP301", "CORPLLC02", "CORPREG01", "DACOUC01", "EPAFORM1", "EPAFORM2C", "LUMAINT01", "NC001", "PA01", "PA02", "SC2309", "SS4"]);
 });
 
 // --- Safety invariants -------------------------------------------------------

@@ -28,6 +28,7 @@ import { PA02 } from "../definitions/pr/municipal/PA02.ts";
 import { AGRIIND01 } from "../definitions/pr/agriculture/AGRIIND01.ts";
 import { AGRICORP01 } from "../definitions/pr/agriculture/AGRICORP01.ts";
 import { PA01 } from "../definitions/pr/municipal/PA01.ts";
+import { SC2309 } from "../definitions/pr/hacienda/SC2309.ts";
 import { CBP301 } from "../definitions/federal/cbp/CBP301.ts";
 import { EPAFORM1 } from "../definitions/federal/epa/EPAFORM1.ts";
 import { EPAFORM2C } from "../definitions/federal/epa/EPAFORM2C.ts";
@@ -61,6 +62,7 @@ const DEFINITIONS: DigitalFormDefinition[] = [
   DACOUC01,
   PA02,
   PA01,
+  SC2309,
   AGRIIND01,
   AGRICORP01,
   CBP301,
@@ -110,7 +112,9 @@ const PLACEHOLDER_ENTRIES: RegistryEntry[] = [
   // official OGP PA01 (REV FEBRERO 2025) PDF is in RealForms with a
   // human-reviewed mapping, served by the real PA01 schema above.
   ph("FORM_PR_HEALTH_PERMIT", "DOC_HEALTH_PERMIT", "health", "Health Permit"),
-  ph("FORM_PR_ALCOHOL_LICENSE", "DOC_ALCOHOL_LICENSE", "alcohol", "Alcohol License"),
+  // FORM_PR_ALCOHOL_LICENSE is no longer a placeholder: the official Hacienda
+  // Modelo SC 2309 PDF is in RealForms with a human-reviewed overlay mapping,
+  // so it is served by the real SC2309 schema above.
   ph("FORM_PR_TOURISM_REGISTRATION", "DOC_TOURISM_REGISTRATION", "tourism", "Tourism Registration"),
   ph("FORM_PR_SIGN_PERMIT", "DOC_SIGN_PERMIT", "sign", "Sign Permit"),
   ph("FORM_PR_OUTDOOR_SEATING", "DOC_OUTDOOR_SEATING_AUTH", "outdoor_seating", "Outdoor Seating Authorization"),
