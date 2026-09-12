@@ -120,7 +120,7 @@ export function compileIncentiveCatalog(nodes: IncentiveCatalogNode[]): Compiled
 
     if (!s(d.name)) reasons.push("missing program name");
     if (!agency || agency.nodeType !== "agency") reasons.push("missing administering agency");
-    if (criteria.length !== criterionIds.length || criteria.length === 0) reasons.push("missing published eligibility criteria");
+    if (criteria.length !== criterionIds.length) reasons.push("missing published eligibility criteria");
     if (benefits.length !== benefitIds.length || benefits.length === 0) reasons.push("missing published benefit");
     if (sources.length !== sourceIds.length || sources.length === 0) reasons.push("missing authoritative graph source");
     if (sources.some((source) => !source.url || !source.citation || !source.lastVerifiedAt || !source.sourceVersion)) {
@@ -130,6 +130,15 @@ export function compileIncentiveCatalog(nodes: IncentiveCatalogNode[]): Compiled
       reasons.push("source is not enacted or effective");
     }
     if (!s(d.last_verified_at) || !s(d.source_version)) reasons.push("missing program verification/version metadata");
+    // F06: a program with no substantive criteria is legitimate discovery
+    // content — the engine caps it at potentially_eligible and flags the
+    // missing criteria honestly. But a program with neither criteria nor
+    // industry/geography scope is vacuous: nothing to discover or evaluate.
+    const scopeIndustryIds = list(d.industry_ids);
+    const scopeMunicipalityIds = list(d.municipality_ids);
+    if (criteria.length === 0 && scopeIndustryIds.length === 0 && scopeMunicipalityIds.length === 0) {
+      reasons.push("program has neither eligibility criteria nor industry/geography scope");
+    }
     if (reasons.length) {
       rejected.push({ entityId: node.entityId, reasons: [...new Set(reasons)] });
       continue;
@@ -141,8 +150,8 @@ export function compileIncentiveCatalog(nodes: IncentiveCatalogNode[]): Compiled
     ])];
     const applicationAgency = byId.get(s(d.application_agency_id));
     const windowNode = byId.get(s(d.application_window_id));
-    const industryIds = list(d.industry_ids);
-    const municipalityIds = list(d.municipality_ids);
+    const industryIds = scopeIndustryIds;
+    const municipalityIds = scopeMunicipalityIds;
 
     programs.push({
       id: node.entityId,

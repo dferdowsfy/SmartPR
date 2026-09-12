@@ -1,0 +1,674 @@
+[
+  {
+    "id": "PR_ACT60_TOURISM",
+    "name": "Tourism and Visitors Economy Incentive",
+    "description": "Act 60's tourism chapter offers a reduced corporate tax rate and municipal exemptions for hotels, resorts, guesthouses, and other visitor-economy businesses.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_TOURISM"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_TOURISM_b1",
+      "PR_ACT60_TOURISM_b2",
+      "PR_ACT60_TOURISM_b3",
+      "PR_ACT60_TOURISM_b4"
+    ],
+    "application_process": "Apply for a tourism tax exemption decree through DDEC's Tourism Incentives Office before or during project development.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_AGRICULTURE",
+    "name": "Agricultural Development Incentive",
+    "description": "Act 60's agricultural chapter exempts most income and property associated with bona fide farming activity.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_AGRICULTURE"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_AGRICULTURE_b1",
+      "PR_ACT60_AGRICULTURE_b2",
+      "PR_ACT60_AGRICULTURE_b3",
+      "PR_ACT60_AGRICULTURE_b4"
+    ],
+    "application_process": "Apply for Bona Fide Farmer certification and the related tax exemption decree through DDEC / Departamento de Agricultura.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_FILM",
+    "name": "Creative Industries and Film Production Incentive",
+    "description": "Act 60's creative-industries chapter credits production spending and offers a reduced rate for local studios and distribution entities.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_ARTS"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_FILM_b1",
+      "PR_ACT60_FILM_b2",
+      "PR_ACT60_FILM_b3"
+    ],
+    "application_process": "Apply through DDEC's Puerto Rico Film Commission before production begins to preserve credit eligibility.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_AUTOMOTIVE_EXPORT",
+    "name": "Export Services Framework — Automotive",
+    "description": "Automotive design, logistics consulting, or software built for international dealerships can qualify as an export service under Act 60. Local dealerships and repair shops serving only the island's retail market do not qualify.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_AUTOMOTIVE"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_AUTOMOTIVE_EXPORT_b1"
+    ],
+    "application_process": "Confirm the activity is genuinely export-oriented (clients and revenue outside Puerto Rico), then apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_BEAUTY_EXPORT",
+    "name": "Export Services Framework — Beauty & Personal Care",
+    "description": "Manufacturing localized cosmetics, or providing corporate training/franchise management for international beauty brands from Puerto Rico, can qualify as an export service. Local salons, spas, and storefronts serving only island customers do not qualify.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_BEAUTY"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_BEAUTY_EXPORT_b1"
+    ],
+    "application_process": "Confirm the activity is genuinely export-oriented, then apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_CONSTRUCTION",
+    "name": "Infrastructure and Housing Development Incentive",
+    "description": "Act 60 and related opportunity-zone rules offer exemptions, credits, and accelerated depreciation for developers building affordable housing, multi-family units, or state-partnered infrastructure.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_CONSTRUCTION"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_CONSTRUCTION_b1",
+      "PR_ACT60_CONSTRUCTION_b2"
+    ],
+    "application_process": "Apply for the applicable housing/infrastructure decree through DDEC, or confirm Opportunity Zone status for the project site.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_EDUCATION_EXPORT",
+    "name": "Export Services Framework — Education & Training",
+    "description": "Companies producing educational modules, digital courses, online programs, or remote corporate training for audiences outside Puerto Rico can qualify as an export service.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_EDUCATION"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_EDUCATION_EXPORT_b1",
+      "PR_ACT60_EDUCATION_EXPORT_b2"
+    ],
+    "application_process": "Confirm the activity is genuinely export-oriented, then apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_ENERGY",
+    "name": "Green Energy and Renewable Resources Incentive",
+    "description": "Act 60's green-energy chapter offers a reduced rate and tax exemptions for businesses generating power from renewable systems.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_ENERGY"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_ENERGY_b1",
+      "PR_ACT60_ENERGY_b2",
+      "PR_ACT60_ENERGY_b3"
+    ],
+    "application_process": "Apply for a green-energy tax exemption decree through DDEC before installing generation equipment.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_IFE",
+    "name": "International Financial Entities (IFE) Incentive",
+    "description": "Act 60 offers a reduced corporate tax rate for offshore banking, international asset management, and clearinghouse activity, provided the business does not transact with local Puerto Rico residents.",
+    "administering_agency_id": "ocif",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_FINANCE"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_IFE_b1"
+    ],
+    "application_process": "Apply for an International Financial Entity license through OCIF, then the related tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_INTL_INSURANCE",
+    "name": "International Insurers and Reinsurers Incentive",
+    "description": "Act 60 offers a preferential corporate tax rate for entities managing cross-border insurance and reinsurance risk from Puerto Rico.",
+    "administering_agency_id": "ocif",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_FINANCE"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_INTL_INSURANCE_b1"
+    ],
+    "application_process": "Apply for an international insurer or reinsurer license through OCIF, then the related tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_FOOD_MANUFACTURING",
+    "name": "Manufacturing Framework — Food & Beverage Export",
+    "description": "Companies that process, blend, or package food or beverages on the island for export qualify under the industrial tax decree. Local restaurants, bars, and cafes serving island customers operate under standard Puerto Rico corporate tax rates instead.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_FOOD"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_FOOD_MANUFACTURING_b1"
+    ],
+    "application_process": "Confirm the activity is manufacturing-for-export rather than local food service, then apply for an industrial tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_PHYSICIAN",
+    "name": "Resident Physician Incentive",
+    "description": "Act 60 offers a reduced personal income tax rate on income from medical professional services practiced locally, intended to retain physicians on the island. Telehealth or medical-billing platforms serving international clinics can separately qualify as an export service.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_HEALTH"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_PHYSICIAN_b1",
+      "PR_ACT60_PHYSICIAN_b2"
+    ],
+    "application_process": "Apply for the physician or medical-export decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_IT_EXPORT",
+    "name": "Export Services Framework — Information Technology",
+    "description": "Software development, blockchain engineering, cloud hosting, SaaS, cybersecurity, and tech-support services provided to entities outside Puerto Rico qualify as a core export service.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_IT"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_IT_EXPORT_b1",
+      "PR_ACT60_IT_EXPORT_b2"
+    ],
+    "application_process": "Apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_MANUFACTURING",
+    "name": "Manufacturing and Industrial Development Incentive",
+    "description": "Act 60's industrial-development chapter offers a fixed reduced corporate tax rate for manufacturers, with a further-reduced rate available for pioneer or critical-IP projects.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_MANUFACTURING"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_MANUFACTURING_b1",
+      "PR_ACT60_MANUFACTURING_b2",
+      "PR_ACT60_MANUFACTURING_b3"
+    ],
+    "application_process": "Apply for an industrial tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_PROFESSIONAL_EXPORT",
+    "name": "Professional Services Framework (Core Export Industry)",
+    "description": "Consultants, lawyers, architects, marketing agencies, corporate headquarters, and remote project managers exporting their services to clients outside Puerto Rico qualify as a core export industry.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_PROF"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_PROFESSIONAL_EXPORT_b1",
+      "PR_ACT60_PROFESSIONAL_EXPORT_b2"
+    ],
+    "application_process": "Apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_REAL_ESTATE",
+    "name": "Real Estate Investment Vehicles & Resident Investor Incentive",
+    "description": "Structured real estate investment vehicles and the Individual Investor Resident Decree offer distinct Act 60 tax treatment for Puerto Rico real estate.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_REALESTATE"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_REAL_ESTATE_b1",
+      "PR_ACT60_REAL_ESTATE_b2"
+    ],
+    "application_process": "Apply for the applicable REIT structuring or Individual Investor Resident Decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_RETAIL_EXPORT",
+    "name": "E-Commerce Export Incentive",
+    "description": "Traditional physical retail stores do not qualify for Act 60 corporate tax exemptions. E-commerce drop-shippers, digital marketplaces, or distribution hubs that store inventory locally and ship items to global customers can qualify as an export activity.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_RETAIL"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_RETAIL_EXPORT_b1"
+    ],
+    "application_process": "Confirm the activity is export-oriented e-commerce rather than local storefront retail, then apply through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_LOGISTICS_EXPORT",
+    "name": "Export Logistics Incentive",
+    "description": "Companies using Puerto Rico as an international maritime transport hub, hub-and-spoke freight forwarder, or cross-border shipping management platform qualify for the export logistics rate.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_TRANSPORT"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_LOGISTICS_EXPORT_b1"
+    ],
+    "application_process": "Apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_WHOLESALE_EXPORT",
+    "name": "Export Goods Incentive",
+    "description": "Businesses that buy wholesale merchandise locally or internationally, hold inventory on the island, and redistribute those goods exclusively to foreign markets qualify for the export goods decree.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_WHOLESALE"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_WHOLESALE_EXPORT_b1"
+    ],
+    "application_process": "Confirm the redistribution is exclusively to markets outside Puerto Rico, then apply through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_GOVT_CONTRACTOR_EXPORT",
+    "name": "Export Services Framework — Government Contractor",
+    "description": "Federal or international government contractors who perform administrative work, software design, consulting, or project tracking from a Puerto Rico office for overseas agencies qualify as an export service.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_GOVCON"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_GOVT_CONTRACTOR_EXPORT_b1"
+    ],
+    "application_process": "Confirm the work is performed for agencies outside Puerto Rico, then apply for an export-services tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_NONPROFIT",
+    "name": "Nonprofit Exemption Decree",
+    "description": "Certified charitable entities, foundations, and religious organizations receive a full exemption from corporate, municipal, and property taxes, and are eligible recipients of the mandatory annual charitable donations required from Act 60 individual investors.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_NONPROFIT"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_NONPROFIT_b1",
+      "PR_ACT60_NONPROFIT_b2"
+    ],
+    "application_process": "Apply for nonprofit certification and the related exemption decree through DDEC and Departamento de Hacienda.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_AIR_MARITIME",
+    "name": "Air and Maritime Transportation Incentive",
+    "description": "Act 60 separately incentivizes international air carrier and maritime cargo/passenger operations based in Puerto Rico — a distinct chapter from the general export-logistics decree covering companies operating airport concessions, port facilities, or vessel/aircraft fleets serving international routes.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_TRANSPORT"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [],
+    "benefit_ids": [
+      "PR_ACT60_AIR_MARITIME_b1"
+    ],
+    "application_process": "Apply for an air/maritime transportation tax exemption decree through DDEC; port and airport concession terms are separately negotiated with the Puerto Rico Ports Authority.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_HISTORIC_PRESERVATION",
+    "name": "Historic Preservation Tax Credit",
+    "description": "Rehabilitating a certified historic structure — common for businesses locating in a municipality's historic district — can qualify for a separate preservation tax credit on top of any housing/infrastructure incentive, administered jointly with Puerto Rico's historic preservation office.",
+    "administering_agency_id": "icp",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [
+      "IND_CONSTRUCTION"
+    ],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [
+      "historic_rehab_activity"
+    ],
+    "benefit_ids": [
+      "PR_ACT60_HISTORIC_PRESERVATION_b1"
+    ],
+    "application_process": "Obtain certification of the structure and rehabilitation plan from the Oficina Estatal de Conservación Histórica (ICP) before work begins, then apply for the credit through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_TRADING_COMPANY",
+    "name": "International Trading Company Incentive",
+    "description": "A business that imports, exports, or re-distributes goods internationally through Puerto Rico can qualify as a trading company under Act 60, regardless of its primary industry classification.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [
+      "trading_export_activity"
+    ],
+    "benefit_ids": [
+      "PR_ACT60_TRADING_COMPANY_b1"
+    ],
+    "application_process": "Confirm the business genuinely imports, exports, or redistributes goods internationally, then apply for a trading-company tax exemption decree through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_RENEWABLE_INVESTMENT",
+    "name": "Renewable Energy Equipment Investment Credit",
+    "description": "Any business — not only energy companies — that invests directly in renewable generation equipment (solar, wind, hydro, or battery storage) for its own operations can access a separate green-investment tax benefit, distinct from the Green Energy and Renewable Resources decree for businesses whose primary activity is power generation.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [
+      "renewable_investment_fact"
+    ],
+    "benefit_ids": [
+      "PR_ACT60_RENEWABLE_INVESTMENT_b1"
+    ],
+    "application_process": "Document the renewable-energy equipment investment and apply for the exemption through DDEC.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  },
+  {
+    "id": "PR_ACT60_OPPORTUNITY_ZONE",
+    "name": "Opportunity Zone Incentive",
+    "description": "A project physically located within one of Puerto Rico's federally designated Opportunity Zones — which cover the large majority of the island — can combine federal capital-gains deferral with additional Act 60 provisions for Opportunity Zone projects, regardless of industry.",
+    "administering_agency_id": "ddec",
+    "application_agency_id": "ddec",
+    "authorized_by_ids": [
+      "SRC_ACT60"
+    ],
+    "industry_ids": [],
+    "municipality_ids": [],
+    "geography_level": "Puerto Rico",
+    "criterion_ids": [
+      "opportunity_zone_fact"
+    ],
+    "benefit_ids": [
+      "PR_ACT60_OPPORTUNITY_ZONE_b1",
+      "PR_ACT60_OPPORTUNITY_ZONE_b2"
+    ],
+    "application_process": "Confirm the project address falls within a designated Opportunity Zone (Puerto Rico's zones are published by DDEC and the U.S. Treasury), then structure the investment through a Qualified Opportunity Fund.",
+    "program_status": "active",
+    "effective_from": "2019-07-01",
+    "last_verified_at": "2026-09-04",
+    "source_version": "2026-09-04.1",
+    "automatic_eligibility": false
+  }
+]

@@ -507,7 +507,7 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
     fields: [
       { key: "name", label: "Benefit name", kind: "text", required: true },
       { key: "description", label: "Benefit description", kind: "textarea", required: true },
-      { key: "benefit_type", label: "Benefit type", kind: "select", options: ["credit", "exemption", "deduction", "grant", "reimbursement", "loan", "guarantee", "technical_assistance", "other"], required: true },
+      { key: "benefit_type", label: "Benefit type", kind: "select", options: ["credit", "exemption", "deduction", "grant", "reimbursement", "loan", "guarantee", "technical_assistance", "tax_incentive", "other"], required: true },
       { key: "amount_description", label: "Amount / value description", kind: "textarea", help: "Use only source-backed language. Do not estimate or invent amounts." },
       { key: "citation", label: "Source citation", kind: "text", required: true },
     ],

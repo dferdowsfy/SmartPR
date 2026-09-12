@@ -1,0 +1,30 @@
+[
+  {
+    "id": "FACT_CONSTRUCTION_OR_REHABILITATION_ACTIVITY",
+    "name": "Certified historic rehabilitation",
+    "fact_key": "construction_or_rehabilitation_activity",
+    "value_type": "boolean",
+    "description": "The credit applies to certified historic rehabilitation, not new construction generally."
+  },
+  {
+    "id": "FACT_EXPORT_ACTIVITY",
+    "name": "International import/export/redistribution activity",
+    "fact_key": "export_activity",
+    "value_type": "boolean",
+    "description": "Trading-company treatment requires genuine international import/export/redistribution activity."
+  },
+  {
+    "id": "FACT_RENEWABLE_ENERGY_INVESTMENT",
+    "name": "Renewable energy equipment investment",
+    "fact_key": "renewable_energy_investment",
+    "value_type": "boolean",
+    "description": "This credit is for a business's own renewable-generation or storage investment, separate from operating a power-generation business."
+  },
+  {
+    "id": "FACT_OPPORTUNITY_ZONE",
+    "name": "Opportunity Zone location",
+    "fact_key": "opportunity_zone",
+    "value_type": "boolean",
+    "description": "Puerto Rico designated Opportunity Zones covering most of the island under the 2017 federal Tax Cuts and Jobs Act."
+  }
+]

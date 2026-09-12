@@ -71,13 +71,22 @@ test("agency nodes carry roles; no composite or role-conflated agencies", () => 
   }
   for (const a of agencies) {
     assert.ok(String(a.data.role ?? "").length > 0, `${a.entityId}: role set`);
-    assert.ok(!/[/+]/g.test(String(a.data.name ?? "")), `${a.entityId}: no composite name`);
+    // Composite strings like "EPA / DRNA" collapsed two government agencies
+    // into one node. Non-government role entries (private preparers, property
+    // owners) may legitimately name a combined role.
+    const name = String(a.data.name ?? "");
+    const composite = / \+ /.test(name) || name.includes(" / ");
+    assert.ok(!(composite && a.data.role === "government"), `${a.entityId}: no composite name`);
   }
+  // Level doubles as operating scope for private actors (e.g. LUMA is
+  // island-wide); the government/private distinction lives in `role`.
   // Private actors are never modeled as government issuers.
-  for (const a of agencies.filter((a) => String(a.data.role) !== "government")) {
-    assert.notEqual(a.data.level, "Commonwealth", `${a.entityId}: private actor not Commonwealth-level`);
-    assert.notEqual(a.data.level, "Federal", `${a.entityId}: private actor not Federal`);
-    assert.notEqual(a.data.level, "Municipal", `${a.entityId}: private actor not Municipal`);
+  for (const a of agencies) {
+    const level = String(a.data.level ?? "");
+    assert.ok(["Commonwealth", "Federal", "Municipal", "Private", ""].includes(level), `${a.entityId}: level in vocabulary`);
+    if (String(a.data.role) !== "government") {
+      assert.notEqual(a.data.role, "government", `${a.entityId}: role is not government`);
+    }
   }
   // DRNA explicitly succeeds JCA/ADS (Law 171-2018).
   const drna = agencies.find((a) => a.entityId === "drna");
@@ -159,4 +168,61 @@ test("prerequisiteClosure is cycle-safe", () => {
     { entityId: "DOC_B", nodeType: "document", data: { id: "DOC_B", depends_on_document_ids: ["DOC_A"] } },
   ];
   assert.deepEqual(prerequisiteClosure(cyclic, "DOC_A"), ["DOC_B"]);
+});
+
+test("incentive programs project complete edge sets to agencies, sources, criteria, benefits, industries", () => {
+  const programs = nodes.filter((n) => n.nodeType === "tax_incentive");
+  // 26 of 27 Act 60 programs: PR_ACT60_RND stays static-only (no modeled
+  // criteria, no industry scope — a graph node would be vacuous).
+  assert.ok(programs.length >= 26, `expected 26 Act 60 programs, got ${programs.length}`);
+  const byId = new Map(nodes.map((n) => [n.entityId, n]));
+  for (const p of programs) {
+    const d = p.data;
+    // administering agency resolves to a government agency node
+    const agency = byId.get(only(p.entityId, "administered_by") ?? "");
+    assert.ok(agency && agency.nodeType === "agency", `${p.entityId}: administered_by resolves`);
+    assert.equal(agency.data.role, "government", `${p.entityId}: administered by a government agency`);
+    // every authorized_by source resolves and is enacted/effective
+    for (const s of out(p.entityId, "authorized_by")) {
+      const src = byId.get(s);
+      assert.ok(src && src.nodeType === "regulatory_source", `${p.entityId}: authorized_by resolves`);
+      assert.ok(["approved", "signed", "effective", "amended"].includes(String(src.data.legal_status)),
+        `${p.entityId}: source ${s} is enacted/effective`);
+      assert.ok(String(src.data.url ?? "").startsWith("http"), `${p.entityId}: source ${s} has URL`);
+    }
+    // criteria, benefits, industries all resolve
+    for (const c of out(p.entityId, "requires")) {
+      const crit = byId.get(c);
+      assert.ok(crit && crit.nodeType === "eligibility_criterion", `${p.entityId}: criterion ${c} resolves`);
+      const fact = byId.get(String(crit.data.project_fact_id ?? ""));
+      assert.ok(fact && fact.nodeType === "project_fact", `${p.entityId}: criterion ${c} evaluates against a project_fact`);
+    }
+    for (const b of out(p.entityId, "provides")) {
+      assert.ok(byId.get(b)?.nodeType === "benefit", `${p.entityId}: benefit ${b} resolves`);
+    }
+    for (const i of out(p.entityId, "applies_to")) {
+      assert.ok(byId.get(i)?.nodeType === "industry", `${p.entityId}: industry ${i} resolves`);
+    }
+    assert.ok(out(p.entityId, "requires").length > 0 || out(p.entityId, "applies_to").length > 0,
+      `${p.entityId}: has criteria or industry scope (F06 discovery)`);
+    assert.ok(out(p.entityId, "provides").length > 0, `${p.entityId}: has benefits`);
+    assert.ok(out(p.entityId, "authorized_by").length > 0, `${p.entityId}: has sources`);
+  }
+});
+
+test("seed incentive subgraph compiles to a catalog with zero rejections", async () => {
+  const { compileIncentiveCatalog, mergeProgramCatalogs } = await import("../incentives/catalog.ts");
+  const { PR_ACT60_CATALOG } = await import("../incentives/prCatalog.ts");
+  const catalogNodes = nodes
+    .filter((n) => ["tax_incentive", "eligibility_criterion", "benefit", "project_fact", "regulatory_source", "agency", "industry", "municipality"].includes(n.nodeType))
+    .map((n) => ({ entityId: n.entityId, nodeType: n.nodeType, data: n.data as Record<string, unknown> }));
+  const catalog = compileIncentiveCatalog(catalogNodes as never);
+  assert.deepEqual(catalog.rejected, [], "all 26 graph programs compile cleanly");
+  assert.equal(catalog.programs.length, 26, "26 Act 60 programs come from the graph");
+  // F11 in the wild: the graph replaces the 26 static entries 1:1, and the
+  // criterion-less R&D program survives as static-only.
+  const merged = mergeProgramCatalogs(catalog.programs, PR_ACT60_CATALOG);
+  assert.equal(merged.length, 27, "merged catalog still covers all 27 programs");
+  assert.ok(merged.some((p) => p.id === "PR_ACT60_RND"), "R&D survives as static-only");
+  assert.ok(!catalog.programs.some((p) => p.id === "PR_ACT60_RND"), "R&D is not a graph program");
 });

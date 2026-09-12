@@ -1,0 +1,62 @@
+[
+  {
+    "id": "historic_rehab_activity",
+    "name": "Certified historic rehabilitation",
+    "description": "The credit applies to certified historic rehabilitation, not new construction generally.",
+    "project_fact_id": "FACT_CONSTRUCTION_OR_REHABILITATION_ACTIVITY",
+    "fact_key": "construction_or_rehabilitation_activity",
+    "operator": "truthy",
+    "required": true,
+    "material": true,
+    "question": "Does the project involve rehabilitating a certified historic structure?",
+    "answer_type": "boolean",
+    "evidence_type_ids": [],
+    "evidence_can_satisfy": false,
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "trading_export_activity",
+    "name": "International import/export/redistribution activity",
+    "description": "Trading-company treatment requires genuine international import/export/redistribution activity.",
+    "project_fact_id": "FACT_EXPORT_ACTIVITY",
+    "fact_key": "export_activity",
+    "operator": "truthy",
+    "required": true,
+    "material": true,
+    "question": "Does the business import, export, or redistribute goods to markets outside Puerto Rico?",
+    "answer_type": "boolean",
+    "evidence_type_ids": [],
+    "evidence_can_satisfy": false,
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "renewable_investment_fact",
+    "name": "Renewable energy equipment investment",
+    "description": "This credit is for a business's own renewable-generation or storage investment, separate from operating a power-generation business.",
+    "project_fact_id": "FACT_RENEWABLE_ENERGY_INVESTMENT",
+    "fact_key": "renewable_energy_investment",
+    "operator": "truthy",
+    "required": true,
+    "material": true,
+    "question": "Is the business investing in solar, wind, hydro, or battery storage equipment for its own facility?",
+    "answer_type": "boolean",
+    "evidence_type_ids": [],
+    "evidence_can_satisfy": false,
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "opportunity_zone_fact",
+    "name": "Opportunity Zone location",
+    "description": "Puerto Rico designated Opportunity Zones covering most of the island under the 2017 federal Tax Cuts and Jobs Act.",
+    "project_fact_id": "FACT_OPPORTUNITY_ZONE",
+    "fact_key": "opportunity_zone",
+    "operator": "truthy",
+    "required": true,
+    "material": true,
+    "question": "Is the project located within a designated Opportunity Zone?",
+    "answer_type": "boolean",
+    "evidence_type_ids": [],
+    "evidence_can_satisfy": false,
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  }
+]

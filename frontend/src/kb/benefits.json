@@ -1,0 +1,324 @@
+[
+  {
+    "id": "PR_ACT60_TOURISM_b1",
+    "name": "Fixed corporate tax rate",
+    "description": "A fixed corporate tax rate, typically 4%, on income from the tourism activity.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_TOURISM_b2",
+    "name": "Municipal development tax exemption",
+    "description": "A 100% exemption on municipal development taxes.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_TOURISM_b3",
+    "name": "Municipal license and property tax exemption",
+    "description": "Up to a 100% exemption on municipal license and property taxes.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_TOURISM_b4",
+    "name": "Tourism tax credits",
+    "description": "30% to 40% tax credits on total eligible project costs for building or substantially renovating hotels, resorts, guesthouses, and theme parks.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_AGRICULTURE_b1",
+    "name": "Income tax exemption",
+    "description": "A 90% income tax exemption on income derived directly from agricultural activities.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_AGRICULTURE_b2",
+    "name": "Property tax exemption",
+    "description": "A 100% exemption on real and personal property taxes.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_AGRICULTURE_b3",
+    "name": "Municipal license tax exemption",
+    "description": "A 100% exemption on municipal license taxes.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_AGRICULTURE_b4",
+    "name": "IVU exemption on inputs",
+    "description": "A 100% exemption on Sales and Use Tax (IVU) for raw materials and farming equipment.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_FILM_b1",
+    "name": "Resident production tax credit",
+    "description": "A 40% tax credit on production expenditures paid to Puerto Rico residents.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_FILM_b2",
+    "name": "Non-resident talent tax credit",
+    "description": "A 20% tax credit for payments made to non-resident talent.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_FILM_b3",
+    "name": "Studio corporate tax rate",
+    "description": "A 4% corporate tax rate for local film studios, sound stages, and distribution entities.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_AUTOMOTIVE_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on income from qualifying export activity.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_BEAUTY_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on income from qualifying export activity.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_CONSTRUCTION_b1",
+    "name": "Development tax exemptions and credits",
+    "description": "Specialized tax exemptions, credits, and accelerated depreciation for qualifying housing or infrastructure development.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_CONSTRUCTION_b2",
+    "name": "Opportunity Zone deferral",
+    "description": "Projects sited within a designated distressed area (Opportunity Zone) can unlock tax deferrals and reduced capital gains treatment.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_EDUCATION_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on income from qualifying export activity.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_EDUCATION_EXPORT_b2",
+    "name": "Dividend distribution exemption",
+    "description": "A 100% tax exemption on dividend distributions from the exempt business.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_ENERGY_b1",
+    "name": "Renewable-generation corporate tax rate",
+    "description": "A fixed 4% corporate tax rate for businesses generating power via renewable systems (solar, wind, hydro).",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_ENERGY_b2",
+    "name": "Excise tax exemption",
+    "description": "A 100% exemption from state excise taxes on energy-generation machinery and equipment.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_ENERGY_b3",
+    "name": "IVU exemption on equipment",
+    "description": "A 100% exemption from Sales and Use Tax (IVU) on energy-generation machinery and equipment.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_IFE_b1",
+    "name": "IFE corporate tax rate",
+    "description": "A 4% corporate tax rate for offshore banking units, international asset managers, and clearinghouses that do not transact business with local residents.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_INTL_INSURANCE_b1",
+    "name": "International insurer/reinsurer rate",
+    "description": "A preferential corporate tax rate — as low as 1–2% in some configurations — for managing cross-border insurance or reinsurance risk.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_FOOD_MANUFACTURING_b1",
+    "name": "Manufacturing corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying export food/beverage manufacturing income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_PHYSICIAN_b1",
+    "name": "Resident physician tax rate",
+    "description": "A 4% personal income tax rate on income derived from medical professional services practiced locally.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_PHYSICIAN_b2",
+    "name": "Medical services export rate",
+    "description": "A 4% corporate tax rate for telehealth or medical-billing platforms serving international clinics.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_IT_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying export-services income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_IT_EXPORT_b2",
+    "name": "Dividend distribution exemption",
+    "description": "A 100% exemption on distributed dividends from the exempt business.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_MANUFACTURING_b1",
+    "name": "Industrial corporate tax rate",
+    "description": "A fixed 4% corporate tax rate, which can drop to 1–2% for pioneer mega-projects or critical intellectual property.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_MANUFACTURING_b2",
+    "name": "Profit distribution exemption",
+    "description": "A 100% tax exemption on distributed profits.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_MANUFACTURING_b3",
+    "name": "Royalty/license withholding exemption",
+    "description": "A significant exemption on royalty or license payments made to foreign entities.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_PROFESSIONAL_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying export-services income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_PROFESSIONAL_EXPORT_b2",
+    "name": "Dividend tax exemption",
+    "description": "A 100% dividend tax exemption on distributions from the exempt business.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_REAL_ESTATE_b1",
+    "name": "REIT pass-through exemption",
+    "description": "Highly structured vehicles investing in local real estate projects (REIT-style structures) can receive substantial pass-through tax exemptions.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_REAL_ESTATE_b2",
+    "name": "Resident investor capital gains rate",
+    "description": "Individuals buying local real estate as a primary residence under the Individual Investor Resident Decree secure a 0% (pre-2027, grandfathered track) or 4% (2027 onward, new track) rate on post-move long-term capital gains when selling.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_RETAIL_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying e-commerce export income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_LOGISTICS_EXPORT_b1",
+    "name": "Export logistics corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying export logistics income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_WHOLESALE_EXPORT_b1",
+    "name": "Export goods corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying export-goods income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_GOVT_CONTRACTOR_EXPORT_b1",
+    "name": "Export-services corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying export-services income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_NONPROFIT_b1",
+    "name": "Full tax exemption",
+    "description": "A 100% exemption from corporate income, municipal, and property taxes for certified nonprofit/religious entities.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_NONPROFIT_b2",
+    "name": "Eligible investor-donation recipient",
+    "description": "Eligibility to receive the mandatory annual $15,000 charitable donation required from Act 60 individual investor decree holders.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_AIR_MARITIME_b1",
+    "name": "Air/maritime carrier corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying income from international air or maritime transportation operations based in Puerto Rico.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_HISTORIC_PRESERVATION_b1",
+    "name": "Rehabilitation tax credit",
+    "description": "A tax credit on qualified rehabilitation expenses for a certified historic structure, in addition to any applicable housing or infrastructure incentive.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_TRADING_COMPANY_b1",
+    "name": "Trading company corporate tax rate",
+    "description": "A 4% corporate tax rate on qualifying international trading income.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_RENEWABLE_INVESTMENT_b1",
+    "name": "IVU and excise exemption on equipment",
+    "description": "Exemption from Sales and Use Tax (IVU) and state excise taxes on qualifying renewable-generation or storage equipment purchased for the business's own operations.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_OPPORTUNITY_ZONE_b1",
+    "name": "Capital gains deferral and reduction",
+    "description": "Federal capital-gains tax deferral, and potential reduction, for qualifying investment held in the Opportunity Zone project.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_OPPORTUNITY_ZONE_b2",
+    "name": "Priority decree processing",
+    "description": "Priority processing for the underlying Act 60 tax exemption decree when the project is sited in a designated zone.",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  }
+]

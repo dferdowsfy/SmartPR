@@ -345,5 +345,27 @@
     "level": "Private",
     "jurisdiction": "Puerto Rico",
     "aliases": []
+  },
+  {
+    "id": "ddec",
+    "name": "Departamento de Desarrollo Económico y Comercio (DDEC)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "url": "https://www.ddec.pr.gov/",
+    "aliases": [
+      "Department of Economic Development and Commerce"
+    ]
+  },
+  {
+    "id": "ocif",
+    "name": "Oficina del Comisionado de Instituciones Financieras (OCIF)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "url": "https://www.ocif.pr.gov/",
+    "aliases": [
+      "Office of the Commissioner of Financial Institutions"
+    ]
   }
 ]

@@ -15,6 +15,11 @@ import type { GuidanceConcept } from "../guidance/model";
 import businessTypeQuestionsJson from "../../kb/business_type_questions.json";
 import industriesJson from "../../kb/industries.json";
 import agenciesJson from "../../kb/agencies.json";
+import incentiveProgramsJson from "../../kb/incentive_programs.json";
+import eligibilityCriteriaJson from "../../kb/eligibility_criteria.json";
+import benefitsJson from "../../kb/benefits.json";
+import projectFactsJson from "../../kb/project_facts.json";
+import incentiveSourcesJson from "../../kb/incentive_sources.json";
 
 interface AgencyEntry {
   id: string; name: string; role: string; level: string; jurisdiction: string;
@@ -141,6 +146,17 @@ export function buildSeedNodes(): SeedNode[] {
   }
 
   for (const r of kb.rules) push("rule", { ...r });
+
+  // Incentive graph: programs, criteria, benefits, facts and sources are
+  // generated from the static Act 60 catalog by scripts/build-incentive-seed.mts
+  // (deterministic; re-run after editing prCatalog.ts). Node ids match the
+  // static program ids so graph programs replace static entries 1:1 via
+  // mergeProgramCatalogs — one authority, no divergence.
+  for (const s of incentiveSourcesJson as Record<string, unknown>[]) push("regulatory_source", { ...s });
+  for (const f of projectFactsJson as Record<string, unknown>[]) push("project_fact", { ...f });
+  for (const c of eligibilityCriteriaJson as Record<string, unknown>[]) push("eligibility_criterion", { ...c });
+  for (const b of benefitsJson as Record<string, unknown>[]) push("benefit", { ...b });
+  for (const p of incentiveProgramsJson as Record<string, unknown>[]) push("tax_incentive", { ...p });
 
   return nodes;
 }
