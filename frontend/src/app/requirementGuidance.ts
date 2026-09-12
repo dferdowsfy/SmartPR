@@ -125,6 +125,20 @@ function caseDescriptor(ctx: GuidanceContext): string {
   return "";
 }
 
+/** Contextual lead: names the exact facts that triggered this requirement, so "why
+ *  you need this" reads as *their* story — the detail a professional scans for —
+ *  instead of a generic paragraph. Only regulatorily-relevant trigger facts are
+ *  named: the case descriptor (business type, municipality) is deliberately
+ *  excluded so an explanation never implies a jurisdictional or business-type
+ *  connection the rule does not assert. The regulatory reason itself is
+ *  untouched validated content. */
+function contextualLead(triggerFacts: TriggerFact[], ctx: GuidanceContext): string {
+  const es = ctx.language === "es";
+  const facts = triggerFacts.map(f => (f.label ?? "").trim()).filter(Boolean).join("; ");
+  if (!facts) return "";
+  return es ? `Tu situación: ${facts}.` : `Your situation: ${facts}.`;
+}
+
 function review(req: GuidanceRequirement, ctx: GuidanceContext, reasons: string[]): RequirementGuidance {
   const es = ctx.language === "es";
   const desc = caseDescriptor(ctx);
@@ -182,7 +196,8 @@ export function buildRequirementGuidance(req: GuidanceRequirement, ctx: Guidance
   const render = (value: string) => value.replace(/\{municipality\}/g, String(triggerFacts.find(f => f.key === "municipality")?.value ?? ""));
   const regulatoryReason = render(concept.regulatoryReason[lang]), purpose = render(concept.purpose[lang]);
   const nextAction = render(concept.nextAction[lang]), consequenceOrNextStep = render(concept.consequenceOrNextStep[lang]);
-  const why = regulatoryReason;
+  const lead = contextualLead(triggerFacts, ctx);
+  const why = lead ? `${lead} ${regulatoryReason}` : regulatoryReason;
   return {
     requirementId: concept.requirementId, status: "VALIDATED", reviewReasons: [], triggerFacts,
     regulatoryReason, purpose, nextAction, consequenceOrNextStep,

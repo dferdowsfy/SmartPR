@@ -37,7 +37,11 @@ test("same Bayamón bar: all twenty-one source-backed explanations are distinct 
       assert.equal(g.status, "VALIDATED", `${g.requirementId}: ${g.reviewReasons}`);
       assert.ok(g.triggerFacts.length && g.sources.length && g.sourceVersion);
       assert.ok(g.triggerFacts.every(f => f.ruleIds.length && f.conditionPath.includes(g.requirementId)));
-      assert.equal(g.whyThisApplies, g.regulatoryReason);
+      // The why is contextual (trigger-fact lead) but always ends with the
+      // untouched validated regulatory reason — never a rewritten rationale.
+      assert.ok(g.whyThisApplies.endsWith(g.regulatoryReason), `${g.requirementId}: why must end with the validated regulatory reason`);
+      assert.ok(g.whyThisApplies === g.regulatoryReason || /^(Your situation|Tu situación): /.test(g.whyThisApplies),
+        `${g.requirementId}: unexpected why lead`);
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }

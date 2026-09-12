@@ -3656,6 +3656,33 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <div className="rq-guidance-label">{L("What you'll do", language)}</div>
           <div>{guidance.whatYouNeedToDo}</div>
         </div>
+        {(() => {
+          // Form-consolidation honesty: one line stating exactly where this
+          // requirement's form lives — fillable in SmartPR, filed at the
+          // agency with a SmartPR-prepared worksheet, or filed directly at the
+          // agency with the issued document uploaded back here. This is the
+          // consolidation story made explicit for the professional reviewer.
+          const agency = (req.agency ?? "").trim();
+          let msg: string | null = null;
+          if (govEntry) {
+            msg = L("You can fill out and complete this form right in SmartPR.", language);
+          } else if (sampleDef) {
+            msg = agency
+              ? L("This is filed with {agency} — SmartPR prepares your worksheet so you can file it faster.", language).replace("{agency}", agency)
+              : L("SmartPR prepares your worksheet so you can file it faster.", language);
+          } else if (req.downloadKind === "filing_portal" || req.downloadKind === "form_page" || req.downloadKind === "form_pdf") {
+            msg = agency
+              ? L("This is filed directly with {agency} — upload the issued document here to keep your package complete.", language).replace("{agency}", agency)
+              : L("This is filed directly with the agency — upload the issued document here to keep your package complete.", language);
+          }
+          if (!msg) return null;
+          return (
+            <div className="rq-guidance-block">
+              <div className="rq-guidance-label">{L("Filing", language)}</div>
+              <div>{msg}</div>
+            </div>
+          );
+        })()}
         <div className="rq-guidance-block">
           <div className="rq-guidance-label">{L('Then what?', language)}</div>
           <div>{guidance.whatHappensNext}</div>

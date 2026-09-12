@@ -88,3 +88,42 @@ test("legalBasisFor falls back to the required document's citation", () => {
 test("legalBasisFor returns null when the graph has no citation", () => {
   assert.equal(legalBasisFor("RULE_DOES_NOT_EXIST", "DOC_DOES_NOT_EXIST", kb as any), null);
 });
+
+test("validated why leads with the user's specific situation, not a generic paragraph", () => {
+  const g = buildRequirementGuidance(req("DOC_WORKERS_COMP"), context);
+  assert.equal(g.status, "VALIDATED");
+  assert.ok(g.whyThisApplies.startsWith("Your situation: Hiring employees. "),
+    `unexpected lead: ${g.whyThisApplies.slice(0, 80)}`);
+  assert.ok(g.summary.startsWith("Your situation: Hiring employees."),
+    "the summary carries the same contextual lead");
+  // The validated regulatory reason itself is untouched after the lead.
+  assert.ok(g.whyThisApplies.endsWith(g.regulatoryReason));
+  assert.ok(g.whyThisApplies.includes("Hiring workers creates employer responsibilities"));
+});
+
+test("contextual lead names only regulatorily-relevant trigger facts, in both languages", () => {
+  // The patent's trigger facts (municipality, commercial activity) are the
+  // regulatory basis — named explicitly, never via an unrelated descriptor.
+  const en = buildRequirementGuidance(req("DOC_PATENTE_MUNICIPAL"), context);
+  assert.equal(en.status, "VALIDATED");
+  assert.ok(en.whyThisApplies.startsWith("Your situation: Municipality: Bayamón; Commercial activity: Bar. "),
+    `unexpected lead: ${en.whyThisApplies.slice(0, 100)}`);
+  const es = buildRequirementGuidance(req("DOC_PATENTE_MUNICIPAL"), { ...context, language: "es" });
+  assert.ok(es.whyThisApplies.startsWith("Tu situación: "),
+    `unexpected lead: ${es.whyThisApplies.slice(0, 80)}`);
+  assert.ok(es.whyThisApplies.endsWith(es.regulatoryReason));
+  const esWc = buildRequirementGuidance(req("DOC_WORKERS_COMP"), { ...context, language: "es" });
+  assert.ok(esWc.whyThisApplies.startsWith("Tu situación: Contratación de empleados. "),
+    `unexpected lead: ${esWc.whyThisApplies.slice(0, 90)}`);
+});
+
+test("contextual lead degrades gracefully with no case facts", () => {
+  const bare = buildRequirementGuidance(req("DOC_WORKERS_COMP"), {
+    ...context, municipality: undefined, businessTypeName: undefined,
+    profile: {}, discoveryAnswers: { Q_EMPLOYEES_HIRED: true },
+    engineInput: { municipalityName: "", businessTypeName: "", answers: { Q_EMPLOYEES_HIRED: true } },
+  });
+  assert.equal(bare.status, "VALIDATED");
+  assert.ok(bare.whyThisApplies.startsWith("Your situation: Hiring employees. "),
+    `unexpected lead: ${bare.whyThisApplies.slice(0, 80)}`);
+});
