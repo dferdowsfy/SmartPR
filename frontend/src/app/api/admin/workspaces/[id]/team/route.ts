@@ -105,10 +105,15 @@ export async function POST(
   );
 
   const inviteUrl = inviteUrlForToken(token);
+  const brandRows = await pool.query(
+    `SELECT company_name FROM workspace_branding WHERE workspace_id = $1`,
+    [workspaceId]
+  );
+  const brandName = brandRows.rows[0]?.company_name?.trim() || ws.rows[0].name;
   const emailed = await sendInviteEmail(
     email,
     buildInviteEmailHtml({
-      workspaceName: ws.rows[0].name,
+      workspaceName: brandName,
       role,
       inviteUrl,
       inviterEmail: ctx.email,

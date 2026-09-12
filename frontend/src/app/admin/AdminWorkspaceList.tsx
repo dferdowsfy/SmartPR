@@ -55,13 +55,13 @@ export function AdminWorkspaceList() {
           {rows.map((w) => (
             <tr key={w.id} className="border-b border-[#161616]/8 last:border-0 hover:bg-[#161616]/3">
               <td className="px-4 py-3">
-                <Link href={`/admin/workspaces/${w.id}`} className="font-medium text-[#245c5c] underline-offset-4 hover:underline">
+                <Link href={`/admin/workspaces/${w.id}`} className="font-medium text-brand underline-offset-4 hover:underline">
                   {w.name}
                 </Link>
                 <div className="text-xs text-[#5a5a5a]">{w.kind.toLowerCase()}</div>
               </td>
               <td className="px-4 py-3">
-                <span className="rounded-full bg-[#245c5c]/10 px-2.5 py-0.5 text-xs font-semibold text-[#245c5c]">
+                <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-semibold text-brand">
                   {w.plan || "free"}
                 </span>
               </td>
@@ -71,7 +71,7 @@ export function AdminWorkspaceList() {
               <td className="px-4 py-3 text-right">
                 <Link
                   href={`/admin/workspaces/${w.id}`}
-                  className="text-sm font-medium text-[#245c5c] underline-offset-4 hover:underline"
+                  className="text-sm font-medium text-brand underline-offset-4 hover:underline"
                 >
                   Manage →
                 </Link>

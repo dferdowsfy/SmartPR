@@ -144,7 +144,7 @@ function BusinessCard({ business, lang, onChanged }: { business: Business; lang:
         <div className="flex items-center gap-2 sm:border-l sm:border-[#161616]/10 sm:pl-6">
           <Link
             href={`/businesses/${business.public_id || business.id}`}
-            className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[#245c5c] px-5 text-sm font-semibold text-[#f6f3ea] transition-colors hover:bg-[#1c4949] sm:w-[150px]"
+            className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[10px] bg-brand px-5 text-sm font-semibold text-[#f6f3ea] transition-colors hover:bg-[#1c4949] sm:w-[150px]"
           >
             {lang === "es" ? "Continuar" : "Continue"} <ArrowRight className="h-4 w-4" />
           </Link>
@@ -190,7 +190,7 @@ export default function BusinessesPage() {
 
         <Link
           href="/?entry=new-business"
-          className="mt-6 inline-flex h-12 w-[210px] items-center justify-center gap-2 rounded-[10px] bg-[#245c5c] text-sm font-semibold text-[#f6f3ea] transition-colors hover:bg-[#1c4949]"
+          className="mt-6 inline-flex h-12 w-[210px] items-center justify-center gap-2 rounded-[10px] bg-brand text-sm font-semibold text-[#f6f3ea] transition-colors hover:bg-[#1c4949]"
         >
           <Plus className="h-4 w-4" /> {es ? "Comenzar una radicación" : "Start a new filing"}
         </Link>
@@ -201,7 +201,7 @@ export default function BusinessesPage() {
             value={search}
             onChange={(event) => updateSearch(event.target.value)}
             placeholder={es ? "Buscar por nombre de negocio" : "Search by business name"}
-            className="h-[54px] w-full rounded-[12px] border border-[#161616]/15 bg-white pl-11 pr-4 text-sm text-[#161616] placeholder:text-[#8a8a8a] focus:border-[#245c5c] focus:outline-none"
+            className="h-[54px] w-full rounded-[12px] border border-[#161616]/15 bg-white pl-11 pr-4 text-sm text-[#161616] placeholder:text-[#8a8a8a] focus:border-brand focus:outline-none"
           />
         </div>
         <div className="mt-6 border-b border-[#161616]/10" />
@@ -235,7 +235,7 @@ export default function BusinessesPage() {
                   {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
                     <button
                       key={number} type="button" onClick={() => setPage(number)}
-                      className={`flex h-9 w-9 items-center justify-center rounded-[8px] border text-sm ${number === page ? "border-[#245c5c] bg-[#245c5c] text-white" : "border-[#161616]/15 bg-white text-[#161616]"}`}
+                      className={`flex h-9 w-9 items-center justify-center rounded-[8px] border text-sm ${number === page ? "border-brand bg-brand text-white" : "border-[#161616]/15 bg-white text-[#161616]"}`}
                     >{number}</button>
                   ))}
                   <button

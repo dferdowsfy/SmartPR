@@ -104,7 +104,7 @@ function ReadinessRing({ percent }: { percent: number | null }) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e7e2d6" strokeWidth={stroke} />
         <circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#245c5c" strokeWidth={stroke}
+          cx={size / 2} cy={size / 2} r={r} fill="none" style={{ stroke: "var(--brand-primary)" }} strokeWidth={stroke}
           strokeDasharray={c} strokeDashoffset={c - (c * pct) / 100} strokeLinecap="round"
         />
       </svg>
@@ -140,7 +140,7 @@ function CollapsibleRow({ icon, iconBg, title, summary, children, defaultOpen }:
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
       <button
         type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open}
-        className="flex w-full items-center gap-3 rounded-2xl px-5 py-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245c5c]"
+        className="flex w-full items-center gap-3 rounded-2xl px-5 py-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${iconBg}`}>{icon}</span>
         <div className="min-w-0 flex-1">
@@ -331,14 +331,14 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           <>
             <button
               type="button" disabled={uploading || busy} onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#245c5c] px-3 py-1 text-xs font-semibold text-[#245c5c] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand px-3 py-1 text-xs font-semibold text-brand disabled:opacity-50"
             >
               <Upload className="h-3.5 w-3.5" />{uploading ? L("Uploading…", lang) : L("Upload", lang)}
             </button>
             {dl && (
               <a
                 href={dl.url} target="_blank" rel="noopener noreferrer" onClick={recordDownload}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[#245c5c] px-3 py-1 text-xs font-bold text-[#245c5c]"
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-brand px-3 py-1 text-xs font-bold text-brand"
               >
                 {downloaded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
                 {downloaded ? L("Open again", lang) : L(downloadKindLabel(dl.kind), lang)}
@@ -351,7 +351,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
             {definition && (
               <button
                 type="button" onClick={() => setFormOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#245c5c] px-3 py-1 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
               >
                 {deliverablesLocked ? <Lock className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}{L("Complete document", lang)}
               </button>
@@ -383,7 +383,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
         )}
       </div>
       {downloaded && !completed && (
-        <p className="mt-2 text-xs font-semibold text-[#245c5c]">
+        <p className="mt-2 text-xs font-semibold text-brand">
           ✓ {L("Got it? Upload the finished document when you come back.", lang)}
         </p>
       )}
@@ -551,7 +551,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
       <TopNav active="businesses" />
       <main className="mx-auto max-w-7xl px-5 py-8">
         <div className="flex items-center justify-between">
-          <Link href="/businesses" className="text-sm font-semibold text-[#245c5c]">← Back</Link>
+          <Link href="/businesses" className="text-sm font-semibold text-brand">← Back</Link>
           <Link href="/businesses" className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-medium text-white">{L("My Businesses", lang)}</Link>
         </div>
 
@@ -575,7 +575,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 {L("Business details", lang)}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showBusinessDetails ? "rotate-180" : ""}`} />
               </button>
-              <Link href={`/businesses/${shortId}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-[#245c5c] px-5 py-3 text-sm font-medium text-[#f6f3ea]">{L("Start New Filing / Renewal", lang)}</Link>
+              <Link href={`/businesses/${shortId}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-medium text-[#f6f3ea]">{L("Start New Filing / Renewal", lang)}</Link>
             </div>
           </div>
 
@@ -602,7 +602,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{L("Overall readiness", lang)}</div>
               <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessInfo.cls}`}>{readinessInfo.text}</span>
               <p className="mt-2 text-sm text-slate-600">{derived.totalApplicable ? (lang === "es" ? `${derived.completed} de ${derived.totalApplicable} requisitos completados.` : `${derived.completed} of ${derived.totalApplicable} requirements complete.`) : L("No applicable requirements recorded yet.", lang)}</p>
-              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-1 text-sm font-semibold text-[#245c5c] hover:underline">{L("View all requirements", lang)}</button>
+              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-1 text-sm font-semibold text-brand hover:underline">{L("View all requirements", lang)}</button>
             </div>
           </section>
 
@@ -615,12 +615,12 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
         {nextBestAction && (
           <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-950/[0.02] sm:flex-row sm:items-center">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#245c5c]"><ArrowRight className="h-4 w-4 text-white" /></span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand"><ArrowRight className="h-4 w-4 text-white" /></span>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-medium text-slate-500">{L("Next best action", lang)}</div>
               <div className="font-bold text-[#161616]">{nextBestAction.name}</div>
             </div>
-            <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="inline-flex items-center justify-center rounded-lg bg-[#245c5c] px-5 py-2.5 text-sm font-medium text-[#f6f3ea]">Continue</a>
+            <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="inline-flex items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea]">Continue</a>
           </div>
         )}
 
@@ -640,12 +640,12 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                         <div className="truncate font-semibold text-[#161616]">{item.name}</div>
                       </div>
                       <span className="hidden sm:inline-flex whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-rose-700">{requirementStatusText(item.status, lang).toUpperCase()}</span>
-                      <a href={`#obligation-${item.id}`} onClick={() => setShowAllRequirements(true)} className="shrink-0 rounded-lg bg-[#245c5c] px-3.5 py-1.5 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245c5c]">{actionLabelForStatus(item.status, Boolean(item.matter_title), lang)}</a>
+                      <a href={`#obligation-${item.id}`} onClick={() => setShowAllRequirements(true)} className="shrink-0 rounded-lg bg-brand px-3.5 py-1.5 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{actionLabelForStatus(item.status, Boolean(item.matter_title), lang)}</a>
                     </div>
                   ))}
                 </div>
               ) : <Empty text={L("No missing requirements are recorded.", lang)} />}
-              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-3 text-sm font-semibold text-[#245c5c] hover:underline">{L("View all requirements", lang)}</button>
+              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-3 text-sm font-semibold text-brand hover:underline">{L("View all requirements", lang)}</button>
             </div>
           </section>
 
@@ -668,7 +668,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   ))}
                 </div>
               ) : <Empty text={L(DUE_DATE_UNKNOWN_MESSAGE, lang)} />}
-              <Link href={`/calendar?business=${business.id}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">{L("View full calendar", lang)}</Link>
+              <Link href={`/calendar?business=${business.id}`} className="mt-3 inline-block text-sm font-semibold text-brand hover:underline">{L("View full calendar", lang)}</Link>
             </div>
           </section>
         </div>
@@ -692,7 +692,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                         <div className="flex flex-wrap items-center gap-3">
                           <StatusBadge status={matter.status === "READY" ? "CURRENT" : matter.status === "DRAFT" ? "IN_PROGRESS" : matter.status as ObligationStatus} lang={lang} />
                           <ScorePill score={matter.readiness_score} />
-                          {matter.submission_id && <Link href={`/?entry=new-business&resume=${matter.submission_id}`} className="text-xs font-semibold text-[#245c5c]">Resume →</Link>}
+                          {matter.submission_id && <Link href={`/?entry=new-business&resume=${matter.submission_id}`} className="text-xs font-semibold text-brand">Resume →</Link>}
                           <button onClick={() => void completeMatter(matter.id)} className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600">{L("Mark filing complete", lang)}</button>
                         </div>
                       </div>
@@ -774,7 +774,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
               {L("All requirements", lang)}
               <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.totalApplicable}</span>
-              <button type="button" onClick={() => setShowAllRequirements(false)} className="text-sm font-semibold text-[#245c5c] hover:underline">{L("Hide", lang)}</button>
+              <button type="button" onClick={() => setShowAllRequirements(false)} className="text-sm font-semibold text-brand hover:underline">{L("Hide", lang)}</button>
             </div>
             <div className="space-y-3 p-5">
               {outstandingDisplay.length ? outstandingDisplay.map((item) => (

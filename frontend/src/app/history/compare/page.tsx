@@ -41,7 +41,7 @@ function SideCard({ side, label }: { side: Side; label: string }) {
           <div className="text-lg font-bold text-[#161616]">{side.document_count}</div>
         </div>
       </div>
-      <Link href={`/history/${side.id}`} className="text-xs text-[#245c5c] font-medium mt-3 inline-block">View details →</Link>
+      <Link href={`/history/${side.id}`} className="text-xs text-brand font-medium mt-3 inline-block">View details →</Link>
     </div>
   );
 }
@@ -65,7 +65,7 @@ function CompareInner() {
 
   return (
     <div className="max-w-5xl mx-auto px-5 py-8">
-      <Link href="/history" className="text-sm text-[#245c5c] font-medium">← Back to History</Link>
+      <Link href="/history" className="text-sm text-brand font-medium">← Back to History</Link>
       <h1 className="text-2xl font-bold text-[#161616] mt-2 mb-6">Compare Scenarios</h1>
 
       <div className="flex flex-col md:flex-row gap-4 items-stretch">
@@ -91,7 +91,7 @@ function CompareInner() {
             ) : <div className="text-xs text-[#161616]/40">None</div>}
           </div>
           <div>
-            <div className="text-xs font-bold uppercase tracking-wide text-[#245c5c] mb-2">Only in Scenario B ({c.onlyInB?.length || 0})</div>
+            <div className="text-xs font-bold uppercase tracking-wide text-brand mb-2">Only in Scenario B ({c.onlyInB?.length || 0})</div>
             {c.onlyInB && c.onlyInB.length ? (
               <ul className="text-sm text-[#161616]/80 space-y-1">{c.onlyInB.map((x) => <li key={x}>• {x}</li>)}</ul>
             ) : <div className="text-xs text-[#161616]/40">None</div>}

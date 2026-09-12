@@ -64,9 +64,9 @@ export default function NewMatterPage({ params }: { params: Promise<{ id: string
     <div className="min-h-screen bg-[#f4f1ea]">
       <TopNav active="businesses" />
       <main className="mx-auto max-w-2xl px-5 py-8">
-        <Link href={`/businesses/${id}`} className="text-sm font-semibold text-[#245c5c]">← {L("Business profile", lang)}</Link>
+        <Link href={`/businesses/${id}`} className="text-sm font-semibold text-brand">← {L("Business profile", lang)}</Link>
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245c5c]">{L("New matter", lang)}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">{L("New matter", lang)}</p>
           <h1 className="mt-1 text-2xl font-bold text-[#161616]">{L("Start a filing or renewal", lang)}</h1>
           <p className="mt-1 text-sm text-slate-500">{L("The matter stays beneath this business and opens in the same SmartPR rules and document workflow.", lang)}</p>
           <form onSubmit={submit} className="mt-6 space-y-4">

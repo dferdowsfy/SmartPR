@@ -154,7 +154,7 @@ export default function WorkspacePage() {
         {/* Status banner */}
         <div
           className={`rounded-xl px-5 py-4 mb-8 text-white flex flex-wrap items-center gap-x-6 gap-y-1 ${
-            ready ? "bg-[#245c5c]" : "bg-amber-600"
+            ready ? "bg-brand" : "bg-amber-600"
           }`}
         >
           <div className="font-semibold">{ready ? t("READY FOR SUBMISSION") : t("NEEDS REVIEW")}</div>
@@ -278,7 +278,7 @@ export default function WorkspacePage() {
                     <div className="text-sm text-[#161616]/70 mt-0.5">{t(f.description)}</div>
                   )}
                   {f.recommended_action && (
-                    <div className="text-sm text-[#245c5c] mt-1">→ {t(f.recommended_action)}</div>
+                    <div className="text-sm text-brand mt-1">→ {t(f.recommended_action)}</div>
                   )}
                 </div>
               ))}

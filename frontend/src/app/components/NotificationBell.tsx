@@ -135,7 +135,7 @@ export function NotificationBell() {
             >
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <div className="text-sm font-bold text-[#161616]">Reminders</div>
-                <Link href="/calendar" onClick={() => setOpen(false)} className="text-xs font-semibold text-[#245c5c] hover:underline">
+                <Link href="/calendar" onClick={() => setOpen(false)} className="text-xs font-semibold text-brand hover:underline">
                   View calendar
                 </Link>
               </div>
@@ -164,7 +164,7 @@ export function NotificationBell() {
                             onClick={() => act(reminder.id, "read")}
                             title="Mark as read"
                             aria-label="Mark as read"
-                            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-[#245c5c]"
+                            className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-brand"
                           >
                             <Check size={15} />
                           </button>
@@ -183,7 +183,7 @@ export function NotificationBell() {
                         <Link
                           href={`/businesses/${reminder.business_public_id || reminder.business_id}#obligation-${reminder.obligation_id}`}
                           onClick={() => setOpen(false)}
-                          className="mt-1 inline-block text-xs font-semibold text-[#245c5c] hover:underline"
+                          className="mt-1 inline-block text-xs font-semibold text-brand hover:underline"
                         >
                           Open filing →
                         </Link>

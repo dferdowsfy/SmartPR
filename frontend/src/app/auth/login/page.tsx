@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser, isAuthConfigured } from "../../../lib/supabase/client";
 import { authRedirectUrl, passwordResetRedirectUrl, verificationRedirectUrl } from "../../../lib/siteUrl";
-import { SmartPRLogo } from "../../components/brand/SmartPRLogo";
+import { BrandLogo } from "../../components/brand/BrandProvider";
 import { GUEST_INTAKE, guestContinuePath, sanitizeNext } from "../../../lib/safeNext";
 
 type Mode = "signin" | "forgot" | "link";
@@ -187,7 +187,7 @@ function LoginInner() {
       </p>
 
       {inviteToken && !inviteAccepted && (
-        <div className="mb-6 rounded-lg border border-[#245c5c]/30 bg-[#245c5c]/8 px-4 py-3 text-sm text-[#161616]">
+        <div className="mb-6 rounded-lg border border-brand/30 bg-brand/8 px-4 py-3 text-sm text-[#161616]">
           You&apos;ve been invited to join a SmartPR workspace. Log in with the invited email address to accept.
         </div>
       )}
@@ -208,7 +208,7 @@ function LoginInner() {
           <div>
             <div className="mb-1 flex items-baseline justify-between">
               <label className="text-sm font-medium">Password</label>
-              <button type="button" onClick={() => swapMode("forgot")} className="text-sm text-[#245c5c] underline-offset-4 hover:underline">
+              <button type="button" onClick={() => swapMode("forgot")} className="text-sm text-brand underline-offset-4 hover:underline">
                 Forgot password?
               </button>
             </div>
@@ -221,7 +221,7 @@ function LoginInner() {
         )}
         <button type="submit"
           disabled={busy || !email || (mode === "signin" && password.length < 6)}
-          className="w-full rounded-lg bg-[#245c5c] py-3 font-medium text-[#f6f3ea] disabled:opacity-50">
+          className="w-full rounded-lg bg-brand py-3 font-medium text-[#f6f3ea] disabled:opacity-50">
           {busy ? (mode === "forgot" ? "Sending…" : mode === "link" ? "Sending…" : "Logging in…")
                 : (mode === "forgot" ? "Send reset link" : mode === "link" ? "Email me a sign-in link" : "Login")}
         </button>
@@ -237,7 +237,7 @@ function LoginInner() {
       {info && <div className="mt-3 text-sm text-[#1f5a3a]">{info}</div>}
       {showResend && (
         <button type="button" onClick={() => void resendVerification()} disabled={busy || !email}
-          className="mt-3 block text-sm font-medium text-[#245c5c] underline-offset-4 hover:underline disabled:opacity-50">
+          className="mt-3 block text-sm font-medium text-brand underline-offset-4 hover:underline disabled:opacity-50">
           {busy ? "Sending…" : "Resend verification email"}
         </button>
       )}
@@ -275,7 +275,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f4f1ea] text-[#161616]">
       <header className="px-6 py-5">
-        <Link href="/" aria-label="SmartPR home"><SmartPRLogo size="auth" /></Link>
+        <Link href="/" aria-label="Home"><BrandLogo size="auth" /></Link>
       </header>
       <main className="mx-auto grid w-full max-w-md flex-1 place-items-center px-6 py-10">
         <Suspense fallback={<div className="text-[#5a5a5a]">Loading…</div>}>

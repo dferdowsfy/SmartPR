@@ -91,11 +91,11 @@ function CalendarContent() {
       <TopNav active="calendar" />
       <main className="mx-auto max-w-5xl px-5 py-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245c5c]">{L("Due dates", lang)}</p><h1 className="mt-1 text-3xl font-bold text-[#161616]">{L("Compliance calendar", lang)}</h1><p className="mt-1 text-sm text-slate-500">{L("Portfolio-level deadlines linked to the relevant business and obligation.", lang)}</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">{L("Due dates", lang)}</p><h1 className="mt-1 text-3xl font-bold text-[#161616]">{L("Compliance calendar", lang)}</h1><p className="mt-1 text-sm text-slate-500">{L("Portfolio-level deadlines linked to the relevant business and obligation.", lang)}</p></div>
           <select value={business} onChange={(event) => setBusiness(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-[#161616]"><option value="">{L("All businesses", lang)}</option>{data?.businesses?.map((item) => <option key={item.id} value={item.id}>{item.legal_name}</option>)}</select>
         </div>
         <div className="mt-3 text-sm">
-          <Link href="/filings" className="font-semibold text-[#245c5c] hover:underline">{L("View annual filings →", lang)}</Link>
+          <Link href="/filings" className="font-semibold text-brand hover:underline">{L("View annual filings →", lang)}</Link>
           <span className="ml-2 text-slate-400">{L("yearly renewals like Informe Anual and Patente, in one place.", lang)}</span>
         </div>
         <div className="mt-6 flex flex-wrap gap-2">{[...HORIZONS.map((days) => ({ key: days as Horizon })), { key: "all" as Horizon }].map(({ key }) => {

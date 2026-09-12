@@ -62,13 +62,13 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
     <div className="min-h-screen bg-[#f4f1ea]">
       <TopNav active="history" />
       <div className="max-w-6xl mx-auto px-5 py-8">
-        <Link href="/history" className="text-sm text-[#245c5c] font-medium">← Back to History</Link>
+        <Link href="/history" className="text-sm text-brand font-medium">← Back to History</Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-3">
           {/* Main column */}
           <div className="lg:col-span-2">
             {/* Summary */}
-            <Card title="Submission Summary" accent="#245c5c">
+            <Card title="Submission Summary" accent="var(--brand-primary)">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <Field label="Municipality" value={s.municipality} />
                 <Field label="Business Type" value={s.business_type} />
@@ -183,7 +183,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
                 <div className="relative pl-4 border-l-2 border-slate-200 space-y-3">
                   {d.timeline!.map((t, i) => (
                     <div key={i} className="relative">
-                      <span className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-[#245c5c] border-2 border-white" />
+                      <span className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-brand border-2 border-white" />
                       <div className="text-sm text-[#161616]">{t.event}</div>
                       <div className="text-xs text-[#161616]/50">{fmtDateTime(t.created_at)}</div>
                     </div>
@@ -234,7 +234,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
                   {insights.avgReadiness != null && (
                     <div className="pt-1 border-t border-slate-100">
                       <span className="text-xs text-[#161616]/60">Average Readiness: </span>
-                      <span className="font-bold" style={{ color: "#245c5c" }}>{insights.avgReadiness}%</span>
+                      <span className="font-bold" style={{ color: "var(--brand-primary)" }}>{insights.avgReadiness}%</span>
                     </div>
                   )}
                 </div>

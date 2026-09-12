@@ -3,6 +3,15 @@
 :root {
   --background: #f4f1ea;
   --foreground: #161616;
+  /* Per-workspace white-label brand color. BrandProvider overrides this at
+     runtime from workspace_branding.primary_color. */
+  --brand-primary: #245c5c;
+}
+
+/* Exposes the runtime brand color as Tailwind tokens: bg-brand, text-brand,
+   border-brand, ring-brand, bg-brand/10, etc. all follow --brand-primary. */
+@theme inline {
+  --color-brand: var(--brand-primary);
 }
 
 html,

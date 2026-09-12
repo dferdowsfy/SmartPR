@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         </Link>
       </header>
       <main className="mx-auto max-w-2xl px-6 py-16">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#245c5c]">Legal</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Legal</p>
         <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight">Privacy Policy</h1>
         <p className="mt-3 text-sm text-[#5a5a5a]">Last updated August 20, 2026</p>
 
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="font-[family-name:var(--font-display)] text-2xl font-medium">Contact</h2>
             <p className="mt-3">
-              Questions about this policy: <a className="text-[#245c5c] underline-offset-4 hover:underline" href="mailto:privacy@smartpr.app">privacy@smartpr.app</a>
+              Questions about this policy: <a className="text-brand underline-offset-4 hover:underline" href="mailto:privacy@smartpr.app">privacy@smartpr.app</a>
             </p>
           </section>
         </div>

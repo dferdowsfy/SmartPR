@@ -44,7 +44,7 @@ function FilingsContent() {
       <main className="mx-auto max-w-5xl px-5 py-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245c5c]">{L("Recurring compliance", lang)}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">{L("Recurring compliance", lang)}</p>
             <h1 className="mt-1 text-3xl font-bold text-[#161616]">{L("Annual filings", lang)}</h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-500">
               {L("Every yearly filing for every business — Informe Anual, Patente, CRIM — in one place. SmartPR reminds you 90, 60, 30 and 7 days out, and queues next year's filing the moment you complete this one.", lang)}
@@ -73,7 +73,7 @@ function FilingsContent() {
         <div className="mt-4 text-sm text-slate-500">
           <span><span className="font-bold text-[#161616] tabular-nums">{counts.total}</span> {es ? `radicación${counts.total === 1 ? "" : "es"} anual${counts.total === 1 ? "" : "es"} en seguimiento` : `annual filing${counts.total === 1 ? "" : "s"} tracked`}</span>
           <span className="mx-2 text-slate-300">·</span>
-          <Link href="/calendar" className="font-semibold text-[#245c5c] hover:underline">{L("View full compliance calendar →", lang)}</Link>
+          <Link href="/calendar" className="font-semibold text-brand hover:underline">{L("View full compliance calendar →", lang)}</Link>
         </div>
 
         {data === null ? (

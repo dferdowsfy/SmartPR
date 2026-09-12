@@ -32,7 +32,7 @@ interface AuditEntry {
 const inputCls =
   "rounded-lg border border-[#161616]/22 bg-[#fbf8f2] px-3 py-2 text-sm placeholder:text-[#5a5a5a]";
 const btnPrimary =
-  "rounded-lg bg-[#245c5c] px-4 py-2 text-sm font-medium text-[#f6f3ea] disabled:opacity-50";
+  "rounded-lg bg-brand px-4 py-2 text-sm font-medium text-[#f6f3ea] disabled:opacity-50";
 const btnGhost =
   "rounded-lg border border-[#161616]/22 px-4 py-2 text-sm font-medium text-[#161616] hover:bg-[#161616]/5 disabled:opacity-50";
 
@@ -247,7 +247,7 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
             onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm font-medium ${
               tab === t
-                ? "border-b-2 border-[#245c5c] text-[#161616]"
+                ? "border-b-2 border-brand text-[#161616]"
                 : "text-[#5a5a5a] hover:text-[#161616]"
             }`}
           >
@@ -286,7 +286,7 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
             {lastInviteUrl && (
               <div className="mt-3 rounded-lg bg-[#161616]/5 px-3 py-2 text-xs">
                 <span className="font-medium">Invite link:</span>{" "}
-                <span className="break-all text-[#245c5c]">{lastInviteUrl}</span>
+                <span className="break-all text-brand">{lastInviteUrl}</span>
               </div>
             )}
           </div>
@@ -304,7 +304,7 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => void resendInvite(i.id)} disabled={busy} className="text-sm text-[#245c5c] underline-offset-4 hover:underline disabled:opacity-50">
+                      <button onClick={() => void resendInvite(i.id)} disabled={busy} className="text-sm text-brand underline-offset-4 hover:underline disabled:opacity-50">
                         Resend
                       </button>
                       <button onClick={() => void revokeInvite(i.id, i.email)} className="text-sm text-[#8a2f2f] underline-offset-4 hover:underline">

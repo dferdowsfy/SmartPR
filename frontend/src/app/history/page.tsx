@@ -42,7 +42,7 @@ export default function HistoryPage() {
           {selected.length === 2 && (
             <button
               onClick={() => router.push(`/history/compare?a=${selected[0]}&b=${selected[1]}`)}
-              className="bg-[#245c5c] text-white rounded-full px-5 py-2 text-sm font-medium"
+              className="bg-brand text-white rounded-full px-5 py-2 text-sm font-medium"
             >
               Compare 2 scenarios →
             </button>
@@ -50,7 +50,7 @@ export default function HistoryPage() {
         </div>
         <p className="text-[#161616]/60 text-sm mb-6">
           Your compliance workspace — revisit prior assessments, compare scenarios, and resume unfinished work.
-          {selected.length === 1 && <span className="text-[#245c5c] font-medium"> Select one more to compare.</span>}
+          {selected.length === 1 && <span className="text-brand font-medium"> Select one more to compare.</span>}
         </p>
 
         {!enabled && <NotConnected />}
@@ -64,7 +64,7 @@ export default function HistoryPage() {
         {enabled && rows && rows.length > 0 && (
           <div className="space-y-3">
             {rows.map((r) => (
-              <div key={r.id} className={`bg-white border rounded-2xl px-5 py-4 flex items-center gap-4 ${selected.includes(r.id) ? "border-[#245c5c] ring-1 ring-[#245c5c]/30" : "border-slate-200"}`}>
+              <div key={r.id} className={`bg-white border rounded-2xl px-5 py-4 flex items-center gap-4 ${selected.includes(r.id) ? "border-brand ring-1 ring-brand/30" : "border-slate-200"}`}>
                 <input
                   type="checkbox"
                   checked={selected.includes(r.id)}

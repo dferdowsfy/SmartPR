@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 import "./validador.css";
 import { AuthRecoveryRedirect } from "./components/AuthRecoveryRedirect";
+import { BrandProvider } from "./components/brand/BrandProvider";
 
 const sans = IBM_Plex_Sans({
   subsets: ["latin", "latin-ext"],
@@ -58,7 +59,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${sans.variable} ${display.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col"><AuthRecoveryRedirect />{children}</body>
+      <body className="min-h-full flex flex-col"><BrandProvider><AuthRecoveryRedirect />{children}</BrandProvider></body>
     </html>
   );
 }

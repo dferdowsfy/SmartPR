@@ -34,7 +34,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
       <TopNav active="businesses" />
       <main className="mx-auto max-w-3xl px-5 py-12 sm:px-6">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#245c5c]">Workspace</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Workspace</p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight sm:text-5xl">
           My businesses
         </h1>
@@ -44,7 +44,7 @@ export default function DashboardPage() {
 
         <Link
           href="/?entry=new-business"
-          className="mt-8 inline-flex h-12 items-center rounded-lg bg-[#245c5c] px-5 text-sm font-medium text-[#f6f3ea]"
+          className="mt-8 inline-flex h-12 items-center rounded-lg bg-brand px-5 text-sm font-medium text-[#f6f3ea]"
         >
           Start a new filing
         </Link>
@@ -66,7 +66,7 @@ export default function DashboardPage() {
                 </p>
                 <Link
                   href={`/businesses/${row.public_id || row.id}`}
-                  className="justify-self-start text-sm text-[#245c5c] underline-offset-4 hover:underline sm:justify-self-end"
+                  className="justify-self-start text-sm text-brand underline-offset-4 hover:underline sm:justify-self-end"
                 >
                   Continue
                 </Link>

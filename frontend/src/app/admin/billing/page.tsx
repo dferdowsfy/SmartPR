@@ -115,7 +115,7 @@ export default function AdminBillingPage() {
               padding: "10px 16px",
               borderRadius: 8,
               border: 0,
-              background: "#245c5c",
+              background: "var(--brand-primary)",
               color: "#fff",
               fontWeight: 600,
             }}
@@ -127,7 +127,7 @@ export default function AdminBillingPage() {
         {error && (
           <p style={{ color: "#b00020", marginBottom: 12, fontWeight: 600 }}>{error}</p>
         )}
-        {msg && <p style={{ color: "#245c5c", marginBottom: 12 }}>{msg}</p>}
+        {msg && <p style={{ color: "var(--brand-primary)", marginBottom: 12 }}>{msg}</p>}
         {tempPassword && (
           <div
             style={{

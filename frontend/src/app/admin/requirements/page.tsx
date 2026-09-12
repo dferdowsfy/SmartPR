@@ -246,7 +246,7 @@ export default function AdminRequirementsPage() {
                   {SOURCE_OPTIONS.map((o) => <option key={o.label} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
-              <button onClick={runDiscovery} disabled={busy === "discover"} className="mt-3 rounded-full bg-[#245c5c] px-5 py-2 text-sm font-medium text-white disabled:opacity-50">
+              <button onClick={runDiscovery} disabled={busy === "discover"} className="mt-3 rounded-full bg-brand px-5 py-2 text-sm font-medium text-white disabled:opacity-50">
                 {busy === "discover" ? "Crawling…" : "Run discovery"}
               </button>
             </div>
@@ -278,7 +278,7 @@ export default function AdminRequirementsPage() {
                     {(lastRun.data.sourcesCrawled ?? []).map((s) => (
                       <div key={s.seedUrl} className="rounded border border-slate-100 p-2">
                         <b>{s.agency}</b><br />Visited {s.pagesVisited} page(s), found {s.documentsFound} document(s).<br />
-                        <a className="text-[#245c5c] underline" href={s.seedUrl} target="_blank" rel="noreferrer">Open seed</a>
+                        <a className="text-brand underline" href={s.seedUrl} target="_blank" rel="noreferrer">Open seed</a>
                       </div>
                     ))}
                   </div>
@@ -321,12 +321,12 @@ export default function AdminRequirementsPage() {
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs">
                           {item.source_url && <a className="rounded-full border border-slate-300 px-3 py-1 text-[#161616]" href={item.source_url} target="_blank" rel="noreferrer">View source page</a>}
-                          {downloadUrl && <a className="rounded-full border border-[#245c5c] px-3 py-1 text-[#245c5c]" href={downloadUrl} target="_blank" rel="noreferrer">View sourced file</a>}
+                          {downloadUrl && <a className="rounded-full border border-brand px-3 py-1 text-brand" href={downloadUrl} target="_blank" rel="noreferrer">View sourced file</a>}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
                         {ACTIONS[item.item_kind].map((a) => (
-                          <button key={a.action} title={a.help} onClick={() => act(item, a.action)} disabled={busy === item.item_id + a.action} className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:opacity-50 ${a.primary ? "bg-[#245c5c] text-white" : "border border-slate-300 text-[#161616]"}`}>
+                          <button key={a.action} title={a.help} onClick={() => act(item, a.action)} disabled={busy === item.item_id + a.action} className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:opacity-50 ${a.primary ? "bg-brand text-white" : "border border-slate-300 text-[#161616]"}`}>
                             {a.label}
                           </button>
                         ))}

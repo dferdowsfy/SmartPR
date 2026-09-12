@@ -24,8 +24,11 @@ export async function POST(
   const ctx = gate.ctx;
 
   const inv = await pool.query(
-    `SELECT i.id, i.workspace_id, i.email, i.role, w.name AS workspace_name
-       FROM workspace_invites i JOIN workspaces w ON w.id = i.workspace_id
+    `SELECT i.id, i.workspace_id, i.email, i.role, w.name AS workspace_name,
+            b.company_name AS brand_name
+       FROM workspace_invites i
+       JOIN workspaces w ON w.id = i.workspace_id
+       LEFT JOIN workspace_branding b ON b.workspace_id = i.workspace_id
       WHERE i.id = $1 AND i.accepted_at IS NULL`,
     [inviteId]
   );
@@ -40,7 +43,7 @@ export async function POST(
   const emailed = await sendInviteEmail(
     inv.rows[0].email,
     buildInviteEmailHtml({
-      workspaceName: inv.rows[0].workspace_name,
+      workspaceName: inv.rows[0].brand_name || inv.rows[0].workspace_name,
       role: inv.rows[0].role,
       inviteUrl,
       inviterEmail: ctx.email,

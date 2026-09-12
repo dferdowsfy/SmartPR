@@ -7,7 +7,7 @@ import { Check, Eye, EyeOff } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
 import { verificationRedirectUrl } from "../../lib/siteUrl";
 import styles from "./signup.module.css";
-import { SmartPRLogo } from "../components/brand/SmartPRLogo";
+import { BrandLogo } from "../components/brand/BrandProvider";
 import { trackAcquisition } from "../restaurants/analytics";
 import { GUEST_INTAKE, sanitizeNext } from "../../lib/safeNext";
 
@@ -125,7 +125,7 @@ function SignupForm() {
     <main className={styles.shell}>
       <aside className={styles.leftPanel}>
         <div className={styles.glow} />
-        <Link href="/"><SmartPRLogo className={styles.logo} inverted size="auth" /></Link>
+        <Link href="/"><BrandLogo className={styles.logo} inverted size="auth" /></Link>
         <div className={styles.pitch}>
           <h1>{isSpanish ? "Todo lo que el cumplimiento en Puerto Rico necesita, en un solo lugar." : "Everything Puerto Rico compliance needs, in one place."}</h1>
           <p>{isSpanish ? "Únete a dueños de negocios, gestores, CPA y bufetes que usan SmartPR para adelantarse a cada requisito." : "Join business owners, gestores, CPAs, and law firms who use SmartPR to stay ahead of every requirement."}</p>
@@ -136,7 +136,7 @@ function SignupForm() {
 
       <section className={styles.formPanel}>
         <div className={styles.topBar}>
-          <Link className={styles.mobileLogo} href="/"><SmartPRLogo className={styles.logo} size="auth" /></Link>
+          <Link className={styles.mobileLogo} href="/"><BrandLogo className={styles.logo} size="auth" /></Link>
           <div><Link href={`/auth/login?next=${encodeURIComponent(nextPath)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""}`}>{t("Log in")}</Link><LanguageToggle language={language} onChange={setLanguage} /></div>
         </div>
         <div className={styles.formWrap}>

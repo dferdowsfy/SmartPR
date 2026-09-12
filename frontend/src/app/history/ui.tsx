@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { createPortal } from "react-dom";
 import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw, FileText } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
-import { SmartPRLogo } from "../components/brand/SmartPRLogo";
+import { BrandLogo } from "../components/brand/BrandProvider";
 import { NotificationBell } from "../components/NotificationBell";
 import { readLang, setLang } from "../useLang";
 
@@ -118,7 +118,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
       <div className="appbar-inner">
         <div className="appbar-left">
           <Link href={user ? "/businesses" : "/"} className="brand" aria-label="SmartPR home">
-            <SmartPRLogo size="app" />
+            <BrandLogo size="app" />
           </Link>
         </div>
 
@@ -241,7 +241,7 @@ export function statusLabel(score: number | null | undefined, stored?: string | 
 export function scoreColor(score: number | null | undefined): string {
   if (score == null) return "#5a5a5a";
   if (score >= 90) return "#1f5a3a";
-  if (score >= 70) return "#245c5c";
+  if (score >= 70) return "var(--brand-primary)";
   if (score >= 40) return "#8a5a12";
   return "#8a2f2f";
 }

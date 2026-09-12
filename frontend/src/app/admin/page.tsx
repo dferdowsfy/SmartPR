@@ -22,7 +22,7 @@ export default async function AdminHome() {
             <p className="mt-2 text-sm text-[#5a5a5a]">
               This area is restricted to SmartPR super admins.
             </p>
-            <Link href="/businesses" className="mt-4 inline-block text-sm font-medium text-[#245c5c] underline-offset-4 hover:underline">
+            <Link href="/businesses" className="mt-4 inline-block text-sm font-medium text-brand underline-offset-4 hover:underline">
               Back to your businesses
             </Link>
           </div>
