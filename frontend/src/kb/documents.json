@@ -311,7 +311,9 @@
     "agency_note": "Not government-issued — request the declaration page or coverage letter from the business's own insurance carrier.",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "No government form: obtained from the business's licensed insurance carrier/agent (e.g., ACORD certificate). Upload the issued certificate as evidence."
+    "download_note": "No government form: obtained from the business's licensed insurance carrier/agent (e.g., ACORD certificate). Upload the issued certificate as evidence.",
+    "citation_confidence": "not_applicable",
+    "citation_note": "Private instrument: certificate issued by the business's insurance carrier. No statutory citation applies; required as evidence of coverage, not by a cited statute."
   },
   {
     "id": "DOC_WORKERS_COMP",
@@ -337,7 +339,9 @@
     "agency_note": "Not government-issued — provided by the landlord/property owner (e.g., lease, written authorization).",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Private contract between tenant and property owner; no government form. Upload the signed lease as evidence."
+    "download_note": "Private contract between tenant and property owner; no government form. Upload the signed lease as evidence.",
+    "citation_confidence": "not_applicable",
+    "citation_note": "Private instrument: contract between the business and the property owner. No statutory citation applies; required as evidence of site control."
   },
   {
     "id": "DOC_PROPERTY_DEED",
@@ -435,7 +439,9 @@
     "agency_note": "No single URL — the issuing office depends on the municipality; contact the mayor's office / permits office of the municipality where the business operates.",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Municipality/Hacienda-dependent; no single official form. Check the municipal permits office."
+    "download_note": "Municipality/Hacienda-dependent; no single official form. Check the municipal permits office.",
+    "citation_confidence": "not_applicable",
+    "citation_note": "Municipal permit; no exact statutory provision found. Promoter licensing (Ley 182-1996, OSPEP) governs promoters, not this per-event municipal permit — not cited to avoid misattribution."
   },
   {
     "id": "DOC_IMPORT_EXPORT_REG",
@@ -650,7 +656,9 @@
     "agency_canonical": "DRNA",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Private contract with an authorized waste hauler or municipal service; no government form."
+    "download_note": "Private contract with an authorized waste hauler or municipal service; no government form.",
+    "citation_confidence": "not_applicable",
+    "citation_note": "Private contract with a licensed solid-waste hauler. No single statutory provision found requiring it as a named prerequisite (hauler licensing sits with ADS/NTSP); required by municipal practice. Left uncited rather than stretched."
   },
   {
     "id": "DOC_PARKING_COMPLIANCE",
@@ -745,7 +753,9 @@
     "agency_canonical": "ATI (Autoridad de Transporte Integrado)",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "No public form verified: cargo manifests for the Vieques/Culebra ferries are coordinated with the ATI maritime operator (ati.pr.gov)."
+    "download_note": "No public form verified: cargo manifests for the Vieques/Culebra ferries are coordinated with the ATI maritime operator (ati.pr.gov).",
+    "citation_confidence": "not_applicable",
+    "citation_note": "Procedural document issued by the ATM ferry operator for cargo logistics. No statutory citation found; left uncited rather than stretched."
   },
   {
     "id": "DOC_NPDES_INDUSTRIAL",
@@ -926,7 +936,9 @@
     "agency_note": "Not government-downloadable — issued by a Puerto Rico notary public of the user's choice.",
     "download_url": null,
     "download_kind": "none",
-    "download_note": "Sworn statement executed before a PR notary; no government form. The notary prepares it."
+    "download_note": "Sworn statement executed before a PR notary; no government form. The notary prepares it.",
+    "citation_confidence": "not_applicable",
+    "citation_note": "Procedural instrument: sworn statement before a notary public. No statutory citation applies; evidentiary, not statute-created."
   },
   {
     "id": "DOC_OPPE_INSTALLER_REG",

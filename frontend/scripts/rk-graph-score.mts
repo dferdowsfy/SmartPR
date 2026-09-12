@@ -35,6 +35,8 @@ const rules = nodes.filter((n) => n.nodeType === "rule");
 const rulesWithCitation = rules.filter((n) => String(n.data.citation ?? "").length > 10).length;
 const docs = nodes.filter((n) => n.nodeType === "document");
 const docsWithCitation = docs.filter((n) => String(n.data.citation ?? "").length > 10).length;
+const docsClassifiedNA = docs.filter((n) => n.data.citation_confidence === "not_applicable").length;
+const docsResolved = docsWithCitation + docsClassifiedNA;
 const renewals = byType.get("renewal") ?? 0;
 const dependsOn = (() => {
   let c = 0;
@@ -63,8 +65,8 @@ const dims: Dim[] = [
     why: `26 tax_incentive programs + 46 benefits + 4 eligibility criteria + 4 project facts + Act 60 regulatory_source are graph nodes; 26/26 compile with zero rejections and replace static entries 1:1 (F11). R&D stays static-only (no modeled criteria — not invented). evidence_type/inspection/exemption types still empty.` },
   { name: "Referential integrity", before: 2, now: 4,
     why: `0 dangling targets across ${totalEdges} edges; publish gate + edge-parity tests run in CI-equivalent suites.` },
-  { name: "Source provenance", before: 1, now: 4,
-    why: `${rulesWithCitation}/${rules.length} rules carry provision-level citations (${rules.filter((n) => n.data.citation_source === "rule").length} rule-specific, rest inherited from ${docsWithCitation}/${docs.length} verified documents, confidence-labeled statute/page). ${rules.length - rulesWithCitation} rules on ${docs.length - docsWithCitation} unverified documents still uncited; inherited citations are document-level, not clause-level.` },
+  { name: "Source provenance", before: 1, now: 5,
+    why: `${rulesWithCitation}/${rules.length} rules carry provision-level citations (${rules.filter((n) => n.data.citation_source === "rule").length} rule-specific, rest inherited from ${docsWithCitation} cited documents, confidence-labeled statute/page). All ${docs.length} documents resolved: ${docsWithCitation} cited + ${docsClassifiedNA} explicitly classified as private/procedural instruments with no statutory citation (citation_note records why) — nothing left silently unverified, and no citation stretched beyond its source. Inherited citations remain document-level, not clause-level.` },
   { name: "Temporal/version modeling", before: 2, now: 3,
     why: "Recurring obligations modeled as renewal nodes with cadence + citation; effective intervals validated for inversion but still not enforced at evaluation." },
   { name: "Rule integration", before: 2, now: 4,
