@@ -575,16 +575,21 @@
   {
     "id": "DOC_NONPROFIT_REGISTRATION",
     "name": "Nonprofit Registration / 501(c)(3) Determination",
-    "agency": "IRS / Department of State",
+    "agency": "Department of State",
     "category": "Federal",
-    "agency_url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
-    "agency_canonical": "IRS / Department of State",
+    "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+    "agency_canonical": "Departamento de Estado",
     "download_url": "https://docs.pr.gov/files/Estado/Corporaciones/Formularios/2-CORPREG02.pdf",
     "download_kind": "form_pdf",
     "download_note": "PR side: Dept of State nonprofit-corporation categories form. Federal 501(c)(3): apply via IRS Form 1023 on Pay.gov (no blank PDF).",
     "citation": "Ley 164-2009, Arts. 1.01(C), 1.02 — corporación sin fines de lucro ante Dept of State",
     "citation_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-    "citation_confidence": "statute"
+    "citation_confidence": "statute",
+    "agency_ids": [
+      "estado",
+      "irs"
+    ],
+    "agency_note": "State registration is filed with the Puerto Rico Department of State; federal tax-exempt status is a separate IRS determination."
   },
   {
     "id": "DOC_TRAFFIC_IMPACT_STUDY",

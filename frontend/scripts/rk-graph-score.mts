@@ -52,8 +52,8 @@ console.log(`DOC_ALCOHOL_LICENSE prerequisite closure: ${alcoholPrereqs.join(", 
 
 interface Dim { name: string; before: number; now: number; why: string }
 const dims: Dim[] = [
-  { name: "Entity modeling", before: 3, now: 3,
-    why: "24 types + stable IDs kept; new nodes reuse existing agency nodes (no new duplicates); issuer/preparer role conflation still unaddressed." },
+  { name: "Entity modeling", before: 3, now: 4,
+    why: "Canonical agency registry (35 agencies, role-typed: government/private_preparer/insurer/property_owner/utility); composite agency strings eliminated; DRNA succession (JCA/ADS, Law 171-2018) explicit; private actors carry agency_note. Municipal generic vs office distinction still coarse." },
   { name: "Relationship modeling", before: 3, now: 4,
     why: `${dependsOn} verified depends_on edges (was 2); prerequisiteClosure traverses them; edge-parity tests prove edges encode relationships. Municipality-flag geography still implicit.` },
   { name: "Typed edges", before: 3, now: 4,

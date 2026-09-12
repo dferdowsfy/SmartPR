@@ -303,6 +303,7 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
       { key: "doc_kind", label: "Kind", kind: "select", options: DOC_KINDS, help: "Permit / license / registration / certificate / supporting document." },
       { key: "agency", label: "Agency (display name)", kind: "text", required: true, help: "Shown to users; kept as text for engine compatibility." },
       { key: "agency_id", label: "Issuing agency", kind: "entity_ref", refType: "agency" },
+      { key: "agency_ids", label: "All involved agencies", kind: "entity_ref_list", refType: "agency", help: "Primary first. For filings that genuinely involve two agencies (e.g. nonprofit: Estado registers, IRS grants exemption)." },
       { key: "category", label: "Category", kind: "select", options: ["State", "Federal", "Municipal", "Insurance", "Legal", "Health", "Safety", "Environmental", "Other"], required: true },
       { key: "recommended", label: "Recommended (not mandatory)", kind: "boolean", help: "Recommended documents don't block readiness." },
       { key: "score_weight", label: "Readiness score weight", kind: "number", help: "Relative weight in readiness scoring. Blank = equal weight." },
@@ -317,7 +318,7 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
     ],
     edgesOf: (d) => {
       const out: DerivedEdge[] = [];
-      pushRef(out, "issued_by", d.agency_id);
+      pushRefs(out, "issued_by", (d.agency_ids as unknown[] | undefined) ?? d.agency_id);
       pushRefs(out, "depends_on", d.depends_on_document_ids);
       pushRefs(out, "requires", d.evidence_type_ids);
       const guidance = d.requirement_guidance as GuidanceConcept | undefined;

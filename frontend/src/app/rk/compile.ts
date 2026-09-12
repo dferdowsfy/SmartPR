@@ -264,7 +264,8 @@ export function validatePublicationGraph(nodes: CompileNode[]): string[] {
       }
     }
     if (n.nodeType === "document") {
-      ref(n.entityId, "agency_id", d.agency_id, "agency");
+      const agencyIds = Array.isArray(d.agency_ids) ? d.agency_ids : [d.agency_id];
+      for (const aid of agencyIds) ref(n.entityId, "agency_id", aid, "agency");
       const deps = Array.isArray(d.depends_on_document_ids) ? d.depends_on_document_ids : [];
       for (const dep of deps) ref(n.entityId, "depends_on_document_ids", dep, "document");
     }

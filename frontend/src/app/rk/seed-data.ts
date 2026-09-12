@@ -14,6 +14,17 @@ import type { GuidanceConcept } from "../guidance/model";
 
 import businessTypeQuestionsJson from "../../kb/business_type_questions.json";
 import industriesJson from "../../kb/industries.json";
+import agenciesJson from "../../kb/agencies.json";
+
+interface AgencyEntry {
+  id: string; name: string; role: string; level: string; jurisdiction: string;
+  url?: string; aliases?: string[]; succeeds?: string[]; succession_note?: string;
+}
+const AGENCY_BY_NAME = new Map<string, AgencyEntry>();
+for (const a of agenciesJson as AgencyEntry[]) {
+  AGENCY_BY_NAME.set(a.name, a);
+  for (const alias of a.aliases ?? []) AGENCY_BY_NAME.set(alias, a);
+}
 
 export interface SeedNode {
   entityId: string;
@@ -26,16 +37,6 @@ interface BtqRow {
   business_type_id: string;
   question_id: string;
 }
-
-const slugAgency = (name: string): string =>
-  "AGY_" +
-  name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 48);
 
 /**
  * Build the full seed node list from the ACTIVE jurisdiction pack:
@@ -88,7 +89,11 @@ export function buildSeedNodes(): SeedNode[] {
   }
 
   const recommendedSet = new Set(recommended);
-  const seenAgencies = new Map<string, string>(); // display name -> entity id
+  const agencyIds = (d: { agency?: string; agency_canonical?: string; agency_ids?: unknown }): string[] => {
+    if (Array.isArray(d.agency_ids) && d.agency_ids.length > 0) return d.agency_ids.map(String);
+    const entry = AGENCY_BY_NAME.get(d.agency_canonical ?? "") ?? AGENCY_BY_NAME.get(d.agency ?? "");
+    return entry ? [entry.id] : [];
+  };
   const guidanceSources = new Map<string, { source: GuidanceConcept["sources"][number]; documents: string[] }>();
   for (const d of kb.documents) {
     const guidance = d.requirement_guidance as GuidanceConcept | undefined;
@@ -97,21 +102,28 @@ export function buildSeedNodes(): SeedNode[] {
       entry.documents.push(d.id);
       guidanceSources.set(source.id, entry);
     }
-    if (d.agency && !seenAgencies.has(d.agency)) {
-      seenAgencies.set(d.agency, slugAgency(d.agency));
-    }
+    const ids = agencyIds(d);
     const orderIdx = order.indexOf(d.id);
     push("document", {
       ...d,
-      agency_id: d.agency ? seenAgencies.get(d.agency) : undefined,
+      agency_id: ids[0],
+      agency_ids: ids,
       recommended: recommendedSet.has(d.id) ? true : undefined,
       order_hint: orderIdx >= 0 ? orderIdx : undefined,
       legacy_code: legacyCode[d.id],
     });
   }
 
-  for (const [name, id] of seenAgencies) {
-    push("agency", { id, name, level: guessAgencyLevel(name) });
+  // Agency nodes come from the canonical registry (kb/agencies.json): one node
+  // per agency with its role (government / private_preparer / insurer /
+  // property_owner / utility). Composite free-text agency strings are gone;
+  // documents that genuinely involve two agencies carry agency_ids.
+  for (const a of agenciesJson as AgencyEntry[]) {
+    push("agency", {
+      id: a.id, name: a.name, role: a.role, level: a.level,
+      jurisdiction: a.jurisdiction, url: a.url,
+      succeeds: a.succeeds, succession_note: a.succession_note,
+    });
   }
   for (const [id, { source, documents }] of guidanceSources) {
     push("regulatory_source", { id, name: source.citation, source_type: "guidance", legal_status: "effective",
@@ -131,14 +143,6 @@ export function buildSeedNodes(): SeedNode[] {
   for (const r of kb.rules) push("rule", { ...r });
 
   return nodes;
-}
-
-function guessAgencyLevel(name: string): string {
-  const n = name.toLowerCase();
-  if (n.includes("municipal") || n.includes("municipio")) return "Municipal";
-  if (n.includes("irs") || n.includes("federal") || n.includes("u.s.") || n.includes("epa") || n.includes("osha"))
-    return "Federal";
-  return "Commonwealth";
 }
 
 function loadIndustries(): Record<string, unknown>[] {

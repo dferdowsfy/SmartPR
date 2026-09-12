@@ -57,9 +57,40 @@ test("rule -> business_type/question edges match applicability fields", () => {
 
 test("document -> agency edges match agency_id fields", () => {
   for (const n of nodes.filter((n) => n.nodeType === "document")) {
-    const agencyId = n.data.agency_id ? String(n.data.agency_id) : undefined;
-    if (agencyId) assert.equal(only(n.entityId, "issued_by"), agencyId, `${n.entityId}: issued_by`);
+    const ids = Array.isArray(n.data.agency_ids) ? (n.data.agency_ids as string[]).map(String) : [];
+    const edges = out(n.entityId, "issued_by");
+    assert.deepEqual(edges, [...ids].sort(), `${n.entityId}: issued_by matches agency_ids`);
   }
+});
+
+test("agency nodes carry roles; no composite or role-conflated agencies", () => {
+  const agencies = nodes.filter((n) => n.nodeType === "agency");
+  const roles = new Set(agencies.map((a) => String(a.data.role ?? "")));
+  for (const r of ["government", "private_preparer", "insurer", "property_owner", "utility"]) {
+    assert.ok(roles.has(r), `role present: ${r}`);
+  }
+  for (const a of agencies) {
+    assert.ok(String(a.data.role ?? "").length > 0, `${a.entityId}: role set`);
+    assert.ok(!/[/+]/g.test(String(a.data.name ?? "")), `${a.entityId}: no composite name`);
+  }
+  // Private actors are never modeled as government issuers.
+  for (const a of agencies.filter((a) => String(a.data.role) !== "government")) {
+    assert.notEqual(a.data.level, "Commonwealth", `${a.entityId}: private actor not Commonwealth-level`);
+    assert.notEqual(a.data.level, "Federal", `${a.entityId}: private actor not Federal`);
+    assert.notEqual(a.data.level, "Municipal", `${a.entityId}: private actor not Municipal`);
+  }
+  // DRNA explicitly succeeds JCA/ADS (Law 171-2018).
+  const drna = agencies.find((a) => a.entityId === "drna");
+  assert.ok(drna, "drna agency node exists");
+  assert.ok(
+    (drna.data.succeeds as string[]).some((s) => s.includes("JCA")),
+    "drna succeeds JCA/ADS"
+  );
+});
+
+test("multi-agency documents project one issued_by edge per involved agency", () => {
+  const edges = out("DOC_NONPROFIT_REGISTRATION", "issued_by");
+  assert.deepEqual(edges, ["estado", "irs"], "nonprofit: Estado registers, IRS grants exemption");
 });
 
 test("document -> document depends_on edges match declared prerequisites", () => {

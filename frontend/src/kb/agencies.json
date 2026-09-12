@@ -1,0 +1,349 @@
+[
+  {
+    "id": "hacienda",
+    "name": "Departamento de Hacienda",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://hacienda.pr.gov/"
+  },
+  {
+    "id": "estado",
+    "name": "Departamento de Estado",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Department of State"
+    ],
+    "url": "https://www.estado.pr.gov/formularios-para-corporaciones"
+  },
+  {
+    "id": "juntas",
+    "name": "Juntas Examinadoras (Departamento de Estado)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Department of State Examining Boards"
+    ],
+    "url": "https://www.didaxispr.com/dept/estado-juntas"
+  },
+  {
+    "id": "daco",
+    "name": "Departamento de Asuntos del Consumidor",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Departamento de Asuntos del Consumidor (DACO)"
+    ],
+    "url": "https://www.daco.pr.gov/"
+  },
+  {
+    "id": "crim",
+    "name": "CRIM",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://www.crimpr.net/"
+  },
+  {
+    "id": "asume",
+    "name": "Administración para el Sustento de Menores",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Administración para el Sustento de Menores (ASUME)"
+    ],
+    "url": "https://www.familia.pr.gov/"
+  },
+  {
+    "id": "turismo",
+    "name": "Compañía de Turismo",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://tourism.pr.gov/"
+  },
+  {
+    "id": "dtrh",
+    "name": "Departamento del Trabajo y Recursos Humanos",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Departamento del Trabajo y Recursos Humanos (DTRH)"
+    ],
+    "url": "https://patronos.trabajo.pr.gov/"
+  },
+  {
+    "id": "cfse",
+    "name": "Corporación del Fondo del Seguro del Estado",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://www.cfse.pr.gov/en"
+  },
+  {
+    "id": "salud",
+    "name": "Departamento de Salud",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://www.salud.pr.gov/"
+  },
+  {
+    "id": "familia",
+    "name": "Departamento de la Familia",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Departamento de la Familia / Educación"
+    ],
+    "url": "https://www.familia.pr.gov/"
+  },
+  {
+    "id": "bomberos",
+    "name": "Cuerpo de Bomberos",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://bomberos.pr.gov/permisos"
+  },
+  {
+    "id": "policia",
+    "name": "Policía de Puerto Rico",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://policia.pr.gov/"
+  },
+  {
+    "id": "ogpe",
+    "name": "OGPe",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://www.permisos.ddec.pr.gov/"
+  },
+  {
+    "id": "drna",
+    "name": "DRNA",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Autoridad de Desperdicios Sólidos / Municipal",
+      "DRNA + Municipal Permits Office",
+      "EPA / DRNA"
+    ],
+    "url": "https://www.drna.pr.gov/acai/permisos/",
+    "succeeds": [
+      "Junta de Calidad Ambiental (JCA)",
+      "Autoridad de Desperdicios Sólidos (ADS)"
+    ],
+    "succession_note": "Absorbed JCA and ADS functions under Law 171-2018; historical JCA/ADS references resolve here."
+  },
+  {
+    "id": "dtop",
+    "name": "DTOP",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Departamento de Transportación y Obras Públicas (DTOP) / Municipal Engineering"
+    ],
+    "url": "https://dtop.pr.gov/"
+  },
+  {
+    "id": "agricultura",
+    "name": "Departamento de Agricultura",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://www.agricultura.gobierno.pr/"
+  },
+  {
+    "id": "ntsp",
+    "name": "NTSP (Negociado de Transporte y Otros Servicios Públicos)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Comisión de Servicio Público"
+    ],
+    "url": "https://ntsp.pr.gov/"
+  },
+  {
+    "id": "ati",
+    "name": "ATI (Autoridad de Transporte Integrado)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Autoridad de Transporte Marítimo (ATM)"
+    ],
+    "url": "https://www.ati.pr.gov/"
+  },
+  {
+    "id": "puertos",
+    "name": "Autoridad de los Puertos",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Aerostar Airport Holdings / Autoridad de los Puertos",
+      "Autoridad de los Puertos de Puerto Rico"
+    ],
+    "url": "https://prpa.pr.gov/"
+  },
+  {
+    "id": "municipio",
+    "name": "Municipal Government",
+    "role": "government",
+    "level": "Municipal",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  },
+  {
+    "id": "municipio_permisos",
+    "name": "Municipal Permits Office",
+    "role": "government",
+    "level": "Municipal",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  },
+  {
+    "id": "san_juan",
+    "name": "Municipio de San Juan",
+    "role": "government",
+    "level": "Municipal",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Municipio de San Juan — Permisos Municipales"
+    ],
+    "url": "https://tramite.sanjuan.pr/"
+  },
+  {
+    "id": "registro_propiedad",
+    "name": "Registro de la Propiedad",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Property Registry"
+    ],
+    "url": "http://ridpr.pr.gov/"
+  },
+  {
+    "id": "oppe",
+    "name": "OPPE (ahora PPPE-DDEC)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "OPPE"
+    ],
+    "url": "https://ddec.pr.gov/"
+  },
+  {
+    "id": "irs",
+    "name": "IRS",
+    "role": "government",
+    "level": "Federal",
+    "jurisdiction": "Federal",
+    "aliases": [],
+    "url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online"
+  },
+  {
+    "id": "cbp",
+    "name": "U.S. Customs and Border Protection (CBP)",
+    "role": "government",
+    "level": "Federal",
+    "jurisdiction": "Federal",
+    "aliases": [],
+    "url": "https://www.cbp.gov/"
+  },
+  {
+    "id": "tsa",
+    "name": "Transportation Security Administration (TSA)",
+    "role": "government",
+    "level": "Federal",
+    "jurisdiction": "Federal",
+    "aliases": [],
+    "url": "https://www.tsa.gov/"
+  },
+  {
+    "id": "luma",
+    "name": "LUMA Energy",
+    "role": "utility",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [],
+    "url": "https://lumapr.com/miluma/"
+  },
+  {
+    "id": "icp",
+    "name": "ICP (Instituto de Cultura Puertorriqueña)",
+    "role": "government",
+    "level": "Commonwealth",
+    "jurisdiction": "Puerto Rico",
+    "aliases": [
+      "Instituto de Cultura Puertorriqueña (ICP) + Municipal Permits Office",
+      "Instituto de Cultura Puertorriqueña (ICP) / OECH"
+    ],
+    "url": "https://icp.pr.gov/"
+  },
+  {
+    "id": "arquitecto_ingeniero",
+    "name": "Licensed Architect / Engineer",
+    "role": "private_preparer",
+    "level": "Private",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  },
+  {
+    "id": "notario",
+    "name": "Notary Public",
+    "role": "private_preparer",
+    "level": "Private",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  },
+  {
+    "id": "aseguradora",
+    "name": "Insurance Carrier",
+    "role": "insurer",
+    "level": "Private",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  },
+  {
+    "id": "propietario",
+    "name": "Property Owner",
+    "role": "property_owner",
+    "level": "Private",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  },
+  {
+    "id": "propietario_hoa",
+    "name": "Property Owner / Homeowners Association",
+    "role": "property_owner",
+    "level": "Private",
+    "jurisdiction": "Puerto Rico",
+    "aliases": []
+  }
+]
