@@ -62,8 +62,8 @@ const dims: Dim[] = [
     why: `Renewal type populated (${renewals} nodes, was 0 at audit), prerequisites traversable; incentive/evidence/inspection types still empty.` },
   { name: "Referential integrity", before: 2, now: 4,
     why: `0 dangling targets across ${totalEdges} edges; publish gate + edge-parity tests run in CI-equivalent suites.` },
-  { name: "Source provenance", before: 1, now: 2,
-    why: `${rulesWithCitation}/${rules.length} rules carry direct citations (all new/changed high-risk rules cited); majority still indirect.` },
+  { name: "Source provenance", before: 1, now: 4,
+    why: `${rulesWithCitation}/${rules.length} rules carry provision-level citations (19 rule-specific, rest inherited from 59/70 verified documents, confidence-labeled statute/page). 99 rules on 11 unverified documents still uncited; inherited citations are document-level, not clause-level.` },
   { name: "Temporal/version modeling", before: 2, now: 3,
     why: "Recurring obligations modeled as renewal nodes with cadence + citation; effective intervals validated for inversion but still not enforced at evaluation." },
   { name: "Rule integration", before: 2, now: 4,
@@ -72,8 +72,8 @@ const dims: Dim[] = [
     why: "Edges are traversed by tested helpers (prerequisiteClosure) and parity checks; checklist still compiles from node data, not edge walks." },
   { name: "Graph-derived reasoning", before: 1, now: 1,
     why: "Intake inference still lives in a separate TS registry, not RK nodes/edges. Unchanged." },
-  { name: "Regulatory traceability", before: 1, now: 2,
-    why: "High-risk rules cite exact provisions; matched_rules/basis reporting; prerequisites are edges. Clause-level matrix for all rules still missing." },
+  { name: "Regulatory traceability", before: 1, now: 3,
+    why: "Requirement -> provision -> official URL chain now exists for 532/631 rules; matched_rules/basis reporting; prerequisites are edges. Clause-level evidence matrix for all rules still missing." },
 ];
 
 console.log("\n== dimensions (0-5) ==");
