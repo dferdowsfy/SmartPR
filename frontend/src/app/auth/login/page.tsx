@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser, isAuthConfigured } from "../../../lib/supabase/client";
-import { passwordResetRedirectUrl } from "../../../lib/siteUrl";
+import { passwordResetRedirectUrl, verificationRedirectUrl } from "../../../lib/siteUrl";
 import { SmartPRLogo } from "../../components/brand/SmartPRLogo";
 import { GUEST_INTAKE, guestContinuePath, sanitizeNext } from "../../../lib/safeNext";
 
@@ -22,7 +22,10 @@ function LoginInner() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(() =>
+    sp.get("verified") === "1" ? "Your email is verified. Please log in to continue." : null,
+  );
+  const [showResend, setShowResend] = useState(false);
 
   useEffect(() => {
     if (sp.get("mode") === "signup") router.replace(signupHref);
@@ -42,7 +45,7 @@ function LoginInner() {
 
   const supabase = createSupabaseBrowser();
   const resetRedirectTo = passwordResetRedirectUrl();
-  const swapMode = (m: Mode) => { setMode(m); setErr(null); setInfo(null); };
+  const swapMode = (m: Mode) => { setMode(m); setErr(null); setInfo(null); setShowResend(false); };
 
   const bootstrapPlatform = async () => {
     const response = await fetch("/api/auth/bootstrap", { method: "POST" });
@@ -68,17 +71,39 @@ function LoginInner() {
       if (error) {
         const m = error.message || "";
         if (/email\s*not\s*confirmed/i.test(m)) {
-          setErr("This email is not confirmed yet. Check your inbox, or ask an admin to confirm the user in Supabase.");
+          setErr("This email is not confirmed yet. Check your inbox for the verification link.");
+          setShowResend(true);
         } else if (/invalid\s*login\s*credentials/i.test(m)) {
           setErr("Email or password is incorrect.");
+          setShowResend(false);
         } else {
           setErr(m);
+          setShowResend(false);
         }
         return;
       }
       if (await bootstrapPlatform()) router.push(nextPath);
     } catch (e) {
       setErr((e as Error).message || "Login failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    if (!email) return;
+    setBusy(true); setErr(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        email: email.trim(),
+        type: "signup",
+        options: { emailRedirectTo: verificationRedirectUrl(nextPath) },
+      });
+      if (error) { setErr(error.message); return; }
+      setInfo(`Verification link sent to ${email.trim()}. Check your inbox.`);
+      setShowResend(false);
+    } catch (e) {
+      setErr((e as Error).message || "Could not resend the verification email.");
     } finally {
       setBusy(false);
     }
@@ -128,6 +153,12 @@ function LoginInner() {
 
       {err && <div className="mt-3 text-sm text-[#8a2f2f]">{err}</div>}
       {info && <div className="mt-3 text-sm text-[#1f5a3a]">{info}</div>}
+      {showResend && (
+        <button type="button" onClick={() => void resendVerification()} disabled={busy || !email}
+          className="mt-3 block text-sm font-medium text-[#245c5c] underline-offset-4 hover:underline disabled:opacity-50">
+          {busy ? "Sending…" : "Resend verification email"}
+        </button>
+      )}
 
       {mode === "forgot" && (
         <button onClick={() => swapMode("signin")} className="mt-4 block text-sm text-[#5a5a5a] hover:text-[#161616]">

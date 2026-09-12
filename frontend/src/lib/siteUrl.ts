@@ -24,6 +24,18 @@ export function authRedirectUrl(nextPath: string): string {
 }
 
 /**
+ * Email verification: the confirmation link must land on the LOGIN page, not
+ * drop the user straight into the app. Goes through /auth/callback so the
+ * server can consume the token; the callback then signs the user out and
+ * redirects to /auth/login?verified=1 (preserving the post-login destination).
+ */
+export function verificationRedirectUrl(nextPath: string): string {
+  const safeNext = nextPath && nextPath.startsWith("/") ? nextPath : "/";
+  const loginNext = `/auth/login?verified=1&next=${encodeURIComponent(safeNext)}`;
+  return `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(loginNext)}`;
+}
+
+/**
  * Password recovery must NOT use the server /auth/callback route as redirectTo.
  * Implicit recovery links put tokens in the URL hash; servers never see the hash.
  * Point straight at the client reset page so tokens can be consumed in-browser.

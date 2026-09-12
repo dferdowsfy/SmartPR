@@ -5,7 +5,7 @@ import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Check, Eye, EyeOff } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
-import { authRedirectUrl } from "../../lib/siteUrl";
+import { verificationRedirectUrl } from "../../lib/siteUrl";
 import styles from "./signup.module.css";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
 import { trackAcquisition } from "../restaurants/analytics";
@@ -90,7 +90,7 @@ function SignupForm() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: authRedirectUrl(nextPath),
+          emailRedirectTo: verificationRedirectUrl(nextPath),
           data: {
             full_name: `${firstName.trim()} ${lastName.trim()}`,
             first_name: firstName.trim(),
