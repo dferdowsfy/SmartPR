@@ -4,11 +4,11 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser, isAuthConfigured } from "../../../lib/supabase/client";
-import { passwordResetRedirectUrl, verificationRedirectUrl } from "../../../lib/siteUrl";
+import { authRedirectUrl, passwordResetRedirectUrl, verificationRedirectUrl } from "../../../lib/siteUrl";
 import { SmartPRLogo } from "../../components/brand/SmartPRLogo";
 import { GUEST_INTAKE, guestContinuePath, sanitizeNext } from "../../../lib/safeNext";
 
-type Mode = "signin" | "forgot";
+type Mode = "signin" | "forgot" | "link";
 
 function LoginInner() {
   const sp = useSearchParams();
@@ -57,10 +57,20 @@ function LoginInner() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode !== "forgot" && (!email || !password)) return;
+    if (mode === "link" && !email) return;
+    if (mode !== "forgot" && mode !== "link" && (!email || !password)) return;
     if (mode === "forgot" && !email) return;
     setBusy(true); setErr(null); setInfo(null);
     try {
+      if (mode === "link") {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: email.trim(),
+          options: { emailRedirectTo: authRedirectUrl(nextPath) },
+        });
+        if (error) { setErr(error.message); return; }
+        setInfo(`Sign-in link sent to ${email.trim()}. Check your inbox — the link expires in 60 minutes.`);
+        return;
+      }
       if (mode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: resetRedirectTo });
         if (error) { setErr(error.message); return; }
@@ -112,10 +122,11 @@ function LoginInner() {
   return (
     <div className="w-full">
       <h1 className="font-[family-name:var(--font-display)] text-4xl font-medium">
-        {mode === "signin" ? "Welcome back." : "Reset your password."}
+        {mode === "signin" ? "Welcome back." : mode === "link" ? "Sign in with email." : "Reset your password."}
       </h1>
       <p className="mt-3 mb-8 text-[#1b1b1b]">
         {mode === "signin" ? "Continue your Puerto Rico filing work."
+          : mode === "link" ? "Enter your email and we'll send a one-click sign-in link. No password needed."
           : "Enter the email on your account and we'll send a reset link."}
       </p>
 
@@ -126,15 +137,13 @@ function LoginInner() {
             onChange={(e) => setEmail(e.target.value)} placeholder="you@business.com"
             className="w-full rounded-lg border border-[#161616]/22 bg-[#fbf8f2] px-3 py-2.5 text-sm placeholder:text-[#5a5a5a]" />
         </div>
-        {mode !== "forgot" && (
+        {mode === "signin" && (
           <div>
             <div className="mb-1 flex items-baseline justify-between">
               <label className="text-sm font-medium">Password</label>
-              {mode === "signin" && (
-                <button type="button" onClick={() => swapMode("forgot")} className="text-sm text-[#245c5c] underline-offset-4 hover:underline">
-                  Forgot password?
-                </button>
-              )}
+              <button type="button" onClick={() => swapMode("forgot")} className="text-sm text-[#245c5c] underline-offset-4 hover:underline">
+                Forgot password?
+              </button>
             </div>
             <input type="password" required minLength={6}
               autoComplete="current-password"
@@ -144,11 +153,17 @@ function LoginInner() {
           </div>
         )}
         <button type="submit"
-          disabled={busy || !email || (mode !== "forgot" && password.length < 6)}
+          disabled={busy || !email || (mode === "signin" && password.length < 6)}
           className="w-full rounded-lg bg-[#245c5c] py-3 font-medium text-[#f6f3ea] disabled:opacity-50">
-          {busy ? (mode === "forgot" ? "Sending…" : "Logging in…")
-                : (mode === "forgot" ? "Send reset link" : "Login")}
+          {busy ? (mode === "forgot" ? "Sending…" : mode === "link" ? "Sending…" : "Logging in…")
+                : (mode === "forgot" ? "Send reset link" : mode === "link" ? "Email me a sign-in link" : "Login")}
         </button>
+        {mode === "signin" && (
+          <button type="button" onClick={() => swapMode("link")}
+            className="w-full rounded-lg border border-[#161616]/22 py-3 text-sm font-medium text-[#161616] hover:bg-[#161616]/5">
+            Email me a sign-in link instead
+          </button>
+        )}
       </form>
 
       {err && <div className="mt-3 text-sm text-[#8a2f2f]">{err}</div>}
@@ -163,6 +178,11 @@ function LoginInner() {
       {mode === "forgot" && (
         <button onClick={() => swapMode("signin")} className="mt-4 block text-sm text-[#5a5a5a] hover:text-[#161616]">
           Back to login
+        </button>
+      )}
+      {mode === "link" && (
+        <button onClick={() => swapMode("signin")} className="mt-4 block text-sm text-[#5a5a5a] hover:text-[#161616]">
+          Back to password login
         </button>
       )}
 
