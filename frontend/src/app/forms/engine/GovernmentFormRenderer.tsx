@@ -62,31 +62,31 @@ function AddressInput({
   const set = (patch: Partial<CanonicalAddress>) => onChange({ ...addr, ...patch });
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const cell: React.CSSProperties = { display: "flex", flexDirection: "column", gap: 2 };
-  const input: React.CSSProperties = { padding: "6px 8px", border: "1px solid var(--border, #cbd5e1)", borderRadius: 6, fontSize: 13 };
+  const input: React.CSSProperties = { padding: "8px 10px", border: "1px solid var(--border, #cbd5e1)", borderRadius: 6, fontSize: 14 };
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
       <label style={{ ...cell, gridColumn: "1 / -1" }}>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>{L("Address line 1", "Dirección línea 1")}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>{L("Address line 1", "Dirección línea 1")}</span>
         <input style={input} disabled={readOnly} value={addr.line1} onChange={(e) => set({ line1: e.target.value })} />
       </label>
       <label style={{ ...cell, gridColumn: "1 / -1" }}>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>{L("Address line 2", "Dirección línea 2")}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>{L("Address line 2", "Dirección línea 2")}</span>
         <input style={input} disabled={readOnly} value={addr.line2 ?? ""} onChange={(e) => set({ line2: e.target.value })} />
       </label>
       <label style={cell}>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>{L("City / Municipality", "Ciudad / Municipio")}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>{L("City / Municipality", "Ciudad / Municipio")}</span>
         <input style={input} disabled={readOnly} value={addr.cityOrMunicipality} onChange={(e) => set({ cityOrMunicipality: e.target.value })} />
       </label>
       <label style={cell}>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>{L("State / Territory", "Estado / Territorio")}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>{L("State / Territory", "Estado / Territorio")}</span>
         <input style={input} disabled={readOnly} value={addr.stateOrTerritory ?? ""} onChange={(e) => set({ stateOrTerritory: e.target.value })} placeholder="PR" />
       </label>
       <label style={cell}>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>{L("Postal code", "Código postal")}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>{L("Postal code", "Código postal")}</span>
         <input style={input} disabled={readOnly} value={addr.postalCode} onChange={(e) => set({ postalCode: e.target.value })} placeholder="00901" />
       </label>
       <label style={cell}>
-        <span style={{ fontSize: 11, opacity: 0.7 }}>{L("Country", "País")}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>{L("Country", "País")}</span>
         <input style={input} disabled={readOnly} value={addr.country} onChange={(e) => set({ country: e.target.value })} />
       </label>
     </div>
@@ -127,9 +127,9 @@ function RepeatableRecords({
       {items.map((item, idx) => (
         <div key={item.id ?? idx} style={{ border: "1px solid var(--border, #e2e8f0)", borderRadius: 8, padding: 10, position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-            <strong style={{ fontSize: 12 }}>{localize(field.label, lang)} {idx + 1}</strong>
+            <strong style={{ fontSize: 13.5 }}>{localize(field.label, lang)} {idx + 1}</strong>
             {!readOnly && (
-              <button type="button" onClick={() => removeItem(idx)} style={{ fontSize: 11, color: "#b91c1c", background: "none", border: "none", cursor: "pointer" }}>
+              <button type="button" onClick={() => removeItem(idx)} style={{ fontSize: 12.5, color: "#b91c1c", background: "none", border: "none", cursor: "pointer" }}>
                 {L("Remove", "Eliminar")}
               </button>
             )}
@@ -141,7 +141,7 @@ function RepeatableRecords({
               if (sub.visibleWhen && !evaluateConditions(sub.visibleWhen, item as unknown as FormData)) return null;
               return (
                 <div key={sub.id}>
-                  <label style={{ fontSize: 12, fontWeight: 500, display: "block", marginBottom: 2 }}>
+                  <label style={{ fontSize: 13.5, fontWeight: 500, display: "block", marginBottom: 2 }}>
                     {localize(sub.label, lang)} {sub.required && <span style={{ color: "#b91c1c" }}>*</span>}
                   </label>
                   {sub.type === "address" ? (
@@ -151,12 +151,12 @@ function RepeatableRecords({
                   ) : sub.type === "signature" ? (
                     <SignaturePlaceholder value={subVal as string} lang={lang} readOnly={readOnly} onChange={(v) => patchItem(idx, sub, v)} />
                   ) : sub.type === "select" ? (
-                    <select disabled={readOnly} value={String(subVal ?? "")} onChange={(e) => patchItem(idx, sub, e.target.value)} style={{ padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, width: "100%" }}>
+                    <select disabled={readOnly} value={String(subVal ?? "")} onChange={(e) => patchItem(idx, sub, e.target.value)} style={{ padding: "8px 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 14, width: "100%" }}>
                       <option value="">—</option>
                       {sub.options?.map((o) => <option key={o.value} value={o.value}>{localize(o.label, lang)}</option>)}
                     </select>
                   ) : (
-                    <input disabled={readOnly} value={String(subVal ?? "")} onChange={(e) => patchItem(idx, sub, e.target.value)} style={{ padding: "6px 8px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, width: "100%" }} />
+                    <input disabled={readOnly} value={String(subVal ?? "")} onChange={(e) => patchItem(idx, sub, e.target.value)} style={{ padding: "8px 10px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 14, width: "100%" }} />
                   )}
                 </div>
               );
@@ -165,7 +165,7 @@ function RepeatableRecords({
         </div>
       ))}
       {!readOnly && (
-        <button type="button" onClick={addItem} style={{ alignSelf: "flex-start", fontSize: 12, padding: "6px 12px", border: "1px dashed #94a3b8", borderRadius: 6, background: "none", cursor: "pointer" }}>
+        <button type="button" onClick={addItem} style={{ alignSelf: "flex-start", fontSize: 13.5, padding: "8px 14px", border: "1px dashed #94a3b8", borderRadius: 6, background: "none", cursor: "pointer" }}>
           + {L("Add", "Agregar")} {localize(field.label, lang)}
         </button>
       )}
@@ -187,7 +187,7 @@ function SignaturePlaceholder({
   const signed = value === "signed";
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, padding: "6px 8px", border: "1px dashed #cbd5e1", borderRadius: 6 }}>
+    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, padding: "8px 10px", border: "1px dashed #cbd5e1", borderRadius: 6 }}>
       <input type="checkbox" disabled={readOnly} checked={signed} onChange={(e) => onChange(e.target.checked ? "signed" : "not_started")} />
       <span>{signed ? L("Signature captured (placeholder)", "Firma capturada (marcador)") : L("Mark as signed (signature placeholder)", "Marcar como firmado (marcador de firma)")}</span>
     </label>
@@ -224,7 +224,7 @@ function SensitiveTextInput({
           type="button"
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? L("Hide sensitive value", "Ocultar valor confidencial") : L("Show sensitive value", "Mostrar valor confidencial")}
-          style={{ minWidth: 58, padding: "0 9px", border: "1px solid #cbd5e1", borderRadius: 6, background: "white", fontSize: 11.5, cursor: "pointer" }}
+          style={{ minWidth: 58, padding: "2px 10px", border: "1px solid #cbd5e1", borderRadius: 6, background: "white", fontSize: 13, cursor: "pointer" }}
         >
           {visible ? L("Hide", "Ocultar") : L("Show", "Mostrar")}
         </button>
@@ -249,7 +249,7 @@ function FieldControl({
   onChange: (id: string, v: unknown) => void;
 }) {
   const value = (formData as Record<string, unknown>)[field.id];
-  const input: React.CSSProperties = { padding: "7px 9px", border: "1px solid var(--border, #cbd5e1)", borderRadius: 6, fontSize: 13, width: "100%", background: readOnly ? "#f8fafc" : "white" };
+  const input: React.CSSProperties = { padding: "8px 10px", border: "1px solid var(--border, #cbd5e1)", borderRadius: 6, fontSize: 14, width: "100%", background: readOnly ? "#f8fafc" : "white" };
 
   if (field.sensitive) {
     return (
@@ -265,9 +265,9 @@ function FieldControl({
 
   switch (field.type) {
     case "heading":
-      return <h4 style={{ margin: "8px 0 0", fontSize: 14 }}>{localize(field.label, lang)}</h4>;
+      return <h4 style={{ margin: "8px 0 0", fontSize: 16 }}>{localize(field.label, lang)}</h4>;
     case "statutory_text":
-      return <p style={{ fontSize: 12.5, color: "#475569", background: "#f1f5f9", padding: 10, borderRadius: 6, margin: 0 }}>{localize(field.body ?? field.label, lang)}</p>;
+      return <p style={{ fontSize: 14, color: "#475569", background: "#f1f5f9", padding: 10, borderRadius: 6, margin: 0 }}>{localize(field.body ?? field.label, lang)}</p>;
     case "textarea":
       return <textarea disabled={readOnly} value={String(value ?? "")} onChange={(e) => onChange(field.id, e.target.value)} rows={3} style={input} />;
     case "select":
@@ -281,7 +281,7 @@ function FieldControl({
       return (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {field.options?.map((o) => (
-            <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+            <label key={o.value} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14.5 }}>
               <input type="radio" disabled={readOnly} name={field.id} checked={String(value ?? "") === o.value} onChange={() => onChange(field.id, o.value)} />
               {localize(o.label, lang)}
             </label>
@@ -299,7 +299,7 @@ function FieldControl({
                 type="button"
                 disabled={readOnly}
                 onClick={() => onChange(field.id, o.value)}
-                style={{ textAlign: "left", fontSize: 12.5, padding: "8px 10px", borderRadius: 6, cursor: readOnly ? "default" : "pointer", border: active ? "2px solid var(--brand-2, #245c5c)" : "1px solid #cbd5e1", background: active ? "rgba(13,148,136,0.08)" : "white" }}
+                style={{ textAlign: "left", fontSize: 14, padding: "10px 12px", borderRadius: 6, cursor: readOnly ? "default" : "pointer", border: active ? "2px solid var(--brand-2, #245c5c)" : "1px solid #cbd5e1", background: active ? "rgba(13,148,136,0.08)" : "white" }}
               >
                 {localize(o.label, lang)}
               </button>
@@ -310,7 +310,7 @@ function FieldControl({
     case "checkbox":
     case "attestation":
       return (
-        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13 }}>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 14.5 }}>
           <input type="checkbox" disabled={readOnly} checked={value === true} onChange={(e) => onChange(field.id, e.target.checked)} style={{ marginTop: 3 }} />
           <span>{localize(field.label, lang)}</span>
         </label>
@@ -326,7 +326,7 @@ function FieldControl({
         <input type="file" disabled={readOnly} onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) onChange(field.id, { id: `att_${Date.now()}`, name: f.name, mimeType: f.type, size: f.size, uploadedAt: new Date().toISOString() });
-        }} style={{ fontSize: 12 }} />
+        }} style={{ fontSize: 13.5 }} />
       );
     case "number":
     case "currency":
@@ -355,23 +355,23 @@ export function GovernmentFormRenderer(props: GovernmentFormRendererProps) {
         if (visibleFields.length === 0) return null;
         return (
           <section key={section.id}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 4px", color: "var(--brand-1, #0a2540)" }}>{localize(section.title, lang)}</h3>
-            {section.description && <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 8px" }}>{localize(section.description, lang)}</p>}
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 4px", color: "var(--brand-1, #0a2540)" }}>{localize(section.title, lang)}</h3>
+            {section.description && <p style={{ fontSize: 13.5, color: "#64748b", margin: "0 0 8px" }}>{localize(section.description, lang)}</p>}
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {visibleFields.map((field) => {
                 const requiredMark = field.required || (field.requiredWhen && evaluateConditions(field.requiredWhen, formData, canonical));
                 const err = errorByField.get(field.id);
                 const showLabel = field.type !== "attestation" && field.type !== "checkbox" && field.type !== "statutory_text" && field.type !== "heading";
                 return (
-                  <div key={field.id}>
+                  <div key={field.id} id={`govfield-${field.id}`} style={{ scrollMarginTop: 10 }}>
                     {showLabel && field.label && (
-                      <label style={{ fontSize: 12.5, fontWeight: 600, display: "block", marginBottom: 3 }}>
+                      <label style={{ fontSize: 14, fontWeight: 600, display: "block", marginBottom: 4 }}>
                         {localize(field.label, lang)} {requiredMark && <span style={{ color: "#b91c1c" }}>*</span>}
                       </label>
                     )}
                     <FieldControl field={field} formData={formData} lang={lang} readOnly={readOnly} onChange={onChange} />
-                    {field.helpText && <p style={{ fontSize: 11, color: "#64748b", margin: "3px 0 0" }}>{localize(field.helpText, lang)}</p>}
-                    {err && <p style={{ fontSize: 11, color: "#b91c1c", margin: "3px 0 0" }}>{err}</p>}
+                    {field.helpText && <p style={{ fontSize: 12.5, color: "#64748b", margin: "4px 0 0", lineHeight: 1.5 }}>{localize(field.helpText, lang)}</p>}
+                    {err && <p style={{ fontSize: 12.5, fontWeight: 600, color: "#b91c1c", margin: "4px 0 0" }}>{err}</p>}
                   </div>
                 );
               })}

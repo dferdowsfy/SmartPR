@@ -27,13 +27,13 @@ export interface GovernmentFormActionsProps {
 export function GovernmentFormActions(props: GovernmentFormActionsProps) {
   const { lang, mode, onReview, onBackToEdit, onComplete, onClose, completing, completeLabel } = props;
   const L = (en: string, es: string) => (lang === "es" ? es : en);
-  const btn: React.CSSProperties = { fontSize: 13, padding: "8px 14px", borderRadius: 8, cursor: "pointer", border: "1px solid #cbd5e1", background: "white" };
+  const btn: React.CSSProperties = { fontSize: 14, padding: "9px 16px", borderRadius: 8, cursor: "pointer", border: "1px solid #cbd5e1", background: "white" };
   const primary: React.CSSProperties = { ...btn, background: "var(--brand-1, #0a2540)", color: "white", border: "none" };
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end" }}>
       <button type="button" style={btn} onClick={onClose}>{L("Close", "Cerrar")}</button>
       {mode === "edit" ? (
-        <button type="button" style={primary} onClick={onReview}>{L("Review and complete", "Revisar y completar")}</button>
+        <button type="button" style={primary} onClick={onReview}>{L("Complete", "Completar")}</button>
       ) : (
         <>
           <button type="button" style={btn} onClick={onBackToEdit}>{L("Back to edit", "Volver a editar")}</button>

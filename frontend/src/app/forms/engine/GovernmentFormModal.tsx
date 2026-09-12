@@ -255,12 +255,19 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   // when the host consumes it), then the modal closes. The host marks its
   // requirement row complete; the applicant can reopen the form any time to
   // view the PDF, edit the answers, or mark it submitted.
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const scrollToField = (fieldId: string) => {
+    document.getElementById(`govfield-${fieldId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
   const handleComplete = async () => {
     if (completing) return;
     const found = validateForm(definition, data, canonical);
     if (found.length > 0) {
       setErrors(found);
       setMode("edit");
+      // Bring the error summary into view so the user knows exactly what
+      // is missing — without it the form just sits there silently.
+      requestAnimationFrame(() => bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" }));
       return;
     }
     setErrors([]);
@@ -392,25 +399,25 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
       <div style={{ background: "var(--surface, white)", borderRadius: 12, maxWidth: 820, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}>
-          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#64748b" }}>{definition.agency} · {definition.officialFormNumber}</div>
-          <h2 style={{ fontSize: 18, margin: "3px 0" }}>{localize(definition.title, lang)}</h2>
+          <div style={{ fontSize: 12.5, textTransform: "uppercase", letterSpacing: 1, color: "#64748b" }}>{definition.agency} · {definition.officialFormNumber}</div>
+          <h2 style={{ fontSize: 20, margin: "3px 0" }}>{localize(definition.title, lang)}</h2>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
             {hasRealArtifact ? (
-              <span style={{ fontSize: 11, background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0", borderRadius: 999, padding: "2px 8px" }}>
+              <span style={{ fontSize: 12, background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0", borderRadius: 999, padding: "2px 8px" }}>
                 ✓ {L("Populated directly into the official government PDF", "Completado directamente en el PDF oficial del gobierno")}
               </span>
             ) : (
-              <span style={{ fontSize: 11, background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a", borderRadius: 999, padding: "2px 8px" }}>
+              <span style={{ fontSize: 12, background: "#fffbeb", color: "#92400e", border: "1px solid #fde68a", borderRadius: 999, padding: "2px 8px" }}>
                 {L("Preparation worksheet — official PDF not yet in SmartPR's library", "Hoja de preparación — el PDF oficial aún no está en la biblioteca de SmartPR")}
               </span>
             )}
             {fee !== null && (
-              <span style={{ fontSize: 11, color: "#475569" }}>
+              <span style={{ fontSize: 12.5, color: "#475569" }}>
                 {L("Government filing fee", "Tarifa gubernamental de radicación")}: {fee} · {L("paid to the agency at submission", "se paga a la agencia al presentar")}
               </span>
             )}
           </div>
-          <p style={{ fontSize: 11.5, color: "#64748b", margin: "6px 0 0" }}>
+          <p style={{ fontSize: 13, color: "#64748b", margin: "6px 0 0", lineHeight: 1.55 }}>
             {L(
               "SmartPR prepares this application from your shared business information. A prepared application is not an approved permit, license, certificate, or government-issued document.",
               "SmartPR prepara esta solicitud con su información comercial compartida. Una solicitud preparada no es un permiso, licencia, certificado ni documento emitido por el gobierno."
@@ -419,12 +426,35 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
         </div>
 
         {/* Body */}
-        <div style={{ padding: 20, maxHeight: "62vh", overflowY: "auto" }}>
+        <div ref={bodyRef} style={{ padding: 20, maxHeight: "62vh", overflowY: "auto" }}>
           {upfrontLocked ? renderPaywallPanel() : (
           <>
+          {errors.length > 0 && mode === "edit" && (
+            <div style={{ marginBottom: 16, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "12px 14px", fontSize: 14, color: "#991b1b" }}>
+              <strong>
+                {L(
+                  `Complete ${errors.length} required ${errors.length === 1 ? "field" : "fields"} before continuing:`,
+                  `Complete ${errors.length} ${errors.length === 1 ? "campo obligatorio" : "campos obligatorios"} antes de continuar:`
+                )}
+              </strong>
+              <ul style={{ margin: "8px 0 0 18px", display: "grid", gap: 4 }}>
+                {errors.slice(0, 10).map((e, i) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => scrollToField(e.fieldId)}
+                      style={{ background: "none", border: "none", padding: 0, color: "#b91c1c", textDecoration: "underline", cursor: "pointer", fontSize: 14, textAlign: "left" }}
+                    >
+                      {localize(e.message, lang)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {(mode === "view" && wantsRealArtifact) && (
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
+              <div style={{ fontSize: 13.5, color: "#475569", marginBottom: 6, lineHeight: 1.55 }}>
                 {paywalled
                   ? L(
                         "The official filled PDF is a paid deliverable.",
@@ -443,7 +473,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
                       )}
               </div>
               {paywalled ? renderPaywallPanel() : hasRealArtifact && realArtifactLoading && !realArtifactUrl ? (
-                <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }}>
                   {L("Populating the official government PDF…", "Completando el PDF oficial del gobierno…")}
                 </div>
               ) : displayedPreviewUrl ? (
@@ -453,14 +483,14 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
                   style={{ width: "100%", height: "50vh", border: "1px solid #e2e8f0", borderRadius: 8, background: "white" }}
                 />
               ) : (
-                <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 13 }}>
+                <div style={{ padding: 24, textAlign: "center", color: "#64748b", fontSize: 14 }}>
                   {realArtifactError
                     ? L("The official PDF isn't available right now — try again shortly.", "El PDF oficial no está disponible en este momento — inténtelo de nuevo en breve.")
                     : L("Generating preview…", "Generando vista previa…")}
                 </div>
               )}
               {showingRealArtifact && realArtifact && (
-                <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 6 }}>
+                <div style={{ fontSize: 12.5, color: "#64748b", marginTop: 6 }}>
                   {L(
                     `${realArtifact.populated} field(s) populated · ${realArtifact.unanswered} still required · original government PDF preserved`,
                     `${realArtifact.populated} campo(s) completados · ${realArtifact.unanswered} pendientes · PDF oficial del gobierno preservado`
@@ -485,14 +515,6 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
           ) : (
             <GovernmentFormRenderer definition={definition} formData={data} canonical={canonical} lang={lang} errors={errors} onChange={setField} />
           )}
-          {errors.length > 0 && mode === "edit" && (
-            <div style={{ marginTop: 12, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 10, fontSize: 12, color: "#991b1b" }}>
-              <strong>{L("Please complete the required fields:", "Complete los campos obligatorios:")}</strong>
-              <ul style={{ margin: "4px 0 0 18px" }}>
-                {errors.slice(0, 8).map((e, i) => <li key={i}>{localize(e.message, lang)}</li>)}
-              </ul>
-            </div>
-          )}
           </>
           )}
         </div>
@@ -501,13 +523,13 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
         <div style={{ padding: "14px 20px", borderTop: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 8 }}>
           {paywalled ? (
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button type="button" onClick={handleClose} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Close", "Cerrar")}</button>
+              <button type="button" onClick={handleClose} style={{ fontSize: 14, padding: "9px 16px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Close", "Cerrar")}</button>
             </div>
           ) : (
           <>
           {offersDownload && (
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-start", alignItems: "center", flexWrap: "wrap" }}>
-              <button type="button" onClick={() => void downloadPdf()} disabled={downloading} style={{ fontSize: 12, padding: "6px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", cursor: downloading ? "default" : "pointer", opacity: downloading ? 0.6 : 1 }}>
+              <button type="button" onClick={() => void downloadPdf()} disabled={downloading} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 6, border: "1px solid #cbd5e1", background: "white", cursor: downloading ? "default" : "pointer", opacity: downloading ? 0.6 : 1 }}>
                 {downloading
                   ? L("Populating the official PDF…", "Completando el PDF oficial…")
                   : hasRealArtifact
@@ -515,7 +537,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
                     : L("Download preparation PDF", "Descargar PDF de preparación")}
               </button>
               {downloadError && (
-                <span style={{ fontSize: 11.5, color: "#991b1b" }}>
+                <span style={{ fontSize: 13, color: "#991b1b" }}>
                   {L(
                     "Couldn't produce the official PDF — nothing was downloaded. Try again.",
                     "No se pudo generar el PDF oficial — no se descargó nada. Inténtelo de nuevo."
@@ -525,15 +547,15 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
             </div>
           )}
           {completeError && !readOnly && (
-            <div style={{ fontSize: 12, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 10px" }}>
+            <div style={{ fontSize: 13.5, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 12px" }}>
               {L("Couldn't save the completed document — your answers are safe. Try again.", "No se pudo guardar el documento completado — sus respuestas están a salvo. Inténtelo de nuevo.")}{" "}
               <span style={{ color: "#b91c1c" }}>{completeError}</span>
             </div>
           )}
           {readOnly ? (
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button type="button" onClick={handleClose} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Close", "Cerrar")}</button>
-              <button type="button" onClick={() => setMode("edit")} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--brand-1, #0a2540)", color: "white", cursor: "pointer" }}>{L("Edit Form", "Editar formulario")}</button>
+              <button type="button" onClick={handleClose} style={{ fontSize: 14, padding: "9px 16px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Close", "Cerrar")}</button>
+              <button type="button" onClick={() => setMode("edit")} style={{ fontSize: 14, padding: "9px 16px", borderRadius: 8, border: "none", background: "var(--brand-1, #0a2540)", color: "white", cursor: "pointer" }}>{L("Edit Form", "Editar formulario")}</button>
             </div>
           ) : (
             <GovernmentFormActions
