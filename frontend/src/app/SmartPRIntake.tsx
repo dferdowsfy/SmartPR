@@ -4935,10 +4935,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           existingApplicationId={preparedGovApplications[activeGovForm.formId]?.id}
           applicationStatus={preparedGovApplications[activeGovForm.formId]?.status}
           onClose={() => setActiveGovForm(null)}
+          // Silent persistence only: the modal autosaves 650ms after each field
+          // change, so this must NEVER close the modal. Explicit close goes
+          // through onClose below.
           onSaveDraft={(formId, data) => {
             setGovFormDrafts((cur) => ({ ...cur, [formId]: data }));
-            setSampleFormNotice(L('Draft saved.', language));
-            setActiveGovForm(null);
           }}
           onCanonicalChange={(updated, changedKeys) => {
             setCanonicalOverride(updated);
