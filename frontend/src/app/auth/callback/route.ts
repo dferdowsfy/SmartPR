@@ -16,6 +16,7 @@ import { convertLeadForUser } from "../../../lib/leads";
 import { getPool, isEnabled } from "../../graph/db";
 import { claimSubmissionsByEmail } from "../../graph/auth-actions";
 import { authCallbackPath } from "../../../lib/safeNext";
+import { getSiteUrl } from "../../../lib/siteUrl";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -97,5 +98,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL(nextPath, req.url));
+  // Build the redirect off the canonical site URL, never req.url: behind
+  // Railway's proxy req.url is https://localhost:8080/…, which would send
+  // users to a dead localhost address.
+  return NextResponse.redirect(new URL(nextPath, getSiteUrl()));
 }
