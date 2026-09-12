@@ -60,6 +60,10 @@ export interface RequirementCardProps {
    * the document. Omitted once the requirement is completed, or when upload
    * is already the primary (only) action. */
   secondary?: RequirementSecondaryAction;
+  /** When true, the secondary action still renders for a completed
+   * requirement — e.g. uploading the agency-issued document after the
+   * SmartPR-prepared form is done. */
+  secondaryOnCompleted?: boolean;
   /** Visible "Download form / File online" button rendered in the action
    * column — the direct official destination for this requirement, never
    * hidden inside the "Why do I need this?" disclosure. */
@@ -75,6 +79,15 @@ export interface RequirementCardProps {
 
 function ActionButton({ action }: { action: RequirementAction }) {
   if (action.kind === "completed") {
+    // A completed form requirement reopens the prepared form (view the PDF,
+    // edit the answers, or mark it submitted) when clicked.
+    if (action.onClick) {
+      return (
+        <button type="button" className="rq-completed rq-completed-clickable" onClick={action.onClick}>
+          <CheckCircle2 size={15} /> {action.label}
+        </button>
+      );
+    }
     return (
       <span className="rq-completed">
         <CheckCircle2 size={15} /> {action.label}
@@ -118,6 +131,7 @@ export function RequirementCard({
   extra,
   id,
   contextLabel,
+  secondaryOnCompleted,
 }: RequirementCardProps) {
   return (
     <div id={id} className="rq-card">
@@ -159,7 +173,7 @@ export function RequirementCard({
           {action.helper && (action.kind === "form" || action.kind === "upload") && (
             <span className="rq-cta-helper">{action.helper}</span>
           )}
-          {secondary && action.kind !== "completed" && (
+          {secondary && (action.kind !== "completed" || secondaryOnCompleted) && (
             <>
               <span className="rq-or">OR</span>
               <button type="button" className="rq-secondary-btn" onClick={secondary.onClick} aria-label={secondary.prompt}>

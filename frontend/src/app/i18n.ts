@@ -24,6 +24,7 @@ export const ES: Record<string, string> = {
   "Added for": "Añadido para",
   "Pursuing": "Persiguiendo",
   "Review": "Revisar",
+  "Edit document": "Editar documento",
   "View all opportunities": "Ver todas las oportunidades",
   "Opportunities": "Oportunidades",
   "identified": "identificadas",

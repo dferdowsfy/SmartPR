@@ -6,10 +6,11 @@
 // bar, completion validation, canonical write-back, and preparation-PDF export
 // so the host page only manages "which form is open" and the prepared-app list.
 //
-// Completing the form lands on the "ready" step, where GovernmentSubmissionPanel
-// states the government filing fee and links to the official agency portal. That
-// step is reachable only after the application has been completed and reviewed —
-// never at the start of the form.
+// Completing the form (after the review step) finalizes everything in one
+// action: the application is recorded, the finished PDF is handed to the host,
+// and the modal closes. The host marks its requirement row complete; reopening
+// the form shows the prepared document (view it, download the official PDF,
+// edit the answers, or mark it submitted to the agency).
 // ============================================================================
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -59,7 +60,7 @@ export interface GovernmentFormModalProps {
   onMarkSubmitted?: (formId: string) => void;
   /**
    * Optional hook for hosts (e.g. the business profile page) that want the
-   * finished PDF bytes instead of just a download. When provided, confirming
+   * finished PDF bytes instead of just a download. When provided, completing
    * the document awaits this callback with the populated official PDF (or the
    * SmartPR preparation worksheet when no official artifact exists) before the
    * application is recorded and the modal closes. A rejection keeps the modal
@@ -67,10 +68,10 @@ export interface GovernmentFormModalProps {
    */
   onPdfReady?: (pdf: { blob: Blob; filename: string }) => Promise<void>;
   /**
-   * Optional [en, es] override for the ready-step confirm button, for hosts
+   * Optional [en, es] override for the final "Complete" button, for hosts
    * whose save destination isn't the intake's deliverables list.
    */
-  confirmLabels?: [string, string];
+  completeLabels?: [string, string];
   /**
    * When the host already knows the workspace can't use deliverables (e.g.
    * from /api/billing/entitlements), open the modal directly on the upgrade
@@ -81,39 +82,22 @@ export interface GovernmentFormModalProps {
 }
 
 export function GovernmentFormModal(props: GovernmentFormModalProps) {
-  const { definition, canonical, lang, initialData, initialMode, existingApplicationId, applicationStatus, onClose, onSaveDraft, onCanonicalChange, onComplete, onMarkSubmitted, onPdfReady, confirmLabels, initialPaywallCode } = props;
+  const { definition, canonical, lang, initialData, initialMode, existingApplicationId, applicationStatus, onClose, onSaveDraft, onCanonicalChange, onComplete, onMarkSubmitted, onPdfReady, completeLabels, initialPaywallCode } = props;
   const L = (en: string, es: string) => (lang === "es" ? es : en);
-  const confirmLabel = confirmLabels ? (lang === "es" ? confirmLabels[1] : confirmLabels[0]) : L("Confirm and Add to Deliverables", "Confirmar y añadir a entregables");
+  const completeLabel = completeLabels ? (lang === "es" ? completeLabels[1] : completeLabels[0]) : L("Complete and add", "Completar y añadir");
 
   const [data, setData] = useState<FormData>(() => prefillFromCanonical(definition, canonical, initialData ?? {}));
-  const [mode, setMode] = useState<"edit" | "review" | "view" | "ready">(initialMode ?? "edit");
+  const [mode, setMode] = useState<"edit" | "review" | "view">(initialMode ?? "edit");
   const [errors, setErrors] = useState<FieldError[]>([]);
-  // Built by handleComplete once the form validates, held here — NOT handed to
-  // onComplete — until the applicant confirms the preview below. This is what
-  // actually gets added to deliverables; nothing commits before that click.
-  const [pendingApp, setPendingApp] = useState<{ app: GeneratedApplication; data: FormData } | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  // Confirm-step state when a host consumes the finished PDF via onPdfReady.
-  const [confirming, setConfirming] = useState(false);
-  const [confirmError, setConfirmError] = useState<string | null>(null);
+  // Finalize-step state: completing runs validation, the host PDF handoff, and
+  // the close. A failure keeps the modal open with the error — the
+  // applicant's answers are never lost.
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState<string | null>(null);
 
   const fee = useMemo(() => governmentFeeText(definition.id, canonical, lang), [definition.id, canonical, lang]);
-
-  // SmartPR's own drafted preparation PDF (jsPDF, drawn from scratch) — used
-  // only as a fallback when the real government file isn't in the template
-  // library yet, or the population request below fails.
-  const readyPreviewUrl = useMemo(() => {
-    if (mode !== "ready" || !pendingApp) return null;
-    const blob = generatePreparationPdf(definition, pendingApp.data, canonical, lang);
-    return URL.createObjectURL(blob);
-  }, [mode, pendingApp, definition, canonical, lang]);
-
-  useEffect(() => {
-    return () => {
-      if (readyPreviewUrl) URL.revokeObjectURL(readyPreviewUrl);
-    };
-  }, [readyPreviewUrl]);
 
   // Whether SmartPR actually holds this agency's official PDF and can
   // populate it directly. Pure catalog lookup (no filesystem access), safe to
@@ -125,7 +109,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
 
   // Every mode whose footer renders the download button. Kept next to that
   // footer condition so the two cannot drift apart.
-  const offersDownload = mode === "review" || mode === "view" || mode === "ready";
+  const offersDownload = mode === "review" || mode === "view";
 
   // The literal government PDF, populated server-side (population reads the
   // source file from disk, so this has to be a request, not a client render).
@@ -184,7 +168,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
 
   // Warmed for every mode that offers a download — including "review", where
   // the download button is on screen but no preview is. Fetching only in
-  // "ready"/"view" is what used to leave the download with nothing official to
+  // "view" is what used to leave the download with nothing official to
   // hand over, so it silently produced the SmartPR worksheet instead.
   const wantsRealArtifact = offersDownload && hasRealArtifact;
   // Derived, not stored: loading is exactly "expecting a real artifact but
@@ -223,17 +207,17 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
     };
   }, [realArtifactUrl]);
 
-  // What the "ready" step actually shows: the real government PDF when it
-  // loaded, the SmartPR-drafted fallback otherwise.
+  // What the "view" step shows when reopening a prepared application: the
+  // real government PDF when it loaded, nothing otherwise.
   const showingRealArtifact = hasRealArtifact && !!realArtifactUrl;
-  const displayedPreviewUrl = realArtifactUrl ?? readyPreviewUrl;
+  const displayedPreviewUrl = realArtifactUrl;
   // Paywall: completed documents (official populated PDFs and preparation
   // worksheets alike) require a plan with deliverables.
   const paywalled = paywallCode !== null;
 
-  // The submission step belongs to a prepared application only: right after the
-  // applicant completes it, or when they reopen one they already prepared.
-  const showSubmissionPanel = mode === "ready" || (mode === "view" && !!existingApplicationId);
+  // The submission step belongs to a prepared application: when its owner
+  // reopens it in "view" mode.
+  const showSubmissionPanel = mode === "view" && !!existingApplicationId;
 
   const setField = (fieldId: string, value: unknown) => {
     draftDirty.current = true;
@@ -256,7 +240,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   // All worksheet answers autosave. Transient taxpayer identifiers are
   // removed before this callback reaches the workflow snapshot.
   useEffect(() => {
-    if (!draftDirty.current || mode === "view" || mode === "ready") return;
+    if (!draftDirty.current || mode === "view") return;
     const timer = window.setTimeout(saveDraft, 650);
     return () => window.clearTimeout(timer);
   }, [data, mode, saveDraft]);
@@ -266,7 +250,13 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
     onClose();
   };
 
-  const handleComplete = () => {
+  // Completing the form finalizes everything in one action: the built
+  // application is handed to the host (and the finished PDF to onPdfReady,
+  // when the host consumes it), then the modal closes. The host marks its
+  // requirement row complete; the applicant can reopen the form any time to
+  // view the PDF, edit the answers, or mark it submitted.
+  const handleComplete = async () => {
+    if (completing) return;
     const found = validateForm(definition, data, canonical);
     if (found.length > 0) {
       setErrors(found);
@@ -274,50 +264,38 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
       return;
     }
     setErrors([]);
-    const updated = persistCanonical();
-    const durableData = persistableFormData(definition, data);
-    const app = buildGeneratedApplication(definition, durableData, updated, { id: existingApplicationId, status: "prepared", lang });
-    // Hold the built application and hand off to the preview step — it is
-    // NOT added to deliverables yet. That happens only in handleConfirmSave,
-    // once the applicant has actually seen the produced document.
-    setPendingApp({ app, data });
-    setMode("ready");
-  };
-
-  const handleConfirmSave = async () => {
-    if (!pendingApp || confirming) return;
-    // Belt and suspenders: the footer hides the confirm button when paywalled,
-    // but never let a locked session produce a document through this path.
+    // Belt and suspenders: the footer hides the complete button when
+    // paywalled, but never let a locked session produce a document.
     if (paywalled) return;
-    if (onPdfReady) {
-      // Hand the finished PDF to the host (upload, attach, …) before the
-      // application is recorded and the modal closes.
-      setConfirming(true);
-      setConfirmError(null);
-      try {
+    setCompleting(true);
+    setCompleteError(null);
+    try {
+      const updated = persistCanonical();
+      const durableData = persistableFormData(definition, data);
+      const app = buildGeneratedApplication(definition, durableData, updated, { id: existingApplicationId, status: "prepared", lang });
+      if (onPdfReady) {
+        // Hand the finished PDF to the host (upload, attach, …) before the
+        // application is recorded and the modal closes.
         const filename = `${definition.officialFormNumber}_${localize(definition.title, lang).replace(/\s+/g, "_")}.pdf`;
         let blob: Blob;
         if (hasRealArtifact) {
           try {
             blob = (await requestOfficialPdf()).blob;
           } catch {
-            blob = generatePreparationPdf(definition, pendingApp.data, canonical, lang);
+            blob = generatePreparationPdf(definition, durableData, canonical, lang);
           }
         } else {
-          blob = generatePreparationPdf(definition, pendingApp.data, canonical, lang);
+          blob = generatePreparationPdf(definition, durableData, canonical, lang);
         }
         await onPdfReady({ blob, filename });
-      } catch (err) {
-        // Stay open: the applicant's work is safe, only the handoff failed.
-        setConfirmError(err instanceof Error ? err.message : String(err));
-        setConfirming(false);
-        return;
       }
-      setConfirming(false);
+      onComplete(app, durableData);
+      onClose();
+    } catch (err) {
+      // Stay open: the applicant's work is safe, only the handoff failed.
+      setCompleteError(err instanceof Error ? err.message : String(err));
+      setCompleting(false);
     }
-    onComplete(pendingApp.app, persistableFormData(definition, pendingApp.data));
-    setPendingApp(null);
-    onClose();
   };
 
   const saveBlob = (blob: Blob, filename: string) => {
@@ -444,7 +422,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
         <div style={{ padding: 20, maxHeight: "62vh", overflowY: "auto" }}>
           {upfrontLocked ? renderPaywallPanel() : (
           <>
-          {(mode === "ready" || (mode === "view" && wantsRealArtifact)) && (
+          {(mode === "view" && wantsRealArtifact) && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 12, color: "#475569", marginBottom: 6 }}>
                 {paywalled
@@ -453,25 +431,15 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
                         "El PDF oficial completado es un entregable pago."
                       )
                   : showingRealArtifact
-                  ? mode === "ready"
-                    ? L(
-                        "This is the official government PDF — your data populated into the original form, nothing else changed. Nothing is saved until you confirm below.",
-                        "Este es el PDF oficial del gobierno — sus datos completados en el formulario original, nada más cambió. No se guarda nada hasta que confirme abajo."
-                      )
-                    : L(
+                  ? L(
                         "This is the official government PDF for the application you prepared.",
                         "Este es el PDF oficial del gobierno de la solicitud que preparó."
                       )
                   : hasRealArtifact && realArtifactError
-                    ? mode === "ready"
-                      ? L(
-                          "Couldn't load the official PDF right now, showing a SmartPR preparation summary instead. Nothing is saved until you confirm below.",
-                          "No se pudo cargar el PDF oficial en este momento; se muestra un resumen de preparación de SmartPR. No se guarda nada hasta que confirme abajo."
-                        )
-                      : L("Couldn't load the official PDF right now.", "No se pudo cargar el PDF oficial en este momento.")
+                    ? L("Couldn't load the official PDF right now.", "No se pudo cargar el PDF oficial en este momento.")
                     : L(
-                        "This is the exact document that will be added to your deliverables — nothing is saved until you confirm below.",
-                        "Este es el documento exacto que se añadirá a sus entregables — no se guarda nada hasta que confirme abajo."
+                        "This is the exact document that was added to your deliverables.",
+                        "Este es el documento exacto que se añadió a sus entregables."
                       )}
               </div>
               {paywalled ? renderPaywallPanel() : hasRealArtifact && realArtifactLoading && !realArtifactUrl ? (
@@ -512,7 +480,7 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
               />
             </div>
           )}
-          {mode === "review" || mode === "view" || mode === "ready" ? (
+          {mode === "review" || mode === "view" ? (
             <GovernmentFormPreview definition={definition} formData={data} canonical={canonical} lang={lang} />
           ) : (
             <GovernmentFormRenderer definition={definition} formData={data} canonical={canonical} lang={lang} errors={errors} onChange={setField} />
@@ -556,20 +524,13 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
               )}
             </div>
           )}
-          {mode === "ready" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {confirmError && (
-                <div style={{ fontSize: 12, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 10px" }}>
-                  {L("Couldn't save the completed document — your answers are safe. Try again.", "No se pudo guardar el documento completado — sus respuestas están a salvo. Inténtelo de nuevo.")}{" "}
-                  <span style={{ color: "#b91c1c" }}>{confirmError}</span>
-                </div>
-              )}
-              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button type="button" disabled={confirming} onClick={() => { setPendingApp(null); setMode("edit"); }} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: confirming ? "default" : "pointer", opacity: confirming ? 0.6 : 1 }}>{L("Back to edit", "Volver a editar")}</button>
-              <button type="button" disabled={!pendingApp || confirming} onClick={() => void handleConfirmSave()} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--brand-1, #0a2540)", color: "white", cursor: pendingApp && !confirming ? "pointer" : "default", opacity: pendingApp && !confirming ? 1 : 0.6 }}>{confirming ? L("Saving…", "Guardando…") : confirmLabel}</button>
-              </div>
+          {completeError && !readOnly && (
+            <div style={{ fontSize: 12, color: "#991b1b", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 10px" }}>
+              {L("Couldn't save the completed document — your answers are safe. Try again.", "No se pudo guardar el documento completado — sus respuestas están a salvo. Inténtelo de nuevo.")}{" "}
+              <span style={{ color: "#b91c1c" }}>{completeError}</span>
             </div>
-          ) : readOnly ? (
+          )}
+          {readOnly ? (
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button type="button" onClick={handleClose} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>{L("Close", "Cerrar")}</button>
               <button type="button" onClick={() => setMode("edit")} style={{ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none", background: "var(--brand-1, #0a2540)", color: "white", cursor: "pointer" }}>{L("Edit Form", "Editar formulario")}</button>
@@ -580,8 +541,10 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
               mode={mode === "review" ? "review" : "edit"}
               onReview={() => setMode("review")}
               onBackToEdit={() => setMode("edit")}
-              onComplete={handleComplete}
+              onComplete={() => void handleComplete()}
               onClose={handleClose}
+              completing={completing}
+              completeLabel={completeLabel}
             />
           )}
           </>

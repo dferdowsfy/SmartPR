@@ -280,9 +280,11 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
     }
   };
   // The modal hands back the finished official PDF. Save it as evidence on
-  // this obligation (the same store the Upload button uses), clear the draft,
-  // and refresh so the row shows the completed document. Throwing keeps the
-  // modal open with the error; the applicant's answers are never lost.
+  // this obligation (the same store the Upload button uses) and mark the row
+  // complete: the finished document is the completion. The draft is kept so
+  // the form can be reopened and edited; the row keeps its PDF download.
+  // Throwing keeps the modal open with the error; the applicant's answers are
+  // never lost.
   const handlePdfReady = async ({ blob, filename }: { blob: Blob; filename: string }) => {
     const form = new FormData();
     form.append("file", new File([blob], filename, { type: "application/pdf" }));
@@ -290,9 +292,10 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
     const response = await fetch("/api/evidence", { method: "POST", body: form });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || "Could not save the completed document.");
-    try { window.localStorage.removeItem(draftKey); } catch { /* draft finished */ }
     setMessage(null);
-    reload();
+    setJustCompleted(true);
+    onMarkComplete?.(item.id);
+    await update({ complete: true });
   };
   const saveDate = () => {
     setDateDialogOpen(false);
@@ -365,9 +368,19 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           </>
         )}
         {completed ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
-            <CheckCircle2 className="h-3.5 w-3.5" />Completed
-          </span>
+          <>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+              <CheckCircle2 className="h-3.5 w-3.5" />Completed
+            </span>
+            {definition && (
+              <button
+                type="button" onClick={() => setFormOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600"
+              >
+                <FileText className="h-3.5 w-3.5" />{L("Edit document", lang)}
+              </button>
+            )}
+          </>
         ) : (
           <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">Mark renewed / complete</button>
         )}
@@ -436,7 +449,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           onCanonicalChange={() => { /* no intake profile to write back to on this page */ }}
           onComplete={() => { /* the PDF handoff in onPdfReady is the save */ }}
           onPdfReady={handlePdfReady}
-          confirmLabels={["Save completed document", "Guardar documento completado"]}
+          completeLabels={["Save completed document", "Guardar documento completado"]}
         />
       )}
     </div>

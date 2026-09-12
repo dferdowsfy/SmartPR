@@ -3582,6 +3582,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
     let action: RequirementAction;
     let secondary: RequirementSecondaryAction | undefined;
+    let secondaryOnCompleted = false;
     let bucket: 'completed' | 'in_progress' | 'needs_action' | 'none';
 
     const secondaryUpload = (): RequirementSecondaryAction | undefined => {
@@ -3614,10 +3615,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       action = { kind: 'form', label: L('Review updates', language), locked: deliverablesLocked, onClick: () => openGovForm(govEntry.id, req.code, 'edit') };
       secondary = secondaryUpload();
       bucket = 'in_progress';
-    } else if (govEntry && (formActions.includes('view_submission') || formActions.includes('view_form'))) {
-      action = { kind: 'waiting', label: L('Waiting for confirmation', language) };
+    } else if (govEntry && (formActions.includes('view_submission') || formActions.includes('view_form') || formActions.includes('view_official_document'))) {
+      // The form is completed in SmartPR: the row reads complete. Clicking
+      // the badge reopens the prepared form — view the official PDF, edit
+      // the answers, or mark it submitted. The upload stays for the
+      // agency-issued document once it comes back.
+      action = { kind: 'completed', label: L('Completed', language), onClick: () => openGovForm(govEntry.id, req.code, 'view') };
       secondary = secondaryUpload();
-      bucket = 'in_progress';
+      bucket = 'completed';
+      secondaryOnCompleted = true;
     } else if (sampleDef && samplePrepared) {
       action = { kind: 'form', label: L('Review submission', language), onClick: () => openSampleApplication(req.code) };
       secondary = secondaryUpload();
@@ -3793,6 +3799,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       why,
       action,
       secondary,
+      secondaryOnCompleted,
       download,
       extra: hasExtra ? extra : undefined,
       contextLabel: req.incentiveLabel ?? null,
@@ -4522,6 +4529,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 why={c.why}
                 action={c.action}
                 secondary={c.secondary}
+                secondaryOnCompleted={c.secondaryOnCompleted}
                 download={c.download}
                 extra={c.extra}
                 contextLabel={c.contextLabel}
@@ -4556,6 +4564,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       why={c.why}
                       action={c.action}
                       secondary={c.secondary}
+                      secondaryOnCompleted={c.secondaryOnCompleted}
                       download={c.download}
                       extra={c.extra}
                       contextLabel={c.contextLabel}

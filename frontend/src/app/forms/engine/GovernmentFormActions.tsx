@@ -18,10 +18,14 @@ export interface GovernmentFormActionsProps {
   onComplete: () => void;
   onClose: () => void;
   completing?: boolean;
+  /** Localized label for the final "complete" button (defaults to
+   * "Complete and add"). Completing finalizes the document and closes the
+   * modal — the host marks its requirement row complete. */
+  completeLabel?: string;
 }
 
 export function GovernmentFormActions(props: GovernmentFormActionsProps) {
-  const { lang, mode, onReview, onBackToEdit, onComplete, onClose, completing } = props;
+  const { lang, mode, onReview, onBackToEdit, onComplete, onClose, completing, completeLabel } = props;
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const btn: React.CSSProperties = { fontSize: 13, padding: "8px 14px", borderRadius: 8, cursor: "pointer", border: "1px solid #cbd5e1", background: "white" };
   const primary: React.CSSProperties = { ...btn, background: "var(--brand-1, #0a2540)", color: "white", border: "none" };
@@ -34,7 +38,7 @@ export function GovernmentFormActions(props: GovernmentFormActionsProps) {
         <>
           <button type="button" style={btn} onClick={onBackToEdit}>{L("Back to edit", "Volver a editar")}</button>
           <button type="button" style={primary} disabled={completing} onClick={onComplete}>
-            {L("Complete and add", "Completar y añadir")}
+            {completing ? L("Saving…", "Guardando…") : completeLabel ?? L("Complete and add", "Completar y añadir")}
           </button>
         </>
       )}
