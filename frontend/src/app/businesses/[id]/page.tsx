@@ -49,46 +49,47 @@ const MISSING_PRIORITY: Record<string, number> = {
   OVERDUE: 0, MISSING: 1, NEEDS_ATTENTION: 2, UNKNOWN: 3, DUE_SOON: 4, IN_PROGRESS: 5, UPCOMING: 6,
 };
 
-function actionLabelForStatus(status: ObligationStatus, hasMatter: boolean): string {
+function actionLabelForStatus(status: ObligationStatus, hasMatter: boolean, lang: Lang): string {
   switch (status) {
-    case "MISSING": case "OVERDUE": case "UNKNOWN": return hasMatter ? "Continue" : "Start";
-    case "NEEDS_ATTENTION": return "Review";
-    case "DUE_SOON": case "UPCOMING": return hasMatter ? "Continue" : "Review";
-    case "IN_PROGRESS": return "Continue";
-    default: return "Review";
+    case "MISSING": case "OVERDUE": case "UNKNOWN": return hasMatter ? L("Continue", lang) : L("Start", lang);
+    case "NEEDS_ATTENTION": return L("Review", lang);
+    case "DUE_SOON": case "UPCOMING": return hasMatter ? L("Continue", lang) : L("Review", lang);
+    case "IN_PROGRESS": return L("Continue", lang);
+    default: return L("Review", lang);
   }
 }
 
-function requirementStatusText(status: ObligationStatus): string {
+function requirementStatusText(status: ObligationStatus, lang: Lang): string {
   switch (status) {
-    case "MISSING": return "Not started";
-    case "OVERDUE": return "Overdue";
-    case "NEEDS_ATTENTION": return "Missing information";
-    case "UNKNOWN": return "Needs information";
-    case "IN_PROGRESS": return "In progress";
-    case "DUE_SOON": return "Due soon";
-    case "UPCOMING": return "Upcoming";
+    case "MISSING": return L("Not started", lang);
+    case "OVERDUE": return L("Overdue", lang);
+    case "NEEDS_ATTENTION": return L("Missing information", lang);
+    case "UNKNOWN": return L("Needs information", lang);
+    case "IN_PROGRESS": return L("In progress", lang);
+    case "DUE_SOON": return L("Due soon", lang);
+    case "UPCOMING": return L("Upcoming", lang);
     default: return status.replaceAll("_", " ");
   }
 }
 
-function dateLabel(value?: string | null) {
-  if (!value) return "No date set";
-  return new Date(`${value}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function dateLabel(value: string | null | undefined, lang: Lang) {
+  if (!value) return L("No date set", lang);
+  return new Date(`${value}T00:00:00`).toLocaleDateString(lang === "es" ? "es-PR" : "en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 // Days-remaining chip for the compliance calendar — same semantic colors as
 // StatusBadge (soft red = urgent, gold/amber = approaching, green = fine).
-function TimeBadge({ dueDate, completed }: { dueDate: string | null; completed: boolean }) {
-  if (completed) return <span className="inline-flex whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-700">DONE</span>;
-  if (!dueDate) return <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-600">NO DATE</span>;
+function TimeBadge({ dueDate, completed, lang }: { dueDate: string | null; completed: boolean; lang: Lang }) {
+  if (completed) return <span className="inline-flex whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-700">{L("DONE", lang)}</span>;
+  if (!dueDate) return <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-600">{L("NO DATE", lang)}</span>;
   const days = Math.ceil((new Date(`${dueDate}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
+  const es = lang === "es";
   let text: string; let cls: string;
-  if (days < 0) { text = "Overdue"; cls = "border-red-300 bg-red-50 text-red-700"; }
-  else if (days === 0) { text = "Due today"; cls = "border-red-300 bg-red-50 text-red-700"; }
-  else if (days <= 14) { text = `${days} day${days === 1 ? "" : "s"}`; cls = "border-rose-200 bg-rose-50 text-rose-700"; }
-  else if (days <= 60) { text = `${days} days`; cls = "border-amber-200 bg-amber-50 text-amber-800"; }
-  else { text = "Upcoming"; cls = "border-sky-200 bg-sky-50 text-sky-700"; }
+  if (days < 0) { text = L("Overdue", lang); cls = "border-red-300 bg-red-50 text-red-700"; }
+  else if (days === 0) { text = L("Due today", lang); cls = "border-red-300 bg-red-50 text-red-700"; }
+  else if (days <= 14) { text = es ? `${days} día${days === 1 ? "" : "s"}` : `${days} day${days === 1 ? "" : "s"}`; cls = "border-rose-200 bg-rose-50 text-rose-700"; }
+  else if (days <= 60) { text = es ? `${days} días` : `${days} days`; cls = "border-amber-200 bg-amber-50 text-amber-800"; }
+  else { text = L("Upcoming", lang); cls = "border-sky-200 bg-sky-50 text-sky-700"; }
   return <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide ${cls}`}>{text}</span>;
 }
 
@@ -113,11 +114,11 @@ function ReadinessRing({ percent }: { percent: number | null }) {
   );
 }
 
-function readinessLabel(percent: number | null): { text: string; cls: string } {
-  if (percent == null) return { text: "Not started", cls: "bg-slate-100 text-slate-600" };
-  if (percent >= 90) return { text: "On track", cls: "bg-emerald-50 text-emerald-700" };
-  if (percent >= 50) return { text: "In progress", cls: "bg-amber-50 text-amber-800" };
-  return { text: "Needs attention", cls: "bg-rose-50 text-rose-700" };
+function readinessLabel(percent: number | null, lang: Lang): { text: string; cls: string } {
+  if (percent == null) return { text: L("Not started", lang), cls: "bg-slate-100 text-slate-600" };
+  if (percent >= 90) return { text: L("On track", lang), cls: "bg-emerald-50 text-emerald-700" };
+  if (percent >= 50) return { text: L("In progress", lang), cls: "bg-amber-50 text-amber-800" };
+  return { text: L("Needs attention", lang), cls: "bg-rose-50 text-rose-700" };
 }
 
 function StatTile({ icon, iconBg, value, label }: { icon: React.ReactNode; iconBg: string; value: number; label: string }) {
@@ -156,7 +157,7 @@ function Empty({ text }: { text: string }) { return <div className="rounded-xl b
 
 // Fetches a short-lived signed URL from an ownership-checked API route, then
 // opens it directly — the file's bytes never pass through our own server.
-function DownloadButton({ kind, id }: { kind: "evidence" | "deliverables"; id: string }) {
+function DownloadButton({ kind, id, lang }: { kind: "evidence" | "deliverables"; id: string; lang: Lang }) {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const download = async () => {
@@ -177,16 +178,16 @@ function DownloadButton({ kind, id }: { kind: "evidence" | "deliverables"; id: s
       type="button" onClick={() => void download()} disabled={busy}
       className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 disabled:opacity-50"
     >
-      <Download className="h-3.5 w-3.5" />{failed ? "Try again" : "Download"}
+      <Download className="h-3.5 w-3.5" />{failed ? L("Try again", lang) : L("Download", lang)}
     </button>
   );
 }
 
-function DetailField({ label, value }: { label: string; value: string | null | undefined }) {
+function DetailField({ label, value, lang }: { label: string; value: string | null | undefined; lang: Lang }) {
   return (
     <div className="min-w-0">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-[#5a5a5a]">{label}</div>
-      <div className="mt-0.5 truncate text-sm font-medium text-[#161616]" title={value || undefined}>{value || "Not entered"}</div>
+      <div className="mt-0.5 truncate text-sm font-medium text-[#161616]" title={value || undefined}>{value || L("Not entered", lang)}</div>
     </div>
   );
 }
@@ -257,7 +258,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
     const response = await fetch(`/api/obligations/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const result = await response.json().catch(() => ({}));
     setBusy(false);
-    if (!response.ok) { setMessage(result.error || "Could not update."); setJustCompleted(false); return; }
+    if (!response.ok) { setMessage(result.error || L("Could not update.", lang)); setJustCompleted(false); return; }
     reload();
   };
   const markComplete = () => {
@@ -273,7 +274,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
       form.append("obligation_id", item.id);
       const response = await fetch("/api/evidence", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) { setMessage(result.error || "Could not upload."); return; }
+      if (!response.ok) { setMessage(result.error || L("Could not upload.", lang)); return; }
       reload();
     } finally {
       setUploading(false);
@@ -291,7 +292,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
     form.append("obligation_id", item.id);
     const response = await fetch("/api/evidence", { method: "POST", body: form });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || "Could not save the completed document.");
+    if (!response.ok) throw new Error(result.error || L("Could not save the completed document.", lang));
     setMessage(null);
     setJustCompleted(true);
     onMarkComplete?.(item.id);
@@ -314,29 +315,29 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           {completed && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />}
           <div className="min-w-0">
             <div className="font-semibold text-[#161616]">{item.name}</div>
-            <div className="text-xs text-slate-500">{item.agency || "Agency not recorded"}{item.matter_title ? ` · ${item.matter_title}` : ""}</div>
+            <div className="text-xs text-slate-500">{item.agency || L("Agency not recorded", lang)}{item.matter_title ? ` · ${item.matter_title}` : ""}</div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="text-right">
-            <div className="text-sm font-semibold text-slate-700">{dateLabel(item.due_date)}</div>
+            <div className="text-sm font-semibold text-slate-700">{dateLabel(item.due_date, lang)}</div>
             {item.due_date && item.due_date_source !== "UNKNOWN" && (
               <div className="text-[10px] uppercase tracking-wide text-slate-400">{item.due_date_source.replaceAll("_", " ")}</div>
             )}
           </div>
-          <StatusBadge status={completed ? "COMPLETED" : (item.status as ObligationStatus)} />
+          <StatusBadge status={completed ? "COMPLETED" : (item.status as ObligationStatus)} lang={lang} />
         </div>
       </div>
-      {!item.due_date && !completed && <p className="mt-2 text-xs text-slate-500">{DUE_DATE_UNKNOWN_MESSAGE}</p>}
+      {!item.due_date && !completed && <p className="mt-2 text-xs text-slate-500">{L(DUE_DATE_UNKNOWN_MESSAGE, lang)}</p>}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-        <span className="mr-auto text-xs font-medium text-slate-600">{completed ? "Marked as complete" : item.next_action}</span>
+        <span className="mr-auto text-xs font-medium text-slate-600">{completed ? L("Marked as complete", lang) : L(item.next_action, lang)}</span>
         {!completed && (
           <>
             <button
               type="button" disabled={uploading || busy} onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#245c5c] px-3 py-1 text-xs font-semibold text-[#245c5c] disabled:opacity-50"
             >
-              <Upload className="h-3.5 w-3.5" />{uploading ? "Uploading…" : "Upload"}
+              <Upload className="h-3.5 w-3.5" />{uploading ? L("Uploading…", lang) : L("Upload", lang)}
             </button>
             {dl && (
               <a
@@ -363,7 +364,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
               type="button" onClick={() => { setDate(item.due_date || ""); setMessage(null); setDateDialogOpen(true); }}
               className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600"
             >
-              <CalendarDays className="h-3.5 w-3.5" />Update date
+              <CalendarDays className="h-3.5 w-3.5" />{L("Update date", lang)}
             </button>
           </>
         )}
@@ -382,7 +383,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
             )}
           </>
         ) : (
-          <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">Mark renewed / complete</button>
+          <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">{L("Mark renewed / complete", lang)}</button>
         )}
       </div>
       {downloaded && !completed && (
@@ -394,42 +395,42 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
         <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
           <FileText className="h-4 w-4 shrink-0 text-emerald-700" />
           <span className="min-w-0 flex-1 truncate text-xs font-semibold text-emerald-900" title={completedPdf.original_filename}>
-            Completed document: {completedPdf.original_filename}
+            {L("Completed document:", lang)} {completedPdf.original_filename}
           </span>
-          <DownloadButton kind="evidence" id={completedPdf.id} />
+          <DownloadButton kind="evidence" id={completedPdf.id} lang={lang} />
         </div>
       )}
       {message && !dateDialogOpen && <p className="mt-2 text-xs text-red-600">{message}</p>}
       {dateDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDateDialogOpen(false)}>
           <div
-            role="dialog" aria-modal="true" aria-label="Update due date"
+            role="dialog" aria-modal="true" aria-label={L("Update due date", lang)}
             className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="font-bold text-[#161616]">Update due date</h3>
+            <h3 className="font-bold text-[#161616]">{L("Update due date", lang)}</h3>
             <p className="mt-0.5 text-xs text-slate-500">{item.name}</p>
-            <label className="mt-4 block text-xs font-semibold text-slate-600">Due date
+            <label className="mt-4 block text-xs font-semibold text-slate-600">{L("Due date", lang)}
               <input
                 type="date" value={date} onChange={(event) => setDate(event.target.value)}
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal text-[#161616]"
               />
             </label>
-            <label className="mt-3 block text-xs font-semibold text-slate-600">Date source
+            <label className="mt-3 block text-xs font-semibold text-slate-600">{L("Date source", lang)}
               <select
                 value={source} onChange={(event) => setSource(event.target.value as DueDateSource)}
                 className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-[#161616]"
               >
-                <option value="USER_PROVIDED">User provided</option>
-                <option value="DOCUMENT_EXTRACTED">Document extracted</option>
-                <option value="EXTERNALLY_VERIFIED">Externally verified</option>
-                <option value="REGULATORY_RULE">Regulatory rule</option>
+                <option value="USER_PROVIDED">{L("User provided", lang)}</option>
+                <option value="DOCUMENT_EXTRACTED">{L("Document extracted", lang)}</option>
+                <option value="EXTERNALLY_VERIFIED">{L("Externally verified", lang)}</option>
+                <option value="REGULATORY_RULE">{L("Regulatory rule", lang)}</option>
               </select>
             </label>
             {message && <p className="mt-2 text-xs text-red-600">{message}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setDateDialogOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600">Cancel</button>
-              <button type="button" disabled={busy || !date} onClick={saveDate} className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save date</button>
+              <button type="button" onClick={() => setDateDialogOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600">{L("Cancel", lang)}</button>
+              <button type="button" disabled={busy || !date} onClick={saveDate} className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{L("Save date", lang)}</button>
             </div>
           </div>
         </div>
@@ -459,6 +460,12 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
 export default function BusinessDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const lang: Lang = useMemo(() => {
+    try {
+      if (typeof window === "undefined") return "en";
+      return window.localStorage.getItem("smartpr-lang") === "es" ? "es" : "en";
+    } catch { return "en"; }
+  }, []);
   const [data, setData] = useState<Detail | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [showAllRequirements, setShowAllRequirements] = useState(false);
@@ -509,10 +516,10 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
       .sort((a, b) => (MISSING_PRIORITY[a.status] ?? 9) - (MISSING_PRIORITY[b.status] ?? 9));
 
     const matterCalendar: Obligation[] = matters.filter((matter) => matter.due_date && matter.status !== "COMPLETED").map((matter) => ({
-      id: `matter-${matter.id}`, name: matter.title, agency: "Filing matter", matter_title: matter.title,
+      id: `matter-${matter.id}`, name: matter.title, agency: L("Filing matter", lang), matter_title: matter.title,
       status: matter.status === "NEEDS_ATTENTION" ? "NEEDS_ATTENTION" : "IN_PROGRESS",
       due_date: matter.due_date, due_date_source: matter.due_date_source,
-      source_reference: matter.source_reference, next_action: "Continue filing",
+      source_reference: matter.source_reference, next_action: L("Continue filing", lang),
     }));
     const calendar = [...obligations.filter((item) => item.due_date && item.status !== "COMPLETED"), ...matterCalendar]
       .sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
@@ -522,9 +529,9 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     return { totalApplicable, completed: completed.length, readiness, missing, calendar, activeMatters, history };
   }, [data]);
 
-  if (loadError) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-sm text-rose-700">Couldn&apos;t load this business right now. <button type="button" onClick={() => void load()} className="font-semibold underline">Try again</button></div></div>;
-  if (!data) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">Loading compliance profile…</div></div>;
-  if (data.error || !data.business) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">Business not found.</div></div>;
+  if (loadError) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-sm text-rose-700">{L("Couldn't load this business right now.", lang)} <button type="button" onClick={() => void load()} className="font-semibold underline">{L("Try again", lang)}</button></div></div>;
+  if (!data) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">{L("Loading compliance profile…", lang)}</div></div>;
+  if (data.error || !data.business) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">{L("Business not found.", lang)}</div></div>;
 
   const business = data.business;
   const evidence = data.evidence ?? [];
@@ -534,7 +541,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const unreadNotifications = notifications.filter((item) => item.status === "PENDING" || item.status === "DELIVERED").length;
   const shortId = business.public_id || id;
 
-  const readinessInfo = readinessLabel(derived.readiness);
+  const readinessInfo = readinessLabel(derived.readiness, lang);
   const topMissing = derived.missing.slice(0, 3);
   const shownMissing = showAllRequirements ? derived.missing : topMissing;
   const topCalendar = derived.calendar.slice(0, 3);
@@ -554,45 +561,45 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
       <main className="mx-auto max-w-7xl px-5 py-8">
         <div className="flex items-center justify-between">
           <Link href="/businesses" className="text-sm font-semibold text-[#245c5c]">← Back</Link>
-          <Link href="/businesses" className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-medium text-white">My Businesses</Link>
+          <Link href="/businesses" className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-medium text-white">{L("My Businesses", lang)}</Link>
         </div>
 
         <header className="mt-3 rounded-2xl border border-[#161616]/15 bg-[#fbf8f2] p-6 text-[#161616]">
           <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#5a5a5a]">
-                <Building2 className="h-3.5 w-3.5" /><span>{business.business_type || "Business type not entered"}</span>
+                <Building2 className="h-3.5 w-3.5" /><span>{business.business_type || L("Business type not entered", lang)}</span>
                 <span>·</span>
-                <MapPin className="h-3.5 w-3.5" /><span>{business.municipality || "Municipality not entered"}</span>
-                <span>·</span><span>Active</span>
+                <MapPin className="h-3.5 w-3.5" /><span>{business.municipality || L("Municipality not entered", lang)}</span>
+                <span>·</span><span>{L("Active", lang)}</span>
               </div>
               <h1 className="font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight md:text-5xl">{business.legal_name || business.name}</h1>
-              <p className="mt-2 max-w-2xl text-base text-[#5a5a5a]">{business.entity_number || "Entity number not entered"} · {business.onboarding_mode === "EXISTING" ? "Existing business reconstruction" : "SmartPR formation workflow"}</p>
+              <p className="mt-2 max-w-2xl text-base text-[#5a5a5a]">{business.entity_number || L("Entity number not entered", lang)} · {business.onboarding_mode === "EXISTING" ? L("Existing business reconstruction", lang) : L("SmartPR formation workflow", lang)}</p>
             </div>
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <button
                 type="button" onClick={() => setShowBusinessDetails((value) => !value)} aria-expanded={showBusinessDetails}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-[#161616]/20 bg-white px-4 py-3 text-sm font-medium text-[#161616]"
               >
-                Business details
+                {L("Business details", lang)}
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showBusinessDetails ? "rotate-180" : ""}`} />
               </button>
-              <Link href={`/businesses/${shortId}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-[#245c5c] px-5 py-3 text-sm font-medium text-[#f6f3ea]">Start New Filing / Renewal</Link>
+              <Link href={`/businesses/${shortId}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-[#245c5c] px-5 py-3 text-sm font-medium text-[#f6f3ea]">{L("Start New Filing / Renewal", lang)}</Link>
             </div>
           </div>
 
           {showBusinessDetails && (
             <div className="mt-5 grid gap-4 rounded-xl border border-[#161616]/15 bg-[#f4f1ea] p-4 sm:grid-cols-2 lg:grid-cols-3">
-              <DetailField label="Legal name" value={business.legal_name || business.name} />
-              <DetailField label="Entity number" value={business.entity_number} />
-              <DetailField label="Business structure" value={business.business_structure} />
-              <DetailField label="Business type" value={business.business_type} />
-              <DetailField label="Industry" value={business.industry} />
-              <DetailField label="Municipality" value={business.municipality} />
-              <DetailField label="Physical address" value={business.physical_address} />
-              <DetailField label="Onboarding mode" value={business.onboarding_mode === "EXISTING" ? "Existing business reconstruction" : "SmartPR formation workflow"} />
-              <DetailField label="Entry created" value={fmtDate(business.created_at)} />
-              <div className="sm:col-span-2 lg:col-span-3"><DetailField label="Notes" value={business.notes} /></div>
+              <DetailField lang={lang} label={L("Legal name", lang)} value={business.legal_name || business.name} />
+              <DetailField lang={lang} label={L("Entity number", lang)} value={business.entity_number} />
+              <DetailField lang={lang} label={L("Business structure", lang)} value={business.business_structure} />
+              <DetailField lang={lang} label={L("Business type", lang)} value={business.business_type} />
+              <DetailField lang={lang} label={L("Industry", lang)} value={business.industry} />
+              <DetailField lang={lang} label={L("Municipality", lang)} value={business.municipality} />
+              <DetailField lang={lang} label={L("Physical address", lang)} value={business.physical_address} />
+              <DetailField lang={lang} label={L("Onboarding mode", lang)} value={business.onboarding_mode === "EXISTING" ? L("Existing business reconstruction", lang) : L("SmartPR formation workflow", lang)} />
+              <DetailField lang={lang} label={L("Entry created", lang)} value={fmtDate(business.created_at)} />
+              <div className="sm:col-span-2 lg:col-span-3"><DetailField lang={lang} label={L("Notes", lang)} value={business.notes} /></div>
             </div>
           )}
         </header>
@@ -601,17 +608,17 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-950/[0.02]">
             <ReadinessRing percent={derived.readiness} />
             <div>
-              <div className="text-xs font-medium uppercase tracking-wider text-slate-500">Overall readiness</div>
+              <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{L("Overall readiness", lang)}</div>
               <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessInfo.cls}`}>{readinessInfo.text}</span>
-              <p className="mt-2 text-sm text-slate-600">{derived.totalApplicable ? `${derived.completed} of ${derived.totalApplicable} requirements complete.` : "No applicable requirements recorded yet."}</p>
-              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-1 text-sm font-semibold text-[#245c5c] hover:underline">View all requirements</button>
+              <p className="mt-2 text-sm text-slate-600">{derived.totalApplicable ? (lang === "es" ? `${derived.completed} de ${derived.totalApplicable} requisitos completados.` : `${derived.completed} of ${derived.totalApplicable} requirements complete.`) : L("No applicable requirements recorded yet.", lang)}</p>
+              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-1 text-sm font-semibold text-[#245c5c] hover:underline">{L("View all requirements", lang)}</button>
             </div>
           </section>
 
           <section className="flex items-stretch divide-x divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
-            <StatTile icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />} iconBg="bg-emerald-50" value={derived.completed} label="Complete" />
-            <StatTile icon={<AlertTriangle className="h-5 w-5 text-rose-600" />} iconBg="bg-rose-50" value={Math.max(derived.totalApplicable - derived.completed, 0)} label="Need attention" />
-            <StatTile icon={<FileText className="h-5 w-5 text-amber-600" />} iconBg="bg-amber-50" value={derived.activeMatters.length} label="Active filing" />
+            <StatTile icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />} iconBg="bg-emerald-50" value={derived.completed} label={L("Complete", lang)} />
+            <StatTile icon={<AlertTriangle className="h-5 w-5 text-rose-600" />} iconBg="bg-rose-50" value={Math.max(derived.totalApplicable - derived.completed, 0)} label={L("Need attention", lang)} />
+            <StatTile icon={<FileText className="h-5 w-5 text-amber-600" />} iconBg="bg-amber-50" value={derived.activeMatters.length} label={L("Active filing", lang)} />
           </section>
         </div>
 
@@ -619,7 +626,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-950/[0.02] sm:flex-row sm:items-center">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#245c5c]"><ArrowRight className="h-4 w-4 text-white" /></span>
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium text-slate-500">Next best action</div>
+              <div className="text-xs font-medium text-slate-500">{L("Next best action", lang)}</div>
               <div className="font-bold text-[#161616]">{nextBestAction.name}</div>
             </div>
             <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="inline-flex items-center justify-center rounded-lg bg-[#245c5c] px-5 py-2.5 text-sm font-medium text-[#f6f3ea]">Continue</a>
@@ -629,7 +636,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
-              <ShieldAlert className="h-4 w-4 text-rose-600" />Missing Requirements
+              <ShieldAlert className="h-4 w-4 text-rose-600" />{L("Missing Requirements", lang)}
               <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.missing.length}</span>
             </div>
             <div className="p-5">
@@ -641,19 +648,19 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-semibold text-[#161616]">{item.name}</div>
                       </div>
-                      <span className="hidden sm:inline-flex whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-rose-700">{requirementStatusText(item.status).toUpperCase()}</span>
-                      <a href={`#obligation-${item.id}`} onClick={() => setShowAllRequirements(true)} className="shrink-0 rounded-lg bg-[#245c5c] px-3.5 py-1.5 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245c5c]">{actionLabelForStatus(item.status, Boolean(item.matter_title))}</a>
+                      <span className="hidden sm:inline-flex whitespace-nowrap rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-rose-700">{requirementStatusText(item.status, lang).toUpperCase()}</span>
+                      <a href={`#obligation-${item.id}`} onClick={() => setShowAllRequirements(true)} className="shrink-0 rounded-lg bg-[#245c5c] px-3.5 py-1.5 text-xs font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245c5c]">{actionLabelForStatus(item.status, Boolean(item.matter_title), lang)}</a>
                     </div>
                   ))}
                 </div>
-              ) : <Empty text="No missing requirements are recorded." />}
-              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-3 text-sm font-semibold text-[#245c5c] hover:underline">View all requirements</button>
+              ) : <Empty text={L("No missing requirements are recorded.", lang)} />}
+              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-3 text-sm font-semibold text-[#245c5c] hover:underline">{L("View all requirements", lang)}</button>
             </div>
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
-              <CalendarDays className="h-4 w-4 text-emerald-600" />Compliance Calendar
+              <CalendarDays className="h-4 w-4 text-emerald-600" />{L("Compliance Calendar", lang)}
               <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.calendar.length}</span>
             </div>
             <div className="p-5">
@@ -662,15 +669,15 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   {topCalendar.map((item) => (
                     <a key={item.id} href={`#obligation-${item.id}`} onClick={() => setShowAllRequirements(true)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-slate-500">{dateLabel(item.due_date)}</div>
+                        <div className="text-xs font-semibold text-slate-500">{dateLabel(item.due_date, lang)}</div>
                         <div className="truncate font-semibold text-[#161616]">{item.name}</div>
                       </div>
-                      <TimeBadge dueDate={item.due_date} completed={false} />
+                      <TimeBadge dueDate={item.due_date} completed={false} lang={lang} />
                     </a>
                   ))}
                 </div>
-              ) : <Empty text={DUE_DATE_UNKNOWN_MESSAGE} />}
-              <Link href={`/calendar?business=${shortId}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">View full calendar</Link>
+              ) : <Empty text={L(DUE_DATE_UNKNOWN_MESSAGE, lang)} />}
+              <Link href={`/calendar?business=${shortId}`} className="mt-3 inline-block text-sm font-semibold text-[#245c5c] hover:underline">{L("View full calendar", lang)}</Link>
             </div>
           </section>
         </div>
@@ -678,52 +685,54 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
         <div className="mt-6 grid gap-4">
           <CollapsibleRow
             icon={<FolderOpen className="h-4 w-4 text-blue-600" />} iconBg="bg-blue-50"
-            title="Filings & Documents"
-            summary={`${derived.activeMatters.length} active filing${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} document${evidence.length === 1 ? "" : "s"}`}
+            title={L("Filings & Documents", lang)}
+            summary={lang === "es"
+              ? `${derived.activeMatters.length} radicación${derived.activeMatters.length === 1 ? "" : "es"} activa${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} documento${evidence.length === 1 ? "" : "s"}`
+              : `${derived.activeMatters.length} active filing${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} document${evidence.length === 1 ? "" : "s"}`}
           >
             <div className="space-y-4">
               <div>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Active filings</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Active filings", lang)}</div>
                 {derived.activeMatters.length ? (
                   <div className="space-y-2">
                     {derived.activeMatters.map((matter) => (
                       <div key={matter.id} className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 sm:flex-row sm:items-center">
-                        <div><div className="font-semibold text-[#161616]">{matter.title}</div><div className="text-xs text-slate-500">{matter.matter_type.replaceAll("_", " ")} · Opened {fmtDate(matter.opened_at)}</div></div>
+                        <div><div className="font-semibold text-[#161616]">{matter.title}</div><div className="text-xs text-slate-500">{matter.matter_type.replaceAll("_", " ")} · {L("Opened", lang)} {fmtDate(matter.opened_at)}</div></div>
                         <div className="flex flex-wrap items-center gap-3">
-                          <StatusBadge status={matter.status === "READY" ? "CURRENT" : matter.status === "DRAFT" ? "IN_PROGRESS" : matter.status as ObligationStatus} />
+                          <StatusBadge status={matter.status === "READY" ? "CURRENT" : matter.status === "DRAFT" ? "IN_PROGRESS" : matter.status as ObligationStatus} lang={lang} />
                           <ScorePill score={matter.readiness_score} />
                           {matter.submission_id && <Link href={`/?entry=new-business&resume=${matter.submission_id}`} className="text-xs font-semibold text-[#245c5c]">Resume →</Link>}
-                          <button onClick={() => void completeMatter(matter.id)} className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600">Mark filing complete</button>
+                          <button onClick={() => void completeMatter(matter.id)} className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600">{L("Mark filing complete", lang)}</button>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : <Empty text="No active filings." />}
+                ) : <Empty text={L("No active filings.", lang)} />}
               </div>
               <div>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Documents</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Documents", lang)}</div>
                 {evidence.length ? (
                   <div className="space-y-2">
                     {evidence.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                        <div className="min-w-0"><div className="truncate font-semibold text-[#161616]">{item.original_filename}</div><div className="text-xs text-slate-500">{item.obligation_name || "Unmatched evidence"} · Added {fmtDateTime(item.created_at)}</div></div>
+                        <div className="min-w-0"><div className="truncate font-semibold text-[#161616]">{item.original_filename}</div><div className="text-xs text-slate-500">{item.obligation_name || L("Unmatched evidence", lang)} · {L("Added", lang)} {fmtDateTime(item.created_at)}</div></div>
                         <div className="flex shrink-0 items-center gap-2">
-                          <StatusBadge status={item.review_status === "VERIFIED" ? "CURRENT" : item.review_status === "NEEDS_REVIEW" ? "NEEDS_ATTENTION" : "UNKNOWN"} />
-                          <DownloadButton kind="evidence" id={item.id} />
+                          <StatusBadge status={item.review_status === "VERIFIED" ? "CURRENT" : item.review_status === "NEEDS_REVIEW" ? "NEEDS_ATTENTION" : "UNKNOWN"} lang={lang} />
+                          <DownloadButton kind="evidence" id={item.id} lang={lang} />
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : <Empty text="No uploaded evidence is associated with this business." />}
+                ) : <Empty text={L("No uploaded evidence is associated with this business.", lang)} />}
               </div>
               {deliverables.length > 0 && (
                 <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Deliverable library</div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Deliverable library", lang)}</div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {deliverables.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
                         <div className="min-w-0"><div className="truncate font-semibold text-[#161616]">{item.filename}</div><div className="text-xs text-slate-500">{item.kind} · {fmtDateTime(item.generated_at)}</div></div>
-                        <DownloadButton kind="deliverables" id={item.id} />
+                        <DownloadButton kind="deliverables" id={item.id} lang={lang} />
                       </div>
                     ))}
                   </div>
@@ -734,31 +743,36 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
           <CollapsibleRow
             icon={<Bell className="h-4 w-4 text-amber-600" />} iconBg="bg-amber-50"
-            title="History & Notifications"
-            summary={`${derived.history.length + submissions.length} past filing${derived.history.length + submissions.length === 1 ? "" : "s"} · ${unreadNotifications} unread`}
+            title={L("History & Notifications", lang)}
+            summary={(() => {
+              const n = derived.history.length + submissions.length;
+              return lang === "es"
+                ? `${n} radicación${n === 1 ? "" : "es"} pasada${n === 1 ? "" : "s"} · ${unreadNotifications} sin leer`
+                : `${n} past filing${n === 1 ? "" : "s"} · ${unreadNotifications} unread`;
+            })()}
           >
             <div className="space-y-4">
               <div>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Filing history</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Filing history", lang)}</div>
                 {derived.history.length || submissions.length ? (
                   <div className="space-y-2">
-                    {derived.history.map((matter) => <div key={matter.id} className="rounded-xl border border-slate-200 px-4 py-3"><div className="font-semibold text-[#161616]">{matter.title}</div><div className="text-xs text-slate-500">Completed {fmtDate(matter.completed_at)}</div></div>)}
+                    {derived.history.map((matter) => <div key={matter.id} className="rounded-xl border border-slate-200 px-4 py-3"><div className="font-semibold text-[#161616]">{matter.title}</div><div className="text-xs text-slate-500">{L("Completed", lang)} {fmtDate(matter.completed_at)}</div></div>)}
                     {submissions.map((submission) => (
                       <Link key={submission.id} href={`/history/${submission.id}`} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3">
-                        <div><div className="font-semibold text-[#161616]">Rules evaluation · {fmtDate(submission.created_at)}</div><div className="text-xs text-slate-500">{submission.business_type || "Business profile"} · {submission.municipality || "—"}</div></div>
+                        <div><div className="font-semibold text-[#161616]">Rules evaluation · {fmtDate(submission.created_at)}</div><div className="text-xs text-slate-500">{submission.business_type || L("Business profile", lang)} · {submission.municipality || "—"}</div></div>
                         <ScorePill score={submission.readiness_score} />
                       </Link>
                     ))}
                   </div>
-                ) : <Empty text="No filing history yet." />}
+                ) : <Empty text={L("No filing history yet.", lang)} />}
               </div>
               <div>
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Notifications</div>
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Notifications", lang)}</div>
                 {notifications.length ? (
                   <div className="space-y-2">
-                    {notifications.slice(0, 10).map((item) => <div key={item.id} className="rounded-xl border border-slate-200 px-4 py-3"><div className="text-sm font-semibold text-[#161616]">{item.message}</div><div className="text-xs text-slate-500">Scheduled {fmtDateTime(item.scheduled_for)} · {item.status}</div></div>)}
+                    {notifications.slice(0, 10).map((item) => <div key={item.id} className="rounded-xl border border-slate-200 px-4 py-3"><div className="text-sm font-semibold text-[#161616]">{item.message}</div><div className="text-xs text-slate-500">{L("Scheduled", lang)} {fmtDateTime(item.scheduled_for)} · {item.status}</div></div>)}
                   </div>
-                ) : <Empty text="No reminders have been scheduled." />}
+                ) : <Empty text={L("No reminders have been scheduled.", lang)} />}
               </div>
             </div>
           </CollapsibleRow>
@@ -767,19 +781,19 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
         {showAllRequirements && (
           <section id="all-requirements" className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
             <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
-              All requirements
+              {L("All requirements", lang)}
               <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.totalApplicable}</span>
-              <button type="button" onClick={() => setShowAllRequirements(false)} className="text-sm font-semibold text-[#245c5c] hover:underline">Hide</button>
+              <button type="button" onClick={() => setShowAllRequirements(false)} className="text-sm font-semibold text-[#245c5c] hover:underline">{L("Hide", lang)}</button>
             </div>
             <div className="space-y-3 p-5">
               {outstandingDisplay.length ? outstandingDisplay.map((item) => (
                 <ObligationRow
                   key={item.id} item={item} business={business} evidence={evidence} reload={load} onMarkComplete={markRecentlyCompleted}
                 />
-              )) : <Empty text="No outstanding requirements." />}
+              )) : <Empty text={L("No outstanding requirements.", lang)} />}
               {otherCompleted.length > 0 && (
                 <>
-                  <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Completed</div>
+                  <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Completed", lang)}</div>
                   {otherCompleted.map((item) => (
                     <ObligationRow
                       key={item.id} item={item} business={business} evidence={evidence} reload={load}

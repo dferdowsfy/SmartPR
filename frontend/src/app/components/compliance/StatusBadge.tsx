@@ -1,4 +1,5 @@
 import type { ObligationStatus } from "../../compliance/types";
+import { L, type Lang } from "../../i18n";
 
 const STYLE: Record<ObligationStatus, string> = {
   CURRENT: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -12,10 +13,10 @@ const STYLE: Record<ObligationStatus, string> = {
   UNKNOWN: "border-slate-200 bg-slate-100 text-slate-600",
 };
 
-export function StatusBadge({ status }: { status: ObligationStatus | string }) {
+export function StatusBadge({ status, lang = "en" }: { status: ObligationStatus | string; lang?: Lang }) {
   const known = status in STYLE ? status as ObligationStatus : "UNKNOWN";
   // Never show the internal "UNKNOWN" state name to users.
-  const text = known === "UNKNOWN" ? "NEEDS INFO" : known.replaceAll("_", " ");
+  const text = known === "UNKNOWN" ? L("NEEDS INFO", lang) : L(known.replaceAll("_", " "), lang);
   return (
     <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide ${STYLE[known]}`}>
       {text}

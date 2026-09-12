@@ -96,6 +96,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
   const initials = (user?.name || user?.email || "?").slice(0, 1).toUpperCase();
   const navStart = lang === "es" ? "Comenzar" : "Start";
   const navMyBiz = lang === "es" ? "Mis Negocios" : "My Businesses";
+  const es = lang === "es";
 
   const langToggle = (
     <div className="spr-context-language" aria-label={lang === "es" ? "Idioma" : "Language"}>
@@ -131,7 +132,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
                 ref={avatarBtnRef}
                 className="avatar"
                 type="button"
-                aria-label="Account menu"
+                aria-label={es ? "Menú de cuenta" : "Account menu"}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((o) => !o)}
@@ -157,29 +158,29 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
                         <div className="uemail">{user.email}</div>
                       </div>
                       <Link className="uitem" role="menuitem" href="/settings" onClick={() => setMenuOpen(false)}>
-                        <Settings className="i" /> Settings
+                        <Settings className="i" /> {es ? "Ajustes" : "Settings"}
                       </Link>
                       <Link className="uitem" role="menuitem" href="/filings" onClick={() => setMenuOpen(false)}>
-                        <FileText className="i" /> Annual filings
+                        <FileText className="i" /> {es ? "Radicaciones anuales" : "Annual filings"}
                       </Link>
                       <Link className="uitem" role="menuitem" href="/calendar" onClick={() => setMenuOpen(false)}>
-                        <CalendarDays className="i" /> Calendar
+                        <CalendarDays className="i" /> {es ? "Calendario" : "Calendar"}
                       </Link>
                       <Link className="uitem" role="menuitem" href="/history" onClick={() => setMenuOpen(false)}>
-                        <RefreshCw className="i" /> History
+                        <RefreshCw className="i" /> {es ? "Historial" : "History"}
                       </Link>
                       {user.isAdmin && (
                         <Link className="uitem" role="menuitem" href="/admin/knowledge-base" onClick={() => setMenuOpen(false)}>
-                          <ShieldCheck className="i" /> Knowledge Graph
+                          <ShieldCheck className="i" /> {es ? "Grafo de conocimiento" : "Knowledge Graph"}
                         </Link>
                       )}
                       {user.isAdmin && (
                         <Link className="uitem" role="menuitem" href="/admin/requirements" onClick={() => setMenuOpen(false)}>
-                          <ShieldCheck className="i" /> Admin Review
+                          <ShieldCheck className="i" /> {es ? "Revisión admin" : "Admin Review"}
                         </Link>
                       )}
                       <button type="button" className="uitem uitem-danger" role="menuitem" onClick={signOutNow}>
-                        <LogOut className="i" /> Log out
+                        <LogOut className="i" /> {es ? "Cerrar sesión" : "Log out"}
                       </button>
                     </div>,
                     document.body,
@@ -188,7 +189,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
             </div>
             </>
           ) : (
-            <Link href="/auth/login" className="nav-tab">Sign in</Link>
+            <Link href="/auth/login" className="nav-tab">{es ? "Iniciar sesión" : "Sign in"}</Link>
           )}
         </div>
       </div>
@@ -196,10 +197,16 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
   );
 }
 
+function currentLocale(): string {
+  try {
+    return window.localStorage.getItem("smartpr-lang") === "es" ? "es-PR" : "en-US";
+  } catch { return "en-US"; }
+}
+
 export function fmtDate(s: string | null | undefined): string {
   if (!s) return "—";
   try {
-    return new Date(s).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    return new Date(s).toLocaleDateString(typeof window === "undefined" ? "en-US" : currentLocale(), { year: "numeric", month: "long", day: "numeric" });
   } catch {
     return String(s);
   }
@@ -208,7 +215,7 @@ export function fmtDate(s: string | null | undefined): string {
 export function fmtDateTime(s: string | null | undefined): string {
   if (!s) return "—";
   try {
-    return new Date(s).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    return new Date(s).toLocaleString(typeof window === "undefined" ? "en-US" : currentLocale(), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   } catch {
     return String(s);
   }

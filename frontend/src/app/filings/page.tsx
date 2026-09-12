@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { FileCheck2 } from "lucide-react";
 import { TopNav } from "../history/ui";
 import { StatusBadge } from "../components/compliance/StatusBadge";
+import { L, type Lang } from "../i18n";
 import {
   countFilings,
   filingYear,
@@ -18,8 +19,27 @@ interface Portfolio {
   items?: FilingLike[];
 }
 
+function useLang(): Lang {
+  const [lang, setLang] = useState<Lang>("en");
+  useEffect(() => {
+    try {
+      const s = window.localStorage.getItem("smartpr-lang");
+      if (s === "es" || s === "en") setLang(s);
+    } catch { /* private mode */ }
+    const handler = (e: Event) => {
+      const l = (e as CustomEvent<string>).detail;
+      if (l === "en" || l === "es") setLang(l);
+    };
+    window.addEventListener("smartpr-lang-change", handler);
+    return () => window.removeEventListener("smartpr-lang-change", handler);
+  }, []);
+  return lang;
+}
+
 function FilingsContent() {
   const searchParams = useSearchParams();
+  const lang = useLang();
+  const es = lang === "es";
   const [data, setData] = useState<Portfolio | null>(null);
   const [business, setBusiness] = useState(() => searchParams.get("business") || "");
   useEffect(() => {
@@ -40,27 +60,26 @@ function FilingsContent() {
       <main className="mx-auto max-w-5xl px-5 py-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245c5c]">Recurring compliance</p>
-            <h1 className="mt-1 text-3xl font-bold text-[#161616]">Annual filings</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245c5c]">{L("Recurring compliance", lang)}</p>
+            <h1 className="mt-1 text-3xl font-bold text-[#161616]">{L("Annual filings", lang)}</h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-500">
-              Every yearly filing for every business — Informe Anual, Patente, CRIM — in one place.
-              SmartPR reminds you 90, 60, 30 and 7 days out, and queues next year&apos;s filing the moment you complete this one.
+              {L("Every yearly filing for every business — Informe Anual, Patente, CRIM — in one place. SmartPR reminds you 90, 60, 30 and 7 days out, and queues next year's filing the moment you complete this one.", lang)}
             </p>
           </div>
-          <select value={business} onChange={(event) => setBusiness(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-[#161616]" aria-label="Filter by business">
-            <option value="">All businesses</option>
+          <select value={business} onChange={(event) => setBusiness(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-[#161616]" aria-label={L("Filter by business", lang)}>
+            <option value="">{L("All businesses", lang)}</option>
             {data?.businesses?.map((item) => <option key={item.id} value={item.id}>{item.legal_name}</option>)}
           </select>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
           {[
-            { label: "Overdue", value: counts.overdue, tone: "text-red-700 bg-red-50 border-red-200" },
-            { label: "Due soon", value: counts.dueSoon, tone: "text-amber-800 bg-amber-50 border-amber-200" },
-            { label: "Upcoming", value: counts.upcoming, tone: "text-slate-600 bg-white border-slate-200" },
-            { label: "Filed", value: counts.filed, tone: "text-emerald-800 bg-emerald-50 border-emerald-200" },
+            { key: "overdue", label: L("Overdue", lang), value: counts.overdue, tone: "text-red-700 bg-red-50 border-red-200" },
+            { key: "dueSoon", label: L("Due soon", lang), value: counts.dueSoon, tone: "text-amber-800 bg-amber-50 border-amber-200" },
+            { key: "upcoming", label: L("Upcoming", lang), value: counts.upcoming, tone: "text-slate-600 bg-white border-slate-200" },
+            { key: "filed", label: L("Filed", lang), value: counts.filed, tone: "text-emerald-800 bg-emerald-50 border-emerald-200" },
           ].map((chip) => (
-            <span key={chip.label} className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${chip.tone}`}>
+            <span key={chip.key} className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${chip.tone}`}>
               {chip.label}
               <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs font-bold tabular-nums">{chip.value}</span>
             </span>
@@ -68,20 +87,19 @@ function FilingsContent() {
         </div>
 
         <div className="mt-4 text-sm text-slate-500">
-          <span><span className="font-bold text-[#161616] tabular-nums">{counts.total}</span> annual filing{counts.total === 1 ? "" : "s"} tracked</span>
+          <span><span className="font-bold text-[#161616] tabular-nums">{counts.total}</span> {es ? `radicación${counts.total === 1 ? "" : "es"} anual${counts.total === 1 ? "" : "es"} en seguimiento` : `annual filing${counts.total === 1 ? "" : "s"} tracked`}</span>
           <span className="mx-2 text-slate-300">·</span>
-          <Link href="/calendar" className="font-semibold text-[#245c5c] hover:underline">View full compliance calendar →</Link>
+          <Link href="/calendar" className="font-semibold text-[#245c5c] hover:underline">{L("View full compliance calendar →", lang)}</Link>
         </div>
 
         {data === null ? (
-          <div className="py-14 text-center text-slate-500">Loading filings…</div>
+          <div className="py-14 text-center text-slate-500">{L("Loading filings…", lang)}</div>
         ) : groups.length === 0 ? (
           <div className="py-14 text-center">
             <FileCheck2 className="mx-auto mb-3 h-9 w-9 text-slate-300" />
-            <div className="font-semibold text-[#161616]">No annual filings tracked yet.</div>
+            <div className="font-semibold text-[#161616]">{L("No annual filings tracked yet.", lang)}</div>
             <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
-              Annual filings appear here once your businesses have obligations with a yearly renewal —
-              for example the Informe Anual or the municipal Patente.
+              {L("Annual filings appear here once your businesses have obligations with a yearly renewal — for example the Informe Anual or the municipal Patente.", lang)}
             </p>
           </div>
         ) : (
@@ -103,12 +121,12 @@ function FilingsContent() {
                           {filing.due_date ? (
                             <>
                               <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                                {new Date(`${filing.due_date}T00:00:00`).toLocaleDateString("en-US", { month: "short" })}
+                                {new Date(`${filing.due_date}T00:00:00`).toLocaleDateString(es ? "es-PR" : "en-US", { month: "short" })}
                               </div>
                               <div className="text-xl font-extrabold text-[#161616]">{new Date(`${filing.due_date}T00:00:00`).getDate()}</div>
                             </>
                           ) : (
-                            <div className="py-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">No date</div>
+                            <div className="py-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{L("No date", lang)}</div>
                           )}
                         </div>
                         <div>
@@ -116,9 +134,9 @@ function FilingsContent() {
                             {filing.name}
                             {year && <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{year}</span>}
                           </div>
-                          <div className="text-xs text-slate-500">{filing.agency || "Agency not recorded"} · renews every year</div>
+                          <div className="text-xs text-slate-500">{filing.agency || L("Agency not recorded", lang)} · {L("renews every year", lang)}</div>
                         </div>
-                        <StatusBadge status={filing.status} />
+                        <StatusBadge status={filing.status} lang={lang} />
                       </Link>
                     );
                   })}
@@ -132,9 +150,14 @@ function FilingsContent() {
   );
 }
 
+function FilingsFallback() {
+  const lang = useLang();
+  return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="filings" /><div className="p-12 text-center text-slate-500">{L("Loading filings…", lang)}</div></div>;
+}
+
 export default function FilingsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#f4f1ea]"><TopNav active="filings" /><div className="p-12 text-center text-slate-500">Loading filings…</div></div>}>
+    <Suspense fallback={<FilingsFallback />}>
       <FilingsContent />
     </Suspense>
   );
