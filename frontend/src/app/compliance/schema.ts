@@ -165,8 +165,11 @@ CREATE INDEX IF NOT EXISTS idx_notifications_pending ON notifications (user_id, 
 -- Admin allowlist, manageable from the Supabase dashboard: insert an email
 -- to grant that user admin access (admin tools + deliverables bypass).
 -- The ADMIN_EMAILS env var remains as an additional source.
+-- The "groups" array holds permission groups (e.g. {admin}, {admin,billing})
+-- so access can be scoped beyond a single admin flag; gate with userInGroup().
 CREATE TABLE IF NOT EXISTS admin_allowlist (
   email TEXT PRIMARY KEY,
+  groups TEXT[] NOT NULL DEFAULT '{admin}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_by TEXT
 );
