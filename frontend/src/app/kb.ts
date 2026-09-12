@@ -303,10 +303,11 @@ function bundledDiscoveryQuestions(businessTypeName: string): DiscoveryQuestionD
  * equal-weight formula (100 / totalMandatory).
  */
 export function readinessWeightFor(
-  mandatoryReqs: { document_id?: string }[]
+  mandatoryReqs: { document_id?: string }[],
+  weights: Readonly<Record<string, number>> = kbMeta.weights
 ): (req: { document_id?: string }) => number {
   const raw = (r: { document_id?: string }) => {
-    const w = r.document_id ? kbMeta.weights[r.document_id] : undefined;
+    const w = r.document_id ? weights[r.document_id] : undefined;
     return typeof w === "number" && isFinite(w) && w > 0 ? w : 1;
   };
   const sum = mandatoryReqs.reduce((s, r) => s + raw(r), 0) || 1;
