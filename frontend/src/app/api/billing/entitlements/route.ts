@@ -7,7 +7,7 @@ import {
   countWorkspaceSeats,
   getWorkspacePlanState,
 } from "../../../../lib/billing/access";
-import { isAdminEmail } from "../../../../lib/admin";
+import { isUserAdmin } from "../../../../lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export async function GET() {
   const pool = getPool();
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
   const workspaceId = await ensureUserWorkspace(pool, user);
-  const admin = isAdminEmail(user.email);
+  const admin = await isUserAdmin(user.email);
   const state = admin
     ? { planId: "enterprise" as const, status: "active" }
     : await getWorkspacePlanState(pool, workspaceId);

@@ -161,4 +161,13 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user_schedule ON notifications (user_id, scheduled_for DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_pending ON notifications (user_id, status, scheduled_for);
+
+-- Admin allowlist, manageable from the Supabase dashboard: insert an email
+-- to grant that user admin access (admin tools + deliverables bypass).
+-- The ADMIN_EMAILS env var remains as an additional source.
+CREATE TABLE IF NOT EXISTS admin_allowlist (
+  email TEXT PRIMARY KEY,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by TEXT
+);
 `;

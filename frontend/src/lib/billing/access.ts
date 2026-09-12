@@ -12,7 +12,7 @@ import {
 } from "./entitlements";
 import type { PlanId } from "./catalog";
 import { isPlanId } from "./catalog";
-import { isAdminEmail } from "../admin";
+import { isUserAdmin } from "../admin";
 
 type Db = Pool | PoolClient;
 
@@ -67,8 +67,8 @@ export async function countWorkspaceSeats(
   return Number(rows[0]?.n || 0);
 }
 
-function adminBypass(email: string | null | undefined): boolean {
-  return isAdminEmail(email);
+async function adminBypass(email: string | null | undefined): Promise<boolean> {
+  return isUserAdmin(email);
 }
 
 export async function assertCanAddBusinesses(
@@ -79,7 +79,7 @@ export async function assertCanAddBusinesses(
     adding?: number;
   }
 ): Promise<WorkspacePlanState> {
-  if (adminBypass(opts.email)) {
+  if (await adminBypass(opts.email)) {
     return { planId: "enterprise", status: "active" };
   }
   const state = await getWorkspacePlanState(db, opts.workspaceId);
@@ -102,7 +102,7 @@ export async function assertCanInviteSeat(
   db: Db,
   opts: { workspaceId: string; email?: string | null }
 ): Promise<WorkspacePlanState> {
-  if (adminBypass(opts.email)) {
+  if (await adminBypass(opts.email)) {
     return { planId: "enterprise", status: "active" };
   }
   const state = await getWorkspacePlanState(db, opts.workspaceId);
@@ -121,7 +121,7 @@ export async function assertCanUseDeliverables(
   db: Db,
   opts: { workspaceId: string; email?: string | null }
 ): Promise<WorkspacePlanState> {
-  if (adminBypass(opts.email)) {
+  if (await adminBypass(opts.email)) {
     return { planId: "enterprise", status: "active" };
   }
   const state = await getWorkspacePlanState(db, opts.workspaceId);
@@ -138,7 +138,7 @@ export async function assertCanUseRadar(
   db: Db,
   opts: { workspaceId: string; email?: string | null }
 ): Promise<WorkspacePlanState> {
-  if (adminBypass(opts.email)) {
+  if (await adminBypass(opts.email)) {
     return { planId: "enterprise", status: "active" };
   }
   const state = await getWorkspacePlanState(db, opts.workspaceId);

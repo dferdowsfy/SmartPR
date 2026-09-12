@@ -21,8 +21,9 @@ export async function POST(request: Request, ctx: { params: Promise<{ formCode: 
   // Filled government forms are a paid deliverable: the free tier covers the
   // assessment and the requirements checklist, but generating the populated
   // official PDF requires a plan with the deliverables entitlement.
-  // NOTE: this only holds when ADMIN_EMAILS is set in production — with it
-  // unset, isAdminEmail() treats every signed-in user as an admin (bypass).
+  // NOTE: admins are resolved via isUserAdmin() (ADMIN_EMAILS env var or the
+  // admin_allowlist table). While no admin is configured anywhere, every
+  // signed-in user is treated as an admin (open default).
   const user = await getCurrentUser();
   const pool = getPool();
   if (!user) {
