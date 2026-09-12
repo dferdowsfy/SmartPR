@@ -1,0 +1,46 @@
+[
+  {
+    "path": "/Users/dariusferdows/Desktop/SmartPR/SmartPR-regulatory-knowledge-audit.md",
+    "sha256": "57a8c3a74c013641cb05ab860476f37372280bca381c6977c6954f22340ce704"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/SmartPR-audit-evidence.zip",
+    "sha256": "567a181f68f2901acd4e2343bf429561e20d7451d201798d7afd6bd4d283af95"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/priority-findings.csv",
+    "sha256": "79bb364c0d98474451b32d688fea65475210ab1f57c94b8f59686c461dcd7863"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/adversarial-tests.json",
+    "sha256": "1bb161cef286e8e1065b88117e7cf5af73f705ec2ec7e7dc9174e2559c664e16"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/regulatory-counterexamples.json",
+    "sha256": "d042553a736b9403c78b5dbc0027acc92e201e341bd0a3343ed2df11c40382dd"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/seed-graph.json",
+    "sha256": "5aa95a08aad80b6a1cd246a0fdde0b5709f1146f22c06ca595241f3fa9e9b78c"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/discovery-drift.json",
+    "sha256": "08f621542e944e4b02bdc8ad7eaf0422c35a70e6b7b7420a25686b0df57a470b"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/incentive-probes.json",
+    "sha256": "203991ba1984cadccba1cffc6a32af02f784bb8cc913cff6bc4712e93cd54290"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/relationship-errors.csv",
+    "sha256": "926bdb0831658762b0707d40409391e395a2ad91bc3381c832cba82ad1cbbb04"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/regulatory-rule-assessments.csv",
+    "sha256": "d31d3dcde538dcab09068fa5b550f68a5d75cf06d4e41113fbe4fa8adf00397b"
+  },
+  {
+    "path": "/Users/dariusferdows/Documents/Codex/2026-09-12/perform-a-rigorous-evidence-based-audit/outputs/guidance-source-assessments.csv",
+    "sha256": "0f350bfe56e5fa29c672253ec43f5ff89403946416eb2526c03c7ed43dcba066"
+  }
+]

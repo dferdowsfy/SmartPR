@@ -7,6 +7,7 @@
 // ============================================================================
 
 import { ACTIVE_JURISDICTION } from "../jurisdictions";
+import { QUESTION_KEY_MAP } from "../ai/intake/questionKeyMap";
 import { labelForNode } from "./registry";
 import type { NodeType } from "./types";
 import type { GuidanceConcept } from "../guidance/model";
@@ -76,9 +77,9 @@ export function buildSeedNodes(): SeedNode[] {
     push("business_type", { ...bt, question_ids: questionIdsByBt.get(bt.id) ?? [] });
   }
 
-  const profileSet = new Set(compat?.profileStageQuestionIds ?? []);
+  const profileSet = new Set([...(compat?.profileStageQuestionIds ?? []), "Q_EMPLOYEE_COUNT"]);
   for (const q of kb.questions) {
-    const uiKey = compat?.uiKeyByQuestionId[q.id];
+    const uiKey = QUESTION_KEY_MAP[q.id]?.writeKey ?? compat?.uiKeyByQuestionId[q.id];
     push("intake_question", {
       ...q,
       stage: profileSet.has(q.id) ? "profile" : "discovery",
@@ -117,6 +118,14 @@ export function buildSeedNodes(): SeedNode[] {
       jurisdiction: source.agency === "Internal Revenue Service" ? "Federal" : source.agency === "Municipio de Bayamón" ? "Municipal" : "Puerto Rico",
       citation: source.citation, url: source.url, last_verified_at: source.lastVerified, source_version: source.sourceVersion,
       supports_document_ids: documents, supported_proposition: source.supports });
+  }
+
+  for (const renewal of kb.extensions?.renewals ?? []) {
+    push("renewal", {
+      id: `RNW_${String(renewal.document_id).replace(/^DOC_/, "")}`,
+      name: `${String(renewal.document_id)} recurring filing`,
+      ...renewal,
+    });
   }
 
   for (const r of kb.rules) push("rule", { ...r });

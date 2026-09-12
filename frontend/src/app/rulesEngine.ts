@@ -63,6 +63,8 @@ export interface GeneratedRequirement {
   category: string;
   reason: string;
   source_rule_id: string;
+  /** All matched bases survive document deduplication, in evaluation order. */
+  matched_rules?: { rule_id: string; reason: string }[];
 }
 
 export interface EngineDebug {
@@ -182,6 +184,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       category: d ? d.category : "",
       reason,
       source_rule_id: rule.id,
+      matched_rules: rulesMatched.filter(match => match.document_id === docId).map(({ rule_id, reason }) => ({ rule_id, reason })),
     };
   });
 
