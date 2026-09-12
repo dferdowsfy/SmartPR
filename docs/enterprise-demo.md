@@ -49,3 +49,5 @@ npm run start -- --port 4173
 ```
 
 Tests cover matched-node provenance, municipality source scope, fact-driven rule changes, score progression, reset determinism, cross-project isolation, existing form routing/prefill/writeback, regulatory non-activation and exact-route auth independence. Browser QA and recording must be performed on a reachable running deployment.
+
+Verified during implementation: all eight focused tests and TypeScript passed; production build passed and the production server returned HTTP 200 with the seeded overview. A mounted React interaction smoke test traversed all seven sections, toggled construction, linked/verified evidence, edited/previewed/validated PA01, explored regulatory states, navigated facilities, and reset state successfully. This does not substitute for desktop/mobile browser visual QA or a live video recording, which remain pending a reachable deployment.

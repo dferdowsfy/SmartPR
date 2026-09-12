@@ -22,7 +22,8 @@ const views: { id: View; label: string }[] = [
   { id: "forms", label: "Government forms" }, { id: "regulations", label: "Regulatory updates" }, { id: "portfolio", label: "Portfolio" },
 ];
 const formCanonical = canonicalFor("bayamon");
-const formId = resolveFormId("DOC_PATENTE_MUNICIPAL", formCanonical);
+const formId = projects.find(p => p.id === "bayamon")?.requirements.some(r => r.document_id === "DOC_PATENTE_MUNICIPAL")
+  ? resolveFormId("DOC_PATENTE_MUNICIPAL", formCanonical) : null;
 const formDefinition = formId ? getDefinition(formId) : null;
 const sampleName = (r: DemoRequirement) => `Sample · ${r.name}`;
 const statusLabel: Record<EvidenceStatus, string> = { missing: "Missing", review: "Needs review", verified: "Verified evidence" };
@@ -56,7 +57,8 @@ export default function EnterpriseDemo() {
   const [eventStage, setEventStage] = useState(0);
   const [message, setMessage] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
-  const project = useMemo(() => projectId === "guaynabo" ? buildProject(projectId, renovations) : projects.find(p => p.id === projectId)!, [projectId, renovations]);
+  const portfolio = useMemo(() => projects.map(p => p.id === "guaynabo" ? buildProject("guaynabo", renovations) : p), [renovations]);
+  const project = portfolio.find(p => p.id === projectId)!;
   const stats = readiness(project, evidence);
   const status = (r: DemoRequirement): EvidenceStatus => evidence[evidenceKey(projectId, r.document_id)] ?? "missing";
   const gaps = [...stats.missing, ...stats.review];
@@ -149,8 +151,8 @@ export default function EnterpriseDemo() {
       </>}
 
       {view === "portfolio" && <>
-        <div className={styles.metrics}><div><span>Facilities</span><strong>{projects.length}</strong><p>One shared requirements engine</p></div><div><span>Open evidence requirements</span><strong>{projects.reduce((n,p) => n + readiness(p,evidence).missing.length + readiness(p,evidence).review.length, 0)}</strong><p>Missing or awaiting verification</p></div><div><span>Regulatory changes applied</span><strong>0</strong><p>One illustrative development monitored</p></div><div><span>Upcoming internal reviews</span><strong>5</strong><p>Seeded targets, not statutory deadlines</p></div></div>
-        <div className={styles.tableWrap}><table><thead><tr><th>Project / facility</th><th>Readiness</th><th>Open / review</th><th>Priority deficiency</th><th>Owner</th><th>Next review</th></tr></thead><tbody>{projects.map(p => { const s = readiness(p,evidence); return <tr key={p.id}><td><button className={styles.projectLink} onClick={() => { setProjectId(p.id); go("overview"); }}>{p.title}<ArrowRight size={14} /></button><small>{p.municipality} · {p.type}</small></td><td><strong>{s.score}%</strong><div className={styles.miniProgress}><i style={{ width: `${s.score}%` }} /></div></td><td>{s.missing.length + s.review.length} evidence<small>{p.reviews.length} applicability</small></td><td>{s.missing[0]?.name ?? (s.review.length ? "Evidence verification" : "Applicability review")}</td><td>{p.owner}</td><td>{p.actionDate}<small>Internal target</small></td></tr>; })}</tbody></table></div>
+        <div className={styles.metrics}><div><span>Facilities</span><strong>{projects.length}</strong><p>One shared requirements engine</p></div><div><span>Open evidence requirements</span><strong>{portfolio.reduce((n,p) => n + readiness(p,evidence).missing.length + readiness(p,evidence).review.length, 0)}</strong><p>Missing or awaiting verification</p></div><div><span>Regulatory changes applied</span><strong>0</strong><p>One illustrative development monitored</p></div><div><span>Upcoming internal reviews</span><strong>5</strong><p>Seeded targets, not statutory deadlines</p></div></div>
+        <div className={styles.tableWrap}><table><thead><tr><th>Project / facility</th><th>Readiness</th><th>Open / review</th><th>Priority deficiency</th><th>Owner</th><th>Next review</th></tr></thead><tbody>{portfolio.map(p => { const s = readiness(p,evidence); return <tr key={p.id}><td><button className={styles.projectLink} onClick={() => { setProjectId(p.id); go("overview"); }}>{p.title}<ArrowRight size={14} /></button><small>{p.municipality} · {p.type}</small></td><td><strong>{s.score}%</strong><div className={styles.miniProgress}><i style={{ width: `${s.score}%` }} /></div></td><td>{s.missing.length + s.review.length} evidence<small>{p.reviews.length} applicability</small></td><td>{s.missing[0]?.name ?? (s.review.length ? "Evidence verification" : "Applicability review")}</td><td>{p.owner}</td><td>{p.actionDate}<small>Internal target</small></td></tr>; })}</tbody></table></div>
         <div className={styles.twoCol}><Panel title="Renewals & deadlines"><p>Bayamón Warehouse has an annual municipal filing example ready for review.</p><p className={styles.note}>No statutory due date is asserted by this demo. The filing period and applicable deadline must be confirmed before scheduling a renewal.</p><button className={styles.textButton} onClick={() => go("forms")}>Open annual filing example <ArrowRight size={16} /></button></Panel><Panel title="Recently changed regulations"><p>No effective regulatory changes applied to these projects.</p><p className={styles.note}>One explicitly fictional proposed event is monitored with no customer action.</p><button className={styles.textButton} onClick={() => go("regulations")}>Inspect monitored development <ArrowRight size={16} /></button></Panel></div>
       </>}
       <footer className={styles.footer}><span>SmartPR · {DEMO_VERSION} · fictional company and evidence</span><span>Isolated session · refresh or reset to restore</span></footer>
