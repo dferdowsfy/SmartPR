@@ -7,6 +7,10 @@ import { createServerClient } from "@supabase/ssr";
 const PROTECTED_PREFIXES = ["/dashboard", "/businesses", "/calendar", "/history", "/settings"];
 
 export async function middleware(req: NextRequest) {
+  // This exact public route contains only bundled fictional data. It neither
+  // consumes nor refreshes customer sessions; all protected routes keep the
+  // normal authentication path below. Never broaden this to an API prefix.
+  if (req.nextUrl.pathname === "/demo/enterprise") return NextResponse.next();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   // Auth not configured -> all routes are open, no-op middleware.
