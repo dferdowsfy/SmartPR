@@ -9,6 +9,8 @@
 // Next.js app and in standalone Node tests.
 // ============================================================================
 
+import { filterEffective } from "./temporal.ts";
+
 export type Flag = "tourism" | "coastal" | "historic" | "metro" | "island";
 
 // `patente_rate` is the municipal gross-receipts tax rate as a decimal (e.g.
@@ -18,7 +20,13 @@ export type Flag = "tourism" | "coastal" | "historic" | "metro" | "island";
 export interface KBMunicipality { id: string; name: string; flags: Flag[]; patente_rate?: number | null }
 export interface KBBusinessType { id: string; industry_id: string; name: string; description: string }
 export interface KBQuestion { id: string; question: string; type: string; options?: string[] }
-export interface KBDocument { id: string; name: string; agency: string; category: string; requirement_guidance?: unknown }
+export interface KBDocument {
+  id: string; name: string; agency: string; category: string; requirement_guidance?: unknown;
+  /** Temporal validity, same semantics as KBRule (see temporal.ts). */
+  effective_from?: string | null;
+  effective_to?: string | null;
+  supersedes?: string[] | null;
+}
 export interface KBRule {
   id: string;
   rule_type: "business_type" | "question_trigger" | "municipality" | "municipality_flag";
@@ -33,6 +41,16 @@ export interface KBRule {
    * Data-driven — the engine interprets it, never hardcodes per-document law.
    */
   excluded_entity_types?: string[] | string | null;
+  /**
+   * Temporal validity (date-only UTC `YYYY-MM-DD`). A rule is in force at
+   * `asOf` when effective_from <= asOf and (effective_to is null or
+   * asOf < effective_to — exclusive end). Undated rules are current law as
+   * modeled. `supersedes` names retired rule ids: an effective superseding
+   * rule excludes them. See temporal.ts.
+   */
+  effective_from?: string | null;
+  effective_to?: string | null;
+  supersedes?: string[] | null;
 }
 
 export interface KnowledgeBase {
@@ -64,6 +82,9 @@ export interface EngineInput {
    *  entity-scoped rules (excluded_entity_types) stay silent for legal forms
    *  they can never apply to, instead of emitting false mandatory duties. */
   entityType?: string | null;
+  /** Date-only UTC (`YYYY-MM-DD`) the evaluation is "as of". Rules not in
+   *  force at this date never fire. Defaults to today (UTC). */
+  asOf?: string | Date | null;
 }
 
 export interface GeneratedRequirement {
@@ -147,7 +168,11 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     }
   };
 
-  for (const rule of kb.rules) {
+  // Temporal enforcement: only rules in force at input.asOf (default today UTC)
+  // are evaluated. Undated rules are current law as modeled. Inverted
+  // intervals and supersession cycles fail loud here, never silently.
+  const effectiveRules = filterEffective(kb.rules, input.asOf);
+  for (const rule of effectiveRules) {
     // Entity-scoped rules never fire for an excluded legal form (F01/F02:
     // e.g. incorporation for sole proprietorships, universal EIN for sole
     // props). An unknown entity type falls through; the classifier marks the

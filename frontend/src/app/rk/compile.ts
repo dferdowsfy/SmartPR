@@ -11,6 +11,7 @@
 import type { CompiledKb, NodeType } from "./types";
 import { duplicateGuidanceIds, validateGuidanceConcept, type GuidanceConcept } from "../guidance/model";
 import { KNOWN_FLAGS, NODE_TYPE_CONFIGS, RULE_TYPES } from "./registry";
+import { filterEffective } from "../temporal.ts";
 
 export interface CompileNode {
   entityId: string;
@@ -22,10 +23,22 @@ const byId = (a: CompileNode, b: CompileNode) => a.entityId.localeCompare(b.enti
 
 export function compileKb(
   nodes: CompileNode[],
-  meta: { version: number; batchId: string | null }
+  meta: { version: number; batchId: string | null },
+  asOfInput?: string | Date | null,
 ): CompiledKb {
   const pick = (t: NodeType) => nodes.filter((n) => n.nodeType === t).sort(byId);
   const datas = (t: NodeType) => pick(t).map((n) => ({ ...n.data }));
+  // Temporal enforcement at compilation: the pack only contains rules and
+  // documents in force at `asOf` (default today UTC). Undated nodes are
+  // current law as modeled. Inverted intervals and supersession cycles fail
+  // loud here via filterEffective — a published snapshot can never silently
+  // contain expired or retired law.
+  const inForce = (ns: CompileNode[]): CompileNode[] => {
+    const kept = new Set(
+      filterEffective(ns.map((n) => ({ ...n.data })), asOfInput).map((d) => String((d as { id?: unknown }).id ?? "")),
+    );
+    return ns.filter((n) => kept.has(n.entityId));
+  };
 
   const businessTypes = pick("business_type");
   const businessTypeQuestions: { business_type_id: string; question_id: string }[] = [];
@@ -38,7 +51,7 @@ export function compileKb(
     }
   }
 
-  const documents = pick("document");
+  const documents = inForce(pick("document"));
   const sourceNodes = new Map(pick("regulatory_source").map(n => [n.entityId, n.data]));
   for (const document of documents) {
     const guidance = document.data.requirement_guidance as GuidanceConcept | undefined;
@@ -76,7 +89,7 @@ export function compileKb(
     businessTypes: businessTypes.map((n) => ({ ...n.data })),
     questions: datas("intake_question"),
     documents: documents.map((n) => ({ ...n.data })),
-    rules: datas("rule"),
+    rules: inForce(pick("rule")).map((n) => ({ ...n.data })),
     industries: datas("industry"),
     businessTypeQuestions,
     docMeta: {

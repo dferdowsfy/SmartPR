@@ -147,9 +147,19 @@ function pushRefs(out: DerivedEdge[], edgeType: EdgeType, v: unknown) {
   for (const id of list(v)) pushRef(out, edgeType, id);
 }
 
+/** Temporal validity fields shared by rule and document configs. Date-only UTC
+ *  `YYYY-MM-DD`; enforced by temporal.ts at pack compilation and engine
+ *  evaluation. Blank = current law as modeled (never invent dates). */
+function temporalFields(refType: "rule" | "document"): FieldSpec[] {
+  return [
+    { key: "effective_from", label: "Effective from", kind: "text", help: "First day in force, YYYY-MM-DD. Blank = current law as modeled." },
+    { key: "effective_to", label: "Effective to", kind: "text", help: "EXCLUSIVE end: first day no longer in force, YYYY-MM-DD. Blank = still in force." },
+    { key: "supersedes", label: "Supersedes", kind: "entity_ref_list", refType, help: "Older records this one retires once it is itself effective." },
+  ];
+}
+
 const INCENTIVE_PROGRAM_FIELDS: FieldSpec[] = [
-  { key: "name", label: "Program name", kind: "text", required: true },
-  { key: "description", label: "Short description", kind: "textarea", required: true },
+  { key: "name", label: "Program name", kind: "text", required: true },  { key: "description", label: "Short description", kind: "textarea", required: true },
   { key: "administering_agency_id", label: "Administering agency", kind: "entity_ref", refType: "agency", required: true },
   { key: "application_agency_id", label: "Application agency", kind: "entity_ref", refType: "agency" },
   { key: "authorized_by_ids", label: "Authorizing law / regulation / public source", kind: "entity_ref_list", refType: "regulatory_source", required: true },
@@ -315,12 +325,14 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
       { key: "citation", label: "Regulatory citation", kind: "text" },
       { key: "requirement_guidance", label: "Structured regulatory guidance", kind: "json", help: "Versioned EN/ES concept, conditions, dependencies and cited sources. Only validated guidance is shown as a regulatory explanation. Null disables bundled guidance." },
       { key: "notes", label: "Internal notes", kind: "textarea" },
+      ...temporalFields("document"),
     ],
     edgesOf: (d) => {
       const out: DerivedEdge[] = [];
       pushRefs(out, "issued_by", (d.agency_ids as unknown[] | undefined) ?? d.agency_id);
       pushRefs(out, "depends_on", d.depends_on_document_ids);
       pushRefs(out, "requires", d.evidence_type_ids);
+      pushRefs(out, "supersedes", d.supersedes);
       const guidance = d.requirement_guidance as GuidanceConcept | undefined;
       if (guidance && typeof guidance === "object") {
         for (const src of Array.isArray(guidance.sources) ? guidance.sources : []) pushRef(out, "derived_from", src?.id);
@@ -360,12 +372,14 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
       { key: "guidance", label: "User guidance", kind: "textarea" },
       { key: "citation", label: "Regulatory citation", kind: "text", help: "e.g. \"PS 1173 Art. 4.2\" or \"Ley 216-2014 §3\"." },
       { key: "notes", label: "Internal notes", kind: "textarea" },
+      ...temporalFields("rule"),
     ],
     edgesOf: (d) => {
       const out: DerivedEdge[] = [];
       pushRef(out, "requires", d.requires_document_id);
       pushRef(out, "applies_to", d.business_type_id);
       pushRef(out, "applies_to", d.question_id);
+      pushRefs(out, "supersedes", d.supersedes);
       return out;
     },
   },
