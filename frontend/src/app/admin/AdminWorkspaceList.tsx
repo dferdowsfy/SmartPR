@@ -39,8 +39,8 @@ export function AdminWorkspaceList() {
   if (err) return <p className="text-sm text-[#8a2f2f]">{err}</p>;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[#161616]/15 bg-[#fbf8f2]">
-      <table className="w-full text-left text-sm">
+    <div className="overflow-x-auto rounded-xl border border-[#161616]/15 bg-[#fbf8f2]">
+      <table className="w-full min-w-[560px] text-left text-sm">
         <thead>
           <tr className="border-b border-[#161616]/10 text-xs uppercase tracking-wide text-[#5a5a5a]">
             <th className="px-4 py-3 font-medium">Company</th>
@@ -55,7 +55,9 @@ export function AdminWorkspaceList() {
           {rows.map((w) => (
             <tr key={w.id} className="border-b border-[#161616]/8 last:border-0 hover:bg-[#161616]/3">
               <td className="px-4 py-3">
-                <div className="font-medium">{w.name}</div>
+                <Link href={`/admin/workspaces/${w.id}`} className="font-medium text-[#245c5c] underline-offset-4 hover:underline">
+                  {w.name}
+                </Link>
                 <div className="text-xs text-[#5a5a5a]">{w.kind.toLowerCase()}</div>
               </td>
               <td className="px-4 py-3">
