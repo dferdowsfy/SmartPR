@@ -28,6 +28,7 @@ function LoginInner() {
   );
   const [showResend, setShowResend] = useState(false);
   const [inviteAccepted, setInviteAccepted] = useState<string | null>(null);
+  const [ssoDomain, setSsoDomain] = useState<string | null>(null);
 
   useEffect(() => {
     if (sp.get("mode") === "signup") router.replace(signupHref);
@@ -74,6 +75,47 @@ function LoginInner() {
   const supabase = createSupabaseBrowser();
   const resetRedirectTo = passwordResetRedirectUrl();
   const swapMode = (m: Mode) => { setMode(m); setErr(null); setInfo(null); setShowResend(false); };
+
+  // SSO: when the typed email's domain has SSO enabled for a white-label
+  // workspace, offer the identity-provider button.
+  useEffect(() => {
+    const domain = (email.split("@")[1] || "").trim().toLowerCase();
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) {
+      setSsoDomain(null);
+      return;
+    }
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/sso/lookup?domain=${encodeURIComponent(domain)}`);
+        const data = await res.json();
+        if (!cancelled) setSsoDomain(data.sso_enabled ? domain : null);
+      } catch {
+        if (!cancelled) setSsoDomain(null);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [email]);
+
+  const signInWithSso = async () => {
+    if (!ssoDomain) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const { error } = await supabase.auth.signInWithSSO({
+        domain: ssoDomain,
+        options: { redirectTo: authRedirectUrl(nextPath) },
+      });
+      if (error) setErr(error.message);
+    } catch (e) {
+      setErr((e as Error).message || "SSO sign-in failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const bootstrapPlatform = async () => {
     const response = await fetch("/api/auth/bootstrap", { method: "POST" });
@@ -229,6 +271,12 @@ function LoginInner() {
           <button type="button" onClick={() => swapMode("link")}
             className="w-full rounded-lg border border-[#161616]/22 py-3 text-sm font-medium text-[#161616] hover:bg-[#161616]/5">
             Email me a sign-in link instead
+          </button>
+        )}
+        {ssoDomain && (
+          <button type="button" onClick={() => void signInWithSso()} disabled={busy}
+            className="w-full rounded-lg border border-brand/40 bg-brand/8 py-3 text-sm font-medium text-[#161616] hover:bg-brand/15 disabled:opacity-50">
+            {busy ? "Redirecting…" : `Continue with ${ssoDomain} SSO`}
           </button>
         )}
       </form>

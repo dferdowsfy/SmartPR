@@ -44,3 +44,10 @@ CREATE INDEX IF NOT EXISTS idx_admin_audit_log_ws ON admin_audit_log(workspace_i
 CREATE INDEX IF NOT EXISTS idx_admin_audit_log_created ON admin_audit_log(created_at DESC);
 
 COMMIT;
+
+-- White-label phase 3: custom domains + SSO/SAML per workspace.
+ALTER TABLE workspace_branding
+  ADD COLUMN IF NOT EXISTS custom_domain TEXT UNIQUE,
+  ADD COLUMN IF NOT EXISTS sso_enabled BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS sso_domain TEXT,
+  ADD COLUMN IF NOT EXISTS sso_provider_id TEXT;

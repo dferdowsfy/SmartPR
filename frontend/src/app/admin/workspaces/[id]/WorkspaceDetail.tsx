@@ -42,7 +42,10 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
-  const [branding, setBranding] = useState({ company_name: "", logo_url: "", primary_color: "#245c5c" });
+  const [branding, setBranding] = useState({
+    company_name: "", logo_url: "", primary_color: "#245c5c",
+    custom_domain: "", sso_enabled: false, sso_domain: "", sso_provider_id: "",
+  });
   const [plan, setPlan] = useState("free");
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -78,6 +81,10 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
           company_name: br.branding.company_name || "",
           logo_url: br.branding.logo_url || "",
           primary_color: br.branding.primary_color || "#245c5c",
+          custom_domain: br.branding.custom_domain || "",
+          sso_enabled: br.branding.sso_enabled === true,
+          sso_domain: br.branding.sso_domain || "",
+          sso_provider_id: br.branding.sso_provider_id || "",
         });
       }
       const au = await auditRes.json();
@@ -414,6 +421,65 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
             <button onClick={() => void saveBranding()} disabled={busy} className={btnPrimary}>
               {busy ? "Saving…" : "Save branding"}
             </button>
+
+            <div className="mt-6 border-t border-[#161616]/10 pt-5">
+              <h3 className="text-sm font-semibold">Custom domain</h3>
+              <p className="mt-1 text-xs text-[#5a5a5a]">
+                Serve this company&apos;s workspace from their own domain (e.g. app.acme.com).
+                Point the domain&apos;s DNS at this app and make sure TLS terminates for it —
+                see the white-label runbook. The login page shows the client&apos;s brand automatically.
+              </p>
+              <div className="mt-3">
+                <label className="mb-1 block text-sm font-medium">Custom domain</label>
+                <input
+                  value={branding.custom_domain}
+                  onChange={(e) => setBranding({ ...branding, custom_domain: e.target.value })}
+                  placeholder="app.acme.com"
+                  className={`${inputCls} w-full`}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-[#161616]/10 pt-5">
+              <h3 className="text-sm font-semibold">SSO / SAML</h3>
+              <p className="mt-1 text-xs text-[#5a5a5a]">
+                Let the client&apos;s team sign in with their identity provider (Okta, Entra ID, Google Workspace…).
+                After saving, register the SAML provider in the Supabase dashboard (Authentication → Sign In / Up →
+                SSO) using the client&apos;s IdP metadata, then paste the provider ID below.
+              </p>
+              <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={branding.sso_enabled}
+                  onChange={(e) => setBranding({ ...branding, sso_enabled: e.target.checked })}
+                  className="h-4 w-4 accent-[#245c5c]"
+                />
+                Enable SSO for this company
+              </label>
+              {branding.sso_enabled && (
+                <div className="mt-3 grid gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Email domain</label>
+                    <input
+                      value={branding.sso_domain}
+                      onChange={(e) => setBranding({ ...branding, sso_domain: e.target.value })}
+                      placeholder="acme.com"
+                      className={`${inputCls} w-full`}
+                    />
+                    <p className="mt-1 text-xs text-[#5a5a5a]">Users signing in with an @acme.com email get the SSO button.</p>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">Supabase SSO provider ID</label>
+                    <input
+                      value={branding.sso_provider_id}
+                      onChange={(e) => setBranding({ ...branding, sso_provider_id: e.target.value })}
+                      placeholder="paste from Supabase dashboard"
+                      className={`${inputCls} w-full font-mono text-xs`}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
