@@ -67,7 +67,7 @@ test("LLC does not receive Certificate of Incorporation", () => {
   assert.equal(final.some((r) => r.document_id === "DOC_CERT_INCORPORATION"), false);
 });
 
-test("negative historic decision suppresses historic-district requirements", () => {
+test("negative historic decision suppresses historic-basis requirements only", () => {
   const classified = classify("limited_liability_company", {
     historic: "not_applies",
     coastal: "not_applies",
@@ -77,8 +77,20 @@ test("negative historic decision suppresses historic-district requirements", () 
     /historic|facade/i.test(r.document_id + r.document_name)
   );
   assert.ok(historic.length > 0, "engine still emits historic rows so they can be labeled");
-  assert.ok(historic.every((r) => r.applicability === "not_applicable"));
-  assert.ok(historic.every((r) => r.mandatory === false));
+  // Rows whose basis is the declined historic flag are suppressed...
+  const historicBasis = historic.filter((r) =>
+    (r.triggerFacts ?? []).some((f) => f === "municipality_flag:historic")
+  );
+  assert.ok(historicBasis.length > 0);
+  assert.ok(historicBasis.every((r) => r.applicability === "not_applicable"));
+  assert.ok(historicBasis.every((r) => r.mandatory === false));
+  // ...but a historic decline must not smear across flags: the metro-basis
+  // traffic study still applies.
+  const metroRows = classified.filter((r) =>
+    (r.triggerFacts ?? []).some((f) => f === "municipality_flag:metro")
+  );
+  assert.ok(metroRows.length > 0);
+  assert.ok(metroRows.every((r) => r.applicability === "required"));
 });
 
 test("unanswered historic stays conditional, not required", () => {

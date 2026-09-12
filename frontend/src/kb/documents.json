@@ -214,13 +214,13 @@
  {
   "id": "DOC_CONTRACTOR_LICENSE",
   "name": "Contractor License",
-  "agency": "Department of State",
+  "agency": "Departamento de Asuntos del Consumidor (DACO)",
   "category": "Professional",
-  "agency_url": "https://www.estado.pr.gov/formularios-para-corporaciones",
-  "agency_canonical": "Departamento de Estado",
+  "agency_url": "https://www.daco.pr.gov/",
+  "agency_canonical": "Departamento de Asuntos del Consumidor",
   "download_url": "https://docs.pr.gov/files/DACO/Licencias/Solicitud-Urbanizador-Constructor-v2.pdf",
   "download_kind": "form_pdf",
-  "download_note": "Official DACO PDF on docs.pr.gov. Matches the DACOUC01 source SmartPR maps as a fillable artifact."
+  "download_note": "Official DACO PDF on docs.pr.gov (Regulation 8172 contractor registration). Matches the DACOUC01 source SmartPR maps as a fillable artifact."
  },
  {
   "id": "DOC_TOURISM_REGISTRATION",
@@ -294,7 +294,7 @@
  {
   "id": "DOC_ENVIRONMENTAL_PERMIT",
   "name": "Environmental Permit",
-  "agency": "Junta de Calidad Ambiental / DRNA",
+  "agency": "DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/otrora-jca/",
   "agency_canonical": "DRNA",
@@ -305,7 +305,7 @@
  {
   "id": "DOC_MEDICAL_WASTE_PERMIT",
   "name": "Medical Waste Management Permit",
-  "agency": "Junta de Calidad Ambiental",
+  "agency": "DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/otrora-jca/",
   "agency_canonical": "DRNA",
@@ -487,7 +487,7 @@
  {
   "id": "DOC_STORMWATER_PLAN",
   "name": "Stormwater Management Plan (NPDES MS4)",
-  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "agency": "EPA / DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
   "agency_canonical": "DRNA",
@@ -498,7 +498,7 @@
  {
   "id": "DOC_NOISE_VARIANCE",
   "name": "Noise Variance / Endoso de Ruido",
-  "agency": "Junta de Calidad Ambiental + Municipal Permits Office",
+  "agency": "DRNA + Municipal Permits Office",
   "category": "Municipal",
   "agency_url": "https://www.drna.pr.gov/otrora-jca/",
   "agency_canonical": "DRNA",
@@ -599,7 +599,7 @@
  {
   "id": "DOC_NPDES_INDUSTRIAL",
   "name": "NPDES Industrial Discharge Permit",
-  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "agency": "EPA / DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
   "agency_canonical": "DRNA",
@@ -610,7 +610,7 @@
  {
   "id": "DOC_HAZMAT_HANDLER",
   "name": "RCRA Hazardous Waste Handler ID (40 CFR 262)",
-  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "agency": "EPA / DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
   "agency_canonical": "DRNA",
@@ -632,7 +632,7 @@
  {
   "id": "DOC_AIR_EMISSION_PERMIT",
   "name": "Title V Air Emission Permit",
-  "agency": "EPA / Junta de Calidad Ambiental (JCA)",
+  "agency": "EPA / DRNA",
   "category": "Regulatory",
   "agency_url": "https://www.drna.pr.gov/acai/permisos/",
   "agency_canonical": "DRNA",
@@ -751,5 +751,27 @@
   "download_url": "https://docs.pr.gov/files/DDEC/PPPE/Solicitud%20de%20Certificaci%C3%B3n%20de%20Instalador%20de%20Sistemas%20El%C3%A9ctricos%20Renovables.pdf",
   "download_kind": "form_pdf",
   "download_note": "Official PPPE (DDEC energy program) application for renewable-systems installer certification, rev. Feb 2025; submitted by email to energia@ddec.pr.gov or in person."
+ },
+ {
+  "id": "DOC_DTRH_EMPLOYER_REG",
+  "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+  "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)",
+  "category": "State",
+  "agency_url": "https://patronos.trabajo.pr.gov/",
+  "agency_canonical": "Departamento del Trabajo y Recursos Humanos",
+  "download_url": "https://patronos.trabajo.pr.gov/",
+  "download_kind": "filing_portal",
+  "download_note": "Employer registration for unemployment and disability insurance (seguro por desempleo e incapacidad) is a separate DTRH process from CFSE workers' compensation. Filed through the DTRH patronos portal."
+ },
+ {
+  "id": "DOC_ASUME_CLEARANCE",
+  "name": "ASUME Child Support Clearance Certification",
+  "agency": "Administración para el Sustento de Menores (ASUME)",
+  "category": "Regulatory",
+  "agency_url": "https://www.familia.pr.gov/",
+  "agency_canonical": "Administración para el Sustento de Menores",
+  "download_url": null,
+  "download_kind": "none",
+  "download_note": "Hacienda requires the ASUME certification (Certificación de la Administración para el Sustento de Menores) as a prerequisite for internal-revenue licenses, including alcohol beverage licenses. Request through ASUME/Familia offices."
  }
 ]

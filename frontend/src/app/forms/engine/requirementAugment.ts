@@ -98,3 +98,33 @@ export function exclusiveFormationRequirements<T extends MinimalRequirement>(
 ): T[] {
   return applyEntityFormationExclusivity(existing, canonical.business.entityType);
 }
+
+export interface AugmentMake {
+  document_id: string;
+  code: string;
+  name: string;
+  reason: string;
+}
+
+/**
+ * Shared formation normalization used by BOTH the intake UI and the server
+ * obligation pipeline (F10): drop the formation certificate that does not
+ * belong to this entity type, add the one the entity type implies, then
+ * enforce exclusivity again so no path can resurrect the wrong certificate.
+ * The caller shapes the added rows via `make` (UI Requirement vs server
+ * obligation rows).
+ */
+export function normalizeEntityFormationRequirements<T extends MinimalRequirement>(
+  entityType: string | null | undefined,
+  existing: T[],
+  make: (def: AugmentMake, entityType: string) => T
+): T[] {
+  const canonical = {
+    business: { entityType: (entityType || "other") as CanonicalApplicationData["business"]["entityType"] },
+  } as CanonicalApplicationData;
+  const withoutWrongFormation = exclusiveFormationRequirements(canonical, existing);
+  const augments = entityTypeRequirements(canonical, withoutWrongFormation, (def) =>
+    make(def, canonical.business.entityType)
+  );
+  return exclusiveFormationRequirements(canonical, [...withoutWrongFormation, ...augments]);
+}

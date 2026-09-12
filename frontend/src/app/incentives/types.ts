@@ -158,6 +158,13 @@ export interface CriterionEvaluation {
   expectedValue?: ProjectFactValue | string[];
   required: boolean;
   material: boolean;
+  /**
+   * Scope/discovery evaluation (industry or geography match) vs a substantive
+   * statutory criterion. Scope supports discovery and acts as a hard filter
+   * (outside the published scope = not eligible), but scope alone can never
+   * establish eligibility — see classificationFor (F06).
+   */
+  scope?: boolean;
   evidence: { id: string; name: string }[];
   citation: string;
   explanation: string;

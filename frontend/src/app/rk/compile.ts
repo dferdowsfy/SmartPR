@@ -10,6 +10,7 @@
 
 import type { CompiledKb, NodeType } from "./types";
 import { duplicateGuidanceIds, validateGuidanceConcept, type GuidanceConcept } from "../guidance/model";
+import { KNOWN_FLAGS, NODE_TYPE_CONFIGS, RULE_TYPES } from "./registry";
 
 export interface CompileNode {
   entityId: string;
@@ -180,5 +181,107 @@ export function goldenCompare(compiled: CompiledKb, bundled: GoldenBundle): stri
   const compiledSet = new Set(compiled.businessTypeQuestions.map(pair));
   for (const p of bundledSet) if (!compiledSet.has(p)) problems.push(`businessTypeQuestions: missing ${p}`);
   for (const p of compiledSet) if (!bundledSet.has(p)) problems.push(`businessTypeQuestions: extra ${p}`);
+  return problems;
+}
+
+/**
+ * Publication integrity gate (F08). Pure: validates the ACTIVE graph nodes
+ * BEFORE they are compiled into a snapshot. publishBatch() refuses to publish
+ * when this returns any problems, so a bad node (dangling ref, wrong-type
+ * target, unknown rule type, duplicated/self edge, temporal inversion) can
+ * never reach the live engine. Returns human-readable problem strings;
+ * empty = safe to publish.
+ */
+const CANONICAL_ENTITY_TYPES = [
+  "stock_corporation",
+  "nonprofit_nonstock_corporation",
+  "close_corporation",
+  "professional_corporation",
+  "foreign_corporation",
+  "limited_liability_partnership",
+  "limited_liability_company",
+  "sole_proprietorship",
+  "partnership",
+  "other",
+];
+
+export function validatePublicationGraph(nodes: CompileNode[]): string[] {
+  const problems: string[] = [];
+  const byEntity = new Map<string, CompileNode>();
+  for (const n of nodes) {
+    if (byEntity.has(n.entityId)) {
+      problems.push(`duplicate entity id: ${n.entityId}`);
+    } else {
+      byEntity.set(n.entityId, n);
+    }
+    if (String(n.data?.id ?? "") !== n.entityId) {
+      problems.push(`${n.entityId || "(missing entity id)"}: data.id does not match the entity id`);
+    }
+  }
+
+  const ref = (ownerId: string, field: string, id: unknown, type: NodeType) => {
+    if (typeof id !== "string" || !id) return; // required-ness is validateNodeData's job
+    const target = byEntity.get(id);
+    if (!target) {
+      problems.push(`${ownerId}: ${field} references missing node ${id}`);
+    } else if (target.nodeType !== type) {
+      problems.push(`${ownerId}: ${field} references ${id} (a ${target.nodeType}, expected ${type})`);
+    }
+  };
+
+  for (const n of nodes) {
+    const d: Record<string, unknown> = n.data ?? {};
+
+    // Projected edges: no duplicates, no self edges, resolvable targets.
+    const cfg = NODE_TYPE_CONFIGS[n.nodeType];
+    if (cfg) {
+      const seenEdges = new Set<string>();
+      for (const e of cfg.edgesOf(d)) {
+        const key = `${e.edgeType}→${e.toEntity}`;
+        if (seenEdges.has(key)) problems.push(`${n.entityId}: duplicate projected edge ${key}`);
+        seenEdges.add(key);
+        if (e.toEntity === n.entityId) problems.push(`${n.entityId}: self edge ${key}`);
+        if (!byEntity.has(e.toEntity)) problems.push(`${n.entityId}: edge ${key} targets a missing node`);
+      }
+    }
+
+    if (n.nodeType === "rule") {
+      const rt = String(d.rule_type ?? "");
+      if (!RULE_TYPES.includes(rt)) problems.push(`${n.entityId}: unknown rule_type ${rt || "(missing)"}`);
+      ref(n.entityId, "requires_document_id", d.requires_document_id, "document");
+      ref(n.entityId, "business_type_id", d.business_type_id, "business_type");
+      ref(n.entityId, "question_id", d.question_id, "intake_question");
+      const flag = d.municipality_flag;
+      if (typeof flag === "string" && flag && !KNOWN_FLAGS.includes(flag)) {
+        problems.push(`${n.entityId}: unknown municipality_flag ${flag}`);
+      }
+      const excl = d.excluded_entity_types;
+      const exclList = Array.isArray(excl) ? excl : typeof excl === "string" ? excl.split(",") : [];
+      for (const et of exclList.map(String).map((s) => s.trim()).filter(Boolean)) {
+        if (!CANONICAL_ENTITY_TYPES.includes(et)) {
+          problems.push(`${n.entityId}: unknown excluded entity type ${et}`);
+        }
+      }
+    }
+    if (n.nodeType === "document") {
+      ref(n.entityId, "agency_id", d.agency_id, "agency");
+      const deps = Array.isArray(d.depends_on_document_ids) ? d.depends_on_document_ids : [];
+      for (const dep of deps) ref(n.entityId, "depends_on_document_ids", dep, "document");
+    }
+    if (n.nodeType === "renewal") {
+      ref(n.entityId, "document_id", d.document_id, "document");
+    }
+    if (n.nodeType === "regulatory_source") {
+      const ids = Array.isArray(d.supports_document_ids) ? d.supports_document_ids : [];
+      for (const sid of ids) ref(n.entityId, "supports_document_ids", sid, "document");
+    }
+
+    // Temporal sanity: an effective interval must not be inverted.
+    const from = d.effective_from;
+    const until = d.effective_until;
+    if (from && until && String(from) > String(until)) {
+      problems.push(`${n.entityId}: effective_from ${from} is after effective_until ${until}`);
+    }
+  }
   return problems;
 }

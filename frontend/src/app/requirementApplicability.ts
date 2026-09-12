@@ -64,6 +64,24 @@ const CORPORATION_TYPES: EntityType[] = [
 
 const LLC_FORMATION = "DOC_ARTICLES_ORGANIZATION";
 const CORP_FORMATION = "DOC_CERT_INCORPORATION";
+const EIN_DOC = "DOC_EIN";
+
+/**
+ * Entity types that never file a Certificate of Incorporation (or Articles
+ * of Organization): sole proprietorships and general partnerships are not
+ * separate juridical persons, foreign corporations form in their home
+ * jurisdiction (PR requires authorization, not incorporation), and LLPs
+ * register under their own instrument. F01.
+ */
+const NON_INCORPORATING_TYPES = new Set([
+  "sole_proprietorship",
+  "partnership",
+  "foreign_corporation",
+  "limited_liability_partnership",
+]);
+
+const truthyAnswer = (v: boolean | string | undefined): boolean =>
+  v === true || v === "true" || v === "yes" || v === "Yes";
 
 const REVIEW_CONDITION_IDS = new Set([
   "DOC_HISTORIC_DISTRICT_REVIEW",
@@ -124,8 +142,13 @@ export function applyEntityFormationExclusivity<T extends { document_id?: string
   if (CORPORATION_TYPES.includes(type as EntityType)) {
     return requirements.filter((item) => item.document_id !== LLC_FORMATION);
   }
-  if (type === "sole_proprietorship" || type === "partnership") {
-    return requirements.filter((item) => item.document_id !== CORP_FORMATION && item.document_id !== LLC_FORMATION);
+  if (NON_INCORPORATING_TYPES.has(type)) {
+    // F01: these legal forms never incorporate in Puerto Rico — drop both
+    // formation certificates rather than presenting incorporation as a
+    // mandatory duty.
+    return requirements.filter(
+      (item) => item.document_id !== CORP_FORMATION && item.document_id !== LLC_FORMATION
+    );
   }
   return requirements;
 }
@@ -156,17 +179,34 @@ function decisionForFlag(
 export interface ClassifyOptions {
   kb: KnowledgeBase;
   entityType?: EntityType | string | null;
+  /** Same answers the engine saw, keyed by KB question id — needed for
+   *  entity/employment-sensitive calls (e.g. EIN when the entity type is
+   *  unknown but the user will hire employees). */
+  answers?: Record<string, boolean | string | undefined>;
   potentialDecisions?: Record<string, PotentialDecision>;
   legacyCode?: Record<string, string>;
   recommendedIds?: Set<string>;
 }
+
+const APPLICABILITY_RANK: Record<Applicability, number> = {
+  required: 3,
+  conditional: 2,
+  recommended: 1,
+  not_applicable: 0,
+  completed: 3,
+};
 
 export function classifyEngineRequirements(
   generated: GeneratedRequirement[],
   options: ClassifyOptions
 ): ClassifiedRequirement[] {
   const exclusive = applyEntityFormationExclusivity(generated, options.entityType);
-  const out: ClassifiedRequirement[] = [];
+  // One row per document: several rules can match the same document on
+  // different bases (e.g. an EIN for every business AND for employers; an
+  // environmental permit for hazardous materials AND a metro flag). The
+  // checklist shows the document once, with the strongest present basis and
+  // every matched rule kept in triggerFacts for provenance.
+  const merged = new Map<string, ClassifiedRequirement>();
 
   for (const row of exclusive) {
     // A decision negates only its own matched basis. The same document can
@@ -203,13 +243,20 @@ export function classifyEngineRequirements(
       applicability = "conditional";
       triggerFacts.push("entityType:unknown");
     }
+    // F02: an EIN is required when the business will have employees, but when
+    // the entity type is still unknown we must not claim it as a definite
+    // requirement — the IRS single-owner exception may apply.
+    if (unknownEntity && row.document_id === EIN_DOC && !truthyAnswer(options.answers?.["Q_EMPLOYEES_HIRED"])) {
+      applicability = "conditional";
+      triggerFacts.push("entityType:unknown");
+    }
 
     const selectedState = basisStates.includes("required") ? "required"
       : basisStates.includes("conditional") ? "conditional" : "not_applicable";
     const independentIndex = flags.findIndex(flag => flag === null);
     const basis = bases[independentIndex >= 0 ? independentIndex : basisStates.indexOf(selectedState)];
     const mandatory = applicability === "required" && !recommended;
-    out.push({
+    const classified: ClassifiedRequirement = {
       document_id: row.document_id,
       document_name: row.document_name,
       agency: row.agency,
@@ -223,10 +270,30 @@ export function classifyEngineRequirements(
       stage: stageForDocument(row.document_id, row.document_name, row.category),
       triggerFacts: triggerFacts.length ? triggerFacts : [`rule:${row.source_rule_id}`],
       acceptsOfficialUpload: kind !== "review_condition" && kind !== "informational_notice" && applicability === "required",
-    });
+    };
+
+    const prior = merged.get(row.document_id);
+    if (!prior) {
+      merged.set(row.document_id, classified);
+      continue;
+    }
+    // Merge: strongest applicability wins (a confirmed independent basis
+    // outweighs an undecided or declined flag), triggerFacts accumulate,
+    // distinct reasons are joined so every basis stays visible.
+    if (APPLICABILITY_RANK[classified.applicability] > APPLICABILITY_RANK[prior.applicability]) {
+      prior.applicability = classified.applicability;
+      prior.mandatory = classified.mandatory;
+      prior.acceptsOfficialUpload = classified.acceptsOfficialUpload;
+    }
+    for (const fact of classified.triggerFacts) {
+      if (!prior.triggerFacts.includes(fact)) prior.triggerFacts.push(fact);
+    }
+    if (!prior.reason.includes(classified.reason)) {
+      prior.reason = `${prior.reason} · ${classified.reason}`;
+    }
   }
 
-  return out;
+  return [...merged.values()];
 }
 
 export function classifyPotentialItem(name: string, flag: string, decision: PotentialDecision | undefined): {

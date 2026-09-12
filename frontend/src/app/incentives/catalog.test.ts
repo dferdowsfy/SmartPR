@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compileIncentiveCatalog, type IncentiveCatalogNode } from "./catalog.ts";
+import { compileIncentiveCatalog, mergeProgramCatalogs, type IncentiveCatalogNode } from "./catalog.ts";
+import type { IncentiveProgram } from "./types.ts";
 
 const baseNodes: IncentiveCatalogNode[] = [
   { entityId: "AGY_TEST", nodeType: "agency", data: { id: "AGY_TEST", name: "Test Agency" } },
@@ -54,4 +55,22 @@ test("catalog rejects a program with incomplete provenance instead of partially 
   const catalog = compileIncentiveCatalog(nodes);
   assert.equal(catalog.programs.length, 0);
   assert.match(catalog.rejected[0]?.reasons.join(" ") ?? "", /authoritative graph source/i);
+});
+
+test("F11: a same-ID graph program replaces the static entry", () => {
+  const graph = [{ id: "ACT60_EXPORT", name: "Graph-corrected export incentive" } as IncentiveProgram];
+  const statik = [
+    { id: "ACT60_EXPORT", name: "Stale static export incentive" } as IncentiveProgram,
+    { id: "ACT60_TOURISM", name: "Static-only tourism incentive" } as IncentiveProgram,
+  ];
+  const merged = mergeProgramCatalogs(graph, statik);
+  assert.deepEqual(merged.map((p) => p.id), ["ACT60_EXPORT", "ACT60_TOURISM"]);
+  assert.equal(merged[0]?.name, "Graph-corrected export incentive");
+});
+
+test("F11: graph-only programs are included and static survives without a graph", () => {
+  const graph = [{ id: "GRAPH_NEW", name: "Graph-only program" } as IncentiveProgram];
+  const statik = [{ id: "ACT60_TOURISM", name: "Static-only" } as IncentiveProgram];
+  assert.deepEqual(mergeProgramCatalogs(graph, statik).map((p) => p.id), ["GRAPH_NEW", "ACT60_TOURISM"]);
+  assert.deepEqual(mergeProgramCatalogs([], statik).map((p) => p.id), ["ACT60_TOURISM"]);
 });

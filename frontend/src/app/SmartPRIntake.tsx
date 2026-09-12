@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
-import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel } from './kb';
+import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel } from './kb';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { buildRequirementGuidance } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
@@ -46,7 +46,7 @@ import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms
 import { requirementFormState, actionsForFormState } from './forms/engine/application';
 import { generatePreparationPdf } from './forms/engine/pdfGenerator';
 import { getTemplate, isOfficialArtifact } from './forms/artifacts/catalog';
-import { entityTypeRequirements, exclusiveFormationRequirements, type MinimalRequirement } from './forms/engine/requirementAugment';
+import { normalizeEntityFormationRequirements as normalizeFormationShared, entityTypeRequirements, type MinimalRequirement } from './forms/engine/requirementAugment';
 import type { CanonicalApplicationData, EntityType, FormData as GovFormData, GeneratedApplication } from './forms/engine/types';
 import { localize } from './forms/engine/types';
 import {
@@ -169,29 +169,7 @@ function potentialItemsForProfile(
     .filter((item) => !mandatoryNames.has(item.document.toLowerCase()));
 }
 
-const INDUSTRIES = [
-  "Accommodation & Tourism",
-  "Agriculture & Farming",
-  "Arts, Entertainment & Recreation",
-  "Automotive",
-  "Beauty & Personal Care",
-  "Construction",
-  "Education & Training",
-  "Energy & Utilities",
-  "Finance & Insurance",
-  "Food & Beverage",
-  "Healthcare",
-  "Information Technology",
-  "Manufacturing",
-  "Professional Services",
-  "Real Estate",
-  "Retail",
-  "Transportation & Logistics",
-  "Wholesale Distribution",
-  "Government Contractor",
-  "Nonprofit / Religious Organization",
-  "Other"
-];
+const INDUSTRIES = INTAKE_INDUSTRIES;
 
 const BUSINESS_TYPES: Record<string, string[]> = {
   "Food & Beverage": [
@@ -983,33 +961,29 @@ function resolveFactsFor(
 
 // Core compute logic - matches the approved rules engine design + seed data
 // Updated to use the new Step 1 fields (location_type, food_prepared_or_sold, alcohol_sold, professional_licenses_required, etc.)
+// Formation normalization is shared with the server obligation pipeline
+// (forms/engine/requirementAugment) so both produce the same requirement set.
 function normalizeEntityFormationRequirements(
   entityType: EntityType,
   existing: Requirement[]
 ): Requirement[] {
-  const canonical = { business: { entityType } } as CanonicalApplicationData;
-  const withoutWrongFormation = exclusiveFormationRequirements<Requirement>(canonical, existing);
-  const augments = entityTypeRequirements<Requirement>(
-    canonical,
-    withoutWrongFormation,
-    (d) =>
-      ({
-        document_id: d.document_id,
-        code: d.code,
-        name: d.name,
-        reason: d.reason,
-        agency: 'Department of State',
-        category: 'formation',
-        mandatory: true,
-        status: 'pending',
-        applicability: 'required',
-        kind: 'government_application',
-        stage: 'entity_formation',
-        triggerFacts: [`entityType:${entityType}`],
-        acceptsOfficialUpload: true,
-      }) as Requirement
+  return normalizeFormationShared<Requirement>(entityType, existing, (d, et) =>
+    ({
+      document_id: d.document_id,
+      code: d.code,
+      name: d.name,
+      reason: d.reason,
+      agency: 'Department of State',
+      category: 'formation',
+      mandatory: true,
+      status: 'pending',
+      applicability: 'required',
+      kind: 'government_application',
+      stage: 'entity_formation',
+      triggerFacts: [`entityType:${et}`],
+      acceptsOfficialUpload: true,
+    }) as Requirement
   );
-  return exclusiveFormationRequirements(canonical, [...withoutWrongFormation, ...augments]);
 }
 
 function computeRequirements(

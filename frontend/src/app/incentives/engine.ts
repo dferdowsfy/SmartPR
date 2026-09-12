@@ -8,7 +8,7 @@ import type {
   IncentiveProgram,
   NormalizedProjectProfile,
   ProjectFactValue,
-} from "./types";
+} from "./types.ts";
 
 const OWNERSHIP_FACTS = new Set(["veteran_owned", "minority_owned", "woman_owned"]);
 
@@ -167,6 +167,9 @@ function scopeEvaluation(input: {
     expectedValue: input.expected,
     required: true,
     material: true,
+    // Discovery scope, not a statutory criterion: matching it keeps the
+    // program in the running but never establishes eligibility by itself.
+    scope: true,
     evidence: [],
     citation: input.citation,
     explanation: !known
@@ -187,13 +190,24 @@ function lifecycleBlocks(program: IncentiveProgram, now: Date): string | null {
 
 function classificationFor(evaluations: CriterionEvaluation[], blocked: string | null): EligibilityStatus {
   if (blocked) return "not_eligible";
-  const required = evaluations.filter((item) => item.required);
+  // Scope (industry/geography) is a discovery filter, not a statutory
+  // criterion: outside the published scope the program is not eligible, but
+  // a scope match alone can never establish eligibility (F06).
+  const scope = evaluations.filter((item) => item.scope);
+  const substantive = evaluations.filter((item) => !item.scope);
+  if (scope.some((item) => item.status === "not_satisfied")) return "not_eligible";
+  const scopeMissing = scope.some((item) => item.status === "missing" || item.status === "not_evaluable");
+  const required = substantive.filter((item) => item.required);
   if (required.some((item) => item.status === "not_satisfied")) return "not_eligible";
   if (required.some((item) => item.status === "missing" || item.status === "not_evaluable")) return "potentially_eligible";
+  // No substantive criteria at all: a scope match is discovery, not a
+  // statutory eligibility finding.
+  if (substantive.length === 0) return "potentially_eligible";
+  if (scopeMissing) return "potentially_eligible";
   if (required.length > 0 && required.every((item) => item.status === "satisfied")) return "likely_eligible";
-  if (evaluations.some((item) => item.status === "satisfied")) return "likely_eligible";
-  if (evaluations.some((item) => item.status === "missing" || item.status === "not_evaluable")) return "potentially_eligible";
-  return evaluations.some((item) => item.status === "not_satisfied") ? "unlikely_eligible" : "potentially_eligible";
+  if (substantive.some((item) => item.status === "satisfied")) return "likely_eligible";
+  if (substantive.some((item) => item.status === "missing" || item.status === "not_evaluable")) return "potentially_eligible";
+  return substantive.some((item) => item.status === "not_satisfied") ? "unlikely_eligible" : "potentially_eligible";
 }
 
 function confidenceFor(evaluations: CriterionEvaluation[], eligibility: EligibilityStatus): number {

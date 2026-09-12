@@ -1,4 +1,4 @@
-import { INCENTIVE_PROGRAM_TYPES, type IncentiveProgram, type IncentiveProgramType } from "./types";
+import { INCENTIVE_PROGRAM_TYPES, type IncentiveProgram, type IncentiveProgramType } from "./types.ts";
 import type { NodeType } from "../rk/types";
 
 export interface IncentiveCatalogNode {
@@ -201,4 +201,22 @@ export function compileIncentiveCatalog(nodes: IncentiveCatalogNode[]): Compiled
     rejected,
     catalogVersion: versions.length ? versions.join("|") : "no-published-incentives",
   };
+}
+
+/**
+ * F11: program source precedence. The published knowledge graph is
+ * authoritative — a graph program with the same id REPLACES the statically
+ * authored entry, so corrections and retirements made in the graph take
+ * effect and stale static content can neither override nor revive what the
+ * graph publishes. Static entries survive only for ids the graph does not
+ * define. (Rejected, i.e. invalid, graph programs are dropped by
+ * compileIncentiveCatalog before this runs, so they never suppress a static
+ * entry.)
+ */
+export function mergeProgramCatalogs(
+  graphPrograms: IncentiveProgram[],
+  staticPrograms: IncentiveProgram[]
+): IncentiveProgram[] {
+  const graphIds = new Set(graphPrograms.map((p) => p.id));
+  return [...graphPrograms, ...staticPrograms.filter((s) => !graphIds.has(s.id))];
 }

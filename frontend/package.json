@@ -15,7 +15,9 @@
     "test:incentives": "tsx --test src/app/incentives/engine.test.ts src/app/incentives/catalog.test.ts",
     "test:guidance": "tsx --test src/app/guidance/guidance.test.ts",
     "forms:verify": "node --experimental-strip-types scripts/verify-deliverable-output.ts",
-    "test:regulatory-correctness": "tsx --test src/app/regulatoryCorrectness.test.ts src/app/requirementApplicability.test.ts src/app/rulesEngine.test.ts src/app/incentives/engine.test.ts src/app/incentives/catalog.test.ts src/app/guidance/guidance.test.ts src/app/forms/engine/formEngine.test.ts"
+    "test:regulatory-correctness": "tsx --test src/app/regulatoryCorrectness.test.ts src/app/requirementApplicability.test.ts src/app/rulesEngine.test.ts src/app/incentives/engine.test.ts src/app/incentives/catalog.test.ts src/app/guidance/guidance.test.ts src/app/forms/engine/formEngine.test.ts",
+    "rk:resync": "tsx scripts/rk-resync-from-seed.ts",
+    "test:rk": "tsx --test src/app/rk/publication.test.ts src/app/rk/discoveryParity.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

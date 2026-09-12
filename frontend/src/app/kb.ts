@@ -20,11 +20,38 @@ import {
 import type { PotentialDecision } from "./potentialRequirements";
 import { classifyEngineRequirements, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
 import type { EntityType } from "./forms/engine/types";
+import { entityTypeFromLegacyStructure } from "./forms/engine/intake.ts";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
 import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
+
+// The intake's industry dropdown list (single source of truth — used by the
+// intake UI and by server-side fact resolution so both derive identical facts).
+export const INTAKE_INDUSTRIES = [
+  "Accommodation & Tourism",
+  "Agriculture & Farming",
+  "Arts, Entertainment & Recreation",
+  "Automotive",
+  "Beauty & Personal Care",
+  "Construction",
+  "Education & Training",
+  "Energy & Utilities",
+  "Finance & Insurance",
+  "Food & Beverage",
+  "Healthcare",
+  "Information Technology",
+  "Manufacturing",
+  "Professional Services",
+  "Real Estate",
+  "Retail",
+  "Transportation & Logistics",
+  "Wholesale Distribution",
+  "Government Contractor",
+  "Nonprofit / Religious Organization",
+  "Other",
+];
 
 // UI requirement shape (kept identical to the existing app interface, with a
 // few optional fields appended for the debug panel / engine output).
@@ -43,6 +70,13 @@ export interface UIRequirement {
   stage?: RequirementStage;
   triggerFacts?: string[];
   acceptsOfficialUpload?: boolean;
+  // Document enrichment (agency/download links) — populated by the shared
+  // pipeline from the snapshot's own documents.
+  agencyUrl?: string | null;
+  agencyNote?: string | null;
+  downloadUrl?: string | null;
+  downloadKind?: string | null;
+  downloadNote?: string | null;
 }
 
 // Minimal view of the app profile this adapter reads.
@@ -403,6 +437,11 @@ export function buildEngineInput(
     municipalityName: (p.municipality as string) || null,
     businessTypeName: resolveBusinessTypeName(p.business_type as string),
     answers: a,
+    // Canonical entity type so entity-scoped rules (excluded_entity_types)
+    // stay silent for legal forms they can never apply to. "other" means the
+    // user hasn't picked a known form — rules treat that as unknown, and the
+    // classifier marks the resulting items conditional rather than required.
+    entityType: entityTypeFromLegacyStructure(p.business_structure as string | undefined),
   };
 }
 
@@ -414,27 +453,55 @@ export function runRulesEngineForProfile(
   return runRulesEngine(KB, buildEngineInput(profile, answers, resolved));
 }
 
-// Drop-in replacement for the old hardcoded computeRequirements().
-export function computeRequirementsFromKB(
+// The full deterministic applicability pipeline, parameterized by the KB
+// snapshot it matches against. This is the single implementation both the
+// intake UI and the server obligation pipeline (compliance/server.ts) run:
+// the same engine input, the same classifier, the same formation rules.
+// Direct answers are carried for admin-published questions that may not exist
+// in the bundled adapter — the rules engine, not AI, still decides.
+export function computeRequirementsFromSnapshot(
+  snapshot: KnowledgeBase,
   profile: ProfileLike,
   answers: Record<string, unknown> = {},
   resolved: Record<string, boolean | string> = {},
   options: {
     entityType?: EntityType | string | null;
     potentialDecisions?: Record<string, PotentialDecision>;
+    recommendedIds?: Set<string>;
+    legacyCode?: Record<string, string>;
   } = {}
 ): UIRequirement[] {
-  const { requirements } = runRulesEngineForProfile(profile, answers, resolved);
-  const docById = new Map(
-    (KB.documents as Array<{ id: string; agency_url?: string | null; agency_note?: string; download_url?: string | null; download_kind?: string; download_note?: string }>).map((d) => [d.id, d])
-  );
-  return classifyEngineRequirements(requirements, {
-    kb: KB,
-    entityType: options.entityType,
+  const input = buildEngineInput(profile, answers, resolved);
+  for (const question of snapshot.questions as Array<{ id: string }>) {
+    const direct = answers[question.id];
+    if (direct !== undefined) input.answers[question.id] = direct as boolean | string;
+  }
+  const { requirements } = runRulesEngine(snapshot, input);
+  const classified = classifyEngineRequirements(requirements, {
+    kb: snapshot,
+    // Explicit caller choice wins; otherwise use what the profile declared.
+    entityType: options.entityType ?? input.entityType ?? null,
+    // The classifier needs the same answers the engine saw for entity- and
+    // employment-sensitive calls (e.g. EIN for an unknown entity type that
+    // will hire employees is required; without that fact it is conditional).
+    answers: input.answers,
     potentialDecisions: options.potentialDecisions,
-    legacyCode: kbMeta.legacyCode,
-    recommendedIds: kbMeta.recommended,
-  })
+    legacyCode: options.legacyCode ?? kbMeta.legacyCode,
+    recommendedIds: options.recommendedIds ?? kbMeta.recommended,
+  });
+  // Enrich with the snapshot's own document metadata (agency/download links)
+  // and apply the canonical display order — identical for UI and server.
+  const docById = new Map(
+    (snapshot.documents as Array<{
+      id: string;
+      agency_url?: string | null;
+      agency_note?: string;
+      download_url?: string | null;
+      download_kind?: string;
+      download_note?: string;
+    }>).map((d) => [d.id, d])
+  );
+  return classified
     .map((r) => ({
       code: r.code,
       name: r.document_name,
@@ -457,4 +524,20 @@ export function computeRequirementsFromKB(
       downloadNote: docById.get(r.document_id)?.download_note ?? null,
     }))
     .sort((a, b) => orderIndex(a.document_id!) - orderIndex(b.document_id!));
+}
+
+// Drop-in replacement for the old hardcoded computeRequirements().
+export function computeRequirementsFromKB(
+  profile: ProfileLike,
+  answers: Record<string, unknown> = {},
+  resolved: Record<string, boolean | string> = {},
+  options: {
+    entityType?: EntityType | string | null;
+    potentialDecisions?: Record<string, PotentialDecision>;
+  } = {}
+): UIRequirement[] {
+  return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
+    entityType: options.entityType,
+    potentialDecisions: options.potentialDecisions,
+  });
 }

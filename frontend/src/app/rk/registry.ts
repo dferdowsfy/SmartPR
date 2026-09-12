@@ -134,13 +134,17 @@ const s = (v: unknown): string => (typeof v === "string" ? v : "");
 const list = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
+// F18: edge emission dedupes on (edgeType, toEntity) — a duplicated ref id
+// in a data list must not project a duplicated edge into the graph.
 function pushRef(out: DerivedEdge[], edgeType: EdgeType, v: unknown) {
   const id = s(v);
-  if (id) out.push({ edgeType, toEntity: id });
+  if (id && !out.some((e) => e.edgeType === edgeType && e.toEntity === id)) {
+    out.push({ edgeType, toEntity: id });
+  }
 }
 
 function pushRefs(out: DerivedEdge[], edgeType: EdgeType, v: unknown) {
-  for (const id of list(v)) out.push({ edgeType, toEntity: id });
+  for (const id of list(v)) pushRef(out, edgeType, id);
 }
 
 const INCENTIVE_PROGRAM_FIELDS: FieldSpec[] = [
@@ -252,8 +256,8 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
     edgesOf: (d) => {
       const out: DerivedEdge[] = [];
       pushRef(out, "belongs_to", d.industry_id);
-      for (const q of list(d.question_ids)) out.push({ edgeType: "asks", toEntity: q });
-      for (const a of list(d.activity_ids)) out.push({ edgeType: "applies_to", toEntity: a });
+      pushRefs(out, "asks", d.question_ids);
+      pushRefs(out, "applies_to", d.activity_ids);
       return out;
     },
   },
@@ -314,15 +318,15 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
     edgesOf: (d) => {
       const out: DerivedEdge[] = [];
       pushRef(out, "issued_by", d.agency_id);
-      for (const dep of list(d.depends_on_document_ids)) out.push({ edgeType: "depends_on", toEntity: dep });
-      for (const ev of list(d.evidence_type_ids)) out.push({ edgeType: "requires", toEntity: ev });
+      pushRefs(out, "depends_on", d.depends_on_document_ids);
+      pushRefs(out, "requires", d.evidence_type_ids);
       const guidance = d.requirement_guidance as GuidanceConcept | undefined;
       if (guidance && typeof guidance === "object") {
-        for (const src of Array.isArray(guidance.sources) ? guidance.sources : []) if (src?.id) out.push({ edgeType: "derived_from", toEntity: src.id });
-        for (const dep of Array.isArray(guidance.dependencies) ? guidance.dependencies : []) out.push({ edgeType: "depends_on", toEntity: dep });
-        for (const dep of Array.isArray(guidance.conditionalDependencies) ? guidance.conditionalDependencies : []) if (dep?.documentId) out.push({ edgeType: "depends_on", toEntity: dep.documentId });
+        for (const src of Array.isArray(guidance.sources) ? guidance.sources : []) pushRef(out, "derived_from", src?.id);
+        pushRefs(out, "depends_on", guidance.dependencies);
+        for (const dep of Array.isArray(guidance.conditionalDependencies) ? guidance.conditionalDependencies : []) pushRef(out, "depends_on", dep?.documentId);
         for (const condition of Array.isArray(guidance.conditions) ? guidance.conditions.flat().filter(Boolean) : []) {
-          if (condition.key?.startsWith("Q_")) out.push({ edgeType: "evaluated_against", toEntity: condition.key });
+          if (condition.key?.startsWith("Q_")) pushRef(out, "evaluated_against", condition.key);
         }
       }
       return out;

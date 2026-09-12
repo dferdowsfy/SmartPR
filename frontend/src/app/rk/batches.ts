@@ -14,7 +14,7 @@
 // ============================================================================
 
 import { getPool } from "../graph/db";
-import { compileKb, type CompileNode } from "./compile";
+import { compileKb, validatePublicationGraph, type CompileNode } from "./compile";
 import { insertNodeVersionTx } from "./node-write";
 import { labelForNode } from "./registry";
 import { ensureRkReady } from "./store";
@@ -288,6 +288,16 @@ export async function publishBatch(batchId: string, actor?: string | null): Prom
       nodeType: r.node_type,
       data: r.data,
     }));
+    // F08: integrity gate — a bad node (dangling/wrong-type ref, unknown rule
+    // type, duplicated or self edge, inverted effective interval) blocks
+    // publication instead of reaching the live engine. The throw rolls back
+    // the whole batch transaction.
+    const integrityProblems = validatePublicationGraph(activeNodes);
+    if (integrityProblems.length > 0) {
+      throw new Error(
+        `PUBLICATION_BLOCKED: ${integrityProblems.length} integrity problem(s): ${integrityProblems.slice(0, 8).join("; ")}`
+      );
+    }
     const versionRow = await client.query(`SELECT coalesce(max(version), 0) + 1 AS v FROM rk_kb_snapshots`);
     const version = Number(versionRow.rows[0].v);
     const kb = compileKb(activeNodes, { version, batchId });

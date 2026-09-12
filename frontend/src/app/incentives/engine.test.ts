@@ -143,3 +143,14 @@ test("an empty catalog is explicit and never fabricates an opportunity", () => {
   assert.equal(assessment.opportunities.length, 0);
   assert.match(assessment.notice ?? "", /will not invent/i);
 });
+
+test("F06: an industry-only match never becomes likely eligible", () => {
+  const fixture = program();
+  fixture.criteria = [];
+  fixture.applicableIndustries = { ids: ["IND_MANUFACTURING"], names: ["Manufacturing"] };
+  const assessment = evaluateIncentives({ industry: "Manufacturing" }, [fixture]);
+  const result = assessment.results[0];
+  assert.equal(result?.eligibility, "potentially_eligible");
+  assert.equal(result?.confidenceScore, 0);
+  assert.match(result?.explanation ?? "", /needs review/i);
+});

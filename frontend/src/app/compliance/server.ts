@@ -1,10 +1,16 @@
 import { randomUUID } from "crypto";
 import type { Pool, PoolClient } from "pg";
 import { ACTIVE_JURISDICTION } from "../jurisdictions";
-import { buildEngineInput } from "../kb";
-import { applyEntityFormationExclusivity } from "../requirementApplicability";
+import {
+  KB,
+  INTAKE_INDUSTRIES,
+  computeRequirementsFromSnapshot,
+  type UIRequirement,
+} from "../kb";
+import { resolveIntakeFacts } from "../ai/intake/relationships";
 import { entityTypeFromLegacyStructure } from "../forms/engine/intake";
-import { runRulesEngine, type KnowledgeBase } from "../rulesEngine";
+import { normalizeEntityFormationRequirements } from "../forms/engine/requirementAugment";
+import type { KnowledgeBase } from "../rulesEngine";
 import { REMINDER_WINDOWS_DAYS, subtractDays } from "./dates";
 import type { ObligationBlueprint } from "./types";
 
@@ -132,17 +138,53 @@ export async function determineObligations(
 ): Promise<{ obligations: ObligationBlueprint[]; knowledgeSource: "PUBLISHED_SNAPSHOT" | "BUNDLED_KB" }> {
   const published = await loadPublishedSnapshot(db);
   const snapshot = published ?? (ACTIVE_JURISDICTION.kb as SnapshotShape);
-  const input = buildEngineInput(profile, answers);
-  // Carry direct answers for admin-published questions that may not exist in
-  // the bundled adapter. The rules engine—not AI—still decides applicability.
-  for (const question of snapshot.questions) {
-    const direct = answers[question.id];
-    if (direct !== undefined) input.answers[question.id] = direct as boolean | string;
-  }
-  const result = runRulesEngine(snapshot, input);
-  const recommended = new Set(
-    published ? (snapshot.docMeta?.recommended ?? []) : ACTIVE_JURISDICTION.docMappings.recommended
+  // F10: the server runs the SAME deterministic pipeline as the intake UI —
+  // relationship-resolved facts, entity type, engine, classifier, formation
+  // normalization — so persisted obligations match what the user sees.
+  const entityType = entityTypeFromLegacyStructure(
+    (profile as { business_structure?: string }).business_structure
   );
+  const resolved = resolveIntakeFacts(
+    { profile: profile as Record<string, unknown>, answers: answers as Record<string, unknown> },
+    { kb: KB, allowedIndustries: INTAKE_INDUSTRIES }
+  ).questionValues;
+  const classified = computeRequirementsFromSnapshot(
+    snapshot as KnowledgeBase,
+    profile as Parameters<typeof computeRequirementsFromSnapshot>[1],
+    answers as Record<string, unknown>,
+    resolved,
+    {
+      entityType,
+      recommendedIds: new Set(
+        published ? (snapshot.docMeta?.recommended ?? []) : ACTIVE_JURISDICTION.docMappings.recommended
+      ),
+      legacyCode: published
+        ? (snapshot.docMeta?.legacyCode as Record<string, string> | undefined)
+        : undefined,
+    }
+  );
+  // Formation certificates implied by the entity type, exactly as the UI adds
+  // them; exclusivity is enforced inside (no resurrected wrong certificate).
+  const normalized = normalizeEntityFormationRequirements<UIRequirement>(
+    entityType,
+    classified,
+    (def, et) => ({
+      code: def.code,
+      name: def.name,
+      mandatory: true,
+      status: "pending",
+      agency: "Department of State",
+      reason: def.reason,
+      document_id: def.document_id,
+      category: "formation",
+      source_rule: undefined,
+      applicability: "required",
+      kind: "government_application",
+      stage: "entity_formation",
+      triggerFacts: [`entityType:${et}`],
+      acceptsOfficialUpload: true,
+    })
+  ).filter((r) => r.applicability !== "not_applicable");
   const renewals = snapshot.extensions?.renewals ?? [];
   const renewalByDocument = new Map<string, Record<string, unknown>>();
   for (const renewal of renewals) {
@@ -150,11 +192,8 @@ export async function determineObligations(
     if (documentId) renewalByDocument.set(documentId, renewal);
   }
 
-  const entityType = entityTypeFromLegacyStructure(
-    typeof profile.business_structure === "string" ? profile.business_structure : String(answers.Q_BUSINESS_STRUCTURE ?? "")
-  );
-  const obligations = applyEntityFormationExclusivity(result.requirements, entityType).map<ObligationBlueprint>((requirement) => {
-    const renewal = renewalByDocument.get(requirement.document_id);
+  const obligations = normalized.map<ObligationBlueprint>((requirement) => {
+    const renewal = renewalByDocument.get(requirement.document_id ?? "");
     const rawFrequency = renewal?.frequency_months;
     const frequency = typeof rawFrequency === "number" && Number.isInteger(rawFrequency) && rawFrequency > 0
       ? rawFrequency
@@ -164,13 +203,13 @@ export async function determineObligations(
       (typeof renewal?.source_reference === "string" && renewal.source_reference) ||
       null;
     return {
-      requirementId: requirement.document_id,
+      requirementId: requirement.document_id ?? "",
       graphEntityId: typeof renewal?.id === "string" ? renewal.id : null,
-      name: requirement.document_name,
+      name: requirement.name,
       agency: requirement.agency,
-      mandatory: !recommended.has(requirement.document_id),
+      mandatory: requirement.mandatory,
       source: "REGULATORY_GRAPH",
-      sourceReference: requirement.source_rule_id,
+      sourceReference: requirement.source_rule ?? requirement.triggerFacts?.[0] ?? requirement.document_id ?? "",
       renewalFrequencyMonths: frequency,
       renewalReference,
     };

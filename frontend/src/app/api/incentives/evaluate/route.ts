@@ -1,9 +1,10 @@
 import { evaluateIncentives } from "../../../incentives/engine";
 import { compileIncentiveCatalog } from "../../../incentives/catalog";
 import { PR_ACT60_CATALOG } from "../../../incentives/prCatalog";
-import type { NormalizedProjectProfile } from "../../../incentives/types";
+import type { IncentiveProgram, NormalizedProjectProfile } from "../../../incentives/types";
 import { isEnabled } from "../../../graph/db";
 import { activeCompileNodes, ensureRkReady } from "../../../rk/store";
+import { mergeProgramCatalogs } from "../../../incentives/catalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,11 +20,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "profile is required" }, { status: 400 });
   }
 
-  // The graph/DB store is optional and, even when configured, nothing has
-  // ever seeded incentive-program nodes into it. The statically authored
-  // Act 60 catalog (incentives/prCatalog.ts) always renders regardless, the
-  // same way requirement guidance (guidance/pr.ts) doesn't depend on a live
-  // graph. A configured store can still contribute additional programs.
+  // Program source precedence: the published knowledge graph is authoritative
+  // when the graph store is configured (see mergeProgramCatalogs above); the
+  // static catalog is the fallback when it is not.
   let programs = PR_ACT60_CATALOG;
   let catalogVersion = "pr-act60-static-2026-09-04.1";
   let catalogWarnings = 0;
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
   if (isEnabled()) {
     await ensureRkReady();
     const catalog = compileIncentiveCatalog(await activeCompileNodes());
-    programs = [...PR_ACT60_CATALOG, ...catalog.programs.filter((p) => !PR_ACT60_CATALOG.some((s) => s.id === p.id))];
+    programs = mergeProgramCatalogs(catalog.programs, PR_ACT60_CATALOG);
     catalogVersion = `${catalogVersion}|${catalog.catalogVersion}`;
     catalogWarnings = catalog.rejected.length;
   }

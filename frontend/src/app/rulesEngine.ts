@@ -27,6 +27,12 @@ export interface KBRule {
   expected_answer: string | null;
   municipality_flag: Flag | null;
   requires_document_id: string;
+  /**
+   * Optional entity-type scoping: the rule never fires for these canonical
+   * entity types (e.g. Certificate of Incorporation for sole proprietorships).
+   * Data-driven — the engine interprets it, never hardcodes per-document law.
+   */
+  excluded_entity_types?: string[] | string | null;
 }
 
 export interface KnowledgeBase {
@@ -54,6 +60,10 @@ export interface EngineInput {
   municipalityName?: string | null;
   businessTypeName?: string | null;
   answers: Record<string, boolean | string | undefined>;
+  /** Canonical entity type (forms/engine EntityType); unknown -> null. Lets
+   *  entity-scoped rules (excluded_entity_types) stay silent for legal forms
+   *  they can never apply to, instead of emitting false mandatory duties. */
+  entityType?: string | null;
 }
 
 export interface GeneratedRequirement {
@@ -84,6 +94,15 @@ export interface EngineResult {
 
 const truthy = (v: boolean | string | undefined): boolean =>
   v === true || v === "true" || v === "yes" || v === "Yes";
+
+/** Normalize a rule's excluded_entity_types to a list (accepts arrays from
+ *  the KB JSON and comma-separated strings from admin authoring). */
+function excludedEntityTypes(rule: KBRule): string[] {
+  const v = rule.excluded_entity_types;
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(String).map((s) => s.trim()).filter(Boolean);
+  return String(v).split(",").map((s) => s.trim()).filter(Boolean);
+}
 
 // Compare an answer against a rule's expected_answer. For boolean triggers the
 // expected_answer is "true"; otherwise an exact (case-insensitive) match.
@@ -129,6 +148,13 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
   };
 
   for (const rule of kb.rules) {
+    // Entity-scoped rules never fire for an excluded legal form (F01/F02:
+    // e.g. incorporation for sole proprietorships, universal EIN for sole
+    // props). An unknown entity type falls through; the classifier marks the
+    // resulting items conditional rather than required.
+    if (input.entityType && excludedEntityTypes(rule).includes(input.entityType)) {
+      continue;
+    }
     switch (rule.rule_type) {
       case "municipality":
         // Universal / municipality baseline — applies whenever a municipality
@@ -159,7 +185,10 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
           const ans = input.answers[rule.question_id];
           if (answerMatches(ans, rule.expected_answer)) {
             const q = qById.get(rule.question_id);
-            const reason = `Question: ${q ? q.question : rule.question_id} | Answer: Yes`;
+            // Report the answer that actually matched (select labels included),
+            // not a blanket "Yes" — the matched basis is what review relies on.
+            const answerText = typeof ans === "string" ? ans : "Yes";
+            const reason = `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`;
             add(rule, reason);
             if (!triggeredSeen.has(rule.question_id)) {
               triggeredSeen.add(rule.question_id);
