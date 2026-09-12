@@ -36,6 +36,10 @@ const kb: KnowledgeBase = {
     // renewal lookup, which reads this array.
     renewals: [
       { document_id: "DOC_ROOM_TAX_RETURN", frequency_months: 1, citation: "Act 272-2003, Art. 28(A)-(B), 13 L.P.R.A. § 2271s." },
+      // Annual report (corporations) / annual fee (LLCs) with the Department of
+      // State, due April 15 each year. Verified against Dept of State forms and
+      // Law 164-2009, Arts. 15.01(A) and 21.03(C).
+      { document_id: "DOC_ANNUAL_REPORT", frequency_months: 12, citation: "Art. 15.01(A), Law 164-2009 (Ley General de Corporaciones); Art. 21.03(C) annual fee for LLCs; due April 15 each year." },
     ],
   },
 };

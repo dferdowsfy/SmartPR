@@ -198,7 +198,12 @@
   "agency_canonical": "Departamento de Hacienda",
   "download_url": "https://suri.hacienda.pr.gov",
   "download_kind": "filing_portal",
-  "download_note": "Internal Revenue license application and renewal moved into SURI; the paper SC 2309 is legacy."
+  "download_note": "Internal Revenue license application and renewal moved into SURI; the paper SC 2309 is legacy.",
+  "depends_on_document_ids": [
+   "DOC_CRIM_CLEARANCE",
+   "DOC_ASUME_CLEARANCE",
+   "DOC_BACKGROUND_CHECK"
+  ]
  },
  {
   "id": "DOC_PROFESSIONAL_LICENSE",
@@ -773,5 +778,17 @@
   "download_url": null,
   "download_kind": "none",
   "download_note": "Hacienda requires the ASUME certification (Certificación de la Administración para el Sustento de Menores) as a prerequisite for internal-revenue licenses, including alcohol beverage licenses. Request through ASUME/Familia offices."
+ },
+ {
+  "id": "DOC_ANNUAL_REPORT",
+  "name": "Annual Report / Annual Fee (Informe Anual)",
+  "agency": "Department of State",
+  "category": "State",
+  "agency_url": "https://www.estado.pr.gov/",
+  "agency_canonical": "Departamento de Estado",
+  "download_url": "https://www.estado.pr.gov/",
+  "download_kind": "filing_portal",
+  "download_note": "Filed with the Department of State on or before April 15 each year: corporations file the Informe Anual (Art. 15.01(A), Law 164-2009); LLCs pay the annual fee with basic company info (Art. 21.03(C)).",
+  "citation": "Art. 15.01(A), Law 164-2009 (Ley General de Corporaciones); Art. 21.03(C) annual fee for LLCs; due April 15 each year."
  }
 ]

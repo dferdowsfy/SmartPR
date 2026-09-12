@@ -711,3 +711,49 @@ export function newEntityId(nodeType: NodeType, name: string): string {
     .slice(0, 40);
   return `${prefix[nodeType]}_${slug || Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
+
+/** Minimal node shape for pure graph traversal (no DB access). */
+export interface TraversalNode {
+  entityId: string;
+  nodeType: NodeType;
+  data: Record<string, unknown>;
+}
+
+/**
+ * Transitive prerequisite closure for a document: follows projected
+ * `depends_on` edges (document → document) until fixpoint. Cycle-safe —
+ * a dependency cycle returns each node once instead of looping forever.
+ *
+ * This is the graph actually being *used* for reasoning: callers get the
+ * ordered list of documents that must be obtained before `documentId`.
+ * Returns entity ids in breadth-first discovery order.
+ */
+export function prerequisiteClosure(
+  nodes: TraversalNode[],
+  documentId: string
+): string[] {
+  const edgesByFrom = new Map<string, string[]>();
+  for (const n of nodes) {
+    if (n.nodeType !== "document") continue;
+    const cfg = NODE_TYPE_CONFIGS[n.nodeType];
+    for (const e of cfg.edgesOf(n.data)) {
+      if (e.edgeType !== "depends_on") continue;
+      const list = edgesByFrom.get(n.entityId) ?? [];
+      list.push(e.toEntity);
+      edgesByFrom.set(n.entityId, list);
+    }
+  }
+  const seen = new Set<string>([documentId]);
+  const queue = [...(edgesByFrom.get(documentId) ?? [])];
+  const out: string[] = [];
+  while (queue.length) {
+    const id = queue.shift()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    for (const next of edgesByFrom.get(id) ?? []) {
+      if (!seen.has(next)) queue.push(next);
+    }
+  }
+  return out;
+}

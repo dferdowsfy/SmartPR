@@ -41,6 +41,7 @@ function classify(
     municipalityName: municipality,
     businessTypeName: businessType,
     answers,
+    entityType,
   }).requirements;
   return classifyEngineRequirements(generated, {
     kb: KB,
@@ -190,4 +191,29 @@ test("no alcohol answers produce no alcohol prerequisites", () => {
   const ids = docIds(rows);
   assert.equal(ids.includes("DOC_CRIM_CLEARANCE"), false);
   assert.equal(ids.includes("DOC_ASUME_CLEARANCE"), false);
+});
+
+// --- Annual report / annual fee (RULE_0636) --------------------------------
+// Verified: corporations file Informe Anual and LLCs pay the annual fee with
+// the Dept of State by April 15 each year (Law 164-2009, Arts. 15.01(A) /
+// 21.03(C)). Non-corporate forms must never see it.
+
+test("corporation receives the annual report requirement", () => {
+  const rows = classify("Restaurant", "San Juan", {}, "stock_corporation");
+  assert.equal(docIds(rows).includes("DOC_ANNUAL_REPORT"), true);
+});
+
+test("LLC receives the annual report requirement", () => {
+  const rows = classify("Restaurant", "San Juan", {}, "limited_liability_company");
+  assert.equal(docIds(rows).includes("DOC_ANNUAL_REPORT"), true);
+});
+
+test("sole proprietorship never receives the annual report requirement", () => {
+  const rows = classify("Restaurant", "San Juan", {}, "sole_proprietorship");
+  assert.equal(docIds(rows).includes("DOC_ANNUAL_REPORT"), false);
+});
+
+test("partnership never receives the annual report requirement", () => {
+  const rows = classify("Restaurant", "San Juan", {}, "partnership");
+  assert.equal(docIds(rows).includes("DOC_ANNUAL_REPORT"), false);
 });
