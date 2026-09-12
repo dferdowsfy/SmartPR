@@ -77,6 +77,7 @@ export const puertoRicoPack: JurisdictionPack = {
       DOC_FIRE_CERT: "fire_certification",
       DOC_CFPM: "food_manager_cert",
       DOC_ALCOHOL_LICENSE: "alcohol_permit",
+      DOC_WORKERS_COMP: "workers_comp",
       DOC_LEASE_AGREEMENT: "lease_or_property_docs",
       DOC_CONTRACTOR_LICENSE: "contractor_license",
       DOC_CRIM_CLEARANCE: "crim_clearance",
