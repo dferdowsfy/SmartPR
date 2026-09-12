@@ -193,3 +193,61 @@ export function buildRequirementGuidance(req: GuidanceRequirement, ctx: Guidance
     lastVerified: concept.sources.map(s => s.lastVerified).sort()[0],
   };
 }
+
+/** Provision-level legal basis for a requirement, resolved from the regulatory
+ * knowledge graph (rule citation first, then the required document's citation).
+ * Returns null when neither the triggering rule nor the document carries a
+ * citation — the UI then shows no legal-basis line rather than inventing one. */
+export interface LegalBasis {
+  ruleId: string | null;
+  citation: string;
+  url: string | null;
+  confidence: string | null;
+  /** Document id the citation was inherited from, when the rule itself has no rule-specific citation. */
+  inheritedFromDocument: string | null;
+}
+
+interface CitationCarrier {
+  citation?: unknown;
+  citation_url?: unknown;
+  citation_confidence?: unknown;
+  citation_inherited_from?: unknown;
+}
+
+const citationText = (c: CitationCarrier | undefined): string =>
+  typeof c?.citation === "string" ? c.citation : "";
+
+export function legalBasisFor(
+  sourceRuleId: string | null | undefined,
+  documentId: string | null | undefined,
+  kb: KnowledgeBase,
+): LegalBasis | null {
+  const rules = kb.rules as (KnowledgeBase["rules"][number] & CitationCarrier & { requires_document_id?: unknown })[];
+  const docs = kb.documents as (KnowledgeBase["documents"][number] & CitationCarrier)[];
+  const rule = rules.find((r) => r.id === sourceRuleId);
+  const ruleCitation = citationText(rule);
+  if (rule && ruleCitation.length > 10) {
+    return {
+      ruleId: rule.id,
+      citation: ruleCitation,
+      url: typeof rule.citation_url === "string" ? rule.citation_url : null,
+      confidence: typeof rule.citation_confidence === "string" ? rule.citation_confidence : null,
+      inheritedFromDocument:
+        typeof rule.citation_inherited_from === "string" ? rule.citation_inherited_from : null,
+    };
+  }
+  const docId =
+    (typeof rule?.requires_document_id === "string" && rule.requires_document_id) || documentId;
+  const doc = docs.find((d) => d.id === docId);
+  const docCitation = citationText(doc);
+  if (doc && docCitation.length > 10) {
+    return {
+      ruleId: rule?.id ?? null,
+      citation: docCitation,
+      url: typeof doc.citation_url === "string" ? doc.citation_url : null,
+      confidence: typeof doc.citation_confidence === "string" ? doc.citation_confidence : null,
+      inheritedFromDocument: doc.id,
+    };
+  }
+  return null;
+}

@@ -35,6 +35,7 @@ export const ES: Record<string, string> = {
   "Then what?": "¿Y luego qué?",
   "SmartPR identified this because:": "SmartPR identificó esto porque:",
   "Verified": "Verificado",
+  "Legal basis": "Base legal",
   "Why we ask": "Por qué lo preguntamos",
   "Needs Action": "Necesita acción",
   "Why do I need this?": "¿Por qué necesito esto?",

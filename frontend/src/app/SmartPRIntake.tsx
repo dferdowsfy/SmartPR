@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import { L } from './i18n';
 import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel } from './kb';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
-import { buildRequirementGuidance } from './requirementGuidance';
+import { buildRequirementGuidance, legalBasisFor } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
@@ -3673,6 +3673,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             <span key={i}>{i > 0 ? ' · ' : ''}{src.agency} · {src.citation}</span>
           ))}
           {guidance.lastVerified && <span> · {L('Verified', language)} {guidance.lastVerified}</span>}
+          {(() => {
+            // Provision-level legal basis straight from the regulatory
+            // knowledge graph (triggering rule's citation, else the required
+            // document's). Never rendered when the graph has no citation.
+            const basis = legalBasisFor(req.source_rule, req.document_id, KB);
+            if (!basis) return null;
+            return (
+              <span>
+                {' · '}{L('Legal basis', language)}: {basis.url ? (
+                  <a href={basis.url} target="_blank" rel="noopener noreferrer">{basis.citation}</a>
+                ) : basis.citation}
+              </span>
+            );
+          })()}
         </div>
         {issuedDocumentGuidance && (
           <div className="issued-document-guidance" style={{ marginTop: 8 }}>

@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ACTIVE_JURISDICTION } from "./jurisdictions/index.ts";
-import { buildRequirementGuidance, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
+import { buildRequirementGuidance, legalBasisFor, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
 import { validateGuidanceConcept } from "./guidance/model.ts";
 
 const kb = ACTIVE_JURISDICTION.kb;
@@ -36,7 +36,7 @@ test("unreviewed documents are flagged, even if a previous builder asserted an e
   for (const id of ["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN", "DOC_HOA_AUTHORIZATION", "DOC_CERT_INCORPORATION"]) {
     const g = buildRequirementGuidance(req(id), context);
     assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", id);
-    assert.match(g.whyThisApplies, /not yet been fully validated/);
+    assert.match(g.whyThisApplies, /hasn't validated the exact regulatory basis yet/);
   }
 });
 test("DOC_CFPM is a reviewed concept: without a confirmed food fact it teaches the document instead of the generic fallback", () => {
@@ -66,4 +66,25 @@ test("municipality is retained for local patent evidence, not inserted into fede
 test("a matched rule cannot turn an unconfirmed inference into something the user said", () => {
   const g = buildRequirementGuidance(req("DOC_ALCOHOL_LICENSE"), { ...context, discoveryAnswers: {} });
   assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW");
+});
+
+test("legalBasisFor resolves the triggering rule's graph citation", () => {
+  const rule = (kb.rules as any[]).find((r) => typeof r.citation === "string" && r.citation.length > 10);
+  assert.ok(rule, "seed KB has at least one cited rule");
+  const basis = legalBasisFor(rule.id, null, kb as any);
+  assert.ok(basis, "a cited rule yields a legal basis");
+  assert.equal(basis.citation, rule.citation);
+  assert.equal(basis.ruleId, rule.id);
+});
+
+test("legalBasisFor falls back to the required document's citation", () => {
+  const rule = (kb.rules as any[]).find((r) => r.citation_source === "document" && r.requires_document_id);
+  assert.ok(rule, "seed KB has a rule with an inherited document citation");
+  const basis = legalBasisFor("RULE_DOES_NOT_EXIST", rule.requires_document_id, kb as any);
+  assert.ok(basis, "document citation is used when the rule is unknown");
+  assert.equal(basis.inheritedFromDocument, rule.requires_document_id);
+});
+
+test("legalBasisFor returns null when the graph has no citation", () => {
+  assert.equal(legalBasisFor("RULE_DOES_NOT_EXIST", "DOC_DOES_NOT_EXIST", kb as any), null);
 });
