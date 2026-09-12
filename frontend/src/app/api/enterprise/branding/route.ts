@@ -81,11 +81,20 @@ export async function GET(request: Request) {
   const pool = getPool();
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
 
-  const { rows } = await pool.query(
-    `SELECT ${SELECT_COLS} FROM workspace_branding WHERE workspace_id = $1`,
-    [workspaceId]
-  );
-  const branding = (rows[0] as BrandingRow | undefined) ?? null;
+  let branding: BrandingRow | null = null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT ${SELECT_COLS} FROM workspace_branding WHERE workspace_id = $1`,
+      [workspaceId]
+    );
+    branding = (rows[0] as BrandingRow | undefined) ?? null;
+  } catch (e) {
+    console.error("[enterprise/branding] GET failed:", (e as Error).message);
+    return Response.json(
+      { error: "could not load branding", detail: "database query failed" },
+      { status: 500 }
+    );
+  }
   const preview_urls = await signedPreviewUrls(branding);
   return Response.json({ branding, preview_urls, preview_expires_in: SIGNED_URL_TTL_SECONDS });
 }

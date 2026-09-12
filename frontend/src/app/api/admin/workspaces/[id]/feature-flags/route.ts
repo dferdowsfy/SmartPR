@@ -25,15 +25,36 @@ export async function GET(request: Request) {
   const pool = getPool();
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
 
-  const { rows } = await pool.query(
-    `SELECT key, value, source, updated_by::text AS updated_by,
-            lower(u.email) AS updated_by_email, updated_at, created_at
-       FROM feature_flags f
-       LEFT JOIN auth.users u ON u.id = f.updated_by
-      WHERE f.workspace_id = $1
-      ORDER BY key ASC`,
-    [workspaceId]
-  );
+  type FlagRow = {
+    key: string;
+    value: unknown;
+    source: string | null;
+    updated_by: string | null;
+    updated_by_email: string | null;
+    updated_at: string;
+    created_at: string;
+  };
+  let rows: FlagRow[] | null = null;
+  try {
+    const result = await pool.query<FlagRow>(
+      `SELECT key, value, source, updated_by::text AS updated_by,
+              lower(u.email) AS updated_by_email, f.updated_at, f.created_at
+         FROM feature_flags f
+         LEFT JOIN auth.users u ON u.id = f.updated_by
+        WHERE f.workspace_id = $1
+        ORDER BY key ASC`,
+      [workspaceId]
+    );
+    rows = result.rows;
+  } catch (e) {
+    console.error("[feature-flags] list failed:", (e as Error).message);
+  }
+  if (!rows) {
+    return Response.json(
+      { error: "could not load feature flags", detail: "database query failed" },
+      { status: 500 }
+    );
+  }
   return Response.json({ flags: rows });
 }
 

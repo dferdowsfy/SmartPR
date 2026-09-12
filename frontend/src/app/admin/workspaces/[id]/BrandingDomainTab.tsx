@@ -111,7 +111,15 @@ export function BrandingDomainTab({ workspaceId }: { workspaceId: string }) {
         fetch(`/api/enterprise/branding?workspace_id=${encodeURIComponent(workspaceId)}`),
         fetch(`/api/enterprise/domain/status?workspace_id=${encodeURIComponent(workspaceId)}`),
       ]);
-      const b = await bRes.json();
+      const bText = await bRes.text();
+      let b: { branding?: Branding; preview_urls?: { primary?: string | null; compact?: string | null; favicon?: string | null }; error?: string };
+      try {
+        b = bText ? (JSON.parse(bText) as typeof b) : {};
+      } catch {
+        throw new Error(
+          `Could not load branding (server returned ${bRes.status || "an empty response"}).`
+        );
+      }
       if (!bRes.ok) throw new Error(b.error || "Could not load branding.");
       const br = (b.branding || {}) as Branding;
       setBranding(br);
@@ -124,8 +132,15 @@ export function BrandingDomainTab({ workspaceId }: { workspaceId: string }) {
         compact: b.preview_urls?.compact || null,
         favicon: b.preview_urls?.favicon || null,
       });
-      const d = await dRes.json();
-      if (dRes.ok) setDomain(d.verification || null);
+      const dText = await dRes.text();
+      if (dRes.ok) {
+        try {
+          const d = dText ? (JSON.parse(dText) as { verification?: DomainVerification | null }) : {};
+          setDomain(d.verification || null);
+        } catch {
+          setDomain(null);
+        }
+      }
     } catch (e) {
       setErr((e as Error).message);
     } finally {

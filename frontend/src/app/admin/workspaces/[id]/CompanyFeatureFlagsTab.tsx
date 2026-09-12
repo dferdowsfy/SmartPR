@@ -51,7 +51,15 @@ export function CompanyFeatureFlagsTab({ workspaceId }: { workspaceId: string })
     setErr(null);
     try {
       const res = await fetch(`/api/admin/workspaces/${workspaceId}/feature-flags`);
-      const d = await res.json();
+      const text = await res.text();
+      let d: { flags?: Flag[]; error?: string };
+      try {
+        d = text ? (JSON.parse(text) as typeof d) : {};
+      } catch {
+        throw new Error(
+          `Could not load flags (server returned ${res.status || "an empty response"}).`
+        );
+      }
       if (!res.ok) throw new Error(d.error || "Could not load flags.");
       setFlags(d.flags || []);
     } catch (e) {
