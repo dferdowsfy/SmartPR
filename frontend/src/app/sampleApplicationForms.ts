@@ -76,9 +76,9 @@ const YES_NO_NA: SampleFormOption[] = [
 export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = {
   certificate_of_incorporation: {
     requirementCode: "certificate_of_incorporation",
-    title: "Certificate of Incorporation Filing Worksheet (Sample)",
+    title: "Certificate of Incorporation Filing Worksheet",
     agency: "Puerto Rico Department of State",
-    description: "Preparation worksheet for the information commonly needed for an entity filing. This is not an issued Certificate of Incorporation.",
+    description: "SmartPR worksheet gathering the information for an entity filing, pre-filled from your business profile.",
     officialOutput: "Certificate of Incorporation issued by the Puerto Rico Department of State",
     filename: "01_Certificate_of_Incorporation_Filing_Worksheet.pdf",
     sections: [
@@ -106,9 +106,9 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
   },
   merchant_registration: {
     requirementCode: "merchant_registration",
-    title: "Merchant Registration Application Worksheet (Sample)",
+    title: "Merchant Registration Application Worksheet",
     agency: "Puerto Rico Department of Treasury (Hacienda / SURI)",
-    description: "Preparation worksheet for merchant registration information. It does not replace registration in SURI or the certificate issued by Hacienda.",
+    description: "SmartPR worksheet gathering merchant registration information, pre-filled from your business profile.",
     officialOutput: "Merchant Registration Certificate issued through SURI",
     filename: "02_Merchant_Registration_Application_Worksheet.pdf",
     sections: [
@@ -139,9 +139,9 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
   },
   permiso_unico: {
     requirementCode: "permiso_unico",
-    title: "Permiso Único Application Worksheet (Sample)",
+    title: "Permiso Único Application Worksheet",
     agency: "Office of Permit Management (OGPe)",
-    description: "Preparation worksheet for a Permiso Único application. The official application and agency review occur through the authorized government process.",
+    description: "SmartPR worksheet gathering the information for a Permiso Único application, pre-filled from your business profile.",
     officialOutput: "Permiso Único issued by OGPe or the authorized municipality",
     filename: "03_Permiso_Unico_Application_Worksheet.pdf",
     sections: [
@@ -175,9 +175,9 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
   },
   health_permit: {
     requirementCode: "health_permit",
-    title: "Health / Sanitary Permit Application Worksheet (Sample)",
+    title: "Health / Sanitary Permit Application Worksheet",
     agency: "Puerto Rico Department of Health (Departamento de Salud)",
-    description: "Preparation worksheet for a health/sanitary permit application for a food establishment. It does not replace the Department of Health application, inspection, or the permit it issues.",
+    description: "SmartPR worksheet gathering the information for a health/sanitary permit application, pre-filled from your business profile.",
     officialOutput: "Health / Sanitary Permit issued by the Department of Health",
     filename: "04_Health_Permit_Application_Worksheet.pdf",
     sections: [
@@ -226,9 +226,9 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
   },
   fire_certification: {
     requirementCode: "fire_certification",
-    title: "Fire Safety Certification Worksheet (Sample)",
+    title: "Fire Safety Certification Worksheet",
     agency: "Puerto Rico Fire Bureau (Cuerpo de Bomberos de Puerto Rico)",
-    description: "Preparation worksheet for a fire safety inspection request. It does not replace the Fire Bureau inspection or the certification it issues.",
+    description: "SmartPR worksheet gathering the information for a fire safety inspection request, pre-filled from your business profile.",
     officialOutput: "Fire Safety Certification issued by the Fire Bureau",
     filename: "05_Fire_Safety_Certification_Worksheet.pdf",
     sections: [
@@ -269,9 +269,9 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
   },
   alcohol_permit: {
     requirementCode: "alcohol_permit",
-    title: "Alcohol Beverage License Application Worksheet (Sample)",
+    title: "Alcohol Beverage License Application Worksheet",
     agency: "Puerto Rico Department of Treasury (Hacienda)",
-    description: "Preparation worksheet for an alcohol beverage license application. It does not replace the Hacienda application, review, or the license it issues.",
+    description: "SmartPR worksheet gathering the information for an alcohol beverage license application, pre-filled from your business profile.",
     officialOutput: "Alcohol Beverage License issued by Hacienda",
     filename: "06_Alcohol_Beverage_License_Worksheet.pdf",
     sections: [
@@ -307,9 +307,9 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
   },
   workers_comp: {
     requirementCode: "workers_comp",
-    title: "Workers' Compensation (CFSE) Policy Worksheet (Sample)",
+    title: "Workers' Compensation (CFSE) Policy Worksheet",
     agency: "State Insurance Fund Corporation (CFSE / Fondo del Seguro del Estado)",
-    description: "Preparation worksheet for a CFSE workers' compensation policy application. It does not replace the CFSE application, risk classification, or the policy it issues.",
+    description: "SmartPR worksheet gathering the information for a CFSE workers' compensation policy application, pre-filled from your business profile.",
     officialOutput: "Workers' compensation policy issued by the CFSE",
     filename: "07_Workers_Compensation_CFSE_Worksheet.pdf",
     sections: [
@@ -425,15 +425,15 @@ export function generateSampleApplicationPdf(
   doc.text(descriptionLines, margin, y);
   y += descriptionLines.length * 4 + 5;
 
-  doc.setFillColor(255, 247, 237);
-  doc.setDrawColor(251, 146, 60);
+  doc.setFillColor(239, 246, 255);
+  doc.setDrawColor(59, 130, 246);
   doc.rect(margin, y, width, 16, "FD");
-  doc.setTextColor(154, 52, 18);
+  doc.setTextColor(30, 64, 175);
   doc.setFont("helvetica", "bold");
-  doc.text("SAMPLE PREPARATION WORKSHEET — NOT AN OFFICIAL GOVERNMENT FILING", margin + 4, y + 6);
+  doc.text("SmartPR preparation worksheet", margin + 4, y + 6);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`Official proof still required: ${definition.officialOutput}`, margin + 4, y + 11);
+  doc.text(`Complete the official filing with the ${definition.agency}; upload the issued document when it arrives.`, margin + 4, y + 11);
   y += 23;
 
   for (const section of definition.sections) {

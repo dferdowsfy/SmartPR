@@ -78,17 +78,17 @@ export function generatePreparationPdf(
   y += 7;
 
   // "Prepared" banner.
-  doc.setFillColor(255, 247, 237);
-  doc.setDrawColor(251, 146, 60);
+  doc.setFillColor(239, 246, 255);
+  doc.setDrawColor(59, 130, 246);
   doc.rect(margin, y, width, 15, "FD");
-  doc.setTextColor(154, 52, 18);
+  doc.setTextColor(30, 64, 175);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
-  doc.text("PREPARED FOR SUBMISSION THROUGH SMARTPR — NOT AN OFFICIAL FILING", margin + 3, y + 6);
+  doc.text("SmartPR preparation summary", margin + 3, y + 6);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.5);
   doc.text(
-    `This draft has not been submitted to or accepted by ${def.agency}; it is not an agency-issued document.`,
+    `Complete and sign the official ${def.officialFormNumber} with ${def.agency} before filing.`,
     margin + 3,
     y + 11
   );

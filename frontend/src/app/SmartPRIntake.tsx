@@ -3128,8 +3128,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       const pdfBlob = await generateReadinessReportPDF();
       zip.file('00_SmartPR_Readiness_Report.pdf', pdfBlob);
 
-      // Add user-prepared sample application worksheets. These are clearly
-      // labeled drafts and never substitute for agency-issued evidence.
+      // Add SmartPR preparation worksheets, pre-filled from the business profile.
+      // The agency-issued document still completes each requirement on upload.
       for (const prepared of Object.values(preparedSampleApplications)) {
         const definition = getSampleApplication(prepared.requirementCode);
         if (!definition) continue;
@@ -4742,7 +4742,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               </div>
             </div>
 
-            {/* 2. Prepared sample applications */}
+            {/* 2. Prepared application worksheets */}
             <div className="pkg purple">
               <div className="pkg-head">
                 <div className="pkg-ic"><FileText className="i-lg i" /></div>
