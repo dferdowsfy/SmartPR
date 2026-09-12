@@ -6,7 +6,8 @@ import { ensureSchema, ensureUniquePublicId } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
 import { notifyNewBusiness } from "../../../lib/leads";
 import { ensureUserWorkspace } from "../../compliance/server";
-import { assertCanAddBusinesses, gateJson } from "../../../lib/billing/access";
+import { gateJson } from "../../../lib/billing/access";
+import { assertContractBusinessAvailable } from "../../../lib/enterprise/workspaceRoles";
 import { assertCanEditWorkspace } from "../../../lib/admin";
 
 export const runtime = "nodejs";
@@ -88,7 +89,9 @@ export async function POST(request: Request) {
       return Response.json({ error: `Not allowed: ${roleBlock}.` }, { status: 403 });
     }
     try {
-      await assertCanAddBusinesses(pool, { workspaceId, email: user.email, adding: 1 });
+      // Contract entitlement gate: a superadmin-set max_businesses wins;
+      // otherwise this falls back to the plan-catalog gate (unchanged behavior).
+      await assertContractBusinessAvailable(pool, workspaceId, user.email, 1);
     } catch (gateErr) {
       const gated = gateJson(gateErr);
       if (gated) return gated;

@@ -554,8 +554,187 @@ export async function requireEnterprisePermission(
 }
 
 // ---------------------------------------------------------------------------
-// Audit events
+// Support access (superadmin, time-boxed, reason-bound)
 // ---------------------------------------------------------------------------
+
+/** A live support_access_grants row. */
+export interface SupportGrant {
+  id: string;
+  workspaceId: string;
+  grantedBy: string | null;
+  grantedToEmail: string;
+  reason: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  scope: string;
+  createdAt: string;
+}
+
+/** Permissions a read_only support grant may exercise (everything else denied). */
+export const SUPPORT_READ_ONLY_PERMISSIONS: Permission[] = [
+  "view_records",
+  "view_billing",
+  "view_audit_logs",
+];
+
+/**
+ * The active (non-revoked, non-expired) support grant for an email on a
+ * workspace, or null. Support grants never confer workspace membership —
+ * they only combine with an explicit superadmin check in requireOrgAccess.
+ */
+export async function getActiveSupportGrant(
+  pool: Queryable | null,
+  workspaceId: string,
+  email: string
+): Promise<SupportGrant | null> {
+  if (!pool || !email) return null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT id::text AS id, workspace_id::text AS workspace_id,
+              granted_by::text AS granted_by, granted_to_email, reason,
+              expires_at::text AS expires_at, revoked_at::text AS revoked_at,
+              scope, created_at::text AS created_at
+         FROM support_access_grants
+        WHERE workspace_id = $1
+          AND lower(granted_to_email) = lower($2)
+          AND revoked_at IS NULL
+          AND expires_at > now()
+        ORDER BY created_at DESC
+        LIMIT 1`,
+      [workspaceId, email]
+    );
+    const r = rows[0];
+    if (!r) return null;
+    return {
+      id: String(r.id),
+      workspaceId: String(r.workspace_id),
+      grantedBy: r.granted_by ? String(r.granted_by) : null,
+      grantedToEmail: String(r.granted_to_email),
+      reason: String(r.reason ?? ""),
+      expiresAt: String(r.expires_at),
+      revokedAt: r.revoked_at ? String(r.revoked_at) : null,
+      scope: String(r.scope ?? "read_only"),
+      createdAt: String(r.created_at),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function emailForUserId(
+  pool: Queryable | null,
+  userId: string
+): Promise<string | null> {
+  if (!pool) return null;
+  try {
+    const { rows } = await pool.query(
+      `SELECT email FROM auth.users WHERE id = $1 LIMIT 1`,
+      [userId]
+    );
+    const email = rows[0]?.email;
+    return typeof email === "string" ? email : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Org-access gate that ALSO honors active support grants.
+ *
+ * Passes when EITHER:
+ *   (a) the user is a workspace member and holds `permission` (when given),
+ *       exactly like requireEnterprisePermission; OR
+ *   (b) the user is a platform superadmin AND holds a non-revoked,
+ *       non-expired support_access_grants row for their email on the
+ *       workspace. Read-only grants only pass for read permissions
+ *       (view_records, view_billing, view_audit_logs) or when no
+ *       permission is requested.
+ *
+ * Returns `{ user, workspaceId, supportGrant }` on success — supportGrant is
+ * non-null on the (b) path so callers can stamp audit events with
+ * source='superadmin' + the grant reason. Returns `{ response }` (401/403)
+ * on failure, same shape as requireEnterprisePermission.
+ */
+export async function requireOrgAccess(
+  userId: string,
+  workspaceId: string,
+  permission?: Permission,
+  scope?: Scope,
+  opts: PermissionCheckOptions = {}
+): Promise<
+  | {
+      user: { id: string; email?: string | null };
+      workspaceId: string;
+      supportGrant: SupportGrant | null;
+    }
+  | { response: Response }
+> {
+  let user: { id: string; email?: string | null } | null = null;
+  try {
+    const { getCurrentUser } = await import("./supabase/server");
+    user = await getCurrentUser();
+  } catch {
+    user = null;
+  }
+  if (!user) {
+    return { response: Response.json({ error: "unauthorized" }, { status: 401 }) };
+  }
+  const pool = opts.pool === undefined ? getPool() : opts.pool;
+
+  // Path (a): regular workspace membership + permission.
+  try {
+    const isMember = await assertWorkspaceAccess(user.id, workspaceId, pool);
+    if (isMember && (!permission || (await hasPermission(user.id, workspaceId, permission, scope, opts)))) {
+      return { user, workspaceId, supportGrant: null };
+    }
+  } catch {
+    // Fall through to the support-grant path.
+  }
+
+  // Path (b): superadmin + active support grant.
+  try {
+    const { isSuperAdmin } = await import("./admin");
+    const email =
+      user.id === userId && user.email
+        ? user.email
+        : (user.email ?? (await emailForUserId(pool, userId)));
+    if (email && (await isSuperAdmin(email))) {
+      const grant = await getActiveSupportGrant(pool, workspaceId, email);
+      if (grant) {
+        const readOk =
+          !permission || SUPPORT_READ_ONLY_PERMISSIONS.includes(permission);
+        if (grant.scope !== "read_only" || readOk) {
+          return { user, workspaceId, supportGrant: grant };
+        }
+      }
+    }
+  } catch {
+    // Deny below.
+  }
+
+  return {
+    response: Response.json({ error: "forbidden", permission }, { status: 403 }),
+  };
+}
+
+/**
+ * Audit-event convention for anything done under support access: every
+ * request made with an active grant must write its audit_events with
+ * source='superadmin' and a reason that carries the grant id + reason, so
+ * support actions are never invisible in the org's own audit log.
+ */
+export async function writeSupportAuditEvent(
+  pool: Queryable | null,
+  grant: SupportGrant,
+  event: Omit<AuditEventInput, "source" | "reason">
+): Promise<void> {
+  await writeAuditEvent(pool, {
+    ...event,
+    source: "superadmin",
+    reason: `[support:${grant.id}] ${grant.reason}`,
+  });
+}
+
 
 export interface AuditEventInput {
   actorUserId?: string | null;

@@ -14,7 +14,7 @@ import type { PlanId } from "./catalog";
 import { isPlanId } from "./catalog";
 import { isUserAdmin } from "../admin";
 
-type Db = Pool | PoolClient;
+export type Db = Pool | PoolClient;
 
 export class PlanGateError extends Error {
   status = 402;

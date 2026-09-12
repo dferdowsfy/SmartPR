@@ -1,10 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CompanyOverviewTab } from "./CompanyOverviewTab";
+import { CompanySecurityTab } from "./CompanySecurityTab";
+import { CompanyPlanLimitsTab } from "./CompanyPlanLimitsTab";
+import { CompanyFeatureFlagsTab } from "./CompanyFeatureFlagsTab";
+import { CompanySupportAccessTab } from "./CompanySupportAccessTab";
+import { CompanyAuditTab } from "./CompanyAuditTab";
+import { BrandingDomainTab } from "./BrandingDomainTab";
 
 const ROLES = ["OWNER", "ADMIN", "MEMBER", "VIEWER"] as const;
 const PLANS = ["free", "core", "operator", "partner", "pilot", "enterprise"] as const;
-const TABS = ["Team", "Branding", "Plan", "Audit log"] as const;
+const TABS = ["Overview", "People & access", "Branding", "Branding & domain", "Security", "Plan", "Plan & limits", "Feature flags", "Support access", "Audit log"] as const;
 
 interface Member {
   user_id: string;
@@ -37,7 +44,7 @@ const btnGhost =
   "rounded-lg border border-[#161616]/22 px-4 py-2 text-sm font-medium text-[#161616] hover:bg-[#161616]/5 disabled:opacity-50";
 
 export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Team");
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Overview");
   const [name, setName] = useState("");
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -247,7 +254,7 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
       {err && <div className="mt-4 rounded-lg border border-[#8a2f2f]/30 bg-[#8a2f2f]/8 px-4 py-3 text-sm text-[#8a2f2f]">{err}</div>}
       {msg && <div className="mt-4 rounded-lg border border-[#1f5a3a]/30 bg-[#1f5a3a]/8 px-4 py-3 text-sm text-[#1f5a3a]">{msg}</div>}
 
-      <div className="mt-6 flex gap-1 border-b border-[#161616]/15">
+      <div className="mt-6 flex flex-wrap gap-1 border-b border-[#161616]/15">
         {TABS.map((t) => (
           <button
             key={t}
@@ -263,7 +270,13 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
         ))}
       </div>
 
-      {tab === "Team" && (
+      {tab === "Overview" && (
+        <div className="mt-6">
+          <CompanyOverviewTab workspaceId={workspaceId} />
+        </div>
+      )}
+
+      {tab === "People & access" && (
         <div className="mt-6">
           <div className="rounded-xl border border-[#161616]/15 bg-[#fbf8f2] p-5">
             <h2 className="text-base font-semibold">Invite someone</h2>
@@ -484,6 +497,18 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
         </div>
       )}
 
+      {tab === "Branding & domain" && (
+        <div className="mt-6">
+          <BrandingDomainTab workspaceId={workspaceId} />
+        </div>
+      )}
+
+      {tab === "Security" && (
+        <div className="mt-6">
+          <CompanySecurityTab workspaceId={workspaceId} />
+        </div>
+      )}
+
       {tab === "Plan" && (
         <div className="mt-6 max-w-lg rounded-xl border border-[#161616]/15 bg-[#fbf8f2] p-5">
           <h2 className="text-base font-semibold">Plan</h2>
@@ -504,9 +529,28 @@ export function WorkspaceDetail({ workspaceId }: { workspaceId: string }) {
         </div>
       )}
 
+      {tab === "Plan & limits" && (
+        <div className="mt-6">
+          <CompanyPlanLimitsTab workspaceId={workspaceId} />
+        </div>
+      )}
+
+      {tab === "Feature flags" && (
+        <div className="mt-6">
+          <CompanyFeatureFlagsTab workspaceId={workspaceId} />
+        </div>
+      )}
+
+      {tab === "Support access" && (
+        <div className="mt-6">
+          <CompanySupportAccessTab workspaceId={workspaceId} />
+        </div>
+      )}
+
       {tab === "Audit log" && (
         <div className="mt-6">
-          <h2 className="mb-2 text-base font-semibold">Audit log</h2>
+          <CompanyAuditTab workspaceId={workspaceId} />
+          <h2 className="mb-2 mt-8 text-base font-semibold">Legacy admin actions</h2>
           <div className="overflow-hidden rounded-xl border border-[#161616]/15 bg-[#fbf8f2]">
             {audit.length === 0 && (
               <p className="px-4 py-6 text-center text-sm text-[#5a5a5a]">No admin actions recorded yet.</p>

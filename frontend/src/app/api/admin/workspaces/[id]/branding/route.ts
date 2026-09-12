@@ -43,6 +43,8 @@ type BrandingBody = {
   sso_enabled?: boolean;
   sso_domain?: string;
   sso_provider_id?: string;
+  /** Phase 6 emergency recovery: superadmin can disable SSO enforcement. */
+  sso_enforcement?: "enabled" | "disabled";
 };
 
 /** Super-admin: save white-label branding for a workspace. */
@@ -79,6 +81,30 @@ export async function PUT(
   }
   const ssoProviderId = (body.sso_provider_id || "").trim() || null;
 
+  // Phase 6: emergency recovery hatch for SSO enforcement. Only "disabled"
+  // is accepted here (the recovery path); enabling enforcement requires a
+  // fresh successful test through the enterprise security API, so enforcement
+  // can never be switched on behind an untested IdP connection.
+  const sets: string[] = [];
+  const args: unknown[] = [workspaceId, companyName, logoUrl, primaryColor, customDomain, ssoEnabled, ssoDomain, ssoProviderId];
+  let enforcementUpdate: string | null = null;
+  if (body.sso_enforcement === "enabled") {
+    return Response.json(
+      {
+        error: "sso_enforcement cannot be enabled here",
+        detail:
+          "Run POST /api/enterprise/security/test-sso first, then enable enforcement " +
+          "via POST /api/enterprise/security/enforcement.",
+      },
+      { status: 400 }
+    );
+  }
+  if (body.sso_enforcement === "disabled") {
+    enforcementUpdate = "disabled";
+    args.push(enforcementUpdate);
+    sets.push(`sso_enforcement = $${args.length}`);
+  }
+
   await pool.query(
     `INSERT INTO workspace_branding
        (workspace_id, company_name, logo_url, primary_color, custom_domain,
@@ -91,19 +117,21 @@ export async function PUT(
        custom_domain = EXCLUDED.custom_domain,
        sso_enabled = EXCLUDED.sso_enabled,
        sso_domain = EXCLUDED.sso_domain,
-       sso_provider_id = EXCLUDED.sso_provider_id,
+       sso_provider_id = EXCLUDED.sso_provider_id
+       ${sets.length ? ", " + sets.join(", ") : ""},
        updated_at = now()`,
-    [workspaceId, companyName, logoUrl, primaryColor, customDomain, ssoEnabled, ssoDomain, ssoProviderId]
+    args
   );
 
   await auditLog({
     actorUserId: ctx.userId,
     actorEmail: ctx.email,
     workspaceId,
-    action: "branding.update",
+    action: enforcementUpdate ? "branding.update+enforcement" : "branding.update",
     details: {
       company_name: companyName, logo_url: logoUrl, primary_color: primaryColor,
       custom_domain: customDomain, sso_enabled: ssoEnabled, sso_domain: ssoDomain,
+      ...(enforcementUpdate ? { sso_enforcement: enforcementUpdate } : {}),
     },
   });
 
