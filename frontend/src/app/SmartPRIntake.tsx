@@ -5021,14 +5021,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               <button className="sample-form-close" onClick={() => setActiveSampleFormCode(null)} aria-label={L('Close form', language)}>×</button>
             </div>
 
-            <div className="sample-form-warning">
-              <AlertTriangle className="i" style={{ width: 17, height: 17 }} />
-              <span>
-                <strong>{L('This is a sample preparation worksheet, not an official filing.', language)}</strong>
-                {L('The requirement remains incomplete until you upload:', language)} {activeSampleDefinition.officialOutput}.
-              </span>
-            </div>
-
             {sampleFormMode === 'edit' ? (
               <div className="sample-form-body">
                 {activeSampleDefinition.sections.map((section) => (
