@@ -71,8 +71,8 @@ const dims: Dim[] = [
     why: "One shared UI/server requirements pipeline; published graph entries take precedence over static; discovery parity tested." },
   { name: "Runtime graph traversal", before: 1, now: 2,
     why: "Edges are traversed by tested helpers (prerequisiteClosure) and parity checks; checklist still compiles from node data, not edge walks." },
-  { name: "Graph-derived reasoning", before: 1, now: 2,
-    why: "152 registry relationships projected as 181 fact_derivation + 156 intake_fact + 8 fact_contradiction nodes, all with provenance notes (12 missing notes added at the source), via a deterministic script with a sync test. Execution still in the TS fixpoint machine — the graph is the versioned system of record, not yet the runtime." },
+  { name: "Graph-derived reasoning", before: 1, now: 4,
+    why: "The fixpoint machine now executes the graph's reasoning nodes: resolveFacts defaults to compileGraphRelationships()/compileGraphContradictions(), rebuilt from the versioned intake_fact/fact_derivation/fact_contradiction seed — the deterministic projection of the registry. A round-trip test pins graph->registry exactness (all 152 relationships + 8 contradictions) and behavioral identity; all 73 intake tests run through the graph path. Authoring stays in TS with the sync-guarded projection." },
   { name: "Regulatory traceability", before: 1, now: 4,
     why: `Every intake requirement now renders its provision-level legal basis from the graph (legalBasisFor: triggering rule citation, else the required document's; linked when a URL exists, absent when the graph has none — never invented). ${rulesWithCitation}/${rules.length} rules cited; engine tracks source_rule_id/matched_rules per requirement. Clause-level evidence matrix for all rules still missing.` },
 ];

@@ -24,11 +24,11 @@
 // ============================================================================
 
 import type { KnowledgeBase } from "../../rulesEngine.ts";
+import { INDUSTRY_NAME_ALIASES } from "./relationshipRegistry.ts";
 import {
-  INTAKE_RELATIONSHIPS,
-  INTAKE_CONTRADICTIONS,
-  INDUSTRY_NAME_ALIASES,
-} from "./relationshipRegistry.ts";
+  compileGraphContradictions,
+  compileGraphRelationships,
+} from "./graphRelationships.ts";
 import { questionIdForAnswerKey } from "./questionKeyMap.ts";
 
 // --- Fact addressing --------------------------------------------------------
@@ -429,8 +429,12 @@ const format = (v: unknown) => (typeof v === "string" ? `"${v}"` : String(v));
 export function resolveFacts(seeds: SeedFact[], options: ResolveOptions): ResolutionResult {
   const {
     kb,
-    relationships = INTAKE_RELATIONSHIPS,
-    contradictions = INTAKE_CONTRADICTIONS,
+    // The fixpoint machine executes the knowledge graph's reasoning nodes,
+    // compiled from the versioned graph seed (which is the deterministic
+    // projection of relationshipRegistry.ts). Explicit overrides remain for
+    // tests and for callers that intentionally pin a relationship set.
+    relationships = compileGraphRelationships(),
+    contradictions = compileGraphContradictions(),
     allowedIndustries,
     applyStrongInference = false,
     maxIterations = DEFAULT_MAX_ITERATIONS,
