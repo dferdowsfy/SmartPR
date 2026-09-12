@@ -20,7 +20,7 @@ function signOutNow() {
   window.location.assign("/auth/signout");
 }
 
-export function TopNav({ active, extraActions }: { active: "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings"; extraActions?: ReactNode }) {
+export function TopNav({ active, extraActions }: { active: "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings" | "enterprise"; extraActions?: ReactNode }) {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLangState] = useState<"en" | "es">("en");
@@ -28,6 +28,8 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const avatarBtnRef = useRef<HTMLButtonElement | null>(null);
+  // Enterprise section: visible only when the user holds view_records in a workspace.
+  const [hasEnterprise, setHasEnterprise] = useState(false);
 
   const placeMenu = useCallback(() => {
     const btn = avatarBtnRef.current;
@@ -38,6 +40,19 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((d) => setUser(d.user || null)).catch(() => setUser(null));
+  }, []);
+
+  // Enterprise nav gating: degrade gracefully if the probe fails.
+  useEffect(() => {
+    fetch("/api/enterprise/access")
+      .then((r) => r.json())
+      .then((d) => {
+        const ws = (d.workspaces ?? []).some((w: { permissions?: string[] }) =>
+          (w.permissions ?? []).includes("view_records")
+        );
+        setHasEnterprise(Boolean(ws));
+      })
+      .catch(() => setHasEnterprise(false));
   }, []);
 
   // Only listen for outside clicks while open, and ignore the opening click.
@@ -127,6 +142,35 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
           <Link href="/businesses" className={`nav-tab ${active === "businesses" || active === "calendar" || active === "filings" || active === "history" || active === "settings" ? "active" : ""}`}>
             {navMyBiz}
           </Link>
+          {hasEnterprise && (
+            <div className="nav-dropdown">
+              <Link href="/enterprise" className={`nav-tab ${active === "enterprise" ? "active" : ""}`}>
+                {es ? "Empresarial" : "Enterprise"}
+              </Link>
+              <div className="nav-dropdown-menu" role="menu" aria-label={es ? "Secciones empresariales" : "Enterprise sections"}>
+                <Link className="nav-dropdown-item" role="menuitem" href="/enterprise">
+                  {es ? "Portafolio" : "Portfolio"}
+                  <span className="sub">{es ? "Métricas en vivo por negocio y facilidad" : "Live metrics by business & facility"}</span>
+                </Link>
+                <Link className="nav-dropdown-item" role="menuitem" href="/enterprise/work">
+                  {es ? "Cola de trabajo" : "Work queue"}
+                  <span className="sub">{es ? "Requisitos, asignaciones y revisiones" : "Requirements, assignments & reviews"}</span>
+                </Link>
+                <Link className="nav-dropdown-item" role="menuitem" href="/enterprise/regulatory">
+                  {es ? "Cambios regulatorios" : "Regulatory changes"}
+                  <span className="sub">{es ? "Impacto y reconocimiento" : "Impact & acknowledgment"}</span>
+                </Link>
+                <Link className="nav-dropdown-item" role="menuitem" href="/enterprise/reports">
+                  {es ? "Informes" : "Reports"}
+                  <span className="sub">{es ? "Ejecutivos, CSV y PDF" : "Executive, CSV & PDF"}</span>
+                </Link>
+                <Link className="nav-dropdown-item" role="menuitem" href="/enterprise/admin">
+                  {es ? "Administración" : "Organization admin"}
+                  <span className="sub">{es ? "Equipo, roles y seguridad" : "Team, roles & security"}</span>
+                </Link>
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="appbar-actions">

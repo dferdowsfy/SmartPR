@@ -148,6 +148,31 @@ button { font-family: inherit; }
 .nav-tab .tab-icon { width: 14px; height: 14px; opacity: 0.85; }
 .nav-tab[disabled] { opacity: 0.4; cursor: not-allowed; }
 
+/* ---- Enterprise dropdown (Phase 3 owns enterprise nav) ---- */
+.nav-dropdown { position: relative; }
+.nav-dropdown-menu {
+  display: none;
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+  min-width: 210px;
+  background: #fbf8f2;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 12px 32px rgba(22, 22, 22, 0.14);
+}
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown:focus-within .nav-dropdown-menu { display: block; }
+.nav-dropdown-item {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--on-navy-3);
+  font-size: 13px; font-weight: 500;
+  white-space: nowrap;
+}
+.nav-dropdown-item:hover { color: var(--on-navy); background: var(--navy-soft); }
+.nav-dropdown-item .sub { display: block; font-size: 11px; font-weight: 400; opacity: 0.7; }
+
 /* ---- Right actions ---- */
 .appbar-actions { display: flex; align-items: center; gap: 4px; }
 .saved-pill {

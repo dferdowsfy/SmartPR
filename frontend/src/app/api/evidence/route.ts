@@ -80,11 +80,28 @@ export async function POST(request: Request) {
   await pool.query(
     `INSERT INTO evidence
        (id, user_id, business_id, matter_id, obligation_id, original_filename,
-        storage_path, mime_type, size_bytes, document_type, review_status, extracted_fields)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NEEDS_REVIEW','{}'::jsonb)`,
+        storage_path, mime_type, size_bytes, document_type, review_status, extracted_fields,
+        enterprise_state)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'NEEDS_REVIEW','{}'::jsonb,'draft')`,
     [evidenceId, user.id, obligation.business_id, obligation.matter_id, obligation.id,
       file.name, path, file.type || null, file.size, obligation.name]
   );
+  // Phase 2: immutable version row for the enterprise evidence workflow.
+  // A fresh upload always enters the workflow as 'draft'; reviewers act on
+  // versions, never on mutable rows.
+  try {
+    const { createHash } = await import("crypto");
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileHash = createHash("sha256").update(buffer).digest("hex");
+    await pool.query(
+      `INSERT INTO evidence_versions (evidence_id, version_number, storage_path, file_hash, uploaded_by)
+       VALUES ($1::uuid, 1, $2, $3, $4::uuid)
+       ON CONFLICT (evidence_id, version_number) DO NOTHING`,
+      [evidenceId, path, fileHash, user.id]
+    );
+  } catch (e) {
+    console.error("[evidence] version row failed:", (e as Error).message);
+  }
   // The user came back with the document — retire the download follow-up nudge.
   await pool.query(
     `UPDATE notifications SET status='CANCELLED'
