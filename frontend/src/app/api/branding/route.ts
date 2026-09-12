@@ -30,8 +30,30 @@ export async function GET() {
     }
     const host = (await headers()).get("host")?.toLowerCase().split(":")[0] || "";
     if (!host) return Response.json({ branding: null });
+    // Phase 8: prefer verified custom domains (domain_verifications.status =
+    // 'active'). A domain is only used for host resolution after DNS
+    // verification; the legacy custom_domain column remains as fallback.
+    const verified = await pool.query(
+      `SELECT ${COLS} FROM workspace_branding wb
+        JOIN domain_verifications dv ON dv.workspace_id = wb.workspace_id
+       WHERE dv.status = 'active' AND lower(dv.domain) = $1
+       LIMIT 1`,
+      [host]
+    );
+    if (verified.rows[0]) return Response.json({ branding: verified.rows[0] });
+    // Legacy fallback: only for workspaces that never entered the Phase 8
+    // domain-verification flow. A workspace with a non-active verification
+    // row (pending/verifying/failed/expired) must not resolve through the
+    // legacy custom_domain column — the domain is only trusted after DNS
+    // verification activates it (see query above).
     const { rows } = await pool.query(
-      `SELECT ${COLS} FROM workspace_branding WHERE lower(custom_domain) = $1 LIMIT 1`,
+      `SELECT ${COLS} FROM workspace_branding wb
+        WHERE lower(wb.custom_domain) = $1
+          AND NOT EXISTS (
+            SELECT 1 FROM domain_verifications dv
+            WHERE dv.workspace_id = wb.workspace_id AND dv.status <> 'active'
+          )
+        LIMIT 1`,
       [host]
     );
     return Response.json({ branding: rows[0] || null });
