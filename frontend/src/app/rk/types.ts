@@ -33,7 +33,10 @@ export type NodeType =
   | "benefit"
   | "application_window"
   | "project_fact"
-  | "regulatory_source";
+  | "regulatory_source"
+  | "intake_fact"
+  | "fact_derivation"
+  | "fact_contradiction";
 
 export type NodeStatus =
   | "draft"
@@ -67,7 +70,9 @@ export type EdgeType =
   | "satisfies"
   | "supports"
   | "supersedes"
-  | "superseded_by";
+  | "superseded_by"
+  | "derives"
+  | "contradicts";
 
 export type SourceType =
   | "bill"

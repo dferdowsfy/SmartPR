@@ -186,6 +186,7 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
     source: { type: "question", key: "Q_EMPLOYEE_COUNT" },
     condition: { operator: "equals", value: "0" },
     effects: [det("Q_EMPLOYEES_HIRED", false, "IMPLIES_FALSE")],
+    note: "The '0' employee-count bucket means nobody is employed.",
   },
 
   {
@@ -200,6 +201,7 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
     source: { type: "profile", key: "number_of_vehicles" },
     condition: { operator: "equals", value: 0 },
     effects: [det("Q_COMMERCIAL_VEHICLES", false, "IMPLIES_FALSE")],
+    note: "A vehicle count of zero means no commercial vehicles are operated.",
   },
   {
     id: "REL_VEHICLE_COUNT_BUCKET",
@@ -213,18 +215,21 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
         relationship: "DERIVED_VALUE",
       },
     ],
+    note: "A numeric vehicle count maps to the matching fleet-size bucket.",
   },
   {
     id: "REL_FLEET_SIZE_IMPLIES_COMMERCIAL_VEHICLES",
     source: { type: "question", key: "Q_FLEET_SIZE" },
     condition: { operator: "in", value: FLEET_BUCKETS_WITH_VEHICLES },
     effects: [det("Q_COMMERCIAL_VEHICLES", true)],
+    note: "Any non-zero fleet bucket means commercial vehicles are operated.",
   },
   {
     id: "REL_FLEET_SIZE_ZERO_IMPLIES_NO_VEHICLES",
     source: { type: "question", key: "Q_FLEET_SIZE" },
     condition: { operator: "equals", value: "0" },
     effects: [det("Q_COMMERCIAL_VEHICLES", false, "IMPLIES_FALSE")],
+    note: "The '0' fleet-size bucket means no commercial vehicles are operated.",
   },
 
   {
@@ -292,6 +297,7 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
       det("Q_PHYSICAL_LOCATION", false, "MUTUALLY_EXCLUSIVE"),
       det("Q_HOME_BASED", false, "MUTUALLY_EXCLUSIVE"),
     ],
+    note: "'Online Only' is definitionally not a physical or home-based location.",
   },
   {
     id: "REL_KB_LOCATION_TYPE_HOME",
@@ -302,6 +308,7 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
       det("Q_PHYSICAL_LOCATION", true, "PARENT_CHILD"),
       det("Q_ONLINE_ONLY", false, "MUTUALLY_EXCLUSIVE"),
     ],
+    note: "A home-based business operates from a physical (home) location and is not online-only.",
   },
   {
     id: "REL_KB_LOCATION_TYPE_FACILITY",
@@ -312,6 +319,7 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
       det("Q_ONLINE_ONLY", false, "MUTUALLY_EXCLUSIVE"),
       det("Q_HOME_BASED", false, "MUTUALLY_EXCLUSIVE"),
     ],
+    note: "A commercial or industrial facility is a physical location, not online-only or home-based.",
   },
   whenTrue(
     "REL_ONLINE_ONLY_EXCLUDES_PHYSICAL",
@@ -486,12 +494,14 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
     source: { type: "question", key: "Q_SIGNAGE_TYPE" },
     condition: { operator: "in", value: SIGNAGE_TYPES_WITH_SIGN },
     effects: [det("Q_COMMERCIAL_SIGNAGE", true, "REQUIRES_VALUE")],
+    note: "Choosing a sign type means the business has commercial signage.",
   },
   {
     id: "REL_SIGNAGE_TYPE_NONE_IMPLIES_NO_SIGNAGE",
     source: { type: "question", key: "Q_SIGNAGE_TYPE" },
     condition: { operator: "equals", value: "None" },
     effects: [det("Q_COMMERCIAL_SIGNAGE", false, "IMPLIES_FALSE")],
+    note: "Choosing 'None' means the business has no commercial signage.",
   },
 
   // ==========================================================================
@@ -530,18 +540,21 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
     source: { type: "profile", key: "business_structure" },
     condition: { operator: "equals", value: "foreign_corporation" },
     effects: [det("Q_ENTITY_FOREIGN_CORP", true)],
+    note: "A foreign-corporation structure is definitionally a foreign corporation.",
   },
   {
     id: "REL_LIMITED_LIABILITY_PARTNERSHIP",
     source: { type: "profile", key: "business_structure" },
     condition: { operator: "equals", value: "limited_liability_partnership" },
     effects: [det("Q_ENTITY_LLP", true)],
+    note: "An LLP structure is definitionally a limited liability partnership.",
   },
   {
     id: "REL_NONPROFIT_STRUCTURE",
     source: { type: "profile", key: "business_structure" },
     condition: { operator: "equals", value: "nonprofit_nonstock_corporation" },
     effects: [det("Q_NONPROFIT_STATUS", true)],
+    note: "A nonprofit non-stock corporation is definitionally a nonprofit.",
   },
 
   // ==========================================================================

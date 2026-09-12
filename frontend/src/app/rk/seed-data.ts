@@ -20,6 +20,10 @@ import eligibilityCriteriaJson from "../../kb/eligibility_criteria.json";
 import benefitsJson from "../../kb/benefits.json";
 import projectFactsJson from "../../kb/project_facts.json";
 import incentiveSourcesJson from "../../kb/incentive_sources.json";
+import inspectionsJson from "../../kb/inspections.json";
+import intakeFactsJson from "../../kb/intake_facts.json";
+import factDerivationsJson from "../../kb/fact_derivations.json";
+import factContradictionsJson from "../../kb/fact_contradictions.json";
 
 interface AgencyEntry {
   id: string; name: string; role: string; level: string; jurisdiction: string;
@@ -157,6 +161,18 @@ export function buildSeedNodes(): SeedNode[] {
   for (const c of eligibilityCriteriaJson as Record<string, unknown>[]) push("eligibility_criterion", { ...c });
   for (const b of benefitsJson as Record<string, unknown>[]) push("benefit", { ...b });
   for (const p of incentiveProgramsJson as Record<string, unknown>[]) push("tax_incentive", { ...p });
+
+  // Inspections are modeled only where a source-backed inspection underlies a
+  // document. Never invent inspection records without authority.
+  for (const i of inspectionsJson as Record<string, unknown>[]) push("inspection", { ...i });
+
+  // Intake reasoning knowledge: deterministic derivations and contradictions
+  // projected from relationshipRegistry.ts by scripts/build-reasoning-seed.mts.
+  // The registry remains what the fixpoint machine executes; these nodes are
+  // the versioned, queryable system of record for the same knowledge.
+  for (const f of intakeFactsJson as Record<string, unknown>[]) push("intake_fact", { ...f });
+  for (const d of factDerivationsJson as Record<string, unknown>[]) push("fact_derivation", { ...d });
+  for (const c of factContradictionsJson as Record<string, unknown>[]) push("fact_contradiction", { ...c });
 
   return nodes;
 }

@@ -70,8 +70,8 @@ const dims: Dim[] = [
     why: "One shared UI/server requirements pipeline; published graph entries take precedence over static; discovery parity tested." },
   { name: "Runtime graph traversal", before: 1, now: 2,
     why: "Edges are traversed by tested helpers (prerequisiteClosure) and parity checks; checklist still compiles from node data, not edge walks." },
-  { name: "Graph-derived reasoning", before: 1, now: 1,
-    why: "Intake inference still lives in a separate TS registry, not RK nodes/edges. Unchanged." },
+  { name: "Graph-derived reasoning", before: 1, now: 2,
+    why: "152 registry relationships projected as 181 fact_derivation + 156 intake_fact + 8 fact_contradiction nodes, all with provenance notes (12 missing notes added at the source), via a deterministic script with a sync test. Execution still in the TS fixpoint machine — the graph is the versioned system of record, not yet the runtime." },
   { name: "Regulatory traceability", before: 1, now: 3,
     why: "Requirement -> provision -> official URL chain now exists for 532/631 rules; matched_rules/basis reporting; prerequisites are edges. Clause-level evidence matrix for all rules still missing." },
 ];

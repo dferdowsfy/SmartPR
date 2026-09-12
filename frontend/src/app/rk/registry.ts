@@ -570,6 +570,62 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
     ],
     edgesOf: (d) => [...list(d.supports_incentive_ids), ...list(d.supports_document_ids)].map((id) => ({ edgeType: "supports" as EdgeType, toEntity: id })),
   },
+
+  intake_fact: {
+    type: "intake_fact",
+    label: "Intake Fact",
+    plural: "Intake Facts",
+    color: "#64748b",
+    labelOf: (d) => s(d.label) || s(d.fact_address) || s(d.id),
+    fields: [
+      { key: "fact_address", label: "Fact address", kind: "text", required: true, help: "Stable address, e.g. question:Q_EMPLOYEES_HIRED" },
+      { key: "fact_type", label: "Fact type", kind: "select", options: ["profile", "question", "business_type"], required: true },
+      { key: "fact_key", label: "Fact key", kind: "text", required: true },
+      { key: "label", label: "Human label", kind: "text" },
+    ],
+    edgesOf: () => [],
+  },
+
+  fact_derivation: {
+    type: "fact_derivation",
+    label: "Fact Derivation",
+    plural: "Fact Derivations",
+    color: "#7c3aed",
+    labelOf: (d) => s(d.id),
+    fields: [
+      { key: "relationship_id", label: "Parent relationship id", kind: "text", required: true, help: "INTAKE_RELATIONSHIPS id; one node per effect" },
+      { key: "source_fact_id", label: "Source fact", kind: "entity_ref", refType: "intake_fact", required: true },
+      { key: "condition_operator", label: "Condition operator", kind: "select", options: ["equals", "not_equals", "greater_than", "greater_than_or_equal", "less_than", "in", "not_in", "truthy", "falsy", "is_number", "non_empty"], required: true },
+      { key: "condition_value", label: "Condition value (JSON)", kind: "textarea" },
+      { key: "target_fact_id", label: "Target fact", kind: "entity_ref", refType: "intake_fact", required: true },
+      { key: "target_value", label: "Target value (JSON)", kind: "textarea" },
+      { key: "derive_kind", label: "Value derivation", kind: "select", options: ["literal", "count_bucket", "value_map", "kb_industry"] },
+      { key: "derive_map", label: "Value map (JSON)", kind: "textarea" },
+      { key: "certainty", label: "Certainty", kind: "select", options: ["deterministic", "strong_inference"], required: true },
+      { key: "relationship", label: "Relationship kind", kind: "select", options: ["IMPLIES", "IMPLIES_FALSE", "REQUIRES_VALUE", "MUTUALLY_EXCLUSIVE", "PARENT_CHILD", "DERIVED_VALUE", "CONTRADICTS"], required: true },
+      { key: "note", label: "Why this holds (provenance)", kind: "textarea", required: true },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "derived_from", d.source_fact_id);
+      pushRef(out, "derives", d.target_fact_id);
+      return out;
+    },
+  },
+
+  fact_contradiction: {
+    type: "fact_contradiction",
+    label: "Fact Contradiction",
+    plural: "Fact Contradictions",
+    color: "#dc2626",
+    labelOf: (d) => s(d.id),
+    fields: [
+      { key: "message", label: "Contradiction message", kind: "textarea", required: true },
+      { key: "when", label: "Clauses (JSON)", kind: "textarea", required: true, help: "Array of {fact_address, operator, value}" },
+      { key: "fact_ids", label: "Involved facts", kind: "entity_ref_list", refType: "intake_fact", required: true },
+    ],
+    edgesOf: (d) => list(d.fact_ids).map((id) => ({ edgeType: "contradicts" as EdgeType, toEntity: id })),
+  },
 };
 
 export const NODE_TYPES = Object.keys(NODE_TYPE_CONFIGS) as NodeType[];
@@ -614,6 +670,9 @@ export const EDGE_RULES: { from: NodeType; edge: EdgeType; to: NodeType }[] = [
   { from: "evidence_type", edge: "satisfies", to: "eligibility_criterion" },
   { from: "eligibility_criterion", edge: "evaluated_against", to: "project_fact" },
   { from: "eligibility_criterion", edge: "requires", to: "evidence_type" },
+  { from: "fact_derivation", edge: "derived_from", to: "intake_fact" },
+  { from: "fact_derivation", edge: "derives", to: "intake_fact" },
+  { from: "fact_contradiction", edge: "contradicts", to: "intake_fact" },
   ...INCENTIVE_NODE_TYPES.map((to) => ({ from: "regulatory_source" as NodeType, edge: "supports" as EdgeType, to })),
   ...INCENTIVE_EDGE_RULES,
 ];
@@ -702,6 +761,9 @@ export function newEntityId(nodeType: NodeType, name: string): string {
     application_window: "WIN",
     project_fact: "FACT",
     regulatory_source: "SRC",
+    intake_fact: "IF",
+    fact_derivation: "FDER",
+    fact_contradiction: "FCON",
   };
   const slug = name
     .normalize("NFD")

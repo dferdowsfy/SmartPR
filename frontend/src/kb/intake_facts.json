@@ -1,0 +1,1094 @@
+[
+  {
+    "id": "IF_profile__number_of_employees",
+    "fact_address": "profile:number_of_employees",
+    "fact_type": "profile",
+    "fact_key": "number_of_employees",
+    "label": "Number Of Employees"
+  },
+  {
+    "id": "IF_question__Q_EMPLOYEES_HIRED",
+    "fact_address": "question:Q_EMPLOYEES_HIRED",
+    "fact_type": "question",
+    "fact_key": "Q_EMPLOYEES_HIRED",
+    "label": "Employees Hired"
+  },
+  {
+    "id": "IF_question__Q_EMPLOYEE_COUNT",
+    "fact_address": "question:Q_EMPLOYEE_COUNT",
+    "fact_type": "question",
+    "fact_key": "Q_EMPLOYEE_COUNT",
+    "label": "Employee Count"
+  },
+  {
+    "id": "IF_profile__number_of_vehicles",
+    "fact_address": "profile:number_of_vehicles",
+    "fact_type": "profile",
+    "fact_key": "number_of_vehicles",
+    "label": "Number Of Vehicles"
+  },
+  {
+    "id": "IF_question__Q_COMMERCIAL_VEHICLES",
+    "fact_address": "question:Q_COMMERCIAL_VEHICLES",
+    "fact_type": "question",
+    "fact_key": "Q_COMMERCIAL_VEHICLES",
+    "label": "Commercial Vehicles"
+  },
+  {
+    "id": "IF_question__Q_FLEET_SIZE",
+    "fact_address": "question:Q_FLEET_SIZE",
+    "fact_type": "question",
+    "fact_key": "Q_FLEET_SIZE",
+    "label": "Fleet Size"
+  },
+  {
+    "id": "IF_profile__number_of_rental_units",
+    "fact_address": "profile:number_of_rental_units",
+    "fact_type": "profile",
+    "fact_key": "number_of_rental_units",
+    "label": "Number Of Rental Units"
+  },
+  {
+    "id": "IF_question__Q_RENTAL_UNITS",
+    "fact_address": "question:Q_RENTAL_UNITS",
+    "fact_type": "question",
+    "fact_key": "Q_RENTAL_UNITS",
+    "label": "Rental Units"
+  },
+  {
+    "id": "IF_profile__location_type",
+    "fact_address": "profile:location_type",
+    "fact_type": "profile",
+    "fact_key": "location_type",
+    "label": "Location Type"
+  },
+  {
+    "id": "IF_question__Q_ONLINE_ONLY",
+    "fact_address": "question:Q_ONLINE_ONLY",
+    "fact_type": "question",
+    "fact_key": "Q_ONLINE_ONLY",
+    "label": "Online Only"
+  },
+  {
+    "id": "IF_question__Q_PHYSICAL_LOCATION",
+    "fact_address": "question:Q_PHYSICAL_LOCATION",
+    "fact_type": "question",
+    "fact_key": "Q_PHYSICAL_LOCATION",
+    "label": "Physical Location"
+  },
+  {
+    "id": "IF_question__Q_HOME_BASED",
+    "fact_address": "question:Q_HOME_BASED",
+    "fact_type": "question",
+    "fact_key": "Q_HOME_BASED",
+    "label": "Home Based"
+  },
+  {
+    "id": "IF_question__Q_LOCATION_TYPE",
+    "fact_address": "question:Q_LOCATION_TYPE",
+    "fact_type": "question",
+    "fact_key": "Q_LOCATION_TYPE",
+    "label": "Location Type"
+  },
+  {
+    "id": "IF_question__Q_OUTDOOR_SEATING",
+    "fact_address": "question:Q_OUTDOOR_SEATING",
+    "fact_type": "question",
+    "fact_key": "Q_OUTDOOR_SEATING",
+    "label": "Outdoor Seating"
+  },
+  {
+    "id": "IF_question__Q_ON_SITE_CONSUMPTION",
+    "fact_address": "question:Q_ON_SITE_CONSUMPTION",
+    "fact_type": "question",
+    "fact_key": "Q_ON_SITE_CONSUMPTION",
+    "label": "On Site Consumption"
+  },
+  {
+    "id": "IF_question__Q_PATIENTS_VISIT",
+    "fact_address": "question:Q_PATIENTS_VISIT",
+    "fact_type": "question",
+    "fact_key": "Q_PATIENTS_VISIT",
+    "label": "Patients Visit"
+  },
+  {
+    "id": "IF_question__Q_CUSTOMERS_VISIT",
+    "fact_address": "question:Q_CUSTOMERS_VISIT",
+    "fact_type": "question",
+    "fact_key": "Q_CUSTOMERS_VISIT",
+    "label": "Customers Visit"
+  },
+  {
+    "id": "IF_question__Q_CLIENTS_VISIT",
+    "fact_address": "question:Q_CLIENTS_VISIT",
+    "fact_type": "question",
+    "fact_key": "Q_CLIENTS_VISIT",
+    "label": "Clients Visit"
+  },
+  {
+    "id": "IF_question__Q_PHYSICAL_OFFICE",
+    "fact_address": "question:Q_PHYSICAL_OFFICE",
+    "fact_type": "question",
+    "fact_key": "Q_PHYSICAL_OFFICE",
+    "label": "Physical Office"
+  },
+  {
+    "id": "IF_question__Q_CLASSES_ON_SITE",
+    "fact_address": "question:Q_CLASSES_ON_SITE",
+    "fact_type": "question",
+    "fact_key": "Q_CLASSES_ON_SITE",
+    "label": "Classes On Site"
+  },
+  {
+    "id": "IF_question__Q_CHILDREN_PRESENT",
+    "fact_address": "question:Q_CHILDREN_PRESENT",
+    "fact_type": "question",
+    "fact_key": "Q_CHILDREN_PRESENT",
+    "label": "Children Present"
+  },
+  {
+    "id": "IF_question__Q_CUSTOMERS_RECEIVE_SERVICES",
+    "fact_address": "question:Q_CUSTOMERS_RECEIVE_SERVICES",
+    "fact_type": "question",
+    "fact_key": "Q_CUSTOMERS_RECEIVE_SERVICES",
+    "label": "Customers Receive Services"
+  },
+  {
+    "id": "IF_question__Q_PARKING_PROVIDED",
+    "fact_address": "question:Q_PARKING_PROVIDED",
+    "fact_type": "question",
+    "fact_key": "Q_PARKING_PROVIDED",
+    "label": "Parking Provided"
+  },
+  {
+    "id": "IF_question__Q_COMMERCIAL_KITCHEN",
+    "fact_address": "question:Q_COMMERCIAL_KITCHEN",
+    "fact_type": "question",
+    "fact_key": "Q_COMMERCIAL_KITCHEN",
+    "label": "Commercial Kitchen"
+  },
+  {
+    "id": "IF_question__Q_FOOD_PREPARED",
+    "fact_address": "question:Q_FOOD_PREPARED",
+    "fact_type": "question",
+    "fact_key": "Q_FOOD_PREPARED",
+    "label": "Food Prepared"
+  },
+  {
+    "id": "IF_question__Q_PRODUCTS_MANUFACTURED",
+    "fact_address": "question:Q_PRODUCTS_MANUFACTURED",
+    "fact_type": "question",
+    "fact_key": "Q_PRODUCTS_MANUFACTURED",
+    "label": "Products Manufactured"
+  },
+  {
+    "id": "IF_question__Q_LIVE_ENTERTAINMENT",
+    "fact_address": "question:Q_LIVE_ENTERTAINMENT",
+    "fact_type": "question",
+    "fact_key": "Q_LIVE_ENTERTAINMENT",
+    "label": "Live Entertainment"
+  },
+  {
+    "id": "IF_question__Q_COMMERCIAL_SIGNAGE",
+    "fact_address": "question:Q_COMMERCIAL_SIGNAGE",
+    "fact_type": "question",
+    "fact_key": "Q_COMMERCIAL_SIGNAGE",
+    "label": "Commercial Signage"
+  },
+  {
+    "id": "IF_question__Q_RENOVATIONS",
+    "fact_address": "question:Q_RENOVATIONS",
+    "fact_type": "question",
+    "fact_key": "Q_RENOVATIONS",
+    "label": "Renovations"
+  },
+  {
+    "id": "IF_question__Q_GUESTS_OVERNIGHT",
+    "fact_address": "question:Q_GUESTS_OVERNIGHT",
+    "fact_type": "question",
+    "fact_key": "Q_GUESTS_OVERNIGHT",
+    "label": "Guests Overnight"
+  },
+  {
+    "id": "IF_question__Q_OWNS_PROPERTY",
+    "fact_address": "question:Q_OWNS_PROPERTY",
+    "fact_type": "question",
+    "fact_key": "Q_OWNS_PROPERTY",
+    "label": "Owns Property"
+  },
+  {
+    "id": "IF_question__Q_EXISTING_LEASE",
+    "fact_address": "question:Q_EXISTING_LEASE",
+    "fact_type": "question",
+    "fact_key": "Q_EXISTING_LEASE",
+    "label": "Existing Lease"
+  },
+  {
+    "id": "IF_question__Q_INVENTORY_STORED",
+    "fact_address": "question:Q_INVENTORY_STORED",
+    "fact_type": "question",
+    "fact_key": "Q_INVENTORY_STORED",
+    "label": "Inventory Stored"
+  },
+  {
+    "id": "IF_question__Q_GOODS_STORED",
+    "fact_address": "question:Q_GOODS_STORED",
+    "fact_type": "question",
+    "fact_key": "Q_GOODS_STORED",
+    "label": "Goods Stored"
+  },
+  {
+    "id": "IF_question__Q_FOOD_SERVED",
+    "fact_address": "question:Q_FOOD_SERVED",
+    "fact_type": "question",
+    "fact_key": "Q_FOOD_SERVED",
+    "label": "Food Served"
+  },
+  {
+    "id": "IF_question__Q_FOOD_DELIVERY",
+    "fact_address": "question:Q_FOOD_DELIVERY",
+    "fact_type": "question",
+    "fact_key": "Q_FOOD_DELIVERY",
+    "label": "Food Delivery"
+  },
+  {
+    "id": "IF_question__Q_FOOD_SOLD",
+    "fact_address": "question:Q_FOOD_SOLD",
+    "fact_type": "question",
+    "fact_key": "Q_FOOD_SOLD",
+    "label": "Food Sold"
+  },
+  {
+    "id": "IF_question__Q_HEALTHCARE_SERVICES",
+    "fact_address": "question:Q_HEALTHCARE_SERVICES",
+    "fact_type": "question",
+    "fact_key": "Q_HEALTHCARE_SERVICES",
+    "label": "Healthcare Services"
+  },
+  {
+    "id": "IF_question__Q_DIAGNOSTIC_TESTING",
+    "fact_address": "question:Q_DIAGNOSTIC_TESTING",
+    "fact_type": "question",
+    "fact_key": "Q_DIAGNOSTIC_TESTING",
+    "label": "Diagnostic Testing"
+  },
+  {
+    "id": "IF_question__Q_NEEDLES_INVASIVE",
+    "fact_address": "question:Q_NEEDLES_INVASIVE",
+    "fact_type": "question",
+    "fact_key": "Q_NEEDLES_INVASIVE",
+    "label": "Needles Invasive"
+  },
+  {
+    "id": "IF_question__Q_BIOHAZARD_WASTE",
+    "fact_address": "question:Q_BIOHAZARD_WASTE",
+    "fact_type": "question",
+    "fact_key": "Q_BIOHAZARD_WASTE",
+    "label": "Biohazard Waste"
+  },
+  {
+    "id": "IF_question__Q_HAZARDOUS_FLUIDS",
+    "fact_address": "question:Q_HAZARDOUS_FLUIDS",
+    "fact_type": "question",
+    "fact_key": "Q_HAZARDOUS_FLUIDS",
+    "label": "Hazardous Fluids"
+  },
+  {
+    "id": "IF_question__Q_HAZARDOUS_MATERIALS",
+    "fact_address": "question:Q_HAZARDOUS_MATERIALS",
+    "fact_type": "question",
+    "fact_key": "Q_HAZARDOUS_MATERIALS",
+    "label": "Hazardous Materials"
+  },
+  {
+    "id": "IF_question__Q_CHEMICALS_USED",
+    "fact_address": "question:Q_CHEMICALS_USED",
+    "fact_type": "question",
+    "fact_key": "Q_CHEMICALS_USED",
+    "label": "Chemicals Used"
+  },
+  {
+    "id": "IF_question__Q_HAZMAT_TRANSPORT",
+    "fact_address": "question:Q_HAZMAT_TRANSPORT",
+    "fact_type": "question",
+    "fact_key": "Q_HAZMAT_TRANSPORT",
+    "label": "Hazmat Transport"
+  },
+  {
+    "id": "IF_question__Q_HAZARDOUS_STORAGE",
+    "fact_address": "question:Q_HAZARDOUS_STORAGE",
+    "fact_type": "question",
+    "fact_key": "Q_HAZARDOUS_STORAGE",
+    "label": "Hazardous Storage"
+  },
+  {
+    "id": "IF_question__Q_FUEL_SOLD",
+    "fact_address": "question:Q_FUEL_SOLD",
+    "fact_type": "question",
+    "fact_key": "Q_FUEL_SOLD",
+    "label": "Fuel Sold"
+  },
+  {
+    "id": "IF_question__Q_VEHICLE_REPAIR",
+    "fact_address": "question:Q_VEHICLE_REPAIR",
+    "fact_type": "question",
+    "fact_key": "Q_VEHICLE_REPAIR",
+    "label": "Vehicle Repair"
+  },
+  {
+    "id": "IF_question__Q_PESTICIDES",
+    "fact_address": "question:Q_PESTICIDES",
+    "fact_type": "question",
+    "fact_key": "Q_PESTICIDES",
+    "label": "Pesticides"
+  },
+  {
+    "id": "IF_question__Q_CUSTOMS_BROKER",
+    "fact_address": "question:Q_CUSTOMS_BROKER",
+    "fact_type": "question",
+    "fact_key": "Q_CUSTOMS_BROKER",
+    "label": "Customs Broker"
+  },
+  {
+    "id": "IF_question__Q_IMPORT_EXPORT",
+    "fact_address": "question:Q_IMPORT_EXPORT",
+    "fact_type": "question",
+    "fact_key": "Q_IMPORT_EXPORT",
+    "label": "Import Export"
+  },
+  {
+    "id": "IF_question__Q_WATER_ACTIVITIES",
+    "fact_address": "question:Q_WATER_ACTIVITIES",
+    "fact_type": "question",
+    "fact_key": "Q_WATER_ACTIVITIES",
+    "label": "Water Activities"
+  },
+  {
+    "id": "IF_question__Q_TOURISM_ACTIVITY",
+    "fact_address": "question:Q_TOURISM_ACTIVITY",
+    "fact_type": "question",
+    "fact_key": "Q_TOURISM_ACTIVITY",
+    "label": "Tourism Activity"
+  },
+  {
+    "id": "IF_question__Q_EXCURSIONS",
+    "fact_address": "question:Q_EXCURSIONS",
+    "fact_type": "question",
+    "fact_key": "Q_EXCURSIONS",
+    "label": "Excursions"
+  },
+  {
+    "id": "IF_question__Q_LIVESTOCK",
+    "fact_address": "question:Q_LIVESTOCK",
+    "fact_type": "question",
+    "fact_key": "Q_LIVESTOCK",
+    "label": "Livestock"
+  },
+  {
+    "id": "IF_question__Q_AGRICULTURE_PRODUCTION",
+    "fact_address": "question:Q_AGRICULTURE_PRODUCTION",
+    "fact_type": "question",
+    "fact_key": "Q_AGRICULTURE_PRODUCTION",
+    "label": "Agriculture Production"
+  },
+  {
+    "id": "IF_question__Q_LICENSE_TYPES",
+    "fact_address": "question:Q_LICENSE_TYPES",
+    "fact_type": "question",
+    "fact_key": "Q_LICENSE_TYPES",
+    "label": "License Types"
+  },
+  {
+    "id": "IF_question__Q_PROFESSIONAL_LICENSES",
+    "fact_address": "question:Q_PROFESSIONAL_LICENSES",
+    "fact_type": "question",
+    "fact_key": "Q_PROFESSIONAL_LICENSES",
+    "label": "Professional Licenses"
+  },
+  {
+    "id": "IF_question__Q_SIGNAGE_TYPE",
+    "fact_address": "question:Q_SIGNAGE_TYPE",
+    "fact_type": "question",
+    "fact_key": "Q_SIGNAGE_TYPE",
+    "label": "Signage Type"
+  },
+  {
+    "id": "IF_profile__business_structure",
+    "fact_address": "profile:business_structure",
+    "fact_type": "profile",
+    "fact_key": "business_structure",
+    "label": "Business Structure"
+  },
+  {
+    "id": "IF_question__Q_BUSINESS_STRUCTURE",
+    "fact_address": "question:Q_BUSINESS_STRUCTURE",
+    "fact_type": "question",
+    "fact_key": "Q_BUSINESS_STRUCTURE",
+    "label": "Business Structure"
+  },
+  {
+    "id": "IF_question__Q_ENTITY_FOREIGN_CORP",
+    "fact_address": "question:Q_ENTITY_FOREIGN_CORP",
+    "fact_type": "question",
+    "fact_key": "Q_ENTITY_FOREIGN_CORP",
+    "label": "Entity Foreign Corp"
+  },
+  {
+    "id": "IF_question__Q_ENTITY_LLP",
+    "fact_address": "question:Q_ENTITY_LLP",
+    "fact_type": "question",
+    "fact_key": "Q_ENTITY_LLP",
+    "label": "Entity Llp"
+  },
+  {
+    "id": "IF_question__Q_NONPROFIT_STATUS",
+    "fact_address": "question:Q_NONPROFIT_STATUS",
+    "fact_type": "question",
+    "fact_key": "Q_NONPROFIT_STATUS",
+    "label": "Nonprofit Status"
+  },
+  {
+    "id": "IF_profile__business_type_id",
+    "fact_address": "profile:business_type_id",
+    "fact_type": "profile",
+    "fact_key": "business_type_id",
+    "label": "Business Type Id"
+  },
+  {
+    "id": "IF_profile__industry",
+    "fact_address": "profile:industry",
+    "fact_type": "profile",
+    "fact_key": "industry",
+    "label": "Industry"
+  },
+  {
+    "id": "IF_business_type__BT_BAR",
+    "fact_address": "business_type:BT_BAR",
+    "fact_type": "business_type",
+    "fact_key": "BT_BAR",
+    "label": "Bt Bar"
+  },
+  {
+    "id": "IF_question__Q_ALCOHOL_SERVED",
+    "fact_address": "question:Q_ALCOHOL_SERVED",
+    "fact_type": "question",
+    "fact_key": "Q_ALCOHOL_SERVED",
+    "label": "Alcohol Served"
+  },
+  {
+    "id": "IF_question__Q_ALCOHOL_SOLD",
+    "fact_address": "question:Q_ALCOHOL_SOLD",
+    "fact_type": "question",
+    "fact_key": "Q_ALCOHOL_SOLD",
+    "label": "Alcohol Sold"
+  },
+  {
+    "id": "IF_business_type__BT_RESTAURANT",
+    "fact_address": "business_type:BT_RESTAURANT",
+    "fact_type": "business_type",
+    "fact_key": "BT_RESTAURANT",
+    "label": "Bt Restaurant"
+  },
+  {
+    "id": "IF_business_type__BT_FAST_FOOD_RESTAURANT",
+    "fact_address": "business_type:BT_FAST_FOOD_RESTAURANT",
+    "fact_type": "business_type",
+    "fact_key": "BT_FAST_FOOD_RESTAURANT",
+    "label": "Bt Fast Food Restaurant"
+  },
+  {
+    "id": "IF_business_type__BT_CAFE",
+    "fact_address": "business_type:BT_CAFE",
+    "fact_type": "business_type",
+    "fact_key": "BT_CAFE",
+    "label": "Bt Cafe"
+  },
+  {
+    "id": "IF_business_type__BT_BAKERY",
+    "fact_address": "business_type:BT_BAKERY",
+    "fact_type": "business_type",
+    "fact_key": "BT_BAKERY",
+    "label": "Bt Bakery"
+  },
+  {
+    "id": "IF_business_type__BT_FOOD_TRUCK",
+    "fact_address": "business_type:BT_FOOD_TRUCK",
+    "fact_type": "business_type",
+    "fact_key": "BT_FOOD_TRUCK",
+    "label": "Bt Food Truck"
+  },
+  {
+    "id": "IF_question__Q_FOOD_TRUCK_MOBILE",
+    "fact_address": "question:Q_FOOD_TRUCK_MOBILE",
+    "fact_type": "question",
+    "fact_key": "Q_FOOD_TRUCK_MOBILE",
+    "label": "Food Truck Mobile"
+  },
+  {
+    "id": "IF_business_type__BT_CATERING_BUSINESS",
+    "fact_address": "business_type:BT_CATERING_BUSINESS",
+    "fact_type": "business_type",
+    "fact_key": "BT_CATERING_BUSINESS",
+    "label": "Bt Catering Business"
+  },
+  {
+    "id": "IF_business_type__BT_COMMERCIAL_KITCHEN",
+    "fact_address": "business_type:BT_COMMERCIAL_KITCHEN",
+    "fact_type": "business_type",
+    "fact_key": "BT_COMMERCIAL_KITCHEN",
+    "label": "Bt Commercial Kitchen"
+  },
+  {
+    "id": "IF_business_type__BT_ICE_CREAM_SHOP",
+    "fact_address": "business_type:BT_ICE_CREAM_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_ICE_CREAM_SHOP",
+    "label": "Bt Ice Cream Shop"
+  },
+  {
+    "id": "IF_business_type__BT_JUICE_BAR",
+    "fact_address": "business_type:BT_JUICE_BAR",
+    "fact_type": "business_type",
+    "fact_key": "BT_JUICE_BAR",
+    "label": "Bt Juice Bar"
+  },
+  {
+    "id": "IF_business_type__BT_MEDICAL_OFFICE",
+    "fact_address": "business_type:BT_MEDICAL_OFFICE",
+    "fact_type": "business_type",
+    "fact_key": "BT_MEDICAL_OFFICE",
+    "label": "Bt Medical Office"
+  },
+  {
+    "id": "IF_business_type__BT_DENTAL_OFFICE",
+    "fact_address": "business_type:BT_DENTAL_OFFICE",
+    "fact_type": "business_type",
+    "fact_key": "BT_DENTAL_OFFICE",
+    "label": "Bt Dental Office"
+  },
+  {
+    "id": "IF_business_type__BT_CLINICAL_LABORATORY",
+    "fact_address": "business_type:BT_CLINICAL_LABORATORY",
+    "fact_type": "business_type",
+    "fact_key": "BT_CLINICAL_LABORATORY",
+    "label": "Bt Clinical Laboratory"
+  },
+  {
+    "id": "IF_business_type__BT_MENTAL_HEALTH_PRACTICE",
+    "fact_address": "business_type:BT_MENTAL_HEALTH_PRACTICE",
+    "fact_type": "business_type",
+    "fact_key": "BT_MENTAL_HEALTH_PRACTICE",
+    "label": "Bt Mental Health Practice"
+  },
+  {
+    "id": "IF_business_type__BT_PHYSICAL_THERAPY_CLINIC",
+    "fact_address": "business_type:BT_PHYSICAL_THERAPY_CLINIC",
+    "fact_type": "business_type",
+    "fact_key": "BT_PHYSICAL_THERAPY_CLINIC",
+    "label": "Bt Physical Therapy Clinic"
+  },
+  {
+    "id": "IF_business_type__BT_URGENT_CARE_CENTER",
+    "fact_address": "business_type:BT_URGENT_CARE_CENTER",
+    "fact_type": "business_type",
+    "fact_key": "BT_URGENT_CARE_CENTER",
+    "label": "Bt Urgent Care Center"
+  },
+  {
+    "id": "IF_business_type__BT_MEDICAL_SPA",
+    "fact_address": "business_type:BT_MEDICAL_SPA",
+    "fact_type": "business_type",
+    "fact_key": "BT_MEDICAL_SPA",
+    "label": "Bt Medical Spa"
+  },
+  {
+    "id": "IF_business_type__BT_HOME_HEALTH_AGENCY",
+    "fact_address": "business_type:BT_HOME_HEALTH_AGENCY",
+    "fact_type": "business_type",
+    "fact_key": "BT_HOME_HEALTH_AGENCY",
+    "label": "Bt Home Health Agency"
+  },
+  {
+    "id": "IF_business_type__BT_LAW_FIRM",
+    "fact_address": "business_type:BT_LAW_FIRM",
+    "fact_type": "business_type",
+    "fact_key": "BT_LAW_FIRM",
+    "label": "Bt Law Firm"
+  },
+  {
+    "id": "IF_business_type__BT_CPA_FIRM",
+    "fact_address": "business_type:BT_CPA_FIRM",
+    "fact_type": "business_type",
+    "fact_key": "BT_CPA_FIRM",
+    "label": "Bt Cpa Firm"
+  },
+  {
+    "id": "IF_business_type__BT_ENGINEERING_FIRM",
+    "fact_address": "business_type:BT_ENGINEERING_FIRM",
+    "fact_type": "business_type",
+    "fact_key": "BT_ENGINEERING_FIRM",
+    "label": "Bt Engineering Firm"
+  },
+  {
+    "id": "IF_business_type__BT_ARCHITECTURE_FIRM",
+    "fact_address": "business_type:BT_ARCHITECTURE_FIRM",
+    "fact_type": "business_type",
+    "fact_key": "BT_ARCHITECTURE_FIRM",
+    "label": "Bt Architecture Firm"
+  },
+  {
+    "id": "IF_business_type__BT_NOTARY_SERVICES",
+    "fact_address": "business_type:BT_NOTARY_SERVICES",
+    "fact_type": "business_type",
+    "fact_key": "BT_NOTARY_SERVICES",
+    "label": "Bt Notary Services"
+  },
+  {
+    "id": "IF_business_type__BT_ACCOUNTING_FIRM",
+    "fact_address": "business_type:BT_ACCOUNTING_FIRM",
+    "fact_type": "business_type",
+    "fact_key": "BT_ACCOUNTING_FIRM",
+    "label": "Bt Accounting Firm"
+  },
+  {
+    "id": "IF_business_type__BT_REAL_ESTATE_BROKERAGE",
+    "fact_address": "business_type:BT_REAL_ESTATE_BROKERAGE",
+    "fact_type": "business_type",
+    "fact_key": "BT_REAL_ESTATE_BROKERAGE",
+    "label": "Bt Real Estate Brokerage"
+  },
+  {
+    "id": "IF_business_type__BT_INSURANCE_AGENCY",
+    "fact_address": "business_type:BT_INSURANCE_AGENCY",
+    "fact_type": "business_type",
+    "fact_key": "BT_INSURANCE_AGENCY",
+    "label": "Bt Insurance Agency"
+  },
+  {
+    "id": "IF_business_type__BT_MORTGAGE_BROKER",
+    "fact_address": "business_type:BT_MORTGAGE_BROKER",
+    "fact_type": "business_type",
+    "fact_key": "BT_MORTGAGE_BROKER",
+    "label": "Bt Mortgage Broker"
+  },
+  {
+    "id": "IF_business_type__BT_AIRBNB_SHORT_TERM_RENTAL",
+    "fact_address": "business_type:BT_AIRBNB_SHORT_TERM_RENTAL",
+    "fact_type": "business_type",
+    "fact_key": "BT_AIRBNB_SHORT_TERM_RENTAL",
+    "label": "Bt Airbnb Short Term Rental"
+  },
+  {
+    "id": "IF_question__Q_SHORT_TERM_RENTAL",
+    "fact_address": "question:Q_SHORT_TERM_RENTAL",
+    "fact_type": "question",
+    "fact_key": "Q_SHORT_TERM_RENTAL",
+    "label": "Short Term Rental"
+  },
+  {
+    "id": "IF_business_type__BT_HOTEL",
+    "fact_address": "business_type:BT_HOTEL",
+    "fact_type": "business_type",
+    "fact_key": "BT_HOTEL",
+    "label": "Bt Hotel"
+  },
+  {
+    "id": "IF_business_type__BT_RESORT",
+    "fact_address": "business_type:BT_RESORT",
+    "fact_type": "business_type",
+    "fact_key": "BT_RESORT",
+    "label": "Bt Resort"
+  },
+  {
+    "id": "IF_business_type__BT_GUEST_HOUSE",
+    "fact_address": "business_type:BT_GUEST_HOUSE",
+    "fact_type": "business_type",
+    "fact_key": "BT_GUEST_HOUSE",
+    "label": "Bt Guest House"
+  },
+  {
+    "id": "IF_business_type__BT_TOUR_OPERATOR",
+    "fact_address": "business_type:BT_TOUR_OPERATOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_TOUR_OPERATOR",
+    "label": "Bt Tour Operator"
+  },
+  {
+    "id": "IF_business_type__BT_EXCURSION_COMPANY",
+    "fact_address": "business_type:BT_EXCURSION_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_EXCURSION_COMPANY",
+    "label": "Bt Excursion Company"
+  },
+  {
+    "id": "IF_business_type__BT_DAYCARE",
+    "fact_address": "business_type:BT_DAYCARE",
+    "fact_type": "business_type",
+    "fact_key": "BT_DAYCARE",
+    "label": "Bt Daycare"
+  },
+  {
+    "id": "IF_business_type__BT_AFTER_SCHOOL_PROGRAM",
+    "fact_address": "business_type:BT_AFTER_SCHOOL_PROGRAM",
+    "fact_type": "business_type",
+    "fact_key": "BT_AFTER_SCHOOL_PROGRAM",
+    "label": "Bt After School Program"
+  },
+  {
+    "id": "IF_business_type__BT_PRIVATE_SCHOOL",
+    "fact_address": "business_type:BT_PRIVATE_SCHOOL",
+    "fact_type": "business_type",
+    "fact_key": "BT_PRIVATE_SCHOOL",
+    "label": "Bt Private School"
+  },
+  {
+    "id": "IF_business_type__BT_TRUCKING_COMPANY",
+    "fact_address": "business_type:BT_TRUCKING_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_TRUCKING_COMPANY",
+    "label": "Bt Trucking Company"
+  },
+  {
+    "id": "IF_business_type__BT_COURIER_SERVICE",
+    "fact_address": "business_type:BT_COURIER_SERVICE",
+    "fact_type": "business_type",
+    "fact_key": "BT_COURIER_SERVICE",
+    "label": "Bt Courier Service"
+  },
+  {
+    "id": "IF_business_type__BT_MOVING_COMPANY",
+    "fact_address": "business_type:BT_MOVING_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_MOVING_COMPANY",
+    "label": "Bt Moving Company"
+  },
+  {
+    "id": "IF_business_type__BT_TAXI_SERVICE",
+    "fact_address": "business_type:BT_TAXI_SERVICE",
+    "fact_type": "business_type",
+    "fact_key": "BT_TAXI_SERVICE",
+    "label": "Bt Taxi Service"
+  },
+  {
+    "id": "IF_business_type__BT_LOGISTICS_COMPANY",
+    "fact_address": "business_type:BT_LOGISTICS_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_LOGISTICS_COMPANY",
+    "label": "Bt Logistics Company"
+  },
+  {
+    "id": "IF_business_type__BT_FREIGHT_FORWARDING_COMPANY",
+    "fact_address": "business_type:BT_FREIGHT_FORWARDING_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_FREIGHT_FORWARDING_COMPANY",
+    "label": "Bt Freight Forwarding Company"
+  },
+  {
+    "id": "IF_business_type__BT_WAREHOUSE_OPERATOR",
+    "fact_address": "business_type:BT_WAREHOUSE_OPERATOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_WAREHOUSE_OPERATOR",
+    "label": "Bt Warehouse Operator"
+  },
+  {
+    "id": "IF_business_type__BT_WAREHOUSE_DISTRIBUTOR",
+    "fact_address": "business_type:BT_WAREHOUSE_DISTRIBUTOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_WAREHOUSE_DISTRIBUTOR",
+    "label": "Bt Warehouse Distributor"
+  },
+  {
+    "id": "IF_business_type__BT_IMPORT_EXPORT_BUSINESS",
+    "fact_address": "business_type:BT_IMPORT_EXPORT_BUSINESS",
+    "fact_type": "business_type",
+    "fact_key": "BT_IMPORT_EXPORT_BUSINESS",
+    "label": "Bt Import Export Business"
+  },
+  {
+    "id": "IF_business_type__BT_AUTO_REPAIR_SHOP",
+    "fact_address": "business_type:BT_AUTO_REPAIR_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_AUTO_REPAIR_SHOP",
+    "label": "Bt Auto Repair Shop"
+  },
+  {
+    "id": "IF_business_type__BT_BODY_SHOP",
+    "fact_address": "business_type:BT_BODY_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_BODY_SHOP",
+    "label": "Bt Body Shop"
+  },
+  {
+    "id": "IF_business_type__BT_MOTORCYCLE_REPAIR_SHOP",
+    "fact_address": "business_type:BT_MOTORCYCLE_REPAIR_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_MOTORCYCLE_REPAIR_SHOP",
+    "label": "Bt Motorcycle Repair Shop"
+  },
+  {
+    "id": "IF_business_type__BT_TIRE_SHOP",
+    "fact_address": "business_type:BT_TIRE_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_TIRE_SHOP",
+    "label": "Bt Tire Shop"
+  },
+  {
+    "id": "IF_business_type__BT_FOOD_MANUFACTURING",
+    "fact_address": "business_type:BT_FOOD_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_FOOD_MANUFACTURING",
+    "label": "Bt Food Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_PHARMACEUTICAL_MANUFACTURING",
+    "fact_address": "business_type:BT_PHARMACEUTICAL_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_PHARMACEUTICAL_MANUFACTURING",
+    "label": "Bt Pharmaceutical Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_MEDICAL_DEVICE_MANUFACTURING",
+    "fact_address": "business_type:BT_MEDICAL_DEVICE_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_MEDICAL_DEVICE_MANUFACTURING",
+    "label": "Bt Medical Device Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_TEXTILE_MANUFACTURING",
+    "fact_address": "business_type:BT_TEXTILE_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_TEXTILE_MANUFACTURING",
+    "label": "Bt Textile Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_FURNITURE_MANUFACTURING",
+    "fact_address": "business_type:BT_FURNITURE_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_FURNITURE_MANUFACTURING",
+    "label": "Bt Furniture Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_BEVERAGE_MANUFACTURING",
+    "fact_address": "business_type:BT_BEVERAGE_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_BEVERAGE_MANUFACTURING",
+    "label": "Bt Beverage Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_CHEMICAL_MANUFACTURING",
+    "fact_address": "business_type:BT_CHEMICAL_MANUFACTURING",
+    "fact_type": "business_type",
+    "fact_key": "BT_CHEMICAL_MANUFACTURING",
+    "label": "Bt Chemical Manufacturing"
+  },
+  {
+    "id": "IF_business_type__BT_FARM",
+    "fact_address": "business_type:BT_FARM",
+    "fact_type": "business_type",
+    "fact_key": "BT_FARM",
+    "label": "Bt Farm"
+  },
+  {
+    "id": "IF_business_type__BT_AQUACULTURE_OPERATION",
+    "fact_address": "business_type:BT_AQUACULTURE_OPERATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_AQUACULTURE_OPERATION",
+    "label": "Bt Aquaculture Operation"
+  },
+  {
+    "id": "IF_business_type__BT_PLANT_NURSERY",
+    "fact_address": "business_type:BT_PLANT_NURSERY",
+    "fact_type": "business_type",
+    "fact_key": "BT_PLANT_NURSERY",
+    "label": "Bt Plant Nursery"
+  },
+  {
+    "id": "IF_business_type__BT_COFFEE_PLANTATION",
+    "fact_address": "business_type:BT_COFFEE_PLANTATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_COFFEE_PLANTATION",
+    "label": "Bt Coffee Plantation"
+  },
+  {
+    "id": "IF_business_type__BT_LIVESTOCK_OPERATION",
+    "fact_address": "business_type:BT_LIVESTOCK_OPERATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_LIVESTOCK_OPERATION",
+    "label": "Bt Livestock Operation"
+  },
+  {
+    "id": "IF_business_type__BT_BEAUTY_SALON",
+    "fact_address": "business_type:BT_BEAUTY_SALON",
+    "fact_type": "business_type",
+    "fact_key": "BT_BEAUTY_SALON",
+    "label": "Bt Beauty Salon"
+  },
+  {
+    "id": "IF_business_type__BT_BARBERSHOP",
+    "fact_address": "business_type:BT_BARBERSHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_BARBERSHOP",
+    "label": "Bt Barbershop"
+  },
+  {
+    "id": "IF_business_type__BT_NAIL_SALON",
+    "fact_address": "business_type:BT_NAIL_SALON",
+    "fact_type": "business_type",
+    "fact_key": "BT_NAIL_SALON",
+    "label": "Bt Nail Salon"
+  },
+  {
+    "id": "IF_business_type__BT_SPA",
+    "fact_address": "business_type:BT_SPA",
+    "fact_type": "business_type",
+    "fact_key": "BT_SPA",
+    "label": "Bt Spa"
+  },
+  {
+    "id": "IF_business_type__BT_MASSAGE_THERAPY_STUDIO",
+    "fact_address": "business_type:BT_MASSAGE_THERAPY_STUDIO",
+    "fact_type": "business_type",
+    "fact_key": "BT_MASSAGE_THERAPY_STUDIO",
+    "label": "Bt Massage Therapy Studio"
+  },
+  {
+    "id": "IF_business_type__BT_ESTHETICS_STUDIO",
+    "fact_address": "business_type:BT_ESTHETICS_STUDIO",
+    "fact_type": "business_type",
+    "fact_key": "BT_ESTHETICS_STUDIO",
+    "label": "Bt Esthetics Studio"
+  },
+  {
+    "id": "IF_business_type__BT_TATTOO_SHOP",
+    "fact_address": "business_type:BT_TATTOO_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_TATTOO_SHOP",
+    "label": "Bt Tattoo Shop"
+  },
+  {
+    "id": "IF_business_type__BT_MUSIC_VENUE",
+    "fact_address": "business_type:BT_MUSIC_VENUE",
+    "fact_type": "business_type",
+    "fact_key": "BT_MUSIC_VENUE",
+    "label": "Bt Music Venue"
+  },
+  {
+    "id": "IF_business_type__BT_THEATER",
+    "fact_address": "business_type:BT_THEATER",
+    "fact_type": "business_type",
+    "fact_key": "BT_THEATER",
+    "label": "Bt Theater"
+  },
+  {
+    "id": "IF_business_type__BT_SOLAR_INSTALLER",
+    "fact_address": "business_type:BT_SOLAR_INSTALLER",
+    "fact_type": "business_type",
+    "fact_key": "BT_SOLAR_INSTALLER",
+    "label": "Bt Solar Installer"
+  },
+  {
+    "id": "IF_question__Q_RENEWABLE_INSTALL",
+    "fact_address": "question:Q_RENEWABLE_INSTALL",
+    "fact_type": "question",
+    "fact_key": "Q_RENEWABLE_INSTALL",
+    "label": "Renewable Install"
+  },
+  {
+    "id": "IF_business_type__BT_BATTERY_STORAGE_INSTALLER",
+    "fact_address": "business_type:BT_BATTERY_STORAGE_INSTALLER",
+    "fact_type": "business_type",
+    "fact_key": "BT_BATTERY_STORAGE_INSTALLER",
+    "label": "Bt Battery Storage Installer"
+  },
+  {
+    "id": "IF_business_type__BT_RENEWABLE_ENERGY_COMPANY",
+    "fact_address": "business_type:BT_RENEWABLE_ENERGY_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_RENEWABLE_ENERGY_COMPANY",
+    "label": "Bt Renewable Energy Company"
+  },
+  {
+    "id": "IF_business_type__BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",
+    "fact_address": "business_type:BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",
+    "label": "Bt Construction Government Contractor"
+  },
+  {
+    "id": "IF_question__Q_GOV_CONTRACT",
+    "fact_address": "question:Q_GOV_CONTRACT",
+    "fact_type": "question",
+    "fact_key": "Q_GOV_CONTRACT",
+    "label": "Gov Contract"
+  },
+  {
+    "id": "IF_business_type__BT_IT_GOVERNMENT_CONTRACTOR",
+    "fact_address": "business_type:BT_IT_GOVERNMENT_CONTRACTOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_IT_GOVERNMENT_CONTRACTOR",
+    "label": "Bt It Government Contractor"
+  },
+  {
+    "id": "IF_business_type__BT_PROFESSIONAL_SERVICES_GOVERNMENT_CONTRACTOR",
+    "fact_address": "business_type:BT_PROFESSIONAL_SERVICES_GOVERNMENT_CONTRACTOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_PROFESSIONAL_SERVICES_GOVERNMENT_CONTRACTOR",
+    "label": "Bt Professional Services Government Contractor"
+  },
+  {
+    "id": "IF_business_type__BT_FACILITIES_GOVERNMENT_CONTRACTOR",
+    "fact_address": "business_type:BT_FACILITIES_GOVERNMENT_CONTRACTOR",
+    "fact_type": "business_type",
+    "fact_key": "BT_FACILITIES_GOVERNMENT_CONTRACTOR",
+    "label": "Bt Facilities Government Contractor"
+  },
+  {
+    "id": "IF_business_type__BT_NONPROFIT_ORGANIZATION",
+    "fact_address": "business_type:BT_NONPROFIT_ORGANIZATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_NONPROFIT_ORGANIZATION",
+    "label": "Bt Nonprofit Organization"
+  },
+  {
+    "id": "IF_business_type__BT_RELIGIOUS_ORGANIZATION",
+    "fact_address": "business_type:BT_RELIGIOUS_ORGANIZATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_RELIGIOUS_ORGANIZATION",
+    "label": "Bt Religious Organization"
+  },
+  {
+    "id": "IF_business_type__BT_COMMUNITY_ORGANIZATION",
+    "fact_address": "business_type:BT_COMMUNITY_ORGANIZATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_COMMUNITY_ORGANIZATION",
+    "label": "Bt Community Organization"
+  },
+  {
+    "id": "IF_business_type__BT_FOUNDATION",
+    "fact_address": "business_type:BT_FOUNDATION",
+    "fact_type": "business_type",
+    "fact_key": "BT_FOUNDATION",
+    "label": "Bt Foundation"
+  },
+  {
+    "id": "IF_business_type__BT_CHARITY",
+    "fact_address": "business_type:BT_CHARITY",
+    "fact_type": "business_type",
+    "fact_key": "BT_CHARITY",
+    "label": "Bt Charity"
+  },
+  {
+    "id": "IF_business_type__BT_PROPERTY_MANAGEMENT_COMPANY",
+    "fact_address": "business_type:BT_PROPERTY_MANAGEMENT_COMPANY",
+    "fact_type": "business_type",
+    "fact_key": "BT_PROPERTY_MANAGEMENT_COMPANY",
+    "label": "Bt Property Management Company"
+  },
+  {
+    "id": "IF_question__Q_PROPERTY_MANAGEMENT",
+    "fact_address": "question:Q_PROPERTY_MANAGEMENT",
+    "fact_type": "question",
+    "fact_key": "Q_PROPERTY_MANAGEMENT",
+    "label": "Property Management"
+  }
+]

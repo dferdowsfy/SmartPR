@@ -1,0 +1,74 @@
+[
+  {
+    "id": "CONTRA_EMPLOYEE_COUNT_VS_HIRING",
+    "message": "A headcount above zero was given, but the intake also says no employees will be hired.",
+    "when": "[{\"fact_address\":\"profile:number_of_employees\",\"operator\":\"greater_than\",\"value\":0},{\"fact_address\":\"question:Q_EMPLOYEES_HIRED\",\"operator\":\"equals\",\"value\":false}]",
+    "fact_ids": [
+      "IF_profile__number_of_employees",
+      "IF_question__Q_EMPLOYEES_HIRED"
+    ]
+  },
+  {
+    "id": "CONTRA_EMPLOYEE_BUCKET_VS_COUNT",
+    "message": "The headcount and the employee-count bracket disagree.",
+    "when": "[{\"fact_address\":\"profile:number_of_employees\",\"operator\":\"greater_than\",\"value\":0},{\"fact_address\":\"question:Q_EMPLOYEE_COUNT\",\"operator\":\"equals\",\"value\":\"0\"}]",
+    "fact_ids": [
+      "IF_profile__number_of_employees",
+      "IF_question__Q_EMPLOYEE_COUNT"
+    ]
+  },
+  {
+    "id": "CONTRA_ONLINE_ONLY_VS_PHYSICAL",
+    "message": "The business cannot be online-only and operate from a physical location.",
+    "when": "[{\"fact_address\":\"question:Q_ONLINE_ONLY\",\"operator\":\"equals\",\"value\":true},{\"fact_address\":\"question:Q_PHYSICAL_LOCATION\",\"operator\":\"equals\",\"value\":true}]",
+    "fact_ids": [
+      "IF_question__Q_ONLINE_ONLY",
+      "IF_question__Q_PHYSICAL_LOCATION"
+    ]
+  },
+  {
+    "id": "CONTRA_ONLINE_ONLY_VS_HOME_BASED",
+    "message": "The business cannot be online-only and home-based at the same time.",
+    "when": "[{\"fact_address\":\"question:Q_ONLINE_ONLY\",\"operator\":\"equals\",\"value\":true},{\"fact_address\":\"question:Q_HOME_BASED\",\"operator\":\"equals\",\"value\":true}]",
+    "fact_ids": [
+      "IF_question__Q_ONLINE_ONLY",
+      "IF_question__Q_HOME_BASED"
+    ]
+  },
+  {
+    "id": "CONTRA_ONLINE_ONLY_VS_OUTDOOR_SEATING",
+    "message": "An online-only business cannot have outdoor seating.",
+    "when": "[{\"fact_address\":\"question:Q_ONLINE_ONLY\",\"operator\":\"equals\",\"value\":true},{\"fact_address\":\"question:Q_OUTDOOR_SEATING\",\"operator\":\"equals\",\"value\":true}]",
+    "fact_ids": [
+      "IF_question__Q_ONLINE_ONLY",
+      "IF_question__Q_OUTDOOR_SEATING"
+    ]
+  },
+  {
+    "id": "CONTRA_NO_PHYSICAL_VS_OUTDOOR_SEATING",
+    "message": "Outdoor seating requires a physical location.",
+    "when": "[{\"fact_address\":\"question:Q_PHYSICAL_LOCATION\",\"operator\":\"equals\",\"value\":false},{\"fact_address\":\"question:Q_OUTDOOR_SEATING\",\"operator\":\"equals\",\"value\":true}]",
+    "fact_ids": [
+      "IF_question__Q_PHYSICAL_LOCATION",
+      "IF_question__Q_OUTDOOR_SEATING"
+    ]
+  },
+  {
+    "id": "CONTRA_NO_PHYSICAL_VS_CUSTOMERS_VISIT",
+    "message": "Customers cannot visit a business with no physical location.",
+    "when": "[{\"fact_address\":\"question:Q_PHYSICAL_LOCATION\",\"operator\":\"equals\",\"value\":false},{\"fact_address\":\"question:Q_CUSTOMERS_VISIT\",\"operator\":\"equals\",\"value\":true}]",
+    "fact_ids": [
+      "IF_question__Q_PHYSICAL_LOCATION",
+      "IF_question__Q_CUSTOMERS_VISIT"
+    ]
+  },
+  {
+    "id": "CONTRA_FLEET_SIZE_VS_COMMERCIAL_VEHICLES",
+    "message": "The fleet size is zero, but the intake also says commercial vehicles are used.",
+    "when": "[{\"fact_address\":\"question:Q_FLEET_SIZE\",\"operator\":\"equals\",\"value\":\"0\"},{\"fact_address\":\"question:Q_COMMERCIAL_VEHICLES\",\"operator\":\"equals\",\"value\":true}]",
+    "fact_ids": [
+      "IF_question__Q_FLEET_SIZE",
+      "IF_question__Q_COMMERCIAL_VEHICLES"
+    ]
+  }
+]

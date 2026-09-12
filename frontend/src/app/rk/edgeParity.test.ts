@@ -226,3 +226,52 @@ test("seed incentive subgraph compiles to a catalog with zero rejections", async
   assert.ok(merged.some((p) => p.id === "PR_ACT60_RND"), "R&D survives as static-only");
   assert.ok(!catalog.programs.some((p) => p.id === "PR_ACT60_RND"), "R&D is not a graph program");
 });
+
+test("inspection nodes are source-backed and resolve to document + agency", () => {
+  const inspections = nodes.filter((n) => n.nodeType === "inspection");
+  assert.ok(inspections.length >= 1, "at least one inspection modeled");
+  const byId = new Map(nodes.map((n) => [n.entityId, n]));
+  for (const i of inspections) {
+    assert.ok(String(i.data.citation ?? "").length > 10, `${i.entityId}: carries a regulatory citation`);
+    const doc = byId.get(only(i.entityId, "inspects") ?? "");
+    assert.ok(doc && doc.nodeType === "document", `${i.entityId}: inspects resolves to a document`);
+    const agency = byId.get(only(i.entityId, "issued_by") ?? "");
+    assert.ok(agency && agency.nodeType === "agency", `${i.entityId}: issued_by resolves to an agency`);
+  }
+  const fire = byId.get("INSP_FIRE_PREVENTION");
+  assert.ok(fire, "fire prevention inspection exists");
+  assert.equal(only("INSP_FIRE_PREVENTION", "inspects"), "DOC_FIRE_CERT");
+  assert.equal(only("INSP_FIRE_PREVENTION", "issued_by"), "bomberos");
+});
+
+test("fact derivations and contradictions are graph nodes in sync with the registry", async () => {
+  const { INTAKE_RELATIONSHIPS, INTAKE_CONTRADICTIONS } = await import("../ai/intake/relationshipRegistry.ts");
+  const facts = nodes.filter((n) => n.nodeType === "intake_fact");
+  const derivations = nodes.filter((n) => n.nodeType === "fact_derivation");
+  const contradictions = nodes.filter((n) => n.nodeType === "fact_contradiction");
+  const expectedDerivations = INTAKE_RELATIONSHIPS.reduce((n, r) => n + r.effects.length, 0);
+  assert.equal(derivations.length, expectedDerivations, "one node per registry effect");
+  assert.equal(contradictions.length, INTAKE_CONTRADICTIONS.length, "all contradictions projected");
+  // every edge resolves; every derivation carries provenance
+  const byId = new Map(nodes.map((n) => [n.entityId, n]));
+  for (const d of derivations) {
+    const src = byId.get(only(d.entityId, "derived_from") ?? "");
+    const tgt = byId.get(only(d.entityId, "derives") ?? "");
+    assert.ok(src && src.nodeType === "intake_fact", `${d.entityId}: derived_from resolves`);
+    assert.ok(tgt && tgt.nodeType === "intake_fact", `${d.entityId}: derives resolves`);
+    assert.ok(String(d.data.note ?? "").length > 0, `${d.entityId}: provenance note present`);
+    assert.ok(["deterministic", "strong_inference"].includes(String(d.data.certainty)), `${d.entityId}: certainty set`);
+  }
+  for (const c of contradictions) {
+    for (const f of out(c.entityId, "contradicts")) {
+      assert.ok(byId.get(f)?.nodeType === "intake_fact", `${c.entityId}: contradicts resolves`);
+    }
+    assert.ok(String(c.data.message ?? "").length > 0, `${c.entityId}: message present`);
+  }
+  // spot check: the canonical employee-count derivation
+  const rel = derivations.find((d) => d.entityId === "REL_EMPLOYEE_COUNT_IMPLIES_EMPLOYEES__e0");
+  assert.ok(rel, "employee-count derivation exists");
+  assert.equal(only(rel.entityId, "derived_from"), "IF_profile__number_of_employees");
+  assert.equal(only(rel.entityId, "derives"), "IF_question__Q_EMPLOYEES_HIRED");
+  assert.equal(facts.length, new Set(facts.map((f) => f.entityId)).size, "fact ids unique");
+});
