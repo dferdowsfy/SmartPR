@@ -1332,7 +1332,11 @@ export default function SmartPRIntake() {
     // out whatever the previous business left behind. Otherwise the intake
     // step and the SmartPR Live panel keep showing that business's answers,
     // rule-engine results, and identified agencies as if they applied here.
-    setProfile((current) => ({ ...current, name: '', business_stage: 'new', municipality: '', industry: '', business_type: '', location_type: '', business_structure: 'llc',
+    // A fresh start is a blank slate: no name, no entity default, no
+    // prefilled answers — the SmartPR Live panel starts at zero and the
+    // user names the project themselves. (Prefilling the account's business
+    // name here made every new project look like the previous one.)
+    setProfile((current) => ({ ...current, name: '', business_stage: 'new', municipality: '', industry: '', business_type: '', location_type: '', business_structure: '',
       number_of_employees: null, number_of_vehicles: null, number_of_rental_units: null, customers_visit: null, food_prepared_or_sold: null,
       alcohol_sold: null, professional_licenses_required: null, healthcare_services: null, hazardous_materials: null, employees_hired: null,
       physical_location: null, products_manufactured: null, vehicles_used: null, commercial_signage: null, outdoor_seating: null,
@@ -1367,7 +1371,6 @@ export default function SmartPRIntake() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             create_business: true,
-            legal_name: me.business_name || undefined,
             matter_type: 'NEW_BUSINESS_FORMATION',
             title: 'New business formation',
           }),
@@ -1377,9 +1380,6 @@ export default function SmartPRIntake() {
         businessIdRef.current = created.business_id;
         matterIdRef.current = created.matter_id;
         setBusinessId(created.business_id);
-        if (me.business_name) {
-          setProfile((current) => current.name ? current : { ...current, name: me.business_name || '' });
-        }
         params.set('business', created.business_id);
         params.set('matter', created.matter_id);
         window.history.replaceState(null, '', `/?${params.toString()}`);
@@ -4053,8 +4053,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const processingDocumentCount = Object.keys(processingStates).length;
   const criticalBlockers = findings.filter((finding) => finding.severity === 'critical').length;
   const remainingMandatory = Math.max(0, totalMandatory - completedMandatory);
+  // A brand-new intake (nothing entered yet) shows all-zero Live metrics —
+  // the rules engine's baseline guesses (e.g. Permiso Único) only appear
+  // once the user has given SmartPR something to work with.
+  const liveBlank = intakeDone === 0;
   const stageIntelligence: SmartPRLiveData = view === 'intake' ? {
-    statusText: intakeDone === 0
+    statusText: liveBlank
       ? (language === 'es' ? 'Creando tu perfil de cumplimiento…' : 'Building your compliance profile…')
       : intakeQuestionsComplete
         ? (language === 'es' ? 'Perfil inicial listo para evaluar.' : 'Initial profile ready for rules evaluation.')
@@ -4063,12 +4067,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     progressLabel: language === 'es' ? 'Contexto del negocio' : 'Business context',
     readiness: null,
     metrics: [
-      { value: liveFacts, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: true },
-      { value: liveRequired, label: language === 'es' ? 'Requisitos por reglas' : 'Determined by rules', emphasis: liveRequired > 0 },
-      { value: liveConditional, label: language === 'es' ? 'Por verificar' : 'Need verification' },
-      { value: Math.max(0, intakeQuestionTotal - guidedQuestionsAnswered - answeredPotentialCount), label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
+      { value: liveBlank ? 0 : liveFacts, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: !liveBlank && liveFacts > 0 },
+      { value: liveBlank ? 0 : liveRequired, label: language === 'es' ? 'Requisitos por reglas' : 'Determined by rules', emphasis: !liveBlank && liveRequired > 0 },
+      { value: liveBlank ? 0 : liveConditional, label: language === 'es' ? 'Por verificar' : 'Need verification' },
+      { value: liveBlank ? 0 : Math.max(0, intakeQuestionTotal - guidedQuestionsAnswered - answeredPotentialCount), label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
     ],
-    agencies: liveAgencies,
+    agencies: liveBlank ? [] : liveAgencies,
     signals: intelligenceSignals,
     potentialRequirements: potentialItems
       .filter((item) => !potentialDecisions[item.flag])
