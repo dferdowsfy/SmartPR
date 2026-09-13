@@ -48,6 +48,19 @@ const copy = {
     ready: "ready",
     next: "Next",
     continue: "Continue",
+    tech: "Technology",
+    techEyebrow: "The technology behind SmartPR",
+    techTitle: "Built so nothing falls through the cracks.",
+    techBody:
+      "SmartPR tracks every regulation, permit, form, and deadline that can apply to your business — and the connections between them. Fill in your business once: it prepares every official form and bundles your complete submission package.",
+    techStats: [
+      ["1,516", "Regulations, permits, forms & deadlines — tracked in one place."],
+      ["3,692", "Connections linking every requirement to its agency, form, deadline & fee."],
+      ["40", "Government agencies covered — Hacienda, Estado, OGPe, Salud, Bomberos & more."],
+      ["16", "Official forms filled automatically from your business profile."],
+    ],
+    techDownload: "Download the technology sheet (PDF)",
+    techTrust: "Same facts → same requirements, every time. Verified by human experts before anything goes live.",
     closeTitle: "Tell SmartPR what you want to build.",
     closeBody: "We'll map what comes next.",
     leadTitle: "Before you start",
@@ -98,6 +111,19 @@ const copy = {
     ready: "listo",
     next: "Siguiente",
     continue: "Continuar",
+    tech: "Tecnología",
+    techEyebrow: "La tecnología detrás de SmartPR",
+    techTitle: "Hecha para que nada se quede fuera.",
+    techBody:
+      "SmartPR lleva cada reglamento, permiso, formulario y vencimiento que puede aplicar a tu negocio — y las conexiones entre todo. Llena tu negocio una vez: prepara cada formulario oficial y empaqueta tu sometimiento completo.",
+    techStats: [
+      ["1,516", "Reglamentos, permisos, formularios y vencimientos — todo en un solo lugar."],
+      ["3,692", "Conexiones atando cada requisito a su agencia, formulario, vencimiento y cargo."],
+      ["40", "Agencias gubernamentales cubiertas — Hacienda, Estado, OGPe, Salud, Bomberos y más."],
+      ["16", "Formularios oficiales que se llenan solos desde tu perfil."],
+    ],
+    techDownload: "Descargar la hoja de tecnología (PDF)",
+    techTrust: "Los mismos datos → los mismos requisitos, siempre. Verificado por expertos antes de publicarse.",
     closeTitle: "Dígale a SmartPR lo que quiere construir.",
     closeBody: "Trazamos lo que sigue.",
     leadTitle: "Antes de empezar",
@@ -217,6 +243,7 @@ export default function MarketingLanding() {
           </Link>
           <nav className={styles.desktopNav} aria-label="Main navigation">
             <a href="#how-it-works">{c.how}</a>
+            <a href="#technology">{c.tech}</a>
             <Link href="/pricing">{c.pricing}</Link>
             <a href="#professionals">{c.professionals}</a>
           </nav>
@@ -341,6 +368,33 @@ export default function MarketingLanding() {
           </div>
         </section>
 
+        <section id="technology" className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.techEyebrow}</p>
+            <h2>{c.techTitle}</h2>
+            <p className={styles.lead}>{c.techBody}</p>
+            <ul className={styles.techStats}>
+              {c.techStats.map(([n, label]) => (
+                <li key={n} className={styles.techStat}>
+                  <span className={styles.techNum}>{n}</span>
+                  <p>{label}</p>
+                </li>
+              ))}
+            </ul>
+            <div className={styles.techCta}>
+              <a
+                className={styles.primary}
+                href={language === "ES" ? "/docs/smartpr-tech-slick-sheet-es.pdf" : "/docs/smartpr-tech-slick-sheet.pdf"}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {c.techDownload}
+              </a>
+            </div>
+            <p className={styles.techTrust}>{c.techTrust}</p>
+          </div>
+        </section>
+
         <section className={styles.section}>
           <div className={styles.close}>
             <h2>{c.closeTitle}</h2>
@@ -406,6 +460,7 @@ export default function MarketingLanding() {
           <Link href={language === "ES" ? "/es/restaurantes" : "/restaurants"}>{language === "ES" ? "Abrir un restaurante" : "Restaurant opening checklist"}</Link>
           <Link href="/privacy">{c.privacy}</Link>
           <a href="#how-it-works">{c.how}</a>
+          <a href="#technology">{c.tech}</a>
           <LanguageToggle language={language} onChange={setLanguage} />
         </div>
       </footer>

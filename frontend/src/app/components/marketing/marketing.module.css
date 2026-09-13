@@ -361,6 +361,53 @@
   color: #1b1b1b;
 }
 
+.techStats {
+  display: grid;
+  gap: 1rem;
+  margin: 3rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.techStat {
+  padding: 1.5rem 1.5rem 1.75rem;
+  border: 1px solid color-mix(in oklab, #161616 22%, transparent);
+  border-radius: 12px;
+  background: #fbf8f2;
+}
+
+.techNum {
+  font-family: var(--font-display), Newsreader, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 4vw, 3.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #245c5c;
+  line-height: 1;
+}
+
+.techStat p {
+  max-width: 22rem;
+  margin: 0.75rem 0 0;
+  color: #1b1b1b;
+  font-size: 0.95rem;
+}
+
+.techCta {
+  margin: 2.5rem 0 0;
+}
+
+.techCta .primary {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.techTrust {
+  max-width: 44rem;
+  margin: 1.25rem 0 0;
+  color: #5a5a5a;
+  font-size: 0.95rem;
+}
+
 .portfolio {
   margin: 3rem 0 0;
   padding: 0;
@@ -446,6 +493,10 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .techStats {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .portfolio li {
     grid-template-columns: 1.4fr 1fr auto;
     align-items: center;
@@ -457,6 +508,10 @@
 }
 
 @media (min-width: 960px) {
+  .techStats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
   .showcase {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.03fr);
     gap: clamp(0.9rem, 1.3vw, 1.2rem);
