@@ -46,6 +46,9 @@ deliverables/
 # tracked had been force-added).
 !**/RealForms/*.pdf
 
+# Marketing collateral served from the site (technology one-pagers).
+!frontend/public/docs/*.pdf
+
 # Populated working copies produced by `npm run forms:demo` / `npm run forms:verify`
 generated-filings-demo/
 generated-filings-verified/
