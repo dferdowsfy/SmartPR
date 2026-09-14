@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { readJson } from "@/lib/safe-json";
 
 export interface EnterpriseWorkspace {
   id: string;
@@ -26,9 +27,9 @@ export function useEnterpriseWorkspaces() {
     setError(null);
     try {
       const res = await fetch("/api/enterprise/workspaces");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not load workspaces.");
-      setWorkspaces(data.workspaces || []);
+      const result = await readJson<{ workspaces: EnterpriseWorkspace[] }>(res);
+      if (!result.ok) throw new Error(result.error || "Could not load workspaces.");
+      setWorkspaces(result.data?.workspaces || []);
     } catch (e) {
       setError((e as Error).message);
     } finally {

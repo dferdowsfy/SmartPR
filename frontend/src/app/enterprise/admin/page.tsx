@@ -2,6 +2,8 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
 import { useEnterpriseWorkspaces } from "../_lib/useEnterpriseWorkspaces";
 
 const CARDS = [
@@ -47,7 +49,8 @@ function HubInner() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#5a5a5a]">
+      <EnterpriseSubNav active="/enterprise/admin" />
+      <p className="mt-4 text-xs font-semibold uppercase tracking-widest text-[#5a5a5a]">
         Organization administration
       </p>
       <h1 className="mt-1 text-3xl font-bold">Admin</h1>
@@ -111,6 +114,7 @@ function HubInner() {
 export default function EnterpriseAdminHub() {
   return (
     <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
+      <TopNav active="enterprise" />
       <Suspense fallback={<p className="px-6 py-8 text-sm">Loading…</p>}>
         <HubInner />
       </Suspense>

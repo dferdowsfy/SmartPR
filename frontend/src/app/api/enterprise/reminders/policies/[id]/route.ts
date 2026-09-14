@@ -1,6 +1,7 @@
 // Enterprise escalation policies — update + delete.
 import { enterpriseGate, transactWithAudit } from "../../_shared";
 import { validateEscalationPolicyInput } from "../../../../../../lib/enterprise-reminders";
+import { withEnterpriseHandler } from "../../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ async function load(pool: { query: (t: string, p?: unknown[]) => Promise<{ rows:
   return rows[0] ?? null;
 }
 
-export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+async function patchHandler(req: Request, context: { params: Promise<{ id: string }> }) {
   const g = await enterpriseGate(req, "assign_requirements");
   if ("response" in g) return g.response;
   const { id } = await context.params;
@@ -51,7 +52,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
   return Response.json({ policy: after });
 }
 
-export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+async function deleteHandler(req: Request, context: { params: Promise<{ id: string }> }) {
   const g = await enterpriseGate(req, "assign_requirements");
   if ("response" in g) return g.response;
   const { id } = await context.params;
@@ -64,3 +65,6 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     });
   return Response.json({ deleted: true });
 }
+
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/reminders/policies/[id]", patchHandler);
+export const DELETE = withEnterpriseHandler("DELETE /api/enterprise/reminders/policies/[id]", deleteHandler);

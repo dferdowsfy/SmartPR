@@ -42,6 +42,7 @@ import {
   type EscalationStep,
 } from "../../../../../lib/enterprise-reminders";
 import { isUuid } from "../../../../../lib/enterprise-work";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,7 +76,7 @@ interface RunSummary {
   errors: string[];
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const pool = getPool();
   if (!pool) return Response.json({ error: "Database unavailable." }, { status: 503 });
 
@@ -466,3 +467,5 @@ function reminderMessage(item: DueItem, _offset: number, today: string): string 
       : "Internal target (not a verified regulatory deadline)";
   return `${item.label} — ${daysLabel(item, today)}. ${kind}. Effective due date: ${item.effectiveDueDate}.`;
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/cron/reminders", postHandler);

@@ -1,11 +1,12 @@
 // Workspaces the signed-in user belongs to (for the enterprise admin UI).
 import { getPool, isEnabled } from "../../../graph/db";
 import { getCurrentUser } from "../../../../lib/supabase/server";
+import { withEnterpriseHandler } from "../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function getHandler() {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
   if (!isEnabled()) return Response.json({ error: "no_database" }, { status: 503 });
@@ -22,3 +23,5 @@ export async function GET() {
   );
   return Response.json({ workspaces: rows });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/workspaces", getHandler);

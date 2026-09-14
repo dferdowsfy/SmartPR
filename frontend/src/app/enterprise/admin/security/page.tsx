@@ -7,6 +7,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 
 const inputCls =
   "rounded-lg border border-[#161616]/22 bg-[#fbf8f2] px-3 py-2 text-sm placeholder:text-[#5a5a5a]";
@@ -92,9 +95,9 @@ export default function SecurityPage() {
     setErr(null);
     try {
       const res = await fetch(`/api/enterprise/security?workspace=${ws}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "failed to load security posture");
-      const p: Posture = data.posture;
+      const result = await readJson<{ posture: Posture }>(res);
+      if (!result.ok) throw new Error(result.error || "failed to load security posture");
+      const p: Posture = result.data!.posture;
       setPosture(p);
       setSsoEnabled(p.sso.enabled);
       setSsoDomain(p.sso.domain || "");
@@ -115,7 +118,8 @@ export default function SecurityPage() {
     (async () => {
       try {
         const res = await fetch("/api/me");
-        const data = await res.json();
+        const meResult = await readJson<{ user?: { workspace_id: string | null; workspace_role: string | null } }>(res);
+        const data = meResult.data;
         const ws = data?.user?.workspace_id as string | null;
         const role = data?.user?.workspace_role as string | null;
         if (!ws) {
@@ -158,10 +162,10 @@ export default function SecurityPage() {
           sso_group_mappings: mappings,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "save failed");
+      const saveResult = await readJson<{ verification_reset?: boolean }>(res);
+      if (!saveResult.ok) throw new Error(saveResult.error || "save failed");
       setMsg(
-        data.verification_reset
+        saveResult.data?.verification_reset
           ? "Saved. The IdP connection changed, so prior verification was reset — run the connection test."
           : "Saved."
       );
@@ -183,9 +187,9 @@ export default function SecurityPage() {
       const res = await fetch(`/api/enterprise/security/test-sso?workspace=${workspaceId}`, {
         method: "POST",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "test failed");
-      setTestResult({ success: data.success, checks: data.checks || [] });
+      const testResultRes = await readJson<{ success: boolean; checks?: Check[] }>(res);
+      if (!testResultRes.ok) throw new Error(testResultRes.error || "test failed");
+      setTestResult({ success: !!testResultRes.data?.success, checks: testResultRes.data?.checks || [] });
       await load(workspaceId);
     } catch (e) {
       setErr((e as Error).message);
@@ -205,8 +209,9 @@ export default function SecurityPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ enforce }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.error || "failed");
+      const enfResult = await readJson<{ detail?: string }>(res);
+      if (!enfResult.ok)
+        throw new Error(enfResult.data?.detail || enfResult.error || "failed");
       setMsg(enforce ? "SSO enforcement enabled." : "SSO enforcement disabled.");
       await load(workspaceId);
     } catch (e) {
@@ -216,22 +221,39 @@ export default function SecurityPage() {
     }
   };
 
-  if (loading) return <main className="p-8 text-sm text-[#5a5a5a]">Loading security center…</main>;
+  if (loading)
+    return (
+      <>
+        <TopNav active="enterprise" />
+        <main className="p-8 text-sm text-[#5a5a5a]">Loading security center…</main>
+      </>
+    );
   if (denied)
     return (
-      <main className="p-8">
-        <h1 className="text-xl font-semibold">Security center</h1>
-        <p className="mt-2 text-sm text-[#5a5a5a]">
-          You need an organization owner or administrator role to view this page.
-        </p>
-      </main>
+      <>
+        <TopNav active="enterprise" />
+        <main className="p-8">
+          <h1 className="text-xl font-semibold">Security center</h1>
+          <p className="mt-2 text-sm text-[#5a5a5a]">
+            You need an organization owner or administrator role to view this page.
+          </p>
+          <p className="mt-4">
+            <a href="/enterprise" className="text-sm font-medium text-[#245c5c] hover:underline">
+              ← Back to Enterprise
+            </a>
+          </p>
+        </main>
+      </>
     );
 
   const s = posture?.sso;
   const enforcementBlocked = !posture?.sso.verification_fresh;
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-6">
+    <>
+      <TopNav active="enterprise" />
+      <main className="mx-auto max-w-5xl space-y-6 p-6">
+        <EnterpriseSubNav active="/enterprise/admin/security" />
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Security center</h1>
@@ -473,6 +495,7 @@ export default function SecurityPage() {
           {busy === "save" ? "Saving…" : "Save changes"}
         </button>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

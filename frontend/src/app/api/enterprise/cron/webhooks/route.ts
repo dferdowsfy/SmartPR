@@ -10,6 +10,7 @@ import { timingSafeEqual } from "node:crypto";
 import { isEnabled } from "../../../../graph/db";
 import { isCurrentUserAdmin } from "../../../../../lib/admin";
 import { runWebhookDeliverySweep } from "../../../../../lib/enterprise-integrations";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,16 +31,19 @@ async function handle(req: Request) {
   return Response.json({ ok: true, ...result });
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   if (!cronAuthorized(req)) {
     if (!(await isCurrentUserAdmin())) return Response.json({ error: "forbidden" }, { status: 403 });
   }
   return handle(req);
 }
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   if (!cronAuthorized(req)) {
     if (!(await isCurrentUserAdmin())) return Response.json({ error: "forbidden" }, { status: 403 });
   }
   return handle(req);
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/cron/webhooks", postHandler);
+export const GET = withEnterpriseHandler("GET /api/enterprise/cron/webhooks", getHandler);

@@ -12,13 +12,14 @@ import {
   getRequestMeta,
 } from "../../../../../../../lib/enterprise-permissions";
 import { redactSecrets } from "../../../../../../../lib/enterprise-security";
+import { withEnterpriseHandler } from "../../../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const UUID_RE = /^[0-9a-fA-F-]{36}$/;
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function postHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const workspaceId = new URL(req.url).searchParams.get("workspace");
   if (!workspaceId || !UUID_RE.test(workspaceId))
@@ -59,3 +60,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   return Response.json({ ok: true, id, revoked: true });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/integrations/service-accounts/[id]/revoke", postHandler);

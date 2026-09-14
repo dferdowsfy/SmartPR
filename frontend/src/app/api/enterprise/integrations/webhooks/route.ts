@@ -17,6 +17,7 @@ import {
   redactSecrets,
 } from "../../../../../lib/enterprise-security";
 import { isWebhookEvent, mintWebhookSecret, WEBHOOK_EVENTS } from "../../../../../lib/enterprise-integrations";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ function validateEvents(events: unknown): { ok: true; events: string[] } | { ok:
   return { ok: true, events: cleaned };
 }
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const workspaceId = workspaceFrom(req);
   if (!workspaceId) return Response.json({ error: "workspace query param required" }, { status: 400 });
   const gate = await requireEnterprisePermission("manage_integrations", workspaceId);
@@ -75,7 +76,7 @@ export async function GET(req: Request) {
   return Response.json({ endpoints: redactSecrets(endpoints), events: WEBHOOK_EVENTS });
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const workspaceId = workspaceFrom(req);
   if (!workspaceId) return Response.json({ error: "workspace query param required" }, { status: 400 });
   const gate = await requireEnterprisePermission("manage_integrations", workspaceId);
@@ -148,3 +149,6 @@ export async function POST(req: Request) {
     { status: 201 }
   );
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/integrations/webhooks", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/integrations/webhooks", postHandler);

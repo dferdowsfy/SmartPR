@@ -3,11 +3,12 @@
 // (same operational rationale as reminder rules).
 import { enterpriseGate, transactWithAudit } from "../_shared";
 import { validateEscalationPolicyInput } from "../../../../../lib/enterprise-reminders";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const g = await enterpriseGate(req, "view_records");
   if ("response" in g) return g.response;
   const { rows } = await g.pool.query(
@@ -21,7 +22,7 @@ export async function GET(req: Request) {
   return Response.json({ policies: rows });
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const g = await enterpriseGate(req, "assign_requirements");
   if ("response" in g) return g.response;
   let body: unknown;
@@ -53,3 +54,6 @@ export async function POST(req: Request) {
   );
   return Response.json({ policy: created }, { status: 201 });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/reminders/policies", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/reminders/policies", postHandler);

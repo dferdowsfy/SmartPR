@@ -15,6 +15,7 @@ import {
   computeEffectiveDueDate,
 } from "../../../../../lib/enterprise-reminders";
 import { hasPermission } from "../../../../../lib/enterprise-permissions";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,7 +44,7 @@ function serialize(row: Record<string, unknown>) {
   };
 }
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const g = await enterpriseGate(req, "view_records");
   if ("response" in g) return g.response;
   const { rows } = await g.pool.query(
@@ -62,7 +63,7 @@ export async function GET(req: Request) {
   return Response.json({ schedules: rows.map(serialize) });
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const g = await enterpriseGate(req, "assign_requirements");
   if ("response" in g) return g.response;
   let body: unknown;
@@ -128,3 +129,6 @@ export async function POST(req: Request) {
     { status: 201 }
   );
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/reminders/schedules", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/reminders/schedules", postHandler);

@@ -1,6 +1,9 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 import { useEnterpriseWorkspaces } from "../../_lib/useEnterpriseWorkspaces";
 
 const ENTERPRISE_ROLE_KEYS = [
@@ -52,9 +55,9 @@ function RolesInner() {
     setErr(null);
     try {
       const res = await fetch(`/api/enterprise/admin/roles?${qs()}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not load assignments.");
-      setAssignments(data.assignments || []);
+      const result = await readJson<{ assignments: Assignment[] }>(res);
+      if (!result.ok) throw new Error(result.error || "Could not load assignments.");
+      setAssignments(result.data?.assignments || []);
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -82,9 +85,9 @@ function RolesInner() {
           scope_id: gScopeId.trim() || null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Grant failed.");
-      setMsg(data.duplicate ? "That assignment already exists." : "Role granted.");
+      const grantResult = await readJson<{ duplicate?: boolean }>(res);
+      if (!grantResult.ok) throw new Error(grantResult.error || "Grant failed.");
+      setMsg(grantResult.data?.duplicate ? "That assignment already exists." : "Role granted.");
       setGUserId("");
       setGScopeId("");
       void load();
@@ -104,8 +107,8 @@ function RolesInner() {
       const res = await fetch(`/api/enterprise/admin/roles?${qs()}&id=${encodeURIComponent(a.id)}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Revoke failed.");
+      const revokeResult = await readJson(res);
+      if (!revokeResult.ok) throw new Error(revokeResult.error || "Revoke failed.");
       setMsg("Assignment revoked.");
       void load();
     } catch (e) {
@@ -117,7 +120,8 @@ function RolesInner() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <EnterpriseSubNav active="/enterprise/admin/roles" />
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#5a5a5a]">
             Organization administration
@@ -233,6 +237,7 @@ function RolesInner() {
 export default function EnterpriseRolesPage() {
   return (
     <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
+      <TopNav active="enterprise" />
       <Suspense fallback={<p className="px-6 py-8 text-sm">Loading…</p>}>
         <RolesInner />
       </Suspense>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TopNav } from "../history/ui";
 import { EnterpriseSubNav } from "./_nav";
+import { readJson } from "@/lib/safe-json";
 
 interface Metric {
   key: string;
@@ -188,8 +189,9 @@ export default function EnterprisePortfolioPage() {
   // Workspace access probe.
   useEffect(() => {
     fetch("/api/enterprise/access")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r) => readJson(r))
+      .then((result) => {
+        const d = (result.data ?? {}) as { workspaces?: AccessWorkspace[] };
         const ws: AccessWorkspace[] = (d.workspaces ?? []).filter((w: AccessWorkspace) =>
           w.permissions.includes("view_records")
         );
@@ -206,10 +208,10 @@ export default function EnterprisePortfolioPage() {
     setError(null);
     setData(null);
     fetch(`/api/enterprise/portfolio?workspace_id=${wsId}${qs ? `&${qs}` : ""}`)
-      .then(async (r) => {
-        const d = await r.json();
-        if (!r.ok) throw new Error(d.error || "load_failed");
-        setData(d);
+      .then((r) => readJson(r))
+      .then((result) => {
+        if (!result.ok) throw new Error(result.error || "load_failed");
+        setData(result.data as PortfolioData);
       })
       .catch((e) => setError(e.message || "load_failed"));
   }, []);
@@ -225,9 +227,10 @@ export default function EnterprisePortfolioPage() {
     if (!workspaceId) return;
     let cancelled = false;
     fetch(`/api/enterprise/regulatory/events?workspace_id=${workspaceId}&limit=5`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error("unavailable");
-        const d = await r.json();
+      .then((r) => readJson(r))
+      .then((result) => {
+        if (!result.ok) throw new Error("unavailable");
+        const d = (result.data ?? {}) as { events?: RegEvent[]; recent?: RegEvent[] };
         if (!cancelled) setRegEvents(d.events ?? d.recent ?? []);
       })
       .catch(() => {

@@ -3,6 +3,7 @@
 // and an optional source version bump. Audited with before/after.
 
 import { getPool } from "../../../../../../graph/db";
+import { withEnterpriseHandler } from "../../../../_util";
 import {
   canTransitionLifecycle,
   isRegulatoryLifecycle,
@@ -22,7 +23,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function postHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const body = await readJsonBody(req);
   const ws = resolveWorkspaceId(req, body);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
@@ -115,3 +116,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ error: "verify_failed" }, { status: e.status ?? 500 });
   }
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/regulatory/events/[id]/verify", postHandler);

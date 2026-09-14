@@ -16,6 +16,7 @@
 //   is an internal target.
 
 import { getPool } from "../../../graph/db";
+import { withEnterpriseHandler } from "../_util";
 import {
   requireEnterprisePermission,
   writeAuditEvent,
@@ -69,7 +70,7 @@ function isVerifiedDateSource(source: unknown): boolean {
   return typeof source === "string" && /verif/i.test(source);
 }
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const url = new URL(req.url);
   const workspaceId = (url.searchParams.get("workspace_id") || "").trim();
   if (!UUID_RE.test(workspaceId)) {
@@ -110,12 +111,12 @@ export async function GET(req: Request) {
               COALESCE(ow.priority, 'medium') AS priority,
               ow.internal_due_date::text AS internal_due_date,
               COALESCE(ow.work_status, 'not_started') AS work_status,
-              u.name AS owner_name, u.email AS owner_email
+              (u.raw_user_meta_data ->> 'full_name') AS owner_name, u.email AS owner_email
          FROM obligations o
          JOIN businesses b ON b.id = o.business_id
          LEFT JOIN obligation_work ow ON ow.obligation_id = o.id
          LEFT JOIN matters m ON m.id = o.matter_id
-         LEFT JOIN users u ON u.id = ow.owner_user_id
+         LEFT JOIN auth.users u ON u.id = ow.owner_user_id
         WHERE b.workspace_id = $1 AND b.archived = false${oClause.sql}`,
       [workspaceId, ...oClause.params]
     );
@@ -224,13 +225,13 @@ export async function GET(req: Request) {
         [workspaceId]
       ),
       pool.query(
-        `SELECT DISTINCT u.id::text AS id, u.name, u.email
+        `SELECT DISTINCT u.id::text AS id, (u.raw_user_meta_data ->> 'full_name'), u.email
            FROM obligation_work ow
            JOIN obligations o ON o.id = ow.obligation_id
            JOIN businesses b ON b.id = o.business_id
-           JOIN users u ON u.id = ow.owner_user_id
+           JOIN auth.users u ON u.id = ow.owner_user_id
           WHERE b.workspace_id = $1 AND b.archived = false
-          ORDER BY u.name NULLS LAST, u.email`,
+          ORDER BY (u.raw_user_meta_data ->> 'full_name') NULLS LAST, u.email`,
         [workspaceId]
       ),
       pool.query(
@@ -498,3 +499,5 @@ export async function GET(req: Request) {
     return Response.json({ error: "query_failed" }, { status: 500 });
   }
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/portfolio", getHandler);

@@ -21,8 +21,7 @@ import {
   forbidden,
   readJsonBody,
   withEnterpriseTransaction,
-  writeEnterpriseAudit,
-} from "../../_util";
+  writeEnterpriseAudit, withEnterpriseHandler } from "../../_util";
 import { hasPermission } from "../../../../../lib/enterprise-permissions";
 import {
   canTransitionTo,
@@ -40,7 +39,7 @@ export const dynamic = "force-dynamic";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export async function PATCH(
+async function patchHandler(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -262,3 +261,5 @@ export async function PATCH(
   }
   return Response.json({ ok: true, workspace_id: workspaceId, ...(result as object) });
 }
+
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/work/[id]", patchHandler);

@@ -5,6 +5,7 @@
 //        sso_verified_at (re-test required). All mutations are audited.
 
 import { getPool, isEnabled } from "../../../graph/db";
+import { withEnterpriseHandler } from "../_util";
 import {
   requireEnterprisePermission,
   writeAuditEvent,
@@ -26,7 +27,7 @@ function workspaceFrom(req: Request): string | null {
   return w && /^[0-9a-fA-F-]{36}$/.test(w) ? w : null;
 }
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const workspaceId = workspaceFrom(req);
   if (!workspaceId) return Response.json({ error: "workspace query param required" }, { status: 400 });
   const gate = await requireEnterprisePermission("configure_branding_security", workspaceId);
@@ -59,7 +60,7 @@ function normalizeDomain(input: string): string | null {
   return d;
 }
 
-export async function PATCH(req: Request) {
+async function patchHandler(req: Request) {
   const workspaceId = workspaceFrom(req);
   if (!workspaceId) return Response.json({ error: "workspace query param required" }, { status: 400 });
   const gate = await requireEnterprisePermission("configure_branding_security", workspaceId);
@@ -181,3 +182,6 @@ export async function PATCH(req: Request) {
     posture: after ? redactSecrets(after) : null,
   });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/security", getHandler);
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/security", patchHandler);

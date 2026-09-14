@@ -1,6 +1,9 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 import { useEnterpriseWorkspaces } from "../../_lib/useEnterpriseWorkspaces";
 
 const ENTERPRISE_ROLE_KEYS = [
@@ -86,8 +89,9 @@ function TeamInner() {
     setErr(null);
     try {
       const res = await fetch(`/api/enterprise/admin/team?${qs()}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Could not load team.");
+      const result = await readJson<{ members: Member[]; assignments: Assignment[]; invites: Invite[] }>(res);
+      if (!result.ok) throw new Error(result.error || "Could not load team.");
+      const data = result.data ?? { members: [], assignments: [], invites: [] };
       setMembers(data.members || []);
       setAssignments(data.assignments || []);
       setInvites(data.invites || []);
@@ -121,12 +125,14 @@ function TeamInner() {
           scope_id: invScopeId.trim() || undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || data.code || "Invite failed.");
+      const result = await readJson<{ invite: { email: string; emailed: boolean; inviteUrl: string | null } }>(res);
+      if (!result.ok) throw new Error(result.error || "Invite failed.");
+      const invite = result.data?.invite;
+      if (!invite) throw new Error("Invite failed.");
       setMsg(
-        `Invite sent to ${data.invite.email}${data.invite.emailed ? "" : " (email not configured — share the link below)"}.`
+        `Invite sent to ${invite.email}${invite.emailed ? "" : " (email not configured — share the link below)"}.`
       );
-      setLastInviteUrl(data.invite.inviteUrl || null);
+      setLastInviteUrl(invite.inviteUrl || null);
       setInvEmail("");
       setInvScopeId("");
       void load();
@@ -169,8 +175,8 @@ function TeamInner() {
           })),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Update failed.");
+      const saveResult = await readJson(res);
+      if (!saveResult.ok) throw new Error(saveResult.error || "Update failed.");
       setMsg("Member updated.");
       setEditing(null);
       void load();
@@ -190,8 +196,8 @@ function TeamInner() {
       const res = await fetch(`/api/enterprise/admin/team/${m.user_id}?${qs()}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Remove failed.");
+      const removeResult = await readJson(res);
+      if (!removeResult.ok) throw new Error(removeResult.error || "Remove failed.");
       setMsg("Member removed.");
       void load();
     } catch (e) {
@@ -203,7 +209,8 @@ function TeamInner() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <EnterpriseSubNav active="/enterprise/admin/team" />
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#5a5a5a]">
             Organization administration
@@ -473,6 +480,7 @@ function TeamInner() {
 export default function EnterpriseTeamPage() {
   return (
     <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
+      <TopNav active="enterprise" />
       <Suspense fallback={<p className="px-6 py-8 text-sm">Loading…</p>}>
         <TeamInner />
       </Suspense>

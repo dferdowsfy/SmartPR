@@ -138,3 +138,46 @@ export async function readJsonBody(request: Request): Promise<Record<string, unk
     return null;
   }
 }
+
+/**
+ * withEnterpriseHandler — every enterprise route handler must be wrapped in
+ * this. It guarantees the route ALWAYS returns valid JSON: any unexpected
+ * throw becomes a 500 JSON error envelope (never an empty body, which is
+ * what surfaces on the client as the raw
+ * "Failed to execute 'json' on 'Response': Unexpected end of JSON input"
+ * error). Successful responses (including CSV/file downloads) pass through
+ * untouched. Missing-table errors (Postgres 42P01) get a legible message
+ * naming the table instead of a generic 500.
+ *
+ * Usage:
+ *   async function getHandler(request: Request) { ... }
+ *   export const GET = withEnterpriseHandler("GET /api/enterprise/audit", getHandler);
+ */
+export function withEnterpriseHandler(
+  tag: string,
+  handler: (request: Request, ctx?: any) => Promise<Response>
+): (request: Request, ctx?: any) => Promise<Response> {
+  return async (request: Request, ctx?: any) => {
+    try {
+      return await handler(request, ctx);
+    } catch (err) {
+      console.error(`[${tag}] unhandled error:`, err);
+      const msg = err instanceof Error ? err.message : String(err ?? "");
+      const missing = /relation "([^"]+)" does not exist/.exec(msg);
+      if (missing) {
+        return Response.json(
+          {
+            error: "missing_table",
+            table: missing[1],
+            message: `Required data table "${missing[1]}" is not set up yet. Some enterprise features are unavailable — please contact support.`,
+          },
+          { status: 500 }
+        );
+      }
+      return Response.json(
+        { error: "internal_error", message: "Something went wrong. Please retry." },
+        { status: 500 }
+      );
+    }
+  };
+}

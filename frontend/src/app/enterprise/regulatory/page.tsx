@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TopNav } from "../../history/ui";
 import { EnterpriseSubNav } from "../_nav";
+import { readJson } from "@/lib/safe-json";
 import { REGULATORY_LIFECYCLES, LIFECYCLE_LABELS } from "../../../lib/enterprise-regulatory";
 
 interface AccessWorkspace {
@@ -85,8 +86,9 @@ export default function RegulatoryQueuePage() {
 
   useEffect(() => {
     fetch("/api/enterprise/access")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r) => readJson(r))
+      .then((result) => {
+        const d = (result.data ?? {}) as { workspaces?: AccessWorkspace[] };
         const ws: AccessWorkspace[] = (d.workspaces ?? []).filter((w: AccessWorkspace) =>
           w.permissions.includes("view_records")
         );
@@ -107,10 +109,10 @@ export default function RegulatoryQueuePage() {
       if (lifecycle !== "all") p.set("lifecycle", lifecycle);
       if (q) p.set("search", q);
       fetch(`/api/enterprise/regulatory/events?workspace_id=${wsId}&${p.toString()}`)
-        .then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error || "load_failed");
-          setEvents(d.events ?? []);
+        .then((r) => readJson<{ events?: RegEvent[] }>(r))
+        .then((result) => {
+          if (!result.ok) throw new Error(result.error || "load_failed");
+          setEvents(result.data?.events ?? []);
         })
         .catch((e) => setError(e.message || "load_failed"))
         .finally(() => setLoading(false));
@@ -169,9 +171,9 @@ export default function RegulatoryQueuePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const d = await res.json();
-      if (!res.ok) {
-        throw new Error(d.message || d.error || "create_failed");
+      const createResult = await readJson<{ message?: string }>(res);
+      if (!createResult.ok) {
+        throw new Error(createResult.data?.message || createResult.error || "create_failed");
       }
       setShowCreate(false);
       resetCreateForm();

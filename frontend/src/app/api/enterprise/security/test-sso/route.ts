@@ -23,6 +23,7 @@ import {
   getRequestMeta,
 } from "../../../../../lib/enterprise-permissions";
 import { redactSecrets } from "../../../../../lib/enterprise-security";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ async function dnsResolves(domain: string): Promise<{ ok: boolean; detail: strin
   }
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const workspaceId = new URL(req.url).searchParams.get("workspace");
   if (!workspaceId || !/^[0-9a-fA-F-]{36}$/.test(workspaceId))
     return Response.json({ error: "workspace query param required" }, { status: 400 });
@@ -222,3 +223,5 @@ export async function POST(req: Request) {
 
   return Response.json({ success, checked_at: nowIso, checks: redactSecrets(checks) });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/security/test-sso", postHandler);

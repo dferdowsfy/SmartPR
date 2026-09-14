@@ -11,11 +11,12 @@
 import { getPool, isEnabled } from "../../../../../app/graph/db";
 import { requireBrandingSecurity } from "../../../../../lib/enterprise-gate";
 import { challengeHostname } from "../../../../../lib/enterprise-domain";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+async function getHandler(request: Request) {
   const workspaceId = new URL(request.url).searchParams.get("workspace_id") || "";
   const gate = await requireBrandingSecurity(workspaceId);
   if ("response" in gate) return gate.response;
@@ -55,3 +56,5 @@ export async function GET(request: Request) {
     },
   });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/domain/status", getHandler);

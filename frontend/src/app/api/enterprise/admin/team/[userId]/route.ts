@@ -17,6 +17,7 @@ import {
   assertRoleKey,
 } from "../../../../../../lib/enterprise/workspaceRoles";
 import type { WorkspaceRole } from "../../../../../../lib/admin";
+import { withEnterpriseHandler } from "../../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,7 +78,7 @@ async function userHasEnterpriseRole(
 }
 
 /** Remove a member (and their enterprise role assignments). */
-export async function DELETE(
+async function deleteHandler(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
@@ -144,7 +145,7 @@ type PatchBody = {
 };
 
 /** Change legacy role and/or replace the user's enterprise role assignments. */
-export async function PATCH(
+async function patchHandler(
   request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
@@ -265,3 +266,6 @@ export async function PATCH(
 
   return Response.json({ ok: true, legacy_role: newLegacy ?? beforeRole });
 }
+
+export const DELETE = withEnterpriseHandler("DELETE /api/enterprise/admin/team/[userId]", deleteHandler);
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/admin/team/[userId]", patchHandler);

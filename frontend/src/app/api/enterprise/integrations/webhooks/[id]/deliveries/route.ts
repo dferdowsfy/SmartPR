@@ -7,6 +7,7 @@
 import { getPool, isEnabled } from "../../../../../../graph/db";
 import { requireEnterprisePermission } from "../../../../../../../lib/enterprise-permissions";
 import { redactSecrets } from "../../../../../../../lib/enterprise-security";
+import { withEnterpriseHandler } from "../../../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ function csvEscape(v: unknown): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function getHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const url = new URL(req.url);
   const workspaceId = url.searchParams.get("workspace");
@@ -92,3 +93,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   return Response.json({ deliveries: redactSecrets(deliveries) });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/integrations/webhooks/[id]/deliveries", getHandler);

@@ -11,6 +11,7 @@
 // validated by the permission gate (tenant-bound), and there is no cross-org
 // mode on this route — superadmins use /api/admin/workspaces/[id]/audit.
 import { getPool, isEnabled } from "../../../graph/db";
+import { withEnterpriseHandler } from "../_util";
 import {
   requireEnterprisePermission,
 } from "../../../../lib/enterprise-permissions";
@@ -25,7 +26,7 @@ function likeParam(v: string | null): string | null {
   return `%${v.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
 }
 
-export async function GET(request: Request) {
+async function getHandler(request: Request) {
   const url = new URL(request.url);
   const workspaceId = (url.searchParams.get("workspace_id") || "").trim();
   if (!workspaceId) {
@@ -139,3 +140,5 @@ export async function GET(request: Request) {
 
   return Response.json({ events: rows, total, page, page_size: pageSize });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/audit", getHandler);

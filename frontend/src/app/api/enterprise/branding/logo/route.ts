@@ -22,13 +22,14 @@ import {
   type LogoKind,
 } from "../../../../../lib/enterprise-branding";
 import { writeAuditEvent, getRequestMeta } from "../../../../../lib/enterprise-permissions";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SIGNED_URL_TTL_SECONDS = 3600;
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const form = await request.formData().catch(() => null);
   const workspaceId = typeof form?.get("workspace_id") === "string"
     ? (form.get("workspace_id") as string)
@@ -122,3 +123,5 @@ export async function POST(request: Request) {
     expires_in: SIGNED_URL_TTL_SECONDS,
   });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/branding/logo", postHandler);

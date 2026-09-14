@@ -14,11 +14,12 @@ import { getPool, isEnabled } from "../../../../../app/graph/db";
 import { requireBrandingSecurity } from "../../../../../lib/enterprise-gate";
 import { normalizeDomain, challengeHostname } from "../../../../../lib/enterprise-domain";
 import { writeAuditEvent, getRequestMeta } from "../../../../../lib/enterprise-permissions";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     workspace_id?: string;
     domain?: string;
@@ -97,3 +98,5 @@ export async function POST(request: Request) {
     txt_value: token,
   });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/domain/request", postHandler);

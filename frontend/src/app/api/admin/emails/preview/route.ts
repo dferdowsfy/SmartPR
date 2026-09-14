@@ -6,7 +6,7 @@
  * exactly what a real send would produce. Super-admin only.
  */
 import { getPool, isEnabled } from "../../../../graph/db";
-import { isCurrentUserAdmin } from "../../../../../lib/admin";
+import { isCurrentUserSuperAdmin } from "../../../../../lib/admin";
 import { allEmailTemplateDefs } from "../../../../../lib/email-template-seeds";
 import {
   buildDigestEmailWithTemplate,
@@ -34,7 +34,7 @@ type PreviewBody = {
 };
 
 export async function POST(request: Request) {
-  if (!(await isCurrentUserAdmin())) {
+  if (!(await isCurrentUserSuperAdmin())) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
   if (!isEnabled()) {

@@ -23,6 +23,7 @@ import {
   type DomainStatus,
 } from "../../../../../lib/enterprise-domain";
 import { writeAuditEvent, getRequestMeta } from "../../../../../lib/enterprise-permissions";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   });
 }
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { workspace_id?: string };
   const workspaceId = typeof body.workspace_id === "string" ? body.workspace_id : "";
   const gate = await requireBrandingSecurity(workspaceId);
@@ -137,3 +138,5 @@ export async function POST(request: Request) {
   }
   return Response.json({ ok: true, ...after });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/domain/verify", postHandler);

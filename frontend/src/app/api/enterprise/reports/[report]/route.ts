@@ -33,6 +33,7 @@ import {
   type PortfolioFilters,
 } from "../../../../../lib/enterprise-filters";
 import { generateReportPdf, type PdfColumn } from "../../../../../lib/enterprise-pdf";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -189,14 +190,14 @@ async function buildDeficiencies(ctx: BuildCtx): Promise<BuiltReport> {
             m.title AS project,
             COALESCE(ow.priority, 'medium') AS priority,
             COALESCE(ow.work_status, 'not_started') AS work_status,
-            ow.department, u.name AS owner,
+            ow.department, (u.raw_user_meta_data ->> 'full_name') AS owner,
             COALESCE(ow.internal_due_date, o.due_date)::text AS due_date,
             o.due_date_source
        FROM obligations o
        JOIN businesses b ON b.id = o.business_id
        LEFT JOIN obligation_work ow ON ow.obligation_id = o.id
        LEFT JOIN matters m ON m.id = o.matter_id
-       LEFT JOIN users u ON u.id = ow.owner_user_id
+       LEFT JOIN auth.users u ON u.id = ow.owner_user_id
       WHERE b.workspace_id = $1 AND b.archived = false
         AND o.status <> 'COMPLETED'
         AND COALESCE(ow.priority, 'medium') IN ('critical', 'high')${oc.sql}
@@ -270,12 +271,12 @@ async function buildDeadlines(ctx: BuildCtx): Promise<BuiltReport> {
                  WHEN o.due_date_source ILIKE '%verif%' THEN 'verified'
                  ELSE 'internal target' END AS date_label,
             COALESCE(ow.priority, 'medium') AS priority,
-            u.name AS owner, 'obligation' AS kind
+            (u.raw_user_meta_data ->> 'full_name') AS owner, 'obligation' AS kind
        FROM obligations o
        JOIN businesses b ON b.id = o.business_id
        LEFT JOIN obligation_work ow ON ow.obligation_id = o.id
        LEFT JOIN matters m ON m.id = o.matter_id
-       LEFT JOIN users u ON u.id = ow.owner_user_id
+       LEFT JOIN auth.users u ON u.id = ow.owner_user_id
       WHERE b.workspace_id = $1 AND b.archived = false
         AND o.status <> 'COMPLETED'
         AND COALESCE(ow.internal_due_date, o.due_date) IS NOT NULL${range}${oc.sql}`,
@@ -293,13 +294,13 @@ async function buildDeadlines(ctx: BuildCtx): Promise<BuiltReport> {
             ds.due_date::text AS due_date,
             CASE WHEN ds.is_verified THEN 'verified' ELSE 'internal target' END AS date_label,
             COALESCE(ow.priority, 'medium') AS priority,
-            u.name AS owner, 'renewal schedule' AS kind
+            (u.raw_user_meta_data ->> 'full_name') AS owner, 'renewal schedule' AS kind
        FROM deadline_schedules ds
        LEFT JOIN obligations o ON o.id = ds.obligation_id
        LEFT JOIN businesses b ON b.id = o.business_id
        LEFT JOIN obligation_work ow ON ow.obligation_id = o.id
        LEFT JOIN matters m ON m.id = o.matter_id
-       LEFT JOIN users u ON u.id = ow.owner_user_id
+       LEFT JOIN auth.users u ON u.id = ow.owner_user_id
       WHERE ds.workspace_id = $1
         AND (o.id IS NULL OR (b.workspace_id = $1 AND b.archived = false))${sRange}${oc.sql}`,
     [ctx.workspaceId, ...oc.params, ...schExtra]
@@ -375,11 +376,11 @@ async function buildEvidenceQueue(ctx: BuildCtx): Promise<BuiltReport> {
             e.created_at::text AS submitted_at,
             COALESCE(b.legal_name, b.name) AS business,
             b.public_id AS business_public_id,
-            o.name AS requirement, u.name AS uploaded_by
+            o.name AS requirement, (u.raw_user_meta_data ->> 'full_name') AS uploaded_by
        FROM evidence e
        JOIN businesses b ON b.id = e.business_id
        LEFT JOIN obligations o ON o.id = e.obligation_id
-       LEFT JOIN users u ON u.id = e.user_id
+       LEFT JOIN auth.users u ON u.id = e.user_id
       WHERE b.workspace_id = $1 AND b.archived = false
         AND e.enterprise_state IN ('submitted_for_review', 'under_review', 'changes_requested', 'draft')${range}${ec.sql}
       ORDER BY e.created_at`,
@@ -556,7 +557,7 @@ async function buildFacilityComparison(ctx: BuildCtx): Promise<BuiltReport> {
 async function buildWorkload(ctx: BuildCtx): Promise<BuiltReport> {
   const oc = obligationFilterClause(ctx.filters);
   const { rows } = await ctx.pool.query(
-    `SELECT u.id::text AS id, u.name AS owner, u.email,
+    `SELECT u.id::text AS id, (u.raw_user_meta_data ->> 'full_name') AS owner, u.email,
             ow.department,
             COUNT(*)::int AS assigned,
             SUM(CASE WHEN o.status = 'COMPLETED' THEN 1 ELSE 0 END)::int AS completed,
@@ -571,10 +572,10 @@ async function buildWorkload(ctx: BuildCtx): Promise<BuiltReport> {
        JOIN obligations o ON o.id = ow.obligation_id
        JOIN businesses b ON b.id = o.business_id
        LEFT JOIN matters m ON m.id = o.matter_id
-       JOIN users u ON u.id = ow.owner_user_id
+       JOIN auth.users u ON u.id = ow.owner_user_id
       WHERE b.workspace_id = $1 AND b.archived = false
         AND ow.owner_user_id IS NOT NULL${oc.sql}
-      GROUP BY u.id, u.name, u.email, ow.department
+      GROUP BY u.id, (u.raw_user_meta_data ->> 'full_name'), u.email, ow.department
       ORDER BY overdue DESC, critical DESC, assigned DESC`,
     [ctx.workspaceId, ...oc.params]
   );
@@ -641,11 +642,11 @@ async function buildAuditActivity(ctx: BuildCtx): Promise<BuiltReport> {
   const range = rangeParts.length ? " AND " + rangeParts.join(" AND ") : "";
   const { rows } = await ctx.pool.query(
     `SELECT ae.id::text AS id, ae.created_at::text AS timestamp,
-            u.email AS actor_email, u.name AS actor_name,
+            u.email AS actor_email, (u.raw_user_meta_data ->> 'full_name') AS actor_name,
             ae.action, ae.target_type, ae.target_id,
             ae.ip, ae.user_agent, ae.source, ae.reason
        FROM audit_events ae
-       LEFT JOIN users u ON u.id = ae.actor_user_id
+       LEFT JOIN auth.users u ON u.id = ae.actor_user_id
       WHERE ae.workspace_id = $1${range}
       ORDER BY ae.created_at DESC
       LIMIT 1000`,
@@ -715,7 +716,7 @@ function toCsv(columns: ReportColumn[], records: Array<Record<string, unknown>>)
 // Handler
 // ---------------------------------------------------------------------------
 
-export async function GET(
+async function getHandler(
   req: Request,
   { params }: { params: Promise<{ report: string }> }
 ) {
@@ -908,3 +909,5 @@ export async function GET(
     return Response.json({ error: "query_failed" }, { status: 500 });
   }
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/reports/[report]", getHandler);

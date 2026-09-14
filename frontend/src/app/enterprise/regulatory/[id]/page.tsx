@@ -10,6 +10,7 @@ import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { TopNav } from "../../../history/ui";
 import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 import {
   LIFECYCLE_LABELS,
   LIFECYCLE_TRANSITIONS,
@@ -152,8 +153,9 @@ export default function RegulatoryEventDetailPage({
 
   useEffect(() => {
     fetch("/api/enterprise/access")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r) => readJson(r))
+      .then((result) => {
+        const d = (result.data ?? {}) as { workspaces?: AccessWorkspace[] };
         const ws: AccessWorkspace[] = (d.workspaces ?? []).filter((w: AccessWorkspace) =>
           w.permissions.includes("view_records")
         );
@@ -171,10 +173,10 @@ export default function RegulatoryEventDetailPage({
       setLoading(true);
       setError(null);
       fetch(`/api/enterprise/regulatory/events/${eventId}/report?workspace_id=${wsId}`)
-        .then(async (r) => {
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error || "load_failed");
-          setReport(d);
+        .then((r) => readJson<Report>(r))
+        .then((result) => {
+          if (!result.ok) throw new Error(result.error || "load_failed");
+          setReport(result.data);
         })
         .catch((e) => setError(e.message || "load_failed"))
         .finally(() => setLoading(false));
@@ -204,9 +206,9 @@ export default function RegulatoryEventDetailPage({
         headers: { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.message || d.error || "request_failed");
-      return d;
+      const result = await readJson<any>(res); // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (!result.ok) throw new Error(result.data?.message || result.error || "request_failed");
+      return result.data;
     },
     [workspaceId]
   );

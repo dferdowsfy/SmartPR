@@ -15,6 +15,7 @@ import {
   redactSecrets,
 } from "../../../../../../lib/enterprise-security";
 import { isWebhookEvent, mintWebhookSecret, WEBHOOK_EVENTS } from "../../../../../../lib/enterprise-integrations";
+import { withEnterpriseHandler } from "../../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ function gateParams(req: Request, id: string) {
   return { workspaceId };
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function patchHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const gp = gateParams(req, id);
   if ("error" in gp) return Response.json({ error: gp.error }, { status: 400 });
@@ -129,7 +130,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   });
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function deleteHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const gp = gateParams(req, id);
   if ("error" in gp) return Response.json({ error: gp.error }, { status: 400 });
@@ -163,3 +164,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   });
   return Response.json({ ok: true, id, active: false });
 }
+
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/integrations/webhooks/[id]", patchHandler);
+export const DELETE = withEnterpriseHandler("DELETE /api/enterprise/integrations/webhooks/[id]", deleteHandler);

@@ -7,6 +7,7 @@
 
 import { getPool } from "../../../../graph/db";
 import { isRegulatoryLifecycle, sanitizeTargeting, isUuidLike } from "../../../../../lib/enterprise-regulatory";
+import { withEnterpriseHandler } from "../../_util";
 import {
   gateRequest,
   readJsonBody,
@@ -27,7 +28,7 @@ const EVENT_COLUMNS = `
   re.prev_rule_text, re.updated_rule_text, re.created_at, re.updated_at
 `;
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const ws = resolveWorkspaceId(req);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
   const gated = await gateRequest(req, "view_records", ws);
@@ -88,7 +89,7 @@ function asDate(v: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : t;
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const body = await readJsonBody(req);
   const ws = resolveWorkspaceId(req, body);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
@@ -201,3 +202,6 @@ export async function POST(req: Request) {
     return Response.json({ error: "create_failed" }, { status: e.status ?? 500 });
   }
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/regulatory/events", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/regulatory/events", postHandler);

@@ -27,6 +27,7 @@ import {
   sendInviteEmail,
 } from "../../../../../lib/invites";
 import type { WorkspaceRole } from "../../../../../lib/admin";
+import { withEnterpriseHandler } from "../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ function workspaceIdFrom(request: Request): string | null {
 }
 
 /** Members with legacy role, joined enterprise role assignments, pending invites. */
-export async function GET(request: Request) {
+async function getHandler(request: Request) {
   const workspaceId = workspaceIdFrom(request);
   if (!workspaceId) return Response.json({ error: "workspace_id required" }, { status: 400 });
   const gate = await requireEnterprisePermission("manage_users", workspaceId);
@@ -111,7 +112,7 @@ type InviteBody = {
  * limit (or the plan-catalog seat gate when no contract override exists)
  * BEFORE creating the invite row.
  */
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const workspaceId = workspaceIdFrom(request);
   if (!workspaceId) return Response.json({ error: "workspace_id required" }, { status: 400 });
   const gate = await requireEnterprisePermission("manage_users", workspaceId);
@@ -230,3 +231,6 @@ export async function POST(request: Request) {
     invite: { id: inviteId, email, legacy_role: role, enterprise_role: enterpriseRoleKey, scope_type: scopeType, inviteUrl, emailed },
   });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/admin/team", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/admin/team", postHandler);

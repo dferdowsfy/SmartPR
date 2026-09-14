@@ -24,6 +24,7 @@ import {
   validateTerminology,
 } from "../../../../lib/enterprise-branding";
 import { writeAuditEvent, getRequestMeta } from "../../../../lib/enterprise-permissions";
+import { withEnterpriseHandler } from "../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -73,7 +74,7 @@ async function signedPreviewUrls(
 }
 
 /** GET /api/enterprise/branding?workspace_id=… */
-export async function GET(request: Request) {
+async function getHandler(request: Request) {
   const workspaceId = new URL(request.url).searchParams.get("workspace_id") || "";
   const gate = await requireBrandingSecurity(workspaceId);
   if ("response" in gate) return gate.response;
@@ -112,7 +113,7 @@ type BrandingBody = {
 };
 
 /** PUT /api/enterprise/branding — publish branding (two-step: paths come from the upload step). */
-export async function PUT(request: Request) {
+async function putHandler(request: Request) {
   const body = (await request.json().catch(() => ({}))) as BrandingBody;
   const workspaceId = typeof body.workspace_id === "string" ? body.workspace_id : "";
   const gate = await requireBrandingSecurity(workspaceId);
@@ -223,3 +224,6 @@ export async function PUT(request: Request) {
 
   return Response.json({ ok: true, branding: after });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/branding", getHandler);
+export const PUT = withEnterpriseHandler("PUT /api/enterprise/branding", putHandler);

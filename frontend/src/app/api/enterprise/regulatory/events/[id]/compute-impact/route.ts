@@ -23,6 +23,7 @@
 
 import type { PoolClient } from "pg";
 import { getPool } from "../../../../../../graph/db";
+import { withEnterpriseHandler } from "../../../../_util";
 import {
   sanitizeTargeting,
   matchObligation,
@@ -163,7 +164,7 @@ async function upsertImpactRows(
   return rowCount ?? 0;
 }
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function postHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const body = await readJsonBody(req);
   const ws = resolveWorkspaceId(req, body);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
@@ -468,3 +469,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ error: "compute_failed" }, { status: e.status ?? 500 });
   }
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/regulatory/events/[id]/compute-impact", postHandler);

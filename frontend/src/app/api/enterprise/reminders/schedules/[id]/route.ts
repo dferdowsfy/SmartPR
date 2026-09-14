@@ -5,6 +5,7 @@ import {
   computeEffectiveDueDate,
 } from "../../../../../../lib/enterprise-reminders";
 import { hasPermission } from "../../../../../../lib/enterprise-permissions";
+import { withEnterpriseHandler } from "../../../_util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ function serialize(row: Record<string, unknown>) {
   };
 }
 
-export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
+async function patchHandler(req: Request, context: { params: Promise<{ id: string }> }) {
   const g = await enterpriseGate(req, "assign_requirements");
   if ("response" in g) return g.response;
   const { id } = await context.params;
@@ -115,7 +116,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
   return Response.json({ schedule: serialize(after) });
 }
 
-export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+async function deleteHandler(req: Request, context: { params: Promise<{ id: string }> }) {
   const g = await enterpriseGate(req, "assign_requirements");
   if ("response" in g) return g.response;
   const { id } = await context.params;
@@ -128,3 +129,6 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     });
   return Response.json({ deleted: true });
 }
+
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/reminders/schedules/[id]", patchHandler);
+export const DELETE = withEnterpriseHandler("DELETE /api/enterprise/reminders/schedules/[id]", deleteHandler);

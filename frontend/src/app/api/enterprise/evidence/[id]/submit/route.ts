@@ -9,8 +9,7 @@ import {
   notFound,
   readJsonBody,
   withEnterpriseTransaction,
-  writeEnterpriseAudit,
-} from "../../../_util";
+  writeEnterpriseAudit, withEnterpriseHandler } from "../../../_util";
 import {
   canEvidenceTransitionTo,
   isUuid,
@@ -20,7 +19,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(
+async function postHandler(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -92,3 +91,5 @@ export async function POST(
   }
   return Response.json({ ok: true, ...(result as object) });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/evidence/[id]/submit", postHandler);

@@ -2,14 +2,14 @@
 // with every review decision (the audit trail for an evidence document).
 // Permission: view_records.
 
-import { gateEnterprise, badRequest, notFound } from "../../../_util";
+import { gateEnterprise, badRequest, notFound, withEnterpriseHandler } from "../../../_util";
 import { getPool } from "../../../../../graph/db";
 import { isUuid } from "../../../../../../lib/enterprise-work";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(
+async function getHandler(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
@@ -51,10 +51,10 @@ export async function GET(
   const { rows: versions } = await pool.query(
     `SELECT v.id::text AS version_id, v.version_number, v.storage_path,
             v.file_hash, v.uploaded_by::text AS uploaded_by,
-            COALESCE(u.name, u.email) AS uploaded_by_name,
+            COALESCE(u.raw_user_meta_data ->> 'full_name', u.email) AS uploaded_by_name,
             v.created_at
        FROM evidence_versions v
-       LEFT JOIN users u ON u.id = v.uploaded_by
+       LEFT JOIN auth.users u ON u.id = v.uploaded_by
       WHERE v.evidence_id = $1::uuid
       ORDER BY v.version_number ASC`,
     [evidenceId]
@@ -65,12 +65,12 @@ export async function GET(
             r.evidence_version_id::text AS evidence_version_id,
             v.version_number AS version_number,
             r.reviewer_user_id::text AS reviewer_user_id,
-            COALESCE(u.name, u.email) AS reviewer_name,
+            COALESCE(u.raw_user_meta_data ->> 'full_name', u.email) AS reviewer_name,
             r.decision, r.reason, r.previous_state, r.resulting_state,
             r.created_at
        FROM evidence_reviews r
        LEFT JOIN evidence_versions v ON v.id = r.evidence_version_id
-       LEFT JOIN users u ON u.id = r.reviewer_user_id
+       LEFT JOIN auth.users u ON u.id = r.reviewer_user_id
       WHERE r.evidence_id = $1::uuid
       ORDER BY r.created_at ASC`,
     [evidenceId]
@@ -83,3 +83,5 @@ export async function GET(
     reviews,
   });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/evidence/[id]/versions", getHandler);

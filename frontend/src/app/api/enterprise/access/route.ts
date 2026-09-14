@@ -6,6 +6,7 @@
 
 import { getPool } from "../../../graph/db";
 import { getCurrentUser } from "../../../../lib/supabase/server";
+import { withEnterpriseHandler } from "../_util";
 import {
   PERMISSIONS,
   hasPermission,
@@ -16,7 +17,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function getHandler() {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
   const pool = getPool();
@@ -64,3 +65,5 @@ export async function GET() {
     return Response.json({ error: "query_failed" }, { status: 500 });
   }
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/access", getHandler);

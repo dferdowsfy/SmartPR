@@ -8,7 +8,7 @@
  * stored template is missing or fails to load.
  */
 import { getPool, isEnabled } from "../../../graph/db";
-import { isCurrentUserAdmin } from "../../../../lib/admin";
+import { isCurrentUserSuperAdmin } from "../../../../lib/admin";
 import { getCurrentUser } from "../../../../lib/supabase/server";
 import { allEmailTemplateDefs } from "../../../../lib/email-template-seeds";
 import {
@@ -37,7 +37,7 @@ const KEY_LABELS: Record<EmailTemplateKey, string> = {
 };
 
 export async function GET() {
-  if (!(await isCurrentUserAdmin())) {
+  if (!(await isCurrentUserSuperAdmin())) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
   if (!isEnabled()) {
@@ -77,7 +77,7 @@ type SaveBody = {
 };
 
 export async function POST(request: Request) {
-  if (!(await isCurrentUserAdmin())) {
+  if (!(await isCurrentUserSuperAdmin())) {
     return Response.json({ error: "forbidden" }, { status: 403 });
   }
   if (!isEnabled()) {

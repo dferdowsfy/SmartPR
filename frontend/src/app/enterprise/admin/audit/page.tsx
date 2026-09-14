@@ -1,6 +1,9 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 import { useEnterpriseWorkspaces } from "../../_lib/useEnterpriseWorkspaces";
 
 interface AuditEvent {
@@ -129,8 +132,9 @@ function AuditInner() {
         if (fTo) q.set("date_to", fTo);
         if (fSearch.trim()) q.set("search", fSearch.trim());
         const res = await fetch(`/api/enterprise/audit?${q.toString()}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Could not load audit events.");
+        const result = await readJson<{ events: AuditEvent[]; total: number; page: number }>(res);
+        if (!result.ok) throw new Error(result.error || "Could not load audit events.");
+        const data = result.data ?? { events: [], total: 0, page: p };
         setEvents(data.events || []);
         setTotal(data.total || 0);
         setPage(data.page || p);
@@ -168,7 +172,8 @@ function AuditInner() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <EnterpriseSubNav active="/enterprise/admin/audit" />
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#5a5a5a]">
             Organization administration
@@ -326,6 +331,7 @@ function AuditInner() {
 export default function EnterpriseAuditPage() {
   return (
     <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
+      <TopNav active="enterprise" />
       <Suspense fallback={<p className="px-6 py-8 text-sm">Loading…</p>}>
         <AuditInner />
       </Suspense>

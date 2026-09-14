@@ -2,6 +2,7 @@
 // Idempotent (re-acknowledging an acknowledged impact is a no-op).
 
 import { getPool } from "../../../../../../graph/db";
+import { withEnterpriseHandler } from "../../../../_util";
 import {
   gateRequest,
   isUuid,
@@ -15,7 +16,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function postHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ws = resolveWorkspaceId(req);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
   // Acknowledging is an operational update: facility and compliance managers
@@ -77,3 +78,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return Response.json({ error: "acknowledge_failed" }, { status: e.status ?? 500 });
   }
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/regulatory/impacts/[id]/acknowledge", postHandler);

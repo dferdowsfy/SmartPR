@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TopNav } from "../../history/ui";
 import { EnterpriseSubNav } from "../_nav";
+import { readJson } from "@/lib/safe-json";
 
 interface ReportDef {
   key: string;
@@ -96,8 +97,9 @@ export default function EnterpriseReportsPage() {
 
   useEffect(() => {
     fetch("/api/enterprise/access")
-      .then((r) => r.json())
-      .then((d) => {
+      .then((r) => readJson(r))
+      .then((result) => {
+        const d = (result.data ?? {}) as { workspaces?: AccessWorkspace[] };
         const ws: AccessWorkspace[] = d.workspaces ?? [];
         setWorkspaces(ws);
         const withView = ws.filter((w) => w.permissions.includes("view_records"));
@@ -113,9 +115,9 @@ export default function EnterpriseReportsPage() {
   useEffect(() => {
     if (!workspaceId) return;
     fetch(`/api/enterprise/portfolio?workspace_id=${workspaceId}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.facets) setFacets(d.facets);
+      .then((r) => readJson<{ facets?: Facets }>(r))
+      .then((result) => {
+        if (result.data?.facets) setFacets(result.data.facets);
       })
       .catch(() => {});
   }, [workspaceId]);
@@ -167,9 +169,9 @@ export default function EnterpriseReportsPage() {
     setError(null);
     try {
       const r = await fetch(buildQuery("json"));
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || "report_failed");
-      setPreview(d);
+      const previewResult = await readJson<PreviewData>(r);
+      if (!previewResult.ok) throw new Error(previewResult.error || "report_failed");
+      setPreview(previewResult.data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "report_failed");
       setPreview(null);
@@ -185,8 +187,8 @@ export default function EnterpriseReportsPage() {
     try {
       const r = await fetch(buildQuery(format));
       if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        throw new Error(d.error || "export_failed");
+        const errResult = await readJson(r);
+        throw new Error(errResult.error || "export_failed");
       }
       const blob = await r.blob();
       const stamp = new Date().toISOString().slice(0, 10);

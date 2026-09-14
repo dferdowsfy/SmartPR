@@ -7,6 +7,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 
 const inputCls =
   "rounded-lg border border-[#161616]/22 bg-[#fbf8f2] px-3 py-2 text-sm placeholder:text-[#5a5a5a]";
@@ -132,13 +135,15 @@ export default function IntegrationsPage() {
         fetch(`/api/enterprise/integrations/webhooks?${qs()}`),
         fetch(`/api/enterprise/integrations/service-accounts?${qs()}`),
       ]);
-      const w = await wRes.json();
-      const s = await sRes.json();
-      if (!wRes.ok) throw new Error(w.error || "failed to load webhooks");
-      if (!sRes.ok) throw new Error(s.error || "failed to load service accounts");
-      setEndpoints(w.endpoints || []);
-      setAllEvents(w.events || []);
-      setAccounts(s.accounts || []);
+      const [wResult, sResult] = await Promise.all([
+        readJson<{ endpoints: Endpoint[]; events: string[] }>(wRes),
+        readJson<{ accounts: ServiceAccount[] }>(sRes),
+      ]);
+      if (!wResult.ok) throw new Error(wResult.error || "failed to load webhooks");
+      if (!sResult.ok) throw new Error(sResult.error || "failed to load service accounts");
+      setEndpoints(wResult.data?.endpoints || []);
+      setAllEvents(wResult.data?.events || []);
+      setAccounts(sResult.data?.accounts || []);
     } catch (e) {
       setErr((e as Error).message);
     }
@@ -152,8 +157,9 @@ export default function IntegrationsPage() {
       const res = await fetch(
         `/api/enterprise/integrations/webhooks/${endpointId}/deliveries?${params}`
       );
-      const data = await res.json();
-      if (res.ok) setDeliveries(data.deliveries || []);
+      const result = await readJson<{ deliveries: Delivery[] }>(res);
+      if (result.ok) setDeliveries(result.data?.deliveries || []);
+      else setErr(result.error || "failed to load deliveries");
     },
     [workspaceId]
   );
@@ -162,7 +168,8 @@ export default function IntegrationsPage() {
     (async () => {
       try {
         const res = await fetch("/api/me");
-        const data = await res.json();
+        const meResult = await readJson<{ user?: { workspace_id: string | null; workspace_role: string | null } }>(res);
+        const data = meResult.data;
         const ws = data?.user?.workspace_id as string | null;
         const role = data?.user?.workspace_role as string | null;
         if (!ws || (role !== "OWNER" && role !== "ADMIN")) {
@@ -197,9 +204,9 @@ export default function IntegrationsPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ url: newUrl.trim(), events: newEvents }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || data.error || "create failed");
-      setOnceSecret(data.secret);
+      const whResult = await readJson<{ secret?: string; detail?: string }>(res);
+      if (!whResult.ok) throw new Error(whResult.data?.detail || whResult.error || "create failed");
+      setOnceSecret(whResult.data?.secret ?? null);
       setNewUrl("");
       setNewEvents([]);
       setMsg("Webhook endpoint created.");
@@ -213,8 +220,8 @@ export default function IntegrationsPage() {
     if (!confirm("Disable this webhook endpoint? Deliveries stop immediately.")) return;
     setErr(null);
     const res = await fetch(`/api/enterprise/integrations/webhooks/${id}?${qs()}`, { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) setErr(data.error || "disable failed");
+    const disResult = await readJson(res);
+    if (!disResult.ok) setErr(disResult.error || "disable failed");
     else {
       setMsg("Webhook disabled.");
       await load();
@@ -226,10 +233,10 @@ export default function IntegrationsPage() {
     setErr(null);
     setOnceSecret(null);
     const res = await fetch(`/api/enterprise/integrations/webhooks/${id}/rotate?${qs()}`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok) setErr(data.detail || data.error || "rotation failed");
+    const rotResult = await readJson<{ secret?: string; detail?: string }>(res);
+    if (!rotResult.ok) setErr(rotResult.data?.detail || rotResult.error || "rotation failed");
     else {
-      setOnceSecret(data.secret);
+      setOnceSecret(rotResult.data?.secret ?? null);
       setMsg("Secret rotated.");
       await load();
     }
@@ -249,9 +256,9 @@ export default function IntegrationsPage() {
           expires_at: newExpiry ? new Date(newExpiry).toISOString() : null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "create failed");
-      setOnceCredential(data.credential);
+      const acctResult = await readJson<{ credential?: string }>(res);
+      if (!acctResult.ok) throw new Error(acctResult.error || "create failed");
+      setOnceCredential(acctResult.data?.credential ?? null);
       setNewName("");
       setNewScopes(["scim"]);
       setNewExpiry("");
@@ -267,10 +274,10 @@ export default function IntegrationsPage() {
     setErr(null);
     setOnceCredential(null);
     const res = await fetch(`/api/enterprise/integrations/service-accounts/${id}/rotate?${qs()}`, { method: "POST" });
-    const data = await res.json();
-    if (!res.ok) setErr(data.error || "rotation failed");
+    const rotAcctResult = await readJson<{ credential?: string }>(res);
+    if (!rotAcctResult.ok) setErr(rotAcctResult.error || "rotation failed");
     else {
-      setOnceCredential(data.credential);
+      setOnceCredential(rotAcctResult.data?.credential ?? null);
       setMsg("Credential rotated.");
       await load();
     }
@@ -284,8 +291,8 @@ export default function IntegrationsPage() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ reason: "revoked from integrations console" }),
     });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) setErr(data.error || "revoke failed");
+    const revResult = await readJson(res);
+    if (!revResult.ok) setErr(revResult.error || "revoke failed");
     else {
       setMsg("Service account revoked.");
       await load();
@@ -295,19 +302,36 @@ export default function IntegrationsPage() {
   const toggleEvent = (list: string[], e: string, set: (v: string[]) => void) =>
     set(list.includes(e) ? list.filter((x) => x !== e) : [...list, e]);
 
-  if (loading) return <main className="p-8 text-sm text-[#5a5a5a]">Loading integrations…</main>;
+  if (loading)
+    return (
+      <>
+        <TopNav active="enterprise" />
+        <main className="p-8 text-sm text-[#5a5a5a]">Loading integrations…</main>
+      </>
+    );
   if (denied)
     return (
-      <main className="p-8">
-        <h1 className="text-xl font-semibold">Integrations</h1>
-        <p className="mt-2 text-sm text-[#5a5a5a]">
-          You need an organization owner or administrator role to view this page.
-        </p>
-      </main>
+      <>
+        <TopNav active="enterprise" />
+        <main className="p-8">
+          <h1 className="text-xl font-semibold">Integrations</h1>
+          <p className="mt-2 text-sm text-[#5a5a5a]">
+            You need an organization owner or administrator role to view this page.
+          </p>
+          <p className="mt-4">
+            <a href="/enterprise" className="text-sm font-medium text-[#245c5c] hover:underline">
+              ← Back to Enterprise
+            </a>
+          </p>
+        </main>
+      </>
     );
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 p-6">
+    <>
+      <TopNav active="enterprise" />
+      <main className="mx-auto max-w-6xl space-y-6 p-6">
+        <EnterpriseSubNav active="/enterprise/admin/integrations" />
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Integrations</h1>
@@ -511,6 +535,7 @@ export default function IntegrationsPage() {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

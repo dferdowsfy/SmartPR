@@ -18,8 +18,7 @@ import {
   forbidden,
   readJsonBody,
   withEnterpriseTransaction,
-  writeEnterpriseAudit,
-} from "../../_util";
+  writeEnterpriseAudit, withEnterpriseHandler } from "../../_util";
 import { PRIORITIES, isUuid } from "../../../../../lib/enterprise-work";
 
 export const runtime = "nodejs";
@@ -27,7 +26,7 @@ export const dynamic = "force-dynamic";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const body = await readJsonBody(request);
   if (!body) return badRequest("A JSON body is required.");
 
@@ -171,3 +170,5 @@ export async function POST(request: Request) {
   }
   return Response.json({ ok: true, workspace_id: workspaceId, assigned: result });
 }
+
+export const POST = withEnterpriseHandler("POST /api/enterprise/work/assign", postHandler);

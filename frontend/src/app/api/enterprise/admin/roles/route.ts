@@ -4,6 +4,7 @@
 // Permission: manage_users on the workspace. System roles are seeded per
 // workspace on first use via ensureSystemRoles().
 import { getPool, isEnabled } from "../../../../graph/db";
+import { withEnterpriseHandler } from "../../_util";
 import {
   requireEnterprisePermission,
   writeAuditEvent,
@@ -35,7 +36,7 @@ async function gate(request: Request) {
 }
 
 /** All role assignments in the workspace (with member email + scope names). */
-export async function GET(request: Request) {
+async function getHandler(request: Request) {
   const g = await gate(request);
   if ("response" in g) return g.response;
   const { workspaceId, pool } = g;
@@ -72,7 +73,7 @@ type GrantBody = {
 };
 
 /** Grant an enterprise role to a member at a scope. Idempotent (no duplicates). */
-export async function POST(request: Request) {
+async function postHandler(request: Request) {
   const g = await gate(request);
   if ("response" in g) return g.response;
   const { workspaceId, user, pool } = g;
@@ -135,7 +136,7 @@ export async function POST(request: Request) {
 }
 
 /** Revoke a role assignment by id (?id= or JSON body). */
-export async function DELETE(request: Request) {
+async function deleteHandler(request: Request) {
   const g = await gate(request);
   if ("response" in g) return g.response;
   const { workspaceId, user, pool } = g;
@@ -195,3 +196,7 @@ export async function DELETE(request: Request) {
 
   return Response.json({ ok: true });
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/admin/roles", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/admin/roles", postHandler);
+export const DELETE = withEnterpriseHandler("DELETE /api/enterprise/admin/roles", deleteHandler);

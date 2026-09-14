@@ -184,11 +184,11 @@ async function workQueueGetInner(request: Request, deps: WorkQueueDeps) {
            b.municipality AS municipality,
            COALESCE(w.work_status,'not_started') AS work_status,
            w.owner_user_id::text AS owner_user_id,
-           COALESCE(owner_u.name, owner_u.email) AS owner_name,
+           COALESCE(owner_u.raw_user_meta_data ->> 'full_name', owner_u.email) AS owner_name,
            owner_u.email AS owner_email,
            w.department AS department,
            w.reviewer_user_id::text AS reviewer_user_id,
-           COALESCE(rev_u.name, rev_u.email) AS reviewer_name,
+           COALESCE(rev_u.raw_user_meta_data ->> 'full_name', rev_u.email) AS reviewer_name,
            COALESCE(w.priority,'medium') AS priority,
            w.internal_due_date::text AS internal_due_date,
            COALESCE(w.internal_due_date, o.due_date)::text AS effective_due_date,
@@ -227,8 +227,8 @@ async function workQueueGetInner(request: Request, deps: WorkQueueDeps) {
       JOIN businesses b ON b.id = o.business_id
       LEFT JOIN matters m ON m.id = o.matter_id
       LEFT JOIN obligation_work w ON w.obligation_id = o.id
-      LEFT JOIN users owner_u ON owner_u.id = w.owner_user_id
-      LEFT JOIN users rev_u ON rev_u.id = w.reviewer_user_id
+      LEFT JOIN auth.users owner_u ON owner_u.id = w.owner_user_id
+      LEFT JOIN auth.users rev_u ON rev_u.id = w.reviewer_user_id
       LEFT JOIN requirement_rules rr ON rr.id = o.requirement_id`;
 
   const format = q("format");

@@ -4,6 +4,9 @@
 // approve_evidence for is_verified=true).
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { TopNav } from "../../../history/ui";
+import { EnterpriseSubNav } from "../../_nav";
+import { readJson } from "@/lib/safe-json";
 import { L } from "../../../i18n";
 import { useLang } from "../../../useLang";
 
@@ -63,8 +66,8 @@ function Page() {
   useEffect(() => {
     if (workspaceId) return;
     fetch("/api/me")
-      .then((r) => r.json())
-      .then((d) => setWorkspaceId(d?.user?.workspace_id ?? null))
+      .then((r) => readJson<{ user?: { workspace_id: string | null } }>(r))
+      .then((result) => setWorkspaceId(result.data?.user?.workspace_id ?? null))
       .catch(() => setWorkspaceId(null));
   }, [workspaceId]);
 
@@ -73,22 +76,22 @@ function Page() {
     setError(null);
     try {
       const [rr, pp, ss] = await Promise.all([
-        fetch(`/api/enterprise/reminders/rules${ws}`).then((r) => {
-          if (!r.ok) throw new Error(`rules: ${r.status}`);
-          return r.json();
-        }),
-        fetch(`/api/enterprise/reminders/policies${ws}`).then((r) => {
-          if (!r.ok) throw new Error(`policies: ${r.status}`);
-          return r.json();
-        }),
-        fetch(`/api/enterprise/reminders/schedules${ws}`).then((r) => {
-          if (!r.ok) throw new Error(`schedules: ${r.status}`);
-          return r.json();
-        }),
+        fetch(`/api/enterprise/reminders/rules${ws}`).then((r) =>
+          readJson<{ rules: Rule[] }>(r)
+        ),
+        fetch(`/api/enterprise/reminders/policies${ws}`).then((r) =>
+          readJson<{ policies: Policy[] }>(r)
+        ),
+        fetch(`/api/enterprise/reminders/schedules${ws}`).then((r) =>
+          readJson<{ schedules: Schedule[] }>(r)
+        ),
       ]);
-      setRules(rr.rules);
-      setPolicies(pp.policies);
-      setSchedules(ss.schedules);
+      if (!rr.ok) throw new Error(rr.error || `rules: ${rr.status}`);
+      if (!pp.ok) throw new Error(pp.error || `policies: ${pp.status}`);
+      if (!ss.ok) throw new Error(ss.error || `schedules: ${ss.status}`);
+      setRules(rr.data?.rules ?? []);
+      setPolicies(pp.data?.policies ?? []);
+      setSchedules(ss.data?.schedules ?? []);
     } catch (e) {
       setError((e as Error).message);
       setRules([]);
@@ -110,9 +113,9 @@ function Page() {
         headers: { "Content-Type": "application/json" },
         body: body === undefined ? undefined : JSON.stringify(body),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.detail || data?.error || `request failed (${res.status})`);
+      const result = await readJson<{ detail?: string }>(res);
+      if (!result.ok) {
+        throw new Error(result.data?.detail || result.error || `request failed (${res.status})`);
       }
       setNotice(L("Saved.", lang));
       setEditing(null);
@@ -133,9 +136,9 @@ function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workspace_id: workspaceId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || `test run failed (${res.status})`);
-      setTestRun(data);
+      const testResult = await readJson<Record<string, unknown>>(res);
+      if (!testResult.ok) throw new Error(testResult.error || `test run failed (${res.status})`);
+      setTestRun(testResult.data ?? {});
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -146,15 +149,19 @@ function Page() {
 
   if (!workspaceId) {
     return (
-      <main className="p-8">
-        <p>{L("Loading…", lang)}</p>
-      </main>
+      <>
+        <TopNav active="enterprise" />
+        <main className="p-8">
+          <p>{L("Loading…", lang)}</p>
+        </main>
+      </>
     );
   }
 
   return (
     <main className="mx-auto max-w-5xl p-6 md:p-8" aria-labelledby="reminders-title">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <EnterpriseSubNav active="/enterprise/admin/reminders" />
+      <div className="mb-6 mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 id="reminders-title" className="text-2xl font-bold">
             {L("Reminders & deadlines", lang)}
@@ -677,8 +684,11 @@ function Editor({
 
 export default function RemindersAdminPage() {
   return (
-    <Suspense fallback={<main className="p-8">Loading…</main>}>
-      <Page />
-    </Suspense>
+    <>
+      <TopNav active="enterprise" />
+      <Suspense fallback={<main className="p-8">Loading…</main>}>
+        <Page />
+      </Suspense>
+    </>
   );
 }

@@ -3,6 +3,7 @@
 // + implementation rollups. Read-only (view_records).
 
 import { getPool } from "../../../../../../graph/db";
+import { withEnterpriseHandler } from "../../../../_util";
 import {
   gateRequest,
   isUuid,
@@ -14,7 +15,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function getHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ws = resolveWorkspaceId(req);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
   const gated = await gateRequest(req, "view_records", ws);
@@ -126,3 +127,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return Response.json({ error: "query_failed" }, { status: 500 });
   }
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/regulatory/events/[id]/report", getHandler);

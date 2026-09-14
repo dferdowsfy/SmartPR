@@ -3,6 +3,7 @@
 
 import { getPool } from "../../../../../graph/db";
 import { isImplementationStatus } from "../../../../../../lib/enterprise-regulatory";
+import { withEnterpriseHandler } from "../../../_util";
 import {
   gateRequest,
   isUuid,
@@ -17,7 +18,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function patchHandler(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const body = await readJsonBody(req);
   const ws = resolveWorkspaceId(req, body);
   if (!ws) return Response.json({ error: "workspace_required" }, { status: 400 });
@@ -85,3 +86,5 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return Response.json({ error: "update_failed" }, { status: e.status ?? 500 });
   }
 }
+
+export const PATCH = withEnterpriseHandler("PATCH /api/enterprise/regulatory/impacts/[id]", patchHandler);

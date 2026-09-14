@@ -5,6 +5,7 @@
 // Only sha256 hashes are stored. Permission: manage_integrations. Audited.
 
 import { getPool, isEnabled } from "../../../../graph/db";
+import { withEnterpriseHandler } from "../../_util";
 import {
   requireEnterprisePermission,
   writeAuditEvent,
@@ -28,7 +29,7 @@ function workspaceFrom(req: Request): string | null {
   return w && /^[0-9a-fA-F-]{36}$/.test(w) ? w : null;
 }
 
-export async function GET(req: Request) {
+async function getHandler(req: Request) {
   const workspaceId = workspaceFrom(req);
   if (!workspaceId) return Response.json({ error: "workspace query param required" }, { status: 400 });
   const gate = await requireEnterprisePermission("manage_integrations", workspaceId);
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
   return Response.json({ accounts: redactSecrets(accounts), scopes: SERVICE_ACCOUNT_SCOPES });
 }
 
-export async function POST(req: Request) {
+async function postHandler(req: Request) {
   const workspaceId = workspaceFrom(req);
   if (!workspaceId) return Response.json({ error: "workspace query param required" }, { status: 400 });
   const gate = await requireEnterprisePermission("manage_integrations", workspaceId);
@@ -133,3 +134,6 @@ export async function POST(req: Request) {
     { status: 201 }
   );
 }
+
+export const GET = withEnterpriseHandler("GET /api/enterprise/integrations/service-accounts", getHandler);
+export const POST = withEnterpriseHandler("POST /api/enterprise/integrations/service-accounts", postHandler);

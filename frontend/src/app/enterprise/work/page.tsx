@@ -872,8 +872,8 @@ export default function EnterpriseWorkPage() {
     try {
       const res = await fetch(`/api/enterprise/work?${buildParams({ format: "csv" })}`);
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || data.error || "Export failed.");
+        const errResult = await readJson(res);
+        throw new Error(errResult.error || "Export failed.");
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
