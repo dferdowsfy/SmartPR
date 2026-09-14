@@ -47,4 +47,72 @@ CREATE INDEX IF NOT EXISTS idx_notifications_cron_sweep
   ON notifications(status, channel, scheduled_for)
   WHERE status = 'PENDING';
 
+-- Monthly digest idempotency: one digest per workspace per YYYY-MM period.
+-- The cron inserts ON CONFLICT DO NOTHING so a retry never double-sends.
+CREATE TABLE IF NOT EXISTS compliance_digest_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  period TEXT NOT NULL,
+  item_count INTEGER NOT NULL DEFAULT 0,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (workspace_id, period)
+);
+CREATE INDEX IF NOT EXISTS idx_compliance_digest_log_workspace ON compliance_digest_log (workspace_id);
+
+-- Regulatory developments pipeline (spec section 10a): the monthly
+-- regulatory scan records findings here; the digest surfaces a finding to a
+-- business ONLY when it matches that business's profile/obligations with an
+-- explainable basis. review_status='verified' is the gate: only verified
+-- findings (checked against a primary government source) reach the digest.
+CREATE TABLE IF NOT EXISTS regulatory_developments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  source_name TEXT NOT NULL,
+  source_url TEXT NOT NULL,
+  published_date DATE,
+  effective_date DATE,
+  affected_requirement_codes TEXT[] NOT NULL DEFAULT '{}',
+  -- Targeting: AND across specified groups, OR within a group (same pattern
+  -- as the enterprise regulatory-events targeting).
+  agency_names TEXT[] NOT NULL DEFAULT '{}',
+  municipalities TEXT[] NOT NULL DEFAULT '{}',
+  business_types TEXT[] NOT NULL DEFAULT '{}',
+  industries TEXT[] NOT NULL DEFAULT '{}',
+  requirement_names TEXT[] NOT NULL DEFAULT '{}',
+  applicability_notes TEXT,
+  recommended_action TEXT,
+  confidence TEXT NOT NULL DEFAULT 'medium' CHECK (confidence IN ('high','medium','low')),
+  review_status TEXT NOT NULL DEFAULT 'unreviewed'
+    CHECK (review_status IN ('unreviewed','verified','superseded')),
+  recorded_by TEXT NOT NULL DEFAULT 'scan',
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_checked_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_regulatory_developments_review
+  ON regulatory_developments (review_status, published_date DESC);
+
+-- Log of the monthly regulatory-scan research passes (the scan itself is a
+-- scheduled research pass; this table records that it happened).
+CREATE TABLE IF NOT EXISTS regulatory_scan_runs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  completed_at TIMESTAMPTZ,
+  sources_checked TEXT[] NOT NULL DEFAULT '{}',
+  developments_found INTEGER NOT NULL DEFAULT 0,
+  notes TEXT
+);
+
+-- A development is shown to a workspace at most once, so monthly digests
+-- never repeat the same finding.
+CREATE TABLE IF NOT EXISTS regulatory_development_shows (
+  development_id UUID NOT NULL REFERENCES regulatory_developments(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL,
+  period TEXT NOT NULL,
+  shown_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (development_id, workspace_id)
+);
+CREATE INDEX IF NOT EXISTS idx_regdev_shows_workspace ON regulatory_development_shows (workspace_id);
+
 COMMIT;

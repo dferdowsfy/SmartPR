@@ -91,7 +91,48 @@ Enforcement: cron query joins `workspace_subscriptions.plan`; free workspaces ar
 2. ~~Sender identity: notifications@getsmartpr.com, or his name?~~ **Decided 2026-09-14: alerts@getsmartpr.com.**
 3. Stalled-filing nudge: 14 days right, or 7?
 
-## 9. Phased rollout
+## 10. Monthly digest email — "proactive compliance officer" (revised 2026-09-14)
+
+**Decision 2026-09-14:** the digest is a personalized monthly compliance briefing, not a deadline list. It behaves like a proactive compliance officer for each business.
+
+### Branding
+Follow getsmartpr.com: warm paper background `#f4f1ea`, ink `#161616`, brand deep teal `#245c5c`, IBM Plex Sans. Voice: plain, direct, warm — "we make it easy," never bureaucratic. Spanish = boricua Spanish.
+
+### Email structure
+Header: **SMARTPR MONTHLY COMPLIANCE DIGEST** — [Business] — [Month Year].
+
+1. **Executive summary** (2–3 sentences, generated from counts): "You have 2 actions requiring attention, 3 requirements approaching within 90 days, and 1 regulatory development that may affect your operation."
+2. **ACTION REQUIRED** (only when relevant). Per item: requirement, agency, due date/days remaining, what needs to happen, why it applies, risk of missing it, CTA "Review Requirement."
+3. **COMING UP**: group 30/60/90 days; explain what preparation should begin *now*, not just dates.
+4. **WHAT CHANGED**: regulatory developments from the pre-email check (§10a) — what changed, effective date, why it affects this business, recommended action, source, confidence. Fallback when none: "No material regulatory changes affecting your SmartPR profile were identified this month."
+5. **SMARTPR NEEDS FROM YOU**: missing evidence, unknown expiration dates, info needed to determine applicability. Never invent a date — surface the gap.
+6. **COMPLIANCE HEALTH**: e.g. "87% Current — 12 requirements current, 3 upcoming actions, 1 needs verification, 0 critical overdue." CTA "Open Compliance Center."
+
+Health score (explainable): `current / total applicable`, where current = obligation neither overdue, nor due within 30 days, nor missing required evidence, nor flagged needs-verification.
+
+### 10a. Fresh regulatory check (before every digest)
+- A monthly regulatory scan runs BEFORE digest generation: reviews authoritative PR sources (OGPe, Hacienda/SURI, Dept of State, DRNA, Bomberos, Salud, DTRH, municipalities, CTPR, relevant leyes/reglamentos) for developments since the previous digest: agency announcements, law/regulation changes, municipal requirements, permit/license changes, forms/fees/procedures, deadlines/renewal rules, enforcement announcements, incentive/program changes.
+- Findings stored in `regulatory_developments`: title, summary, source name + URL, published date, effective date, affected requirement codes, applicability notes, confidence (high/medium/low). Primary government sources required; news/media may tip off a development but material findings must be verified against an authoritative source.
+- Digest matches developments against the knowledge graph + business profile (business type, activities, municipality, facilities, employees, vehicles). **Only surface a development when SmartPR can explain why it affects or may affect THIS business.** No generic PR news.
+- Every WHAT CHANGED item carries: source, date, affected requirement, applicability reasoning, confidence.
+
+### Language
+Full user preference: the entire email — explanations, CTAs, everything — renders in the user's selected language (English or Puerto Rican Spanish).
+
+### Applicability labels
+Every obligation/finding labeled: **Confirmed** / **Likely — verify** / **Conditional** / Not applicable (never shown). Labels visible in the email where they aid decisions.
+
+### Guardrails
+- Never invent deadlines, expiration dates, regulatory changes, or applicability.
+- Every finding traces to the knowledge graph and/or a cited authoritative source.
+- Do NOT hard-code the OAFA example (or any business) into production logic.
+- Prioritize by: deadline proximity, operational/shutdown risk, penalty, preparation lead time, confidence.
+- Readable in under 2 minutes. After reading, the user knows: what do I need to do? what is coming? what changed? what is SmartPR missing?
+
+### Gating, schedule, opt-outs
+Unchanged from v1: monthly 1st 8:00am ET, paid tiers only (Core = 1 business, Operator = all, Partner = per client), separate digest opt-out + global unsubscribe. Cron endpoints still need host scheduling (daily + monthly).
+
+## 9. Phased rollout (updated)
 
 - **Phase 1:** tables, cron, email templates + opt-out, settings toggles, seed sourced renewal cadences for top ~20 requirements.
 - **Phase 2:** intake expiry-date capture, calendar reminder badges.

@@ -1,14 +1,22 @@
-// Monthly compliance-digest sender.
+// Monthly compliance-digest sender (spec section 10, revised).
 //
 // POST /api/cron/compliance-digest
-// Sends the monthly "compliance snapshot" digest email to paid workspaces:
-// due within 30 days / due in 1–3 months / stalled filings / missing dates.
-// Queries Supabase LIVE at send time. Email only — no SMS/WhatsApp.
+// Sends the proactive-compliance-officer digest to paid workspaces, in the
+// user's language (English / Puerto Rican Spanish). Queries Supabase LIVE at
+// send time. Email only — no SMS/WhatsApp.
+//
+// The email answers four questions: what must I do (ACTION REQUIRED),
+// what is coming (COMING UP, 30/60/90-day windows), what changed
+// (WHAT CHANGED — only verified developments matched to THIS business),
+// and what SmartPR is missing (SMARTPR NEEDS FROM YOU), plus an
+// explainable COMPLIANCE HEALTH score (current / total applicable).
 //
 // Auth: header `x-cron-secret: $COMPLIANCE_CRON_SECRET` (same secret as the
-// daily compliance-reminder cron).
+// daily compliance-reminder cron and the regulatory-scan cron).
 // Schedule: once monthly, on the 1st at ~8:00am ET, via the host's scheduler
-// (Railway cron, Supabase pg_cron hitting the endpoint, etc.).
+// (Railway cron, Supabase pg_cron hitting the endpoint, etc.). The
+// regulatory-scan cron (POST /api/cron/regulatory-scan) should run earlier
+// the same morning (~6:00am ET) so fresh findings are available.
 //
 // Safety properties:
 // - Idempotent per (workspace_id, period): the UNIQUE (workspace_id, period)
@@ -18,6 +26,9 @@
 //   covers both digest and transactional reminders.
 // - A due item appears ONLY when the obligation still carries a stored due
 //   date with real provenance — never an estimate.
+// - WHAT CHANGED shows only review_status='verified' developments matched
+//   deterministically to the business, each at most once per workspace.
+//   Generic Puerto Rico news (no targeting criteria) never matches.
 
 import { getPool } from "../../../graph/db";
 import { runComplianceDigestCron } from "../../../../lib/compliance-digest";
