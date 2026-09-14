@@ -12,9 +12,47 @@
 import { gateEnterprise, badRequest, getPool } from "../_util";
 import { requireEnterprisePermission } from "../../../../lib/enterprise-permissions";
 import { WORK_STATUSES, PRIORITIES, isUuid } from "../../../../lib/enterprise-work";
+import type { Pool } from "pg";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Injected dependencies so the handler is unit-testable without a database. */
+export interface WorkQueueDeps {
+  gate: typeof gateEnterprise;
+  pool: () => Pool | null;
+  exportGate: typeof requireEnterprisePermission;
+}
+
+const liveDeps: WorkQueueDeps = {
+  gate: (req, perm, ws) => gateEnterprise(req, perm, ws),
+  pool: () => getPool(),
+  exportGate: (perm, ws) => requireEnterprisePermission(perm, ws),
+};
+
+/**
+ * GET handler with an ironclad contract: the response is ALWAYS valid JSON.
+ * An uncaught throw in a Next.js route handler otherwise becomes a 500 with
+ * an empty body in production, and clients calling res.json() on it surface
+ * "Failed to execute 'json' on 'Response': Unexpected end of JSON input".
+ */
+export async function handleWorkQueueGet(request: Request, deps: WorkQueueDeps): Promise<Response> {
+  try {
+    return await workQueueGetInner(request, deps);
+  } catch (e) {
+    console.error(
+      "[api/enterprise/work] unhandled error:",
+      e instanceof Error ? e.message : e
+    );
+    return Response.json(
+      {
+        error: "work_queue_failed",
+        message: "Something went wrong loading the work queue. Please retry.",
+      },
+      { status: 500 }
+    );
+  }
+}
 
 const VALID_VIEWS = new Set(["my_work", "my_reviews", "overdue", "unassigned", "critical"]);
 
@@ -35,6 +73,10 @@ function csvCell(value: unknown): string {
 }
 
 export async function GET(request: Request) {
+  return handleWorkQueueGet(request, liveDeps);
+}
+
+async function workQueueGetInner(request: Request, deps: WorkQueueDeps) {
   const url = new URL(request.url);
   const q = (name: string) => url.searchParams.get(name)?.trim() || null;
 
@@ -44,11 +86,11 @@ export async function GET(request: Request) {
     return badRequest(`Invalid view "${view}".`);
   }
 
-  const gate = await gateEnterprise(request, "view_records", workspaceParam);
+  const gate = await deps.gate(request, "view_records", workspaceParam);
   if ("response" in gate) return gate.response;
   const { user, workspaceId } = gate;
 
-  const pool = getPool();
+  const pool = deps.pool();
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
 
   const workStatus = q("work_status");
@@ -196,7 +238,7 @@ export async function GET(request: Request) {
 
   if (format === "csv") {
     // CSV export requires export_data.
-    const exportGate = await requireEnterprisePermission("export_data", workspaceId);
+    const exportGate = await deps.exportGate("export_data", workspaceId);
     if ("response" in exportGate) return exportGate.response;
     const { rows } = await pool.query(
       `${select} WHERE ${whereSql} ORDER BY ${orderBy} LIMIT 5000`,

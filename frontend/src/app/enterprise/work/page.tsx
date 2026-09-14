@@ -7,6 +7,8 @@
 // -> Status -> Readiness impact chain.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { TopNav } from "../../history/ui";
+import { EnterpriseSubNav } from "../_nav";
 
 interface EvidenceSummary {
   evidence_id: string;
@@ -161,6 +163,32 @@ const EMPTY_FILTERS: Filters = {
   due_to: "",
 };
 
+// Read a JSON response defensively. The API contract is "always JSON", but a
+// proxy, edge 500, or crashed handler can still surface an empty or HTML
+// body — and res.json() on that throws the raw
+// "Failed to execute 'json' on 'Response': Unexpected end of JSON input".
+// Never let that raw error reach the user; throw a friendly message instead.
+async function readJson(res: Response): Promise<any> {
+  let text: string;
+  try {
+    text = await res.text();
+  } catch {
+    throw new Error("Could not read the server response. Please retry.");
+  }
+  if (!text.trim()) {
+    throw new Error(
+      res.ok
+        ? "The server returned an empty response. Please retry."
+        : `Request failed (HTTP ${res.status}). Please retry.`
+    );
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("The server returned an unexpected response. Please retry.");
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Detail drawer: Requirement -> Required evidence -> Uploaded versions ->
 // Review decisions -> Status -> Readiness impact
@@ -229,7 +257,7 @@ function ChainDrawer({
         const res = await fetch(
           `/api/enterprise/evidence/${evidenceId}/versions?workspace_id=${workspaceId}`
         );
-        const data = await res.json();
+        const data = await readJson(res);
         if (!res.ok) throw new Error(data.message || data.error || "Failed to load versions.");
         setVersionsByEvidence((m) => ({ ...m, [evidenceId]: { versions: data.versions, reviews: data.reviews } }));
         setExpandedEvidence(evidenceId);
@@ -249,7 +277,7 @@ function ChainDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workspace_id: workspaceId, ...payload }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || data.error || "Request failed.");
       onChanged();
     } catch (e) {
@@ -274,7 +302,7 @@ function ChainDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workspace_id: workspaceId, ...payload }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || data.error || "Update failed.");
       onChanged();
     } catch (e) {
@@ -614,7 +642,7 @@ function AssignDrawer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.message || data.error || "Assignment failed.");
       onAssigned();
       onClose();
@@ -719,7 +747,7 @@ export default function EnterpriseWorkPage() {
     (async () => {
       try {
         const res = await fetch("/api/me");
-        const data = await res.json();
+        const data = await readJson(res);
         const ws = data?.user?.workspace_id as string | undefined;
         if (!ws) {
           setBootError("No workspace found for this account.");
@@ -759,7 +787,7 @@ export default function EnterpriseWorkPage() {
     setForbidden(false);
     try {
       const res = await fetch(`/api/enterprise/work?${buildParams()}`);
-      const data = await res.json();
+      const data = await readJson(res);
       if (res.status === 403) {
         setForbidden(true);
         setItems([]);
@@ -790,11 +818,11 @@ export default function EnterpriseWorkPage() {
           fetch(`/api/businesses`),
         ]);
         if (tRes.ok) {
-          const t = await tRes.json();
+          const t = await readJson(tRes);
           setTeam(t.members ?? []);
         }
         if (bRes.ok) {
-          const b = await bRes.json();
+          const b = await readJson(bRes);
           setBusinesses((b.businesses ?? []).map((x: { id: string; name: string }) => ({ id: x.id, name: x.name })));
         }
       } catch {
@@ -871,15 +899,21 @@ export default function EnterpriseWorkPage() {
 
   if (bootError) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-10">
-        <div role="alert" className="rounded border border-red-200 bg-red-50 px-4 py-3 text-red-800">{bootError}</div>
-      </main>
+      <>
+        <TopNav active="enterprise" />
+        <main className="mx-auto max-w-7xl px-4 py-10">
+          <div role="alert" className="rounded border border-red-200 bg-red-50 px-4 py-3 text-red-800">{bootError}</div>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <>
+      <TopNav active="enterprise" />
+      <main className="mx-auto max-w-[1400px] px-4 py-6">
+      <EnterpriseSubNav active="/enterprise/work" />
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Work queue</h1>
           <p className="text-sm text-gray-600">Requirements, owners, evidence review, and readiness — one operational list.</p>
@@ -1178,6 +1212,7 @@ export default function EnterpriseWorkPage() {
           onAssigned={refresh}
         />
       )}
-    </main>
+      </main>
+    </>
   );
 }
