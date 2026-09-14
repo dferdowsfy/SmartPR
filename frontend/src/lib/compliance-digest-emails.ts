@@ -5,9 +5,15 @@
  * ACTION REQUIRED, COMING UP, WHAT CHANGED, SMARTPR NEEDS FROM YOU, and
  * COMPLIANCE HEALTH. Only relevant sections render.
  *
- * Pure functions: buildDigestEmail() takes the digest facts and returns
- * { subject, text, html }. Sending lives in the cron route; this module never
- * touches the network so it is trivially unit-testable.
+ * Template architecture (founder-managed via Supabase `email_templates`):
+ * code renders the dynamic *section blocks* (this module) and the stored
+ * template is the *wrapper* with {{placeholders}}. Templates carry no logic —
+ * only substitution. buildDigestEmail() uses the built-in wrapper;
+ * buildDigestEmailWithTemplate() accepts a Supabase-loaded wrapper and falls
+ * back to built-in when it is null.
+ *
+ * Pure functions: this module never touches the network so it is trivially
+ * unit-testable.
  *
  * Branding follows getsmartpr.com: warm paper #f4f1ea, ink #161616, brand
  * deep teal #245c5c, IBM Plex Sans. Voice: plain, direct, warm.
@@ -29,6 +35,10 @@ import {
   type DevelopmentConfidence,
   type DigestLang,
 } from "./compliance-regulatory";
+import {
+  substitutePlaceholders,
+  type EmailTemplateVariable,
+} from "./email-templates";
 
 export interface DigestActionItem {
   obligationId: string;
@@ -445,122 +455,28 @@ function needItemHtml(item: DigestNeedItem, c: Copy, lang: DigestLang): string {
   );
 }
 
-export function buildDigestEmail(input: DigestEmailInput): BuiltEmail {
+// ---------------------------------------------------------------------------
+// Section blocks + template wrappers
+//
+// Code renders the dynamic section blocks; the Supabase template is the
+// wrapper with {{placeholders}}. Templates carry no logic — only substitution.
+// ---------------------------------------------------------------------------
+
+export interface DigestBlocks {
+  html: Record<string, string>;
+  text: Record<string, string>;
+  subjectVars: Record<string, string>;
+}
+
+/** Pure: render every dynamic block of the digest. Empty string = section not shown. */
+export function renderDigestBlocks(input: DigestEmailInput): DigestBlocks {
   const { lang } = input;
   const c = copyFor(lang);
   const greeting = input.userName ? `${c.greeting} ${input.userName},` : `${c.greeting},`;
-  const subject = lang === "es"
-    ? `SmartPR: tu resumen de cumplimiento — ${input.businessLabel} — ${input.monthLabel}`
-    : `SmartPR Monthly Compliance Digest — ${input.businessLabel} — ${input.monthLabel}`;
-
-  const hasContent =
-    input.actionRequired.length > 0 ||
-    input.comingUp.length > 0 ||
-    input.changes.length > 0 ||
-    input.needsFromYou.length > 0;
   const summary = executiveSummary(lang, input.actionCount, input.upcomingCount, input.changeCount);
-
-  // ------------------------------------------------------------------ text --
-  const t: string[] = [`SMARTPR MONTHLY COMPLIANCE DIGEST — ${input.businessLabel} — ${input.monthLabel}`, "", greeting, "", summary, ""];
-  if (input.actionRequired.length) {
-    t.push(c.actionTitle.toUpperCase());
-    for (const i of input.actionRequired) {
-      t.push(`• ${i.name} (${i.businessName}${i.agency ? ` · ${i.agency}` : ""}) — ${i.daysRemaining !== null ? daysLabel(i.daysRemaining, lang) : stalledLabel(i.daysStalled ?? 0, lang)}`);
-      t.push(`  ${c.whatToDo}: ${i.whatToDo}`);
-      t.push(`  ${c.whyApplies}: ${i.whyApplies}`);
-      t.push(`  ${c.riskLabel}: ${i.risk}`);
-    }
-    t.push("");
-  }
-  if (input.comingUp.length) {
-    t.push(c.comingTitle.toUpperCase());
-    for (const i of input.comingUp) t.push(`• ${i.name} — ${i.dueDate} (${daysLabel(i.daysRemaining, lang)}). ${c.prepNowLabel}: ${i.prepNow}`);
-    t.push("");
-  }
-  t.push(c.changedTitle.toUpperCase());
-  if (input.changes.length) {
-    for (const ch of input.changes) {
-      t.push(`• ${ch.title} — ${ch.sourceName}${ch.effectiveDate ? ` (${c.effectiveDate}: ${ch.effectiveDate})` : ""}`);
-      t.push(`  ${c.whyAffects}: ${ch.whyAffects}`);
-      if (ch.recommendedAction) t.push(`  ${c.recommendedAction}: ${ch.recommendedAction}`);
-    }
-  } else {
-    t.push(c.changedFallback);
-  }
-  t.push("");
-  if (input.needsFromYou.length) {
-    t.push(c.needsTitle.toUpperCase());
-    for (const n of input.needsFromYou) t.push(`• ${n.name} (${n.businessName}): ${n.detail}`);
-    t.push("");
-  }
   const h = input.health;
-  t.push(
-    c.healthTitle.toUpperCase(),
-    `${h.percent}% ${c.healthCurrent} — ${h.current}/${h.total}`
-  );
-  t.push(
-    `${c.openComplianceCenter}: ${input.complianceCenterUrl}`,
-    "",
-    c.footer,
-    `${c.manageLabel}: ${input.manageUrl}`,
-    `${c.unsubLabel}: ${input.unsubscribeUrl}`
-  );
 
-  // ------------------------------------------------------------------- html --
-  const sections: string[] = [];
-
-  if (input.actionRequired.length) {
-    sections.push(
-      sectionShell(c.actionTitle, input.actionRequired.map((i) => actionItemHtml(i, c, lang)).join("") + overflowLine(input.overflow.action, c), "action")
-    );
-  }
-
-  if (input.comingUp.length) {
-    const w60 = input.comingUp.filter((i) => i.window === "60");
-    const w90 = input.comingUp.filter((i) => i.window === "90");
-    let inner = "";
-    if (w60.length) inner += `<div style="font-size:15px;font-weight:700;color:${INK};margin:0 0 8px;">${escapeHtml(c.coming60)}</div>` + w60.map((i) => comingItemHtml(i, c, lang)).join("");
-    if (w90.length) inner += `<div style="font-size:15px;font-weight:700;color:${INK};margin:14px 0 8px;">${escapeHtml(c.coming90)}</div>` + w90.map((i) => comingItemHtml(i, c, lang)).join("");
-    sections.push(sectionShell(c.comingTitle, inner + overflowLine(input.overflow.coming, c), "coming"));
-  }
-
-  {
-    const hasChanges = input.changes.length > 0;
-    const inner = hasChanges
-      ? input.changes.map((ch) => changeItemHtml(ch, c, lang)).join("") + overflowLine(input.overflow.changes, c)
-      : `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:16px;font-size:15px;color:${MUTED};line-height:1.6;">${escapeHtml(c.changedFallback)}</div>`;
-    sections.push(sectionShell(c.changedTitle, inner, hasChanges ? "changed" : "changedOk"));
-  }
-
-  if (input.needsFromYou.length) {
-    sections.push(
-      sectionShell(c.needsTitle, input.needsFromYou.map((n) => needItemHtml(n, c, lang)).join("") + overflowLine(input.overflow.needs, c), "needs")
-    );
-  }
-
-  // Compliance health.
-  const healthInner =
-    `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:20px 16px;text-align:center;">` +
-    `<div style="font-size:40px;font-weight:800;color:${TEAL};">${h.percent}%</div>` +
-    `<div style="font-size:15px;font-weight:700;color:${INK};margin-top:2px;">${escapeHtml(c.healthCurrent)}</div>` +
-    `<div style="font-size:15px;color:${MUTED};margin-top:10px;line-height:1.7;">` +
-    `${h.current}/${h.total} · ${c.actionTitle.toLowerCase()}: ${h.upcoming} · ${lang === "es" ? "por verificar" : "needs verification"}: ${h.needsVerification} · ${lang === "es" ? "vencidos críticos" : "critical overdue"}: ${h.overdue}` +
-    `</div>` +
-    `<div style="margin-top:14px;"><a href="${escapeHtml(input.complianceCenterUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openComplianceCenter)}</a></div>` +
-    `</div>`;
-  sections.push(sectionShell(c.healthTitle, healthInner, "health"));
-
-  const allClearBanner = !hasContent
-    ? `<div style="margin:0 0 20px;background:#e6f0ec;border:1px solid #bcd9cd;border-radius:12px;padding:18px 16px;text-align:center;">` +
-      `<div style="font-size:20px;font-weight:800;color:${TEAL};">${escapeHtml(c.allClearTitle)}</div>` +
-      `<p style="margin:8px 0 0;font-size:16px;color:#2b2b2b;line-height:1.6;">${escapeHtml(c.allClearBody)}</p></div>`
-    : "";
-
-  const html =
-    `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">` +
-    `<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet"></head>` +
-    `<body style="margin:0;background:${PAPER};">` +
-    `<div style="max-width:620px;margin:0 auto;padding:28px 10px;font-family:${FONT};color:${INK};">` +
+  const header =
     `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:6px 4px 18px;">` +
     `<div style="min-width:0;">` +
     `<div style="font-size:14px;font-weight:800;letter-spacing:0.14em;color:${TEAL};">SMARTPR MONTHLY COMPLIANCE DIGEST</div>` +
@@ -571,20 +487,207 @@ export function buildDigestEmail(input: DigestEmailInput): BuiltEmail {
     `<div style="font-size:30px;font-weight:800;color:#3f7d4e;line-height:1.1;">${h.percent}%</div>` +
     `<div style="font-size:14px;font-weight:700;color:${INK};margin-top:2px;">${escapeHtml(c.healthCurrent)}</div>` +
     `</div>` +
-    `</div>` +
+    `</div>`;
+
+  const introCard =
     `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:18px;margin:0 0 20px;">` +
     `<p style="margin:0;font-size:16px;line-height:1.65;color:${INK};">${escapeHtml(greeting)}</p>` +
     `<p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#2b2b2b;">${escapeHtml(summary)}</p>` +
+    `</div>`;
+
+  const hasContent =
+    input.actionRequired.length > 0 ||
+    input.comingUp.length > 0 ||
+    input.changes.length > 0 ||
+    input.needsFromYou.length > 0;
+
+  const allClear = !hasContent
+    ? `<div style="margin:0 0 20px;background:#e6f0ec;border:1px solid #bcd9cd;border-radius:12px;padding:18px 16px;text-align:center;">` +
+      `<div style="font-size:20px;font-weight:800;color:${TEAL};">${escapeHtml(c.allClearTitle)}</div>` +
+      `<p style="margin:8px 0 0;font-size:16px;color:#2b2b2b;line-height:1.6;">${escapeHtml(c.allClearBody)}</p></div>`
+    : "";
+
+  let actionRequired = "";
+  if (input.actionRequired.length) {
+    actionRequired = sectionShell(
+      c.actionTitle,
+      input.actionRequired.map((i) => actionItemHtml(i, c, lang)).join("") + overflowLine(input.overflow.action, c),
+      "action"
+    );
+  }
+
+  let comingUp = "";
+  if (input.comingUp.length) {
+    const w60 = input.comingUp.filter((i) => i.window === "60");
+    const w90 = input.comingUp.filter((i) => i.window === "90");
+    let inner = "";
+    if (w60.length) inner += `<div style="font-size:15px;font-weight:700;color:${INK};margin:0 0 8px;">${escapeHtml(c.coming60)}</div>` + w60.map((i) => comingItemHtml(i, c, lang)).join("");
+    if (w90.length) inner += `<div style="font-size:15px;font-weight:700;color:${INK};margin:14px 0 8px;">${escapeHtml(c.coming90)}</div>` + w90.map((i) => comingItemHtml(i, c, lang)).join("");
+    comingUp = sectionShell(c.comingTitle, inner + overflowLine(input.overflow.coming, c), "coming");
+  }
+
+  const hasChanges = input.changes.length > 0;
+  const changedInner = hasChanges
+    ? input.changes.map((ch) => changeItemHtml(ch, c, lang)).join("") + overflowLine(input.overflow.changes, c)
+    : `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:16px;font-size:15px;color:${MUTED};line-height:1.6;">${escapeHtml(c.changedFallback)}</div>`;
+  const whatChanged = sectionShell(c.changedTitle, changedInner, hasChanges ? "changed" : "changedOk");
+
+  let needsFromYou = "";
+  if (input.needsFromYou.length) {
+    needsFromYou = sectionShell(
+      c.needsTitle,
+      input.needsFromYou.map((n) => needItemHtml(n, c, lang)).join("") + overflowLine(input.overflow.needs, c),
+      "needs"
+    );
+  }
+
+  const healthInner =
+    `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:20px 16px;text-align:center;">` +
+    `<div style="font-size:40px;font-weight:800;color:${TEAL};">${h.percent}%</div>` +
+    `<div style="font-size:15px;font-weight:700;color:${INK};margin-top:2px;">${escapeHtml(c.healthCurrent)}</div>` +
+    `<div style="font-size:15px;color:${MUTED};margin-top:10px;line-height:1.7;">` +
+    `${h.current}/${h.total} · ${c.actionTitle.toLowerCase()}: ${h.upcoming} · ${lang === "es" ? "por verificar" : "needs verification"}: ${h.needsVerification} · ${lang === "es" ? "vencidos críticos" : "critical overdue"}: ${h.overdue}` +
     `</div>` +
-    allClearBanner +
-    sections.join("") +
+    `<div style="margin-top:14px;"><a href="${escapeHtml(input.complianceCenterUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openComplianceCenter)}</a></div>` +
+    `</div>`;
+  const health = sectionShell(c.healthTitle, healthInner, "health");
+
+  const dashboardCta =
     `<div style="text-align:center;padding:6px 12px 10px;">` +
     `<a href="${escapeHtml(input.dashboardUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openDashboard)}</a>` +
-    `</div>` +
+    `</div>`;
+
+  const footer =
     `<p style="margin:10px 0 0;padding:0 16px 18px;color:${MUTED};font-size:14px;line-height:1.6;text-align:center;">${escapeHtml(c.footer)}<br>` +
     `<a href="${escapeHtml(input.manageUrl)}" style="color:${MUTED};">${escapeHtml(c.manageLabel)}</a> · ` +
-    `<a href="${escapeHtml(input.unsubscribeUrl)}" style="color:${MUTED};">${escapeHtml(c.unsubLabel)}</a></p>` +
-    `</div></body></html>`;
+    `<a href="${escapeHtml(input.unsubscribeUrl)}" style="color:${MUTED};">${escapeHtml(c.unsubLabel)}</a></p>`;
 
-  return { subject: `[SmartPR] ${subject}`, text: t.join("\n"), html };
+  // ---- text blocks (each section ends with a blank line, matching the legacy layout) ----
+  const textAction = input.actionRequired.length
+    ? `${c.actionTitle.toUpperCase()}\n` +
+      input.actionRequired.map((i) =>
+        `• ${i.name} (${i.businessName}${i.agency ? ` · ${i.agency}` : ""}) — ${i.daysRemaining !== null ? daysLabel(i.daysRemaining, lang) : stalledLabel(i.daysStalled ?? 0, lang)}\n` +
+        `  ${c.whatToDo}: ${i.whatToDo}\n` +
+        `  ${c.whyApplies}: ${i.whyApplies}\n` +
+        `  ${c.riskLabel}: ${i.risk}`
+      ).join("\n") + "\n\n"
+    : "";
+  const textComing = input.comingUp.length
+    ? `${c.comingTitle.toUpperCase()}\n` +
+      input.comingUp.map((i) => `• ${i.name} — ${i.dueDate} (${daysLabel(i.daysRemaining, lang)}). ${c.prepNowLabel}: ${i.prepNow}`).join("\n") + "\n\n"
+    : "";
+  const textChanged = hasChanges
+    ? `${c.changedTitle.toUpperCase()}\n` +
+      input.changes.map((ch) => {
+        const lines = [`• ${ch.title} — ${ch.sourceName}${ch.effectiveDate ? ` (${c.effectiveDate}: ${ch.effectiveDate})` : ""}`, `  ${c.whyAffects}: ${ch.whyAffects}`];
+        if (ch.recommendedAction) lines.push(`  ${c.recommendedAction}: ${ch.recommendedAction}`);
+        return lines.join("\n");
+      }).join("\n") + "\n\n"
+    : `${c.changedTitle.toUpperCase()}\n${c.changedFallback}\n\n`;
+  const textNeeds = input.needsFromYou.length
+    ? `${c.needsTitle.toUpperCase()}\n` +
+      input.needsFromYou.map((n) => `• ${n.name} (${n.businessName}): ${n.detail}`).join("\n") + "\n\n"
+    : "";
+  const textHealth = `${c.healthTitle.toUpperCase()}\n${h.percent}% ${c.healthCurrent} — ${h.current}/${h.total}\n`;
+
+  return {
+    html: {
+      header,
+      intro_card: introCard,
+      all_clear: allClear,
+      action_required: actionRequired,
+      coming_up: comingUp,
+      what_changed: whatChanged,
+      needs_from_you: needsFromYou,
+      health,
+      dashboard_cta: dashboardCta,
+      footer,
+    },
+    text: {
+      text_header: `SMARTPR MONTHLY COMPLIANCE DIGEST — ${input.businessLabel} — ${input.monthLabel}\n\n${greeting}\n\n${summary}`,
+      text_action_required: textAction,
+      text_coming_up: textComing,
+      text_what_changed: textChanged,
+      text_needs_from_you: textNeeds,
+      text_health: textHealth,
+      text_footer:
+        `${c.openComplianceCenter}: ${input.complianceCenterUrl}\n\n${c.footer}\n` +
+        `${c.manageLabel}: ${input.manageUrl}\n${c.unsubLabel}: ${input.unsubscribeUrl}`,
+    },
+    subjectVars: {
+      business_label: input.businessLabel,
+      month_label: input.monthLabel,
+    },
+  };
+}
+
+export interface DigestWrapper {
+  subject: string;
+  html_template: string;
+  text_template: string;
+}
+
+export const DIGEST_TEMPLATE_VARIABLES: EmailTemplateVariable[] = [
+  { name: "business_label", description: "Subject: business name (or 'N businesses')." },
+  { name: "month_label", description: "Subject: e.g. 'October 2026' / 'octubre de 2026'." },
+  { name: "header", description: "HTML: brand header — title, business, month, health-score badge." },
+  { name: "intro_card", description: "HTML: greeting + 2–3 sentence executive summary." },
+  { name: "all_clear", description: "HTML: all-clear banner (empty unless nothing needs attention)." },
+  { name: "action_required", description: "HTML: ACTION REQUIRED section (empty when none)." },
+  { name: "coming_up", description: "HTML: COMING UP section (empty when none)." },
+  { name: "what_changed", description: "HTML: WHAT CHANGED section (always rendered; shows fallback when no verified changes)." },
+  { name: "needs_from_you", description: "HTML: SMARTPR NEEDS FROM YOU section (empty when none)." },
+  { name: "health", description: "HTML: COMPLIANCE HEALTH section with score and CTA." },
+  { name: "dashboard_cta", description: "HTML: centered 'Open SmartPR' button." },
+  { name: "footer", description: "HTML: footer with preference + unsubscribe links." },
+  { name: "text_header", description: "Text: title line, greeting, executive summary." },
+  { name: "text_action_required", description: "Text: action items (empty when none)." },
+  { name: "text_coming_up", description: "Text: upcoming items (empty when none)." },
+  { name: "text_what_changed", description: "Text: changes or the no-changes fallback." },
+  { name: "text_needs_from_you", description: "Text: missing evidence/dates/info (empty when none)." },
+  { name: "text_health", description: "Text: health score line." },
+  { name: "text_footer", description: "Text: footer with preference + unsubscribe links." },
+];
+
+/** The built-in wrapper — byte-equivalent to the pre-template digest layout. */
+export function builtinDigestWrapper(lang: DigestLang): DigestWrapper {
+  return {
+    subject:
+      lang === "es"
+        ? "[SmartPR] SmartPR: tu resumen de cumplimiento — {{business_label}} — {{month_label}}"
+        : "[SmartPR] SmartPR Monthly Compliance Digest — {{business_label}} — {{month_label}}",
+    html_template:
+      `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet"></head>` +
+      `<body style="margin:0;background:${PAPER};">` +
+      `<div style="max-width:620px;margin:0 auto;padding:28px 10px;font-family:${FONT};color:${INK};">` +
+      `{{header}}{{intro_card}}{{all_clear}}{{action_required}}{{coming_up}}{{what_changed}}{{needs_from_you}}{{health}}{{dashboard_cta}}{{footer}}` +
+      `</div></body></html>`,
+    text_template:
+      `{{text_header}}\n\n{{text_action_required}}{{text_coming_up}}{{text_what_changed}}{{text_needs_from_you}}{{text_health}}{{text_footer}}`,
+  };
+}
+
+/**
+ * Build the digest from a template wrapper. Pass null to use the built-in
+ * wrapper (fallback when the Supabase template is missing or failed to load).
+ */
+export function buildDigestEmailWithTemplate(
+  input: DigestEmailInput,
+  tmpl: DigestWrapper | null
+): BuiltEmail {
+  const blocks = renderDigestBlocks(input);
+  const w = tmpl ?? builtinDigestWrapper(input.lang);
+  const subject = substitutePlaceholders(w.subject, blocks.subjectVars);
+  const html = substitutePlaceholders(w.html_template, blocks.html);
+  const text = substitutePlaceholders(w.text_template, blocks.text);
+  for (const [name, r] of [["subject", subject], ["html", html], ["text", text]] as const) {
+    if (r.unknown.length) console.warn(`[digest-email] unknown placeholders in ${name}: ${r.unknown.join(", ")}`);
+  }
+  return { subject: subject.output, text: text.output, html: html.output };
+}
+
+/** Legacy entry point — identical output to before, via the built-in wrapper. */
+export function buildDigestEmail(input: DigestEmailInput): BuiltEmail {
+  return buildDigestEmailWithTemplate(input, null);
 }

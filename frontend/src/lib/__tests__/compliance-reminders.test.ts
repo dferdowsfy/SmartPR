@@ -262,6 +262,8 @@ interface FakeTable {
   subscriptions: Record<string, string>;
   prefs: Record<string, unknown>[];
   users: Record<string, { email: string | null; lang: string }>;
+  templates: Record<string, unknown>[];
+  archive: Record<string, unknown>[];
 }
 
 function makeDb(t: FakeTable) {
@@ -384,6 +386,29 @@ function makeDb(t: FakeTable) {
         });
         return { rows: [], rowCount: 1 };
       }
+      // email_templates seed / load / archive (never throws in production either)
+      if (s.includes("INSERT INTO email_templates")) {
+        const exists = t.templates.some((x) => String(x.key) === String(params[0]) && String(x.lang) === String(params[1]));
+        if (!exists) {
+          t.templates.push({
+            key: params[0], lang: params[1], subject: params[2], html_template: params[3],
+            text_template: params[4], updated_at: "2026-09-14T00:00:00Z", updated_by: "seed",
+          });
+        }
+        return { rows: [], rowCount: exists ? 0 : 1 };
+      }
+      if (s.includes("FROM email_templates")) {
+        const row = t.templates.find((x) => String(x.key) === String(params[0]) && String(x.lang) === String(params[1]));
+        return { rows: row ? [row] : [] };
+      }
+      if (s.includes("INSERT INTO email_archive")) {
+        t.archive.push({
+          template_key: params[0], lang: params[1], template_source: params[2],
+          template_updated_at: params[3], recipient_user_id: params[4], workspace_id: params[5],
+          recipient_email: params[6], subject: params[7], html_body: params[8], text_body: params[9],
+        });
+        return { rows: [], rowCount: 1 };
+      }
       throw new Error(`unhandled query in fake db: ${s.slice(0, 120)}`);
     },
   };
@@ -422,6 +447,8 @@ function baseTables(): FakeTable {
     subscriptions: { "w-paid": "core", "w-free": "free" },
     prefs: [],
     users: { u1: { email: "owner@example.com", lang: "en" } },
+    templates: [],
+    archive: [],
   };
 }
 
@@ -517,6 +544,45 @@ test("cron sends the stalled nudge once per 14 days", async () => {
     // Second run: the 14-day cap suppresses a repeat.
     const s2 = await runComplianceReminderCron(db as never, new Date("2026-09-14T12:00:00Z"));
     assert.equal(s2.stalled_sent, 0);
+  } finally {
+    setComplianceMailerForTests(null);
+  }
+});
+
+test("cron uses the stored reminder template and archives the send", async () => {
+  const sent: Record<string, unknown>[] = [];
+  setComplianceMailerForTests({
+    sendMail: async (opts) => {
+      sent.push(opts as Record<string, unknown>);
+      return {};
+    },
+  });
+  try {
+    const t = baseTables();
+    t.templates.push({
+      key: "reminder_30", lang: "en",
+      subject: "CUSTOM-30 {{subject_line}}",
+      html_template: "<p>CUSTOM-30</p>{{details}}",
+      text_template: "CUSTOM-30 {{text_details}}",
+      updated_at: "2026-09-13T00:00:00Z", updated_by: "darius@getsmartpr.com",
+    });
+    const db = makeDb(t);
+    const s = await runComplianceReminderCron(db as never, new Date("2026-09-14T12:00:00Z"));
+    assert.equal(s.renewal_sent, 1);
+    assert.equal(sent.length, 1);
+    assert.match(String(sent[0].subject), /^CUSTOM-30 /);
+    assert.ok(String(sent[0].html).includes("<p>CUSTOM-30</p>"));
+    // Founder edit survived seeding.
+    const row = t.templates.find((x) => x.key === "reminder_30" && x.lang === "en");
+    assert.equal(row?.updated_by, "darius@getsmartpr.com");
+    // Archive written with template version.
+    assert.equal(t.archive.length, 1);
+    const a = t.archive[0];
+    assert.equal(a.template_key, "reminder_30");
+    assert.equal(a.template_source, "db");
+    assert.equal(a.template_updated_at, "2026-09-13T00:00:00Z");
+    assert.equal(a.recipient_email, "owner@example.com");
+    assert.match(String(a.subject), /^CUSTOM-30 /);
   } finally {
     setComplianceMailerForTests(null);
   }

@@ -37,7 +37,7 @@ import {
   type PreferenceRow,
 } from "./compliance-reminders";
 import {
-  buildDigestEmail,
+  buildDigestEmailWithTemplate,
   bucketComingItem,
   sortDigestSoonestFirst,
   type DigestActionItem,
@@ -47,6 +47,12 @@ import {
   type DigestHealth,
   type DigestNeedItem,
 } from "./compliance-digest-emails";
+import {
+  archiveEmail,
+  createTemplateCache,
+  ensureEmailTemplatesSeeded,
+} from "./email-templates";
+import { allEmailTemplateDefs } from "./email-template-seeds";
 import {
   developmentApplicability,
   guidanceForRequirement,
@@ -601,6 +607,11 @@ export async function runComplianceDigestCron(db: Db, now = new Date()): Promise
   };
   const period = digestPeriod(now);
 
+  // Founder-managed templates: seed built-ins once (never overwrites admin
+  // edits), then load Supabase wrappers per run with built-in fallback.
+  await ensureEmailTemplatesSeeded(db, allEmailTemplateDefs());
+  const templates = createTemplateCache(db);
+
   const { rows: workspaces } = await db.query<{ workspace_id: string }>(
     `SELECT DISTINCT workspace_id FROM businesses
       WHERE archived = false AND workspace_id IS NOT NULL`
@@ -722,12 +733,31 @@ export async function runComplianceDigestCron(db: Db, now = new Date()): Promise
         manageUrl: `${site}/settings`,
         unsubscribeUrl: `${site}/api/notifications/unsubscribe?token=${signUnsubscribeToken(ownerId)}&lang=${lang}`,
       };
-      const built = buildDigestEmail(emailInput);
+      const tmpl = await templates.get("digest", lang);
+      const built = buildDigestEmailWithTemplate(
+        emailInput,
+        tmpl
+          ? { subject: tmpl.subject, html_template: tmpl.html_template, text_template: tmpl.text_template }
+          : null
+      );
       const ok = await sendComplianceEmail(email, built.subject, built.text, built.html);
       if (!ok) {
         summary.errors.push(`digest send failed for workspace ${workspaceId}`);
         continue;
       }
+      // Archive the sent email: full rendered body + which template rendered it.
+      await archiveEmail(db, {
+        templateKey: "digest",
+        lang,
+        templateSource: tmpl ? "db" : "builtin",
+        templateUpdatedAt: tmpl?.updated_at ?? null,
+        recipientUserId: ownerId,
+        workspaceId,
+        recipientEmail: email,
+        subject: built.subject,
+        htmlBody: built.html,
+        textBody: built.text,
+      });
       // Mark shown developments (only the ones actually included).
       const shownIds = emailInput.changes.map((c) => c.developmentId);
       for (const devId of new Set(shownIds)) {

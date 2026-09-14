@@ -231,6 +231,11 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
                           <ShieldCheck className="i" /> {es ? "Revisión admin" : "Admin Review"}
                         </Link>
                       )}
+                      {user.isAdmin && (
+                        <Link className="uitem" role="menuitem" href="/admin/emails" onClick={() => setMenuOpen(false)}>
+                          <ShieldCheck className="i" /> {es ? "Correos de cumplimiento" : "Compliance emails"}
+                        </Link>
+                      )}
                       <button type="button" className="uitem uitem-danger" role="menuitem" onClick={signOutNow}>
                         <LogOut className="i" /> {es ? "Cerrar sesión" : "Log out"}
                       </button>

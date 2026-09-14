@@ -13,7 +13,19 @@ import { createHmac, randomUUID } from "crypto";
 import nodemailer from "nodemailer";
 import type { Pool, PoolClient } from "pg";
 import { getWorkspacePlanState } from "./billing/access";
-import { buildReminderEmail, tierFromNotificationType, type ReminderEmailInput } from "./compliance-reminder-emails";
+import {
+  buildReminderEmailWithTemplate,
+  reminderTemplateKey,
+  tierFromNotificationType,
+  type ReminderEmailInput,
+} from "./compliance-reminder-emails";
+import {
+  archiveEmail,
+  createTemplateCache,
+  ensureEmailTemplatesSeeded,
+  type TemplateCache,
+} from "./email-templates";
+import { allEmailTemplateDefs } from "./email-template-seeds";
 import { getSiteUrl } from "./siteUrl";
 
 type Db = Pool | PoolClient;
@@ -294,7 +306,8 @@ async function sendRenewalReminder(
   db: Db,
   n: DueNotificationRow,
   ctx: ObligationContext,
-  summary: CronSummary
+  summary: CronSummary,
+  templates: TemplateCache
 ): Promise<void> {
   const tier = tierFromNotificationType(n.type);
   if (!tier || !ctx.due_date) return;
@@ -316,13 +329,32 @@ async function sendRenewalReminder(
     actionUrl: `${getSiteUrl()}/businesses/${businessRef}#obligation-${ctx.obligation_id}`,
     unsubscribeUrl: `${getSiteUrl()}/api/notifications/unsubscribe?token=${signUnsubscribeToken(n.user_id)}`,
   };
-  const built = buildReminderEmail(emailInput);
+  const key = reminderTemplateKey("renewal", tier);
+  const tmpl = await templates.get(key, lang);
+  const built = buildReminderEmailWithTemplate(
+    emailInput,
+    tmpl
+      ? { subject: tmpl.subject, html_template: tmpl.html_template, text_template: tmpl.text_template }
+      : null
+  );
   const ok = await sendComplianceEmail(email, built.subject, built.text, built.html);
   if (ok) {
     await db.query(
       `UPDATE notifications SET status = 'DELIVERED', delivered_at = now() WHERE id = $1 AND status = 'PENDING'`,
       [n.id]
     );
+    await archiveEmail(db, {
+      templateKey: key,
+      lang,
+      templateSource: tmpl ? "db" : "builtin",
+      templateUpdatedAt: tmpl?.updated_at ?? null,
+      recipientUserId: n.user_id,
+      workspaceId: ctx.workspace_id ?? n.workspace_id,
+      recipientEmail: email,
+      subject: built.subject,
+      htmlBody: built.html,
+      textBody: built.text,
+    });
     summary.renewal_sent += 1;
   } else {
     summary.errors.push(`send failed for notification ${n.id}`);
@@ -330,7 +362,7 @@ async function sendRenewalReminder(
 }
 
 /** Stalled filings: IN_PROGRESS obligations untouched for 14+ days, max one nudge per 14 days. */
-async function sweepStalledFilings(db: Db, summary: CronSummary): Promise<void> {
+async function sweepStalledFilings(db: Db, summary: CronSummary, templates: TemplateCache): Promise<void> {
   const { rows } = await db.query<{
     obligation_id: string;
     obligation_name: string;
@@ -385,7 +417,7 @@ async function sweepStalledFilings(db: Db, summary: CronSummary): Promise<void> 
     }
     const lang = await userLang(db, row.user_id);
     const businessRef = row.business_public_id || row.business_id;
-    const built = buildReminderEmail({
+    const emailInput: ReminderEmailInput = {
       kind: "stalled",
       lang,
       obligationName: row.obligation_name,
@@ -393,7 +425,14 @@ async function sweepStalledFilings(db: Db, summary: CronSummary): Promise<void> 
       agency: row.agency,
       actionUrl: `${getSiteUrl()}/businesses/${businessRef}#obligation-${row.obligation_id}`,
       unsubscribeUrl: `${getSiteUrl()}/api/notifications/unsubscribe?token=${signUnsubscribeToken(row.user_id)}`,
-    });
+    };
+    const tmpl = await templates.get("stalled_nudge", lang);
+    const built = buildReminderEmailWithTemplate(
+      emailInput,
+      tmpl
+        ? { subject: tmpl.subject, html_template: tmpl.html_template, text_template: tmpl.text_template }
+        : null
+    );
     const ok = await sendComplianceEmail(email, built.subject, built.text, built.html);
     // Record the nudge (idempotency: the 14-day EXISTS guard above).
     await db.query(
@@ -412,6 +451,20 @@ async function sweepStalledFilings(db: Db, summary: CronSummary): Promise<void> 
     );
     if (ok) summary.stalled_sent += 1;
     else summary.errors.push(`stalled send failed for obligation ${row.obligation_id}`);
+    if (ok) {
+      await archiveEmail(db, {
+        templateKey: "stalled_nudge",
+        lang,
+        templateSource: tmpl ? "db" : "builtin",
+        templateUpdatedAt: tmpl?.updated_at ?? null,
+        recipientUserId: row.user_id,
+        workspaceId: row.workspace_id,
+        recipientEmail: email,
+        subject: built.subject,
+        htmlBody: built.html,
+        textBody: built.text,
+      });
+    }
   }
 }
 
@@ -424,6 +477,11 @@ export async function runComplianceReminderCron(db: Db, now = new Date()): Promi
     skipped_no_date: 0,
     errors: [],
   };
+
+  // Founder-managed templates: seed built-ins once (never overwrites admin
+  // edits), then load Supabase wrappers per run with built-in fallback.
+  await ensureEmailTemplatesSeeded(db, allEmailTemplateDefs());
+  const templates = createTemplateCache(db);
 
   const { rows } = await db.query<DueNotificationRow>(
     `SELECT id, user_id, workspace_id, business_id, obligation_id, type,
@@ -467,12 +525,12 @@ export async function runComplianceReminderCron(db: Db, now = new Date()): Promi
         summary.skipped_no_date += 1;
         continue;
       }
-      await sendRenewalReminder(db, n, ctx, summary);
+      await sendRenewalReminder(db, n, ctx, summary, templates);
     } catch (err) {
       summary.errors.push(`notification ${n.id}: ${(err as Error)?.message || err}`);
     }
   }
 
-  await sweepStalledFilings(db, summary);
+  await sweepStalledFilings(db, summary, templates);
   return summary;
 }

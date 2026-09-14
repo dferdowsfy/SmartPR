@@ -449,6 +449,8 @@ interface FakeTables {
   developments: Row[];
   shows: Row[];
   users: Record<string, { email: string; lang: string; name: string }>;
+  templates: Row[];
+  archive: Row[];
 }
 
 function baseTables(): FakeTables {
@@ -476,6 +478,8 @@ function baseTables(): FakeTables {
     ],
     shows: [],
     users: { u1: { email: "owner@example.com", lang: "en", name: "Darius" } },
+    templates: [],
+    archive: [],
   };
 }
 
@@ -571,6 +575,30 @@ function makeDb(t: FakeTables) {
         const exists = t.digestLog.some((l) => String(l.workspace_id) === String(p[0]) && String(l.period) === String(p[2]));
         if (exists) return { rows: [], rowCount: 0 };
         t.digestLog.push({ workspace_id: p[0], user_id: p[1], period: p[2], item_count: p[3] });
+        return { rows: [], rowCount: 1 };
+      }
+      if (s.includes("INSERT INTO email_templates")) {
+        // Emulates ON CONFLICT (key, lang) DO NOTHING: never overwrites.
+        const exists = t.templates.some((x) => String(x.key) === String(p[0]) && String(x.lang) === String(p[1]));
+        if (!exists) {
+          t.templates.push({
+            key: p[0], lang: p[1], subject: p[2], html_template: p[3],
+            text_template: p[4], variables: JSON.parse(String(p[5])),
+            updated_at: "2026-09-14T00:00:00Z", updated_by: "seed",
+          });
+        }
+        return { rows: [], rowCount: exists ? 0 : 1 };
+      }
+      if (s.includes("FROM email_templates")) {
+        const row = t.templates.find((x) => String(x.key) === String(p[0]) && String(x.lang) === String(p[1]));
+        return { rows: row ? [row] : [] };
+      }
+      if (s.includes("INSERT INTO email_archive")) {
+        t.archive.push({
+          template_key: p[0], lang: p[1], template_source: p[2], template_updated_at: p[3],
+          recipient_user_id: p[4], workspace_id: p[5], recipient_email: p[6],
+          subject: p[7], html_body: p[8], text_body: p[9],
+        });
         return { rows: [], rowCount: 1 };
       }
       throw new Error(`unhandled query in fake db: ${s.slice(0, 120)}`);
@@ -705,4 +733,69 @@ test("classifyObligation never invents dates: unknown-date items stay dateless",
 
 test("DIGEST_CAPS keeps the email readable in under 2 minutes", () => {
   assert.ok(DIGEST_CAPS.action <= 10 && DIGEST_CAPS.coming <= 10 && DIGEST_CAPS.changes <= 6 && DIGEST_CAPS.needs <= 8);
+});
+
+test("cron uses the Supabase template when present and archives the send", async () => {
+  const sent: Row[] = [];
+  setComplianceMailerForTests({ sendMail: async (opts) => { sent.push(opts as Row); return {}; } });
+  try {
+    const t = baseTables();
+    // A founder-customized wrapper already in the table.
+    t.templates.push({
+      key: "digest", lang: "en",
+      subject: "CUSTOM-DIGEST {{business_label}}",
+      html_template: "<html><body><h1>CUSTOM</h1>{{header}}{{action_required}}</body></html>",
+      text_template: "CUSTOM {{text_header}}",
+      variables: [], updated_at: "2026-09-13T00:00:00Z", updated_by: "darius@getsmartpr.com",
+    });
+    const db = makeDb(t);
+    const s = await runComplianceDigestCron(db as never, FIRST_OF_OCT);
+    assert.equal(s.digests_sent, 1);
+    assert.equal(sent.length, 1);
+    // The stored wrapper rendered the send (not the built-in).
+    assert.match(String(sent[0].subject), /^CUSTOM-DIGEST /);
+    assert.ok(String(sent[0].html).includes("<h1>CUSTOM</h1>"));
+    // Seeding did not overwrite the founder's edit.
+    const row = t.templates.find((x) => x.key === "digest" && x.lang === "en");
+    assert.equal(row?.updated_by, "darius@getsmartpr.com");
+    // The send was archived with its template version.
+    assert.equal(t.archive.length, 1);
+    const a = t.archive[0];
+    assert.equal(a.template_key, "digest");
+    assert.equal(a.template_source, "db");
+    assert.equal(a.template_updated_at, "2026-09-13T00:00:00Z");
+    assert.equal(a.recipient_email, "owner@example.com");
+    assert.equal(a.workspace_id, "w-op");
+    assert.match(String(a.subject), /^CUSTOM-DIGEST /);
+    assert.ok(String(a.html_body).includes("<h1>CUSTOM</h1>"));
+  } finally {
+    setComplianceMailerForTests(null);
+  }
+});
+
+test("cron falls back to the built-in wrapper and still archives when templates are missing", async () => {
+  const sent: Row[] = [];
+  setComplianceMailerForTests({ sendMail: async (opts) => { sent.push(opts as Row); return {}; } });
+  try {
+    const t = baseTables();
+    // Simulate a DB where the SELECT finds nothing: drop the seed rows after seeding.
+    const db = makeDb(t);
+    const origQuery = db.query;
+    db.query = (async (sql: string, params: unknown[] = []) => {
+      const res = await (origQuery as (s: string, p?: unknown[]) => Promise<{ rows: Row[]; rowCount?: number | null }>)(
+        sql, params
+      );
+      if (String(sql).includes("FROM email_templates")) return { rows: [], rowCount: 0 };
+      return res;
+    }) as typeof db.query;
+    const s = await runComplianceDigestCron(db as never, FIRST_OF_OCT);
+    assert.equal(s.digests_sent, 1);
+    assert.equal(sent.length, 1);
+    assert.match(String(sent[0].subject), /Monthly Compliance Digest/);
+    assert.equal(t.archive.length, 1);
+    assert.equal(t.archive[0].template_source, "builtin");
+    assert.equal(t.archive[0].template_updated_at, null);
+  } finally {
+    setComplianceMailerForTests(null);
+  }
 });

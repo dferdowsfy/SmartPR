@@ -278,6 +278,47 @@ CREATE TABLE IF NOT EXISTS regulatory_development_shows (
 );
 CREATE INDEX IF NOT EXISTS idx_regdev_shows_workspace ON regulatory_development_shows (workspace_id);
 
+-- Founder-manageable compliance email templates: the *wrapper* (subject +
+-- HTML + text) for each compliance email, editable from /admin/emails or the
+-- Supabase Table Editor. Code renders the dynamic section blocks and
+-- substitutes them into the {{placeholders}} — templates carry no logic.
+-- Seed rows are INSERT ... ON CONFLICT DO NOTHING so an admin's edits are
+-- never overwritten by a later deploy or cron run. A missing row or a
+-- failed load never drops a send: the cron falls back to the built-in
+-- wrapper and still sends.
+CREATE TABLE IF NOT EXISTS email_templates (
+  key TEXT NOT NULL,
+  lang TEXT NOT NULL CHECK (lang IN ('en', 'es')),
+  subject TEXT NOT NULL,
+  html_template TEXT NOT NULL,
+  text_template TEXT NOT NULL,
+  variables JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_by TEXT,
+  PRIMARY KEY (key, lang)
+);
+
+-- Archive of every compliance email actually sent: the full rendered body,
+-- which template rendered it, and which template version (updated_at) was
+-- used. Written only on successful sends; archiving never throws.
+CREATE TABLE IF NOT EXISTS email_archive (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_key TEXT NOT NULL,
+  lang TEXT NOT NULL,
+  template_source TEXT NOT NULL CHECK (template_source IN ('db', 'builtin')),
+  template_updated_at TIMESTAMPTZ,
+  recipient_user_id UUID,
+  workspace_id UUID,
+  recipient_email TEXT,
+  subject TEXT NOT NULL,
+  html_body TEXT NOT NULL,
+  text_body TEXT NOT NULL,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_email_archive_recipient ON email_archive (recipient_email, sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_email_archive_workspace ON email_archive (workspace_id, sent_at DESC);
+
 -- Admin allowlist, manageable from the Supabase dashboard: insert an email
 -- to grant that user admin access (admin tools + deliverables bypass).
 -- The ADMIN_EMAILS env var remains as an additional source.

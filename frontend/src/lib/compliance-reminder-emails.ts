@@ -1,13 +1,25 @@
 /**
  * Compliance-reminder email templates (English + Puerto Rican Spanish).
  *
- * Pure functions: buildReminderEmail() takes the reminder facts and returns
- * { subject, text, html }. Sending lives in the cron route; this module never
- * touches the network so it is trivially unit-testable.
+ * Template architecture (founder-managed via Supabase `email_templates`):
+ * code renders the dynamic *section blocks* (this module) and the stored
+ * template is the *wrapper* with {{placeholders}}. Templates carry no logic —
+ * only substitution. buildReminderEmail() uses the built-in wrapper;
+ * buildReminderEmailWithTemplate() accepts a Supabase-loaded wrapper and
+ * falls back to built-in when it is null.
+ *
+ * Pure functions: this module never touches the network so it is trivially
+ * unit-testable.
  *
  * Spanish copy is boricua Spanish — direct, warm, "radicar", "patrono",
  * "se te vence" — never neutral/LatAm phrasing.
  */
+
+import {
+  substitutePlaceholders,
+  type EmailTemplateKey,
+  type EmailTemplateVariable,
+} from "./email-templates";
 
 export type ReminderTier = 60 | 30 | 7;
 export type ReminderKind = "renewal" | "stalled";
@@ -33,6 +45,14 @@ export interface BuiltEmail {
   subject: string;
   text: string;
   html: string;
+}
+
+/** Template key for a reminder send. */
+export function reminderTemplateKey(kind: ReminderKind, tier?: ReminderTier): EmailTemplateKey {
+  if (kind === "stalled") return "stalled_nudge";
+  if (tier === 60) return "reminder_60";
+  if (tier === 7) return "reminder_7";
+  return "reminder_30";
 }
 
 function escapeHtml(s: string): string {
@@ -111,9 +131,16 @@ function copyFor(input: ReminderEmailInput): Copy {
   };
 }
 
-export function buildReminderEmail(input: ReminderEmailInput): BuiltEmail {
+export interface ReminderBlocks {
+  html: Record<string, string>;
+  text: Record<string, string>;
+  subjectVars: Record<string, string>;
+}
+
+/** Pure: render every dynamic block of a reminder email. */
+export function renderReminderBlocks(input: ReminderEmailInput): ReminderBlocks {
   if (input.kind === "renewal" && !input.dueDate) {
-    throw new Error("buildReminderEmail: dueDate is required for renewal reminders");
+    throw new Error("renderReminderBlocks: dueDate is required for renewal reminders");
   }
   const copy = copyFor(input);
   const { lang, obligationName, businessName, agency, missingItems } = input;
@@ -130,49 +157,124 @@ export function buildReminderEmail(input: ReminderEmailInput): BuiltEmail {
     ]);
   }
 
-  const textLines = [
-    `SmartPR — ${copy.headline}`,
-    "",
-    copy.intro,
-    "",
-    ...detailRows.map(([k, v]) => `${k}: ${v}`),
-  ];
-  if (input.kind === "renewal" && input.tier === 30 && missingItems?.length) {
-    textLines.push("", lang === "es" ? "Todavía te falta:" : "Still missing:");
-    for (const item of missingItems) textLines.push(`- ${item}`);
-  }
-  textLines.push("", `${copy.cta}: ${input.actionUrl}`, "", copy.footer, `${lang === "es" ? "Darme de baja" : "Unsubscribe"}: ${input.unsubscribeUrl}`);
+  const missingLabel = lang === "es" ? "Todavía te falta:" : "Still missing:";
+  const showMissing = input.kind === "renewal" && input.tier === 30 && !!missingItems?.length;
 
-  const rowsHtml = detailRows
-    .map(
-      ([k, v]) =>
-        `<tr><td style="padding:8px 12px;color:#5b6b7b;font-size:13px;width:38%;">${escapeHtml(k)}</td>` +
-        `<td style="padding:8px 12px;color:#12212f;font-size:13px;">${escapeHtml(v)}</td></tr>`
-    )
-    .join("");
-  const missingHtml =
-    input.kind === "renewal" && input.tier === 30 && missingItems?.length
-      ? `<div style="padding:4px 12px 12px;"><div style="font-size:13px;font-weight:700;color:#12212f;margin-bottom:6px;">${
-          lang === "es" ? "Todavía te falta:" : "Still missing:"
-        }</div><ul style="margin:0;padding-left:20px;color:#5b6b7b;font-size:13px;">${missingItems
-          .map((m) => `<li>${escapeHtml(m)}</li>`)
-          .join("")}</ul></div>`
-      : "";
-  const html =
-    `<!DOCTYPE html><html><body style="margin:0;background:#f2f5f7;">` +
-    `<div style="max-width:560px;margin:0 auto;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">` +
+  const header =
     `<div style="background:#0f2a43;border-radius:12px 12px 0 0;padding:20px 24px;">` +
     `<div style="color:#fff;font-size:20px;font-weight:700;">SmartPR</div>` +
-    `<div style="color:#9fb4c7;font-size:14px;margin-top:2px;">${escapeHtml(copy.headline)}</div></div>` +
-    `<div style="background:#fff;border-radius:0 0 12px 12px;padding:16px 12px;">` +
-    `<p style="margin:0 0 12px;padding:0 12px;color:#12212f;font-size:14px;line-height:1.5;">${escapeHtml(copy.intro)}</p>` +
-    `<table role="presentation" style="width:100%;border-collapse:collapse;">${rowsHtml}</table>` +
-    missingHtml +
-    `<div style="padding:12px;"><a href="${escapeHtml(input.actionUrl)}" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;">${escapeHtml(copy.cta)}</a></div>` +
-    `<p style="margin:8px 0 0;padding:0 12px;color:#8a99a8;font-size:12px;line-height:1.5;">${escapeHtml(copy.footer)} <a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#8a99a8;">${lang === "es" ? "Darme de baja" : "Unsubscribe"}</a></p>` +
-    `</div></div></body></html>`;
+    `<div style="color:#9fb4c7;font-size:14px;margin-top:2px;">${escapeHtml(copy.headline)}</div></div>`;
 
-  return { subject: `[SmartPR] ${copy.subject}`, text: textLines.join("\n"), html };
+  const intro = `<p style="margin:0 0 12px;padding:0 12px;color:#12212f;font-size:14px;line-height:1.5;">${escapeHtml(copy.intro)}</p>`;
+
+  const details =
+    `<table role="presentation" style="width:100%;border-collapse:collapse;">` +
+    detailRows
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:8px 12px;color:#5b6b7b;font-size:13px;width:38%;">${escapeHtml(k)}</td>` +
+          `<td style="padding:8px 12px;color:#12212f;font-size:13px;">${escapeHtml(v)}</td></tr>`
+      )
+      .join("") +
+    `</table>`;
+
+  const missingItemsHtml = showMissing
+    ? `<div style="padding:4px 12px 12px;"><div style="font-size:13px;font-weight:700;color:#12212f;margin-bottom:6px;">${escapeHtml(missingLabel)}</div>` +
+      `<ul style="margin:0;padding-left:20px;color:#5b6b7b;font-size:13px;">${missingItems!
+        .map((m) => `<li>${escapeHtml(m)}</li>`)
+        .join("")}</ul></div>`
+    : "";
+
+  const ctaButton =
+    `<div style="padding:12px;"><a href="${escapeHtml(input.actionUrl)}" style="display:inline-block;background:#0f766e;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 24px;border-radius:10px;">${escapeHtml(copy.cta)}</a></div>`;
+
+  const unsubLabel = lang === "es" ? "Darme de baja" : "Unsubscribe";
+  const footer =
+    `<p style="margin:8px 0 0;padding:0 12px;color:#8a99a8;font-size:12px;line-height:1.5;">${escapeHtml(copy.footer)} ` +
+    `<a href="${escapeHtml(input.unsubscribeUrl)}" style="color:#8a99a8;">${escapeHtml(unsubLabel)}</a></p>`;
+
+  return {
+    html: {
+      header,
+      intro,
+      details,
+      missing_items: missingItemsHtml,
+      cta_button: ctaButton,
+      footer,
+    },
+    text: {
+      text_header: `SmartPR — ${copy.headline}`,
+      text_intro: copy.intro,
+      text_details: detailRows.map(([k, v]) => `${k}: ${v}`).join("\n"),
+      text_missing: showMissing ? `\n\n${missingLabel}\n${missingItems!.map((m) => `- ${m}`).join("\n")}` : "",
+      text_cta: `${copy.cta}: ${input.actionUrl}`,
+      text_footer: `${copy.footer}\n${unsubLabel}: ${input.unsubscribeUrl}`,
+    },
+    subjectVars: { subject_line: copy.subject },
+  };
+}
+
+export interface ReminderWrapper {
+  subject: string;
+  html_template: string;
+  text_template: string;
+}
+
+export const REMINDER_TEMPLATE_VARIABLES: EmailTemplateVariable[] = [
+  { name: "subject_line", description: "Subject: localized subject line (urgency + requirement name, or nudge headline)." },
+  { name: "header", description: "HTML: navy SmartPR header with the urgency headline." },
+  { name: "intro", description: "HTML: intro paragraph explaining what's due and why it matters." },
+  { name: "details", description: "HTML: requirement / business / agency / due-date table." },
+  { name: "missing_items", description: "HTML: 'still missing' evidence list (30-day tier only; empty otherwise)." },
+  { name: "cta_button", description: "HTML: call-to-action button linking back into the app." },
+  { name: "footer", description: "HTML: footer with the unsubscribe link." },
+  { name: "text_header", description: "Text: 'SmartPR — headline' line." },
+  { name: "text_intro", description: "Text: intro paragraph." },
+  { name: "text_details", description: "Text: detail lines." },
+  { name: "text_missing", description: "Text: missing-evidence list (empty unless 30-day tier with missing items)." },
+  { name: "text_cta", description: "Text: CTA label + deep link." },
+  { name: "text_footer", description: "Text: footer + unsubscribe link." },
+];
+
+/** The built-in wrapper — byte-equivalent to the pre-template reminder layout. Shared across tiers; copy comes from blocks. */
+export function builtinReminderWrapper(): ReminderWrapper {
+  return {
+    subject: "[SmartPR] {{subject_line}}",
+    html_template:
+      `<!DOCTYPE html><html><body style="margin:0;background:#f2f5f7;">` +
+      `<div style="max-width:560px;margin:0 auto;padding:24px 12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">` +
+      `{{header}}` +
+      `<div style="background:#fff;border-radius:0 0 12px 12px;padding:16px 12px;">` +
+      `{{intro}}{{details}}{{missing_items}}{{cta_button}}{{footer}}` +
+      `</div></div></body></html>`,
+    text_template:
+      `{{text_header}}\n\n{{text_intro}}\n\n{{text_details}}{{text_missing}}\n\n{{text_cta}}\n\n{{text_footer}}`,
+  };
+}
+
+/**
+ * Build a reminder email from a template wrapper. Pass null to use the
+ * built-in wrapper (fallback when the Supabase template is missing or
+ * failed to load).
+ */
+export function buildReminderEmailWithTemplate(
+  input: ReminderEmailInput,
+  tmpl: ReminderWrapper | null
+): BuiltEmail {
+  const blocks = renderReminderBlocks(input);
+  const w = tmpl ?? builtinReminderWrapper();
+  const subject = substitutePlaceholders(w.subject, blocks.subjectVars);
+  const html = substitutePlaceholders(w.html_template, blocks.html);
+  const text = substitutePlaceholders(w.text_template, blocks.text);
+  for (const [name, r] of [["subject", subject], ["html", html], ["text", text]] as const) {
+    if (r.unknown.length) console.warn(`[reminder-email] unknown placeholders in ${name}: ${r.unknown.join(", ")}`);
+  }
+  return { subject: subject.output, text: text.output, html: html.output };
+}
+
+/** Legacy entry point — identical output to before, via the built-in wrapper. */
+export function buildReminderEmail(input: ReminderEmailInput): BuiltEmail {
+  return buildReminderEmailWithTemplate(input, null);
 }
 
 /** Tier parsed from a scheduled notification type like "RENEWAL_30_DAY". */
