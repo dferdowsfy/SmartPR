@@ -181,9 +181,19 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     (scope = 'global' AND business_id IS NULL AND obligation_id IS NULL) OR
     (scope = 'business' AND business_id IS NOT NULL AND obligation_id IS NULL) OR
     (scope = 'obligation' AND obligation_id IS NOT NULL)
-  ),
-  UNIQUE (user_id, scope, business_id, obligation_id, channel)
+  )
 );
+-- NULL-safe uniqueness: plain UNIQUE treats NULLs as distinct, so a single
+-- constraint would allow duplicate global/business mutes. One partial unique
+-- index per scope instead.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_preferences_global
+  ON notification_preferences (user_id, channel) WHERE scope = 'global';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_preferences_business
+  ON notification_preferences (user_id, business_id, channel) WHERE scope = 'business';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_preferences_obligation
+  ON notification_preferences (user_id, obligation_id, channel) WHERE scope = 'obligation';
+ALTER TABLE notification_preferences
+  DROP CONSTRAINT IF EXISTS notification_preferences_user_id_scope_business_id_obligation_id_channel_key;
 CREATE INDEX IF NOT EXISTS idx_notification_preferences_user ON notification_preferences (user_id);
 
 -- Admin allowlist, manageable from the Supabase dashboard: insert an email

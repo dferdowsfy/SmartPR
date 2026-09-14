@@ -202,6 +202,39 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   const [source, setSource] = useState<DueDateSource>(item.due_date_source === "UNKNOWN" ? "USER_PROVIDED" : item.due_date_source);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Per-requirement reminder mute (notification_preferences, scope=obligation).
+  const [muted, setMuted] = useState<boolean | null>(null);
+  const [muteBusy, setMuteBusy] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/notifications/preferences")
+      .then((r) => (r.ok ? r.json() : { preferences: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        const prefs = Array.isArray(data.preferences) ? data.preferences : data;
+        const found = (Array.isArray(prefs) ? prefs : []).find(
+          (p: { scope?: string; obligation_id?: string | null; muted?: boolean }) =>
+            p.scope === "obligation" && p.obligation_id === item.id
+        );
+        setMuted(found ? !!found.muted : false);
+      })
+      .catch(() => { if (!cancelled) setMuted(false); });
+    return () => { cancelled = true; };
+  }, [item.id]);
+  const toggleMute = async () => {
+    if (muteBusy || muted === null) return;
+    setMuteBusy(true);
+    try {
+      const response = await fetch("/api/notifications/preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scope: "obligation", obligation_id: item.id, muted: !muted }),
+      });
+      if (response.ok) setMuted(!muted);
+    } finally {
+      setMuteBusy(false);
+    }
+  };
   // Optimistic flag so the row visibly flips to "completed" the moment the
   // user clicks, instead of silently vanishing once the list re-sorts.
   const [justCompleted, setJustCompleted] = useState(false);
@@ -377,6 +410,12 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
                 <FileText className="h-3.5 w-3.5" />{L("Edit document", lang)}
               </button>
             )}
+            <button
+              type="button" disabled={muteBusy || muted === null} onClick={toggleMute} title={L("Mute or unmute email reminders for this requirement.", lang)}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${muted ? "border-slate-300 bg-slate-100 text-slate-500" : "border-amber-300 text-amber-700"}`}
+            >
+              {muted ? `🔕 ${L("Reminders off", lang)}` : `🔔 ${L("Reminders on", lang)}`}
+            </button>
           </>
         ) : (
           <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">{L("Mark renewed / complete", lang)}</button>

@@ -62,10 +62,17 @@ export async function POST(req: Request) {
     );
     if (!ok.rows[0]) return Response.json({ error: "not_found" }, { status: 404 });
   }
+  // NULL-safe upsert: each scope has its own partial unique index.
+  const conflictTarget =
+    scope === "global"
+      ? `(user_id, channel) WHERE scope = 'global'`
+      : scope === "business"
+        ? `(user_id, business_id, channel) WHERE scope = 'business'`
+        : `(user_id, obligation_id, channel) WHERE scope = 'obligation'`;
   await pool.query(
     `INSERT INTO notification_preferences (user_id, scope, business_id, obligation_id, channel, muted, updated_at)
      VALUES ($1, $2, $3, $4, 'EMAIL', $5, now())
-     ON CONFLICT (user_id, scope, business_id, obligation_id, channel)
+     ON CONFLICT ${conflictTarget}
      DO UPDATE SET muted = EXCLUDED.muted, updated_at = now()`,
     [user.id, scope, businessId, obligationId, muted]
   );
