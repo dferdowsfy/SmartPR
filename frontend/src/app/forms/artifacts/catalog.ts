@@ -397,7 +397,7 @@ export const TEMPLATE_LIBRARY: TemplateDescriptor[] = [
     scope: "statewide",
     artifactType: "smartpr_generated",
     populationMethod: "none",
-    submissionChannel: "agency_office",
+    submissionChannel: "in_person",
     sourceStatus: "smartpr_generated",
     requirementCode: "DOC_CONTRACTOR_LICENSE",
     officialSourceUrl: "https://docs.pr.gov/files/DACO/Licencias/Solicitud-Urbanizador-Constructor-v2.pdf",
