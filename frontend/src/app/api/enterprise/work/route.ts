@@ -201,7 +201,7 @@ async function workQueueGetInner(request: Request, deps: WorkQueueDeps) {
                 jsonb_build_object('document_title', rd.document_title, 'document_type', rd.document_type)
                 ORDER BY rd.document_title)
               FROM requirement_documents rd
-              WHERE rd.requirement_rule_id = o.requirement_id) AS required_documents,
+              WHERE rd.requirement_rule_id::text = o.requirement_id) AS required_documents,
            (SELECT f2.name FROM facilities f2
              WHERE f2.business_id = b.id AND f2.workspace_id = b.workspace_id
              ORDER BY f2.created_at ASC LIMIT 1) AS facility_name,
@@ -229,7 +229,7 @@ async function workQueueGetInner(request: Request, deps: WorkQueueDeps) {
       LEFT JOIN obligation_work w ON w.obligation_id = o.id
       LEFT JOIN auth.users owner_u ON owner_u.id = w.owner_user_id
       LEFT JOIN auth.users rev_u ON rev_u.id = w.reviewer_user_id
-      LEFT JOIN requirement_rules rr ON rr.id = o.requirement_id`;
+      LEFT JOIN requirement_rules rr ON rr.id::text = o.requirement_id`;
 
   const format = q("format");
   const sortKey = q("sort") && SORT_COLUMNS[q("sort")!] ? q("sort")! : "due_date";
@@ -272,7 +272,7 @@ async function workQueueGetInner(request: Request, deps: WorkQueueDeps) {
     `SELECT COUNT(*)::text AS total FROM obligations o
       JOIN businesses b ON b.id = o.business_id
       LEFT JOIN obligation_work w ON w.obligation_id = o.id
-      LEFT JOIN requirement_rules rr ON rr.id = o.requirement_id
+      LEFT JOIN requirement_rules rr ON rr.id::text = o.requirement_id
      WHERE ${whereSql}`,
     params
   );
