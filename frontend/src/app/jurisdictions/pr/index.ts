@@ -40,6 +40,29 @@ const kb: KnowledgeBase = {
       // State, due April 15 each year. Verified against Dept of State forms and
       // Law 164-2009, Arts. 15.01(A) and 21.03(C).
       { document_id: "DOC_ANNUAL_REPORT", frequency_months: 12, citation: "Art. 15.01(A), Law 164-2009 (Ley General de Corporaciones); Art. 21.03(C) annual fee for LLCs; due April 15 each year." },
+      // Patente Municipal: annual declaration; payment in two semiannual
+      // installments. Verified 2026-09-14.
+      { document_id: "DOC_PATENTE_MUNICIPAL", frequency_months: 12, citation: "Arts. 7.207(a) and 7.208, Law 107-2020 (Puerto Rico Municipal Code); OGP Carta Circular 002-2022. Declaration filed annually; payment in two semiannual installments." },
+      // Fire Safety Certification: statutory annual fire inspection of covered
+      // commercial/public buildings; certification rides the annual Permiso
+      // Único renewal cycle. Verified 2026-09-14.
+      { document_id: "DOC_FIRE_CERT", frequency_months: 12, citation: "25 L.P.R.A. § 3566 (mandatory annual fire inspection); Reglamento Conjunto 2019, Tomo IV, Cap. 4.1, Regla 4.1.4.1 (fire certification renewed with each Permiso Único renewal); OGPe Permiso Único Applicant Manual v1.2." },
+      // CFSE workers' comp: annual policy year with semiannual premium
+      // installments. Verified 2026-09-14.
+      { document_id: "DOC_WORKERS_COMP", frequency_months: 12, citation: "Art. 16, Law 45-1935 (11 L.P.R.A. § 19) — premiums paid each semester with seal showing the covered year and semester." },
+      // Permiso Único: expressly renewable annually. Verified 2026-09-14.
+      { document_id: "DOC_PERMISO_UNICO", frequency_months: 12, citation: "OGPe Permiso Único Applicant Manual v1.2 (Nov. 2023): 'El permiso único deberá ser renovado anualmente.'" },
+      // Merchant Registration Certificate: two-year term, then renewed.
+      // Verified 2026-09-14.
+      { document_id: "DOC_MERCHANT_REGISTRATION", frequency_months: 24, citation: "Hacienda Circular Letter CC RI 16-12, § II(B)(5) — new Merchant Registration Certificates have a two-year term and must then be renewed." },
+      // Health / Sanitary Permit (establishment Licencia Sanitaria): follows
+      // the annual Permiso Único renewal cycle. Verified 2026-09-14.
+      { document_id: "DOC_HEALTH_PERMIT", frequency_months: 12, citation: "Reglamento Conjunto 2019, Tomo IV, Cap. 4.1, Regla 4.1.4.1 (Licencia Sanitaria requested with each Permiso Único new filing or renewal); OGPe Permiso Único Applicant Manual v1.2 (annual renewal)." },
+      // Commercial vehicle registration (marbete): annual. Verified 2026-09-14.
+      { document_id: "DOC_VEHICLE_REGISTRATION", frequency_months: 12, citation: "Art. 23.01, Law 22-2000 (annual license rights; marbete valid for one year)." },
+      // Everything else stays absent = renewal cadence unknown = no renewal
+      // reminders. Never invent a cadence: add entries here only with an
+      // authoritative source recorded in the citation.
     ],
   },
 };
