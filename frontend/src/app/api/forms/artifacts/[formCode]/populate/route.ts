@@ -11,6 +11,7 @@ import { ensureUserWorkspace, userCanAccessBusiness } from "../../../../../compl
 import { assertCanUseDeliverables, gateJson } from "../../../../../../lib/billing/access";
 import { ArtifactGenerationError, generateWorkingCopy } from "../../../../../forms/artifacts/library";
 import { recordGeneratedFiling } from "../../../../../forms/artifacts/persistence";
+import { recordArtifactGeneration } from "../../../../../graph/store";
 import { emptyCanonicalData, type CanonicalApplicationData, type FormData } from "../../../../../forms/engine/types";
 
 export const runtime = "nodejs";
@@ -26,6 +27,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ formCode: 
   // signed-in user is treated as an admin (open default).
   const user = await getCurrentUser();
   const pool = getPool();
+  let workspaceId: string | null = null;
   if (!user) {
     return Response.json(
       {
@@ -38,7 +40,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ formCode: 
   }
   if (pool) {
     try {
-      const workspaceId = await ensureUserWorkspace(pool, user);
+      workspaceId = await ensureUserWorkspace(pool, user);
       await assertCanUseDeliverables(pool, { workspaceId, email: user.email });
     } catch (err) {
       const gated = gateJson(err);
@@ -65,6 +67,16 @@ export async function POST(request: Request, ctx: { params: Promise<{ formCode: 
 
   const warnings: string[] = [];
   let archived = false;
+  // Observational: which forms users actually generate (pilot feedback).
+  // Never blocks the download.
+  void recordArtifactGeneration({
+    userId: user.id,
+    businessId: body.businessId ?? null,
+    workspaceId,
+    formCode,
+    populatedFields: result.populated.length,
+    unansweredFields: result.unanswered.length,
+  });
   if (body.archive && body.businessId && user) {
     const owns = pool ? await userCanAccessBusiness(pool, user.id, body.businessId) : false;
     if (!owns) {

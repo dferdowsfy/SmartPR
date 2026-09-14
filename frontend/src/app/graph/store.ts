@@ -114,6 +114,17 @@ CREATE TABLE IF NOT EXISTS readiness_scores (
 CREATE INDEX IF NOT EXISTS idx_readiness_submission ON readiness_scores (submission_id);
 ALTER TABLE readiness_scores ADD COLUMN IF NOT EXISTS user_id UUID;
 CREATE INDEX IF NOT EXISTS idx_readiness_user ON readiness_scores (user_id);
+-- Every generated form artifact (official PDFs, worksheets, letters): the
+-- raw material for "which forms are pilot users actually filling out".
+CREATE TABLE IF NOT EXISTS artifact_generations (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID, business_id UUID, workspace_id UUID,
+  form_code TEXT NOT NULL, populated_fields INT, unanswered_fields INT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS idx_artgen_user ON artifact_generations (user_id);
+CREATE INDEX IF NOT EXISTS idx_artgen_form ON artifact_generations (form_code);
+CREATE INDEX IF NOT EXISTS idx_artgen_workspace ON artifact_generations (workspace_id);
+CREATE INDEX IF NOT EXISTS idx_artgen_created ON artifact_generations (created_at);
 CREATE TABLE IF NOT EXISTS scenario_patterns (
   id BIGSERIAL PRIMARY KEY, municipality TEXT, business_type TEXT,
   question_hash TEXT NOT NULL, requirements_hash TEXT NOT NULL,
@@ -603,5 +614,41 @@ export async function capture(
     throw err;
   } finally {
     c.release();
+  }
+}
+
+/**
+ * Record that a form artifact PDF was generated for a user. Fire-and-forget
+ * from the populate endpoint — never blocks the download. Powers the admin
+ * pilot-activity view ("which forms are they filling out").
+ */
+export async function recordArtifactGeneration(opts: {
+  userId: string | null;
+  businessId?: string | null;
+  workspaceId?: string | null;
+  formCode: string;
+  populatedFields?: number | null;
+  unansweredFields?: number | null;
+}): Promise<void> {
+  if (!isEnabled()) return;
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    await ensureSchema();
+    await pool.query(
+      `INSERT INTO artifact_generations
+         (user_id, business_id, workspace_id, form_code, populated_fields, unanswered_fields)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        opts.userId,
+        opts.businessId ?? null,
+        opts.workspaceId ?? null,
+        opts.formCode,
+        opts.populatedFields ?? null,
+        opts.unansweredFields ?? null,
+      ]
+    );
+  } catch {
+    // Observational only — a recording failure must never break generation.
   }
 }

@@ -30,13 +30,31 @@ export async function getWorkspacePlanState(
   workspaceId: string
 ): Promise<WorkspacePlanState> {
   try {
-    const { rows } = await db.query<{ plan: string; status: string }>(
-      `SELECT plan, status FROM workspace_subscriptions WHERE workspace_id = $1 LIMIT 1`,
+    const { rows } = await db.query<{
+      plan: string;
+      status: string;
+      current_period_end: string | null;
+      stripe_subscription_id: string | null;
+    }>(
+      `SELECT plan, status, current_period_end, stripe_subscription_id
+         FROM workspace_subscriptions WHERE workspace_id = $1 LIMIT 1`,
       [workspaceId]
     );
     const row = rows[0];
     if (row && isPlanId(row.plan)) {
-      return { planId: row.plan as PlanId, status: row.status || "active" };
+      const status = row.status || "active";
+      // Pilot/complimentary grants (no Stripe subscription backing them) end
+      // when their period ends. Stripe-managed subscriptions are left alone —
+      // renewals and status transitions there belong to the Stripe webhooks.
+      if (
+        status.toLowerCase() === "active" &&
+        !row.stripe_subscription_id &&
+        row.current_period_end &&
+        new Date(row.current_period_end).getTime() < Date.now()
+      ) {
+        return { planId: "free", status: "expired" };
+      }
+      return { planId: row.plan as PlanId, status };
     }
   } catch {
     // Table may not exist in older envs — treat as free.

@@ -14,7 +14,14 @@ import {
 process.env.ADMIN_EMAILS = "admin@getsmartpr.com";
 
 // Minimal stand-in for pg Pool: only query() is exercised.
-function fakeDb(rows: Array<{ plan: string; status: string }>) {
+function fakeDb(
+  rows: Array<{
+    plan: string;
+    status: string;
+    current_period_end?: string | null;
+    stripe_subscription_id?: string | null;
+  }>
+) {
   return {
     query: async () => ({ rows }),
   } as never;
@@ -51,4 +58,39 @@ test("gateJson serializes a PlanGateError as 402 with upgrade URL", async () => 
 
 test("gateJson ignores non-gate errors", () => {
   assert.equal(gateJson(new Error("boom")), null);
+});
+
+test("pilot grant past its period end is treated as expired (free)", async () => {
+  const past = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const db = fakeDb([
+    { plan: "partner", status: "active", current_period_end: past, stripe_subscription_id: null },
+  ]);
+  await assert.rejects(
+    assertCanUseDeliverables(db, { workspaceId: "ws-1", email: "user@example.com" }),
+    (err: unknown) => err instanceof PlanGateError && err.code === "plan_deliverables_locked"
+  );
+});
+
+test("pilot grant within its period passes the gate", async () => {
+  const future = new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString();
+  const db = fakeDb([
+    { plan: "partner", status: "active", current_period_end: future, stripe_subscription_id: null },
+  ]);
+  const state = await assertCanUseDeliverables(db, {
+    workspaceId: "ws-1",
+    email: "user@example.com",
+  });
+  assert.equal(state.planId, "partner");
+});
+
+test("stripe-backed subscription past period end is NOT force-expired", async () => {
+  const past = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+  const db = fakeDb([
+    { plan: "core", status: "active", current_period_end: past, stripe_subscription_id: "sub_123" },
+  ]);
+  const state = await assertCanUseDeliverables(db, {
+    workspaceId: "ws-1",
+    email: "user@example.com",
+  });
+  assert.equal(state.planId, "core");
 });
