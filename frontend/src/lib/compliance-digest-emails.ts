@@ -330,11 +330,11 @@ function labelChip(label: ApplicabilityLabel, lang: DigestLang): string {
     likely: `background:#fdf3e3;color:#8a5a00;`,
     conditional: `background:#f0ede6;color:#6b6257;`,
   };
-  return `<span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;${styles[label]}">${escapeHtml(applicabilityLabelCopy(label, lang))}</span>`;
+  return `<span style="display:inline-block;font-size:14px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:3px 10px;border-radius:999px;${styles[label]}">${escapeHtml(applicabilityLabelCopy(label, lang))}</span>`;
 }
 
 function daysChip(days: number, lang: DigestLang): string {
-  const base = "display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;";
+  const base = "display:inline-block;font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px;white-space:nowrap;";
   const style = days <= 7 ? `${base}background:#fbe3e3;color:#a02a2a;` : days <= 30 ? `${base}background:#fdf3e3;color:#8a5a00;` : `${base}background:#e6f0ec;color:${TEAL};`;
   return `<span style="${style}">${escapeHtml(daysLabel(days, lang))}</span>`;
 }
@@ -343,31 +343,50 @@ function itemHead(name: string, url: string, meta: string, rightHtml: string): s
   return (
     `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">` +
     `<div style="min-width:0;">` +
-    `<a href="${escapeHtml(url)}" style="color:${INK};font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(name)}</a>` +
-    `<div style="font-size:12px;color:${MUTED};margin-top:4px;">${meta}</div>` +
+    `<a href="${escapeHtml(url)}" style="color:${INK};font-size:17px;font-weight:700;text-decoration:none;">${escapeHtml(name)}</a>` +
+    `<div style="font-size:14px;color:${MUTED};margin-top:4px;">${meta}</div>` +
     `</div><div style="text-align:right;flex-shrink:0;">${rightHtml}</div></div>`
   );
 }
 
 function factRow(label: string, value: string): string {
-  return `<div style="font-size:13px;line-height:1.55;margin-top:8px;"><span style="font-weight:700;color:${INK};">${escapeHtml(label)}:</span> <span style="color:#2b2b2b;">${escapeHtml(value)}</span></div>`;
+  return `<div style="font-size:15px;line-height:1.6;margin-top:8px;"><span style="font-weight:700;color:${INK};">${escapeHtml(label)}:</span> <span style="color:#2b2b2b;">${escapeHtml(value)}</span></div>`;
 }
 
 function ctaButton(url: string, label: string): string {
-  return `<div style="margin-top:12px;"><a href="${escapeHtml(url)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:13px;padding:10px 20px;border-radius:8px;">${escapeHtml(label)}</a></div>`;
+  return `<div style="margin-top:14px;"><a href="${escapeHtml(url)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:12px 24px;border-radius:8px;">${escapeHtml(label)}</a></div>`;
 }
 
 function card(inner: string): string {
   return `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:16px;margin:0 0 14px;">${inner}</div>`;
 }
 
-function sectionShell(title: string, inner: string): string {
-  return `<div style="margin:0 0 20px;"><div style="font-size:13px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:${TEAL};margin-bottom:10px;">${escapeHtml(title)}</div>${inner}</div>`;
+// Flat, low-intensity severity tints. Soft tinted section shells with a left
+// accent border — calm, never saturated blocks. Base branding (paper/ink/teal)
+// stays intact underneath.
+type SeverityKey = "action" | "coming" | "needs" | "changed" | "changedOk" | "health";
+
+const SEVERITY: Record<SeverityKey, { accent: string; tint: string; title: string }> = {
+  action:    { accent: "#b94f45", tint: "#f9e9e6", title: "#a03d33" },
+  coming:    { accent: "#c07a2e", tint: "#f8ecdc", title: "#9a5f1f" },
+  needs:     { accent: "#c07a2e", tint: "#f8ecdc", title: "#9a5f1f" },
+  changed:   { accent: "#6b7280", tint: "#eef0f2", title: "#4b5563" },
+  changedOk: { accent: "#3f7d4e", tint: "#e6f0e8", title: "#356b42" },
+  health:    { accent: "#3f7d4e", tint: "#e6f0e8", title: "#356b42" },
+};
+
+function sectionShell(title: string, inner: string, sev: SeverityKey): string {
+  const s = SEVERITY[sev];
+  return (
+    `<div style="margin:0 0 20px;background:${s.tint};border:1px solid #e3ddd0;border-left:4px solid ${s.accent};border-radius:12px;padding:16px;">` +
+    `<div style="font-size:15px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:${s.title};margin-bottom:12px;">${escapeHtml(title)}</div>` +
+    `${inner}</div>`
+  );
 }
 
 function overflowLine(n: number, c: Copy): string {
   if (n <= 0) return "";
-  return `<div style="font-size:12px;color:${MUTED};text-align:center;margin:-6px 0 14px;">${escapeHtml(c.moreInApp(n))}</div>`;
+  return `<div style="font-size:14px;color:${MUTED};text-align:center;margin:-6px 0 14px;">${escapeHtml(c.moreInApp(n))}</div>`;
 }
 
 function actionItemHtml(item: DigestActionItem, c: Copy, lang: DigestLang): string {
@@ -375,8 +394,8 @@ function actionItemHtml(item: DigestActionItem, c: Copy, lang: DigestLang): stri
   if (item.agency) metaParts.push(escapeHtml(item.agency));
   const meta = metaParts.join(" · ");
   const timing = item.overdue || item.daysRemaining !== null
-    ? `<div style="margin-bottom:8px;">${daysChip(item.daysRemaining ?? 0, lang)}</div><div style="font-size:12px;color:${MUTED};margin-top:4px;">${item.dueDate ? escapeHtml(formatDateLong(item.dueDate, lang)) : ""}</div>`
-    : `<div style="margin-bottom:8px;"><span style="display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap;background:#f0ede6;color:#6b6257;">${escapeHtml(stalledLabel(item.daysStalled ?? 0, lang))}</span></div>`;
+    ? `<div style="margin-bottom:8px;">${daysChip(item.daysRemaining ?? 0, lang)}</div><div style="font-size:14px;color:${MUTED};margin-top:4px;">${item.dueDate ? escapeHtml(formatDateLong(item.dueDate, lang)) : ""}</div>`
+    : `<div style="margin-bottom:8px;"><span style="display:inline-block;font-size:14px;font-weight:700;padding:4px 12px;border-radius:999px;white-space:nowrap;background:#f0ede6;color:#6b6257;">${escapeHtml(stalledLabel(item.daysStalled ?? 0, lang))}</span></div>`;
   const right = `${timing}<div style="margin-top:6px;">${labelChip(item.applicability, lang)}</div>`;
   return card(
     itemHead(item.name, item.actionUrl, meta, right) +
@@ -390,7 +409,7 @@ function actionItemHtml(item: DigestActionItem, c: Copy, lang: DigestLang): stri
 function comingItemHtml(item: DigestComingItem, c: Copy, lang: DigestLang): string {
   const metaParts = [escapeHtml(item.businessName)];
   if (item.agency) metaParts.push(escapeHtml(item.agency));
-  const right = `<div style="margin-bottom:8px;">${daysChip(item.daysRemaining, lang)}</div><div style="font-size:12px;color:${MUTED};margin-top:4px;">${escapeHtml(formatDateLong(item.dueDate, lang))}</div><div style="margin-top:6px;">${labelChip(item.applicability, lang)}</div>`;
+  const right = `<div style="margin-bottom:8px;">${daysChip(item.daysRemaining, lang)}</div><div style="font-size:14px;color:${MUTED};margin-top:4px;">${escapeHtml(formatDateLong(item.dueDate, lang))}</div><div style="margin-top:6px;">${labelChip(item.applicability, lang)}</div>`;
   return card(
     itemHead(item.name, item.actionUrl, metaParts.join(" · "), right) +
     factRow(c.prepNowLabel, item.prepNow)
@@ -399,7 +418,7 @@ function comingItemHtml(item: DigestComingItem, c: Copy, lang: DigestLang): stri
 
 function changeItemHtml(item: DigestChangeItem, c: Copy, lang: DigestLang): string {
   const rows: string[] = [];
-  rows.push(`<div style="font-size:14px;color:#2b2b2b;line-height:1.55;margin-top:6px;">${escapeHtml(item.summary)}</div>`);
+  rows.push(`<div style="font-size:16px;color:#2b2b2b;line-height:1.6;margin-top:8px;">${escapeHtml(item.summary)}</div>`);
   rows.push(factRow(c.whyAffects, item.whyAffects));
   if (item.recommendedAction) rows.push(factRow(c.recommendedAction, item.recommendedAction));
   const metaBits: string[] = [];
@@ -408,10 +427,10 @@ function changeItemHtml(item: DigestChangeItem, c: Copy, lang: DigestLang): stri
   metaBits.push(`${c.source}: ${item.sourceName}`);
   const head =
     `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">` +
-    `<div style="min-width:0;"><a href="${escapeHtml(item.sourceUrl)}" style="color:${INK};font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(item.title)}</a>` +
-    `<div style="font-size:12px;color:${MUTED};margin-top:4px;">${escapeHtml(item.businessName)} · ${metaBits.map(escapeHtml).join(" · ")}</div></div>` +
+    `<div style="min-width:0;"><a href="${escapeHtml(item.sourceUrl)}" style="color:${INK};font-size:17px;font-weight:700;text-decoration:none;">${escapeHtml(item.title)}</a>` +
+    `<div style="font-size:14px;color:${MUTED};margin-top:4px;">${escapeHtml(item.businessName)} · ${metaBits.map(escapeHtml).join(" · ")}</div></div>` +
     `<div style="text-align:right;flex-shrink:0;"><div style="margin-bottom:6px;">${labelChip(item.applicability, lang)}</div>` +
-    `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:#f0ede6;color:#6b6257;">${escapeHtml(confidenceCopy(item.confidence, lang))}</span></div></div>`;
+    `<span style="display:inline-block;font-size:14px;font-weight:700;padding:3px 10px;border-radius:999px;background:#f0ede6;color:#6b6257;">${escapeHtml(confidenceCopy(item.confidence, lang))}</span></div></div>`;
   rows.unshift(head);
   return card(rows.join(""));
 }
@@ -421,7 +440,7 @@ function needItemHtml(item: DigestNeedItem, c: Copy, lang: DigestLang): string {
   if (item.agency) metaParts.push(escapeHtml(item.agency));
   return card(
     itemHead(item.name, item.actionUrl, metaParts.join(" · "), "") +
-    `<div style="font-size:13px;color:#2b2b2b;line-height:1.55;margin-top:8px;">${escapeHtml(item.detail)}</div>` +
+    `<div style="font-size:15px;color:#2b2b2b;line-height:1.6;margin-top:8px;">${escapeHtml(item.detail)}</div>` +
     ctaButton(item.actionUrl, item.cta)
   );
 }
@@ -492,7 +511,7 @@ export function buildDigestEmail(input: DigestEmailInput): BuiltEmail {
 
   if (input.actionRequired.length) {
     sections.push(
-      sectionShell(c.actionTitle, input.actionRequired.map((i) => actionItemHtml(i, c, lang)).join("") + overflowLine(input.overflow.action, c))
+      sectionShell(c.actionTitle, input.actionRequired.map((i) => actionItemHtml(i, c, lang)).join("") + overflowLine(input.overflow.action, c), "action")
     );
   }
 
@@ -500,40 +519,41 @@ export function buildDigestEmail(input: DigestEmailInput): BuiltEmail {
     const w60 = input.comingUp.filter((i) => i.window === "60");
     const w90 = input.comingUp.filter((i) => i.window === "90");
     let inner = "";
-    if (w60.length) inner += `<div style="font-size:13px;font-weight:700;color:${INK};margin:0 0 8px;">${escapeHtml(c.coming60)}</div>` + w60.map((i) => comingItemHtml(i, c, lang)).join("");
-    if (w90.length) inner += `<div style="font-size:13px;font-weight:700;color:${INK};margin:14px 0 8px;">${escapeHtml(c.coming90)}</div>` + w90.map((i) => comingItemHtml(i, c, lang)).join("");
-    sections.push(sectionShell(c.comingTitle, inner + overflowLine(input.overflow.coming, c)));
+    if (w60.length) inner += `<div style="font-size:15px;font-weight:700;color:${INK};margin:0 0 8px;">${escapeHtml(c.coming60)}</div>` + w60.map((i) => comingItemHtml(i, c, lang)).join("");
+    if (w90.length) inner += `<div style="font-size:15px;font-weight:700;color:${INK};margin:14px 0 8px;">${escapeHtml(c.coming90)}</div>` + w90.map((i) => comingItemHtml(i, c, lang)).join("");
+    sections.push(sectionShell(c.comingTitle, inner + overflowLine(input.overflow.coming, c), "coming"));
   }
 
   {
-    const inner = input.changes.length
+    const hasChanges = input.changes.length > 0;
+    const inner = hasChanges
       ? input.changes.map((ch) => changeItemHtml(ch, c, lang)).join("") + overflowLine(input.overflow.changes, c)
-      : `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:16px;font-size:13px;color:${MUTED};line-height:1.55;">${escapeHtml(c.changedFallback)}</div>`;
-    sections.push(sectionShell(c.changedTitle, inner));
+      : `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:16px;font-size:15px;color:${MUTED};line-height:1.6;">${escapeHtml(c.changedFallback)}</div>`;
+    sections.push(sectionShell(c.changedTitle, inner, hasChanges ? "changed" : "changedOk"));
   }
 
   if (input.needsFromYou.length) {
     sections.push(
-      sectionShell(c.needsTitle, input.needsFromYou.map((n) => needItemHtml(n, c, lang)).join("") + overflowLine(input.overflow.needs, c))
+      sectionShell(c.needsTitle, input.needsFromYou.map((n) => needItemHtml(n, c, lang)).join("") + overflowLine(input.overflow.needs, c), "needs")
     );
   }
 
   // Compliance health.
   const healthInner =
     `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:20px 16px;text-align:center;">` +
-    `<div style="font-size:34px;font-weight:800;color:${TEAL};">${h.percent}%</div>` +
-    `<div style="font-size:13px;font-weight:700;color:${INK};margin-top:2px;">${escapeHtml(c.healthCurrent)}</div>` +
-    `<div style="font-size:13px;color:${MUTED};margin-top:10px;line-height:1.7;">` +
+    `<div style="font-size:40px;font-weight:800;color:${TEAL};">${h.percent}%</div>` +
+    `<div style="font-size:15px;font-weight:700;color:${INK};margin-top:2px;">${escapeHtml(c.healthCurrent)}</div>` +
+    `<div style="font-size:15px;color:${MUTED};margin-top:10px;line-height:1.7;">` +
     `${h.current}/${h.total} · ${c.actionTitle.toLowerCase()}: ${h.upcoming} · ${lang === "es" ? "por verificar" : "needs verification"}: ${h.needsVerification} · ${lang === "es" ? "vencidos críticos" : "critical overdue"}: ${h.overdue}` +
     `</div>` +
-    `<div style="margin-top:14px;"><a href="${escapeHtml(input.complianceCenterUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openComplianceCenter)}</a></div>` +
+    `<div style="margin-top:14px;"><a href="${escapeHtml(input.complianceCenterUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openComplianceCenter)}</a></div>` +
     `</div>`;
-  sections.push(sectionShell(c.healthTitle, healthInner));
+  sections.push(sectionShell(c.healthTitle, healthInner, "health"));
 
   const allClearBanner = !hasContent
     ? `<div style="margin:0 0 20px;background:#e6f0ec;border:1px solid #bcd9cd;border-radius:12px;padding:18px 16px;text-align:center;">` +
-      `<div style="font-size:17px;font-weight:800;color:${TEAL};">${escapeHtml(c.allClearTitle)}</div>` +
-      `<p style="margin:8px 0 0;font-size:14px;color:#2b2b2b;line-height:1.55;">${escapeHtml(c.allClearBody)}</p></div>`
+      `<div style="font-size:20px;font-weight:800;color:${TEAL};">${escapeHtml(c.allClearTitle)}</div>` +
+      `<p style="margin:8px 0 0;font-size:16px;color:#2b2b2b;line-height:1.6;">${escapeHtml(c.allClearBody)}</p></div>`
     : "";
 
   const html =
@@ -541,21 +561,27 @@ export function buildDigestEmail(input: DigestEmailInput): BuiltEmail {
     `<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet"></head>` +
     `<body style="margin:0;background:${PAPER};">` +
     `<div style="max-width:620px;margin:0 auto;padding:28px 10px;font-family:${FONT};color:${INK};">` +
-    `<div style="padding:6px 4px 18px;">` +
-    `<div style="font-size:12px;font-weight:800;letter-spacing:0.14em;color:${TEAL};">SMARTPR MONTHLY COMPLIANCE DIGEST</div>` +
-    `<div style="font-size:22px;font-weight:700;margin-top:6px;">${escapeHtml(input.businessLabel)}</div>` +
-    `<div style="font-size:14px;color:${MUTED};margin-top:2px;">${escapeHtml(input.monthLabel)}</div>` +
+    `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:6px 4px 18px;">` +
+    `<div style="min-width:0;">` +
+    `<div style="font-size:14px;font-weight:800;letter-spacing:0.14em;color:${TEAL};">SMARTPR MONTHLY COMPLIANCE DIGEST</div>` +
+    `<div style="font-size:26px;font-weight:700;margin-top:6px;">${escapeHtml(input.businessLabel)}</div>` +
+    `<div style="font-size:16px;color:${MUTED};margin-top:2px;">${escapeHtml(input.monthLabel)}</div>` +
+    `</div>` +
+    `<div style="flex-shrink:0;background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:10px 18px;text-align:center;">` +
+    `<div style="font-size:30px;font-weight:800;color:#3f7d4e;line-height:1.1;">${h.percent}%</div>` +
+    `<div style="font-size:14px;font-weight:700;color:${INK};margin-top:2px;">${escapeHtml(c.healthCurrent)}</div>` +
+    `</div>` +
     `</div>` +
     `<div style="background:#ffffff;border:1px solid #e3ddd0;border-radius:12px;padding:18px;margin:0 0 20px;">` +
-    `<p style="margin:0;font-size:15px;line-height:1.65;color:${INK};">${escapeHtml(greeting)}</p>` +
-    `<p style="margin:10px 0 0;font-size:15px;line-height:1.65;color:#2b2b2b;">${escapeHtml(summary)}</p>` +
+    `<p style="margin:0;font-size:16px;line-height:1.65;color:${INK};">${escapeHtml(greeting)}</p>` +
+    `<p style="margin:10px 0 0;font-size:16px;line-height:1.65;color:#2b2b2b;">${escapeHtml(summary)}</p>` +
     `</div>` +
     allClearBanner +
     sections.join("") +
     `<div style="text-align:center;padding:6px 12px 10px;">` +
-    `<a href="${escapeHtml(input.dashboardUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openDashboard)}</a>` +
+    `<a href="${escapeHtml(input.dashboardUrl)}" style="display:inline-block;background:${TEAL};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:12px 28px;border-radius:8px;">${escapeHtml(c.openDashboard)}</a>` +
     `</div>` +
-    `<p style="margin:10px 0 0;padding:0 16px 18px;color:${MUTED};font-size:12px;line-height:1.6;text-align:center;">${escapeHtml(c.footer)}<br>` +
+    `<p style="margin:10px 0 0;padding:0 16px 18px;color:${MUTED};font-size:14px;line-height:1.6;text-align:center;">${escapeHtml(c.footer)}<br>` +
     `<a href="${escapeHtml(input.manageUrl)}" style="color:${MUTED};">${escapeHtml(c.manageLabel)}</a> · ` +
     `<a href="${escapeHtml(input.unsubscribeUrl)}" style="color:${MUTED};">${escapeHtml(c.unsubLabel)}</a></p>` +
     `</div></body></html>`;
