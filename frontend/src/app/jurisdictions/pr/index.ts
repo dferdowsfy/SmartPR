@@ -115,6 +115,9 @@ const kb: KnowledgeBase = {
       // remain active; required to bid on federal contracts and receive
       // federal grants/awards. Verified 2026-09-14.
       { document_id: "DOC_SAM_REGISTRATION", frequency_months: 12, citation: "GSA, Comply with contractual requirements: SAM.gov registration must be renewed annually to remain active; SAM Entity Registration guide (FAR 52.204-7): renewal every 365 days." },
+      // DACO Registro de Contratistas / urbanizador-constructor: Ley 146-1995
+      // charges $100 for annual inscription renewal. Verified 2026-09-14.
+      { document_id: "DOC_CONTRACTOR_LICENSE", frequency_months: 12, citation: "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO): $100 por la renovación anual de la inscripción; Regl. 8172 urbanizador/constructor application includes a Renovación option." },
       // Everything else stays absent = renewal cadence unknown = no renewal
       // reminders. Never invent a cadence: add entries here only with an
       // authoritative source recorded in the citation.
@@ -198,6 +201,7 @@ export const puertoRicoPack: JurisdictionPack = {
       "DOC_ALCOHOL_LICENSE",
       "DOC_PROFESSIONAL_LICENSE",
       "DOC_CONTRACTOR_LICENSE",
+      "DOC_SAM_REGISTRATION",
       "DOC_TOURISM_REGISTRATION",
       "DOC_HOA_AUTHORIZATION",
       "DOC_ROOM_TAX_RETURN",

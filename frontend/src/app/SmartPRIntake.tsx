@@ -3843,6 +3843,28 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             )}
           </div>
         )}
+        {(req.code === 'contractor_license' || req.document_id === 'DOC_CONTRACTOR_LICENSE') && (
+          <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 12.5 }}>
+            <div style={{ fontWeight: 600, marginBottom: 2 }}>
+              {L('Supporting documents for DACO filing', language)}
+            </div>
+            <div style={{ color: 'var(--muted)', marginBottom: 6 }}>
+              {L('Use this checklist with the official DACOUC01 application SmartPR prepares for page-1 fields.', language)}
+            </div>
+            <button
+              type="button"
+              className="rq-secondary-btn"
+              onClick={() => openSampleApplication('daco_contractor_checklist')}
+            >
+              <span>{L('Prepare DACO supporting checklist', language)}</span>
+            </button>
+            {preparedSampleApplications['daco_contractor_checklist'] && (
+              <span className="tag" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', marginLeft: 8 }}>
+                {L('DACO checklist prepared', language)}
+              </span>
+            )}
+          </div>
+        )}
         {prepared && (
           <span className="tag" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
             {fState === 'submitted' ? L('Marked as submitted', language) : L('Application prepared', language)}
@@ -3881,7 +3903,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         )}
       </>
     );
-    const hasExtra = !!(isRenewable || prepared || samplePrepared || (ext && analysis) || processingStates[req.code] || ((state === 'review' || reviewingCode === req.code) && analysis));
+    const hasExtra = !!(isRenewable || prepared || samplePrepared || req.code === 'sam_registration' || req.code === 'contractor_license' || req.document_id === 'DOC_CONTRACTOR_LICENSE' || (ext && analysis) || processingStates[req.code] || ((state === 'review' || reviewingCode === req.code) && analysis));
 
     // Visible direct-download / file-online button. The official destination
     // lives on the row as a real button — never hidden in the disclosure —

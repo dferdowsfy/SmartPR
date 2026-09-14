@@ -209,6 +209,8 @@ export const ES: Record<string, string> = {
   "Will clients or members visit?": "¿Visitarán clientes o miembros?",
   "Do you plan to bid on federal contracts or apply for federal grants or awards?":
     "¿El negocio licitará contratos federales o solicitará fondos federales?",
+  "Will you offer construction, installation, repair, or contracting services to others (not only on property you own)?":
+    "¿Ofrecerás servicios de construcción, instalación, reparación o contratación a terceros (no solo en propiedad tuya)?",
 
   // ---- Requirement names ----
   "Certificate of Incorporation / LLC Formation":
@@ -893,6 +895,10 @@ export const ES: Record<string, string> = {
   "We'll remind you 60, 30, and 7 days before.": "Te avisaremos 60, 30 y 7 días antes.",
   "Reminder set": "Recordatorio activado",
   "Registered on sam.gov already?": "¿Ya te registraste en sam.gov?",
+  "Prepare DACO supporting checklist": "Preparar lista de apoyo de DACO",
+  "DACO checklist prepared": "Lista de DACO preparada",
+  "Supporting documents for DACO filing": "Documentos de apoyo para radicar en DACO",
+  "Use this checklist with the official DACOUC01 application SmartPR prepares for page-1 fields.": "Usa esta lista junto con la solicitud oficial DACOUC01 que SmartPR prepara para los campos de la página 1.",
   "Enter your registration expiry date below and we'll remind you 60, 30, and 7 days before it lapses.": "Anota la fecha de vencimiento de tu registro abajo y te avisaremos 60, 30 y 7 días antes de que se venza.",
   "Reminders on": "Recordatorios activados",
   "Reminders off": "Recordatorios desactivados",
