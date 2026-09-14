@@ -82,7 +82,9 @@ test("F07 room-tax renewal survives seed compilation and obligation mapping with
   for (const source of [null, snapshot]) {
     const { obligations } = await determineObligations(snapshotDb(source), profile, { Q_SHORT_TERM_RENTAL: true });
     assert.equal(obligations.find(r => r.requirementId === "DOC_ROOM_TAX_RETURN")?.renewalFrequencyMonths, 1);
-    assert.equal(obligations.find(r => r.requirementId === "DOC_TOURISM_REGISTRATION")?.renewalFrequencyMonths, null);
+    // Tourism registration verified annual 2026-09-14 (CTPR fiscal-year
+    // arancel + published renewal requirements) — no longer null.
+    assert.equal(obligations.find(r => r.requirementId === "DOC_TOURISM_REGISTRATION")?.renewalFrequencyMonths, 12);
     const negative = await determineObligations(snapshotDb(source), profile, { Q_SHORT_TERM_RENTAL: false });
     assert.ok(!negative.obligations.some(r => r.requirementId === "DOC_ROOM_TAX_RETURN"));
   }

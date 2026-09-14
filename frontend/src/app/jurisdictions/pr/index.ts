@@ -36,10 +36,15 @@ const kb: KnowledgeBase = {
     // renewal lookup, which reads this array.
     renewals: [
       { document_id: "DOC_ROOM_TAX_RETURN", frequency_months: 1, citation: "Act 272-2003, Art. 28(A)-(B), 13 L.P.R.A. § 2271s." },
-      // Annual report (corporations) / annual fee (LLCs) with the Department of
-      // State, due April 15 each year. Verified against Dept of State forms and
-      // Law 164-2009, Arts. 15.01(A) and 21.03(C).
-      { document_id: "DOC_ANNUAL_REPORT", frequency_months: 12, citation: "Art. 15.01(A), Law 164-2009 (Ley General de Corporaciones); Art. 21.03(C) annual fee for LLCs; due April 15 each year." },
+      // Annual corporate obligation with the Department of State. For years
+      // prior to 2025: informe anual due April 15 (Art. 15.01(A) domestic,
+      // Art. 15.03 foreign corps). From 2025 the report is replaced by the
+      // Art. 17.01 annual fee (cargo anual) per Law 65-2025; the fee's due
+      // date is set by Dept of State order and is not yet verified, so
+      // reminders anchor to the stored fee date only. Corrected 2026-09-14:
+      // 21.03(C) removed — that is the LLC annual fee (due March 1), a
+      // separate obligation.
+      { document_id: "DOC_ANNUAL_REPORT", frequency_months: 12, citation: "Arts. 15.01(A)/15.03, Law 164-2009 — annual report due April 15 (years prior to 2025); Law 65-2025 replaces the report with the Art. 17.01 annual fee from 2025. Fee: statutory minimum $100 (Art. 17.01(A)(15)), Dept of State practice $150." },
       // Patente Municipal: annual declaration; payment in two semiannual
       // installments. Verified 2026-09-14.
       { document_id: "DOC_PATENTE_MUNICIPAL", frequency_months: 12, citation: "Arts. 7.207(a) and 7.208, Law 107-2020 (Puerto Rico Municipal Code); OGP Carta Circular 002-2022. Declaration filed annually; payment in two semiannual installments." },
@@ -60,6 +65,52 @@ const kb: KnowledgeBase = {
       { document_id: "DOC_HEALTH_PERMIT", frequency_months: 12, citation: "Reglamento Conjunto 2019, Tomo IV, Cap. 4.1, Regla 4.1.4.1 (Licencia Sanitaria requested with each Permiso Único new filing or renewal); OGPe Permiso Único Applicant Manual v1.2 (annual renewal)." },
       // Commercial vehicle registration (marbete): annual. Verified 2026-09-14.
       { document_id: "DOC_VEHICLE_REGISTRATION", frequency_months: 12, citation: "Art. 23.01, Law 22-2000 (annual license rights; marbete valid for one year)." },
+      // Trade name (nombre comercial): 10-year term, renewable within the
+      // year before expiry. Verified 2026-09-14.
+      { document_id: "DOC_DBA_REGISTRATION", frequency_months: 120, citation: "Law 23-1992 (Ley de Nombres Comerciales de Puerto Rico), via Dept of State Registro de Marcas y Nombres Comerciales: registration valid 10 years, renewable within the year before expiry." },
+      // LLP registration: 1-year validity from filing/renewal date, renewed
+      // by filing a renewal request on or before expiry. Anniversary-based,
+      // not a fixed calendar date. Verified 2026-09-14.
+      { document_id: "DOC_LLP_REGISTRATION", frequency_months: 12, citation: "Law 154-1996, Art. 3(f) (10 L.P.R.A. § 1862(f)): LLP registration valid 1 year from filing; renewed by renewal request on or before expiry (Dept of State form CORPOTR09)." },
+      // Foreign corporation authorization: same annual cycle as domestic
+      // corps — report pre-2025, annual fee from 2025. Verified 2026-09-14.
+      { document_id: "DOC_FOREIGN_CORPORATION_AUTHORIZATION", frequency_months: 12, citation: "Art. 15.03, Law 164-2009 — foreign corps file annual report by April 15 (years prior to 2025); from 2025 replaced by Art. 17.01 annual fee per Law 65-2025." },
+      // Nonprofit corporation: annual report like other domestic corps.
+      // Verified 2026-09-14.
+      { document_id: "DOC_NONPROFIT_REGISTRATION", frequency_months: 12, citation: "Art. 15.01(A), Law 164-2009 (applies to all domestic corps incl. nonprofits); Art. 17.01(C)(13) filing fee. Report due April 15 for years prior to 2025; from 2025 replaced by Art. 17.01 annual fee per Law 65-2025." },
+      // Alcohol beverage license (licencia de rentas internas): annual license
+      // per establishment; renewal through SURI in a ~60-day window around
+      // expiry. Verified 2026-09-14.
+      { document_id: "DOC_ALCOHOL_LICENSE", frequency_months: 12, citation: "13 L.P.R.A. § 32554 (Código de Rentas Internas 2011, Subt. C/E): license obtained 'anualmente' per establishment; Hacienda CC RI 18-14 — renewal via SURI, ~60-day window from first day of expiry month through end of following month; due date keyed to last digit of SSN/EIN." },
+      // Tourism registration (travel agency / mayorista): annual fee per
+      // fiscal year; CTPR publishes dedicated renewal requirements.
+      // Verified 2026-09-14.
+      { document_id: "DOC_TOURISM_REGISTRATION", frequency_months: 12, citation: "Ley 10-1970 (Compañía de Turismo licensing authority); CTPR requirements: 'arancel anual correspondiente al Año Fiscal' (July 1–June 30), not prorated; CTPR publishes 'Requisitos para Renovación' for agencies/mayoristas." },
+      // NPDES industrial discharge permit: fixed term not to exceed 5 years.
+      // Verified 2026-09-14.
+      { document_id: "DOC_NPDES_INDUSTRIAL", frequency_months: 60, citation: "40 CFR §122.46(a): NPDES permits effective for a fixed term not to exceed 5 years. Maximum term — the facility's printed permit expiration governs; renewal application per 40 CFR §122.21(d) (typically ≥180 days before expiry)." },
+      // Title V air emission permit: fixed term not to exceed 5 years.
+      // Verified 2026-09-14.
+      { document_id: "DOC_AIR_EMISSION_PERMIT", frequency_months: 60, citation: "CAA §502(b)(5)(B), 42 U.S.C. §7661a(b)(5)(B); 40 CFR §70.6(a)(2): Title V permits issued for a fixed term not to exceed 5 years. Maximum term — the facility's printed permit expiration governs." },
+      // Pesticide applicator license: 4-year term, renewable for 4 more
+      // years; renewal filed ≥90 days before expiry. Verified 2026-09-14.
+      { document_id: "DOC_PESTICIDE_LICENSE", frequency_months: 48, citation: "PR Dept of Agriculture Reglamento de Plaguicidas, Art. 30(A): commercial/private applicator certificate expires 4 years after issuance, renewable for an additional 4 years; renewal application ≥90 days before expiry (Art. 30(B))." },
+      // Childcare license (hogar de cuidado / home-based): 2-year term.
+      // Scoped to home-based care under Reglamento 6475; center-based terms
+      // (Reglamento 8860) not yet verified. Verified 2026-09-14.
+      { document_id: "DOC_CHILDCARE_LICENSE", frequency_months: 24, citation: "Reglamento 6475 (Dept de la Familia — hogares de cuidado), Sec. 3.3(c): license granted for 2 years; Sec. 3.4: renewable for 2-year periods, renewal requested 60 days before expiry." },
+      // Firearms dealer (armero) license: 1 year from issuance; renewal filed
+      // 30 days before expiry. (Personal Licencia de Armas is 5 years — a
+      // different license.) Verified 2026-09-14.
+      { document_id: "DOC_FIREARMS_LICENSE", frequency_months: 12, citation: "Law 168-2019 (Ley de Armas de Puerto Rico de 2020), §464: dealer licenses expire 1 year from issuance; renewal filed 30 days before expiry." },
+      // Bona fide farmer certification: 4-year validity. Verified 2026-09-14.
+      { document_id: "DOC_AGRICULTURE_REGISTRATION", frequency_months: 48, citation: "Law 51-2021 amending Sec. 1020.08(a)(3), Law 60-2019 (Código de Incentivos de Puerto Rico): Certificación de Agricultor Bona Fide valid 4 years." },
+      // Certified Food Protection Manager: certificate valid max 5 years.
+      // Verified 2026-09-14.
+      { document_id: "DOC_CFPM", frequency_months: 60, citation: "Conference for Food Protection, Standards for Accreditation of Food Protection Manager Certification Programs, §7.2: certificate valid for no more than 5 years." },
+      // CBP continuous import bond: annual periods until terminated.
+      // Verified 2026-09-14.
+      { document_id: "DOC_CUSTOMS_BROKER_BOND", frequency_months: 12, citation: "19 CFR Part 113, App. D to Subpart G: continuous bond 'remains in force for one year beginning with the effective date and for each succeeding annual period, or until terminated' (termination per 19 CFR §113.27)." },
       // Everything else stays absent = renewal cadence unknown = no renewal
       // reminders. Never invent a cadence: add entries here only with an
       // authoritative source recorded in the citation.
