@@ -51,9 +51,14 @@ export async function readJson<T = unknown>(res: Response): Promise<SafeJsonResu
   }
   if (!res.ok) {
     const body = data as unknown as Record<string, unknown> | null;
+    const serverMsg = body && typeof body.message === "string" && body.message;
+    const serverErr = body && typeof body.error === "string" && body.error;
+    // Prefer the server's human-written message. For 401s (almost always an
+    // expired session) fall back to an actionable sign-in note rather than a
+    // raw error code; otherwise the raw code is the last resort.
     const msg =
-      (body && typeof body.message === "string" && body.message) ||
-      (body && typeof body.error === "string" && body.error) ||
+      serverMsg ||
+      (res.status === 401 ? "Your session expired. Please sign in again." : serverErr) ||
       `Request failed (HTTP ${res.status}). Please retry.`;
     return { ok: false, status: res.status, data, error: msg };
   }

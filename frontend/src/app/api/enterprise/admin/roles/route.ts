@@ -4,6 +4,7 @@
 // Permission: manage_users on the workspace. System roles are seeded per
 // workspace on first use via ensureSystemRoles().
 import { getPool, isEnabled } from "../../../../graph/db";
+import type { Pool } from "pg";
 import { withEnterpriseHandler } from "../../_util";
 import {
   requireEnterprisePermission,
@@ -24,7 +25,15 @@ function workspaceIdFrom(request: Request): string | null {
   return id || null;
 }
 
-async function gate(request: Request) {
+type RolesGate =
+  | { response: Response }
+  | {
+      workspaceId: string;
+      user: { id: string; email?: string | null };
+      pool: Pool;
+    };
+
+async function gate(request: Request): Promise<RolesGate> {
   const workspaceId = workspaceIdFrom(request);
   if (!workspaceId) return { response: Response.json({ error: "workspace_id required" }, { status: 400 }) } as const;
   const g = await requireEnterprisePermission("manage_users", workspaceId);
@@ -36,7 +45,7 @@ async function gate(request: Request) {
 }
 
 /** All role assignments in the workspace (with member email + scope names). */
-async function getHandler(request: Request) {
+async function getHandler(request: Request): Promise<Response> {
   const g = await gate(request);
   if ("response" in g) return g.response;
   const { workspaceId, pool } = g;
@@ -73,7 +82,7 @@ type GrantBody = {
 };
 
 /** Grant an enterprise role to a member at a scope. Idempotent (no duplicates). */
-async function postHandler(request: Request) {
+async function postHandler(request: Request): Promise<Response> {
   const g = await gate(request);
   if ("response" in g) return g.response;
   const { workspaceId, user, pool } = g;
@@ -136,7 +145,7 @@ async function postHandler(request: Request) {
 }
 
 /** Revoke a role assignment by id (?id= or JSON body). */
-async function deleteHandler(request: Request) {
+async function deleteHandler(request: Request): Promise<Response> {
   const g = await gate(request);
   if ("response" in g) return g.response;
   const { workspaceId, user, pool } = g;

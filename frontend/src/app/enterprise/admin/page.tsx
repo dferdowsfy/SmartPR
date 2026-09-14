@@ -2,8 +2,8 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { TopNav } from "../../../history/ui";
-import { EnterpriseSubNav } from "../../_nav";
+import { TopNav } from "../../history/ui";
+import { EnterpriseSubNav } from "../_nav";
 import { useEnterpriseWorkspaces } from "../_lib/useEnterpriseWorkspaces";
 
 const CARDS = [

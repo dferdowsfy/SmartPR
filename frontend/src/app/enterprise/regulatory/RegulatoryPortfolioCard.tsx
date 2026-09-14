@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LIFECYCLE_LABELS } from "../../../lib/enterprise-regulatory";
+import { readJson } from "@/lib/safe-json";
 
 interface CardEvent {
   id: string;
@@ -41,8 +42,9 @@ export function RegulatoryPortfolioCard({ workspaceId }: { workspaceId: string }
           `/api/enterprise/regulatory/events?workspace_id=${workspaceId}`
         );
         if (!res.ok) throw new Error("unavailable");
-        const d = await res.json();
-        const all: CardEvent[] = d.events ?? [];
+        const result = await readJson<{ events?: CardEvent[] }>(res);
+        if (!result.ok) throw new Error("unavailable");
+        const all: CardEvent[] = result.data?.events ?? [];
         const recent = all
           .filter((e) => e.verification_date || e.lifecycle === "effective")
           .sort(
@@ -63,8 +65,8 @@ export function RegulatoryPortfolioCard({ workspaceId }: { workspaceId: string }
               `/api/enterprise/regulatory/events/${e.id}/report?workspace_id=${workspaceId}`
             );
             if (!rr.ok) continue;
-            const rd = await rr.json();
-            for (const f of rd.affected?.facilities ?? []) facilityIds.add(f.id);
+            const rdResult = await readJson<{ affected?: { facilities?: Array<{ id: string }> } }>(rr);
+            for (const f of rdResult.data?.affected?.facilities ?? []) facilityIds.add(f.id);
           } catch {
             // per-event report failure: skip, keep the rest
           }
