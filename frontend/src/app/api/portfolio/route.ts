@@ -14,7 +14,7 @@ export async function GET() {
   if (!pool) return Response.json({ enabled: false, businesses: [], items: [], notifications: [] });
   await ensureSchema();
   try {
-    const [businessRows, obligationRows, mattersCount, notificationRows, dueMatterRows] = await Promise.all([
+    const [businessRows, obligationRows, mattersCount, notificationRows, dueMatterRows, reminderRows] = await Promise.all([
       pool.query(
         `SELECT b.id, b.public_id, COALESCE(b.legal_name,b.name) AS legal_name, b.entity_number,
                 b.business_structure, b.business_type, b.industry, b.municipality,
@@ -73,6 +73,20 @@ export async function GET() {
             AND (b.user_id=$1 OR wm.user_id IS NOT NULL)`,
         [user.id]
       ),
+      // Next pending email reminder per obligation — powers the calendar's
+      // "🔔 reminds in N days" badge.
+      pool.query<{ obligation_id: string; next_reminder_for: string }>(
+        `SELECT DISTINCT ON (n.obligation_id) n.obligation_id,
+                n.scheduled_for::text AS next_reminder_for
+           FROM notifications n
+           JOIN businesses b ON b.id = n.business_id
+           LEFT JOIN workspace_members wm ON wm.workspace_id = b.workspace_id AND wm.user_id = $1
+          WHERE n.user_id = $1 AND n.channel = 'EMAIL' AND n.status = 'PENDING'
+            AND n.obligation_id IS NOT NULL
+            AND (b.user_id = $1 OR wm.user_id IS NOT NULL)
+          ORDER BY n.obligation_id, n.scheduled_for`,
+        [user.id]
+      ),
     ]);
 
     const obligationItems = obligationRows.rows.map((row) => {
@@ -83,12 +97,15 @@ export async function GET() {
         evidenceState: row.evidence_state,
         expectsRenewal: Boolean(row.renewal_frequency_months || dueDate),
       });
+      const nextReminder = (reminderRows.rows as { obligation_id: string; next_reminder_for: string }[])
+        .find((r) => r.obligation_id === row.id)?.next_reminder_for ?? null;
       return {
         ...row,
         business_name: row.legal_name || row.legacy_name,
         status: effectiveStatus,
         next_action: row.next_action || nextActionForStatus(effectiveStatus),
         item_type: "OBLIGATION",
+        reminder_scheduled_for: nextReminder,
       };
     });
     const matterItems = dueMatterRows.rows.map((row) => {

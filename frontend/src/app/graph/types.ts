@@ -13,6 +13,9 @@ export interface CapturedRequirement {
   reason: string;
   source_rule?: string;  // rule id, e.g. "RULE_0046" (stored as a Rule node)
   mandatory?: boolean;
+  /** User-entered current expiry date (YYYY-MM-DD) for renewable documents.
+   *  Absent = "I don't know" = no reminders (never estimated). */
+  expiry_date?: string;
 }
 
 export interface CapturedAnswer {

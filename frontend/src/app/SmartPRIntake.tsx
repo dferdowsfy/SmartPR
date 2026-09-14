@@ -1144,6 +1144,10 @@ export default function SmartPRIntake() {
   // user has opened in a new tab. This is the return path — the row flips to a
   // "downloaded, now upload" state so the user has a reason to come back.
   const [downloadedCodes, setDownloadedCodes] = useState<Record<string, number>>({});
+  // User-entered current expiry dates for renewable requirements, keyed by
+  // requirement code. Absent/empty = "I don't know" = no reminders, never
+  // estimated. Persisted into obligations.due_date on capture.
+  const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('smartpr-downloaded-docs') || '{}');
@@ -2001,6 +2005,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         reason: r.reason,
         source_rule: r.source_rule,
         mandatory: r.mandatory,
+        // User-entered expiry date, if any. Empty = "I don't know" = omitted.
+        ...(expiryDates[r.code] ? { expiry_date: expiryDates[r.code] } : {}),
       }));
       captureEvent({
         kind: 'submission',
@@ -3516,6 +3522,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // a plain document upload. `acceptsOfficialUpload === false` or a
   // conditional/review-condition requirement gets no action — those need the
   // user's answer, not a button, before SmartPR can say what's next.
+  // Document ids the knowledge graph marks as renewable (extensions.renewals).
+  // Only these requirements get the "when does your current one expire?"
+  // capture — everything else is one-time and never asks.
+  const renewableDocumentIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of KB.extensions?.renewals ?? []) {
+      const id = (r as Record<string, unknown>).document_id;
+      if (typeof id === "string" && id) set.add(id);
+    }
+    return set;
+  }, []);
+
   const computeReqCard = (req: Requirement) => {
     const doc = uploadedDocs.find(d => d.requirement_code === req.code);
     const analysis = doc?.ai_analysis;
@@ -3749,8 +3767,46 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       </div>
     );
 
+    // Renewable documents (per the knowledge graph's extensions.renewals) get
+    // an optional expiry-date capture. "I don't know" = empty = no reminders,
+    // never estimated. The date flows into obligations.due_date on capture.
+    const isRenewable = !!req.document_id && renewableDocumentIds.has(req.document_id);
+    const expiryValue = expiryDates[req.code] || "";
+    const expiryBlock = isRenewable ? (
+      <div style={{ marginTop: 8, padding: 10, background: 'var(--surface-2)', borderRadius: 8, fontSize: 13 }}>
+        <label style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>
+          {L('When does your current one expire?', language)}
+        </label>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="date"
+            value={expiryValue}
+            onChange={(e) => setExpiryDates((prev) => ({ ...prev, [req.code]: e.target.value }))}
+            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13 }}
+          />
+          {expiryValue ? (
+            <button
+              type="button"
+              onClick={() => setExpiryDates((prev) => ({ ...prev, [req.code]: '' }))}
+              style={{ fontSize: 12, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'white', cursor: 'pointer' }}
+            >
+              {L("I don't know", language)}
+            </button>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--muted)' }}>{L("I don't know", language)} ✓</span>
+          )}
+        </div>
+        {expiryValue && (
+          <div style={{ marginTop: 6, fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>
+            ✓ {L('Reminder set', language)} — {L("We'll remind you 60, 30, and 7 days before.", language)}
+          </div>
+        )}
+      </div>
+    ) : null;
+
     const extra = (
       <>
+        {expiryBlock}
         {prepared && (
           <span className="tag" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
             {fState === 'submitted' ? L('Marked as submitted', language) : L('Application prepared', language)}
@@ -3789,7 +3845,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         )}
       </>
     );
-    const hasExtra = !!(prepared || samplePrepared || (ext && analysis) || processingStates[req.code] || ((state === 'review' || reviewingCode === req.code) && analysis));
+    const hasExtra = !!(isRenewable || prepared || samplePrepared || (ext && analysis) || processingStates[req.code] || ((state === 'review' || reviewingCode === req.code) && analysis));
 
     // Visible direct-download / file-online button. The official destination
     // lives on the row as a real button — never hidden in the disclosure —
@@ -3826,7 +3882,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .filter(r => r.applicability !== 'not_applicable')
       .map(computeReqCard),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes]
+    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds]
   );
   const tabNeedsActionCount = reqCards.filter(c => c.bucket === 'needs_action').length;
   const tabInProgressCount = reqCards.filter(c => c.bucket === 'in_progress').length;
