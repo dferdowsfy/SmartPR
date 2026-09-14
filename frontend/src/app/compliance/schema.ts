@@ -180,7 +180,8 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   CONSTRAINT notification_preferences_scope_check CHECK (
     (scope = 'global' AND business_id IS NULL AND obligation_id IS NULL) OR
     (scope = 'business' AND business_id IS NOT NULL AND obligation_id IS NULL) OR
-    (scope = 'obligation' AND obligation_id IS NOT NULL)
+    (scope = 'obligation' AND obligation_id IS NOT NULL) OR
+    (scope = 'digest' AND business_id IS NULL AND obligation_id IS NULL)
   )
 );
 -- NULL-safe uniqueness: plain UNIQUE treats NULLs as distinct, so a single
@@ -195,6 +196,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_preferences_obligation
 ALTER TABLE notification_preferences
   DROP CONSTRAINT IF EXISTS notification_preferences_user_id_scope_business_id_obligation_id_channel_key;
 CREATE INDEX IF NOT EXISTS idx_notification_preferences_user ON notification_preferences (user_id);
+
+-- Monthly digest opt-out (scope='digest'): independent of the transactional
+-- reminder toggles; the global EMAIL mute covers both. Applied to existing
+-- deployments via ALTER (the CREATE TABLE above is IF NOT EXISTS).
+ALTER TABLE notification_preferences DROP CONSTRAINT IF EXISTS notification_preferences_scope_check;
+ALTER TABLE notification_preferences ADD CONSTRAINT notification_preferences_scope_check CHECK (
+  (scope = 'global' AND business_id IS NULL AND obligation_id IS NULL) OR
+  (scope = 'business' AND business_id IS NOT NULL AND obligation_id IS NULL) OR
+  (scope = 'obligation' AND obligation_id IS NOT NULL) OR
+  (scope = 'digest' AND business_id IS NULL AND obligation_id IS NULL)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_notification_preferences_digest
+  ON notification_preferences (user_id, channel) WHERE scope = 'digest';
+
+-- Monthly digest idempotency: one digest per workspace per YYYY-MM period.
+-- The cron inserts ON CONFLICT DO NOTHING so a retry never double-sends.
+CREATE TABLE IF NOT EXISTS compliance_digest_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  period TEXT NOT NULL,
+  item_count INTEGER NOT NULL DEFAULT 0,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (workspace_id, period)
+);
+CREATE INDEX IF NOT EXISTS idx_compliance_digest_log_workspace ON compliance_digest_log (workspace_id);
 
 -- Admin allowlist, manageable from the Supabase dashboard: insert an email
 -- to grant that user admin access (admin tools + deliverables bypass).

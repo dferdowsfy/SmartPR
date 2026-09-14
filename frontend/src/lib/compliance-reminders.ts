@@ -68,7 +68,7 @@ export function businessCoveredByPlan(
 // ---------------------------------------------------------------------------
 
 export interface PreferenceRow {
-  scope: "global" | "business" | "obligation";
+  scope: "global" | "business" | "obligation" | "digest";
   business_id: string | null;
   obligation_id: string | null;
   muted: boolean;

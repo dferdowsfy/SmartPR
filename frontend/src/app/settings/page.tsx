@@ -12,7 +12,7 @@ interface AccountUser {
 }
 
 interface PrefRow {
-  scope: "global" | "business" | "obligation";
+  scope: "global" | "business" | "obligation" | "digest";
   business_id: string | null;
   obligation_id: string | null;
   muted: boolean;
@@ -96,6 +96,7 @@ export default function SettingsPage() {
         p.muted
     );
   const globalMuted = isMuted("global");
+  const digestMuted = isMuted("digest");
 
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -210,6 +211,7 @@ export default function SettingsPage() {
                 <p className="mt-1 text-sm text-[#161616]/60">
                   Deadline reminders are sent by email from alerts@getsmartpr.com — 60, 30, and 7 days
                   before a stored expiry date, plus a nudge if a filing sits untouched for 14 days.
+                  Paid accounts also get a monthly compliance snapshot on the 1st of each month.
                 </p>
                 <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3">
                   <span className="text-sm font-medium text-[#161616]">
@@ -228,6 +230,28 @@ export default function SettingsPage() {
                   >
                     <span
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${globalMuted ? "left-0.5" : "left-[22px]"}`}
+                    />
+                  </button>
+                </label>
+                <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3">
+                  <span className="text-sm font-medium text-[#161616]">
+                    Monthly compliance snapshot
+                    <span className="block text-xs font-normal text-[#161616]/50">
+                      {digestMuted || globalMuted
+                        ? "Off — you won't receive the monthly digest."
+                        : "On — a monthly summary of upcoming deadlines, stalled filings, and missing dates."}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!digestMuted && !globalMuted}
+                    disabled={prefsBusy || globalMuted}
+                    onClick={() => setPreference({ scope: "digest", muted: !digestMuted })}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${digestMuted || globalMuted ? "bg-slate-300" : "bg-emerald-600"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${digestMuted || globalMuted ? "left-0.5" : "left-[22px]"}`}
                     />
                   </button>
                 </label>

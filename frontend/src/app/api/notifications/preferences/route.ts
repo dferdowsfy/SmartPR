@@ -8,7 +8,7 @@ import { getCurrentUser } from "../../../../lib/supabase/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const SCOPES = new Set(["global", "business", "obligation"]);
+const SCOPES = new Set(["global", "business", "obligation", "digest"]);
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -63,12 +63,16 @@ export async function POST(req: Request) {
     if (!ok.rows[0]) return Response.json({ error: "not_found" }, { status: 404 });
   }
   // NULL-safe upsert: each scope has its own partial unique index.
+  // 'digest' is the monthly-digest opt-out, independent of transactional
+  // reminders; 'global' covers both.
   const conflictTarget =
     scope === "global"
       ? `(user_id, channel) WHERE scope = 'global'`
-      : scope === "business"
-        ? `(user_id, business_id, channel) WHERE scope = 'business'`
-        : `(user_id, obligation_id, channel) WHERE scope = 'obligation'`;
+      : scope === "digest"
+        ? `(user_id, channel) WHERE scope = 'digest'`
+        : scope === "business"
+          ? `(user_id, business_id, channel) WHERE scope = 'business'`
+          : `(user_id, obligation_id, channel) WHERE scope = 'obligation'`;
   await pool.query(
     `INSERT INTO notification_preferences (user_id, scope, business_id, obligation_id, channel, muted, updated_at)
      VALUES ($1, $2, $3, $4, 'EMAIL', $5, now())
