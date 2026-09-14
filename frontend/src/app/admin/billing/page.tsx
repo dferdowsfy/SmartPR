@@ -17,14 +17,31 @@ type Row = {
 
 const PLANS = ["free", "core", "operator", "partner", "pilot", "enterprise"] as const;
 
+type PartnerCodeRow = {
+  id: string;
+  code: string;
+  plan: string;
+  workspace_id: string | null;
+  workspace_name: string;
+  max_redemptions: number;
+  redemption_count: number;
+  pilot_days: number;
+  expires_at: string | null;
+  active: boolean;
+};
+
 export default function AdminBillingPage() {
   const [rows, setRows] = useState<Row[]>([]);
+  const [partnerCodes, setPartnerCodes] = useState<PartnerCodeRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState<(typeof PLANS)[number]>("enterprise");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [newCode, setNewCode] = useState("");
+  const [newCodeName, setNewCodeName] = useState("");
+  const [codeBusy, setCodeBusy] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
@@ -37,9 +54,16 @@ export default function AdminBillingPage() {
     setRows(data.users || []);
   }, []);
 
+  const loadCodes = useCallback(async () => {
+    const res = await fetch("/api/admin/partner-codes", { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) setPartnerCodes(data.codes || []);
+  }, []);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadCodes();
+  }, [load, loadCodes]);
 
   async function grant(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +94,37 @@ export default function AdminBillingPage() {
       await load();
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function createPartnerCode(e: React.FormEvent) {
+    e.preventDefault();
+    setCodeBusy(true);
+    setMsg(null);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/partner-codes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          code: newCode,
+          plan: "partner",
+          maxRedemptions: 10,
+          pilotDays: 90,
+          workspaceName: newCodeName || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.message || data.error || `Create code failed (${res.status})`);
+        return;
+      }
+      setMsg(`Partner code ${data.code?.code || newCode} ready.`);
+      setNewCode("");
+      setNewCodeName("");
+      await loadCodes();
+    } finally {
+      setCodeBusy(false);
     }
   }
 
@@ -147,6 +202,68 @@ export default function AdminBillingPage() {
           </div>
         )}
 
+        <h2 style={{ fontSize: 20, margin: "28px 0 8px" }}>Partner codes</h2>
+        <p style={{ marginBottom: 12, opacity: 0.8, fontSize: 14 }}>
+          Design-partner pilots share one workspace + plan. Share{" "}
+          <code>/signup?code=LUYO-90</code>. Apply <code>data/partner_codes_schema.sql</code> once.
+        </p>
+        <form onSubmit={createPartnerCode} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          <input
+            required
+            placeholder="CODE-90"
+            value={newCode}
+            onChange={(ev) => setNewCode(ev.target.value.toUpperCase())}
+            style={{ flex: "1 1 140px", padding: "10px 12px", borderRadius: 8, border: "1px solid #ccc" }}
+          />
+          <input
+            placeholder="Workspace name (optional)"
+            value={newCodeName}
+            onChange={(ev) => setNewCodeName(ev.target.value)}
+            style={{ flex: "1 1 200px", padding: "10px 12px", borderRadius: 8, border: "1px solid #ccc" }}
+          />
+          <button
+            type="submit"
+            disabled={codeBusy}
+            style={{
+              padding: "10px 16px",
+              borderRadius: 8,
+              border: 0,
+              background: "#245c5c",
+              color: "#fff",
+              fontWeight: 600,
+            }}
+          >
+            {codeBusy ? "Saving…" : "Create partner code"}
+          </button>
+        </form>
+        {partnerCodes.length > 0 && (
+          <div style={{ overflowX: "auto", background: "#fff", borderRadius: 12, border: "1px solid #e5e0d6", marginBottom: 28 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ textAlign: "left", background: "#faf8f4" }}>
+                  <th style={{ padding: 12 }}>Code</th>
+                  <th style={{ padding: 12 }}>Plan</th>
+                  <th style={{ padding: 12 }}>Redemptions</th>
+                  <th style={{ padding: 12 }}>Workspace</th>
+                  <th style={{ padding: 12 }}>Expires</th>
+                </tr>
+              </thead>
+              <tbody>
+                {partnerCodes.map((c) => (
+                  <tr key={c.id} style={{ borderTop: "1px solid #eee" }}>
+                    <td style={{ padding: 12 }}><code>{c.code}</code></td>
+                    <td style={{ padding: 12 }}>{c.plan}</td>
+                    <td style={{ padding: 12 }}>{c.redemption_count}/{c.max_redemptions}</td>
+                    <td style={{ padding: 12 }}>{c.workspace_name}</td>
+                    <td style={{ padding: 12 }}>{c.expires_at ? new Date(c.expires_at).toLocaleDateString() : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <h2 style={{ fontSize: 20, margin: "8px 0 12px" }}>Users &amp; plans</h2>
         <div style={{ overflowX: "auto", background: "#fff", borderRadius: 12, border: "1px solid #e5e0d6" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
             <thead>

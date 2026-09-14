@@ -31,6 +31,7 @@ const esLabels: Record<string, string> = {
   "At least 8 characters": "Al menos 8 caracteres", "Your new business name": "Nombre de tu nuevo negocio",
   "I agree to the": "Acepto los", "Terms of Service": "Términos de servicio", and: "y la", "Privacy Policy": "Política de privacidad",
   "Creating account…": "Creando cuenta…", "Create Account": "Crear cuenta", "Already have an account?": "¿Ya tienes una cuenta?", "Log in": "Iniciar sesión", "← Back to smartpr.com": "← Volver a smartpr.com",
+  "Have a partner code?": "¿Tienes un código de socio?", "Partner code": "Código de socio",
 };
 
 function LanguageToggle({ language, onChange }: { language: Language; onChange: (language: Language) => void }) {
@@ -55,6 +56,8 @@ function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [complete, setComplete] = useState<"session" | "confirmation" | null>(null);
   const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [partnerCode, setPartnerCode] = useState(() => (params.get("code") || "").trim().toUpperCase());
+  const [showPartnerCode, setShowPartnerCode] = useState(() => Boolean((params.get("code") || "").trim()));
 
   const requestedNext = params.get("next");
   const inviteToken = params.get("invite");
@@ -64,7 +67,12 @@ function SignupForm() {
   const t = (value: string) => isSpanish ? (esLabels[value] || value) : value;
 
   async function bootstrapPlatform() {
-    const response = await fetch("/api/auth/bootstrap", { method: "POST" });
+    const code = partnerCode.trim().toUpperCase();
+    const response = await fetch("/api/auth/bootstrap", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(code ? { partnerCode: code } : {}),
+    });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
       setError(result.error || "Your account was created, but SmartPR could not initialize your workspace.");
@@ -100,6 +108,7 @@ function SignupForm() {
             professional_role: role,
             onboarding_intent: intent,
             business_name: businessName.trim() || null,
+            partner_code: partnerCode.trim().toUpperCase() || null,
           },
         },
       });
@@ -176,6 +185,22 @@ function SignupForm() {
             <label>{t("Phone number")} <em>({t("optional")})</em><input type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="(787) 555-0123" /></label>
             <label>{t("I am a…")}<select value={role} onChange={(event) => setRole(event.target.value)}><option value="owner">{t("Business owner")}</option><option value="gestor">{t("Gestor")}</option><option value="cpa">{t("CPA / Accountant")}</option><option value="permitting">{t("Permitting firm")}</option><option value="attorney">{t("Attorney / Law firm")}</option></select></label>
             <label>{t("Business name")} <em>({t("optional")})</em><input value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder={intent === "manage" ? "Luna Café LLC" : t("Your new business name")} /></label>
+
+            {showPartnerCode ? (
+              <label>{t("Partner code")} <em>({t("optional")})</em>
+                <input
+                  value={partnerCode}
+                  onChange={(event) => setPartnerCode(event.target.value.toUpperCase())}
+                  placeholder="LUYO-90"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+            ) : (
+              <button type="button" className={styles.partnerToggle} onClick={() => setShowPartnerCode(true)}>
+                {t("Have a partner code?")}
+              </button>
+            )}
 
             <label className={styles.terms}><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>{t("I agree to the")} <Link href="/privacy">{t("Privacy Policy")}</Link>.</span></label>
             {error && <div className={styles.error} role="alert">{error}</div>}
