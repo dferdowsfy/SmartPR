@@ -282,7 +282,7 @@
     "agency_canonical": "Departamento de Asuntos del Consumidor",
     "download_url": "https://docs.pr.gov/files/DACO/Licencias/Solicitud-Urbanizador-Constructor-v2.pdf",
     "download_kind": "form_pdf",
-    "download_note": "Official DACO PDF on docs.pr.gov (Regulation 8172 contractor registration). Matches the DACOUC01 source SmartPR maps as a fillable artifact.",
+    "download_note": "Official DACO PDF on docs.pr.gov (Regulation 8172 contractor registration). Matches the DACOUC01 source SmartPR maps as a fillable artifact; the form includes a 'Renovación' (renewal) option. Note: the license's validity period is not verified — no renewal cadence is recorded.",
     "citation": "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO); Regl. 8172",
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute"
@@ -995,5 +995,19 @@
     "citation": "Ley 164-2009, Arts. 15.01(A) y 21.03(C) — informe anual (corps) / anualidad (CRL), vence 15 de abril",
     "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Corporaciones%20Privadas/164-2009/164-2009.pdf",
     "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_SAM_REGISTRATION",
+    "name": "SAM.gov Entity Registration",
+    "agency": "System for Award Management (SAM.gov)",
+    "category": "Federal",
+    "agency_url": "https://sam.gov",
+    "agency_canonical": "System for Award Management (SAM.gov)",
+    "download_url": "https://sam.gov",
+    "download_kind": "filing_portal",
+    "download_note": "Free federal registration at sam.gov; required to bid on federal contracts and receive federal grants or awards. Registration must be renewed every 365 days to remain active.",
+    "citation": "GSA: SAM.gov entity registration must be renewed annually to remain active (Comply with contractual requirements); renewal every 365 days (SAM Entity Registration guide, FAR 52.204-7)",
+    "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+    "citation_confidence": "official"
   }
 ]

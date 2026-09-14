@@ -367,5 +367,16 @@
     "aliases": [
       "Office of the Commissioner of Financial Institutions"
     ]
+  },
+  {
+    "id": "sam_gov",
+    "name": "System for Award Management (SAM.gov)",
+    "role": "government",
+    "level": "Federal",
+    "jurisdiction": "Federal",
+    "aliases": [
+      "General Services Administration (GSA) — SAM.gov"
+    ],
+    "url": "https://sam.gov"
   }
 ]

@@ -27,6 +27,7 @@ export const PR_GUIDANCE_SOURCES = {
   luma: source("SRC_GUIDANCE_LUMA", "Negociado de Energía de Puerto Rico", "Reglamento 8915 — interconexión de generadores con el sistema de distribución", "https://energia.pr.gov/wp-content/uploads/sites/7/2024/04/20240419-MI20190009-Mocion-en-Cumplimiento-de-Orden-Emitida-el-15-de-abril-de-2024.pdf", "The Negociado de Energía oversees the interconnection regulation for distributed generators connecting to the distribution system (Reglamento 8915)."),
   netMetering: source("SRC_GUIDANCE_NET_METERING", "Negociado de Energía de Puerto Rico", "Resolución sobre medición neta y energía distribuida", "https://energia.pr.gov/wp-content/uploads/sites/7/2024/06/20240614-MI20240006-Resolucion.pdf", "The Negociado de Energía regulates the net metering program and distributed energy under Ley 114-2007, as amended."),
   solarOgpe: source("SRC_GUIDANCE_SOLAR_OGPE", "OGPe", "Single Business Portal — construction and use permits", "https://www.permisos.pr.gov/", "Construction and use permits for energy projects are processed through OGPe's Single Business Portal; rooftop photovoltaic systems of 1 MW or less on existing structures are exempt from OGPe construction and use permits."),
+  sam: source("SRC_GUIDANCE_SAM", "General Services Administration", "SAM.gov entity registration — annual renewal requirement", "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements", "Entity registration in SAM.gov must be renewed every 365 days to remain active; registration is required to bid on federal contracts and receive federal awards."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -35,6 +36,7 @@ const business = condition("businessType", "Commercial activity", "Actividad com
 const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_ALCOHOL_LICENSE: { en: ["alcohol"], es: ["alcohol", "alcohólic"] },
   DOC_EIN: { en: ["ein", "federal tax identifier"], es: ["ein", "identificador contributivo"] },
+  DOC_SAM_REGISTRATION: { en: ["sam.gov", "federal registration", "federal contractor"], es: ["sam.gov", "registro federal", "contratista federal"] },
   DOC_MERCHANT_REGISTRATION: { en: ["merchant", "suri", "ivu"], es: ["comerciante", "suri", "ivu"] },
   DOC_PERMISO_UNICO: { en: ["permit"], es: ["permiso", "solicitud en sbp"] },
   DOC_PATENTE_MUNICIPAL: { en: ["patent", "municipal tax"], es: ["patente", "contributivo municipal"] },
@@ -80,6 +82,17 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("IRS confirmation is official evidence of the EIN assigned to the business, not the application for that number.", "La confirmación del IRS es evidencia oficial del EIN asignado al negocio, no la solicitud de ese número."),
     text("Prepare the EIN application, or upload IRS confirmation if already assigned. Form a new legal entity before applying.", "Prepara la solicitud del EIN o sube la confirmación del IRS si ya fue asignado. Constituye la entidad antes de solicitarlo."),
     text("The assigned EIN can identify the business on tax returns and later licensing applications. Do not substitute a draft for IRS confirmation.", "El EIN asignado identifica al negocio en planillas y solicitudes de licencias. Un borrador no sustituye la confirmación del IRS."),
+  ]),
+  DOC_SAM_REGISTRATION: concept("DOC_SAM_REGISTRATION", [
+    [condition("businessType", "Government contractor: construction", "Contratista del gobierno: construcción", "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR")],
+    [condition("businessType", "Government contractor: IT", "Contratista del gobierno: tecnología", "BT_IT_GOVERNMENT_CONTRACTOR")],
+    [condition("businessType", "Government contractor: professional services", "Contratista del gobierno: servicios profesionales", "BT_PROFESSIONAL_SERVICES_GOVERNMENT_CONTRACTOR")],
+    [condition("businessType", "Government contractor: facilities", "Contratista del gobierno: facilidades", "BT_FACILITIES_GOVERNMENT_CONTRACTOR")],
+  ], [PR_GUIDANCE_SOURCES.sam], [
+    text("Businesses pursuing federal work must be registered in SAM.gov, the federal government's business registry. Registration is free.", "Los negocios que buscan trabajo con el gobierno federal tienen que estar registrados en SAM.gov, el registro federal de negocios. El registro es gratis."),
+    text("The SAM.gov entity registration is the business's active record for federal contracting and awards; it must be renewed every 365 days to stay active.", "El registro de entidad en SAM.gov es el expediente activo del negocio para contratos y fondos federales; hay que renovarlo cada 365 días para mantenerlo activo."),
+    text("Register the business free at sam.gov and keep the registration current; renew it annually before it expires.", "Registra el negocio gratis en sam.gov y mantén el registro al día; renuévalo cada año antes de que se venza."),
+    text("Without an active SAM.gov registration the business cannot be awarded federal contracts or receive federal funds; an expired registration blocks awards.", "Sin un registro activo en SAM.gov el negocio no puede recibir contratos federales ni fondos federales; un registro vencido tranca las adjudicaciones."),
   ]),
   DOC_MERCHANT_REGISTRATION: concept("DOC_MERCHANT_REGISTRATION", [[business]], [PR_GUIDANCE_SOURCES.merchant, PR_GUIDANCE_SOURCES.merchantLaw], [
     text("Puerto Rico's merchant-registration process identifies commercial locations and their sales-tax treatment with Hacienda.", "El registro de comerciantes de Puerto Rico identifica los locales comerciales y su tratamiento del IVU ante Hacienda."),

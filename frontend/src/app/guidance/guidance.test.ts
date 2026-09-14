@@ -24,12 +24,15 @@ function req(id: string): GuidanceRequirement {
 // solar questions.
 const FOOD_GATED = new Set(["DOC_HEALTH_PERMIT", "DOC_FIRE_CERT", "DOC_CFPM"]);
 const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREEMENT", "DOC_OGPE_CONSTRUCTION_PERMIT"]);
+// Federal-contractor-gated: SAM.gov registration applies only to businesses
+// pursuing federal contracts, so it stays provisional for the bar profile.
+const CONTRACTOR_GATED = new Set(["DOC_SAM_REGISTRATION"]);
 
-test("same Bayamón bar: all twenty-one source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all twenty-two source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId)) {
+      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -45,7 +48,7 @@ test("same Bayamón bar: all twenty-one source-backed explanations are distinct 
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 21);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 22);
   }
 });
 

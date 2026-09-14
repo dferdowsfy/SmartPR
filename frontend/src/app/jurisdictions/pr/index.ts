@@ -111,6 +111,10 @@ const kb: KnowledgeBase = {
       // CBP continuous import bond: annual periods until terminated.
       // Verified 2026-09-14.
       { document_id: "DOC_CUSTOMS_BROKER_BOND", frequency_months: 12, citation: "19 CFR Part 113, App. D to Subpart G: continuous bond 'remains in force for one year beginning with the effective date and for each succeeding annual period, or until terminated' (termination per 19 CFR §113.27)." },
+      // SAM.gov entity registration: must be renewed every 365 days to
+      // remain active; required to bid on federal contracts and receive
+      // federal grants/awards. Verified 2026-09-14.
+      { document_id: "DOC_SAM_REGISTRATION", frequency_months: 12, citation: "GSA, Comply with contractual requirements: SAM.gov registration must be renewed annually to remain active; SAM Entity Registration guide (FAR 52.204-7): renewal every 365 days." },
       // Everything else stays absent = renewal cadence unknown = no renewal
       // reminders. Never invent a cadence: add entries here only with an
       // authoritative source recorded in the citation.

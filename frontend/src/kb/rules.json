@@ -8601,5 +8601,61 @@
     "citation": "Art. 15.01(A), Law 164-2009 (Ley General de Corporaciones) — corporations file Informe Anual by April 15; Art. 21.03(C) — LLCs pay annual fee by April 15. Dept of State.",
     "notes": "Annual recurring obligation for corporations and LLCs (domestic and foreign authorized to do business in PR). Sole proprietorships, partnerships and LLPs do not file entity annual reports with the Department of State.",
     "citation_source": "rule"
+  },
+  {
+    "id": "RULE_0637",
+    "rule_type": "business_type",
+    "business_type_id": "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",
+    "question_id": null,
+    "expected_answer": null,
+    "municipality_flag": null,
+    "requires_document_id": "DOC_SAM_REGISTRATION",
+    "citation": "GSA: SAM.gov entity registration required to bid on federal contracts and receive federal grants/awards; must be renewed annually (Comply with contractual requirements); renewal every 365 days (SAM Entity Registration guide, FAR 52.204-7)",
+    "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+    "citation_confidence": "official",
+    "citation_inherited_from": "DOC_SAM_REGISTRATION",
+    "citation_source": "document"
+  },
+  {
+    "id": "RULE_0638",
+    "rule_type": "business_type",
+    "business_type_id": "BT_IT_GOVERNMENT_CONTRACTOR",
+    "question_id": null,
+    "expected_answer": null,
+    "municipality_flag": null,
+    "requires_document_id": "DOC_SAM_REGISTRATION",
+    "citation": "GSA: SAM.gov entity registration required to bid on federal contracts and receive federal grants/awards; must be renewed annually (Comply with contractual requirements); renewal every 365 days (SAM Entity Registration guide, FAR 52.204-7)",
+    "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+    "citation_confidence": "official",
+    "citation_inherited_from": "DOC_SAM_REGISTRATION",
+    "citation_source": "document"
+  },
+  {
+    "id": "RULE_0639",
+    "rule_type": "business_type",
+    "business_type_id": "BT_PROFESSIONAL_SERVICES_GOVERNMENT_CONTRACTOR",
+    "question_id": null,
+    "expected_answer": null,
+    "municipality_flag": null,
+    "requires_document_id": "DOC_SAM_REGISTRATION",
+    "citation": "GSA: SAM.gov entity registration required to bid on federal contracts and receive federal grants/awards; must be renewed annually (Comply with contractual requirements); renewal every 365 days (SAM Entity Registration guide, FAR 52.204-7)",
+    "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+    "citation_confidence": "official",
+    "citation_inherited_from": "DOC_SAM_REGISTRATION",
+    "citation_source": "document"
+  },
+  {
+    "id": "RULE_0640",
+    "rule_type": "business_type",
+    "business_type_id": "BT_FACILITIES_GOVERNMENT_CONTRACTOR",
+    "question_id": null,
+    "expected_answer": null,
+    "municipality_flag": null,
+    "requires_document_id": "DOC_SAM_REGISTRATION",
+    "citation": "GSA: SAM.gov entity registration required to bid on federal contracts and receive federal grants/awards; must be renewed annually (Comply with contractual requirements); renewal every 365 days (SAM Entity Registration guide, FAR 52.204-7)",
+    "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+    "citation_confidence": "official",
+    "citation_inherited_from": "DOC_SAM_REGISTRATION",
+    "citation_source": "document"
   }
 ]
