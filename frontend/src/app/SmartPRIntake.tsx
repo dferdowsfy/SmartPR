@@ -3808,6 +3808,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
     const extra = (
       <>
+        {req.document_id === 'DOC_SAM_REGISTRATION' && !expiryValue && (
+          <div style={{ marginTop: 8, padding: 10, background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, fontSize: 13 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4 }}>
+              {L('Registered on sam.gov already?', language)}
+            </div>
+            <div style={{ color: 'var(--muted)' }}>
+              {L("Enter your registration expiry date below and we'll remind you 60, 30, and 7 days before it lapses.", language)}
+            </div>
+          </div>
+        )}
         {expiryBlock}
         {req.code === 'sam_registration' && (
           <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 12.5 }}>

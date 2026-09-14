@@ -892,6 +892,8 @@ export const ES: Record<string, string> = {
   "I don't know": "No sé",
   "We'll remind you 60, 30, and 7 days before.": "Te avisaremos 60, 30 y 7 días antes.",
   "Reminder set": "Recordatorio activado",
+  "Registered on sam.gov already?": "¿Ya te registraste en sam.gov?",
+  "Enter your registration expiry date below and we'll remind you 60, 30, and 7 days before it lapses.": "Anota la fecha de vencimiento de tu registro abajo y te avisaremos 60, 30 y 7 días antes de que se venza.",
   "Reminders on": "Recordatorios activados",
   "Reminders off": "Recordatorios desactivados",
   "Mute or unmute email reminders for this requirement.": "Silencia o reactiva los recordatorios por correo de este requisito.",
