@@ -6,6 +6,8 @@ export type SampleFormData = Record<string, SampleFormValue>;
 export interface SampleFormOption {
   value: string;
   label: string;
+  /** Puerto Rican Spanish label, used when the worksheet renders in Spanish. */
+  labelEs?: string;
 }
 
 export interface SampleFormField {
@@ -17,12 +19,20 @@ export interface SampleFormField {
   help?: string;
   options?: SampleFormOption[];
   profileKey?: "name" | "municipality" | "business_structure" | "number_of_employees";
+  /** Puerto Rican Spanish variants, used when the worksheet renders in Spanish. */
+  labelEs?: string;
+  placeholderEs?: string;
+  helpEs?: string;
 }
 
 export interface SampleFormSection {
   title: string;
+  /** Puerto Rican Spanish title, used when the worksheet renders in Spanish. */
+  titleEs?: string;
   fields: SampleFormField[];
 }
+
+export type SampleApplicationLayout = "worksheet" | "letter";
 
 export interface SampleApplicationDefinition {
   requirementCode: string;
@@ -32,6 +42,18 @@ export interface SampleApplicationDefinition {
   officialOutput: string;
   filename: string;
   sections: SampleFormSection[];
+  /**
+   * "worksheet" renders the classic field-list preparation PDF.
+   * "letter" renders a formal letter with the field values merged into the
+   * body text plus blank signature/notary blocks (never pre-filled).
+   */
+  layout?: SampleApplicationLayout;
+  /** Modal kicker override (e.g. "Supporting document" for the admin letter). */
+  kicker?: string;
+  /** Puerto Rican Spanish variants, used when the worksheet renders in Spanish. */
+  titleEs?: string;
+  descriptionEs?: string;
+  kickerEs?: string;
 }
 
 export interface PreparedSampleApplication {
@@ -338,6 +360,187 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
       },
     ],
   },
+  sam_registration: {
+    requirementCode: "sam_registration",
+    title: "SAM.gov Entity Registration Worksheet",
+    titleEs: "Hoja de trabajo para el registro de entidad en SAM.gov",
+    agency: "U.S. General Services Administration (GSA) — System for Award Management (SAM.gov)",
+    description: "SAM.gov entity registration is completed online at sam.gov — there is no downloadable registration form. This SmartPR worksheet gathers everything you will enter there, pre-filled from your business profile. Complete it here, then enter the information at sam.gov.",
+    descriptionEs: "El registro de entidad en SAM.gov se completa en línea en sam.gov — no existe un formulario de registro descargable. Esta hoja de trabajo de SmartPR reúne todo lo que vas a ingresar allí, prellenado con tu perfil de negocio. Complétala aquí y luego ingresa la información en sam.gov.",
+    officialOutput: "Active SAM.gov entity registration (verified at sam.gov)",
+    filename: "08_SAM.gov_Entity_Registration_Worksheet.pdf",
+    sections: [
+      {
+        title: "Account & access",
+        titleEs: "Cuenta y acceso",
+        fields: [
+          {
+            key: "login_gov_email", label: "Login.gov account email", labelEs: "Correo de la cuenta de Login.gov",
+            type: "email", required: true,
+            help: "SAM.gov sign-in uses a Login.gov account. Create one at login.gov if you do not have one yet.",
+            helpEs: "Para entrar a SAM.gov se usa una cuenta de Login.gov. Crea una en login.gov si aún no tienes.",
+          },
+          {
+            key: "has_login_gov", label: "Do you already have a Login.gov account?", labelEs: "¿Ya tienes una cuenta de Login.gov?",
+            type: "select", options: [
+              { value: "yes", label: "Yes", labelEs: "Sí" },
+              { value: "no", label: "No", labelEs: "No" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Entity identity",
+        titleEs: "Identidad de la entidad",
+        fields: [
+          {
+            key: "legal_name", label: "Legal business name", labelEs: "Nombre legal del negocio",
+            type: "text", required: true, profileKey: "name",
+            help: "Must match the IRS records exactly — SAM.gov validates it against the IRS.",
+            helpEs: "Tiene que coincidir exactamente con los récords del IRS — SAM.gov lo valida contra el IRS.",
+          },
+          {
+            key: "physical_address", label: "Physical address", labelEs: "Dirección física",
+            type: "textarea", required: true,
+            help: "Must match the SAM.gov registration exactly — the Entity Administrator letter uses this address too.",
+            helpEs: "Tiene que coincidir exactamente con el registro en SAM.gov — la carta del Administrador de la Entidad también usa esta dirección.",
+          },
+          {
+            key: "mailing_address", label: "Mailing address (if different)", labelEs: "Dirección postal (si es diferente)",
+            type: "textarea",
+          },
+          {
+            key: "ein", label: "Taxpayer Identification Number (EIN)", labelEs: "Número de Identificación Patronal (EIN)",
+            type: "text", required: true, placeholder: "XX-XXXXXXX",
+          },
+          {
+            key: "entity_type", label: "Business structure / entity type", labelEs: "Estructura del negocio / tipo de entidad",
+            type: "select", required: true, profileKey: "business_structure", options: ENTITY_OPTIONS,
+          },
+        ],
+      },
+      {
+        title: "Business classification",
+        titleEs: "Clasificación del negocio",
+        fields: [
+          {
+            key: "naics_codes", label: "NAICS codes", labelEs: "Códigos NAICS",
+            type: "text", required: true, placeholder: "e.g. 541512, 236220",
+            help: "North American Industry Classification System codes describing your business activities. List all that apply, separated by commas.",
+            helpEs: "Códigos del Sistema de Clasificación Industrial de América del Norte que describen las actividades del negocio. Indica todos los que apliquen, separados por comas.",
+          },
+          {
+            key: "registration_purpose", label: "Purpose of registration", labelEs: "Propósito del registro",
+            type: "select", required: true,
+            options: [
+              { value: "contracts", label: "Federal contracts", labelEs: "Contratos federales" },
+              { value: "grants", label: "Federal grants / awards", labelEs: "Fondos federales / subvenciones" },
+              { value: "both", label: "Both contracts and grants", labelEs: "Contratos y fondos federales" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Banking — electronic funds transfer",
+        titleEs: "Datos bancarios — transferencia electrónica de fondos",
+        fields: [
+          {
+            key: "bank_name", label: "Bank name", labelEs: "Nombre del banco",
+            type: "text", required: true,
+            help: "SAM.gov requires banking information for electronic funds transfer (EFT) payments. Enter it directly at sam.gov — SmartPR keeps this draft only on this device.",
+            helpEs: "SAM.gov exige los datos bancarios para pagos por transferencia electrónica de fondos (EFT). Ingrésalos directamente en sam.gov — SmartPR guarda este borrador solo en este dispositivo.",
+          },
+          { key: "routing_number", label: "Routing number", labelEs: "Número de ruta", type: "text", required: true },
+          { key: "account_number", label: "Account number", labelEs: "Número de cuenta", type: "text", required: true },
+          {
+            key: "account_type", label: "Account type", labelEs: "Tipo de cuenta",
+            type: "select", required: true,
+            options: [
+              { value: "checking", label: "Checking", labelEs: "Cheques" },
+              { value: "savings", label: "Savings", labelEs: "Ahorros" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Points of contact",
+        titleEs: "Personas de contacto",
+        fields: [
+          { key: "poc_name", label: "Primary point of contact — name", labelEs: "Contacto principal — nombre", type: "text", required: true },
+          { key: "poc_title", label: "Title", labelEs: "Título", type: "text", required: true },
+          { key: "poc_email", label: "Email", labelEs: "Correo electrónico", type: "email", required: true },
+          { key: "poc_phone", label: "Phone", labelEs: "Teléfono", type: "tel", required: true },
+        ],
+      },
+      {
+        title: "Representations & certifications",
+        titleEs: "Representaciones y certificaciones",
+        fields: [
+          {
+            key: "reps_certs_ack", label: "FAR / DFARS representations & certifications",
+            labelEs: "Representaciones y certificaciones FAR / DFARS",
+            type: "checkbox", required: true,
+            help: "The representations and certifications are completed inside sam.gov as part of registration — this checkbox confirms you know to complete them there.",
+            helpEs: "Las representaciones y certificaciones se completan dentro de sam.gov como parte del registro — esta casilla confirma que sabes que tienes que completarlas allí.",
+          },
+        ],
+      },
+    ],
+  },
+  sam_admin_letter: {
+    requirementCode: "sam_admin_letter",
+    layout: "letter",
+    kicker: "Supporting document",
+    kickerEs: "Documento de apoyo",
+    title: "Entity Administrator Appointment Letter",
+    titleEs: "Carta de nombramiento del Administrador de la Entidad",
+    agency: "U.S. General Services Administration (GSA) — System for Award Management (SAM.gov)",
+    description: "Template for the original signed, notarized letter on entity letterhead that GSA requires new entities to submit to appoint the SAM.gov Entity Administrator. Print on letterhead, sign by hand, and have it notarized — SmartPR never signs or notarizes.",
+    descriptionEs: "Modelo de la carta original firmada y notarizada en papel con membrete de la entidad que GSA exige a las entidades nuevas para nombrar al Administrador de la Entidad de SAM.gov. Imprímela en papel con membrete, fírmala a mano y notarízala — SmartPR nunca firma ni notariza.",
+    officialOutput: "Signed, notarized Entity Administrator appointment letter accepted by GSA",
+    filename: "09_SAM.gov_Entity_Administrator_Appointment_Letter.pdf",
+    sections: [
+      {
+        title: "Entity",
+        titleEs: "Entidad",
+        fields: [
+          { key: "entity_legal_name", label: "Entity legal name", labelEs: "Nombre legal de la entidad", type: "text", required: true, profileKey: "name" },
+          {
+            key: "uei", label: "Unique Entity ID (UEI)", labelEs: "Identificador Único de Entidad (UEI)",
+            type: "text",
+            help: "If already assigned. Leave blank if the UEI is still pending.",
+            helpEs: "Si ya se te asignó. Déjalo en blanco si aún está pendiente.",
+          },
+          {
+            key: "entity_physical_address", label: "Entity physical address", labelEs: "Dirección física de la entidad",
+            type: "textarea", required: true,
+            help: "Must match the SAM.gov registration exactly.",
+            helpEs: "Tiene que coincidir exactamente con el registro en SAM.gov.",
+          },
+        ],
+      },
+      {
+        title: "Entity Administrator",
+        titleEs: "Administrador de la Entidad",
+        fields: [
+          { key: "admin_name", label: "Administrator name", labelEs: "Nombre del administrador", type: "text", required: true },
+          { key: "admin_title", label: "Administrator title", labelEs: "Título del administrador", type: "text", required: true },
+          { key: "admin_email", label: "Administrator email", labelEs: "Correo electrónico del administrador", type: "email", required: true },
+          { key: "admin_phone", label: "Administrator phone", labelEs: "Teléfono del administrador", type: "tel", required: true },
+          {
+            key: "admin_preference", label: "Account administration preference", labelEs: "Preferencia de administración de la cuenta",
+            type: "select", required: true,
+            options: [
+              { value: "self_admin", label: "Self-administration — the entity administers its own SAM.gov account", labelEs: "Autoadministración — la entidad administra su propia cuenta de SAM.gov" },
+              { value: "third_party_agent", label: "Third-party agent — the entity designates an agent to administer its SAM.gov account", labelEs: "Agente tercero — la entidad designa un agente para administrar su cuenta de SAM.gov" },
+            ],
+            help: "GSA requires the letter to state this preference.",
+            helpEs: "GSA exige que la carta indique esta preferencia.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
@@ -350,6 +553,7 @@ export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
   alcohol_permit: "SmartPR prepares an alcohol beverage license worksheet for you. The license itself is agency-issued: complete the application with Hacienda, and after it issues the license, upload the official Alcohol Beverage License to complete this requirement.",
   workers_comp: "SmartPR prepares a CFSE policy worksheet for you. The policy itself is agency-issued: complete the application with the State Insurance Fund Corporation (CFSE), and after coverage is issued, upload the official CFSE policy evidence to complete this requirement.",
   doc_luma_interconnection: "SmartPR prepares LUMA's customer orientation attestation for you — print it, sign it by hand, and upload the signed copy. LUMA still requires the signed document as part of its interconnection registration.",
+  sam_registration: "SAM.gov registration is completed online at sam.gov — there is no downloadable form. SmartPR prepares a worksheet with everything you will enter there, plus the Entity Administrator appointment letter template (print on letterhead, sign by hand, have it notarized). After GSA activates the registration, upload the confirmation to complete this requirement.",
 };
 
 export const ISSUED_DOCUMENT_GUIDANCE_ES: Record<string, string> = {
@@ -362,10 +566,48 @@ export const ISSUED_DOCUMENT_GUIDANCE_ES: Record<string, string> = {
   alcohol_permit: "SmartPR te prepara una hoja de trabajo para la licencia de bebidas alcohólicas. La licencia en sí la emite la agencia: completa la solicitud con Hacienda y, después de emitida, sube la Licencia de Bebidas Alcohólicas oficial para completar este requisito.",
   workers_comp: "SmartPR te prepara una hoja de trabajo para la póliza de la CFSE. La póliza en sí la emite la agencia: completa la solicitud con la Corporación del Fondo del Seguro del Estado (CFSE) y, después de emitida la cubierta, sube la evidencia oficial de la póliza para completar este requisito.",
   doc_luma_interconnection: "SmartPR te prepara la Confirmación de Orientación al Cliente de LUMA — imprímela, fírmala a mano y sube la copia firmada. LUMA sigue exigiendo el documento firmado como parte de su registro de interconexión.",
+  sam_registration: "El registro en SAM.gov se completa en línea en sam.gov — no hay un formulario descargable. SmartPR te prepara una hoja de trabajo con todo lo que vas a ingresar allí, más el modelo de carta de nombramiento del Administrador de la Entidad (imprímela en papel con membrete, fírmala a mano y notarízala). Después de que GSA active el registro, sube la confirmación para completar este requisito.",
 };
 
-export function getSampleApplication(requirementCode: string): SampleApplicationDefinition | null {
-  return SAMPLE_APPLICATIONS[requirementCode] ?? null;
+export type SampleApplicationLanguage = "en" | "es";
+
+/**
+ * Return a copy of the definition with Puerto Rican Spanish copy swapped in
+ * when language is "es". Definitions without Spanish variants render unchanged.
+ */
+export function localizeSampleDefinition(
+  definition: SampleApplicationDefinition,
+  language: SampleApplicationLanguage = "en"
+): SampleApplicationDefinition {
+  if (language !== "es") return definition;
+  return {
+    ...definition,
+    title: definition.titleEs ?? definition.title,
+    description: definition.descriptionEs ?? definition.description,
+    kicker: definition.kickerEs ?? definition.kicker,
+    sections: definition.sections.map((section) => ({
+      ...section,
+      title: section.titleEs ?? section.title,
+      fields: section.fields.map((field) => ({
+        ...field,
+        label: field.labelEs ?? field.label,
+        placeholder: field.placeholderEs ?? field.placeholder,
+        help: field.helpEs ?? field.help,
+        options: field.options?.map((option) => ({
+          ...option,
+          label: option.labelEs ?? option.label,
+        })),
+      })),
+    })),
+  };
+}
+
+export function getSampleApplication(
+  requirementCode: string,
+  language: SampleApplicationLanguage = "en"
+): SampleApplicationDefinition | null {
+  const definition = SAMPLE_APPLICATIONS[requirementCode] ?? null;
+  return definition ? localizeSampleDefinition(definition, language) : null;
 }
 
 export function prefillSampleApplication(
@@ -399,6 +641,19 @@ export function missingRequiredSampleFields(
 
 export function generateSampleApplicationPdf(
   definition: SampleApplicationDefinition,
+  data: SampleFormData,
+  language: SampleApplicationLanguage = "en"
+): Blob {
+  const localized = localizeSampleDefinition(definition, language);
+  if (localized.layout === "letter") {
+    return generateLetterPdf(localized, data, language);
+  }
+  return generateWorksheetPdf(localized, language, data);
+}
+
+function generateWorksheetPdf(
+  definition: SampleApplicationDefinition,
+  language: SampleApplicationLanguage,
   data: SampleFormData
 ): Blob {
   const doc = new jsPDF({ unit: "mm", format: "letter" });
@@ -430,10 +685,15 @@ export function generateSampleApplicationPdf(
   doc.rect(margin, y, width, 16, "FD");
   doc.setTextColor(30, 64, 175);
   doc.setFont("helvetica", "bold");
-  doc.text("SmartPR preparation worksheet", margin + 4, y + 6);
+  doc.text(language === "es" ? "Hoja de trabajo de preparación de SmartPR" : "SmartPR preparation worksheet", margin + 4, y + 6);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`Complete the official filing with the ${definition.agency}; upload the issued document when it arrives.`, margin + 4, y + 11);
+  doc.text(
+    language === "es"
+      ? `Completa la radicación oficial con ${definition.agency}; sube el documento emitido cuando llegue.`
+      : `Complete the official filing with the ${definition.agency}; upload the issued document when it arrives.`,
+    margin + 4, y + 11
+  );
   y += 23;
 
   for (const section of definition.sections) {
@@ -464,14 +724,229 @@ export function generateSampleApplicationPdf(
   doc.line(margin + 95, y, margin + 145, y);
   doc.setTextColor(75, 85, 99);
   doc.setFontSize(8);
-  doc.text("Prepared by", margin, y + 4);
-  doc.text("Date", margin + 95, y + 4);
+  doc.text(language === "es" ? "Preparado por" : "Prepared by", margin, y + 4);
+  doc.text(language === "es" ? "Fecha" : "Date", margin + 95, y + 4);
   y += 12;
   const footer = doc.splitTextToSize(
-    "SmartPR organizes application information but does not submit filings or issue approvals. Verify all information against the current official agency process before filing.",
+    language === "es"
+      ? "SmartPR organiza la información de la solicitud, pero no radica trámites ni emite aprobaciones. Verifica toda la información con el proceso oficial vigente de la agencia antes de radicar."
+      : "SmartPR organizes application information but does not submit filings or issue approvals. Verify all information against the current official agency process before filing.",
     width
   );
   doc.text(footer, margin, y);
+
+  return doc.output("blob");
+}
+
+/**
+ * Formal-letter renderer for layout: "letter" definitions (today: the SAM.gov
+ * Entity Administrator appointment letter).
+ *
+ * Page 1 is the letter itself: entity letterhead, the required appointment
+ * statements with the user's data merged in, then signature and notary blocks
+ * that are ALWAYS blank — SmartPR never signs or notarizes.
+ * Page 2 carries mailing instructions and the source note (never mailed).
+ */
+export function generateLetterPdf(
+  definition: SampleApplicationDefinition,
+  data: SampleFormData,
+  language: SampleApplicationLanguage = "en"
+): Blob {
+  const es = language === "es";
+  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  const margin = 20;
+  const width = 216 - margin * 2;
+  let y = 22;
+
+  const value = (key: string): string | null => {
+    const val = data[key];
+    if (val === undefined || val === null) return null;
+    const s = String(val).trim();
+    return s === "" ? null : s;
+  };
+  // Missing values render as a blank underline the signer completes by hand —
+  // never as a placeholder that could be mistaken for data.
+  const fill = (key: string, len = 26): string => value(key) ?? "_".repeat(len);
+
+  const paragraph = (text: string, opts?: { bold?: boolean; size?: number; gap?: number }) => {
+    doc.setFont("helvetica", opts?.bold ? "bold" : "normal");
+    doc.setFontSize(opts?.size ?? 10.5);
+    doc.setTextColor(20, 20, 20);
+    const lines = doc.splitTextToSize(text, width);
+    if (y + lines.length * 5 > 268) {
+      doc.addPage();
+      y = 22;
+    }
+    doc.text(lines, margin, y);
+    y += lines.length * 5 + (opts?.gap ?? 4);
+  };
+
+  const blankLine = (label: string, lineLen = 92) => {
+    if (y + 12 > 268) {
+      doc.addPage();
+      y = 22;
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(20, 20, 20);
+    doc.text(label, margin, y);
+    const labelW = doc.getTextWidth(label);
+    doc.setDrawColor(20, 20, 20);
+    doc.line(margin + labelW + 2, y, margin + labelW + 2 + lineLen, y);
+    y += 10;
+  };
+
+  // ---- Letterhead: the entity's own name, or a blank line to complete ----
+  const letterhead = value("entity_legal_name");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.setTextColor(20, 20, 20);
+  if (letterhead) {
+    const lines = doc.splitTextToSize(letterhead, width);
+    doc.text(lines, 108, y, { align: "center" });
+    y += lines.length * 6;
+  } else {
+    doc.text("_".repeat(46), 108, y, { align: "center" });
+    y += 8;
+  }
+  doc.setDrawColor(120, 120, 120);
+  doc.line(margin, y, margin + width, y);
+  y += 8;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.text(es ? "Fecha: ____________________" : "Date: ____________________", margin, y);
+  y += 10;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(definition.title, 108, y, { align: "center" });
+  y += 10;
+
+  // ---- Required appointment statements (GSA / Federal Service Desk) ----
+  const uei = fill("uei", 22);
+  const adminName = fill("admin_name", 30);
+  const adminTitle = fill("admin_title", 24);
+  const adminEmail = fill("admin_email", 30);
+  const adminPhone = fill("admin_phone", 18);
+  const entityAddress = fill("entity_physical_address", 30);
+  const pref = value("admin_preference");
+  const prefText = es
+    ? pref === "self_admin"
+      ? "la autoadministración de su cuenta de SAM.gov"
+      : pref === "third_party_agent"
+        ? "la designación de un agente tercero para administrar su cuenta de SAM.gov"
+        : "________________________________________"
+    : pref === "self_admin"
+      ? "self-administration of its SAM.gov account"
+      : pref === "third_party_agent"
+        ? "designation of a third-party agent to administer its SAM.gov account"
+        : "________________________________________";
+
+  if (es) {
+    paragraph(
+      `${fill("entity_legal_name", 34)}, con Identificador Único de Entidad (UEI) ${uei}, ` +
+      `por la presente nombra a ${adminName}, ${adminTitle}, como Administrador de la Entidad ` +
+      `para su registro de entidad en el Sistema de Gestión de Adjudicaciones (SAM.gov).`
+    );
+    paragraph(`La entidad elige ${prefText}.`);
+    paragraph(
+      `La información de contacto del Administrador de la Entidad es: correo electrónico ${adminEmail}, ` +
+      `teléfono ${adminPhone}. La dirección física de la entidad es ${entityAddress}. ` +
+      `Esta información tiene que coincidir exactamente con el registro de entidad en SAM.gov.`
+    );
+  } else {
+    paragraph(
+      `${fill("entity_legal_name", 34)}, with Unique Entity ID (UEI) ${uei}, ` +
+      `hereby appoints ${adminName}, ${adminTitle}, as Entity Administrator ` +
+      `for its System for Award Management (SAM.gov) entity registration.`
+    );
+    paragraph(`The entity elects ${prefText}.`);
+    paragraph(
+      `The Entity Administrator's contact information is: email ${adminEmail}, ` +
+      `telephone ${adminPhone}. The entity's physical address is ${entityAddress}. ` +
+      `This information must match the SAM.gov entity registration exactly.`
+    );
+  }
+
+  // ---- Signature block: ALWAYS blank. SmartPR never signs. ----
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(es ? "Firma" : "Signature", margin, y);
+  y += 8;
+  blankLine(es ? "Firma:" : "Signature:");
+  blankLine(es ? "Nombre en letra de molde:" : "Printed name:");
+  blankLine(es ? "Título:" : "Title:");
+  blankLine(es ? "Fecha:" : "Date:");
+
+  // ---- Notary block: ALWAYS blank. SmartPR never notarizes. ----
+  y += 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text(es ? "Notarización" : "Notarization", margin, y);
+  y += 8;
+  paragraph(
+    es
+      ? `Estado de ____________________, Condado de ____________________`
+      : `State of ____________________, County of ____________________`,
+    { gap: 2 }
+  );
+  paragraph(
+    es
+      ? `Jurado y suscrito ante mí hoy _____ de ____________________ de 20_____.`
+      : `Sworn to and subscribed before me this _____ day of ____________________, 20_____.`,
+    { gap: 6 }
+  );
+  blankLine(es ? "Firma del notario:" : "Notary Public (signature):");
+  blankLine(es ? "Nombre en letra de molde:" : "Printed name:");
+  blankLine(es ? "Mi comisión vence:" : "My commission expires:");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.text(es ? "[SELLO]" : "[SEAL]", margin, y);
+  y += 10;
+
+  // ---- Page 2: instructions (never mailed) ----
+  doc.addPage();
+  y = 22;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(20, 20, 20);
+  doc.text(es ? "Instrucciones — no incluya esta página al enviar" : "Instructions — do not mail this page", margin, y);
+  y += 10;
+  const instructions = es
+    ? [
+      "Imprima esta carta en papel con membrete de la entidad.",
+      "La persona que firma tiene que estar autorizada a actuar a nombre de la entidad.",
+      "Entidades domésticas: la carta tiene que estar notarizada. Envíe el original firmado y notarizado según las instrucciones vigentes del Federal Service Desk (FSD) en sam.gov.",
+      "El correo electrónico y el teléfono del administrador, y la dirección física de la entidad, tienen que coincidir exactamente con el registro en SAM.gov.",
+      "Verifique la redacción vigente de la carta del FSD en sam.gov antes de enviarla — el FSD actualiza el modelo.",
+    ]
+    : [
+      "Print this letter on the entity's letterhead.",
+      "The signer must be authorized to act on behalf of the entity.",
+      "Domestic entities: the letter must be notarized. Mail the original signed, notarized letter per the current Federal Service Desk (FSD) instructions at sam.gov.",
+      "The administrator's email and phone, and the entity's physical address, must match the SAM.gov registration exactly.",
+      "Verify the current FSD letter wording at sam.gov before mailing — FSD updates the template.",
+    ];
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  for (const [i, text] of instructions.entries()) {
+    const lines = doc.splitTextToSize(`${i + 1}. ${text}`, width - 6);
+    if (y + lines.length * 5 > 268) {
+      doc.addPage();
+      y = 22;
+    }
+    doc.text(lines, margin + 3, y);
+    y += lines.length * 5 + 4;
+  }
+  y += 6;
+  paragraph(
+    es
+      ? "Modelo preparado por SmartPR según los requisitos del Federal Service Desk (FSD) de GSA para el nombramiento del Administrador de la Entidad. Esto es un modelo de preparación de SmartPR, no un formulario del gobierno. SmartPR no firma ni notariza."
+      : "Template prepared by SmartPR from the GSA Federal Service Desk (FSD) Entity Administrator appointment requirements. This is a SmartPR preparation template, not a government form. SmartPR does not sign or notarize.",
+    { size: 9, gap: 2 }
+  );
 
   return doc.output("blob");
 }

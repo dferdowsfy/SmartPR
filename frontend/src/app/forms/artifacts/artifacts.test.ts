@@ -148,6 +148,9 @@ test("forms without native fields are the ones that carry coordinate overlays", 
 test("a mapping artifact exists for every template in the library", () => {
   const codes = listMappingFormCodes();
   for (const template of TEMPLATE_LIBRARY) {
+    // SmartPR-generated preparation aids are rendered directly by SmartPR —
+    // they are not official forms and carry no overlay mapping.
+    if (template.artifactType === "smartpr_generated") continue;
     assert.ok(codes.includes(template.formCode), `form-mappings/${template.formCode}.json exists`);
   }
 });

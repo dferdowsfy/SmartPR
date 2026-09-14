@@ -355,6 +355,41 @@ export const TEMPLATE_LIBRARY: TemplateDescriptor[] = [
       "Taxpayer-record maintenance; not every municipality uses a document of this kind.",
     ],
   },
+  {
+    formCode: "SAMWS01",
+    title: "SAM.gov Entity Registration — Preparation Worksheet (SmartPR)",
+    agency: "U.S. General Services Administration (GSA) — System for Award Management (SAM.gov)",
+    scope: "federal",
+    artifactType: "smartpr_generated",
+    populationMethod: "none",
+    submissionChannel: "agency_portal",
+    sourceStatus: "smartpr_generated",
+    requirementCode: "DOC_SAM_REGISTRATION",
+    officialSourceUrl: "https://sam.gov",
+    usageNotes: [
+      "SAM.gov entity registration is completed online at sam.gov — there is no downloadable registration form. This SmartPR worksheet gathers everything the filer will enter there, pre-filled from the business profile.",
+      "SmartPR-generated preparation aid: never present it as an official government form. The registration itself is agency-issued — complete it at sam.gov, then upload the resulting evidence.",
+      "Registration must be renewed every 365 days to remain active (GSA).",
+    ],
+  },
+  {
+    formCode: "SAMAL01",
+    title: "SAM.gov Entity Administrator Appointment Letter — Template (SmartPR)",
+    agency: "U.S. General Services Administration (GSA) — System for Award Management (SAM.gov)",
+    scope: "federal",
+    artifactType: "smartpr_generated",
+    populationMethod: "none",
+    submissionChannel: "mail",
+    sourceStatus: "smartpr_generated",
+    requirementCode: "DOC_SAM_REGISTRATION",
+    officialSourceUrl: "https://sam.gov",
+    usageNotes: [
+      "Template for the original signed, notarized letter on entity letterhead that GSA requires new entities to submit to appoint the SAM.gov Entity Administrator (per GSA Federal Service Desk guidance).",
+      "The letter must state the account-administration preference (self-administration or third-party agent designation); the administrator's email/phone and the entity's physical address must match the SAM.gov registration exactly.",
+      "Signature and notary blocks are never filled by SmartPR — print on entity letterhead, sign by hand, and have it notarized.",
+      "SmartPR-generated template: never present it as an official government form. Verify the current FSD letter wording at sam.gov before mailing — FSD updates the template.",
+    ],
+  },
 ];
 
 export const TEMPLATES_BY_CODE: Record<string, TemplateDescriptor> = Object.fromEntries(

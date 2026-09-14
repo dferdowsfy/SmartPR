@@ -58,3 +58,107 @@ test("required-field validation returns human-readable labels", () => {
   assert.ok(missing.includes("Registered agent name"));
   assert.ok(!missing.includes("Proposed legal entity name"));
 });
+
+test("SAM.gov worksheet covers all required registration fields", () => {
+  const definition = getSampleApplication("sam_registration")!;
+  const keys = definition.sections.flatMap((section) => section.fields.map((field) => field.key));
+  for (const key of [
+    "login_gov_email",      // Login.gov account
+    "legal_name",           // legal name exactly as registered with IRS
+    "physical_address",     // physical address
+    "mailing_address",      // mailing address
+    "ein",                  // EIN/TIN
+    "entity_type",          // business structure/type
+    "naics_codes",          // NAICS codes
+    "registration_purpose", // federal contracts and/or grants/awards
+    "bank_name", "routing_number", "account_number", // EFT banking details
+    "poc_name", "poc_email", "poc_phone",            // points of contact
+    "reps_certs_ack",       // FAR/DFARS representations and certifications
+  ]) {
+    assert.ok(keys.includes(key), `sam_registration worksheet missing field ${key}`);
+  }
+});
+
+test("SAM.gov worksheet is framed as a preparation worksheet, not an official form", () => {
+  for (const language of ["en", "es"] as const) {
+    const definition = getSampleApplication("sam_registration", language)!;
+    assert.match(definition.description, /sam\.gov/i, `sam.gov web-only notice missing (${language})`);
+    assert.doesNotMatch(definition.title, /official/i, `worksheet must not be called official (${language})`);
+    assert.ok(definition.filename.toLowerCase().includes("worksheet"), "worksheet PDF filename must say worksheet");
+  }
+});
+
+test("SAM.gov worksheet pre-fills profile fields and localizes", () => {
+  const definition = getSampleApplication("sam_registration")!;
+  const prefilled = prefillSampleApplication(definition, {
+    name: "Taller Caribe LLC",
+    municipality: "Yabucoa",
+    business_structure: "llc",
+  });
+  assert.equal(prefilled.legal_name, "Taller Caribe LLC");
+  assert.equal(prefilled.entity_type, "llc");
+
+  const spanish = getSampleApplication("sam_registration", "es")!;
+  assert.notEqual(spanish.title, definition.title, "Spanish title should differ");
+  assert.match(spanish.title, /SAM\.gov/i);
+  assert.match(spanish.sections[0].title, /[a-záéíóúñ]/i);
+
+  for (const language of ["en", "es"] as const) {
+    const blob = generateSampleApplicationPdf(getSampleApplication("sam_registration", language)!, { legal_name: "Taller Caribe LLC" }, language);
+    assert.ok(blob.size > 0, `SAM.gov worksheet PDF should not be empty (${language})`);
+  }
+});
+
+test("Entity Administrator letter covers the required appointment statements", () => {
+  const definition = getSampleApplication("sam_admin_letter")!;
+  assert.equal(definition.layout, "letter");
+  assert.equal(definition.kicker, "Supporting document");
+  const keys = definition.sections.flatMap((section) => section.fields.map((field) => field.key));
+  for (const key of [
+    "entity_legal_name",      // entity legal name
+    "uei",                    // UEI, if known (optional)
+    "entity_physical_address",// entity physical address matching SAM.gov
+    "admin_name", "admin_title", "admin_email", "admin_phone", // administrator name/title/email/phone
+    "admin_preference",       // self-administration vs third-party agent
+  ]) {
+    assert.ok(keys.includes(key), `sam_admin_letter missing field ${key}`);
+  }
+  // The letter is a supporting document: only blank blocks are hand-completed.
+  assert.match(definition.description, /letterhead/i);
+  assert.match(definition.description, /notariz/i);
+  assert.match(definition.description, /hand/i);
+});
+
+test("Entity Administrator letter PDF has blank signature and notary blocks", async () => {
+  const { extractPdfText } = await import("./forms/artifacts/pdfReadback.ts");
+  for (const language of ["en", "es"] as const) {
+    const definition = getSampleApplication("sam_admin_letter", language)!;
+    const blob = generateSampleApplicationPdf(definition, {
+      entity_legal_name: "Taller Caribe LLC",
+      uei: "K1L2M3N4P5Q6",
+      entity_physical_address: "Carr. 901 Km 2.3, Yabucoa, PR 00767",
+      admin_name: "María Pagán",
+      admin_title: "Presidenta",
+      admin_email: "maria@tallercaribe.com",
+      admin_phone: "787-555-0100",
+      admin_preference: "self_admin",
+    }, language);
+    assert.ok(blob.size > 0, `letter PDF should not be empty (${language})`);
+    const text = await extractPdfText(new Uint8Array(await blob.arrayBuffer()));
+
+    // Required appointment statements appear in the letter body.
+    for (const expected of language === "es"
+      ? ["Administrador de la Entidad", "SAM.gov", "coincidir exactamente", "Federal Service Desk"]
+      : ["Entity Administrator", "SAM.gov", "match the SAM.gov entity registration exactly", "Federal Service Desk"]) {
+      assert.ok(text.includes(expected), `letter PDF missing "${expected}" (${language})`);
+    }
+
+    // Signature and notary blocks are present but never pre-filled with data:
+    // the admin's name/email must not appear after the signature block starts.
+    const signatureStart = language === "es" ? "Firma" : "Signature";
+    const tail = text.slice(text.indexOf(signatureStart));
+    assert.ok(tail.includes(language === "es" ? "Notariz" : "Notarization"), `notary block missing (${language})`);
+    assert.ok(!tail.includes("María Pagán"), `signature/notary blocks must stay blank (${language})`);
+    assert.ok(!tail.includes("maria@tallercaribe.com"), `signature/notary blocks must stay blank (${language})`);
+  }
+});

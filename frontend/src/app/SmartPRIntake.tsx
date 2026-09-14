@@ -3009,7 +3009,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   };
 
   const openSampleApplication = (requirementCode: string) => {
-    const definition = getSampleApplication(requirementCode);
+    const definition = getSampleApplication(requirementCode, language);
     if (!definition) return;
     const nextData = prefillSampleApplication(
       definition,
@@ -3046,7 +3046,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // generated PDF. "Add PDF to deliverables" only becomes available from there.
   const reviewSampleForm = () => {
     if (!activeSampleFormCode) return;
-    const definition = getSampleApplication(activeSampleFormCode);
+    const definition = getSampleApplication(activeSampleFormCode, language);
     if (!definition) return;
     const data = sampleFormDrafts[activeSampleFormCode] || {};
     const missing = missingRequiredSampleFields(definition, data);
@@ -3066,11 +3066,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // approximation of what "Add PDF to deliverables" is about to save.
   const sampleFormPreviewUrl = useMemo(() => {
     if (sampleFormMode !== 'preview' || !activeSampleFormCode) return null;
-    const definition = getSampleApplication(activeSampleFormCode);
+    const definition = getSampleApplication(activeSampleFormCode, language);
     if (!definition) return null;
-    const blob = generateSampleApplicationPdf(definition, sampleFormDrafts[activeSampleFormCode] || {});
+    const blob = generateSampleApplicationPdf(definition, sampleFormDrafts[activeSampleFormCode] || {}, language);
     return URL.createObjectURL(blob);
-  }, [sampleFormMode, activeSampleFormCode, sampleFormDrafts]);
+  }, [sampleFormMode, activeSampleFormCode, sampleFormDrafts, language]);
 
   useEffect(() => {
     return () => {
@@ -3080,7 +3080,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   const addSampleFormToDeliverables = () => {
     if (!activeSampleFormCode) return;
-    const definition = getSampleApplication(activeSampleFormCode);
+    const definition = getSampleApplication(activeSampleFormCode, language);
     if (!definition) return;
     const data = sampleFormDrafts[activeSampleFormCode] || {};
     const missing = missingRequiredSampleFields(definition, data);
@@ -3100,16 +3100,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const nextPrepared = { ...preparedSampleApplications, [activeSampleFormCode]: prepared };
     setPreparedSampleApplications(nextPrepared);
     persistSampleForms(sampleFormDrafts, nextPrepared);
-    setSampleFormNotice('Application worksheet added to deliverables. Upload the agency-issued document separately after approval.');
+    setSampleFormNotice(definition.layout === 'letter'
+      ? 'Letter added to deliverables. Print it on entity letterhead, sign by hand, and have it notarized.'
+      : 'Application worksheet added to deliverables. Upload the agency-issued document separately after approval.');
     setSampleFormErrors([]);
   };
 
   // Renders the exact PDF in an on-page preview before it can be downloaded —
   // clicking "PDF" no longer fires a silent, easy-to-miss browser download.
   const previewPreparedSampleApplication = (prepared: PreparedSampleApplication) => {
-    const definition = getSampleApplication(prepared.requirementCode);
+    const definition = getSampleApplication(prepared.requirementCode, language);
     if (!definition) return;
-    const blob = generateSampleApplicationPdf(definition, prepared.data);
+    const blob = generateSampleApplicationPdf(definition, prepared.data, language);
     setDocPreview({ title: prepared.title, filename: prepared.filename, blob });
   };
 
@@ -3137,9 +3139,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // Add SmartPR preparation worksheets, pre-filled from the business profile.
       // The agency-issued document still completes each requirement on upload.
       for (const prepared of Object.values(preparedSampleApplications)) {
-        const definition = getSampleApplication(prepared.requirementCode);
+        const definition = getSampleApplication(prepared.requirementCode, language);
         if (!definition) continue;
-        zip.file(`Prepared_Applications/${prepared.filename}`, generateSampleApplicationPdf(definition, prepared.data));
+        zip.file(`Prepared_Applications/${prepared.filename}`, generateSampleApplicationPdf(definition, prepared.data, language));
       }
 
       // Add government-form PDFs (CORPREG01–06). Regenerated fresh here, never
@@ -3568,7 +3570,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const fState = govEntry ? requirementFormState(prepared) : null;
     const formActions = govEntry ? (fState === 'no_record' && hasDraft ? ['edit_form'] : actionsForFormState(fState!)) : [];
 
-    const sampleDef = !govEntry ? getSampleApplication(req.code) : null;
+    const sampleDef = !govEntry ? getSampleApplication(req.code, language) : null;
     const sampleDraft = sampleDef ? sampleFormDrafts[req.code] : undefined;
     const samplePrepared = sampleDef ? preparedSampleApplications[req.code] : undefined;
 
@@ -3807,6 +3809,30 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const extra = (
       <>
         {expiryBlock}
+        {req.code === 'sam_registration' && (
+          <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 12.5 }}>
+            <div style={{ fontWeight: 600, marginBottom: 2 }}>
+              {language === 'es' ? 'Documento de apoyo requerido por GSA' : 'Supporting document required by GSA'}
+            </div>
+            <div style={{ color: 'var(--muted)', marginBottom: 6 }}>
+              {language === 'es'
+                ? 'Las entidades nuevas tienen que enviar una carta original firmada y notarizada nombrando al Administrador de la Entidad.'
+                : 'New entities must submit an original signed, notarized letter appointing the Entity Administrator.'}
+            </div>
+            <button
+              type="button"
+              className="rq-secondary-btn"
+              onClick={() => openSampleApplication('sam_admin_letter')}
+            >
+              <span>{language === 'es' ? 'Preparar carta de nombramiento' : 'Prepare appointment letter'}</span>
+            </button>
+            {preparedSampleApplications['sam_admin_letter'] && (
+              <span className="tag" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', marginLeft: 8 }}>
+                {language === 'es' ? 'Carta preparada' : 'Letter prepared'}
+              </span>
+            )}
+          </div>
+        )}
         {prepared && (
           <span className="tag" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
             {fState === 'submitted' ? L('Marked as submitted', language) : L('Application prepared', language)}
@@ -4052,7 +4078,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const preparedSampleList = Object.values(preparedSampleApplications);
   const preparedGovList = Object.values(preparedGovApplications);
   const packageAssetCount = zipReadyDocs.length + preparedSampleList.length + preparedGovList.length;
-  const activeSampleDefinition = activeSampleFormCode ? getSampleApplication(activeSampleFormCode) : null;
+  const activeSampleDefinition = activeSampleFormCode ? getSampleApplication(activeSampleFormCode, language) : null;
   const activeSampleData = activeSampleFormCode ? (sampleFormDrafts[activeSampleFormCode] || {}) : {};
   const deliverablesReady = totalMandatory > 0 && completedMandatory === totalMandatory;
 
@@ -5070,7 +5096,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <section className="sample-form-modal" role="dialog" aria-modal="true" aria-labelledby="sample-form-title">
             <div className="sample-form-head">
               <div>
-                <div className="spr-kicker">{L('Preparation worksheet', language)} · {activeSampleDefinition.agency}</div>
+                <div className="spr-kicker">{activeSampleDefinition.kicker ?? L('Preparation worksheet', language)} · {activeSampleDefinition.agency}</div>
                 <h2 id="sample-form-title">{activeSampleDefinition.title}</h2>
                 <p>{activeSampleDefinition.description}</p>
               </div>

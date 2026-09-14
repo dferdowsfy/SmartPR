@@ -24,7 +24,8 @@ export type ArtifactType =
   | "genericized_municipal_template"
   | "portal_submission"
   | "issued_certificate"
-  | "supporting_evidence";
+  | "supporting_evidence"
+  | "smartpr_generated";
 
 /** How SmartPR writes user data onto the artifact. */
 export type PopulationMethod =
@@ -53,11 +54,15 @@ export type ArtifactScope = "federal" | "statewide" | "municipality_specific";
  * `genericized_working_copy` — an official layout with municipality-specific
  *   wording removed; usable for field mapping, never presentable as official.
  * `pending_source` — SmartPR knows the artifact exists but has no file yet.
+ * `smartpr_generated` — SmartPR generates this artifact from user data at
+ *   preparation time (worksheet, letter template). There is no agency file,
+ *   and it must never be presented as an official government form.
  */
 export type TemplateSourceStatus =
   | "official_source"
   | "genericized_working_copy"
-  | "pending_source";
+  | "pending_source"
+  | "smartpr_generated";
 
 /** A template in the SmartPR library (one row per form code + revision). */
 export interface TemplateDescriptor {
