@@ -149,3 +149,9 @@ BEGIN
   );
 END;
 $$;
+
+-- ============================================================================
+-- Partner codes: see data/partner_codes_schema.sql
+--   SELECT admin_create_partner_code('ACME-90', 'partner', 10, 90, 'Acme Pilot');
+--   SELECT * FROM partner_codes;
+-- ============================================================================
