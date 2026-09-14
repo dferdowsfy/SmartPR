@@ -207,6 +207,8 @@ export const ES: Record<string, string> = {
     "¿El negocio operará desde una ubicación física?",
   "Will professional licenses be required?": "¿Se requerirán licencias profesionales?",
   "Will clients or members visit?": "¿Visitarán clientes o miembros?",
+  "Do you plan to bid on federal contracts or apply for federal grants or awards?":
+    "¿El negocio licitará contratos federales o solicitará fondos federales?",
 
   // ---- Requirement names ----
   "Certificate of Incorporation / LLC Formation":
@@ -225,6 +227,7 @@ export const ES: Record<string, string> = {
     "Contrato de Arrendamiento o Documentos de Propiedad + Planos / Fotos",
   "Contractor License / Trade Certification":
     "Licencia de Contratista / Certificación de Oficio",
+  "SAM.gov Entity Registration": "Registro de Entidad en SAM.gov",
   "CRIM Property Tax Clearance": "Certificación de Deuda del CRIM",
   "Professional Licenses for Staff": "Licencias Profesionales del Personal",
   "Professional Liability / E&O Insurance":

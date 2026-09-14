@@ -1,511 +1,511 @@
 [
-{
-"id": "Q_BUSINESS_STRUCTURE",
-"question": "What is the legal structure of the business?",
-"type": "single_select",
-"options": [
-"LLC",
-"Corporation",
-"Sole Proprietorship",
-"Partnership",
-"Professional Corporation",
-"Other"
-]
-},
-{
-"id": "Q_PHYSICAL_LOCATION",
-"question": "Will the business operate from a physical location?",
-"type": "boolean"
-},
-{
-"id": "Q_LOCATION_TYPE",
-"question": "What type of location will the business use?",
-"type": "single_select",
-"options": [
-"Commercial Facility",
-"Home-Based Business",
-"Online Only",
-"Mobile",
-"Industrial Facility"
-]
-},
-{
-"id": "Q_HOME_BASED",
-"question": "Will the business be operated from a home?",
-"type": "boolean"
-},
-{
-"id": "Q_ONLINE_ONLY",
-"question": "Will the business operate entirely online?",
-"type": "boolean"
-},
-{
-"id": "Q_CUSTOMERS_VISIT",
-"question": "Will customers visit the location?",
-"type": "boolean"
-},
-{
-"id": "Q_CLIENTS_VISIT",
-"question": "Will clients visit the office?",
-"type": "boolean"
-},
-{
-"id": "Q_PHYSICAL_OFFICE",
-"question": "Will employees work from a physical office?",
-"type": "boolean"
-},
-{
-"id": "Q_OWNS_PROPERTY",
-"question": "Does the business own the property it will operate from?",
-"type": "boolean"
-},
-{
-"id": "Q_EXISTING_LEASE",
-"question": "Will the business lease its commercial space?",
-"type": "boolean"
-},
-{
-"id": "Q_RENOVATIONS",
-"question": "Will construction or renovations be performed at the location?",
-"type": "boolean"
-},
-{
-"id": "Q_PARKING_PROVIDED",
-"question": "Will the business provide customer parking?",
-"type": "boolean"
-},
-{
-"id": "Q_EMPLOYEES_HIRED",
-"question": "Will employees be hired?",
-"type": "boolean"
-},
-{
-"id": "Q_EMPLOYEE_COUNT",
-"question": "How many employees will the business have?",
-"type": "single_select",
-"options": [
-"0",
-"1-5",
-"6-20",
-"21-50",
-"50+"
-]
-},
-{
-"id": "Q_FOOD_PREPARED",
-"question": "Will food be prepared on-site?",
-"type": "boolean"
-},
-{
-"id": "Q_FOOD_SOLD",
-"question": "Will food be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_FOOD_SERVED",
-"question": "Will food be served to customers?",
-"type": "boolean"
-},
-{
-"id": "Q_ON_SITE_CONSUMPTION",
-"question": "Will customers consume food on-site?",
-"type": "boolean"
-},
-{
-"id": "Q_FOOD_DELIVERY",
-"question": "Will food be delivered?",
-"type": "boolean"
-},
-{
-"id": "Q_FOOD_TRUCK_MOBILE",
-"question": "Will the business operate from a food truck or mobile unit?",
-"type": "boolean"
-},
-{
-"id": "Q_COMMERCIAL_KITCHEN",
-"question": "Will a commercial kitchen be used?",
-"type": "boolean"
-},
-{
-"id": "Q_CFPM_ON_STAFF",
-"question": "Will a Certified Food Protection Manager be on staff?",
-"type": "boolean"
-},
-{
-"id": "Q_ALCOHOL_SOLD",
-"question": "Will alcohol be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_ALCOHOL_SERVED",
-"question": "Will alcohol be served?",
-"type": "boolean"
-},
-{
-"id": "Q_ALCOHOL_MANUFACTURED",
-"question": "Will alcohol be manufactured or bottled?",
-"type": "boolean"
-},
-{
-"id": "Q_HEALTHCARE_SERVICES",
-"question": "Will healthcare services be provided?",
-"type": "boolean"
-},
-{
-"id": "Q_PATIENTS_VISIT",
-"question": "Will patients visit the location?",
-"type": "boolean"
-},
-{
-"id": "Q_CONTROLLED_SUBSTANCES",
-"question": "Will controlled substances be stored or dispensed?",
-"type": "boolean"
-},
-{
-"id": "Q_DIAGNOSTIC_TESTING",
-"question": "Will diagnostic testing be performed?",
-"type": "boolean"
-},
-{
-"id": "Q_NEEDLES_INVASIVE",
-"question": "Will needles or invasive procedures be used?",
-"type": "boolean"
-},
-{
-"id": "Q_MEDICAL_WASTE",
-"question": "Will medical waste be generated?",
-"type": "boolean"
-},
-{
-"id": "Q_BIOHAZARD_WASTE",
-"question": "Will biohazard waste be generated?",
-"type": "boolean"
-},
-{
-"id": "Q_COMMERCIAL_VEHICLES",
-"question": "Will commercial vehicles be used?",
-"type": "boolean"
-},
-{
-"id": "Q_FLEET_SIZE",
-"question": "How many commercial vehicles will be operated?",
-"type": "single_select",
-"options": [
-"0",
-"1-3",
-"4-10",
-"10+"
-]
-},
-{
-"id": "Q_HAZMAT_TRANSPORT",
-"question": "Will hazardous materials be transported?",
-"type": "boolean"
-},
-{
-"id": "Q_VEHICLE_REPAIR",
-"question": "Will vehicles be repaired or serviced?",
-"type": "boolean"
-},
-{
-"id": "Q_HAZARDOUS_FLUIDS",
-"question": "Will hazardous fluids be stored or handled?",
-"type": "boolean"
-},
-{
-"id": "Q_USED_VEHICLE_SALES",
-"question": "Will used vehicles be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_FUEL_SOLD",
-"question": "Will fuel be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_PRODUCTS_MANUFACTURED",
-"question": "Will products be manufactured on-site?",
-"type": "boolean"
-},
-{
-"id": "Q_PRODUCTS_DISTRIBUTED",
-"question": "Will products be distributed?",
-"type": "boolean"
-},
-{
-"id": "Q_CHEMICALS_USED",
-"question": "Will chemicals be used or stored in production?",
-"type": "boolean"
-},
-{
-"id": "Q_TOURISM_ACTIVITY",
-"question": "Will the business offer tourism activities?",
-"type": "boolean"
-},
-{
-"id": "Q_GUESTS_OVERNIGHT",
-"question": "Will guests stay overnight?",
-"type": "boolean"
-},
-{
-"id": "Q_WATER_ACTIVITIES",
-"question": "Will water-based activities be offered?",
-"type": "boolean"
-},
-{
-"id": "Q_EXCURSIONS",
-"question": "Will guided excursions be offered?",
-"type": "boolean"
-},
-{
-"id": "Q_SHORT_TERM_RENTAL",
-"question": "Will this be a short-term rental?",
-"type": "boolean"
-},
-{
-"id": "Q_RENTAL_UNITS",
-"question": "How many rental units will be operated?",
-"type": "single_select",
-"options": [
-"1",
-"2-5",
-"6-20",
-"20+"
-]
-},
-{
-"id": "Q_OUTDOOR_SEATING",
-"question": "Will there be outdoor seating?",
-"type": "boolean"
-},
-{
-"id": "Q_LIVE_ENTERTAINMENT",
-"question": "Will there be live entertainment?",
-"type": "boolean"
-},
-{
-"id": "Q_COMMERCIAL_SIGNAGE",
-"question": "Will the business have commercial signage?",
-"type": "boolean"
-},
-{
-"id": "Q_SIGNAGE_TYPE",
-"question": "What type of signage will be used?",
-"type": "single_select",
-"options": [
-"None",
-"Wall Sign",
-"Freestanding Sign",
-"Illuminated Sign",
-"Digital Sign"
-]
-},
-{
-"id": "Q_HAZARDOUS_MATERIALS",
-"question": "Will hazardous materials be stored?",
-"type": "boolean"
-},
-{
-"id": "Q_HAZARDOUS_STORAGE",
-"question": "Will hazardous materials require dedicated storage?",
-"type": "boolean"
-},
-{
-"id": "Q_ENVIRONMENTAL_IMPACT",
-"question": "Will operations have a potential environmental impact?",
-"type": "boolean"
-},
-{
-"id": "Q_GENERATOR_INSTALLED",
-"question": "Will a fuel-powered generator be installed?",
-"type": "boolean"
-},
-{
-"id": "Q_IMPORT_EXPORT",
-"question": "Will import/export activity occur?",
-"type": "boolean"
-},
-{
-"id": "Q_CUSTOMS_BROKER",
-"question": "Will a customs broker be used?",
-"type": "boolean"
-},
-{
-"id": "Q_PROFESSIONAL_LICENSES",
-"question": "Will professional licenses be required for staff?",
-"type": "boolean"
-},
-{
-"id": "Q_LICENSE_TYPES",
-"question": "Which professional licenses apply?",
-"type": "multi_select",
-"options": [
-"Attorney",
-"CPA",
-"Engineer",
-"Architect",
-"Real Estate Broker",
-"Insurance Agent",
-"Healthcare Professional",
-"Contractor",
-"Other"
-]
-},
-{
-"id": "Q_RETAIL_SALES",
-"question": "Will goods be sold directly to consumers?",
-"type": "boolean"
-},
-{
-"id": "Q_INVENTORY_STORED",
-"question": "Will inventory be stored on-site?",
-"type": "boolean"
-},
-{
-"id": "Q_HARDWARE_SOLD",
-"question": "Will physical hardware or equipment be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_DELIVERIES",
-"question": "Will deliveries be made to customers?",
-"type": "boolean"
-},
-{
-"id": "Q_GOODS_STORED",
-"question": "Will goods be stored in a warehouse or facility?",
-"type": "boolean"
-},
-{
-"id": "Q_TOBACCO_SOLD",
-"question": "Will tobacco products be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_FIREARMS_SOLD",
-"question": "Will firearms or ammunition be sold?",
-"type": "boolean"
-},
-{
-"id": "Q_CHILDREN_PRESENT",
-"question": "Will children be present at the location?",
-"type": "boolean"
-},
-{
-"id": "Q_CLASSES_ON_SITE",
-"question": "Will classes be held on-site?",
-"type": "boolean"
-},
-{
-"id": "Q_BACKGROUND_CHECKS",
-"question": "Will staff require background checks?",
-"type": "boolean"
-},
-{
-"id": "Q_PROPERTY_MANAGEMENT",
-"question": "Will properties be managed on behalf of others?",
-"type": "boolean"
-},
-{
-"id": "Q_CUSTOMERS_RECEIVE_SERVICES",
-"question": "Will customers receive personal-care services on-site?",
-"type": "boolean"
-},
-{
-"id": "Q_AGRICULTURE_PRODUCTION",
-"question": "Will agricultural products be produced?",
-"type": "boolean"
-},
-{
-"id": "Q_LIVESTOCK",
-"question": "Will livestock be raised?",
-"type": "boolean"
-},
-{
-"id": "Q_PESTICIDES",
-"question": "Will pesticides or agrochemicals be applied?",
-"type": "boolean"
-},
-{
-"id": "Q_CASH_INTENSIVE",
-"question": "Will the business be cash-intensive?",
-"type": "boolean"
-},
-{
-"id": "Q_RENEWABLE_INSTALL",
-"question": "Will renewable energy systems be installed?",
-"type": "boolean"
-},
-{
-"id": "Q_GOV_CONTRACT",
-"question": "Will the business contract with government agencies?",
-"type": "boolean"
-},
-{
-"id": "Q_NONPROFIT_STATUS",
-"question": "Will the organization operate as a nonprofit?",
-"type": "boolean"
-},
-{
-"id": "Q_DONATIONS",
-"question": "Will the organization solicit donations?",
-"type": "boolean"
-},
-{
-"id": "Q_ENTITY_FOREIGN_CORP",
-"question": "Is this a corporation already formed outside Puerto Rico seeking authorization to do business here?",
-"type": "boolean"
-},
-{
-"id": "Q_ENTITY_LLP",
-"question": "Is this entity registering as a Limited Liability Partnership (SRL)?",
-"type": "boolean"
-},
-{
-"id": "Q_HOA_CONDO",
-"question": "Is the property part of a condominium, HOA, or other residential association?",
-"type": "boolean"
-}
-,
-{
-"id": "Q_SOLAR_MOUNTING",
-"question": "Will the solar system be roof-mounted or ground-mounted?",
-"type": "single_select",
-"options": [
-"Roof-mounted",
-"Ground-mounted"
-]
-}
-,
-{
-"id": "Q_SOLAR_SIZE",
-"question": "What is the planned solar system capacity?",
-"type": "single_select",
-"options": [
-"1 MW or less",
-"Over 1 MW"
-]
-}
-,
-{
-"id": "Q_SOLAR_STRUCTURE",
-"question": "Will the system be installed on an existing structure?",
-"type": "boolean"
-}
-,
-{
-"id": "Q_SOLAR_OWNERSHIP",
-"question": "Does the business own the property where the solar system will be installed?",
-"type": "single_select",
-"options": [
-"Own",
-"Lease"
-]
-}
-,
-{
-"id": "Q_SOLAR_BATTERY",
-"question": "Will battery energy storage be installed with the solar system?",
-"type": "boolean"
-}
+  {
+    "id": "Q_BUSINESS_STRUCTURE",
+    "question": "What is the legal structure of the business?",
+    "type": "single_select",
+    "options": [
+      "LLC",
+      "Corporation",
+      "Sole Proprietorship",
+      "Partnership",
+      "Professional Corporation",
+      "Other"
+    ]
+  },
+  {
+    "id": "Q_PHYSICAL_LOCATION",
+    "question": "Will the business operate from a physical location?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_LOCATION_TYPE",
+    "question": "What type of location will the business use?",
+    "type": "single_select",
+    "options": [
+      "Commercial Facility",
+      "Home-Based Business",
+      "Online Only",
+      "Mobile",
+      "Industrial Facility"
+    ]
+  },
+  {
+    "id": "Q_HOME_BASED",
+    "question": "Will the business be operated from a home?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ONLINE_ONLY",
+    "question": "Will the business operate entirely online?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CUSTOMERS_VISIT",
+    "question": "Will customers visit the location?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CLIENTS_VISIT",
+    "question": "Will clients visit the office?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PHYSICAL_OFFICE",
+    "question": "Will employees work from a physical office?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_OWNS_PROPERTY",
+    "question": "Does the business own the property it will operate from?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_EXISTING_LEASE",
+    "question": "Will the business lease its commercial space?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_RENOVATIONS",
+    "question": "Will construction or renovations be performed at the location?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PARKING_PROVIDED",
+    "question": "Will the business provide customer parking?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_EMPLOYEES_HIRED",
+    "question": "Will employees be hired?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_EMPLOYEE_COUNT",
+    "question": "How many employees will the business have?",
+    "type": "single_select",
+    "options": [
+      "0",
+      "1-5",
+      "6-20",
+      "21-50",
+      "50+"
+    ]
+  },
+  {
+    "id": "Q_FOOD_PREPARED",
+    "question": "Will food be prepared on-site?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FOOD_SOLD",
+    "question": "Will food be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FOOD_SERVED",
+    "question": "Will food be served to customers?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ON_SITE_CONSUMPTION",
+    "question": "Will customers consume food on-site?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FOOD_DELIVERY",
+    "question": "Will food be delivered?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FOOD_TRUCK_MOBILE",
+    "question": "Will the business operate from a food truck or mobile unit?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_COMMERCIAL_KITCHEN",
+    "question": "Will a commercial kitchen be used?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CFPM_ON_STAFF",
+    "question": "Will a Certified Food Protection Manager be on staff?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ALCOHOL_SOLD",
+    "question": "Will alcohol be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ALCOHOL_SERVED",
+    "question": "Will alcohol be served?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ALCOHOL_MANUFACTURED",
+    "question": "Will alcohol be manufactured or bottled?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_HEALTHCARE_SERVICES",
+    "question": "Will healthcare services be provided?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PATIENTS_VISIT",
+    "question": "Will patients visit the location?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CONTROLLED_SUBSTANCES",
+    "question": "Will controlled substances be stored or dispensed?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_DIAGNOSTIC_TESTING",
+    "question": "Will diagnostic testing be performed?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_NEEDLES_INVASIVE",
+    "question": "Will needles or invasive procedures be used?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_MEDICAL_WASTE",
+    "question": "Will medical waste be generated?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_BIOHAZARD_WASTE",
+    "question": "Will biohazard waste be generated?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_COMMERCIAL_VEHICLES",
+    "question": "Will commercial vehicles be used?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FLEET_SIZE",
+    "question": "How many commercial vehicles will be operated?",
+    "type": "single_select",
+    "options": [
+      "0",
+      "1-3",
+      "4-10",
+      "10+"
+    ]
+  },
+  {
+    "id": "Q_HAZMAT_TRANSPORT",
+    "question": "Will hazardous materials be transported?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_VEHICLE_REPAIR",
+    "question": "Will vehicles be repaired or serviced?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_HAZARDOUS_FLUIDS",
+    "question": "Will hazardous fluids be stored or handled?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_USED_VEHICLE_SALES",
+    "question": "Will used vehicles be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FUEL_SOLD",
+    "question": "Will fuel be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PRODUCTS_MANUFACTURED",
+    "question": "Will products be manufactured on-site?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PRODUCTS_DISTRIBUTED",
+    "question": "Will products be distributed?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CHEMICALS_USED",
+    "question": "Will chemicals be used or stored in production?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_TOURISM_ACTIVITY",
+    "question": "Will the business offer tourism activities?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_GUESTS_OVERNIGHT",
+    "question": "Will guests stay overnight?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_WATER_ACTIVITIES",
+    "question": "Will water-based activities be offered?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_EXCURSIONS",
+    "question": "Will guided excursions be offered?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_SHORT_TERM_RENTAL",
+    "question": "Will this be a short-term rental?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_RENTAL_UNITS",
+    "question": "How many rental units will be operated?",
+    "type": "single_select",
+    "options": [
+      "1",
+      "2-5",
+      "6-20",
+      "20+"
+    ]
+  },
+  {
+    "id": "Q_OUTDOOR_SEATING",
+    "question": "Will there be outdoor seating?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_LIVE_ENTERTAINMENT",
+    "question": "Will there be live entertainment?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_COMMERCIAL_SIGNAGE",
+    "question": "Will the business have commercial signage?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_SIGNAGE_TYPE",
+    "question": "What type of signage will be used?",
+    "type": "single_select",
+    "options": [
+      "None",
+      "Wall Sign",
+      "Freestanding Sign",
+      "Illuminated Sign",
+      "Digital Sign"
+    ]
+  },
+  {
+    "id": "Q_HAZARDOUS_MATERIALS",
+    "question": "Will hazardous materials be stored?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_HAZARDOUS_STORAGE",
+    "question": "Will hazardous materials require dedicated storage?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ENVIRONMENTAL_IMPACT",
+    "question": "Will operations have a potential environmental impact?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_GENERATOR_INSTALLED",
+    "question": "Will a fuel-powered generator be installed?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_IMPORT_EXPORT",
+    "question": "Will import/export activity occur?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CUSTOMS_BROKER",
+    "question": "Will a customs broker be used?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PROFESSIONAL_LICENSES",
+    "question": "Will professional licenses be required for staff?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_LICENSE_TYPES",
+    "question": "Which professional licenses apply?",
+    "type": "multi_select",
+    "options": [
+      "Attorney",
+      "CPA",
+      "Engineer",
+      "Architect",
+      "Real Estate Broker",
+      "Insurance Agent",
+      "Healthcare Professional",
+      "Contractor",
+      "Other"
+    ]
+  },
+  {
+    "id": "Q_RETAIL_SALES",
+    "question": "Will goods be sold directly to consumers?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_INVENTORY_STORED",
+    "question": "Will inventory be stored on-site?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_HARDWARE_SOLD",
+    "question": "Will physical hardware or equipment be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_DELIVERIES",
+    "question": "Will deliveries be made to customers?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_GOODS_STORED",
+    "question": "Will goods be stored in a warehouse or facility?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_TOBACCO_SOLD",
+    "question": "Will tobacco products be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FIREARMS_SOLD",
+    "question": "Will firearms or ammunition be sold?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CHILDREN_PRESENT",
+    "question": "Will children be present at the location?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CLASSES_ON_SITE",
+    "question": "Will classes be held on-site?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_BACKGROUND_CHECKS",
+    "question": "Will staff require background checks?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PROPERTY_MANAGEMENT",
+    "question": "Will properties be managed on behalf of others?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CUSTOMERS_RECEIVE_SERVICES",
+    "question": "Will customers receive personal-care services on-site?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_AGRICULTURE_PRODUCTION",
+    "question": "Will agricultural products be produced?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_LIVESTOCK",
+    "question": "Will livestock be raised?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_PESTICIDES",
+    "question": "Will pesticides or agrochemicals be applied?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_CASH_INTENSIVE",
+    "question": "Will the business be cash-intensive?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_RENEWABLE_INSTALL",
+    "question": "Will renewable energy systems be installed?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_GOV_CONTRACT",
+    "question": "Will the business contract with government agencies?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_NONPROFIT_STATUS",
+    "question": "Will the organization operate as a nonprofit?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_DONATIONS",
+    "question": "Will the organization solicit donations?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ENTITY_FOREIGN_CORP",
+    "question": "Is this a corporation already formed outside Puerto Rico seeking authorization to do business here?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_ENTITY_LLP",
+    "question": "Is this entity registering as a Limited Liability Partnership (SRL)?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_HOA_CONDO",
+    "question": "Is the property part of a condominium, HOA, or other residential association?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_SOLAR_MOUNTING",
+    "question": "Will the solar system be roof-mounted or ground-mounted?",
+    "type": "single_select",
+    "options": [
+      "Roof-mounted",
+      "Ground-mounted"
+    ]
+  },
+  {
+    "id": "Q_SOLAR_SIZE",
+    "question": "What is the planned solar system capacity?",
+    "type": "single_select",
+    "options": [
+      "1 MW or less",
+      "Over 1 MW"
+    ]
+  },
+  {
+    "id": "Q_SOLAR_STRUCTURE",
+    "question": "Will the system be installed on an existing structure?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_SOLAR_OWNERSHIP",
+    "question": "Does the business own the property where the solar system will be installed?",
+    "type": "single_select",
+    "options": [
+      "Own",
+      "Lease"
+    ]
+  },
+  {
+    "id": "Q_SOLAR_BATTERY",
+    "question": "Will battery energy storage be installed with the solar system?",
+    "type": "boolean"
+  },
+  {
+    "id": "Q_FEDERAL_CONTRACTS_GRANTS",
+    "question": "Do you plan to bid on federal contracts or apply for federal grants or awards?",
+    "type": "boolean"
+  }
 ]

@@ -8657,5 +8657,19 @@
     "citation_confidence": "official",
     "citation_inherited_from": "DOC_SAM_REGISTRATION",
     "citation_source": "document"
+  },
+  {
+    "id": "RULE_0641",
+    "rule_type": "question_trigger",
+    "business_type_id": null,
+    "question_id": "Q_FEDERAL_CONTRACTS_GRANTS",
+    "expected_answer": "true",
+    "municipality_flag": null,
+    "requires_document_id": "DOC_SAM_REGISTRATION",
+    "citation": "GSA: SAM.gov entity registration required to bid on federal contracts and receive federal grants/awards; must be renewed annually (Comply with contractual requirements); renewal every 365 days (SAM Entity Registration guide, FAR 52.204-7)",
+    "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+    "citation_confidence": "official",
+    "citation_inherited_from": "DOC_SAM_REGISTRATION",
+    "citation_source": "document"
   }
 ]
