@@ -7090,5 +7090,621 @@
   {
     "business_type_id": "BT_TIRE_RECYCLING",
     "question_id": "Q_FEDERAL_CONTRACTS_GRANTS"
+  },
+  {
+    "business_type_id": "BT_RESTAURANT",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FAST_FOOD_RESTAURANT",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BAKERY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CAFE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BAR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FOOD_TRUCK",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CATERING_BUSINESS",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ICE_CREAM_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_JUICE_BAR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_COMMERCIAL_KITCHEN",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_OFFICE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_DENTAL_OFFICE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PHARMACY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CLINICAL_LABORATORY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MENTAL_HEALTH_PRACTICE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PHYSICAL_THERAPY_CLINIC",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_VETERINARY_CLINIC",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_URGENT_CARE_CENTER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_SPA",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_HOME_HEALTH_AGENCY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_LAW_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CPA_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CONSULTING_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MARKETING_AGENCY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ENGINEERING_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ARCHITECTURE_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_NOTARY_SERVICES",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TRANSLATION_SERVICES",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_STAFFING_AGENCY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SOFTWARE_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SAAS_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_IT_CONSULTING_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CYBERSECURITY_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MANAGED_SERVICES_PROVIDER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_DATA_ANALYTICS_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_WEB_DEVELOPMENT_AGENCY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CLOTHING_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_JEWELRY_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ELECTRONICS_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FURNITURE_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_HARDWARE_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CONVENIENCE_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PET_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_GIFT_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_E_COMMERCE_BUSINESS",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_COSMETICS_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_GENERAL_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ELECTRICAL_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PLUMBING_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_HVAC_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ROOFING_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CONCRETE_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_LANDSCAPING_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SPECIALTY_TRADE_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_HOTEL",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_RESORT",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_GUEST_HOUSE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_AIRBNB_SHORT_TERM_RENTAL",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TOUR_OPERATOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_EXCURSION_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CAR_RENTAL_BUSINESS",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TRAVEL_AGENCY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BEAUTY_SALON",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BARBERSHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_NAIL_SALON",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SPA",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MASSAGE_THERAPY_STUDIO",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TATTOO_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ESTHETICS_STUDIO",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FOOD_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PHARMACEUTICAL_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_DEVICE_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FURNITURE_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CHEMICAL_MANUFACTURING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TRUCKING_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_COURIER_SERVICE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MOVING_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TAXI_SERVICE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_LOGISTICS_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_WAREHOUSE_OPERATOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FREIGHT_FORWARDING_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PRIVATE_SCHOOL",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_DAYCARE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TUTORING_CENTER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_VOCATIONAL_SCHOOL",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TRAINING_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_AFTER_SCHOOL_PROGRAM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_REAL_ESTATE_BROKERAGE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PROPERTY_MANAGEMENT_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_REAL_ESTATE_DEVELOPER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_APPRAISAL_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_REAL_ESTATE_INVESTMENT_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_AUTO_REPAIR_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BODY_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CAR_DEALERSHIP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_AUTO_PARTS_STORE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CAR_WASH",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TIRE_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MOTORCYCLE_REPAIR_SHOP",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FARM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_LIVESTOCK_OPERATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_AQUACULTURE_OPERATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PLANT_NURSERY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_AGRICULTURAL_SERVICES_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_COFFEE_PLANTATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_INSURANCE_AGENCY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MORTGAGE_BROKER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FINANCIAL_ADVISORY_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ACCOUNTING_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_INVESTMENT_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CREDIT_SERVICES_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SOLAR_INSTALLER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ENERGY_CONSULTING_FIRM",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_UTILITY_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BATTERY_STORAGE_INSTALLER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_WHOLESALE_FOOD_DISTRIBUTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_WHOLESALE_GOODS_DISTRIBUTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_DISTRIBUTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_IMPORT_EXPORT_BUSINESS",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_WAREHOUSE_DISTRIBUTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_GYM_FITNESS_STUDIO",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_DANCE_STUDIO",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MUSIC_VENUE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_EVENT_VENUE",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_THEATER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_ART_GALLERY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SPORTS_FACILITY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_IT_GOVERNMENT_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_PROFESSIONAL_SERVICES_GOVERNMENT_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FACILITIES_GOVERNMENT_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_SECURITY_CONTRACTOR",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_NONPROFIT_ORGANIZATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_RELIGIOUS_ORGANIZATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_COMMUNITY_ORGANIZATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_FOUNDATION",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_CHARITY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_PHYSICAL_LOCATION"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_LOCATION_TYPE"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_EMPLOYEES_HIRED"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_EMPLOYEE_COUNT"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_COMMERCIAL_SIGNAGE"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_PRODUCTS_MANUFACTURED"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_HAZARDOUS_MATERIALS"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_PRODUCTS_DISTRIBUTED"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_CHEMICALS_USED"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_ENVIRONMENTAL_IMPACT"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_RECYCLING",
+    "question_id": "Q_FEDERAL_CONTRACTS_GRANTS"
   }
 ]

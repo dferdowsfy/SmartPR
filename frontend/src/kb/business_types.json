@@ -435,7 +435,7 @@
     "id": "BT_TEXTILE_MANUFACTURING",
     "industry_id": "IND_MANUFACTURING",
     "name": "Textile Manufacturing",
-    "description": "Textile Manufacturing operating in Puerto Rico."
+    "description": "Textile manufacturing and related fabric/apparel production in Puerto Rico, including cutting, sewing, finishing, and textile product manufacturing. Manufactura textil, confección, and fabric/apparel production."
   },
   {
     "id": "BT_FURNITURE_MANUFACTURING",
@@ -844,5 +844,11 @@
     "industry_id": "IND_MANUFACTURING",
     "name": "Tire Recycling & Manufacturing",
     "description": "Tire recycling plant that collects used tires and manufactures recycled rubber products (granulated rubber, rubber mulch, rubber tiles, mats) in Puerto Rico. Reciclaje de neumaticos y gomas, waste tire processing, rubber product manufacturing."
+  },
+  {
+    "id": "BT_TEXTILE_RECYCLING",
+    "industry_id": "IND_MANUFACTURING",
+    "name": "Textile Recycling & Materials Recovery",
+    "description": "Textile recycling and materials-recovery facility that collects, sorts, processes, or remanufactures post-consumer or post-industrial textiles in Puerto Rico (e.g. fiber reclaim, rag grading, recycled textile products). Reciclaje textil, recuperación de materiales, and recycled textile manufacturing."
   }
 ]

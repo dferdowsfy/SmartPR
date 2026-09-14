@@ -162,3 +162,48 @@ test("Entity Administrator letter PDF has blank signature and notary blocks", as
     assert.ok(!tail.includes("maria@tallercaribe.com"), `signature/notary blocks must stay blank (${language})`);
   }
 });
+
+test("DACO contractor supporting checklist covers bond and package attachments", () => {
+  const definition = getSampleApplication("daco_contractor_checklist")!;
+  assert.ok(definition, "daco_contractor_checklist definition missing");
+  assert.equal(definition.kicker, "Supporting checklist");
+  const keys = definition.sections.flatMap((section) => section.fields.map((field) => field.key));
+  for (const key of [
+    "legal_name",
+    "activity_type",
+    "application_type",
+    "doc_bond",
+    "doc_merchant_reg",
+    "doc_consumer_declaration",
+    "dacouc01_prepared",
+  ]) {
+    assert.ok(keys.includes(key), `daco_contractor_checklist missing field ${key}`);
+  }
+  assert.match(definition.description, /DACOUC01/i);
+  assert.match(definition.description, /never present this checklist as an official/i);
+  assert.ok(definition.filename.toLowerCase().includes("checklist"), "checklist PDF filename");
+});
+
+test("DACO contractor checklist pre-fills and localizes; PDF non-empty", () => {
+  const definition = getSampleApplication("daco_contractor_checklist")!;
+  const prefilled = prefillSampleApplication(definition, {
+    name: "Reciclaje Textil del Este LLC",
+    municipality: "Yabucoa",
+  });
+  assert.equal(prefilled.legal_name, "Reciclaje Textil del Este LLC");
+  assert.equal(prefilled.municipality, "Yabucoa");
+
+  const spanish = getSampleApplication("daco_contractor_checklist", "es")!;
+  assert.notEqual(spanish.title, definition.title);
+  assert.match(spanish.title, /DACO/i);
+
+  for (const language of ["en", "es"] as const) {
+    const blob = generateSampleApplicationPdf(
+      getSampleApplication("daco_contractor_checklist", language)!,
+      { legal_name: "Reciclaje Textil del Este LLC", activity_type: "constructor", application_type: "new" },
+      language
+    );
+    assert.ok(blob.size > 0, `DACO checklist PDF should not be empty (${language})`);
+  }
+});
+

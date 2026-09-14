@@ -390,6 +390,24 @@ export const TEMPLATE_LIBRARY: TemplateDescriptor[] = [
       "SmartPR-generated template: never present it as an official government form. Verify the current FSD letter wording at sam.gov before mailing — FSD updates the template.",
     ],
   },
+  {
+    formCode: "DACOWS01",
+    title: "DACO Contractor Registry — Supporting Documents Checklist (SmartPR)",
+    agency: "Departamento de Asuntos del Consumidor (DACO) — Gobierno de Puerto Rico",
+    scope: "statewide",
+    artifactType: "smartpr_generated",
+    populationMethod: "none",
+    submissionChannel: "agency_office",
+    sourceStatus: "smartpr_generated",
+    requirementCode: "DOC_CONTRACTOR_LICENSE",
+    officialSourceUrl: "https://docs.pr.gov/files/DACO/Licencias/Solicitud-Urbanizador-Constructor-v2.pdf",
+    usageNotes: [
+      "Companion checklist for DOC_CONTRACTOR_LICENSE. The official fillable artifact remains DACOUC01 (Regl. 8172 urbanizador/constructor application).",
+      "Gathers Ley 146-1995 Registro de Contratistas supporting attachments: incorporation/good standing, Hacienda merchant reg, municipal patente, ID, surety bond, consumer-responsibility declaration, and fee payment.",
+      "SmartPR-generated preparation aid: never present it as an official DACO form. Complete DACOUC01 in SmartPR, assemble the checklist attachments, then file with DACO.",
+      "Inscription renewal is annual under Ley 146-1995 ($100 renewal fee in the statute).",
+    ],
+  },
 ];
 
 export const TEMPLATES_BY_CODE: Record<string, TemplateDescriptor> = Object.fromEntries(

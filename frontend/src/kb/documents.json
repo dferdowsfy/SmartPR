@@ -282,7 +282,7 @@
     "agency_canonical": "Departamento de Asuntos del Consumidor",
     "download_url": "https://docs.pr.gov/files/DACO/Licencias/Solicitud-Urbanizador-Constructor-v2.pdf",
     "download_kind": "form_pdf",
-    "download_note": "Official DACO PDF on docs.pr.gov (Regulation 8172 contractor registration). Matches the DACOUC01 source SmartPR maps as a fillable artifact; the form includes a 'Renovación' (renewal) option. Note: the license's validity period is not verified — no renewal cadence is recorded.",
+    "download_note": "Official DACO PDF on docs.pr.gov (Regulation 8172 urbanizador/constructor license). Matches the DACOUC01 source SmartPR maps as a fillable artifact; the form includes a 'Renovación' (renewal) option. Related Registro de Contratistas (Ley 146-1995) inscription is renewed annually ($100 renewal fee in the statute). SmartPR also prepares a bilingual supporting-documents checklist for the filing package.",
     "citation": "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO); Regl. 8172",
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute"

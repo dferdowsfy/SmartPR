@@ -541,6 +541,137 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
       },
     ],
   },
+  daco_contractor_checklist: {
+    requirementCode: "daco_contractor_checklist",
+    kicker: "Supporting checklist",
+    kickerEs: "Lista de apoyo",
+    title: "DACO Contractor Registry — Supporting Documents Checklist",
+    titleEs: "Registro de Contratistas DACO — Lista de documentos de apoyo",
+    agency: "Departamento de Asuntos del Consumidor (DACO) — Gobierno de Puerto Rico",
+    description: "SmartPR checklist for the DACO contractor / urbanizador-constructor filing package. SmartPR already prepares the official DACOUC01 application PDF for page-1 applicant fields — use this bilingual checklist to gather the bond, Hacienda, corporate, and consumer-responsibility attachments Ley 146-1995 and Regl. 8172 expect. Never present this checklist as an official DACO form.",
+    descriptionEs: "Lista de SmartPR para el paquete de radicación de contratista / urbanizador-constructor ante DACO. SmartPR ya prepara el PDF oficial DACOUC01 con los datos del solicitante en la página 1 — usa esta lista bilingüe para reunir la fianza, Hacienda, documentos corporativos y la declaración de responsabilidad al consumidor que Ley 146-1995 y el Regl. 8172 esperan. Nunca presentes esta lista como un formulario oficial de DACO.",
+    officialOutput: "DACO contractor certification / urbanizador-constructor license (agency-issued)",
+    filename: "10_DACO_Contractor_Supporting_Documents_Checklist.pdf",
+    sections: [
+      {
+        title: "Applicant",
+        titleEs: "Solicitante",
+        fields: [
+          {
+            key: "legal_name", label: "Applicant / business legal name", labelEs: "Nombre legal del solicitante / negocio",
+            type: "text", required: true, profileKey: "name",
+          },
+          {
+            key: "municipality", label: "Municipality of operations", labelEs: "Municipio de operaciones",
+            type: "text", required: true, profileKey: "municipality",
+          },
+          {
+            key: "physical_address", label: "Physical address", labelEs: "Dirección física",
+            type: "textarea", required: true,
+          },
+          {
+            key: "mailing_address", label: "Mailing address", labelEs: "Dirección postal",
+            type: "textarea",
+          },
+          {
+            key: "contact_phone", label: "Phone", labelEs: "Teléfono",
+            type: "tel", required: true,
+          },
+          {
+            key: "contact_email", label: "Email", labelEs: "Correo electrónico",
+            type: "email", required: true,
+          },
+        ],
+      },
+      {
+        title: "License requested",
+        titleEs: "Licencia solicitada",
+        fields: [
+          {
+            key: "application_type", label: "Application type", labelEs: "Tipo de solicitud",
+            type: "select", required: true,
+            options: [
+              { value: "new", label: "New registration / license", labelEs: "Registro / licencia nueva" },
+              { value: "renewal", label: "Renewal (renovación)", labelEs: "Renovación" },
+            ],
+          },
+          {
+            key: "activity_type", label: "Activity type", labelEs: "Tipo de actividad",
+            type: "select", required: true,
+            options: [
+              { value: "constructor", label: "Constructor (builder)", labelEs: "Constructor" },
+              { value: "urbanizador", label: "Urbanizador (developer)", labelEs: "Urbanizador" },
+              { value: "ambos", label: "Both constructor and urbanizador", labelEs: "Ambos (constructor y urbanizador)" },
+              { value: "specialty", label: "Specialty trade / other contracting", labelEs: "Oficio especializado / otra contratación" },
+            ],
+            help: "Ley 146-1995 requires DACO contractor certification before offering construction estimates or work on property you do not own. Regl. 8172 covers the urbanizador/constructor license application SmartPR maps as DACOUC01.",
+            helpEs: "La Ley 146-1995 exige la certificación de contratista de DACO antes de ofrecer estimados o trabajos de construcción en propiedad que no es tuya. El Regl. 8172 cubre la solicitud de licencia de urbanizador/constructor que SmartPR mapea como DACOUC01.",
+          },
+          {
+            key: "gross_volume", label: "Prior-year gross business volume (USD)", labelEs: "Volumen bruto del año anterior (USD)",
+            type: "text", placeholder: "e.g. 75000",
+            help: "Bond (fianza) percentage under Ley 146-1995 scales with gross volume; new contractors without history use the statutory minimum bond.",
+            helpEs: "El por ciento de la fianza bajo la Ley 146-1995 escala con el volumen bruto; los contratistas nuevos sin historial usan la fianza mínima estatutaria.",
+          },
+        ],
+      },
+      {
+        title: "Supporting documents checklist",
+        titleEs: "Lista de documentos de apoyo",
+        fields: [
+          {
+            key: "doc_incorporation", label: "Certificate of Incorporation / authority to do business in PR",
+            labelEs: "Certificado de Incorporación / autorización para hacer negocios en PR",
+            type: "checkbox", required: true,
+          },
+          {
+            key: "doc_good_standing", label: "Good Standing / Certificate of Existence (if entity is over 2 years old)",
+            labelEs: "Good Standing / Certificado de Existencia (si la entidad tiene más de 2 años)",
+            type: "checkbox",
+          },
+          {
+            key: "doc_merchant_reg", label: "Hacienda Merchant Registration (SURI)",
+            labelEs: "Registro de Comerciantes de Hacienda (SURI)",
+            type: "checkbox", required: true,
+          },
+          {
+            key: "doc_patente", label: "Municipal patente / volume-of-business declaration",
+            labelEs: "Patente municipal / declaración de volumen de negocios",
+            type: "checkbox", required: true,
+          },
+          {
+            key: "doc_id", label: "Driver's license of individual or entity representative",
+            labelEs: "Licencia de conducir del individuo o representante de la entidad",
+            type: "checkbox", required: true,
+          },
+          {
+            key: "doc_bond", label: "Surety bond (fianza) matching Ley 146-1995 volume brackets (or evidence works are already bonded)",
+            labelEs: "Fianza según los tramos de volumen de la Ley 146-1995 (o evidencia de que los trabajos ya están afianzados)",
+            type: "checkbox", required: true,
+            help: "New contractors without prior history: statutory minimum bond of $4,000 corresponding to $50,001 volume. Annual inscription renewal fee is $100 under Ley 146-1995.",
+            helpEs: "Contratistas nuevos sin historial: fianza mínima estatutaria de $4,000 correspondiente a un volumen de $50,001. La renovación anual de la inscripción cuesta $100 bajo la Ley 146-1995.",
+          },
+          {
+            key: "doc_consumer_declaration", label: "Declaración de Cumplimiento de Responsabilidades a los Consumidores",
+            labelEs: "Declaración de Cumplimiento de Responsabilidades a los Consumidores",
+            type: "checkbox", required: true,
+          },
+          {
+            key: "doc_payment", label: "Payment prepared for DACO fees (check/money order to Secretario de Hacienda as instructed on the current DACO form)",
+            labelEs: "Pago preparado de los derechos de DACO (cheque/giro a nombre del Secretario de Hacienda según el formulario vigente de DACO)",
+            type: "checkbox", required: true,
+          },
+          {
+            key: "dacouc01_prepared", label: "Official DACOUC01 application prepared in SmartPR (page-1 fields)",
+            labelEs: "Solicitud oficial DACOUC01 preparada en SmartPR (campos de la página 1)",
+            type: "checkbox", required: true,
+            help: "Complete and download the official DACO form from the Contractor License requirement card. Sworn/notary pages stay blank for hand completion.",
+            helpEs: "Completa y descarga el formulario oficial de DACO desde la tarjeta del requisito de Licencia de Contratista. Las páginas juradas/notariales se dejan en blanco para completarlas a mano.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
@@ -553,6 +684,7 @@ export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
   alcohol_permit: "SmartPR prepares an alcohol beverage license worksheet for you. The license itself is agency-issued: complete the application with Hacienda, and after it issues the license, upload the official Alcohol Beverage License to complete this requirement.",
   workers_comp: "SmartPR prepares a CFSE policy worksheet for you. The policy itself is agency-issued: complete the application with the State Insurance Fund Corporation (CFSE), and after coverage is issued, upload the official CFSE policy evidence to complete this requirement.",
   doc_luma_interconnection: "SmartPR prepares LUMA's customer orientation attestation for you — print it, sign it by hand, and upload the signed copy. LUMA still requires the signed document as part of its interconnection registration.",
+  contractor_license: "SmartPR prepares the official DACOUC01 urbanizador/constructor application (page-1 fields) and a bilingual supporting-documents checklist (bond, Hacienda, corporate papers, consumer-responsibility declaration). Complete DACOUC01, assemble the checklist attachments, file with DACO, then upload the agency-issued contractor certification to complete this requirement.",
   sam_registration: "SAM.gov registration is completed online at sam.gov — there is no downloadable form. SmartPR prepares a worksheet with everything you will enter there, plus the Entity Administrator appointment letter template (print on letterhead, sign by hand, have it notarized). After GSA activates the registration, upload the confirmation to complete this requirement.",
 };
 
@@ -566,6 +698,7 @@ export const ISSUED_DOCUMENT_GUIDANCE_ES: Record<string, string> = {
   alcohol_permit: "SmartPR te prepara una hoja de trabajo para la licencia de bebidas alcohólicas. La licencia en sí la emite la agencia: completa la solicitud con Hacienda y, después de emitida, sube la Licencia de Bebidas Alcohólicas oficial para completar este requisito.",
   workers_comp: "SmartPR te prepara una hoja de trabajo para la póliza de la CFSE. La póliza en sí la emite la agencia: completa la solicitud con la Corporación del Fondo del Seguro del Estado (CFSE) y, después de emitida la cubierta, sube la evidencia oficial de la póliza para completar este requisito.",
   doc_luma_interconnection: "SmartPR te prepara la Confirmación de Orientación al Cliente de LUMA — imprímela, fírmala a mano y sube la copia firmada. LUMA sigue exigiendo el documento firmado como parte de su registro de interconexión.",
+  contractor_license: "SmartPR te prepara la solicitud oficial DACOUC01 de urbanizador/constructor (campos de la página 1) y una lista bilingüe de documentos de apoyo (fianza, Hacienda, papeles corporativos, declaración de responsabilidad al consumidor). Completa DACOUC01, reúne los anejos de la lista, radica en DACO y luego sube la certificación de contratista emitida por la agencia para completar este requisito.",
   sam_registration: "El registro en SAM.gov se completa en línea en sam.gov — no hay un formulario descargable. SmartPR te prepara una hoja de trabajo con todo lo que vas a ingresar allí, más el modelo de carta de nombramiento del Administrador de la Entidad (imprímela en papel con membrete, fírmala a mano y notarízala). Después de que GSA active el registro, sube la confirmación para completar este requisito.",
 };
 
