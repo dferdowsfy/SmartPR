@@ -90,17 +90,17 @@ BEGIN
 END;
 $$;
 
--- Seed: Luyo design-partner pilot (safe to re-run).
+-- Seed: Luiggo design-partner pilot (safe to re-run).
 INSERT INTO partner_codes (
   code, plan, workspace_name, max_redemptions, pilot_days, expires_at, notes, active
 ) VALUES (
-  'LUYO-90',
+  'LUIGGO-90',
   'partner',
-  'Luyo Design Partner',
+  'Luiggo Design Partner',
   10,
   90,
   NOW() + INTERVAL '90 days',
-  'Luyo design-partner pilot — shared Partner workspace',
+  'Luiggo design-partner pilot — shared Partner workspace',
   true
 )
 ON CONFLICT (code) DO UPDATE SET

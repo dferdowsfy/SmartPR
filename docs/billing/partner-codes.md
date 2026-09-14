@@ -8,7 +8,7 @@ Shared workspace + plan for pilots (e.g. Luyo). Users redeem one code and land o
 psql "$DATABASE_URL" -f data/partner_codes_schema.sql
 ```
 
-Or paste `data/partner_codes_schema.sql` into the Supabase SQL Editor. Safe to re-run. Seeds **`LUYO-90`** (plan `partner`, max 10 redemptions, 90-day pilot).
+Or paste `data/partner_codes_schema.sql` into the Supabase SQL Editor. Safe to re-run. Seeds **`LUIGGO-90`** (plan `partner`, max 10 redemptions, 90-day pilot).
 
 ## Create more codes
 
@@ -26,9 +26,9 @@ SELECT admin_create_partner_code('ACME-90', 'partner', 10, 90, 'Acme Pilot');
 
 ## Redeem
 
-- Signup: optional “Have a partner code?” or `/signup?code=LUYO-90` (prefill). Stored in `user_metadata.partner_code` and sent to bootstrap.
-- `POST /api/partner-codes/redeem` `{ "code":"LUYO-90" }` (auth required)
-- `POST /api/auth/bootstrap` `{ "partnerCode":"LUYO-90" }`
+- Signup: optional “Have a partner code?” or `/signup?code=LUIGGO-90` (prefill). Stored in `user_metadata.partner_code` and sent to bootstrap.
+- `POST /api/partner-codes/redeem` `{ "code":"LUIGGO-90" }` (auth required)
+- `POST /api/auth/bootstrap` `{ "partnerCode":"LUIGGO-90" }`
 
 First redeemer creates the pilot workspace (OWNER) and sets `workspace_subscriptions` to the code’s plan. Later redeemers join as MEMBER on that workspace.
 
@@ -36,5 +36,5 @@ Bad / expired / exhausted codes return `400` with `{ error, code: "invalid"|"exp
 
 ## Note on `?code=`
 
-- `/signup?code=LUYO-90` — partner code prefill
+- `/signup?code=LUIGGO-90` — partner code prefill
 - `/auth/callback?code=…` — Supabase OAuth / PKCE (unchanged)

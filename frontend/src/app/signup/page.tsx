@@ -191,7 +191,7 @@ function SignupForm() {
                 <input
                   value={partnerCode}
                   onChange={(event) => setPartnerCode(event.target.value.toUpperCase())}
-                  placeholder="LUYO-90"
+                  placeholder="LUIGGO-90"
                   autoComplete="off"
                   spellCheck={false}
                 />
