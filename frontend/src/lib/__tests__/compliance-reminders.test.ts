@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   planAllowsReminders,
+  businessCoveredByPlan,
   isMuted,
   selectDueNotifications,
   hasStoredDueDate,
@@ -42,6 +43,18 @@ test("planAllowsReminders: free gets nothing, every paid plan gets reminders", (
   assert.equal(planAllowsReminders("free"), false);
   for (const plan of ["core", "operator", "partner", "pilot", "enterprise"]) {
     assert.equal(planAllowsReminders(plan), true, plan);
+  }
+});
+
+test("businessCoveredByPlan: core covers exactly its one (oldest) business", () => {
+  // Core: only the covered business passes.
+  assert.equal(businessCoveredByPlan("core", "biz-oldest", "biz-oldest"), true);
+  assert.equal(businessCoveredByPlan("core", "biz-oldest", "biz-newer"), false);
+  assert.equal(businessCoveredByPlan("core", null, "biz-any"), false);
+  // Operator / partner / others: every business passes.
+  for (const plan of ["operator", "partner", "pilot", "enterprise"]) {
+    assert.equal(businessCoveredByPlan(plan, "biz-oldest", "biz-newer"), true, plan);
+    assert.equal(businessCoveredByPlan(plan, null, "biz-newer"), true, plan);
   }
 });
 
@@ -347,6 +360,13 @@ function makeDb(t: FakeTable) {
               };
             }),
         };
+      }
+      // core one-business coverage: oldest business in the workspace
+      if (s.includes("FROM businesses") && s.includes("WHERE workspace_id")) {
+        const match = t.businesses
+          .filter((b) => String(b.workspace_id) === String(params[0]))
+          .sort((a, b2) => String(a.id).localeCompare(String(b2.id)))[0];
+        return { rows: match ? [{ id: match.id }] : [] };
       }
       // stalled insert ('STALLED_NUDGE' is inline in the SQL, not in params)
       if (s.includes("INSERT INTO notifications") && s.includes("STALLED_NUDGE")) {

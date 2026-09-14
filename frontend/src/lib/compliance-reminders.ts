@@ -29,6 +29,40 @@ export function planAllowsReminders(planId: string): boolean {
   return planId !== "free";
 }
 
+/**
+ * Core covers exactly ONE business: the workspace's oldest active business.
+ * Returns that business id for core plans, null for every other plan (which
+ * cover all businesses). Deterministic and documented — Darius can later let
+ * the user pick which business is covered.
+ */
+export async function coreCoveredBusinessId(
+  db: Db,
+  workspaceId: string
+): Promise<string | null> {
+  try {
+    const { rows } = await db.query<{ id: string }>(
+      `SELECT id FROM businesses
+        WHERE workspace_id = $1 AND archived = false
+        ORDER BY created_at ASC, id ASC
+        LIMIT 1`,
+      [workspaceId]
+    );
+    return rows[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Pure: does this business fall inside the plan's coverage? */
+export function businessCoveredByPlan(
+  planId: string,
+  coveredBusinessId: string | null,
+  businessId: string
+): boolean {
+  if (planId === "core") return coveredBusinessId === businessId;
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // Opt-outs
 // ---------------------------------------------------------------------------
@@ -332,6 +366,13 @@ async function sweepStalledFilings(db: Db, summary: CronSummary): Promise<void> 
       summary.skipped_plan += 1;
       continue;
     }
+    if (plan.planId === "core") {
+      const covered = await coreCoveredBusinessId(db, row.workspace_id);
+      if (!businessCoveredByPlan(plan.planId, covered, row.business_id)) {
+        summary.skipped_plan += 1;
+        continue;
+      }
+    }
     const prefs = await loadPreferences(db, row.user_id);
     if (isMuted(prefs, { businessId: row.business_id, obligationId: row.obligation_id })) {
       summary.skipped_optout += 1;
@@ -405,6 +446,13 @@ export async function runComplianceReminderCron(db: Db, now = new Date()): Promi
       if (!planAllowsReminders(plan.planId)) {
         summary.skipped_plan += 1;
         continue;
+      }
+      if (plan.planId === "core") {
+        const covered = await coreCoveredBusinessId(db, n.workspace_id);
+        if (!businessCoveredByPlan(plan.planId, covered, n.business_id)) {
+          summary.skipped_plan += 1;
+          continue;
+        }
       }
       const prefs = await loadPreferences(db, n.user_id);
       if (isMuted(prefs, { businessId: n.business_id, obligationId: n.obligation_id })) {
