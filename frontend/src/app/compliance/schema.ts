@@ -161,6 +161,30 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 CREATE INDEX IF NOT EXISTS idx_notifications_user_schedule ON notifications (user_id, scheduled_for DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_pending ON notifications (user_id, status, scheduled_for);
+-- Sweep index for the daily compliance-reminder cron: due PENDING emails.
+CREATE INDEX IF NOT EXISTS idx_notifications_cron_sweep ON notifications (status, channel, scheduled_for) WHERE status = 'PENDING';
+
+-- Compliance-reminder opt-outs: global email mute, per-business mute, and
+-- per-requirement (obligation) mute. The reminder cron honors all three.
+-- Mirrored in data/compliance_reminders_schema.sql for explicit migration.
+CREATE TABLE IF NOT EXISTS notification_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  scope TEXT NOT NULL CHECK (scope IN ('global', 'business', 'obligation')),
+  business_id UUID REFERENCES businesses (id) ON DELETE CASCADE,
+  obligation_id UUID REFERENCES obligations (id) ON DELETE CASCADE,
+  channel TEXT NOT NULL DEFAULT 'EMAIL' CHECK (channel IN ('EMAIL')),
+  muted BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT notification_preferences_scope_check CHECK (
+    (scope = 'global' AND business_id IS NULL AND obligation_id IS NULL) OR
+    (scope = 'business' AND business_id IS NOT NULL AND obligation_id IS NULL) OR
+    (scope = 'obligation' AND obligation_id IS NOT NULL)
+  ),
+  UNIQUE (user_id, scope, business_id, obligation_id, channel)
+);
+CREATE INDEX IF NOT EXISTS idx_notification_preferences_user ON notification_preferences (user_id);
 
 -- Admin allowlist, manageable from the Supabase dashboard: insert an email
 -- to grant that user admin access (admin tools + deliverables bypass).

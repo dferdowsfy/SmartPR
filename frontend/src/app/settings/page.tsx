@@ -11,6 +11,18 @@ interface AccountUser {
   name: string | null;
 }
 
+interface PrefRow {
+  scope: "global" | "business" | "obligation";
+  business_id: string | null;
+  obligation_id: string | null;
+  muted: boolean;
+}
+
+interface BusinessRow {
+  id: string;
+  legal_name: string;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState<AccountUser | null>(null);
@@ -20,6 +32,9 @@ export default function SettingsPage() {
   const [resetBusy, setResetBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [prefs, setPrefs] = useState<PrefRow[]>([]);
+  const [businesses, setBusinesses] = useState<BusinessRow[]>([]);
+  const [prefsBusy, setPrefsBusy] = useState(false);
 
   useEffect(() => {
     fetch("/api/me")
@@ -34,7 +49,53 @@ export default function SettingsPage() {
       })
       .catch(() => setError("We could not load your account settings."))
       .finally(() => setLoading(false));
+    fetch("/api/notifications/preferences")
+      .then((r) => r.json())
+      .then((d) => setPrefs(Array.isArray(d.preferences) ? d.preferences : []))
+      .catch(() => {});
+    fetch("/api/businesses")
+      .then((r) => r.json())
+      .then((d) => setBusinesses(Array.isArray(d.businesses) ? d.businesses : []))
+      .catch(() => {});
   }, [router]);
+
+  const setPreference = async (pref: { scope: PrefRow["scope"]; business_id?: string; obligation_id?: string; muted: boolean }) => {
+    setPrefsBusy(true);
+    try {
+      const res = await fetch("/api/notifications/preferences", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(pref),
+      });
+      if (!res.ok) throw new Error("save failed");
+      setPrefs((prev) => {
+        const key = (p: PrefRow) =>
+          `${p.scope}:${p.business_id || ""}:${p.obligation_id || ""}`;
+        const next: PrefRow = {
+          scope: pref.scope,
+          business_id: pref.business_id || null,
+          obligation_id: pref.obligation_id || null,
+          muted: pref.muted,
+        };
+        const rest = prev.filter((p) => key(p) !== key(next));
+        return [...rest, next];
+      });
+    } catch {
+      setError("We could not save your notification preference.");
+    } finally {
+      setPrefsBusy(false);
+    }
+  };
+
+  const isMuted = (scope: PrefRow["scope"], businessId?: string, obligationId?: string) =>
+    prefs.some(
+      (p) =>
+        p.scope === scope &&
+        (p.business_id || null) === (businessId || null) &&
+        (p.obligation_id || null) === (obligationId || null) &&
+        p.muted
+    );
+  const globalMuted = isMuted("global");
 
   const saveProfile = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -143,6 +204,67 @@ export default function SettingsPage() {
                   {saving ? "Saving…" : "Save profile"}
                 </button>
               </form>
+
+              <div className="border-t border-slate-200 pt-6">
+                <h2 className="text-sm font-semibold text-[#161616]">Notifications</h2>
+                <p className="mt-1 text-sm text-[#161616]/60">
+                  Deadline reminders are sent by email from alerts@getsmartpr.com — 60, 30, and 7 days
+                  before a stored expiry date, plus a nudge if a filing sits untouched for 14 days.
+                </p>
+                <label className="mt-4 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3">
+                  <span className="text-sm font-medium text-[#161616]">
+                    Email deadline reminders
+                    <span className="block text-xs font-normal text-[#161616]/50">
+                      {globalMuted ? "Off — you won't receive reminder emails." : "On for all your businesses."}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={!globalMuted}
+                    disabled={prefsBusy}
+                    onClick={() => setPreference({ scope: "global", muted: !globalMuted })}
+                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${globalMuted ? "bg-slate-300" : "bg-emerald-600"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${globalMuted ? "left-0.5" : "left-[22px]"}`}
+                    />
+                  </button>
+                </label>
+                {businesses.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-[#161616]/50">
+                      Per-business reminders
+                    </h3>
+                    <div className="mt-2 space-y-2">
+                      {businesses.map((b) => {
+                        const muted = isMuted("business", b.id);
+                        return (
+                          <label
+                            key={b.id}
+                            className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-2.5"
+                          >
+                            <span className="text-sm text-[#161616]">{b.legal_name}</span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={!muted}
+                              aria-label={`Reminders for ${b.legal_name}`}
+                              disabled={prefsBusy || globalMuted}
+                              onClick={() => setPreference({ scope: "business", business_id: b.id, muted: !muted })}
+                              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${muted || globalMuted ? "bg-slate-300" : "bg-emerald-600"}`}
+                            >
+                              <span
+                                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${muted || globalMuted ? "left-0.5" : "left-[22px]"}`}
+                              />
+                            </button>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="border-t border-slate-200 pt-6">
                 <h2 className="text-sm font-semibold text-[#161616]">Password</h2>

@@ -2,7 +2,8 @@ import type { ObligationStatus } from "./types";
 
 // Product-level reminder defaults. These control notification timing only;
 // regulatory deadlines and renewal cadences still come from structured data.
-export const REMINDER_WINDOWS_DAYS = [90, 60, 30, 7, 0] as const;
+// Founder decision 2026-09-14: email-only reminders at 60/30/7 days.
+export const REMINDER_WINDOWS_DAYS = [60, 30, 7] as const;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
