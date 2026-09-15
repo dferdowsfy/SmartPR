@@ -16,6 +16,7 @@ import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
+import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
 import { getDocumentDownload, downloadKindLabel } from "../../kb";
 import { L } from "../../i18n";
@@ -683,6 +684,10 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             lang={lang}
             onChanged={() => load()}
           />
+        </div>
+
+        <div className="mt-6">
+          <AgencyRunCard businessId={shortId} lang={lang} />
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
