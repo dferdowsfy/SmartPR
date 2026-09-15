@@ -444,8 +444,8 @@ export function PassportVoiceOrb({
 
   return (
     <>
-      {/* Desktop: fixed right near passport; mobile: bottom-safe */}
-      <div className="pointer-events-none fixed z-40 flex flex-col items-end gap-3 max-md:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] max-md:right-4 md:right-6 md:top-[min(42%,calc(100%-12rem))]">
+      {/* Lower-right corner (desktop + mobile), safe-area aware; panel stacks above */}
+      <div className="pointer-events-none fixed z-40 flex flex-col items-end gap-3 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] md:bottom-[calc(1.35rem+env(safe-area-inset-bottom,0px))] md:right-[max(1.25rem,env(safe-area-inset-right,0px))]">
         {open && (
           <div
             ref={panelRef}

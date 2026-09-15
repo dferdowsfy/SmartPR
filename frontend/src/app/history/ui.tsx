@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw, FileText } from "lucide-react";
@@ -121,6 +122,38 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   const navMyBiz = lang === "es" ? "Mis Negocios" : "My Businesses";
   const es = lang === "es";
 
+  // Harden Start highlight: prop from FilingWorkflowShell + URL fallback so
+  // intake paths never leave My Businesses selected by accident.
+  const pathname = usePathname();
+  const [intakeRoute, setIntakeRoute] = useState(false);
+  useEffect(() => {
+    const sync = () => {
+      try {
+        const u = new URL(window.location.href);
+        const onHome = u.pathname === "/" || pathname === "/";
+        setIntakeRoute(
+          onHome &&
+            (u.searchParams.get("entry") === "new-business" ||
+              u.searchParams.has("resume") ||
+              u.searchParams.has("debug"))
+        );
+      } catch {
+        setIntakeRoute(false);
+      }
+    };
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, [pathname, active]);
+  const startActive = active === "start" || intakeRoute;
+  const businessesActive =
+    !startActive &&
+    (active === "businesses" ||
+      active === "calendar" ||
+      active === "filings" ||
+      active === "history" ||
+      active === "settings");
+
   const langToggle = (
     <div className="spr-context-language" aria-label={lang === "es" ? "Idioma" : "Language"}>
       <button type="button" className={lang === "en" ? "active" : ""} aria-pressed={lang === "en"} onClick={() => changeLang("en")}>EN</button>
@@ -138,13 +171,30 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
         </div>
 
         <nav className="nav-tabs" aria-label="Sections">
-          <Link href="/?entry=new-business" className={`nav-tab ${active === "start" ? "active" : ""}`}>{navStart}</Link>
-          <Link href="/businesses" className={`nav-tab ${active === "businesses" || active === "calendar" || active === "filings" || active === "history" || active === "settings" ? "active" : ""}`}>
+          <Link
+            href="/?entry=new-business"
+            className={`nav-tab${startActive ? " active" : ""}`}
+            aria-current={startActive ? "page" : undefined}
+            data-active={startActive ? "true" : undefined}
+          >
+            {navStart}
+          </Link>
+          <Link
+            href="/businesses"
+            className={`nav-tab${businessesActive ? " active" : ""}`}
+            aria-current={businessesActive ? "page" : undefined}
+            data-active={businessesActive ? "true" : undefined}
+          >
             {navMyBiz}
           </Link>
           {hasEnterprise && (
             <div className="nav-dropdown">
-              <Link href="/enterprise" className={`nav-tab ${active === "enterprise" ? "active" : ""}`}>
+              <Link
+                href="/enterprise"
+                className={`nav-tab${active === "enterprise" ? " active" : ""}`}
+                aria-current={active === "enterprise" ? "page" : undefined}
+                data-active={active === "enterprise" ? "true" : undefined}
+              >
                 {es ? "Empresarial" : "Enterprise"}
               </Link>
               <div className="nav-dropdown-menu" role="menu" aria-label={es ? "Secciones empresariales" : "Enterprise sections"}>

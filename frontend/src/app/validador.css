@@ -139,11 +139,21 @@ button { font-family: inherit; }
   letter-spacing: -0.005em;
 }
 .nav-tab:hover { color: var(--on-navy); background: var(--navy-soft); }
-.nav-tab.active {
+.nav-tabs .nav-tab.active,
+.nav-tabs .nav-tab[aria-current="page"],
+.nav-tabs .nav-tab[data-active="true"] {
   color: #f6f3ea;
   background: #245c5c;
   border-color: #245c5c;
   box-shadow: none;
+}
+/* Keep selected tab teal even on hover (same specificity otherwise loses to :hover). */
+.nav-tabs .nav-tab.active:hover,
+.nav-tabs .nav-tab[aria-current="page"]:hover,
+.nav-tabs .nav-tab[data-active="true"]:hover {
+  color: #f6f3ea;
+  background: #1f5252;
+  border-color: #1f5252;
 }
 .nav-tab .tab-icon { width: 14px; height: 14px; opacity: 0.85; }
 .nav-tab[disabled] { opacity: 0.4; cursor: not-allowed; }
