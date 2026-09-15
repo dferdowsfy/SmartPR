@@ -143,9 +143,16 @@ export function EvidenceLockerPanel({
             <Archive className="h-4 w-4 text-indigo-700" />
           </span>
           <div>
-            <h2 className="font-bold text-[#161616]">
-              {L("Evidence locker", "Casillero de evidencia", lang)}
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-bold text-[#161616]">
+                {L("Evidence locker", "Casillero de evidencia", lang)}
+              </h2>
+              <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-800">
+                {files.length === 1
+                  ? L("1 file", "1 archivo", lang)
+                  : L(`${files.length} files`, `${files.length} archivos`, lang)}
+              </span>
+            </div>
             <p className="mt-0.5 text-sm text-slate-500">
               {L(
                 "Upload once, tag the requirements a file satisfies, and reuse it across agency asks instead of re-uploading.",
@@ -168,65 +175,31 @@ export function EvidenceLockerPanel({
         </button>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-4 sm:flex-row sm:items-end">
-        <label className="min-w-0 flex-1 text-xs font-semibold text-slate-600">
-          {L("Tags for next upload (requirement codes)", "Etiquetas del próximo archivo (códigos de requisito)", lang)}
-          <input
-            value={tagDraft}
-            onChange={(e) => setTagDraft(e.target.value)}
-            placeholder="DOC_CONTRACTOR_LICENSE, DOC_BOND"
-            list="locker-tag-suggestions"
-            className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-[#161616]"
-          />
-          <datalist id="locker-tag-suggestions">
-            {suggestionCodes.map((code) => (
-              <option key={code} value={code} />
-            ))}
-          </datalist>
-        </label>
-        <button
-          type="button"
-          disabled={uploading}
-          onClick={() => fileRef.current?.click()}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          <Upload className="h-4 w-4" />
-          {uploading ? L("Uploading…", "Subiendo…", lang) : L("Upload to locker", "Subir al casillero", lang)}
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          className="hidden"
-          accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) void upload(file);
-          }}
-        />
-      </div>
-
-      {message && <p className="mt-3 text-xs text-red-600">{message}</p>}
-
+      {/* Inventory-first: stored files as clear cards */}
       <div className="mt-4 space-y-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          {L("Stored files", "Archivos guardados", lang)}
+        </h3>
         {files.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400">
-            {L("No locker files yet.", "Aún no hay archivos en el casillero.", lang)}
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/40 py-8 text-center text-sm text-slate-400">
+            {L("No locker files yet. Upload below to start your inventory.", "Aún no hay archivos en el casillero. Suba abajo para comenzar su inventario.", lang)}
           </div>
         ) : (
           files.map((file) => {
             const tags = file.requirement_tags ?? [];
             const editing = editingId === file.id;
             return (
-              <div key={file.id} className="rounded-xl border border-slate-200 px-4 py-3">
+              <div key={file.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-950/[0.02]">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex items-start gap-2">
-                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                      <FileText className="h-4 w-4 text-slate-600" />
+                    </span>
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-[#161616]" title={file.original_filename}>
                         {file.original_filename}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="mt-0.5 text-xs text-slate-500">
                         {[fmtSize(file.size_bytes), file.mime_type, file.review_status]
                           .filter(Boolean)
                           .join(" · ")}
@@ -288,6 +261,52 @@ export function EvidenceLockerPanel({
           })
         )}
       </div>
+
+      {/* Upload zone — secondary but clear */}
+      <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-4">
+        <div className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+          {L("Add to locker", "Agregar al casillero", lang)}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="min-w-0 flex-1 text-xs font-semibold text-slate-600">
+            {L("Tags for next upload (requirement codes)", "Etiquetas del próximo archivo (códigos de requisito)", lang)}
+            <input
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              placeholder="DOC_CONTRACTOR_LICENSE, DOC_BOND"
+              list="locker-tag-suggestions"
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-[#161616]"
+            />
+            <datalist id="locker-tag-suggestions">
+              {suggestionCodes.map((code) => (
+                <option key={code} value={code} />
+              ))}
+            </datalist>
+          </label>
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            <Upload className="h-4 w-4" />
+            {uploading ? L("Uploading…", "Subiendo…", lang) : L("Upload to locker", "Subir al casillero", lang)}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void upload(file);
+            }}
+          />
+        </div>
+      </div>
+
+      {message && <p className="mt-3 text-xs text-red-600">{message}</p>}
     </section>
   );
 }
