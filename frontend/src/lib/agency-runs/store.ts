@@ -23,7 +23,7 @@ import {
 import { timelineFor, type MockBeat } from "./mockTimeline";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
 import { PLACEHOLDER_SHOTS } from "./placeholders";
-import { buildResumeTaskPrompt, buildAgencyTaskPrompt } from "./taskPrompt";
+import { buildResumeTaskPrompt, buildAgencyTaskPrompt, type ResumeCredentials } from "./taskPrompt";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -493,9 +493,35 @@ export function peekRun(id: string): AgencyRun | null {
   return runs().get(id) || null;
 }
 
-export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
+export type ResumeRunOptions = {
+  /** Ephemeral only — passed into the Browser Use follow-up prompt; never stored on the run. */
+  credentials?: ResumeCredentials | null;
+};
+
+function sanitizeCredentials(
+  raw: ResumeCredentials | null | undefined
+): ResumeCredentials | null {
+  if (!raw || typeof raw !== "object") return null;
+  const email = typeof raw.email === "string" ? raw.email.trim() : "";
+  const password = typeof raw.password === "string" ? raw.password.trim() : "";
+  const mfa = typeof raw.mfa === "string" ? raw.mfa.trim() : "";
+  if (!email && !password && !mfa) return null;
+  const out: ResumeCredentials = {};
+  if (email) out.email = email;
+  if (password) out.password = password;
+  if (mfa) out.mfa = mfa;
+  return out;
+}
+
+export async function resumeRun(
+  id: string,
+  options?: ResumeRunOptions
+): Promise<AgencyRunPublic | null> {
   const run = runs().get(id);
   if (!run) return null;
+
+  // Credentials are ephemeral for this call only — never assign onto `run`.
+  const credentials = sanitizeCredentials(options?.credentials);
 
   if (run.worker === "browser_use") {
     if (run.status !== "paused" && run.status !== "running") {
@@ -505,23 +531,34 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
     run.status = "running";
     run.pause_reason = null;
     run.updated_at = nowIso();
-    pushEvent(run, {
-      message: "Resumed by user — continuing assisted filing",
-      message_es: "Reanudado por el usuario — continuando el trámite asistido",
-      screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
-      kind: "info",
-    });
+    if (credentials) {
+      pushEvent(run, {
+        message: "User provided login fields from step log — filling and continuing",
+        message_es: "El usuario proporcionó campos de inicio de sesión desde el registro — rellenando y continuando",
+        screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+        kind: "info",
+      });
+    } else {
+      pushEvent(run, {
+        message: "Resumed by user — continuing assisted filing",
+        message_es: "Reanudado por el usuario — continuando el trámite asistido",
+        screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+        kind: "info",
+      });
+    }
     if (run.browser_use_session_id && run.browser_use_run_id) {
       try {
         const bu = await getAgentRun(run.browser_use_run_id);
         if (bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled") {
           // Follow-up turn on the same session with the resume brief.
+          // Credentials (if any) go only into the task message — never logged.
           const queued = await queueAgentMessage(
             run.browser_use_session_id,
             buildResumeTaskPrompt({
               config: getFilingConfig(run.filing_type),
               pauseReason: prevPause,
               passport: run.passport_snapshot ?? null,
+              credentials,
             })
           );
           if (queued.runId) run.browser_use_run_id = queued.runId;
@@ -546,12 +583,21 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
   run.pause_reason = null;
   run.segment_started_at = nowIso();
   run.updated_at = nowIso();
-  pushEvent(run, {
-    message: "Resumed by user — continuing assisted filing",
-    message_es: "Reanudado por el usuario — continuando el trámite asistido",
-    screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
-    kind: "info",
-  });
+  if (credentials) {
+    pushEvent(run, {
+      message: "User provided login fields from step log — filling and continuing",
+      message_es: "El usuario proporcionó campos de inicio de sesión desde el registro — rellenando y continuando",
+      screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+      kind: "info",
+    });
+  } else {
+    pushEvent(run, {
+      message: "Resumed by user — continuing assisted filing",
+      message_es: "Reanudado por el usuario — continuando el trámite asistido",
+      screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+      kind: "info",
+    });
+  }
   return toPublic(advanceMock(run));
 }
 

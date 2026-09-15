@@ -1,5 +1,12 @@
 import type { AgencyFilingConfig } from "./filingTypes";
 
+/** Ephemeral login fields for USER_LOGIN resume — never persisted on the run. */
+export type ResumeCredentials = {
+  email?: string;
+  password?: string;
+  mfa?: string;
+};
+
 /**
  * Build the Browser Use Cloud task prompt for an assisted portal filing.
  * Fully generated from the filing-type registry — the brief stays
@@ -10,14 +17,47 @@ export function buildAgencyTaskPrompt(input: {
   config: AgencyFilingConfig;
   passport: Record<string, unknown> | null;
   resumeHint?: string;
+  credentials?: ResumeCredentials | null;
 }): string {
   const { config } = input;
   const passportBlock = input.passport
     ? JSON.stringify(input.passport, null, 2)
     : "(no passport JSON available — fill only what the user provides on screen; do not invent data)";
 
+  const creds = input.credentials;
+  const hasCreds = Boolean(
+    creds && (creds.email?.trim() || creds.password?.trim() || creds.mfa?.trim())
+  );
+
+  let credentialsBlock = "";
+  if (hasCreds && creds) {
+    const lines: string[] = [
+      "",
+      "CREDENTIALS FILL (user provided from the SmartPR step log — use EXACTLY these values; do not invent or alter them)",
+    ];
+    if (creds.email?.trim()) {
+      lines.push(`- Email / username field: type exactly: ${creds.email.trim()}`);
+    }
+    if (creds.password?.trim()) {
+      lines.push(`- Password field: type exactly: ${creds.password.trim()}`);
+    }
+    if (creds.mfa?.trim()) {
+      lines.push(`- MFA / OTP / verification code field (if present): type exactly: ${creds.mfa.trim()}`);
+    }
+    lines.push(
+      "- Locate the matching login fields on the CURRENT page and type these values into them.",
+      "- If an Ingresar / Login / Sign in / Continuar button is present after filling, click it to proceed past the login gate.",
+      "- If login succeeds (you leave the login page or reach the next portal step), do NOT re-pause with PAUSE_USER_LOGIN for the same gate.",
+      "- Still NEVER click the final Submit / Enviar that permanently files.",
+      "- Do not invent secrets; only use the values listed above. If a field was not provided, leave it for the human or pause only for that missing field."
+    );
+    credentialsBlock = "\n" + lines.join("\n");
+  }
+
   const resume = input.resumeHint
-    ? `\n\nRESUME CONTEXT: The human just handled the pause (${input.resumeHint}) directly in the live browser — assume they completed the login / typed the sensitive fields / uploaded the documents. Briefly VERIFY the current page state: if the previously blocking step is done (fields filled, gate cleared), CONTINUE forward toward pre-submit review — do NOT re-pause for the same reason. Only pause again if specific fields are still visibly empty or the gate is still literally blocking, and name exactly which fields are still missing. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
+    ? hasCreds
+      ? `\n\nRESUME CONTEXT: The human provided login fields from the step log so you can fill them on the current page. ${credentialsBlock ? "Follow CREDENTIALS FILL below, then" : ""} briefly VERIFY the page state and CONTINUE toward pre-submit review — do NOT re-pause USER_LOGIN if login succeeded. Only pause again if login still fails or other gates remain, and name exactly what is still blocking. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
+      : `\n\nRESUME CONTEXT: The human just handled the pause (${input.resumeHint}) directly in the live browser — assume they completed the login / typed the sensitive fields / uploaded the documents. Briefly VERIFY the current page state: if the previously blocking step is done (fields filled, gate cleared), CONTINUE forward toward pre-submit review — do NOT re-pause for the same reason. Only pause again if specific fields are still visibly empty or the gate is still literally blocking, and name exactly which fields are still missing. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
     : "";
 
   const procedure = config.procedureEn
@@ -43,7 +83,7 @@ PREFILL — DO THIS AGGRESSIVELY
 HARD RULES (never violate)
 1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.
 2. Domain allowlist: only ${config.domains.join(", ")} (and necessary redirects on those hosts). Do not visit other sites.
-3. Do NOT invent SSN, ITIN, passwords, MFA codes, or other sensitive IDs. Leave those for the human.
+3. Do NOT invent SSN, ITIN, passwords, MFA codes, or other sensitive IDs. Leave those for the human (unless CREDENTIALS FILL below supplies exact values for this turn only).
 4. When you hit an upload wall, login/MFA wall, captcha, or payment gate: STOP immediately, do not loop, and report clearly with one of these markers in your final message:
    - PAUSE_USER_UPLOAD — documents required (${config.uploadsEn})
    - PAUSE_USER_LOGIN — portal login / MFA required (credentials stay with the human)
@@ -57,7 +97,7 @@ ${passportBlock}
 
 PROCEDURE OUTLINE (goal-oriented — adapt to what the portal actually shows)
 ${procedure}
-${resume}
+${resume}${credentialsBlock}
 
 When finished or paused, end with a short status line containing exactly one marker: PAUSE_USER_UPLOAD | PAUSE_USER_LOGIN | PAUSE_CAPTCHA | PAUSE_PAYMENT | REVIEW_READY | FAILED:<reason>`;
 }
@@ -66,10 +106,12 @@ export function buildResumeTaskPrompt(input: {
   config: AgencyFilingConfig;
   pauseReason: string | null;
   passport: Record<string, unknown> | null;
+  credentials?: ResumeCredentials | null;
 }): string {
   return buildAgencyTaskPrompt({
     config: input.config,
     passport: input.passport,
     resumeHint: input.pauseReason || "user resumed after assisting",
+    credentials: input.credentials ?? null,
   });
 }

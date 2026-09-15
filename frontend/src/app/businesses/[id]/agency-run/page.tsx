@@ -71,6 +71,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * No new window — the iframe stays interactive and an "I'm done" button
    * hands control back to the assistant. */
   const [takeover, setTakeover] = useState(false);
+  /** USER_LOGIN fields typed in the step log (and optionally PauseOverlay).
+   * Never mirrored into event messages — only POSTed to resume. */
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginMfa, setLoginMfa] = useState("");
   /** Tracks whether the live preview iframe has rendered its first frame —
    * drives the loading animation while the Cloud session spins up. */
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -107,6 +112,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   // Leaving takeover mode whenever a different run loads.
   useEffect(() => {
     setTakeover(false);
+    setLoginEmail("");
+    setLoginPassword("");
+    setLoginMfa("");
   }, [run?.id]);
 
   // Reset the preview loading animation whenever the stream is (re)created.
@@ -150,21 +158,51 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const resume = async () => {
+  const resume = async (credentials?: { email?: string; password?: string; mfa?: string }) => {
     if (!run) return;
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(`/api/agency-runs/${run.id}/resume`, { method: "POST" });
+      const hasCreds = Boolean(
+        credentials &&
+          (credentials.email?.trim() || credentials.password?.trim() || credentials.mfa?.trim())
+      );
+      const response = await fetch(`/api/agency-runs/${run.id}/resume`, {
+        method: "POST",
+        headers: hasCreds ? { "Content-Type": "application/json" } : undefined,
+        body: hasCreds
+          ? JSON.stringify({
+              credentials: {
+                ...(credentials!.email?.trim() ? { email: credentials!.email.trim() } : {}),
+                ...(credentials!.password?.trim() ? { password: credentials!.password.trim() } : {}),
+                ...(credentials!.mfa?.trim() ? { mfa: credentials!.mfa.trim() } : {}),
+              },
+            })
+          : undefined,
+      });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
         setError(result.error || L("Could not resume.", "No se pudo reanudar.", lang));
         return;
       }
       setRun(result.run as AgencyRunPublic);
+      if (hasCreds) {
+        setLoginEmail("");
+        setLoginPassword("");
+        setLoginMfa("");
+      }
+      setTakeover(false);
     } finally {
       setBusy(false);
     }
+  };
+
+  const fillAndContinue = async () => {
+    await resume({
+      email: loginEmail,
+      password: loginPassword,
+      mfa: loginMfa,
+    });
   };
 
   const stop = async () => {
@@ -430,6 +468,64 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 ))}
                 <div ref={logEndRef} />
               </ol>
+              {paused && run.pause_reason === "USER_LOGIN" && (
+                <div className="space-y-2 border-t border-amber-100 bg-amber-50/60 px-3 py-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-900">
+                    <KeyRound className="h-3.5 w-3.5" />
+                    {L("Portal login", "Inicio de sesión", lang)}
+                  </div>
+                  <p className="text-[11px] leading-snug text-amber-900/80">
+                    {L(
+                      "Type your credentials here — the assistant will fill the portal and continue. Take over remains available if you prefer.",
+                      "Escriba sus credenciales aquí — el asistente llenará el portal y continuará. Tomar el control sigue disponible si lo prefiere.",
+                      lang
+                    )}
+                  </p>
+                  <label className="block">
+                    <span className="sr-only">{L("Email", "Correo", lang)}</span>
+                    <input
+                      type="email"
+                      autoComplete="username"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder={L("Email", "Correo", lang)}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="sr-only">{L("Password", "Contraseña", lang)}</span>
+                    <input
+                      type="password"
+                      autoComplete="current-password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder={L("Password", "Contraseña", lang)}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="sr-only">{L("MFA / OTP (optional)", "MFA / OTP (opcional)", lang)}</span>
+                    <input
+                      type="text"
+                      autoComplete="one-time-code"
+                      inputMode="numeric"
+                      value={loginMfa}
+                      onChange={(e) => setLoginMfa(e.target.value)}
+                      placeholder={L("MFA / OTP (optional)", "MFA / OTP (opcional)", lang)}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={busy || (!loginEmail.trim() && !loginPassword.trim() && !loginMfa.trim())}
+                    onClick={() => void fillAndContinue()}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                  >
+                    <Play className="h-3.5 w-3.5" />
+                    {L("Fill & continue", "Llenar y continuar", lang)}
+                  </button>
+                </div>
+              )}
               <div className="flex gap-2 border-t border-slate-100 p-3">
                 {paused && (
                   <button
@@ -650,6 +746,13 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       portalName={L(activeConfig.portalEn, activeConfig.portalEs, lang)}
                       uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
                       pauseStreak={run.pause_streak ?? 0}
+                      loginEmail={loginEmail}
+                      loginPassword={loginPassword}
+                      loginMfa={loginMfa}
+                      onLoginEmail={setLoginEmail}
+                      onLoginPassword={setLoginPassword}
+                      onLoginMfa={setLoginMfa}
+                      onFillAndContinue={() => void fillAndContinue()}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
                       onTakeover={enterTakeover}
@@ -734,6 +837,13 @@ function PauseOverlay({
   portalName,
   uploadsText,
   pauseStreak,
+  loginEmail,
+  loginPassword,
+  loginMfa,
+  onLoginEmail,
+  onLoginPassword,
+  onLoginMfa,
+  onFillAndContinue,
   onResume,
   onStop,
   onTakeover,
@@ -749,6 +859,13 @@ function PauseOverlay({
   portalName: string;
   uploadsText: string;
   pauseStreak: number;
+  loginEmail: string;
+  loginPassword: string;
+  loginMfa: string;
+  onLoginEmail: (v: string) => void;
+  onLoginPassword: (v: string) => void;
+  onLoginMfa: (v: string) => void;
+  onFillAndContinue: () => void;
   onResume: () => void;
   onStop: () => void;
   onTakeover: () => void;
@@ -785,8 +902,8 @@ function PauseOverlay({
         )
       : reason === "USER_LOGIN"
         ? L(
-            `Press "Take over the browser" below and complete what ${portalName} is asking for — login, MFA code, or mandatory profile fields (such as SSN) that only you can provide. Fill every required field and press any Save or Confirm button on the page. What you type is private — nobody at SmartPR, admins included, can see this session. When finished, press "I'm done" (top right) to hand it back to the assistant.`,
-            `Pulsa "Tomar el control del navegador" abajo y completa lo que ${portalName} te pide — inicio de sesión, código MFA o campos obligatorios del perfil (como el SSN) que solo tú puedes proveer. Llena todos los campos requeridos y pulsa cualquier botón de Guardar o Confirmar en la página. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando termines, pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.`,
+            `Enter your ${portalName} email, password, and optional MFA below — SmartPR will fill the portal fields and continue. Or take over the live browser if you prefer to type there yourself. Credentials are used only for this resume and are never stored.`,
+            `Ingrese su correo, contraseña y MFA opcional de ${portalName} abajo — SmartPR llenará los campos del portal y continuará. O tome el control del navegador en vivo si prefiere escribir ahí. Las credenciales solo se usan en esta reanudación y nunca se almacenan.`,
             lang
           )
         : reason === "CAPTCHA"
@@ -802,6 +919,9 @@ function PauseOverlay({
                 lang
               )
             : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
+
+  const canFill =
+    Boolean(loginEmail.trim() || loginPassword.trim() || loginMfa.trim());
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
@@ -848,15 +968,53 @@ function PauseOverlay({
               </div>
             )}
 
-            {reason === "USER_LOGIN" && liveUrl && (
-              <button
-                type="button"
-                onClick={onTakeover}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-white"
-              >
-                <KeyRound className="h-3.5 w-3.5" />
-                {L("Take over the browser", "Tomar el control del navegador", lang)}
-              </button>
+            {reason === "USER_LOGIN" && (
+              <div className="mt-3 space-y-2">
+                <input
+                  type="email"
+                  autoComplete="username"
+                  value={loginEmail}
+                  onChange={(e) => onLoginEmail(e.target.value)}
+                  placeholder={L("Email", "Correo", lang)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                />
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginPassword}
+                  onChange={(e) => onLoginPassword(e.target.value)}
+                  placeholder={L("Password", "Contraseña", lang)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                />
+                <input
+                  type="text"
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  value={loginMfa}
+                  onChange={(e) => onLoginMfa(e.target.value)}
+                  placeholder={L("MFA / OTP (optional)", "MFA / OTP (opcional)", lang)}
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                />
+                <button
+                  type="button"
+                  disabled={busy || !canFill}
+                  onClick={onFillAndContinue}
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  {L("Fill & continue", "Llenar y continuar", lang)}
+                </button>
+                {liveUrl && (
+                  <button
+                    type="button"
+                    onClick={onTakeover}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                    {L("Take over the browser", "Tomar el control del navegador", lang)}
+                  </button>
+                )}
+              </div>
             )}
 
             {(reason === "CAPTCHA" || reason === "PAYMENT") && liveUrl && (
@@ -895,15 +1053,17 @@ function PauseOverlay({
             )}
 
             <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={onResume}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-              >
-                <Play className="h-3.5 w-3.5" />
-                {L("Resume", "Reanudar", lang)}
-              </button>
+              {reason !== "USER_LOGIN" && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={onResume}
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  {L("Resume", "Reanudar", lang)}
+                </button>
+              )}
               <button
                 type="button"
                 disabled={busy}
@@ -920,4 +1080,3 @@ function PauseOverlay({
     </div>
   );
 }
-
