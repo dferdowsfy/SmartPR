@@ -7,8 +7,8 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, FileUp, KeyRound, Loader2, PauseCircle,
-  Play, RefreshCw, Server, Shield, Square, Upload,
+  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, FileUp, KeyRound, Loader2, Maximize2,
+  Minimize2, PauseCircle, Play, RefreshCw, Server, Shield, Square, Upload,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
@@ -75,6 +75,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * drives the loading animation while the Cloud session spins up. */
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  /** Fullscreen (maximized) live browser panel. */
+  const previewSectionRef = useRef<HTMLElement | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const poll = useCallback(async (runId: string) => {
@@ -110,6 +113,21 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     setPreviewLoaded(false);
   }, [previewKey, run?.id, run?.live_url]);
+
+  // Track browser fullscreen state for the maximize/restore button.
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => {});
+    } else {
+      void previewSectionRef.current?.requestFullscreen().catch(() => {});
+    }
+  };
 
   const start = async () => {
     setBusy(true);
@@ -443,7 +461,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             </aside>
 
             {/* Live browser / screenshot panel */}
-            <section className="relative flex min-h-[70vh] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
+            <section
+              ref={previewSectionRef}
+              className="relative flex min-h-[70vh] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]"
+            >
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <h2 className="text-sm font-bold text-[#161616]">
                   {run.live_url
@@ -458,6 +479,27 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       ? L(`Live preview — ${activeConfig.domains[0]}`, `Vista previa en vivo — ${activeConfig.domains[0]}`, lang)
                       : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
                   </span>
+                  {run.live_url && (
+                    <button
+                      type="button"
+                      onClick={toggleFullscreen}
+                      title={
+                        isFullscreen
+                          ? L("Exit fullscreen", "Salir de pantalla completa", lang)
+                          : L("Maximize browser", "Maximizar navegador", lang)
+                      }
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                    >
+                      {isFullscreen ? (
+                        <Minimize2 className="h-3 w-3" />
+                      ) : (
+                        <Maximize2 className="h-3 w-3" />
+                      )}
+                      {isFullscreen
+                        ? L("Restore", "Restaurar", lang)
+                        : L("Maximize", "Maximizar", lang)}
+                    </button>
+                  )}
                   {takeover && run.live_url ? (
                     <button
                       type="button"
@@ -530,9 +572,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   </div>
                 )}
                 <div
-                  className={`relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
-                    takeover ? "border-2 border-amber-400" : "border border-slate-200"
-                  }`}
+                  className={`relative w-full overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
+                    isFullscreen ? "min-h-0 flex-1" : "aspect-[16/10]"
+                  } ${takeover ? "border-2 border-amber-400" : "border border-slate-200"}`}
                 >
                   {run.live_url ? (
                     <>

@@ -482,6 +482,7 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
             buildResumeTaskPrompt({
               config: getFilingConfig(run.filing_type),
               pauseReason: prevPause,
+              passport: run.passport_snapshot ?? null,
             })
           );
           if (queued.runId) run.browser_use_run_id = queued.runId;

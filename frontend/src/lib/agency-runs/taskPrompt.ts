@@ -17,7 +17,7 @@ export function buildAgencyTaskPrompt(input: {
     : "(no passport JSON available — fill only what the user provides on screen; do not invent data)";
 
   const resume = input.resumeHint
-    ? `\n\nRESUME CONTEXT: The human just finished a pause (${input.resumeHint}). Continue from the current page toward pre-submit review. Do not restart from scratch unless the session was lost.`
+    ? `\n\nRESUME CONTEXT: The human just finished a pause (${input.resumeHint}). Continue from the current page toward pre-submit review. Do not restart from scratch unless the session was lost. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
     : "";
 
   const procedure = config.procedureEn
@@ -30,8 +30,14 @@ GOAL
 - Filing: ${config.labelEn}
 - ${config.goalEn}
 - Open and stay on the allowlisted domains only: ${config.domains.join(", ")} (start: ${config.startUrl})
-- Prefill non-sensitive fields from the Business Passport JSON below.
 - Spanish UI is OK; follow on-screen Spanish labels.
+
+PREFILL — DO THIS AGGRESSIVELY
+- Fill EVERY form field whose meaning you can identify from the Business Passport JSON below: legal/business names, entity type, addresses, phone, email, dates, organizer/member details, non-sensitive IDs, and anything else with a clear match.
+- For dropdowns/selects: pick the option whose visible text best matches the passport value. Never leave a dropdown on a placeholder/default when the passport identifies the value.
+- For checkboxes/radios that clearly correspond to passport facts, set them.
+- If a field has no passport match and is not sensitive, use visible page context; if truly unknown, leave it blank and note it — do not invent.
+- Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them for the human and pause with the right marker below.
 
 HARD RULES (never violate)
 1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.
@@ -58,10 +64,11 @@ When finished or paused, end with a short status line containing exactly one mar
 export function buildResumeTaskPrompt(input: {
   config: AgencyFilingConfig;
   pauseReason: string | null;
+  passport: Record<string, unknown> | null;
 }): string {
   return buildAgencyTaskPrompt({
     config: input.config,
-    passport: null,
+    passport: input.passport,
     resumeHint: input.pauseReason || "user resumed after assisting",
   });
 }
