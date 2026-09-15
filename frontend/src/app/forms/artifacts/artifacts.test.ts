@@ -145,6 +145,22 @@ test("forms without native fields are the ones that carry coordinate overlays", 
 
 // --- 3. mapping artifacts persist -------------------------------------------
 
+test("OGPe / Salud / Bomberos prep packs are catalogued as smartpr_generated portal aids", () => {
+  for (const [code, req] of [
+    ["OGPEWS01", "DOC_PERMISO_UNICO"],
+    ["SALUDWS01", "DOC_HEALTH_PERMIT"],
+    ["BOMBEROSWS01", "DOC_FIRE_CERT"],
+  ] as const) {
+    const template = getTemplate(code);
+    assert.ok(template, `${code} missing from catalog`);
+    assert.equal(template.artifactType, "smartpr_generated");
+    assert.equal(template.sourceStatus, "smartpr_generated");
+    assert.equal(template.submissionChannel, "agency_portal");
+    assert.equal(template.requirementCode, req);
+    assert.notEqual(template.submissionChannel, "agency_office" as string);
+  }
+});
+
 test("a mapping artifact exists for every template in the library", () => {
   const codes = listMappingFormCodes();
   for (const template of TEMPLATE_LIBRARY) {

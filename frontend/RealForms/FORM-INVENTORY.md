@@ -429,8 +429,8 @@ listed in rough order of how often they occur in SmartPR business-entry flows:
 
 | Placeholder | Requirement | Agency to research |
 | --- | --- | --- |
-| `FORM_PR_PERMISO_UNICO` | `DOC_PERMISO_UNICO` | OGPe — Permiso Único (high frequency; likely portal-based) |
-| `FORM_PR_HEALTH_PERMIT` | `DOC_HEALTH_PERMIT` | Departamento de Salud |
+| `FORM_PR_PERMISO_UNICO` | `DOC_PERMISO_UNICO` | OGPe — Permiso Único (portal-only; SmartPR prep pack `OGPEWS01` / `permiso_unico`) |
+| `FORM_PR_HEALTH_PERMIT` | `DOC_HEALTH_PERMIT` | Departamento de Salud (portal/OGPe path; SmartPR prep pack `SALUDWS01` / `health_permit`) |
 | `FORM_PR_ALCOHOL_LICENSE` | `DOC_ALCOHOL_LICENSE` | Hacienda (likely SURI — see above) |
 | `FORM_PR_SIGN_PERMIT` | `DOC_SIGN_PERMIT` | OGPe / municipality |
 | `FORM_PR_OUTDOOR_SEATING` | `DOC_OUTDOOR_SEATING_AUTH` | Municipality |
@@ -444,9 +444,7 @@ listed in rough order of how often they occur in SmartPR business-entry flows:
 | `FORM_PR_NOISE_VARIANCE` | `DOC_NOISE_VARIANCE` | Junta de Calidad Ambiental / DRNA |
 | `FORM_PR_SAN_JUAN_USE_PERMIT` | `DOC_SAN_JUAN_USE_PERMIT` | Municipio de San Juan |
 
-**Not yet researched here:** Negociado del Cuerpo de Bomberos (fire
-inspection/certificate) and Departamento del Trabajo registrations, both named
-in the original brief. Neither has a registry placeholder yet.
+**Bomberos:** no official PDF in RealForms yet; SmartPR ships prep pack `BOMBEROSWS01` / `fire_certification` for CPI inspection readiness (CPI tracked via OGPe). **Still to research:** Departamento del Trabajo registrations named in the original brief (no registry placeholder yet).
 
 ---
 
