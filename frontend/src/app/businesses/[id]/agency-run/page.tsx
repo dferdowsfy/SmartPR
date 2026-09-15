@@ -19,19 +19,12 @@ import type {
   AgencyRunPublic,
   AgencyRunStatus,
 } from "../../../../lib/agency-runs/types";
+import {
+  AGENCY_FILING_CONFIGS,
+  getFilingConfig,
+} from "../../../../lib/agency-runs/filingTypes";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
-
-const FILING_LABELS: Record<AgencyFilingType, { en: string; es: string }> = {
-  SURI_REGISTER_TAXPAYER: {
-    en: "SURI — Register Taxpayer (account signup)",
-    es: "SURI — Registrar contribuyente (crear cuenta)",
-  },
-  SURI_MERCHANT_REGISTRATION: {
-    en: "SURI — Merchant registration (Registro de Comerciante)",
-    es: "SURI — Registro de Comerciante",
-  },
-};
 
 const STATUS_STYLES: Record<AgencyRunStatus, string> = {
   queued: "border-slate-300 bg-slate-100 text-slate-700",
@@ -62,8 +55,6 @@ function StatusPill({ status, lang }: { status: AgencyRunStatus; lang: Lang }) {
     </span>
   );
 }
-
-const UPLOAD_TAGS = ["DOC_PHOTO_ID", "DOC_UTILITY_BILL", "DOC_SSN_CARD"];
 
 export default function AgencyRunPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: businessId } = use(params);
@@ -182,8 +173,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       if (file.size > 5 * 1024 * 1024) {
         setUploadMsg(
           L(
-            "SURI attachments max 5 MB — compress or crop before upload.",
-            "Adjuntos SURI máx. 5 MB — comprima o recorte antes de subir.",
+            "Portal attachments max 5 MB — compress or crop before upload.",
+            "Adjuntos del portal máx. 5 MB — comprima o recorte antes de subir.",
             lang
           )
         );
@@ -192,7 +183,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       const form = new FormData();
       form.append("file", file);
       form.append("business_id", businessId);
-      form.append("requirement_tags", UPLOAD_TAGS.join(","));
+      form.append("requirement_tags", activeConfig.evidenceTags.join(","));
       const response = await fetch("/api/evidence", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -226,6 +217,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const showPreflight = !run;
   const paused = run?.status === "paused";
   const inReview = run?.status === "review";
+  // Active filing config: the run's type once started, otherwise the picker's selection.
+  const activeConfig = getFilingConfig(run ? run.filing_type : filingType);
+  const preflightConfig = getFilingConfig(filingType);
 
   return (
     <div className="min-h-screen bg-[#f4f1ea]">
@@ -248,12 +242,12 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 {L("Agency assistant", "Asistente de agencia", lang)}
               </p>
               <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-medium tracking-tight md:text-4xl">
-                {L("SURI live visual run", "Ejecución visual en vivo de SURI", lang)}
+                {L("Agency live visual run", "Ejecución visual en vivo de agencia", lang)}
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-[#5a5a5a]">
                 {L(
-                  "Assisted SURI filing with live browser preview when Browser Use Cloud is configured. Mock timeline runs when the API key is unset.",
-                  "Trámite SURI asistido con vista previa en vivo cuando Browser Use Cloud está configurado. Línea de tiempo simulada si no hay API key.",
+                  "Assisted government filing with live browser preview when Browser Use Cloud is configured. Mock timeline runs when the API key is unset.",
+                  "Trámite de gobierno asistido con vista previa en vivo cuando Browser Use Cloud está configurado. Línea de tiempo simulada si no hay API key.",
                   lang
                 )}
               </p>
@@ -289,15 +283,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 onChange={(e) => setFilingType(e.target.value as AgencyFilingType)}
                 className="w-full max-w-xl rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#161616]"
               >
-                {(Object.keys(FILING_LABELS) as AgencyFilingType[]).map((key) => (
+                {AGENCY_FILING_CONFIGS.map((c) => (
                   <option
-                    key={key}
-                    value={key}
-                    disabled={key === "SURI_MERCHANT_REGISTRATION"}
+                    key={c.id}
+                    value={c.id}
+                    disabled={!c.enabled || c.requiresExistingAccount}
                   >
-                    {L(FILING_LABELS[key].en, FILING_LABELS[key].es, lang)}
-                    {key === "SURI_MERCHANT_REGISTRATION"
-                      ? L(" — needs existing SURI account", " — requiere cuenta SURI existente", lang)
+                    {L(c.labelEn, c.labelEs, lang)}
+                    {c.requiresExistingAccount
+                      ? L(" — requires an existing portal account", " — requiere una cuenta existente en el portal", lang)
                       : ""}
                   </option>
                 ))}
@@ -311,7 +305,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   <div className="font-bold">{L("Hard rules", "Reglas firmes", lang)}</div>
                   <ul className="mt-2 list-disc space-y-1 pl-4 text-amber-900/90">
                     <li>{L("Agent never clicks final submit — you submit on the portal.", "El agente nunca hace clic en enviar — usted envía en el portal.", lang)}</li>
-                    <li>{L("Domain allowlist: suri.hacienda.pr.gov only.", "Dominio permitido: solo suri.hacienda.pr.gov.", lang)}</li>
+                    <li>{L(`Domain allowlist: ${preflightConfig.domains.join(", ")} only.`, `Dominio permitido: solo ${preflightConfig.domains.join(", ")}.`, lang)}</li>
                     <li>{L("Pauses for uploads, login/MFA, and captcha.", "Pausa para adjuntos, inicio de sesión/MFA y captcha.", lang)}</li>
                     <li>{L("Prefill from Business Passport; sensitive IDs are not stored.", "Relleno desde el Pasaporte de Negocio; los ID sensibles no se almacenan.", lang)}</li>
                   </ul>
@@ -322,9 +316,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             <div className="mt-4 rounded-xl border border-slate-200 bg-[#f4f1ea] p-4 text-sm text-slate-700">
               <div className="font-bold text-[#161616]">{L("Gotcha hints from recon", "Avisos de reconocimiento", lang)}</div>
               <ul className="mt-2 list-disc space-y-1 pl-4">
-                <li>{L("Attachments max 5.00 MB per file.", "Adjuntos máx. 5.00 MB por archivo.", lang)}</li>
-                <li>{L("Verify Address is required — incomplete address blocks Next.", "Verificar dirección es obligatorio — dirección incompleta bloquea Siguiente.", lang)}</li>
-                <li>{L("Register Taxpayer needs photo ID + utility bill + SSN card copy.", "Registrar contribuyente requiere ID con foto + utilidad + copia de tarjeta SSN.", lang)}</li>
+                {(lang === "es" ? preflightConfig.hintsEs : preflightConfig.hintsEn).map((hint) => (
+                  <li key={hint}>{hint}</li>
+                ))}
               </ul>
             </div>
 
@@ -427,7 +421,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-medium text-slate-400">
                     {run.live_url
-                      ? L("Live preview — suri.hacienda.pr.gov", "Vista previa en vivo — suri.hacienda.pr.gov", lang)
+                      ? L(`Live preview — ${activeConfig.domains[0]}`, `Vista previa en vivo — ${activeConfig.domains[0]}`, lang)
                       : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
                   </span>
                   {run.live_url && (
@@ -481,6 +475,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       uploadMsg={uploadMsg}
                       fileRef={fileRef}
                       liveUrl={run.live_url}
+                      portalName={L(activeConfig.portalEn, activeConfig.portalEs, lang)}
+                      uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
                       onTakeover={() => takeoverBrowser()}
@@ -500,8 +496,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                             </div>
                             <p className="mt-1 text-sm text-slate-600">
                               {L(
-                                "Review the last screenshot. The agency assistant never clicks final submit. When ready, complete submission yourself on SURI.",
-                                "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, complete el envío usted mismo en SURI.",
+                                "Review the last screenshot. The agency assistant never clicks final submit. When ready, complete submission yourself on the portal.",
+                                "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, complete el envío usted mismo en el portal.",
                                 lang
                               )}
                             </p>
@@ -552,6 +548,8 @@ function PauseOverlay({
   uploadMsg,
   fileRef,
   liveUrl,
+  portalName,
+  uploadsText,
   onResume,
   onStop,
   onTakeover,
@@ -564,6 +562,8 @@ function PauseOverlay({
   uploadMsg: string | null;
   fileRef: React.RefObject<HTMLInputElement | null>;
   liveUrl: string | null;
+  portalName: string;
+  uploadsText: string;
   onResume: () => void;
   onStop: () => void;
   onTakeover: () => void;
@@ -582,7 +582,7 @@ function PauseOverlay({
     reason === "USER_UPLOAD"
       ? L("Upload required documents", "Suba los documentos requeridos", lang)
       : reason === "USER_LOGIN"
-        ? L("Your turn — log into SURI", "Te toca a ti — inicia sesión en SURI", lang)
+        ? L(`Your turn — log into ${portalName}`, `Te toca a ti — inicia sesión en ${portalName}`, lang)
         : reason === "CAPTCHA"
           ? L("Complete captcha", "Complete el captcha", lang)
           : L("Paused for your action", "Pausado para su acción", lang);
@@ -590,14 +590,14 @@ function PauseOverlay({
   const body =
     reason === "USER_UPLOAD"
       ? L(
-          "Photo ID, utility bill, and SSN card copy for Register Taxpayer. Max 5 MB per file. Upload into Evidence Locker, then Resume.",
-          "ID con foto, factura de utilidad y copia de tarjeta SSN. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar.",
+          `${uploadsText}. Max 5 MB per file. Upload into Evidence Locker, then Resume.`,
+          `${uploadsText}. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar.`,
           lang
         )
       : reason === "USER_LOGIN"
         ? L(
-            "Take over the live browser and type your SURI username, password, and MFA code yourself. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, come back here and press Resume.",
-            "Toma el control del navegador en vivo y escribe tu usuario, contraseña y código MFA de SURI. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, vuelve aquí y pulsa Reanudar.",
+            `Take over the live browser and type your ${portalName} username, password, and MFA code yourself. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, come back here and press Resume.`,
+            `Toma el control del navegador en vivo y escribe tu usuario, contraseña y código MFA de ${portalName}. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, vuelve aquí y pulsa Reanudar.`,
             lang
           )
         : reason === "CAPTCHA"

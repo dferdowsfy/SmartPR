@@ -111,8 +111,10 @@ export async function createBrowserUseSession(input: {
       keepAlive: input.keepAlive ?? true,
       // Puerto Rico Hacienda portal — US residential proxy is appropriate.
       proxyCountryCode: input.proxyCountryCode ?? "us",
-      // Cheaper / faster model is enough for form-fill assist; override via env if needed.
-      model: process.env.BROWSER_USE_MODEL?.trim() || "bu-mini",
+      // Cheapest reliable model per 2026-09 cost research: gpt-5.6-luna
+      // (~2.5x cheaper than bu-mini on output tokens, 78% bench accuracy).
+      // Override per environment with BROWSER_USE_MODEL if needed.
+      model: process.env.BROWSER_USE_MODEL?.trim() || "gpt-5.6-luna",
     }),
   });
   return normalizeSession(raw);

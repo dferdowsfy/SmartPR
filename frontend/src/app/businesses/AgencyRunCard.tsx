@@ -8,7 +8,7 @@ const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
 /**
  * Entry card on the business profile — opens the agency assistant run panel.
- * Phase 2 skeleton: mock visual run only; no real SURI automation.
+ * Browser Use Cloud when BROWSER_USE_API_KEY is set; mock timeline otherwise.
  */
 export function AgencyRunCard({
   businessId,
@@ -30,13 +30,13 @@ export function AgencyRunCard({
                 {L("File with agency assistant", "Tramitar con asistente de agencia", lang)}
               </h2>
               <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
-                {L("SURI live visual · skeleton", "SURI visual en vivo · esqueleto", lang)}
+                {L("Live visual · pilot", "Visual en vivo · piloto", lang)}
               </span>
             </div>
             <p className="mt-0.5 max-w-xl text-sm text-slate-500">
               {L(
-                "Prefill from Business Passport, pause for uploads and login, stop at review — never final-submit. Domain allowlist: suri.hacienda.pr.gov.",
-                "Relleno desde el Pasaporte de Negocio, pausa para adjuntos e inicio de sesión, detener en revisión — nunca envía. Dominio permitido: suri.hacienda.pr.gov.",
+                "Prefill from Business Passport, pause for uploads and login, stop at review — never final-submit. Runs on allowlisted government portals.",
+                "Relleno desde el Pasaporte de Negocio, pausa para adjuntos e inicio de sesión, detener en revisión — nunca envía. Corre en portales de gobierno permitidos.",
                 lang
               )}
             </p>

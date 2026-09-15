@@ -16,8 +16,9 @@ import {
   type BuSession,
 } from "./browserUseClient";
 import { timelineFor, type MockBeat } from "./mockTimeline";
+import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
 import { PLACEHOLDER_SHOTS } from "./placeholders";
-import { buildResumeTaskPrompt, buildSuriTaskPrompt } from "./taskPrompt";
+import { buildResumeTaskPrompt, buildAgencyTaskPrompt } from "./taskPrompt";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -93,7 +94,7 @@ export function advanceMock(run: AgencyRun): AgencyRun {
     return run;
   }
 
-  const script = timelineFor(run.filing_type);
+  const script = timelineFor(getFilingConfig(run.filing_type));
   let cursor = run.mock_cursor;
   let segmentStart = new Date(run.segment_started_at).getTime();
   const now = Date.now();
@@ -181,7 +182,7 @@ function messageText(msg: { summary?: string | null; data?: unknown; role?: stri
 function applySessionStatus(run: AgencyRun, session: BuSession): void {
   if (session.liveUrl) run.live_url = session.liveUrl;
 
-  // Privacy: while the user has taken over for SURI login/MFA, never persist
+  // Privacy: while the user has taken over for portal login/MFA, never persist
   // live screenshots. The credential-entry flow must not be stored in the
   // event log, shown in the filmstrip, or visible to anyone but the owner —
   // admins included. A neutral placeholder is recorded instead.
@@ -262,9 +263,10 @@ function applySessionStatus(run: AgencyRun, session: BuSession): void {
       // keepAlive idle after task without explicit marker — land on review
       run.status = "review";
       run.pause_reason = null;
+      const portal = getFilingConfig(run.filing_type).portalEn;
       pushEvent(run, {
-        message: out || "Session idle — review the live browser before submitting on SURI.",
-        message_es: out || "Sesión inactiva — revise el navegador en vivo antes de enviar en SURI.",
+        message: out || `Session idle — review the live browser before submitting on ${portal}.`,
+        message_es: out || `Sesión inactiva — revise el navegador en vivo antes de enviar en ${portal}.`,
         screenshot_url: shot,
         kind: "review",
       });
@@ -379,15 +381,16 @@ export async function createRun(input: {
   };
 
   if (useBu) {
+    const filingConfig = getFilingConfig(input.filing_type);
     pushEvent(run, {
-      message: "Starting Browser Use Cloud session for SURI…",
-      message_es: "Iniciando sesión de Browser Use Cloud para SURI…",
+      message: `Starting Browser Use Cloud session for ${filingConfig.portalEn}…`,
+      message_es: `Iniciando sesión de Browser Use Cloud para ${filingConfig.portalEs}…`,
       screenshot_url: PLACEHOLDER_SHOTS.home,
       kind: "info",
     });
     try {
-      const task = buildSuriTaskPrompt({
-        filingType: input.filing_type,
+      const task = buildAgencyTaskPrompt({
+        config: filingConfig,
         passport: input.passport || null,
       });
       const session = await createBrowserUseSession({ task, keepAlive: true });
@@ -477,7 +480,7 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
           await dispatchBrowserUseTask(
             run.browser_use_session_id,
             buildResumeTaskPrompt({
-              filingType: run.filing_type,
+              config: getFilingConfig(run.filing_type),
               pauseReason: prevPause,
             })
           );
@@ -553,10 +556,7 @@ export async function stopRun(id: string): Promise<AgencyRunPublic | null> {
   return toPublic(run);
 }
 
-export const FILING_TYPES: AgencyFilingType[] = [
-  "SURI_REGISTER_TAXPAYER",
-  "SURI_MERCHANT_REGISTRATION",
-];
+export const FILING_TYPES: AgencyFilingType[] = AGENCY_FILING_CONFIGS.map((c) => c.id);
 
 export function isFilingType(value: string): value is AgencyFilingType {
   return (FILING_TYPES as string[]).includes(value);
