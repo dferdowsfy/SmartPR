@@ -11,8 +11,9 @@ import { ensureUserWorkspace, userCanAccessBusiness } from "../../../../../compl
 import { assertCanUseDeliverables, gateJson } from "../../../../../../lib/billing/access";
 import { ArtifactGenerationError, generateWorkingCopy } from "../../../../../forms/artifacts/library";
 import { recordGeneratedFiling } from "../../../../../forms/artifacts/persistence";
-import { recordArtifactGeneration } from "../../../../../graph/store";
-import { emptyCanonicalData, type CanonicalApplicationData, type FormData } from "../../../../../forms/engine/types";
+import { recordArtifactGeneration, resolveBusinessUuid } from "../../../../../graph/store";
+import { type CanonicalApplicationData, type FormData } from "../../../../../forms/engine/types";
+import { resolvePopulationProfile, type BusinessRowFacts } from "../../../../../forms/engine/businessPassport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,7 +57,25 @@ export async function POST(request: Request, ctx: { params: Promise<{ formCode: 
     return Response.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const profile = { ...emptyCanonicalData(), ...(body.profile ?? {}) } as CanonicalApplicationData;
+  // Prefer Business Passport fields when a businessId is supplied. Request
+  // profile may fill gaps; filled passport values win.
+  let businessRow: BusinessRowFacts | null = null;
+  if (body.businessId && pool && user) {
+    const businessUuid = await resolveBusinessUuid(pool, body.businessId);
+    if (businessUuid && await userCanAccessBusiness(pool, user.id, businessUuid)) {
+      const { rows } = await pool.query(
+        `SELECT legal_name, name, entity_number, business_structure, municipality,
+                physical_address, onboarding_mode, passport_json
+           FROM businesses WHERE id=$1 AND archived=false`,
+        [businessUuid]
+      );
+      businessRow = rows[0] ?? null;
+    }
+  }
+  const profile = resolvePopulationProfile({
+    business: businessRow,
+    requestProfile: body.profile ?? null,
+  });
   let result;
   try {
     result = await generateWorkingCopy({ formCode, profile, formData: body.formData, purpose: "filing" });

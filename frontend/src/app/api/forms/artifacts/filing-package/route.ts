@@ -9,7 +9,12 @@ import { buildFilingPackage } from "../../../../forms/artifacts/filingPackage";
 import { applyExtraction, extractIntake } from "../../../../forms/artifacts/intakeExtraction";
 import { loadMunicipalities } from "../../../../forms/artifacts/kbLoader";
 import { loadAllMappings, outstandingQuestionsForProfile } from "../../../../forms/artifacts/library";
-import { emptyCanonicalData, type CanonicalApplicationData } from "../../../../forms/engine/types";
+import { type CanonicalApplicationData } from "../../../../forms/engine/types";
+import { resolvePopulationProfile, type BusinessRowFacts } from "../../../../forms/engine/businessPassport";
+import { getPool } from "../../../../graph/db";
+import { resolveBusinessUuid } from "../../../../graph/store";
+import { getCurrentUser } from "../../../../../lib/supabase/server";
+import { userCanAccessBusiness } from "../../../../compliance/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +22,7 @@ export const dynamic = "force-dynamic";
 interface Body {
   description?: string;
   profile?: Partial<CanonicalApplicationData>;
+  businessId?: string;
   options?: ApplicabilityOptions;
 }
 
@@ -28,7 +34,27 @@ export async function POST(request: Request) {
     return Response.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const base: CanonicalApplicationData = { ...emptyCanonicalData(), ...(body.profile ?? {}) } as CanonicalApplicationData;
+  let businessRow: BusinessRowFacts | null = null;
+  if (body.businessId) {
+    const user = await getCurrentUser();
+    const pool = getPool();
+    if (user && pool) {
+      const businessUuid = await resolveBusinessUuid(pool, body.businessId);
+      if (businessUuid && await userCanAccessBusiness(pool, user.id, businessUuid)) {
+        const { rows } = await pool.query(
+          `SELECT legal_name, name, entity_number, business_structure, municipality,
+                  physical_address, onboarding_mode, passport_json
+             FROM businesses WHERE id=$1 AND archived=false`,
+          [businessUuid]
+        );
+        businessRow = rows[0] ?? null;
+      }
+    }
+  }
+  const base = resolvePopulationProfile({
+    business: businessRow,
+    requestProfile: body.profile ?? null,
+  });
   const extraction = body.description
     ? extractIntake(body.description.slice(0, 2000), loadMunicipalities())
     : null;

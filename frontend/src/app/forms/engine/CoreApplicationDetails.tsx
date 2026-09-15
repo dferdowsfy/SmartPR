@@ -13,6 +13,7 @@ import React from "react";
 import { readPath } from "./formConditions.ts";
 import { setCanonicalValue } from "./canonicalMapping.ts";
 import { INTAKE_FIELDS, type IntakeFieldSpec } from "./intake.ts";
+import { PASSPORT_INTAKE_FIELDS } from "./businessPassport.ts";
 import { validatePuertoRicoAddress } from "./formValidation.ts";
 import type { CanonicalAddress, CanonicalApplicationData, Lang } from "./types.ts";
 import { localize } from "./types.ts";
@@ -46,6 +47,10 @@ export interface CoreApplicationDetailsProps {
   canonical: CanonicalApplicationData;
   lang: Lang;
   onChange: (next: CanonicalApplicationData) => void;
+  /** When true, use the full Business Passport field set (NAICS, formation date, registry). */
+  passportMode?: boolean;
+  /** Override the intro banner copy. */
+  banner?: { en: string; es: string };
 }
 
 const GROUP_TITLES: Record<IntakeFieldSpec["group"], { en: string; es: string }> = {
@@ -55,9 +60,10 @@ const GROUP_TITLES: Record<IntakeFieldSpec["group"], { en: string; es: string }>
   property: { en: "Property", es: "Propiedad" },
 };
 
-export function CoreApplicationDetails({ canonical, lang, onChange }: CoreApplicationDetailsProps) {
+export function CoreApplicationDetails({ canonical, lang, onChange, passportMode, banner }: CoreApplicationDetailsProps) {
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const groups: IntakeFieldSpec["group"][] = ["business", "contact", "address", "property"];
+  const fieldSpecs = passportMode ? PASSPORT_INTAKE_FIELDS : INTAKE_FIELDS;
   const input: React.CSSProperties = { padding: "7px 9px", border: "1px solid #cbd5e1", borderRadius: 6, fontSize: 13, width: "100%" };
 
   const setField = (spec: IntakeFieldSpec, value: unknown) => {
@@ -65,17 +71,22 @@ export function CoreApplicationDetails({ canonical, lang, onChange }: CoreApplic
   };
 
   const mailingSame = Boolean(readPath(canonical, "addresses.mailingSameAsPhysical"));
+  const bannerCopy = banner ?? {
+    en: passportMode
+      ? "Business Passport — enter these facts once. SmartPR stamps them onto every applicable form, worksheet, checklist, and package artifact."
+      : "Enter your core business information once. SmartPR will reuse it across every applicable government application.",
+    es: passportMode
+      ? "Pasaporte comercial — ingrese estos datos una sola vez. SmartPR los aplica en cada formulario, hoja de trabajo, lista de verificación y paquete aplicable."
+      : "Ingrese su información comercial una sola vez. SmartPR la reutilizará en cada solicitud gubernamental aplicable.",
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "#1e40af" }}>
-        {L(
-          "Enter your core business information once. SmartPR will reuse it across every applicable government application.",
-          "Ingrese su información comercial una sola vez. SmartPR la reutilizará en cada solicitud gubernamental aplicable."
-        )}
+        {L(bannerCopy.en, bannerCopy.es)}
       </div>
       {groups.map((group) => {
-        const fields = INTAKE_FIELDS.filter((f) => f.group === group);
+        const fields = fieldSpecs.filter((f) => f.group === group);
         return (
           <details key={group} open={group === "business"} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px" }}>
             <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 13 }}>{localize(GROUP_TITLES[group], lang)}</summary>

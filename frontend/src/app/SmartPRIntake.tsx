@@ -43,6 +43,7 @@ import type { IntakePatch } from './ai/intake/validateInterpretation';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
 import { selectFormForRequirement, selectEntriesForRequirement } from './forms/engine/routing';
 import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms/engine/intake';
+import { passportJsonFromCanonical } from './forms/engine/businessPassport';
 import { requirementFormState, actionsForFormState } from './forms/engine/application';
 import { generatePreparationPdf } from './forms/engine/pdfGenerator';
 import { getTemplate, isOfficialArtifact } from './forms/artifacts/catalog';
@@ -2053,20 +2054,36 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             },
           }),
         })];
-        const businessPatch = {
+        const businessPatch: Record<string, unknown> = {
           legal_name: profile.name || undefined,
           business_structure: profile.business_structure || undefined,
           business_type: profile.business_type || undefined,
           industry: profile.industry || undefined,
           municipality: profile.municipality || undefined,
         };
+        // Persist the full Business Passport when the user has edited core facts
+        // (canonicalOverride) so regenerated artifacts pick up the same values.
+        if (canonicalOverride) {
+          const passportCanonical = buildCanonicalFromIntake({
+            legalName: profile.name || undefined,
+            business_structure: profile.business_structure || undefined,
+            municipality: profile.municipality || undefined,
+            employeeCount: profile.number_of_employees,
+          }, canonicalOverride);
+          businessPatch.passport = passportJsonFromCanonical(passportCanonical);
+        }
         // A brand-new intake has no business fields yet. Sending an empty PATCH
         // returns 400 and used to mark an otherwise successful snapshot save as
         // failed.
-        if (businessIdRef.current && Object.values(businessPatch).some(Boolean)) {
+        const hasBusinessFields = Object.entries(businessPatch).some(([key, value]) => key !== 'passport' && Boolean(value));
+        if (businessIdRef.current && (hasBusinessFields || businessPatch.passport)) {
+          // Passport write syncs denormalized columns server-side; otherwise patch columns only.
+          const body = businessPatch.passport
+            ? { passport: businessPatch.passport }
+            : businessPatch;
           writes.push(fetch(`/api/businesses/${businessIdRef.current}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(businessPatch),
+            body: JSON.stringify(body),
           }));
         }
         const responses = await Promise.all(writes);
@@ -3013,7 +3030,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     if (!definition) return;
     const nextData = prefillSampleApplication(
       definition,
-      profile,
+      { ...profile, ...worksheetPrefillFromPassport(canonicalApplication) },
       sampleFormDrafts[requirementCode] || preparedSampleApplications[requirementCode]?.data || {}
     );
     setSampleFormDrafts((current) => ({ ...current, [requirementCode]: nextData }));
@@ -4527,6 +4544,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               <div style={{ margin: '4px 0 8px', borderTop: '1px solid var(--border, #e2e8f0)', paddingTop: 12 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>{L('Core Application Details', language)}</h3>
                 <CoreApplicationDetails
+                  passportMode
                   canonical={canonicalApplication}
                   lang={language}
                   onChange={(next) => setCanonicalOverride(next)}

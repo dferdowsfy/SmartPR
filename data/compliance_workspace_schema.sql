@@ -35,6 +35,8 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS onboarding_mode TEXT NOT NULL DE
   CHECK (onboarding_mode IN ('NEW','EXISTING'));
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+-- Business Passport: enter-once canonical facts that stamp every applicable form.
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS passport_json JSONB NOT NULL DEFAULT '{}'::jsonb;
 UPDATE businesses SET legal_name=name WHERE legal_name IS NULL;
 CREATE INDEX IF NOT EXISTS idx_businesses_workspace ON businesses(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_businesses_municipality ON businesses(municipality);
