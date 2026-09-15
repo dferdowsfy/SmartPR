@@ -49,6 +49,8 @@ export interface AgencyRun {
   worker: AgencyWorkerKind;
   /** Browser Use Cloud session id (server-side; also returned for owner polling). */
   browser_use_session_id: string | null;
+  /** Cloud/worker run id (one agent turn) for the active SmartPR run. */
+  browser_use_run_id: string | null;
   /** Live preview URL from Browser Use (session-scoped; owner-only). */
   live_url: string | null;
   /** Authenticated owner when create ran under auth (gates live_url). */

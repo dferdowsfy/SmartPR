@@ -12,6 +12,13 @@ Next.js client already calls (`POST/GET /api/v3/sessions`,
 `/stop`, `/messages`), plus:
 
 - `GET /api/v3/sessions/{id}/screenshot?token=` — latest browser frame (PNG)
+- `POST /api/v4/runs` `{task, model?, sessionId?, allowedDomains?}` — create a run (new session unless `sessionId` given)
+- `GET /api/v4/runs/{id}` — run summary (includes `liveUrl`, `screenshotUrl`, `lastStepSummary`)
+- `GET /api/v4/runs/{id}/status` — `{status}` (cheap poll target)
+- `POST /api/v4/runs/{id}/cancel` — cancel the run
+- `GET /api/v4/runs/{id}/events?after=&limit=` — run events with `nextAfter` cursor
+- `POST /api/v4/sessions/{id}/queue` `{text, interrupt?}` — follow-up run on the session
+- `GET /api/v4/browsers?agentSessionId=` — Cloud-shaped browser listing with `liveUrl`
 - `GET /vnc/vnc.html?token=` — token-gated live viewer (noVNC, interactive)
 - `WS /vnc/websock?token=` — bridges the viewer to the session's browser
 
@@ -38,7 +45,7 @@ owner-gated API — the same privacy posture as the Cloud viewer.
    | Var | Value |
    |---|---|
    | `AGENT_PROVIDER` | `self_hosted` |
-   | `SELF_HOSTED_AGENT_URL` | same public URL + `/api/v3`, e.g. `https://browser-agent.up.railway.app/api/v3` |
+   | `SELF_HOSTED_AGENT_URL` | same public URL (client appends `/api/v4`), e.g. `https://browser-agent.up.railway.app` |
    | `WORKER_API_TOKEN` | same secret as above |
    | `XAI_MODEL` | `grok-4.3` (optional; overrides per deploy) |
 

@@ -49,6 +49,7 @@ from typing import Any, Optional
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, WebSocket
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 log = logging.getLogger("browser-agent")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -89,6 +90,23 @@ class SessionLog:
     role: str
     text: str
     created_at: str
+    seq: int = 0  # monotonic per-session id for the v4 events cursor
+
+
+@dataclass
+class AgentRun:
+    """One v4 run (agent turn) on a session (conversation)."""
+
+    id: str
+    session_id: str
+    task: str
+    model: str
+    status: str = "queued"  # queued|running|completed|failed|cancelled
+    result: Optional[str] = None
+    error: Optional[str] = None
+    cancelled: bool = False
+    created_at: float = field(default_factory=time.time)
+    updated_at: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -110,16 +128,26 @@ class AgentSession:
     created_at: float = field(default_factory=time.time)
     log_entries: list[SessionLog] = field(default_factory=list)
     stop_requested: bool = False
+    runs: list[AgentRun] = field(default_factory=list)
+    current_run_id: Optional[str] = None
+    event_seq: int = 0
 
     def push_log(self, role: str, text: str) -> SessionLog:
+        self.event_seq += 1
         entry = SessionLog(
             id=f"msg_{uuid.uuid4().hex[:12]}",
             role=role,
             text=text[:2000],
             created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            seq=self.event_seq,
         )
         self.log_entries.append(entry)
         return entry
+
+    def current_run(self) -> Optional[AgentRun]:
+        if not self.current_run_id:
+            return None
+        return next((r for r in self.runs if r.id == self.current_run_id), None)
 
 
 SESSIONS: dict[str, AgentSession] = {}
@@ -143,6 +171,55 @@ def active_session() -> Optional[AgentSession]:
 
 def _base() -> str:
     return PUBLIC_WORKER_URL
+
+
+def _iso(ts: float) -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))
+
+
+def run_status(sess: AgentSession, run: AgentRun) -> str:
+    """Map worker state onto the v4 run statuses. Terminal states are
+    snapshotted on the run so a later follow-up turn can't rewrite history."""
+    if run.status in ("completed", "failed", "cancelled"):
+        return run.status
+    if run.cancelled or sess.stop_requested:
+        return "cancelled"
+    return {"created": "queued", "running": "running"}.get(sess.status, "queued")
+
+
+def run_json(sess: AgentSession, run: AgentRun) -> dict:
+    live_url = f"{_base()}/vnc/vnc.html?token={sess.token}&autoconnect=true" if _base() else None
+    shot_url = (
+        f"{_base()}/api/v3/sessions/{sess.id}/screenshot?token={sess.token}" if _base() else None
+    )
+    return {
+        "id": run.id,
+        "task": run.task,
+        "title": sess.title or None,
+        "model": run.model,
+        "status": run_status(sess, run),
+        "result": run.result,
+        "error": run.error,
+        "sessionId": sess.id,
+        "workspaceId": None,
+        "totalInputTokens": 0,
+        "totalOutputTokens": 0,
+        "totalCostUsd": None,
+        "createdAt": _iso(run.created_at),
+        "updatedAt": _iso(run.updated_at),
+        # Worker extras (not in the Cloud v4 contract, harmless):
+        "liveUrl": live_url,
+        "screenshotUrl": shot_url,
+        "lastStepSummary": sess.last_summary or None,
+    }
+
+
+def find_run(run_id: str) -> tuple[Optional[AgentSession], Optional[AgentRun]]:
+    for sess in SESSIONS.values():
+        for run in sess.runs:
+            if run.id == run_id:
+                return sess, run
+    return None, None
 
 
 def session_json(sess: AgentSession) -> dict:
@@ -252,11 +329,14 @@ def _final_result(history: Any) -> str:
     return ""
 
 
-async def _run_agent(sess: AgentSession, task: str):
+async def _run_agent(sess: AgentSession, run: AgentRun):
     from browser_use import Agent
 
+    task = run.task
     sess.status = "running"
     sess.stop_requested = False
+    run.status = "running"
+    run.updated_at = time.time()
     sess.last_summary = "Agent starting on the portal…"
     sess.push_log("system", f"Task started: {task[:300]}")
     shot_task = asyncio.create_task(_screenshot_loop(sess))
@@ -275,7 +355,7 @@ async def _run_agent(sess: AgentSession, task: str):
     try:
         agent = Agent(
             task=task,
-            llm=make_llm(sess.model),
+            llm=make_llm(run.model),
             browser=sess.browser,
             use_vision=USE_VISION,
             # Constructor hook in current browser-use; absent in older ones
@@ -295,11 +375,19 @@ async def _run_agent(sess: AgentSession, task: str):
             sess.is_task_successful = None  # human decision pending — not a failure
         else:
             sess.is_task_successful = True
-        sess.status = "stopped" if sess.stop_requested else "idle"
+        run.result = final or sess.last_summary or None
+        if sess.stop_requested or run.cancelled:
+            run.status = "cancelled"
+            sess.status = "stopped"
+        else:
+            run.status = "completed"
+            sess.status = "idle"
     except asyncio.TimeoutError:
         sess.last_summary = f"Task timed out after {TASK_TIMEOUT_MIN:g} minutes."
         sess.push_log("system", sess.last_summary)
         sess.status = "timed_out"
+        run.status = "failed"
+        run.error = sess.last_summary
         try:
             if sess.agent is not None:
                 await sess.agent.stop()
@@ -309,18 +397,52 @@ async def _run_agent(sess: AgentSession, task: str):
         sess.last_summary = f"Agent error: {exc}"[:600]
         sess.push_log("system", sess.last_summary)
         sess.status = "error"
+        run.status = "failed"
+        run.error = sess.last_summary
         log.exception("agent run failed")
     finally:
+        run.updated_at = time.time()
         shot_task.cancel()
         sess.agent = None
         sess.run_task = None
+        if sess.current_run_id == run.id:
+            sess.current_run_id = None
 
 
-def _launch(sess: AgentSession, task: str):
+def _launch(sess: AgentSession, task: str, model: Optional[str] = None) -> AgentRun:
     if sess.run_task and not sess.run_task.done():
         raise HTTPException(status_code=409, detail="session already running a task")
+    run = AgentRun(
+        id=f"run_{uuid.uuid4().hex[:12]}",
+        session_id=sess.id,
+        task=task,
+        model=model or sess.model,
+    )
+    sess.runs.append(run)
+    sess.current_run_id = run.id
     sess.title = task[:80]
-    sess.run_task = asyncio.create_task(_run_agent(sess, task))
+    sess.run_task = asyncio.create_task(_run_agent(sess, run))
+    return run
+
+
+def _cancel_run(sess: AgentSession, run: AgentRun):
+    """Best-effort cancel of the active run; snapshots the terminal state."""
+    run.cancelled = True
+    sess.stop_requested = True
+    if sess.agent is not None:
+        try:
+            # Can't await here from sync context — the run loop notices
+            # stop_requested and the agent's own stop is attempted async.
+            pass
+        except Exception:
+            pass
+    if sess.run_task and not sess.run_task.done():
+        sess.run_task.cancel()
+    if run.status not in ("completed", "failed"):
+        run.status = "cancelled"
+    run.updated_at = time.time()
+    sess.status = "stopped"
+    sess.push_log("system", "Run cancelled by user.")
 
 
 # --------------------------------------------------------------------------- #
@@ -405,7 +527,12 @@ async def stop_session(session_id: str, body: dict | None = None):
     if not sess:
         raise HTTPException(status_code=404, detail="session not found")
     strategy = (body or {}).get("strategy", "session")
-    sess.stop_requested = True
+    cur = sess.current_run()
+    if cur:
+        _cancel_run(sess, cur)
+    else:
+        sess.stop_requested = True
+        sess.status = "stopped"
     if sess.agent is not None:
         try:
             await sess.agent.stop()
@@ -413,7 +540,6 @@ async def stop_session(session_id: str, body: dict | None = None):
             pass
     if sess.run_task and not sess.run_task.done():
         sess.run_task.cancel()
-    sess.status = "stopped"
     sess.push_log("system", f"Stopped by user (strategy={strategy}).")
     if strategy == "session":
         try:
@@ -460,6 +586,161 @@ async def get_screenshot(session_id: str, token: Optional[str] = Query(default=N
     if not sess.shot:
         raise HTTPException(status_code=404, detail="no screenshot yet")
     return Response(content=sess.shot, media_type="image/png")
+
+
+# --------------------------------------------------------------------------- #
+# API v4 — mirrors the Cloud v4 run/session shapes the Next.js client uses
+# --------------------------------------------------------------------------- #
+
+class RunCreateV4(BaseModel):
+    task: str
+    model: Optional[str] = None
+    sessionId: Optional[str] = None
+    allowedDomains: Optional[list[str]] = None
+
+
+@app.post("/api/v4/runs", dependencies=[Depends(require_api_token)])
+async def v4_create_run(body: RunCreateV4):
+    task = (body.task or "").strip()
+    if not task:
+        raise HTTPException(status_code=400, detail="task is required")
+    model = (body.model or XAI_MODEL).strip() or XAI_MODEL
+
+    sess: Optional[AgentSession] = None
+    if body.sessionId:
+        sess = SESSIONS.get(body.sessionId)
+        if not sess:
+            raise HTTPException(status_code=404, detail="session not found")
+        if sess.run_task and not sess.run_task.done():
+            raise HTTPException(status_code=409, detail="session already running a task")
+        sess.model = model
+    else:
+        sess = active_session()
+        if sess:
+            raise HTTPException(
+                status_code=409,
+                detail=f"pilot limit: session {sess.id} is still active; stop it first",
+            )
+        if not XAI_API_KEY:
+            raise HTTPException(status_code=500, detail="XAI_API_KEY is not set on the worker")
+        sess = AgentSession(
+            id=f"sess_{uuid.uuid4().hex[:12]}",
+            token=uuid.uuid4().hex,
+            model=model,
+        )
+        allowed = body.allowedDomains if isinstance(body.allowedDomains, list) else None
+        try:
+            sess.browser = make_browser(allowed)
+        except Exception as exc:  # noqa: BLE001
+            log.exception("browser launch failed")
+            raise HTTPException(status_code=500, detail=f"browser launch failed: {exc}")
+        SESSIONS[sess.id] = sess
+        sess.push_log("system", f"Session created (model {model}).")
+
+    run = _launch(sess, task, model)
+    return JSONResponse(run_json(sess, run), status_code=201)
+
+
+@app.get("/api/v4/runs/{run_id}", dependencies=[Depends(require_api_token)])
+async def v4_get_run(run_id: str):
+    sess, run = find_run(run_id)
+    if not sess or not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    return run_json(sess, run)
+
+
+@app.get("/api/v4/runs/{run_id}/status", dependencies=[Depends(require_api_token)])
+async def v4_run_status(run_id: str):
+    sess, run = find_run(run_id)
+    if not sess or not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    return {"status": run_status(sess, run)}
+
+
+@app.post("/api/v4/runs/{run_id}/cancel", dependencies=[Depends(require_api_token)])
+async def v4_cancel_run(run_id: str):
+    sess, run = find_run(run_id)
+    if not sess or not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    _cancel_run(sess, run)
+    return run_json(sess, run)
+
+
+@app.get("/api/v4/runs/{run_id}/events", dependencies=[Depends(require_api_token)])
+async def v4_run_events(
+    run_id: str,
+    after: Optional[int] = Query(default=None),
+    limit: int = Query(default=20, le=50),
+):
+    sess, run = find_run(run_id)
+    if not sess or not run:
+        raise HTTPException(status_code=404, detail="run not found")
+    entries = sess.log_entries
+    if after is not None:
+        entries = [e for e in entries if e.seq > after]
+    items = [
+        {
+            "runId": run.id,
+            "id": e.seq,
+            "ts": e.created_at,
+            "type": "agent.message" if e.role == "agent" else f"session.{e.role}",
+            "data": {"text": e.text},
+        }
+        for e in entries[:limit]
+    ]
+    next_after = items[-1]["id"] if items else after
+    return {"events": items, "nextAfter": next_after}
+
+
+class SessionQueueV4(BaseModel):
+    text: str
+    interrupt: bool = False
+
+
+@app.post("/api/v4/sessions/{session_id}/queue", dependencies=[Depends(require_api_token)])
+async def v4_queue_message(session_id: str, body: SessionQueueV4):
+    sess = SESSIONS.get(session_id)
+    if not sess:
+        raise HTTPException(status_code=404, detail="session not found")
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="text is required")
+    sess.push_log("user", f"Follow-up: {text[:300]}")
+    if sess.run_task and not sess.run_task.done():
+        raise HTTPException(status_code=409, detail="session already running a task")
+    run = _launch(sess, text)
+    return {"id": run.id, "sessionId": sess.id, "runId": run.id, "mode": "new_run"}
+
+
+@app.get("/api/v4/browsers", dependencies=[Depends(require_api_token)])
+async def v4_browsers(
+    agentSessionId: Optional[str] = Query(default=None),
+    pageSize: int = Query(default=10, le=50),
+):
+    items = []
+    for sess in SESSIONS.values():
+        if agentSessionId and sess.id != agentSessionId:
+            continue
+        if sess.browser is None:
+            continue
+        live_url = (
+            f"{_base()}/vnc/vnc.html?token={sess.token}&autoconnect=true" if _base() else None
+        )
+        items.append(
+            {
+                "id": sess.id,
+                "status": "running" if sess.status in ("created", "running") else "stopped",
+                "liveUrl": live_url,
+                "agentSessionId": sess.id,
+                "timeout": TASK_TIMEOUT_MIN,
+            }
+        )
+    return {
+        "items": items[:pageSize],
+        "totalItems": len(items),
+        "pageNumber": 1,
+        "pageSize": pageSize,
+    }
 
 
 # --------------------------------------------------------------------------- #

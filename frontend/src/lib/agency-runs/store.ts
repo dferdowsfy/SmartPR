@@ -8,14 +8,16 @@
 import { randomUUID } from "crypto";
 import {
   agentProviderLabel,
-  createBrowserUseSession,
-  dispatchBrowserUseTask,
-  getBrowserUseSession,
+  cancelAgentRun,
+  createAgentRun,
+  getAgentRun,
   isBrowserUseConfigured,
-  listBrowserUseMessages,
+  listAgentRunEvents,
+  queueAgentMessage,
   sanitizeError,
-  stopBrowserUseSession,
-  type BuSession,
+  stopAgentBrowser,
+  type BuEvent,
+  type BuRun,
 } from "./browserUseClient";
 import { timelineFor, type MockBeat } from "./mockTimeline";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
@@ -165,24 +167,20 @@ function detectMarker(text: string): {
   return {};
 }
 
-function messageText(msg: { summary?: string | null; data?: unknown; role?: string }): string {
-  if (msg.summary && String(msg.summary).trim()) return String(msg.summary).trim();
-  if (typeof msg.data === "string") return msg.data.trim();
-  if (msg.data && typeof msg.data === "object") {
-    const d = msg.data as Record<string, unknown>;
-    if (typeof d.text === "string") return d.text.trim();
-    if (typeof d.content === "string") return d.content.trim();
-    try {
-      return JSON.stringify(msg.data).slice(0, 400);
-    } catch {
-      return "";
-    }
-  }
-  return "";
-}
+/**
+ * v4 run → SmartPR run mapping. The run is one agent turn; terminal statuses
+ * are decided by the marker protocol in the result/events (PAUSE_*,
+ * REVIEW_READY, FAILED:) so the agent never clicks final submit unapproved.
+ */
+function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
+  if (bu.liveUrl) run.live_url = bu.liveUrl;
 
-function applySessionStatus(run: AgencyRun, session: BuSession): void {
-  if (session.liveUrl) run.live_url = session.liveUrl;
+  // Latest agent text: worker exposes lastStepSummary; Cloud derives from events.
+  const latestText =
+    bu.lastStepSummary ||
+    [...events].reverse().find((e) => e.text)?.text ||
+    run.bu_last_step ||
+    null;
 
   // Privacy: while the user has taken over for portal login/MFA, never persist
   // live screenshots. The credential-entry flow must not be stored in the
@@ -190,25 +188,23 @@ function applySessionStatus(run: AgencyRun, session: BuSession): void {
   // admins included. A neutral placeholder is recorded instead.
   const loginTakeover =
     run.pause_reason === "USER_LOGIN" ||
-    (session.lastStepSummary
-      ? /PAUSE_USER_LOGIN/.test(session.lastStepSummary.toUpperCase())
-      : false);
+    (latestText ? /PAUSE_USER_LOGIN/.test(latestText.toUpperCase()) : false);
 
   const shot = loginTakeover
     ? PLACEHOLDER_SHOTS.login
-    : session.screenshotUrl ||
+    : bu.screenshotUrl ||
       run.events[run.events.length - 1]?.screenshot_url ||
       PLACEHOLDER_SHOTS.home;
 
-  if (session.lastStepSummary && session.lastStepSummary !== run.bu_last_step) {
-    run.bu_last_step = session.lastStepSummary;
+  if (latestText && latestText !== run.bu_last_step) {
+    run.bu_last_step = latestText;
     pushEvent(run, {
-      message: session.lastStepSummary,
-      message_es: session.lastStepSummary,
+      message: latestText,
+      message_es: latestText,
       screenshot_url: shot,
       kind: "info",
     });
-    const marker = detectMarker(session.lastStepSummary);
+    const marker = detectMarker(latestText);
     if (marker.status === "paused") {
       run.status = "paused";
       run.pause_reason = marker.pause_reason ?? null;
@@ -221,123 +217,117 @@ function applySessionStatus(run: AgencyRun, session: BuSession): void {
     }
   }
 
-  if (run.status === "queued" && (session.status === "running" || session.status === "created")) {
+  if (run.status === "queued" && (bu.status === "running" || bu.status === "dispatching")) {
     run.status = "running";
   }
 
-  if (session.status === "running" && run.status !== "paused" && run.status !== "review") {
+  if (bu.status === "running" && run.status !== "paused" && run.status !== "review") {
     run.status = "running";
     run.pause_reason = null;
   }
 
-  if (
-    (session.status === "idle" || session.status === "stopped") &&
-    run.status !== "paused" &&
-    run.status !== "review" &&
-    run.status !== "stopped"
-  ) {
-    const out =
-      typeof session.output === "string"
-        ? session.output
-        : session.output
-          ? JSON.stringify(session.output)
-          : "";
-    const marker = detectMarker(`${out}\n${session.lastStepSummary || ""}`);
-    if (marker.status === "paused") {
-      run.status = "paused";
-      run.pause_reason = marker.pause_reason ?? null;
-      pushEvent(run, {
-        message: out || "Paused — waiting for your action on the live browser",
-        message_es: out || "Pausado — esperando su acción en el navegador en vivo",
-        screenshot_url: shot,
-        kind: "pause",
-      });
-    } else if (marker.status === "review" || session.isTaskSuccessful === true) {
-      run.status = "review";
-      run.pause_reason = null;
-      pushEvent(run, {
-        message: out || "Review ready — you submit on the portal. Agent never clicks final submit.",
-        message_es: out || "Revisión lista — usted envía en el portal. El agente nunca hace clic en enviar.",
-        screenshot_url: shot,
-        kind: "review",
-      });
-    } else if (session.status === "idle" && (session.stepCount || 0) > 0) {
-      // keepAlive idle after task without explicit marker — land on review
-      run.status = "review";
-      run.pause_reason = null;
-      const portal = getFilingConfig(run.filing_type).portalEn;
-      pushEvent(run, {
-        message: out || `Session idle — review the live browser before submitting on ${portal}.`,
-        message_es: out || `Sesión inactiva — revise el navegador en vivo antes de enviar en ${portal}.`,
-        screenshot_url: shot,
-        kind: "review",
-      });
-    } else if (session.status === "stopped") {
-      run.status = "stopped";
-      run.pause_reason = null;
-      run.live_url = null;
+  if (bu.status === "completed") {
+    // Marker already decided (paused/review/failed from step text) — leave it.
+    if (run.status !== "paused" && run.status !== "review" && run.status !== "failed") {
+      const out = `${bu.result || ""}\n${latestText || ""}`;
+      const marker = detectMarker(out);
+      if (marker.status === "paused") {
+        run.status = "paused";
+        run.pause_reason = marker.pause_reason ?? null;
+        pushEvent(run, {
+          message: out.trim() || "Paused — waiting for your action on the live browser",
+          message_es: out.trim() || "Pausado — esperando su acción en el navegador en vivo",
+          screenshot_url: shot,
+          kind: "pause",
+        });
+      } else if (marker.status === "failed") {
+        run.status = "failed";
+        run.pause_reason = null;
+        pushEvent(run, {
+          message: out.trim() || "Agent reported a failure",
+          message_es: out.trim() || "El agente reportó un error",
+          screenshot_url: shot,
+          kind: "info",
+        });
+      } else {
+        // Turn finished with no pause marker — agent prepared the filing;
+        // the user reviews and submits on the portal.
+        run.status = "review";
+        run.pause_reason = null;
+        const portal = getFilingConfig(run.filing_type).portalEn;
+        pushEvent(run, {
+          message: out.trim() || `Turn complete — review the live browser before submitting on ${portal}.`,
+          message_es: out.trim() || `Turno completo — revise el navegador en vivo antes de enviar en ${portal}.`,
+          screenshot_url: shot,
+          kind: "review",
+        });
+      }
     }
   }
 
-  if (session.status === "error" || session.status === "timed_out") {
+  if (bu.status === "failed") {
     run.status = "failed";
     run.pause_reason = null;
     pushEvent(run, {
-      message: `Browser Use session ${session.status}`,
-      message_es: `Sesión Browser Use: ${session.status}`,
+      message: bu.error ? `Agent run failed: ${bu.error}` : "Agent run failed",
+      message_es: bu.error ? `El agente falló: ${bu.error}` : "El agente falló",
       screenshot_url: shot,
       kind: "info",
     });
+  }
+
+  if (bu.status === "cancelled") {
+    run.status = "stopped";
+    run.pause_reason = null;
+    run.live_url = null;
   }
 
   run.updated_at = nowIso();
 }
 
 async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
-  if (!run.browser_use_session_id) return run;
+  if (!run.browser_use_run_id) return run;
   if (run.status === "stopped" || run.status === "failed") return run;
 
   try {
-    const session = await getBrowserUseSession(run.browser_use_session_id);
-    applySessionStatus(run, session);
+    const bu = await getAgentRun(run.browser_use_run_id);
 
-    // Append new AI messages as step-log events when feasible.
+    // Append new agent events as step-log events when feasible.
+    let events: BuEvent[] = [];
     try {
-      const { items } = await listBrowserUseMessages(run.browser_use_session_id, {
+      const page = await listAgentRunEvents(run.browser_use_run_id, {
         after: run.bu_message_cursor || undefined,
-        limit: 20,
+        limit: 25,
       });
-      for (const msg of items) {
-        run.bu_message_cursor = msg.id;
-        if (String(msg.role).toLowerCase() === "human") continue;
-        const text = messageText(msg);
-        if (!text) continue;
-        // Skip duplicates of lastStepSummary we already logged.
-        if (text === run.bu_last_step) continue;
-        const shot =
-          session.screenshotUrl ||
-          run.events[run.events.length - 1]?.screenshot_url ||
-          PLACEHOLDER_SHOTS.home;
-        const marker = detectMarker(text);
-        pushEvent(run, {
-          message: text.slice(0, 500),
-          message_es: text.slice(0, 500),
-          screenshot_url: shot,
-          kind: marker.status === "paused" ? "pause" : marker.status === "review" ? "review" : "info",
-        });
-        if (marker.status === "paused") {
-          run.status = "paused";
-          run.pause_reason = marker.pause_reason ?? null;
-        } else if (marker.status === "review") {
-          run.status = "review";
-          run.pause_reason = null;
-        } else if (marker.status === "failed") {
-          run.status = "failed";
-          run.pause_reason = null;
-        }
-      }
+      events = page.events;
+      if (page.nextAfter) run.bu_message_cursor = page.nextAfter;
+      else if (events.length > 0) run.bu_message_cursor = events[events.length - 1].id;
     } catch {
-      // Messages endpoint optional — session poll still drives status.
+      // Events endpoint optional — run poll still drives status.
+    }
+
+    applyRunStatus(run, bu, events);
+
+    for (const ev of events) {
+      // Skip the latest-step text we already logged in applyRunStatus.
+      if (ev.text === run.bu_last_step) continue;
+      const marker = detectMarker(ev.text);
+      pushEvent(run, {
+        message: ev.text.slice(0, 500),
+        message_es: ev.text.slice(0, 500),
+        screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+        kind: marker.status === "paused" ? "pause" : marker.status === "review" ? "review" : "info",
+      });
+      if (marker.status === "paused") {
+        run.status = "paused";
+        run.pause_reason = marker.pause_reason ?? null;
+      } else if (marker.status === "review") {
+        run.status = "review";
+        run.pause_reason = null;
+      } else if (marker.status === "failed") {
+        run.status = "failed";
+        run.pause_reason = null;
+      }
     }
   } catch (err) {
     pushEvent(run, {
@@ -375,6 +365,7 @@ export async function createRun(input: {
     events: [],
     worker: useBu ? "browser_use" : "mock",
     browser_use_session_id: null,
+    browser_use_run_id: null,
     live_url: null,
     owner_user_id: input.owner_user_id || null,
     bu_message_cursor: null,
@@ -395,30 +386,30 @@ export async function createRun(input: {
         config: filingConfig,
         passport: input.passport || null,
       });
-      const session = await createBrowserUseSession({
+      const buRun = await createAgentRun({
         task,
-        keepAlive: true,
         allowedDomains: filingConfig.domains,
       });
-      run.browser_use_session_id = session.id;
-      run.live_url = session.liveUrl || null;
-      run.status = session.status === "running" || session.status === "created" ? "running" : "queued";
+      run.browser_use_run_id = buRun.id;
+      run.browser_use_session_id = buRun.sessionId;
+      run.live_url = buRun.liveUrl || null;
+      run.status = buRun.status === "queued" ? "queued" : "running";
       pushEvent(run, {
-        message: session.liveUrl
+        message: buRun.liveUrl
           ? "Live browser ready — embed preview active"
-          : "Browser Use session created — waiting for live preview",
-        message_es: session.liveUrl
+          : "Agent run created — waiting for live preview",
+        message_es: buRun.liveUrl
           ? "Navegador en vivo listo — vista previa activa"
-          : "Sesión Browser Use creada — esperando vista previa",
-        screenshot_url: session.screenshotUrl || PLACEHOLDER_SHOTS.home,
+          : "Ejecución del agente creada — esperando vista previa",
+        screenshot_url: buRun.screenshotUrl || PLACEHOLDER_SHOTS.home,
         kind: "info",
       });
-      if (session.lastStepSummary) {
-        run.bu_last_step = session.lastStepSummary;
+      if (buRun.lastStepSummary) {
+        run.bu_last_step = buRun.lastStepSummary;
         pushEvent(run, {
-          message: session.lastStepSummary,
-          message_es: session.lastStepSummary,
-          screenshot_url: session.screenshotUrl || PLACEHOLDER_SHOTS.home,
+          message: buRun.lastStepSummary,
+          message_es: buRun.lastStepSummary,
+          screenshot_url: buRun.screenshotUrl || PLACEHOLDER_SHOTS.home,
           kind: "info",
         });
       }
@@ -479,17 +470,19 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
       screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
       kind: "info",
     });
-    if (run.browser_use_session_id) {
+    if (run.browser_use_session_id && run.browser_use_run_id) {
       try {
-        const session = await getBrowserUseSession(run.browser_use_session_id);
-        if (session.status === "idle") {
-          await dispatchBrowserUseTask(
+        const bu = await getAgentRun(run.browser_use_run_id);
+        if (bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled") {
+          // Follow-up turn on the same session with the resume brief.
+          const queued = await queueAgentMessage(
             run.browser_use_session_id,
             buildResumeTaskPrompt({
               config: getFilingConfig(run.filing_type),
               pauseReason: prevPause,
             })
           );
+          if (queued.runId) run.browser_use_run_id = queued.runId;
         }
         // If still running, human used live view; keep syncing.
       } catch (err) {
@@ -523,30 +516,39 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
 export async function stopRun(id: string): Promise<AgencyRunPublic | null> {
   const run = runs().get(id);
   if (!run) return null;
-  if (run.status === "stopped" || run.status === "review") {
-    if (run.worker === "browser_use" && run.status === "review" && run.browser_use_session_id) {
+
+  // Best-effort cleanup: cancel the run, then stop the browser so billing ends.
+  // (Cloud keeps billing the browser until it is explicitly stopped.)
+  const buRunId = run.browser_use_run_id;
+  const buSessionId = run.browser_use_session_id;
+  async function cleanupProvider(): Promise<void> {
+    if (buRunId) {
       try {
-        await stopBrowserUseSession(run.browser_use_session_id, "session");
+        await cancelAgentRun(buRunId);
       } catch {
         // best-effort cleanup
       }
+    }
+    if (buSessionId) {
+      try {
+        await stopAgentBrowser(buSessionId);
+      } catch {
+        // best-effort cleanup
+      }
+    }
+  }
+
+  if (run.status === "stopped" || run.status === "review") {
+    if (run.worker === "browser_use" && run.status === "review") {
+      await cleanupProvider();
       run.status = "stopped";
       run.updated_at = nowIso();
     }
     return toPublic(run);
   }
 
-  if (run.worker === "browser_use" && run.browser_use_session_id) {
-    try {
-      await stopBrowserUseSession(run.browser_use_session_id, "session");
-    } catch (err) {
-      pushEvent(run, {
-        message: `Stop warning: ${sanitizeError(err)}`,
-        message_es: `Aviso al detener: ${sanitizeError(err)}`,
-        screenshot_url: PLACEHOLDER_SHOTS.stopped,
-        kind: "info",
-      });
-    }
+  if (run.worker === "browser_use") {
+    await cleanupProvider();
   }
 
   run.status = "stopped";

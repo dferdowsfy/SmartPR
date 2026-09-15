@@ -11,8 +11,8 @@
 ## Workers
 | Mode | When | Behavior |
 |------|------|----------|
-| **Browser Use Cloud** (default) | `BROWSER_USE_API_KEY` is set | Server creates a v3 session (`POST https://api.browser-use.com/api/v3/sessions`) with a filing task prompt + Business Passport JSON. Stores `browser_use_session_id` + `live_url`. UI embeds `live_url` in an iframe. Poll syncs status/messages into `agency_run_events`. Stop ends the Cloud session. |
-| **Self-hosted agent** | `AGENT_PROVIDER=self_hosted` + `SELF_HOSTED_AGENT_URL` + `WORKER_API_TOKEN` | Same v3 session paths, served by `workers/browser-agent` (FastAPI + OSS `browser-use` on your own xAI model, default `grok-4.3`). Live view is a token-gated noVNC session; domain allowlist is enforced by browser-use itself via `allowedDomains`. Pilot: one active session at a time. |
+| **Browser Use Cloud** (default) | `BROWSER_USE_API_KEY` is set | Server creates a v4 **run** via the official `browser-use-sdk` (`POST https://api.browser-use.com/api/v4/runs`) with a filing task prompt + Business Passport JSON, default model `gpt-5.6-luna` (cheapest), `reasoning.effort: low`, US proxy, and a `$5` per-run cost cap. Stores `browser_use_run_id` + `browser_use_session_id`; live view URL comes from `GET /api/v4/browsers?agentSessionId=`. UI embeds `live_url` in an iframe. Poll syncs run status + run events into `agency_run_events`. Resume queues a follow-up run on the same session. Stop cancels the run and stops the browser (ends Cloud billing). |
+| **Self-hosted agent** | `AGENT_PROVIDER=self_hosted` + `SELF_HOSTED_AGENT_URL` + `WORKER_API_TOKEN` | Same v4 run/session paths, served by `workers/browser-agent` (FastAPI + OSS `browser-use` on your own xAI model, default `grok-4.3`). Live view is a token-gated noVNC session; domain allowlist is enforced by browser-use itself via `allowedDomains`. Pilot: one active session at a time. |
 | **Mock** (fallback) | env unset | In-memory timeline advances on GET poll with SVG placeholder screenshots — no real automation. |
 
 ### Env vars
@@ -21,7 +21,7 @@
 | `BROWSER_USE_API_KEY` | for live Cloud worker | Server-only. **Never** prefix with `NEXT_PUBLIC_`. Do not log the value. |
 | `BROWSER_USE_MODEL` | optional | Cloud default `gpt-5.6-luna` (cheapest per 2026-09 research). |
 | `AGENT_PROVIDER` | optional | `self_hosted` to use the worker; anything else (or unset) = Browser Use Cloud. |
-| `SELF_HOSTED_AGENT_URL` | for self-hosted | Worker public URL + `/api/v3`, e.g. `https://browser-agent.up.railway.app/api/v3`. |
+| `SELF_HOSTED_AGENT_URL` | for self-hosted | Worker public URL (the client appends `/api/v4`), e.g. `https://browser-agent.up.railway.app`. |
 | `WORKER_API_TOKEN` | for self-hosted | Shared secret between Next.js and the worker. Server-only. |
 | `XAI_MODEL` | optional | Self-hosted default `grok-4.3` (exact xAI model id). |
 

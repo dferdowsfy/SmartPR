@@ -1,16 +1,22 @@
 /**
- * Server-only agent-provider client (Browser Use Cloud v3, or the self-hosted
- * browser-agent worker that runs the OSS browser-use library on your own xAI
- * model). Never import from client components — keeps API keys off the wire.
+ * Server-only agent-provider client — Browser Use Cloud API v4 (official
+ * TypeScript SDK) or the self-hosted browser-agent worker, which mirrors the
+ * v4 run/session shapes. Never import from client components — keeps API keys
+ * off the wire.
  *
  * Provider is chosen with AGENT_PROVIDER:
- *   "browser_use_cloud" (default) → https://api.browser-use.com/api/v3
- *   "self_hosted"               → SELF_HOSTED_AGENT_URL (the worker mirrors
- *                                 the Cloud v3 session paths, so the rest of
- *                                 this client is unchanged)
+ *   "browser_use_cloud" (default) → https://api.browser-use.com/api/v4
+ *   "self_hosted"               → SELF_HOSTED_AGENT_URL (the worker exposes
+ *                                 /api/v4/* routes with the same shapes)
+ *
+ * v4 model: a *run* is one agent turn; a *session* is the conversation shared
+ * by follow-up runs. SmartPR polls the run for status/events and steers via
+ * the session queue endpoint.
  */
 
-const CLOUD_BASE_URL = "https://api.browser-use.com/api/v3";
+import { BrowserUse, type V4Types } from "browser-use-sdk/v4";
+
+const CLOUD_BASE_URL = "https://api.browser-use.com/api/v4";
 
 export type AgentProvider = "browser_use_cloud" | "self_hosted";
 
@@ -36,10 +42,6 @@ function selfHostedBase(): string {
   return url;
 }
 
-function baseUrl(): string {
-  return agentProvider() === "self_hosted" ? selfHostedBase() : CLOUD_BASE_URL;
-}
-
 /** Default model per provider: cheapest Cloud pick, or your own xAI model. */
 function defaultModel(): string {
   if (agentProvider() === "self_hosted") {
@@ -51,32 +53,51 @@ function defaultModel(): string {
   return process.env.BROWSER_USE_MODEL?.trim() || "gpt-5.6-luna";
 }
 
-export type BuSessionStatus =
-  | "created"
-  | "idle"
-  | "running"
-  | "stopped"
-  | "timed_out"
-  | "error";
-
-export interface BuSession {
-  id: string;
-  status: BuSessionStatus;
-  liveUrl?: string | null;
-  screenshotUrl?: string | null;
-  lastStepSummary?: string | null;
-  output?: unknown;
-  isTaskSuccessful?: boolean | null;
-  stepCount?: number;
-  title?: string | null;
+/**
+ * Provider-native model params. v4 defaults gpt-5.6-luna to xhigh reasoning —
+ * pin to the dashboard default ("low") to keep filing runs cheap. Only sent
+ * for gpt-* models: other providers reject unknown param paths with 422.
+ */
+function modelParamsFor(model: string): Record<string, unknown> | undefined {
+  if (/^gpt-/i.test(model)) return { reasoning: { effort: "low" } };
+  return undefined;
 }
 
-export interface BuMessage {
+/** Per-run spend cap (USD) — safety net; filing runs cost cents. */
+function maxCostUsd(): number {
+  const raw = Number(process.env.BROWSER_USE_MAX_COST_USD);
+  return Number.isFinite(raw) && raw > 0 ? raw : 5;
+}
+
+export type BuRunStatus =
+  | "queued"
+  | "dispatching"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface BuRun {
+  /** v4 run id (one agent turn). */
   id: string;
-  sessionId?: string;
-  role: string;
-  data?: unknown;
-  summary?: string | null;
+  /** v4 session id (the conversation; follow-up runs share it). */
+  sessionId: string;
+  status: BuRunStatus;
+  liveUrl?: string | null;
+  /** Latest step screenshot — worker only (v4 Cloud exposes no step screenshots). */
+  screenshotUrl?: string | null;
+  result?: string | null;
+  error?: string | null;
+  title?: string | null;
+  totalCostUsd?: string | null;
+  /** Latest agent text — worker only (Cloud: derive from events). */
+  lastStepSummary?: string | null;
+}
+
+export interface BuEvent {
+  id: string;
+  type: string;
+  text: string;
   createdAt?: string;
 }
 
@@ -95,24 +116,17 @@ export function isBrowserUseConfigured(): boolean {
   return Boolean(apiKey());
 }
 
-function authHeaders(): HeadersInit {
-  if (agentProvider() === "self_hosted") {
-    const token = process.env.WORKER_API_TOKEN?.trim();
-    if (!token) {
-      throw new Error("WORKER_API_TOKEN is not set");
-    }
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    };
-  }
+function cloudClient(): BrowserUse {
   const key = apiKey();
-  if (!key) {
-    throw new Error("BROWSER_USE_API_KEY is not set");
-  }
+  if (!key) throw new Error("BROWSER_USE_API_KEY is not set");
+  return new BrowserUse({ apiKey: key });
+}
+
+function workerHeaders(): HeadersInit {
+  const token = process.env.WORKER_API_TOKEN?.trim();
+  if (!token) throw new Error("WORKER_API_TOKEN is not set");
   return {
-    "X-Browser-Use-API-Key": key,
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     Accept: "application/json",
   };
@@ -128,110 +142,271 @@ export function sanitizeError(err: unknown): string {
   return text.slice(0, 500);
 }
 
-async function buFetch<T>(
-  path: string,
-  init?: RequestInit
-): Promise<T> {
-  const response = await fetch(`${baseUrl()}${path}`, {
+async function workerFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${selfHostedBase()}${path}`, {
     ...init,
-    headers: {
-      ...authHeaders(),
-      ...(init?.headers || {}),
-    },
+    headers: { ...workerHeaders(), ...(init?.headers || {}) },
     cache: "no-store",
   });
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(
-      `Agent ${init?.method || "GET"} ${path} → ${response.status}: ${body.slice(0, 300)}`
+      `Worker ${init?.method || "GET"} ${path} → ${response.status}: ${body.slice(0, 300)}`
     );
   }
   return (await response.json()) as T;
 }
 
-function normalizeSession(raw: Record<string, unknown>): BuSession {
+/** Cloud v4 has no browsers.list in the SDK — one raw call for the live view URL. */
+async function cloudLiveUrl(sessionId: string): Promise<string | null> {
+  const key = apiKey();
+  if (!key) return null;
+  const res = await fetch(
+    `${CLOUD_BASE_URL}/browsers?agentSessionId=${encodeURIComponent(sessionId)}&pageSize=1`,
+    { headers: { "X-Browser-Use-API-Key": key, Accept: "application/json" }, cache: "no-store" }
+  );
+  if (!res.ok) return null;
+  const body = (await res.json()) as { items?: Array<{ liveUrl?: string | null }> };
+  return body.items?.[0]?.liveUrl ?? null;
+}
+
+/** Stop the session's browser — ends Cloud browser billing. Idempotent. */
+export async function stopAgentBrowser(sessionId: string): Promise<void> {
+  if (agentProvider() === "self_hosted") {
+    await workerFetch(`/api/v3/sessions/${encodeURIComponent(sessionId)}/stop`, {
+      method: "POST",
+      body: JSON.stringify({ strategy: "session" }),
+    });
+    return;
+  }
+  await cloudClient().browsers.stop(sessionId);
+}
+
+/** Extract human-readable text from a v4 run event (defensive: types vary). */
+function cloudEventText(ev: { type?: string; data?: unknown }): string | null {
+  const t = String(ev.type || "").toLowerCase();
+  if (/screenshot|token|browser_state|dom/.test(t)) return null;
+  const d = ev.data;
+  if (!d || typeof d !== "object") return null;
+  const rec = d as Record<string, unknown>;
+  for (const k of ["text", "summary", "message", "output", "content", "result"]) {
+    const v = rec[k];
+    if (typeof v === "string" && v.trim()) return v.trim().slice(0, 600);
+  }
+  return null;
+}
+
+function normalizeCloudRun(
+  raw: V4Types["schemas"]["RunSummary"],
+  liveUrl: string | null
+): BuRun {
   return {
-    id: String(raw.id),
-    status: raw.status as BuSessionStatus,
-    liveUrl: (raw.liveUrl ?? raw.live_url ?? null) as string | null,
-    screenshotUrl: (raw.screenshotUrl ?? raw.screenshot_url ?? null) as string | null,
-    lastStepSummary: (raw.lastStepSummary ?? raw.last_step_summary ?? null) as string | null,
-    output: raw.output ?? null,
-    isTaskSuccessful: (raw.isTaskSuccessful ?? raw.is_task_successful ?? null) as boolean | null,
-    stepCount: Number(raw.stepCount ?? raw.step_count ?? 0),
-    title: (raw.title ?? null) as string | null,
+    id: raw.id,
+    sessionId: raw.sessionId,
+    status: raw.status as BuRunStatus,
+    liveUrl,
+    screenshotUrl: null, // v4 Cloud exposes no step screenshots via REST
+    result: raw.result ?? null,
+    error: raw.error ?? null,
+    title: raw.title ?? null,
+    totalCostUsd: raw.totalCostUsd ?? null,
+    lastStepSummary: null,
   };
 }
 
-export async function createBrowserUseSession(input: {
+// ---------------------------------------------------------------------------
+// Public API — provider-agnostic
+// ---------------------------------------------------------------------------
+
+export async function createAgentRun(input: {
   task: string;
-  keepAlive?: boolean;
-  proxyCountryCode?: string;
   /** Deterministic domain allowlist — enforced by the self-hosted worker. */
   allowedDomains?: string[];
-}): Promise<BuSession> {
-  const raw = await buFetch<Record<string, unknown>>("/sessions", {
-    method: "POST",
-    body: JSON.stringify({
-      task: input.task,
-      keepAlive: input.keepAlive ?? true,
-      // Puerto Rico Hacienda portal — US residential proxy is appropriate (Cloud).
-      proxyCountryCode: input.proxyCountryCode ?? "us",
-      model: defaultModel(),
-      allowedDomains: input.allowedDomains ?? [],
-    }),
+  proxyCountryCode?: string;
+}): Promise<BuRun> {
+  const model = defaultModel();
+  if (agentProvider() === "self_hosted") {
+    const raw = await workerFetch<{
+      id: string;
+      status: BuRunStatus;
+      model: string;
+      sessionId: string;
+      liveUrl?: string | null;
+    }>("/api/v4/runs", {
+      method: "POST",
+      body: JSON.stringify({
+        task: input.task,
+        model,
+        allowedDomains: input.allowedDomains ?? [],
+      }),
+    });
+    return {
+      id: raw.id,
+      sessionId: raw.sessionId,
+      status: raw.status,
+      liveUrl: raw.liveUrl ?? null,
+    };
+  }
+
+  const client = cloudClient();
+  const created = await client.runs.create({
+    task: input.task,
+    model: model as V4Types["schemas"]["RunCreateRequest"]["model"],
+    modelParams: modelParamsFor(model),
+    browserSettings: {
+      // Puerto Rico Hacienda portal — US residential proxy is appropriate.
+      proxyCountryCode: (input.proxyCountryCode ?? "us") as V4Types["schemas"]["ProxyCountryCode"],
+    },
+    maxCostUsd: maxCostUsd(),
   });
-  return normalizeSession(raw);
-}
-
-export async function getBrowserUseSession(sessionId: string): Promise<BuSession> {
-  const raw = await buFetch<Record<string, unknown>>(`/sessions/${sessionId}`);
-  return normalizeSession(raw);
-}
-
-/** Destroy the sandbox (default) or stop only the running task. */
-export async function stopBrowserUseSession(
-  sessionId: string,
-  strategy: "session" | "task" = "session"
-): Promise<BuSession> {
-  const raw = await buFetch<Record<string, unknown>>(`/sessions/${sessionId}/stop`, {
-    method: "POST",
-    body: JSON.stringify({ strategy }),
-  });
-  return normalizeSession(raw);
-}
-
-/** Dispatch a follow-up task onto an idle keepAlive session. */
-export async function dispatchBrowserUseTask(
-  sessionId: string,
-  task: string
-): Promise<BuSession> {
-  const raw = await buFetch<Record<string, unknown>>("/sessions", {
-    method: "POST",
-    body: JSON.stringify({
-      sessionId,
-      task,
-      keepAlive: true,
-    }),
-  });
-  return normalizeSession(raw);
-}
-
-export async function listBrowserUseMessages(
-  sessionId: string,
-  opts?: { after?: string; limit?: number }
-): Promise<{ items: BuMessage[]; nextCursor?: string | null }> {
-  const params = new URLSearchParams();
-  if (opts?.after) params.set("after", opts.after);
-  if (opts?.limit) params.set("pageSize", String(opts.limit));
-  const qs = params.toString();
-  const raw = await buFetch<{
-    items?: BuMessage[];
-    nextCursor?: string | null;
-    next_cursor?: string | null;
-  }>(`/sessions/${sessionId}/messages${qs ? `?${qs}` : ""}`);
   return {
-    items: raw.items || [],
-    nextCursor: raw.nextCursor ?? raw.next_cursor ?? null,
+    id: created.id,
+    sessionId: created.sessionId,
+    status: created.status as BuRunStatus,
+    liveUrl: null, // resolved on first poll via /browsers
+  };
+}
+
+export async function getAgentRun(runId: string): Promise<BuRun> {
+  if (agentProvider() === "self_hosted") {
+    const raw = await workerFetch<{
+      id: string;
+      sessionId: string;
+      status: BuRunStatus;
+      liveUrl?: string | null;
+      screenshotUrl?: string | null;
+      result?: string | null;
+      error?: string | null;
+      title?: string | null;
+      lastStepSummary?: string | null;
+    }>(`/api/v4/runs/${encodeURIComponent(runId)}`);
+    return {
+      id: raw.id,
+      sessionId: raw.sessionId,
+      status: raw.status,
+      liveUrl: raw.liveUrl ?? null,
+      screenshotUrl: raw.screenshotUrl ?? null,
+      result: raw.result ?? null,
+      error: raw.error ?? null,
+      title: raw.title ?? null,
+      lastStepSummary: raw.lastStepSummary ?? null,
+    };
+  }
+  const summary = await cloudClient().runs.get(runId);
+  const liveUrl = await cloudLiveUrl(summary.sessionId);
+  return normalizeCloudRun(summary, liveUrl);
+}
+
+/** Lightweight status poll (v4 status route — cheap, no result text). */
+export async function getAgentRunStatus(runId: string): Promise<BuRunStatus> {
+  if (agentProvider() === "self_hosted") {
+    const raw = await workerFetch<{ status: BuRunStatus }>(
+      `/api/v4/runs/${encodeURIComponent(runId)}/status`
+    );
+    return raw.status;
+  }
+  const res = await cloudClient().runs.status(runId);
+  return res.status as BuRunStatus;
+}
+
+/** Cancel the run — idempotent; Cloud refuses further billing once cancelled. */
+export async function cancelAgentRun(runId: string): Promise<BuRun> {
+  if (agentProvider() === "self_hosted") {
+    const raw = await workerFetch<{
+      id: string;
+      sessionId: string;
+      status: BuRunStatus;
+      result?: string | null;
+      error?: string | null;
+    }>(`/api/v4/runs/${encodeURIComponent(runId)}/cancel`, { method: "POST" });
+    return {
+      id: raw.id,
+      sessionId: raw.sessionId,
+      status: raw.status,
+      result: raw.result ?? null,
+      error: raw.error ?? null,
+    };
+  }
+  const summary = await cloudClient().runs.cancel(runId);
+  const liveUrl = await cloudLiveUrl(summary.sessionId);
+  return normalizeCloudRun(summary, liveUrl);
+}
+
+/**
+ * Steer the conversation: queues a follow-up message on the session. Starts a
+ * new run when the session is idle. Returns the (possibly new) run id.
+ */
+export async function queueAgentMessage(
+  sessionId: string,
+  text: string
+): Promise<{ runId: string | null }> {
+  if (agentProvider() === "self_hosted") {
+    const raw = await workerFetch<{ runId?: string | null }>(
+      `/api/v4/sessions/${encodeURIComponent(sessionId)}/queue`,
+      { method: "POST", body: JSON.stringify({ text, interrupt: false }) }
+    );
+    return { runId: raw.runId ?? null };
+  }
+  const queued = await cloudClient().sessions.sendMessage(sessionId, {
+    text,
+    interrupt: false,
+  });
+  return { runId: queued.runId ?? null };
+}
+
+export async function listAgentRunEvents(
+  runId: string,
+  opts?: { after?: string; limit?: number }
+): Promise<{ events: BuEvent[]; nextAfter?: string | null }> {
+  const limit = opts?.limit ?? 20;
+  if (agentProvider() === "self_hosted") {
+    const params = new URLSearchParams();
+    if (opts?.after) params.set("after", opts.after);
+    params.set("limit", String(limit));
+    const qs = params.toString();
+    const raw = await workerFetch<{
+      events?: Array<{
+        id: number;
+        type: string;
+        ts?: string;
+        data?: { text?: string };
+      }>;
+      nextAfter?: number | null;
+    }>(`/api/v4/runs/${encodeURIComponent(runId)}/events?${qs}`);
+    const events: BuEvent[] = (raw.events || [])
+      .map((e) => ({
+        id: String(e.id),
+        type: e.type,
+        text: (e.data?.text || "").trim().slice(0, 600),
+        createdAt: e.ts,
+      }))
+      .filter((e) => e.text.length > 0);
+    return {
+      events,
+      nextAfter: raw.nextAfter != null ? String(raw.nextAfter) : null,
+    };
+  }
+
+  const page = await cloudClient().runs.events(runId, {
+    after: opts?.after ? Number(opts.after) : undefined,
+    limit,
+    // include_output is a documented REST param; the SDK's typed params omit
+    // it but pass unknown keys straight through as query string.
+    include_output: true,
+  } as { after?: number; limit?: number });
+  const events: BuEvent[] = [];
+  for (const ev of page.events || []) {
+    const text = cloudEventText(ev as { type?: string; data?: unknown });
+    if (!text) continue;
+    events.push({
+      id: String((ev as { id?: number }).id ?? ""),
+      type: String((ev as { type?: string }).type ?? "event"),
+      text,
+      createdAt: (ev as { ts?: string }).ts,
+    });
+  }
+  return {
+    events,
+    nextAfter: page.nextAfter != null ? String(page.nextAfter) : null,
   };
 }
