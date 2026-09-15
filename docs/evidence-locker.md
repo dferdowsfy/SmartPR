@@ -57,6 +57,5 @@ package inclusion/manifest.
 
 ## Out of scope (follow-ups)
 
-- OGPe / Salud / Bomberos official prep packs (#3) — use locker files + passport
-  identity when those packs land
+- OGPe / Salud / Bomberos prep packs (#3) — shipped; see `docs/ogpe-salud-bomberos-prep-packs.md` (locker tags + passport identity on checklists)
 - Portal auto-submit, email delivery of packages, OCR auto-tagging

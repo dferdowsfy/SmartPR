@@ -207,3 +207,135 @@ test("DACO contractor checklist pre-fills and localizes; PDF non-empty", () => {
   }
 });
 
+test("OGPe Permiso Único prep checklist is bilingual and covers locker-tagged evidence", () => {
+  const definition = getSampleApplication("permiso_unico")!;
+  assert.equal(definition.kicker, "Preparation checklist");
+  assert.match(definition.description, /never present this checklist as an official/i);
+  assert.match(definition.description, /ogpe\.pr\.gov/i);
+  assert.ok(definition.filename.toLowerCase().includes("checklist"));
+  const keys = definition.sections.flatMap((section) => section.fields.map((field) => field.key));
+  for (const key of [
+    "legal_name",
+    "business_address",
+    "proposed_use",
+    "occupancy_description",
+    "doc_lease",
+    "doc_floor_plans",
+    "doc_merchant_reg",
+    "portal_ack",
+  ]) {
+    assert.ok(keys.includes(key), `permiso_unico missing field ${key}`);
+  }
+  const lease = definition.sections.flatMap((s) => s.fields).find((f) => f.key === "doc_lease")!;
+  assert.match(lease.label, /DOC_LEASE_AGREEMENT/);
+
+  const spanish = getSampleApplication("permiso_unico", "es")!;
+  assert.notEqual(spanish.title, definition.title);
+  assert.match(spanish.title, /OGPe|Permiso/i);
+  assert.match(spanish.kicker!, /Lista/i);
+
+  const prefilled = prefillSampleApplication(definition, {
+    name: "Café Plaza LLC",
+    municipality: "Bayamón",
+    physical_address: "Calle Principal 12, Bayamón PR",
+    contact_name: "Ana Ruiz",
+    contact_email: "ana@cafeplaza.pr",
+    contact_phone: "787-555-0100",
+  });
+  assert.equal(prefilled.legal_name, "Café Plaza LLC");
+  assert.equal(prefilled.municipality, "Bayamón");
+  assert.equal(prefilled.business_address, "Calle Principal 12, Bayamón PR");
+  assert.equal(prefilled.applicant_name, "Ana Ruiz");
+
+  for (const language of ["en", "es"] as const) {
+    const blob = generateSampleApplicationPdf(
+      getSampleApplication("permiso_unico", language)!,
+      { legal_name: "Café Plaza LLC", proposed_use: "Restaurant", occupancy_description: "Ground floor" },
+      language
+    );
+    assert.ok(blob.size > 0, `OGPe prep checklist PDF should not be empty (${language})`);
+  }
+});
+
+test("Salud sanitary prep checklist gates on Salud docs and localizes", () => {
+  const definition = getSampleApplication("health_permit")!;
+  assert.equal(definition.kicker, "Preparation checklist");
+  assert.match(definition.description, /DOC_HEALTH_PERMIT/);
+  assert.match(definition.description, /never present this checklist as an official/i);
+  const keys = definition.sections.flatMap((section) => section.fields.map((field) => field.key));
+  for (const key of [
+    "legal_name",
+    "operation_type",
+    "manager_certified",
+    "doc_cfpm",
+    "doc_floor_plans",
+    "portal_ack",
+  ]) {
+    assert.ok(keys.includes(key), `health_permit missing field ${key}`);
+  }
+  const spanish = getSampleApplication("health_permit", "es")!;
+  assert.notEqual(spanish.title, definition.title);
+  assert.match(spanish.title, /Salud/i);
+
+  const prefilled = prefillSampleApplication(definition, {
+    name: "Panadería Sol LLC",
+    municipality: "Ponce",
+    physical_address: "Calle Marina 5, Ponce PR",
+    phone: "787-555-0200",
+    email: "hola@panaderiasol.pr",
+  });
+  assert.equal(prefilled.legal_name, "Panadería Sol LLC");
+  assert.equal(prefilled.physical_address, "Calle Marina 5, Ponce PR");
+
+  for (const language of ["en", "es"] as const) {
+    const blob = generateSampleApplicationPdf(
+      getSampleApplication("health_permit", language)!,
+      { legal_name: "Panadería Sol LLC", hours: "6am-6pm", food_handlers: "3" },
+      language
+    );
+    assert.ok(blob.size > 0, `Salud prep checklist PDF should not be empty (${language})`);
+  }
+});
+
+test("Bomberos fire-safety prep checklist covers inspection readiness and DOC_FIRE_CERT", () => {
+  const definition = getSampleApplication("fire_certification")!;
+  assert.equal(definition.kicker, "Preparation checklist");
+  assert.match(definition.description, /DOC_FIRE_CERT|Bomberos/i);
+  assert.match(definition.description, /never present this checklist as an official/i);
+  assert.ok(definition.filename.toLowerCase().includes("checklist"));
+  const keys = definition.sections.flatMap((section) => section.fields.map((field) => field.key));
+  for (const key of [
+    "legal_name",
+    "occupancy_use",
+    "extinguishers",
+    "sprinklers",
+    "doc_floor_plans",
+    "inspection_ready",
+    "portal_ack",
+  ]) {
+    assert.ok(keys.includes(key), `fire_certification missing field ${key}`);
+  }
+  const spanish = getSampleApplication("fire_certification", "es")!;
+  assert.notEqual(spanish.title, definition.title);
+  assert.match(spanish.title, /Bomberos/i);
+
+  const prefilled = prefillSampleApplication(definition, {
+    name: "Retail Norte LLC",
+    municipality: "Carolina",
+    physical_address: "Ave. 65 Infantería, Carolina PR",
+    contact_name: "Luis Méndez",
+    contact_phone: "787-555-0300",
+    contact_email: "luis@retailnorte.pr",
+  });
+  assert.equal(prefilled.legal_name, "Retail Norte LLC");
+  assert.equal(prefilled.contact_name, "Luis Méndez");
+
+  for (const language of ["en", "es"] as const) {
+    const blob = generateSampleApplicationPdf(
+      getSampleApplication("fire_certification", language)!,
+      { legal_name: "Retail Norte LLC", square_footage: "1800", occupancy_use: "retail" },
+      language
+    );
+    assert.ok(blob.size > 0, `Bomberos prep checklist PDF should not be empty (${language})`);
+  }
+});

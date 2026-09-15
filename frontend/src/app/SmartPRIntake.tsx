@@ -43,7 +43,7 @@ import type { IntakePatch } from './ai/intake/validateInterpretation';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
 import { selectFormForRequirement, selectEntriesForRequirement } from './forms/engine/routing';
 import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms/engine/intake';
-import { passportJsonFromCanonical } from './forms/engine/businessPassport';
+import { passportJsonFromCanonical, worksheetPrefillFromPassport } from './forms/engine/businessPassport';
 import { requirementFormState, actionsForFormState } from './forms/engine/application';
 import { generatePreparationPdf } from './forms/engine/pdfGenerator';
 import { getTemplate, isOfficialArtifact } from './forms/artifacts/catalog';
