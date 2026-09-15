@@ -1,4 +1,4 @@
-/** Agency assistant run types (Phase 2 UI skeleton). No real SURI browser automation. */
+/** Agency assistant run types — mock worker or Browser Use Cloud. */
 
 export type AgencyFilingType =
   | "SURI_REGISTER_TAXPAYER"
@@ -18,6 +18,8 @@ export type AgencyPauseReason =
   | "CAPTCHA"
   | "PAYMENT"
   | null;
+
+export type AgencyWorkerKind = "mock" | "browser_use";
 
 export interface AgencyRunEvent {
   index: number;
@@ -41,6 +43,20 @@ export interface AgencyRun {
   /** Wall-clock when the current segment started (for poll-based advancement). */
   segment_started_at: string;
   events: AgencyRunEvent[];
+  /** Which worker backs this run. */
+  worker: AgencyWorkerKind;
+  /** Browser Use Cloud session id (server-side; also returned for owner polling). */
+  browser_use_session_id: string | null;
+  /** Live preview URL from Browser Use (session-scoped; owner-only). */
+  live_url: string | null;
+  /** Authenticated owner when create ran under auth (gates live_url). */
+  owner_user_id: string | null;
+  /** Last synced Browser Use message id (cursor). */
+  bu_message_cursor: string | null;
+  /** Last lastStepSummary we already emitted as an event. */
+  bu_last_step: string | null;
+  /** Passport snapshot used for the task prompt (not returned publicly). */
+  passport_snapshot: Record<string, unknown> | null;
 }
 
 export interface AgencyRunPublic {
@@ -52,4 +68,8 @@ export interface AgencyRunPublic {
   created_at: string;
   updated_at: string;
   events: AgencyRunEvent[];
+  worker: AgencyWorkerKind;
+  /** Present when Browser Use Cloud backs the run; embed in iframe. */
+  live_url: string | null;
+  browser_use_session_id: string | null;
 }
