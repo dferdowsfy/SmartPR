@@ -2,6 +2,8 @@
 
 // Floating SmartPR voice orb — capture spoken business facts into the Passport.
 // REST STT + confirm-before-apply. CSS/Tailwind only (respects prefers-reduced-motion).
+// Intake Start uses a sibling orb (components/voice/IntakeVoiceOrb) that STTs then
+// feeds /api/intake/interpret — same glow/MediaRecorder pattern, no businessId.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Mic, Square, Type, X } from "lucide-react";
