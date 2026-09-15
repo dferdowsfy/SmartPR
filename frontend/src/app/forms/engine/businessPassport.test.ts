@@ -10,10 +10,10 @@ import {
   mergePreferFilled,
   passportCoverage,
   passportJsonFromCanonical,
-  passportMappingCoverage,
   resolvePopulationProfile,
   worksheetPrefillFromPassport,
 } from "./businessPassport.ts";
+import { passportMappingCoverage } from "./passportMappingCoverage.ts";
 import { readCanonicalField } from "../artifacts/canonicalFields.ts";
 import { loadMapping } from "../artifacts/mappingStore.ts";
 
