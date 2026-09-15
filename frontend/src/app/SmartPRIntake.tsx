@@ -4298,6 +4298,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       )}
 
       <FilingWorkflowShell
+        navActive="start"
         businessName={profile.name}
         businessId={businessId}
         municipality={profile.municipality}
