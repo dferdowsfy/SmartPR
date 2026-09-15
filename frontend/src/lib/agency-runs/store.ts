@@ -2,10 +2,12 @@
  * In-memory agency_runs store.
  *
  * Persistence is a process-local Map (keyed by run id).
- * Worker: Browser Use Cloud when BROWSER_USE_API_KEY is set; otherwise mock timeline.
+ * Worker: agent provider (Browser Use Cloud by default, or the self-hosted
+ * browser-agent worker when AGENT_PROVIDER=self_hosted); otherwise mock timeline.
  */
 import { randomUUID } from "crypto";
 import {
+  agentProviderLabel,
   createBrowserUseSession,
   dispatchBrowserUseTask,
   getBrowserUseSession,
@@ -383,8 +385,8 @@ export async function createRun(input: {
   if (useBu) {
     const filingConfig = getFilingConfig(input.filing_type);
     pushEvent(run, {
-      message: `Starting Browser Use Cloud session for ${filingConfig.portalEn}…`,
-      message_es: `Iniciando sesión de Browser Use Cloud para ${filingConfig.portalEs}…`,
+      message: `Starting ${agentProviderLabel()} session for ${filingConfig.portalEn}…`,
+      message_es: `Iniciando sesión de ${agentProviderLabel()} para ${filingConfig.portalEs}…`,
       screenshot_url: PLACEHOLDER_SHOTS.home,
       kind: "info",
     });
@@ -393,7 +395,11 @@ export async function createRun(input: {
         config: filingConfig,
         passport: input.passport || null,
       });
-      const session = await createBrowserUseSession({ task, keepAlive: true });
+      const session = await createBrowserUseSession({
+        task,
+        keepAlive: true,
+        allowedDomains: filingConfig.domains,
+      });
       run.browser_use_session_id = session.id;
       run.live_url = session.liveUrl || null;
       run.status = session.status === "running" || session.status === "created" ? "running" : "queued";
@@ -419,8 +425,8 @@ export async function createRun(input: {
     } catch (err) {
       run.status = "failed";
       pushEvent(run, {
-        message: `Failed to start Browser Use: ${sanitizeError(err)}`,
-        message_es: `No se pudo iniciar Browser Use: ${sanitizeError(err)}`,
+        message: `Failed to start ${agentProviderLabel()}: ${sanitizeError(err)}`,
+        message_es: `No se pudo iniciar ${agentProviderLabel()}: ${sanitizeError(err)}`,
         screenshot_url: PLACEHOLDER_SHOTS.stopped,
         kind: "info",
       });

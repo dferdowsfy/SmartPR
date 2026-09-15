@@ -7,7 +7,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, Bot, CheckCircle2, FileUp, KeyRound, PauseCircle,
+  AlertTriangle, Bot, CheckCircle2, CreditCard, FileUp, KeyRound, PauseCircle,
   Play, RefreshCw, Shield, Square, Upload,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
@@ -246,8 +246,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-[#5a5a5a]">
                 {L(
-                  "Assisted government filing with live browser preview when Browser Use Cloud is configured. Mock timeline runs when the API key is unset.",
-                  "Trámite de gobierno asistido con vista previa en vivo cuando Browser Use Cloud está configurado. Línea de tiempo simulada si no hay API key.",
+                  "Assisted government filing with live browser preview when the agent provider is configured. Mock timeline runs otherwise.",
+                  "Trámite de gobierno asistido con vista previa en vivo cuando el proveedor del agente está configurado. Línea de tiempo simulada en caso contrario.",
                   lang
                 )}
               </p>
@@ -438,6 +438,22 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                         : L("Reconnect", "Reconectar", lang)}
                     </button>
                   )}
+                  {run.live_url &&
+                    (run.status === "queued" || run.status === "running" || run.status === "paused") && (
+                      <button
+                        type="button"
+                        onClick={() => takeoverBrowser()}
+                        title={L(
+                          "Open the live browser in a new tab and take over whenever you want",
+                          "Abra el navegador en vivo en una pestaña nueva y tome el control cuando quiera",
+                          lang
+                        )}
+                        className="inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/5 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/10"
+                      >
+                        <KeyRound className="h-3 w-3" />
+                        {L("Take over", "Tomar control", lang)}
+                      </button>
+                    )}
                 </div>
               </div>
 
@@ -496,15 +512,25 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                             </div>
                             <p className="mt-1 text-sm text-slate-600">
                               {L(
-                                "Review the last screenshot. The agency assistant never clicks final submit. When ready, complete submission yourself on the portal.",
-                                "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, complete el envío usted mismo en el portal.",
+                                "Review the last screenshot. The agency assistant never clicks final submit. When ready, take over the browser and complete submission yourself on the portal.",
+                                "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, tome el control del navegador y complete el envío usted mismo en el portal.",
                                 lang
                               )}
                             </p>
+                            {run.live_url && (
+                              <button
+                                type="button"
+                                onClick={() => takeoverBrowser()}
+                                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white"
+                              >
+                                <KeyRound className="h-3.5 w-3.5" />
+                                {L("Take over the browser to submit", "Tome el control del navegador para enviar", lang)}
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => void stop()}
-                              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                              className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
                             >
                               <Square className="h-3.5 w-3.5" />
                               {L("Close run", "Cerrar ejecución", lang)}
@@ -574,6 +600,8 @@ function PauseOverlay({
       <FileUp className="h-6 w-6 text-amber-700" />
     ) : reason === "USER_LOGIN" ? (
       <KeyRound className="h-6 w-6 text-amber-700" />
+    ) : reason === "PAYMENT" ? (
+      <CreditCard className="h-6 w-6 text-amber-700" />
     ) : (
       <PauseCircle className="h-6 w-6 text-amber-700" />
     );
@@ -585,7 +613,9 @@ function PauseOverlay({
         ? L(`Your turn — log into ${portalName}`, `Te toca a ti — inicia sesión en ${portalName}`, lang)
         : reason === "CAPTCHA"
           ? L("Complete captcha", "Complete el captcha", lang)
-          : L("Paused for your action", "Pausado para su acción", lang);
+          : reason === "PAYMENT"
+            ? L("Complete payment", "Complete el pago", lang)
+            : L("Paused for your action", "Pausado para su acción", lang);
 
   const body =
     reason === "USER_UPLOAD"
@@ -602,11 +632,17 @@ function PauseOverlay({
           )
         : reason === "CAPTCHA"
           ? L(
-              "Complete the portal captcha / challenge, then Resume.",
-              "Complete el captcha / desafío del portal y luego Reanudar.",
+              "This one needs a human touch. Take over the browser, complete the captcha or challenge on the portal, then come back here and press Resume.",
+              "Esto necesita toque humano. Toma el control del navegador, completa el captcha o el desafío en el portal, y luego vuelve aquí y pulsa Reanudar.",
               lang
             )
-          : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
+          : reason === "PAYMENT"
+            ? L(
+                "Payment is always yours to make — the assistant never touches it. Take over the browser and pay on the portal yourself, then come back here and press Resume.",
+                "El pago siempre lo haces tú — el asistente nunca lo toca. Toma el control del navegador y paga en el portal, luego vuelve aquí y pulsa Reanudar.",
+                lang
+              )
+            : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
@@ -661,6 +697,31 @@ function PauseOverlay({
               >
                 <KeyRound className="h-3.5 w-3.5" />
                 {L("Take over the browser", "Tomar el control del navegador", lang)}
+              </button>
+            )}
+
+            {(reason === "CAPTCHA" || reason === "PAYMENT") && liveUrl && (
+              <button
+                type="button"
+                onClick={onTakeover}
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-white"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                {L("Take over the browser", "Tomar el control del navegador", lang)}
+              </button>
+            )}
+
+            {reason === "USER_UPLOAD" && liveUrl && (
+              <button
+                type="button"
+                onClick={onTakeover}
+                className="mt-2 w-full text-center text-xs font-semibold text-brand underline underline-offset-2"
+              >
+                {L(
+                  "Or take over the browser to attach files directly on the portal",
+                  "O toma el control del navegador para adjuntar los archivos directamente en el portal",
+                  lang
+                )}
               </button>
             )}
 

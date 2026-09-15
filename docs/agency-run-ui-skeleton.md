@@ -11,14 +11,19 @@
 ## Workers
 | Mode | When | Behavior |
 |------|------|----------|
-| **Browser Use Cloud** | `BROWSER_USE_API_KEY` is set | Server creates a v3 session (`POST https://api.browser-use.com/api/v3/sessions`) with a SURI task prompt + Business Passport JSON. Stores `browser_use_session_id` + `live_url`. UI embeds `live_url` in an iframe. Poll syncs status/messages into `agency_run_events`. Stop ends the Cloud session. |
+| **Browser Use Cloud** (default) | `BROWSER_USE_API_KEY` is set | Server creates a v3 session (`POST https://api.browser-use.com/api/v3/sessions`) with a filing task prompt + Business Passport JSON. Stores `browser_use_session_id` + `live_url`. UI embeds `live_url` in an iframe. Poll syncs status/messages into `agency_run_events`. Stop ends the Cloud session. |
+| **Self-hosted agent** | `AGENT_PROVIDER=self_hosted` + `SELF_HOSTED_AGENT_URL` + `WORKER_API_TOKEN` | Same v3 session paths, served by `workers/browser-agent` (FastAPI + OSS `browser-use` on your own xAI model, default `grok-4.3`). Live view is a token-gated noVNC session; domain allowlist is enforced by browser-use itself via `allowedDomains`. Pilot: one active session at a time. |
 | **Mock** (fallback) | env unset | In-memory timeline advances on GET poll with SVG placeholder screenshots — no real automation. |
 
 ### Env vars
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `BROWSER_USE_API_KEY` | for live Cloud worker | Server-only. **Never** prefix with `NEXT_PUBLIC_`. Do not log the value. |
-| `BROWSER_USE_MODEL` | optional | Defaults to `bu-mini`. |
+| `BROWSER_USE_MODEL` | optional | Cloud default `gpt-5.6-luna` (cheapest per 2026-09 research). |
+| `AGENT_PROVIDER` | optional | `self_hosted` to use the worker; anything else (or unset) = Browser Use Cloud. |
+| `SELF_HOSTED_AGENT_URL` | for self-hosted | Worker public URL + `/api/v3`, e.g. `https://browser-agent.up.railway.app/api/v3`. |
+| `WORKER_API_TOKEN` | for self-hosted | Shared secret between Next.js and the worker. Server-only. |
+| `XAI_MODEL` | optional | Self-hosted default `grok-4.3` (exact xAI model id). |
 
 Set `BROWSER_USE_API_KEY` on Railway (or local `.env`) and redeploy. Without it, the UI still works in mock mode.
 

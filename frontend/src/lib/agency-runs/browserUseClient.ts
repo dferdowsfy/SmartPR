@@ -1,9 +1,55 @@
 /**
- * Server-only Browser Use Cloud (API v3) client.
- * Never import from client components — keeps BROWSER_USE_API_KEY off the wire.
+ * Server-only agent-provider client (Browser Use Cloud v3, or the self-hosted
+ * browser-agent worker that runs the OSS browser-use library on your own xAI
+ * model). Never import from client components — keeps API keys off the wire.
+ *
+ * Provider is chosen with AGENT_PROVIDER:
+ *   "browser_use_cloud" (default) → https://api.browser-use.com/api/v3
+ *   "self_hosted"               → SELF_HOSTED_AGENT_URL (the worker mirrors
+ *                                 the Cloud v3 session paths, so the rest of
+ *                                 this client is unchanged)
  */
 
-const BASE_URL = "https://api.browser-use.com/api/v3";
+const CLOUD_BASE_URL = "https://api.browser-use.com/api/v3";
+
+export type AgentProvider = "browser_use_cloud" | "self_hosted";
+
+/** Which agent backend SmartPR talks to. Defaults to Browser Use Cloud. */
+export function agentProvider(): AgentProvider {
+  return process.env.AGENT_PROVIDER?.trim() === "self_hosted"
+    ? "self_hosted"
+    : "browser_use_cloud";
+}
+
+/** Human label for the active provider (UI copy). */
+export function agentProviderLabel(): string {
+  return agentProvider() === "self_hosted"
+    ? "self-hosted agent (Grok)"
+    : "Browser Use Cloud";
+}
+
+function selfHostedBase(): string {
+  const url = process.env.SELF_HOSTED_AGENT_URL?.trim().replace(/\/$/, "");
+  if (!url) {
+    throw new Error("SELF_HOSTED_AGENT_URL is not set");
+  }
+  return url;
+}
+
+function baseUrl(): string {
+  return agentProvider() === "self_hosted" ? selfHostedBase() : CLOUD_BASE_URL;
+}
+
+/** Default model per provider: cheapest Cloud pick, or your own xAI model. */
+function defaultModel(): string {
+  if (agentProvider() === "self_hosted") {
+    return process.env.XAI_MODEL?.trim() || "grok-4.3";
+  }
+  // Cheapest reliable Cloud model per 2026-09 cost research: gpt-5.6-luna
+  // (~2.5x cheaper than bu-mini on output tokens, 78% bench accuracy).
+  // Override per environment with BROWSER_USE_MODEL if needed.
+  return process.env.BROWSER_USE_MODEL?.trim() || "gpt-5.6-luna";
+}
 
 export type BuSessionStatus =
   | "created"
@@ -39,12 +85,28 @@ function apiKey(): string | null {
   return key ? key : null;
 }
 
-/** True when Railway / local env has a Browser Use key (mock is fallback otherwise). */
+/** True when env has what the active provider needs (mock is fallback otherwise). */
 export function isBrowserUseConfigured(): boolean {
+  if (agentProvider() === "self_hosted") {
+    return Boolean(
+      process.env.SELF_HOSTED_AGENT_URL?.trim() && process.env.WORKER_API_TOKEN?.trim()
+    );
+  }
   return Boolean(apiKey());
 }
 
 function authHeaders(): HeadersInit {
+  if (agentProvider() === "self_hosted") {
+    const token = process.env.WORKER_API_TOKEN?.trim();
+    if (!token) {
+      throw new Error("WORKER_API_TOKEN is not set");
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+  }
   const key = apiKey();
   if (!key) {
     throw new Error("BROWSER_USE_API_KEY is not set");
@@ -61,6 +123,8 @@ export function sanitizeError(err: unknown): string {
   let text = err instanceof Error ? err.message : String(err);
   const key = apiKey();
   if (key) text = text.split(key).join("[redacted]");
+  const workerToken = process.env.WORKER_API_TOKEN?.trim();
+  if (workerToken) text = text.split(workerToken).join("[redacted]");
   return text.slice(0, 500);
 }
 
@@ -68,7 +132,7 @@ async function buFetch<T>(
   path: string,
   init?: RequestInit
 ): Promise<T> {
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await fetch(`${baseUrl()}${path}`, {
     ...init,
     headers: {
       ...authHeaders(),
@@ -79,7 +143,7 @@ async function buFetch<T>(
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(
-      `Browser Use ${init?.method || "GET"} ${path} → ${response.status}: ${body.slice(0, 300)}`
+      `Agent ${init?.method || "GET"} ${path} → ${response.status}: ${body.slice(0, 300)}`
     );
   }
   return (await response.json()) as T;
@@ -103,18 +167,18 @@ export async function createBrowserUseSession(input: {
   task: string;
   keepAlive?: boolean;
   proxyCountryCode?: string;
+  /** Deterministic domain allowlist — enforced by the self-hosted worker. */
+  allowedDomains?: string[];
 }): Promise<BuSession> {
   const raw = await buFetch<Record<string, unknown>>("/sessions", {
     method: "POST",
     body: JSON.stringify({
       task: input.task,
       keepAlive: input.keepAlive ?? true,
-      // Puerto Rico Hacienda portal — US residential proxy is appropriate.
+      // Puerto Rico Hacienda portal — US residential proxy is appropriate (Cloud).
       proxyCountryCode: input.proxyCountryCode ?? "us",
-      // Cheapest reliable model per 2026-09 cost research: gpt-5.6-luna
-      // (~2.5x cheaper than bu-mini on output tokens, 78% bench accuracy).
-      // Override per environment with BROWSER_USE_MODEL if needed.
-      model: process.env.BROWSER_USE_MODEL?.trim() || "gpt-5.6-luna",
+      model: defaultModel(),
+      allowedDomains: input.allowedDomains ?? [],
     }),
   });
   return normalizeSession(raw);
