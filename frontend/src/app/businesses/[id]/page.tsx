@@ -660,6 +660,9 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
         </header>
 
         <div className="mt-6">
+          <p className="mb-3 text-sm text-slate-500">
+            {L("Stored business facts and evidence stay here — always visible, ready to reuse on every filing.", lang)}
+          </p>
           <BusinessPassportPanel
             businessId={shortId}
             business={business}

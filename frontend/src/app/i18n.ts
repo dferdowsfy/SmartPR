@@ -719,6 +719,7 @@ export const ES: Record<string, string> = {
   "Agency not recorded": "Agencia no registrada",
   "All requirements": "Todos los requisitos",
   "Business details": "Detalles del negocio",
+  "Stored business facts and evidence stay here — always visible, ready to reuse on every filing.": "Los datos comerciales y la evidencia guardados permanecen aquí — siempre visibles, listos para reutilizar en cada radicación.",
   "Business not found.": "Negocio no encontrado.",
   "Business structure": "Estructura del negocio",
   "Business type": "Tipo de negocio",

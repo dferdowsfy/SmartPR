@@ -60,6 +60,75 @@ const GROUP_TITLES: Record<IntakeFieldSpec["group"], { en: string; es: string }>
   property: { en: "Property", es: "Propiedad" },
 };
 
+function SectionFields({
+  fields,
+  mailingSame,
+  canonical,
+  lang,
+  onChange,
+  setField,
+  input,
+  L,
+}: {
+  fields: IntakeFieldSpec[];
+  mailingSame: boolean;
+  canonical: CanonicalApplicationData;
+  lang: Lang;
+  onChange: (next: CanonicalApplicationData) => void;
+  setField: (spec: IntakeFieldSpec, value: unknown) => void;
+  input: React.CSSProperties;
+  L: (en: string, es: string) => string;
+}) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+      {fields.map((spec) => {
+        // Hide principal mailing address when "same as physical" is on.
+        if (spec.id === "principalMailing" && mailingSame) return null;
+        const raw = readPath(canonical, spec.canonicalKey);
+        const span2 = spec.type === "address" || spec.type === "textarea";
+        const addrErrors = spec.type === "address" && spec.id === "operatingAddress" && raw
+          ? validatePuertoRicoAddress(raw as CanonicalAddress)
+          : [];
+        return (
+          <div key={spec.id} style={{ gridColumn: span2 ? "1 / -1" : undefined }}>
+            <label style={{ fontSize: 12, fontWeight: 500, display: "block", marginBottom: 3 }}>
+              {localize(spec.label, lang)} {spec.required && <span style={{ color: "#b91c1c" }}>*</span>}
+              {spec.optional && <span style={{ color: "#94a3b8", fontWeight: 400 }}> · {L("optional", "opcional")}</span>}
+            </label>
+            {spec.type === "address" ? (
+              <AddressFields value={raw as CanonicalAddress | undefined} lang={lang} onChange={(a) => setField(spec, a)} />
+            ) : spec.type === "checkbox" ? (
+              <input type="checkbox" checked={raw === true} onChange={(e) => setField(spec, e.target.checked)} />
+            ) : spec.type === "textarea" ? (
+              <textarea rows={2} style={input} value={String(raw ?? "")} onChange={(e) => setField(spec, e.target.value)} />
+            ) : spec.type === "select" ? (
+              <select style={input} value={String(raw ?? "")} onChange={(e) => setField(spec, e.target.value)}>
+                <option value="">—</option>
+                {spec.options?.map((o) => <option key={o.value} value={o.value}>{localize(o.label, lang)}</option>)}
+              </select>
+            ) : spec.type === "number" ? (
+              <input type="number" style={input} value={raw === undefined || raw === null ? "" : String(raw)} onChange={(e) => setField(spec, e.target.value === "" ? undefined : Number(e.target.value))} />
+            ) : (
+              <input type={spec.type === "email" ? "email" : spec.type === "phone" ? "tel" : spec.type === "date" ? "date" : "text"} style={input} value={String(raw ?? "")} onChange={(e) => setField(spec, e.target.value)} />
+            )}
+            {spec.id === "ein" && (
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#64748b", marginTop: 4 }}>
+                <input type="checkbox" checked={Boolean(readPath(canonical, "business.einPending"))} onChange={(e) => onChange(setCanonicalValue(canonical, "business.einPending", e.target.checked))} />
+                {L("I do not have one yet", "Aún no tengo uno")}
+              </label>
+            )}
+            {addrErrors.length > 0 && (
+              <p style={{ fontSize: 11, color: "#b91c1c", margin: "3px 0 0" }}>
+                {addrErrors.map((e) => localize(e.message, lang)).join(" ")}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function CoreApplicationDetails({ canonical, lang, onChange, passportMode, banner }: CoreApplicationDetailsProps) {
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const groups: IntakeFieldSpec["group"][] = ["business", "contact", "address", "property"];
@@ -87,55 +156,34 @@ export function CoreApplicationDetails({ canonical, lang, onChange, passportMode
       </div>
       {groups.map((group) => {
         const fields = fieldSpecs.filter((f) => f.group === group);
+        const title = localize(GROUP_TITLES[group], lang);
+        const sectionBody = (
+          <SectionFields
+            fields={fields}
+            mailingSame={mailingSame}
+            canonical={canonical}
+            lang={lang}
+            onChange={onChange}
+            setField={setField}
+            input={input}
+            L={L}
+          />
+        );
+
+        // Passport edit mode: always-open section headers (no accordion collapse).
+        if (passportMode) {
+          return (
+            <div key={group} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px" }}>
+              <div style={{ fontWeight: 600, fontSize: 13 }}>{title}</div>
+              {sectionBody}
+            </div>
+          );
+        }
+
         return (
           <details key={group} open={group === "business"} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "8px 12px" }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 13 }}>{localize(GROUP_TITLES[group], lang)}</summary>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
-              {fields.map((spec) => {
-                // Hide principal mailing address when "same as physical" is on.
-                if (spec.id === "principalMailing" && mailingSame) return null;
-                const raw = readPath(canonical, spec.canonicalKey);
-                const span2 = spec.type === "address" || spec.type === "textarea";
-                const addrErrors = spec.type === "address" && spec.id === "operatingAddress" && raw
-                  ? validatePuertoRicoAddress(raw as CanonicalAddress)
-                  : [];
-                return (
-                  <div key={spec.id} style={{ gridColumn: span2 ? "1 / -1" : undefined }}>
-                    <label style={{ fontSize: 12, fontWeight: 500, display: "block", marginBottom: 3 }}>
-                      {localize(spec.label, lang)} {spec.required && <span style={{ color: "#b91c1c" }}>*</span>}
-                      {spec.optional && <span style={{ color: "#94a3b8", fontWeight: 400 }}> · {L("optional", "opcional")}</span>}
-                    </label>
-                    {spec.type === "address" ? (
-                      <AddressFields value={raw as CanonicalAddress | undefined} lang={lang} onChange={(a) => setField(spec, a)} />
-                    ) : spec.type === "checkbox" ? (
-                      <input type="checkbox" checked={raw === true} onChange={(e) => setField(spec, e.target.checked)} />
-                    ) : spec.type === "textarea" ? (
-                      <textarea rows={2} style={input} value={String(raw ?? "")} onChange={(e) => setField(spec, e.target.value)} />
-                    ) : spec.type === "select" ? (
-                      <select style={input} value={String(raw ?? "")} onChange={(e) => setField(spec, e.target.value)}>
-                        <option value="">—</option>
-                        {spec.options?.map((o) => <option key={o.value} value={o.value}>{localize(o.label, lang)}</option>)}
-                      </select>
-                    ) : spec.type === "number" ? (
-                      <input type="number" style={input} value={raw === undefined || raw === null ? "" : String(raw)} onChange={(e) => setField(spec, e.target.value === "" ? undefined : Number(e.target.value))} />
-                    ) : (
-                      <input type={spec.type === "email" ? "email" : spec.type === "phone" ? "tel" : spec.type === "date" ? "date" : "text"} style={input} value={String(raw ?? "")} onChange={(e) => setField(spec, e.target.value)} />
-                    )}
-                    {spec.id === "ein" && (
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#64748b", marginTop: 4 }}>
-                        <input type="checkbox" checked={Boolean(readPath(canonical, "business.einPending"))} onChange={(e) => onChange(setCanonicalValue(canonical, "business.einPending", e.target.checked))} />
-                        {L("I do not have one yet", "Aún no tengo uno")}
-                      </label>
-                    )}
-                    {addrErrors.length > 0 && (
-                      <p style={{ fontSize: 11, color: "#b91c1c", margin: "3px 0 0" }}>
-                        {addrErrors.map((e) => localize(e.message, lang)).join(" ")}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <summary style={{ cursor: "pointer", fontWeight: 600, fontSize: 13 }}>{title}</summary>
+            {sectionBody}
           </details>
         );
       })}
