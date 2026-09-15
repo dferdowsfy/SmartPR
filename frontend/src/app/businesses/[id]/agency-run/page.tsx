@@ -8,7 +8,7 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle, Bot, CheckCircle2, FileUp, KeyRound, PauseCircle,
-  Play, Shield, Square, Upload,
+  Play, RefreshCw, Shield, Square, Upload,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
@@ -74,6 +74,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [error, setError] = useState<string | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
+  const [reconnectBusy, setReconnectBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -154,6 +156,23 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     } finally {
       setBusy(false);
     }
+  };
+
+  const reconnectPreview = async () => {
+    if (!run?.live_url) return;
+    setReconnectBusy(true);
+    try {
+      await poll(run.id);
+    } finally {
+      // Remount the iframe so the Browser Use viewer re-establishes its
+      // stream, even when live_url itself did not change.
+      setPreviewKey((k) => k + 1);
+      setReconnectBusy(false);
+    }
+  };
+
+  const takeoverBrowser = () => {
+    if (run?.live_url) window.open(run.live_url, "_blank", "noopener,noreferrer");
   };
 
   const uploadToLocker = async (file: File) => {
@@ -406,17 +425,34 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       ? L("Assisted browser", "Navegador asistido", lang)
                       : L("Assisted browser (mock)", "Navegador asistido (simulado)", lang)}
                 </h2>
-                <span className="text-[11px] font-medium text-slate-400">
-                  {run.live_url
-                    ? L("Live preview — suri.hacienda.pr.gov", "Vista previa en vivo — suri.hacienda.pr.gov", lang)
-                    : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-slate-400">
+                    {run.live_url
+                      ? L("Live preview — suri.hacienda.pr.gov", "Vista previa en vivo — suri.hacienda.pr.gov", lang)
+                      : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
+                  </span>
+                  {run.live_url && (
+                    <button
+                      type="button"
+                      disabled={reconnectBusy}
+                      onClick={() => void reconnectPreview()}
+                      title={L("Reload the live preview stream", "Recargar la vista previa en vivo", lang)}
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      {reconnectBusy
+                        ? L("Reconnecting…", "Reconectando…", lang)
+                        : L("Reconnect", "Reconectar", lang)}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="relative flex flex-1 flex-col bg-slate-900/5 p-3">
                 <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner">
                   {run.live_url ? (
                     <iframe
+                      key={previewKey}
                       src={run.live_url}
                       title={L("Live Browser Use session", "Sesión Browser Use en vivo", lang)}
                       className="h-full w-full border-0 bg-white"
@@ -445,8 +481,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       uploadBusy={uploadBusy}
                       uploadMsg={uploadMsg}
                       fileRef={fileRef}
+                      liveUrl={run.live_url}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
+                      onTakeover={() => takeoverBrowser()}
                       onUpload={(file) => void uploadToLocker(file)}
                     />
                   )}
@@ -514,8 +552,10 @@ function PauseOverlay({
   uploadBusy,
   uploadMsg,
   fileRef,
+  liveUrl,
   onResume,
   onStop,
+  onTakeover,
   onUpload,
 }: {
   lang: Lang;
@@ -524,8 +564,10 @@ function PauseOverlay({
   uploadBusy: boolean;
   uploadMsg: string | null;
   fileRef: React.RefObject<HTMLInputElement | null>;
+  liveUrl: string | null;
   onResume: () => void;
   onStop: () => void;
+  onTakeover: () => void;
   onUpload: (file: File) => void;
 }) {
   const icon =
@@ -541,7 +583,7 @@ function PauseOverlay({
     reason === "USER_UPLOAD"
       ? L("Upload required documents", "Suba los documentos requeridos", lang)
       : reason === "USER_LOGIN"
-        ? L("Log into SURI / confirm MFA", "Inicie sesión en SURI / confirme MFA", lang)
+        ? L("Your turn — log into SURI", "Te toca a ti — inicia sesión en SURI", lang)
         : reason === "CAPTCHA"
           ? L("Complete captcha", "Complete el captcha", lang)
           : L("Paused for your action", "Pausado para su acción", lang);
@@ -555,8 +597,8 @@ function PauseOverlay({
         )
       : reason === "USER_LOGIN"
         ? L(
-            "Log into SURI in the assisted browser (or your own session) and complete MFA. Credentials stay with you. Resume when done.",
-            "Inicie sesión en SURI en el navegador asistido (o su propia sesión) y complete el MFA. Las credenciales son suyas. Reanude al terminar.",
+            "Take over the live browser and type your SURI username, password, and MFA code yourself. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, come back here and press Resume.",
+            "Toma el control del navegador en vivo y escribe tu usuario, contraseña y código MFA de SURI. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, vuelve aquí y pulsa Reanudar.",
             lang
           )
         : reason === "CAPTCHA"
@@ -610,6 +652,17 @@ function PauseOverlay({
                 </button>
                 {uploadMsg && <p className="text-xs text-slate-600">{uploadMsg}</p>}
               </div>
+            )}
+
+            {reason === "USER_LOGIN" && liveUrl && (
+              <button
+                type="button"
+                onClick={onTakeover}
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-white"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                {L("Take over the browser", "Tomar el control del navegador", lang)}
+              </button>
             )}
 
             <div className="mt-4 flex gap-2">

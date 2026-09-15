@@ -181,10 +181,21 @@ function messageText(msg: { summary?: string | null; data?: unknown; role?: stri
 function applySessionStatus(run: AgencyRun, session: BuSession): void {
   if (session.liveUrl) run.live_url = session.liveUrl;
 
-  const shot =
-    session.screenshotUrl ||
-    run.events[run.events.length - 1]?.screenshot_url ||
-    PLACEHOLDER_SHOTS.home;
+  // Privacy: while the user has taken over for SURI login/MFA, never persist
+  // live screenshots. The credential-entry flow must not be stored in the
+  // event log, shown in the filmstrip, or visible to anyone but the owner —
+  // admins included. A neutral placeholder is recorded instead.
+  const loginTakeover =
+    run.pause_reason === "USER_LOGIN" ||
+    (session.lastStepSummary
+      ? /PAUSE_USER_LOGIN/.test(session.lastStepSummary.toUpperCase())
+      : false);
+
+  const shot = loginTakeover
+    ? PLACEHOLDER_SHOTS.login
+    : session.screenshotUrl ||
+      run.events[run.events.length - 1]?.screenshot_url ||
+      PLACEHOLDER_SHOTS.home;
 
   if (session.lastStepSummary && session.lastStepSummary !== run.bu_last_step) {
     run.bu_last_step = session.lastStepSummary;
