@@ -80,6 +80,7 @@ export function buildAgencyTaskPrompt(input: {
     }
     lines.push(
       "- Locate the matching fields on the CURRENT page (by label / autocomplete / nearby text) and type these values into them.",
+      "- After FIELDS FILL, continue filling any remaining non-sensitive blanks from the Business Passport JSON — do not stop at only the listed ids.",
       "- If an Ingresar / Login / Sign in / Continuar / Next / Guardar button is present after filling, click it to proceed past the gate.",
       "- If the fields were accepted (you leave the page or the blanks are no longer empty), do NOT re-pause for the same fields.",
       "- Still NEVER click the final Submit / Enviar that permanently files.",
@@ -107,12 +108,19 @@ GOAL
 - Spanish UI is OK; follow on-screen Spanish labels.
 
 PREFILL — DO THIS AGGRESSIVELY
-- SEQUENCING: on every page, FIRST fill all non-sensitive fields from the passport, THEN pause for the sensitive ones. Never pause on a page that still has unfilled fields the passport could satisfy — the human should only ever need to fill the sensitive blanks.
-- Fill EVERY form field whose meaning you can identify from the Business Passport JSON below: legal/business names, entity type, addresses, phone, email, dates, organizer/member details, non-sensitive IDs, and anything else with a clear match.
+- SEQUENCING (mandatory): on every page, FIRST fill ALL non-sensitive fields you can from the Business Passport JSON below. ONLY THEN pause for blanks the passport cannot satisfy (usually password / MFA / SSN / uploads).
+- Do NOT PAUSE and do NOT emit REQUIRED_FIELDS for any control the passport can already fill (email, phone, legal/business names, addresses, municipality, EIN/registry when present and non-sensitive, etc.).
+- Fill EVERY form field whose meaning you can identify from the passport: legal/business names, entity type, addresses, phone, email, dates, organizer/member details, non-sensitive IDs, and anything else with a clear match.
 - For dropdowns/selects: pick the option whose visible text best matches the passport value. Never leave a dropdown on a placeholder/default when the passport identifies the value.
 - For checkboxes/radios that clearly correspond to passport facts, set them.
 - If a field has no passport match and is not sensitive, use visible page context; if truly unknown, leave it blank and note it — do not invent.
 - Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them blank for the human and pause with the right marker below.
+
+HUMAN INPUT PATH (login / required text fields)
+- When you PAUSE_USER_LOGIN or pause for required text fields, the human types ONLY in the SmartPR Assistant panel on the left — NOT in the live browser iframe (it is view-only until Fill & continue).
+- Do NOT expect the human to type into the live browser for email/password/MFA or other required text fields.
+- Wait for resume with FIELDS FILL values; then type those exact values into the matching controls and continue.
+- Keep emitting accurate REQUIRED_FIELDS for whatever is still empty after passport prefill (ids/labels/types/sensitivity only — never echo secrets).
 
 HARD RULES (never violate)
 1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.
@@ -120,7 +128,7 @@ HARD RULES (never violate)
 3. Do NOT invent SSN, ITIN, passwords, MFA codes, or other sensitive IDs. Leave those for the human (unless FIELDS FILL below supplies exact values for this turn only).
 4. When you hit an upload wall, login/MFA wall, captcha, payment gate, or any page with required blanks the passport cannot fill: STOP immediately, do not loop, and end your message with BOTH:
    (a) exactly one pause/status marker, and
-   (b) a machine-parseable REQUIRED_FIELDS block listing every field the human must provide on the CURRENT page.
+   (b) a machine-parseable REQUIRED_FIELDS block listing ONLY fields the human must provide (never list passport-fillable blanks).
 
 PAUSE / STATUS MARKERS (exactly one)
    - PAUSE_USER_UPLOAD — documents required (${config.uploadsEn})
@@ -138,13 +146,14 @@ REQUIRED_FIELDS:
 - id=<slug>; label=<human label>; type=<...>; sensitive=<...>; optional=true
 
 Rules for the block:
-- List ONLY fields that are currently empty/required on screen AND that the passport cannot fill (or that are sensitive — passwords, MFA, SSN, ITIN, etc.).
+- List ONLY fields that are currently empty/required on screen AND that the passport cannot fill (or that are sensitive — passwords, MFA, SSN, ITIN, etc.). Never list email/phone/name/address/EIN/etc. when the passport already has a clear value — fill those yourself before pausing.
 - Use stable id slugs: email, password, mfa, ssn, itin, phone, legal_name, …
 - type must be one of: text | email | password | tel | number
 - sensitive=true for passwords, MFA, SSN/ITIN — the UI will use password-style inputs where appropriate.
 - For PAUSE_USER_UPLOAD the fields block may be empty (upload UI already exists).
 - For PAUSE_CAPTCHA / PAUSE_PAYMENT usually no text fields — takeover stays primary; you may emit an empty REQUIRED_FIELDS: block or omit field lines.
-- After the human provides values via resume / FIELDS FILL, fill exactly those fields, do not invent, and do not re-pause for the same fields if they are now filled.
+- On login pages: pause once with REQUIRED_FIELDS (email if passport has no email, password, mfa if shown). Prefer the Assistant-fill path. Do NOT loop on login.
+- After the human provides values via resume / FIELDS FILL: fill those exact fields, then CONTINUE passport prefill for any remaining non-sensitive blanks on the page. Do not invent. Do not re-pause for the same fields if they are now filled.
 
 Example (login):
 PAUSE_USER_LOGIN

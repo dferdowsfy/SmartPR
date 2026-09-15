@@ -108,4 +108,9 @@ export interface AgencyRunPublic {
   pause_streak: number;
   /** Required fields for the Assistant panel (ids/labels/types only — never values). */
   pending_fields: AgencyPendingField[];
+  /**
+   * Owner-only passport snapshot for Assistant-panel prefill (non-sensitive mapping
+   * happens client-side). Never contains field values the user typed in Assistant.
+   */
+  passport_snapshot: Record<string, unknown> | null;
 }
