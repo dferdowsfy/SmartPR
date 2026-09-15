@@ -180,7 +180,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   const enterTakeover = () => setTakeover(true);
-  const exitTakeover = () => setTakeover(false);
+  /** "I'm done" — exit takeover mode AND hand control back to the agent in one tap. */
+  const handBackToAgent = async () => {
+    setTakeover(false);
+    await resume();
+  };
 
   const uploadToLocker = async (file: File) => {
     setUploadBusy(true);
@@ -457,16 +461,23 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   {takeover && run.live_url ? (
                     <button
                       type="button"
-                      onClick={exitTakeover}
+                      onClick={() => void handBackToAgent()}
+                      disabled={busy}
                       title={L(
                         "Hand control back to the agency assistant",
                         "Devolver el control al asistente de agencia",
                         lang
                       )}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:brightness-95"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {L("I'm done", "Terminé", lang)}
+                      {busy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      )}
+                      {busy
+                        ? L("Handing back…", "Devolviendo…", lang)
+                        : L("I'm done", "Terminé", lang)}
                     </button>
                   ) : (
                     <>
@@ -717,20 +728,20 @@ function PauseOverlay({
         )
       : reason === "USER_LOGIN"
         ? L(
-            `Press "Take over the browser" below and type your ${portalName} username, password, and MFA code directly in the live browser on this page. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, press "I'm done" (top right), then Resume.`,
-            `Pulsa "Tomar el control del navegador" abajo y escribe tu usuario, contraseña y código MFA de ${portalName} directamente en el navegador en vivo de esta página. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, pulsa "Terminé" (arriba a la derecha) y luego Reanudar.`,
+            `Press "Take over the browser" below and type your ${portalName} username, password, and MFA code directly in the live browser on this page. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, press "I'm done" (top right) to hand it back to the assistant.`,
+            `Pulsa "Tomar el control del navegador" abajo y escribe tu usuario, contraseña y código MFA de ${portalName} directamente en el navegador en vivo de esta página. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.`,
             lang
           )
         : reason === "CAPTCHA"
           ? L(
-              'This one needs a human touch. Press "Take over the browser", complete the captcha or challenge directly in the live browser on this page, then press "I\'m done" (top right) and Resume.',
-              'Esto necesita toque humano. Pulsa "Tomar el control del navegador", completa el captcha o el desafío directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) y Reanudar.',
+              'This one needs a human touch. Press "Take over the browser", complete the captcha or challenge directly in the live browser on this page, then press "I\'m done" (top right) to hand it back to the assistant.',
+              'Esto necesita toque humano. Pulsa "Tomar el control del navegador", completa el captcha o el desafío directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.',
               lang
             )
           : reason === "PAYMENT"
             ? L(
-                'Payment is always yours to make — the assistant never touches it. Press "Take over the browser" and pay directly in the live browser on this page, then press "I\'m done" (top right) and Resume.',
-                'El pago siempre lo haces tú — el asistente nunca lo toca. Pulsa "Tomar el control del navegador" y paga directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) y Reanudar.',
+                'Payment is always yours to make — the assistant never touches it. Press "Take over the browser" and pay directly in the live browser on this page, then press "I\'m done" (top right) to hand it back to the assistant.',
+                'El pago siempre lo haces tú — el asistente nunca lo toca. Pulsa "Tomar el control del navegador" y paga directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.',
                 lang
               )
             : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
