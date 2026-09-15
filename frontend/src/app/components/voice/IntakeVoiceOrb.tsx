@@ -2,7 +2,8 @@
 
 // Floating SmartPR voice orb for intake Start — STT then existing interpret path.
 // No businessId required. CSS/Tailwind only (respects prefers-reduced-motion).
-// Visual: deep teal core + cyan/mint glass halo + white sparkles (not mic FAB).
+// Visual: ChatGPT-like breathing glow (teal #245c5c + mint/cyan halo + sparkles).
+// Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Square, Type, X } from "lucide-react";
@@ -294,182 +295,252 @@ export function IntakeVoiceOrb({
   const showHints = state !== "error";
 
   return (
-    <div className="pointer-events-none fixed z-40 flex flex-col items-center gap-2.5 max-md:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] max-md:right-3 md:right-5 md:top-[min(36%,calc(100%-14rem))]">
-      {/* Upper white tooltip */}
-      {showHints && (
-        <div className="pointer-events-auto relative max-w-[14.5rem]">
-          <button
-            type="button"
-            disabled={blocked && state !== "listening"}
-            onClick={() => {
-              if (state === "listening") void stopListening();
-              else if (state === "idle") void startListening();
-            }}
-            className="flex items-center gap-1.5 rounded-2xl border border-white/80 bg-white px-3.5 py-2 text-left text-[12px] font-semibold leading-snug text-[#1a2e2e] shadow-[0_8px_24px_rgba(36,92,92,0.12)]"
-          >
-            <span className="min-w-0 flex-1">{tooltipText}</span>
-            {state === "idle" && (
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
-            )}
-          </button>
-          {/* Arrow / chevron pointing down at orb */}
-          <span
-            aria-hidden
-            className="absolute left-1/2 top-full -mt-px h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-white/80 bg-white shadow-[2px_2px_4px_rgba(36,92,92,0.06)]"
-          />
-        </div>
-      )}
-
-      {/* Orb + glass halo */}
-      <button
-        type="button"
-        disabled={blocked && state !== "listening"}
-        onClick={() => {
-          if (state === "listening") {
-            void stopListening();
-          } else if (state === "processing") {
-            return;
-          } else if (state === "error") {
-            setState("idle");
-            setError(null);
-            setShowPanel(true);
-          } else {
-            void startListening();
+    <>
+      {/* Scoped orb motion — disabled under prefers-reduced-motion via media query */}
+      <style>{`
+        @keyframes spr-orb-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.14); opacity: 0.9; }
+        }
+        @keyframes spr-orb-ring {
+          0% { transform: scale(0.92); opacity: 0.45; }
+          70% { transform: scale(1.45); opacity: 0; }
+          100% { transform: scale(1.45); opacity: 0; }
+        }
+        @keyframes spr-orb-shimmer {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.7; }
+        }
+        .spr-intake-orb-breathe {
+          animation: spr-orb-breathe 3.2s ease-in-out infinite;
+        }
+        .spr-intake-orb-ring {
+          animation: spr-orb-ring 3.6s ease-out infinite;
+        }
+        .spr-intake-orb-ring-delay {
+          animation: spr-orb-ring 3.6s ease-out infinite 1.2s;
+        }
+        .spr-intake-orb-shimmer {
+          animation: spr-orb-shimmer 2.8s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .spr-intake-orb-breathe,
+          .spr-intake-orb-ring,
+          .spr-intake-orb-ring-delay,
+          .spr-intake-orb-shimmer {
+            animation: none !important;
           }
-        }}
-        aria-label={L("SmartPR voice intake", "Admisión por voz SmartPR", lang)}
-        aria-busy={state === "processing" || state === "listening"}
-        className="pointer-events-auto group relative flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70"
-        style={{
-          transform:
-            state === "listening" && !reducedMotion ? `scale(${glowScale})` : undefined,
-          transition: reducedMotion ? undefined : "transform 90ms linear",
-        }}
+        }
+      `}</style>
+
+      <div
+        className="pointer-events-none fixed z-40 flex flex-col items-end gap-2.5 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] md:bottom-[calc(1.35rem+env(safe-area-inset-bottom,0px))] md:right-[max(1.25rem,env(safe-area-inset-right,0px))]"
       >
-        {/* Soft cyan/mint glass halo */}
-        <span
-          aria-hidden
-          className={`absolute inset-[-10px] rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(167,243,208,0.55)_0%,rgba(103,232,249,0.28)_42%,rgba(36,92,92,0.06)_70%,transparent_78%)] ${
-            state === "listening" && !reducedMotion ? "animate-pulse" : ""
-          }`}
-          style={{
-            filter: "blur(0.5px)",
-            opacity: 0.95 + (reducedMotion ? 0 : level * 0.15),
-            transform: `scale(${1 + (reducedMotion ? 0 : level * 0.12)})`,
-          }}
-        />
-        {/* Outer frosted ring */}
-        <span
-          aria-hidden
-          className="absolute inset-[-4px] rounded-full border border-cyan-100/70 bg-gradient-to-br from-white/50 via-teal-100/25 to-cyan-200/30 shadow-[0_10px_28px_rgba(36,92,92,0.18),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-[2px]"
-        />
-        {/* Deep teal core */}
-        <span
-          aria-hidden
-          className="absolute inset-[6px] rounded-full bg-[#245c5c] shadow-[inset_0_2px_6px_rgba(255,255,255,0.18),0_4px_14px_rgba(36,92,92,0.35)]"
-          style={{
-            boxShadow:
-              state === "listening"
-                ? `inset 0 2px 6px rgba(255,255,255,0.2), 0 0 ${16 + level * 28}px rgba(45,212,191,${0.35 + level * 0.35}), 0 6px 18px rgba(36,92,92,0.4)`
-                : undefined,
-          }}
-        />
-        {/* Icon */}
-        <span className="relative z-10 text-white">
-          {state === "listening" ? (
-            <Square className="h-5 w-5 fill-current" />
-          ) : state === "processing" ? (
-            <span
-              className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
-                reducedMotion ? "" : "animate-spin"
-              }`}
-            />
-          ) : (
-            <SparkleStarsIcon className="h-6 w-6 drop-shadow-sm" />
-          )}
-        </span>
-      </button>
-
-      {/* Lower translucent mint pill */}
-      {showHints && (
-        <div className="pointer-events-none relative z-10 -mt-0.5 max-w-[13.5rem] rounded-full border border-emerald-100/80 bg-[rgba(209,250,229,0.72)] px-3.5 py-1.5 text-center text-[10.5px] font-medium leading-snug text-[#1f3d3d] shadow-[0_4px_14px_rgba(36,92,92,0.08)] backdrop-blur-md">
-          {pillText}
-        </div>
-      )}
-
-      {/* Compact status / error / text fallback panel — not a chatbot FAB card */}
-      {(showPanel || error) && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="pointer-events-auto mt-1 w-[min(100vw-2rem,16.5rem)] overflow-hidden rounded-2xl border border-teal-100/80 bg-white/95 shadow-lg shadow-teal-950/10 backdrop-blur"
-        >
-          <div className="flex items-start gap-2 px-3 py-2.5">
-            <div className="min-w-0 flex-1 space-y-2">
-              {error && (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] font-medium leading-snug text-amber-950">
-                  {error}
-                </p>
-              )}
-              {state === "processing" && !error && (
-                <p className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
-                  <span
-                    className={`inline-block h-3.5 w-3.5 rounded-full border-2 border-[#245c5c] border-t-transparent ${
-                      reducedMotion ? "" : "animate-spin"
-                    }`}
-                    aria-hidden
-                  />
-                  {L("Transcribing…", "Transcribiendo…", lang)}
-                </p>
-              )}
-              {(state === "error" || state === "idle") && (
-                <div className="flex flex-col gap-1.5">
-                  {state === "error" && (
+        {/* Compact status / error panel — opens upward above hints */}
+        {(showPanel || error) && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-auto order-1 w-[min(100vw-2rem,16.5rem)] overflow-hidden rounded-2xl border border-teal-100/80 bg-white/95 shadow-lg shadow-teal-950/10 backdrop-blur"
+          >
+            <div className="flex items-start gap-2 px-3 py-2.5">
+              <div className="min-w-0 flex-1 space-y-2">
+                {error && (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] font-medium leading-snug text-amber-950">
+                    {error}
+                  </p>
+                )}
+                {state === "processing" && !error && (
+                  <p className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-full border-2 border-[#245c5c] border-t-transparent ${
+                        reducedMotion ? "" : "animate-spin"
+                      }`}
+                      aria-hidden
+                    />
+                    {L("Transcribing…", "Transcribiendo…", lang)}
+                  </p>
+                )}
+                {(state === "error" || state === "idle") && (
+                  <div className="flex flex-col gap-1.5">
+                    {state === "error" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setState("idle");
+                          setError(null);
+                          void startListening();
+                        }}
+                        className="w-full rounded-xl bg-[#245c5c] px-3 py-2 text-[12px] font-semibold text-[#f6f3ea]"
+                      >
+                        {L("Try again", "Intentar de nuevo", lang)}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
-                        setState("idle");
+                        setShowPanel(false);
                         setError(null);
-                        void startListening();
+                        setState("idle");
+                        onUseTextInstead?.();
                       }}
-                      className="w-full rounded-xl bg-[#245c5c] px-3 py-2 text-[12px] font-semibold text-[#f6f3ea]"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
                     >
-                      {L("Try again", "Intentar de nuevo", lang)}
+                      <Type className="h-3.5 w-3.5" />
+                      {L("Use text instead", "Usar texto en su lugar", lang)}
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPanel(false);
-                                        setError(null);
-                      setState("idle");
-                      onUseTextInstead?.();
-                    }}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    <Type className="h-3.5 w-3.5" />
-                    {L("Use text instead", "Usar texto en su lugar", lang)}
-                  </button>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPanel(false);
+                  if (state === "error") {
+                    setError(null);
+                    setState("idle");
+                  }
+                }}
+                className="rounded-lg p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label={L("Dismiss", "Cerrar", lang)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
+          </div>
+        )}
+
+        {/* Hints stack upward above the orb (never over Live sidebar / form) */}
+        {showHints && (
+          <div className="pointer-events-auto relative order-2 max-w-[14.5rem]">
             <button
               type="button"
+              disabled={blocked && state !== "listening"}
               onClick={() => {
-                setShowPanel(false);
-                if (state === "error") {
-                  setError(null);
-                  setState("idle");
-                }
+                if (state === "listening") void stopListening();
+                else if (state === "idle") void startListening();
               }}
-              className="rounded-lg p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              aria-label={L("Dismiss", "Cerrar", lang)}
+              className="flex items-center gap-1.5 rounded-2xl border border-white/80 bg-white px-3.5 py-2 text-left text-[12px] font-semibold leading-snug text-[#1a2e2e] shadow-[0_8px_24px_rgba(36,92,92,0.12)]"
             >
-              <X className="h-3.5 w-3.5" />
+              <span className="min-w-0 flex-1">{tooltipText}</span>
+              {state === "idle" && (
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
+              )}
             </button>
+            <span
+              aria-hidden
+              className="absolute left-1/2 top-full -mt-px h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-white/80 bg-white shadow-[2px_2px_4px_rgba(36,92,92,0.06)]"
+            />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {showHints && (
+          <div className="pointer-events-none relative z-10 order-3 -mb-0.5 max-w-[13.5rem] rounded-full border border-emerald-100/80 bg-[rgba(209,250,229,0.72)] px-3.5 py-1.5 text-center text-[10.5px] font-medium leading-snug text-[#1f3d3d] shadow-[0_4px_14px_rgba(36,92,92,0.08)] backdrop-blur-md">
+            {pillText}
+          </div>
+        )}
+
+        {/* Orb + layered ChatGPT-style glow (SmartPR teal / mint) */}
+        <button
+          type="button"
+          disabled={blocked && state !== "listening"}
+          onClick={() => {
+            if (state === "listening") {
+              void stopListening();
+            } else if (state === "processing") {
+              return;
+            } else if (state === "error") {
+              setState("idle");
+              setError(null);
+              setShowPanel(true);
+            } else {
+              void startListening();
+            }
+          }}
+          aria-label={L("SmartPR voice intake", "Admisión por voz SmartPR", lang)}
+          aria-busy={state === "processing" || state === "listening"}
+          className="pointer-events-auto group relative order-4 flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 md:h-16 md:w-16"
+          style={{
+            transform:
+              state === "listening" && !reducedMotion ? `scale(${glowScale})` : undefined,
+            transition: reducedMotion ? undefined : "transform 90ms linear",
+          }}
+        >
+          {/* Soft ambient bloom */}
+          <span
+            aria-hidden
+            className={`absolute inset-[-18px] rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(94,234,212,0.45)_0%,rgba(167,243,208,0.28)_38%,rgba(36,92,92,0.08)_62%,transparent_75%)] ${
+              !reducedMotion ? "spr-intake-orb-breathe" : ""
+            }`}
+            style={{
+              opacity: state === "listening" ? 0.95 + level * 0.2 : 0.85,
+              filter: "blur(1px)",
+            }}
+          />
+          {/* Gentle ambient rings */}
+          {!reducedMotion && (
+            <>
+              <span
+                aria-hidden
+                className="spr-intake-orb-ring absolute inset-[-6px] rounded-full border border-teal-200/50"
+              />
+              <span
+                aria-hidden
+                className="spr-intake-orb-ring-delay absolute inset-[-6px] rounded-full border border-cyan-200/40"
+              />
+            </>
+          )}
+          {/* Cyan/mint glass halo */}
+          <span
+            aria-hidden
+            className={`absolute inset-[-10px] rounded-full bg-[radial-gradient(circle_at_50%_40%,rgba(204,251,241,0.7)_0%,rgba(103,232,249,0.32)_45%,rgba(36,92,92,0.05)_72%,transparent_80%)] ${
+              state === "listening" && !reducedMotion ? "animate-pulse" : !reducedMotion ? "spr-intake-orb-shimmer" : ""
+            }`}
+            style={{
+              filter: "blur(0.5px)",
+              opacity: 0.9 + (reducedMotion ? 0 : level * 0.15),
+              transform: `scale(${1 + (reducedMotion ? 0 : level * 0.1)})`,
+            }}
+          />
+          {/* Outer frosted ring */}
+          <span
+            aria-hidden
+            className="absolute inset-[-3px] rounded-full border border-cyan-100/80 bg-gradient-to-br from-white/55 via-teal-100/30 to-cyan-200/35 shadow-[0_10px_28px_rgba(36,92,92,0.2),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-[2px]"
+          />
+          {/* Deep teal core */}
+          <span
+            aria-hidden
+            className="absolute inset-[5px] rounded-full bg-[#245c5c] shadow-[inset_0_2px_6px_rgba(255,255,255,0.22),0_4px_16px_rgba(36,92,92,0.38)]"
+            style={{
+              boxShadow:
+                state === "listening"
+                  ? `inset 0 2px 6px rgba(255,255,255,0.22), 0 0 ${18 + level * 32}px rgba(45,212,191,${0.4 + level * 0.4}), 0 6px 18px rgba(36,92,92,0.42)`
+                  : !reducedMotion
+                    ? "inset 0 2px 6px rgba(255,255,255,0.22), 0 0 22px rgba(45,212,191,0.28), 0 4px 16px rgba(36,92,92,0.38)"
+                    : "inset 0 2px 6px rgba(255,255,255,0.22), 0 0 16px rgba(45,212,191,0.22), 0 4px 14px rgba(36,92,92,0.35)",
+            }}
+          />
+          {/* Specular highlight */}
+          <span
+            aria-hidden
+            className="absolute inset-[7px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,0.35)_0%,transparent_45%)]"
+          />
+          {/* Icon */}
+          <span className="relative z-10 text-white">
+            {state === "listening" ? (
+              <Square className="h-5 w-5 fill-current" />
+            ) : state === "processing" ? (
+              <span
+                className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
+                  reducedMotion ? "" : "animate-spin"
+                }`}
+              />
+            ) : (
+              <SparkleStarsIcon className="h-6 w-6 drop-shadow-sm" />
+            )}
+          </span>
+        </button>
+      </div>
+    </>
   );
 }

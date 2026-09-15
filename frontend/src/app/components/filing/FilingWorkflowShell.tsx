@@ -54,7 +54,7 @@ interface FilingWorkflowShellProps {
   onLanguageChange: (language: "en" | "es") => void;
   onStageChange: (stage: FilingStage) => void;
   intelligence: SmartPRLiveData;
-  /** Which top-nav tab should appear active. Defaults to businesses. */
+  /** Which top-nav tab should appear active. Defaults to start (intake is the only caller). */
   navActive?: TopNavActive;
   /** Overrides the default SmartPR Live sidebar when provided. Pass `null`
    * (not `undefined`) to render no sidebar at all and let the main content
@@ -233,7 +233,7 @@ export function FilingWorkflowShell({
   onLanguageChange,
   onStageChange,
   intelligence,
-  navActive = "businesses",
+  navActive = "start",
   sidebar,
   stepperRight,
   stickyHeader = true,
