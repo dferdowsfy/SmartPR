@@ -15,6 +15,8 @@ import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
+import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
+import { evidenceForObligation } from "../../compliance/evidenceLocker";
 import { getDocumentDownload, downloadKindLabel } from "../../kb";
 import { L } from "../../i18n";
 import { useLang } from "../../useLang";
@@ -29,7 +31,7 @@ interface BusinessRecord {
 }
 interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null }
 interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string; downloaded_at?: string | null }
-interface Evidence { id: string; obligation_id: string | null; original_filename: string; obligation_name: string | null; review_status: string; created_at: string }
+interface Evidence { id: string; obligation_id: string | null; original_filename: string; obligation_name: string | null; review_status: string; created_at: string; requirement_tags?: string[] | null; mime_type?: string | null; size_bytes?: number | null; document_type?: string | null }
 interface Submission { id: string; created_at: string; business_type: string | null; municipality: string | null; readiness_score: number | null }
 interface Deliverable { id: string; filename: string; kind: string; generated_at: string }
 interface Notification { id: string; message: string; scheduled_for: string; status: string }
@@ -271,11 +273,14 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   // The completed PDF for this row, newest first — shown persistently in the
   // row once the document is finished (and visible in Documents regardless).
   const rowEvidence = useMemo(
-    () => evidence
-      .filter((entry) => entry.obligation_id === item.id)
+    () => evidenceForObligation(evidence, {
+      id: item.id,
+      requirement_id: item.requirement_id,
+      name: item.name,
+    })
       .slice()
       .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")),
-    [evidence, item.id]
+    [evidence, item.id, item.requirement_id, item.name]
   );
   const completedPdf = rowEvidence[0];
   const completed = item.status === "COMPLETED" || justCompleted;
@@ -301,6 +306,21 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
       const response = await fetch("/api/evidence", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) { setMessage(result.error || L("Could not upload.", lang)); return; }
+      reload();
+    } finally {
+      setUploading(false);
+    }
+  };
+  const attachFromLocker = async (evidenceId: string) => {
+    setUploading(true); setMessage(null);
+    try {
+      const response = await fetch(`/api/evidence/${evidenceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ obligation_id: item.id }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) { setMessage(result.error || L("Could not attach.", lang)); return; }
       reload();
     } finally {
       setUploading(false);
@@ -365,6 +385,14 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
             >
               <Upload className="h-3.5 w-3.5" />{uploading ? L("Uploading…", lang) : L("Upload", lang)}
             </button>
+            <AttachFromLockerPicker
+              lang={lang}
+              lockerFiles={evidence}
+              requirementId={item.requirement_id}
+              obligationId={item.id}
+              busy={uploading || busy}
+              onAttach={(evidenceId) => void attachFromLocker(evidenceId)}
+            />
             {dl && (
               <a
                 href={dl.url} target="_blank" rel="noopener noreferrer" onClick={recordDownload}
@@ -640,6 +668,20 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           />
         </div>
 
+        <div className="mt-6">
+          <EvidenceLockerPanel
+            businessId={shortId}
+            files={evidence}
+            obligations={(data.obligations ?? []).map((o) => ({
+              id: o.id,
+              name: o.name,
+              requirement_id: o.requirement_id,
+            }))}
+            lang={lang}
+            onChanged={() => load()}
+          />
+        </div>
+
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-950/[0.02]">
             <ReadinessRing percent={derived.readiness} />
@@ -751,7 +793,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   <div className="space-y-2">
                     {evidence.map((item) => (
                       <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                        <div className="min-w-0"><div className="truncate font-semibold text-[#161616]">{item.original_filename}</div><div className="text-xs text-slate-500">{item.obligation_name || L("Unmatched evidence", lang)} · {L("Added", lang)} {fmtDateTime(item.created_at)}</div></div>
+                        <div className="min-w-0"><div className="truncate font-semibold text-[#161616]">{item.original_filename}</div><div className="text-xs text-slate-500">{item.obligation_name || L("Unmatched evidence", lang)} · {L("Added", lang)} {fmtDateTime(item.created_at)}{(item.requirement_tags && item.requirement_tags.length) ? ` · ${item.requirement_tags.join(", ")}` : ""}</div></div>
                         <div className="flex shrink-0 items-center gap-2">
                           <StatusBadge status={item.review_status === "VERIFIED" ? "CURRENT" : item.review_status === "NEEDS_REVIEW" ? "NEEDS_ATTENTION" : "UNKNOWN"} lang={lang} />
                           <DownloadButton kind="evidence" id={item.id} lang={lang} />

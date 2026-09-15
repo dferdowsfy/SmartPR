@@ -37,9 +37,26 @@ export async function GET() {
                 m.readiness_score,
                 CASE
                   WHEN o.verified_at IS NOT NULL AND o.status IN ('CURRENT','UPCOMING','DUE_SOON','OVERDUE') THEN 'VERIFIED'
-                  WHEN EXISTS (SELECT 1 FROM evidence e WHERE e.obligation_id=o.id AND e.review_status='VERIFIED') THEN 'VERIFIED'
-                  WHEN EXISTS (SELECT 1 FROM evidence e WHERE e.obligation_id=o.id AND e.review_status='NEEDS_REVIEW') THEN 'NEEDS_REVIEW'
-                  WHEN EXISTS (SELECT 1 FROM evidence e WHERE e.obligation_id=o.id) THEN 'FAILED'
+                  WHEN EXISTS (
+                    SELECT 1 FROM evidence e
+                     WHERE e.business_id=o.business_id
+                       AND (e.obligation_id=o.id
+                            OR (o.requirement_id IS NOT NULL AND o.requirement_id = ANY(e.requirement_tags)))
+                       AND e.review_status='VERIFIED'
+                  ) THEN 'VERIFIED'
+                  WHEN EXISTS (
+                    SELECT 1 FROM evidence e
+                     WHERE e.business_id=o.business_id
+                       AND (e.obligation_id=o.id
+                            OR (o.requirement_id IS NOT NULL AND o.requirement_id = ANY(e.requirement_tags)))
+                       AND e.review_status='NEEDS_REVIEW'
+                  ) THEN 'NEEDS_REVIEW'
+                  WHEN EXISTS (
+                    SELECT 1 FROM evidence e
+                     WHERE e.business_id=o.business_id
+                       AND (e.obligation_id=o.id
+                            OR (o.requirement_id IS NOT NULL AND o.requirement_id = ANY(e.requirement_tags)))
+                  ) THEN 'FAILED'
                   ELSE 'NONE' END AS evidence_state
            FROM obligations o
            JOIN businesses b ON b.id=o.business_id

@@ -146,6 +146,17 @@ export interface PackagedForm {
   source: { url: string | null; domain: string | null; lastCheckedAt: string | null };
 }
 
+export interface PackagedEvidenceFile {
+  evidenceId: string;
+  filename: string;
+  zipPath: string;
+  requirementCodes: string[];
+  obligationIds: string[];
+  inclusionReason: "obligation_link" | "requirement_tag" | "both";
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+}
+
 export interface SubmissionPackage {
   tenantId: string;
   targetId: string;
@@ -154,6 +165,8 @@ export interface SubmissionPackage {
   forms: PackagedForm[];
   openIssues: string[];
   disclaimer: string;
+  /** Locker files attached/tagged to package requirements (metadata; binaries optional). */
+  evidenceFiles?: PackagedEvidenceFile[];
 }
 
 // ---- Row shapes ------------------------------------------------------------

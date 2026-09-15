@@ -128,6 +128,10 @@ CREATE TABLE IF NOT EXISTS evidence (
 CREATE INDEX IF NOT EXISTS idx_evidence_business ON evidence (business_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_evidence_obligation ON evidence (obligation_id);
 
+-- Evidence locker: reusable business-scoped files tagged with DOC_/requirement codes.
+ALTER TABLE evidence ADD COLUMN IF NOT EXISTS requirement_tags TEXT[] NOT NULL DEFAULT '{}';
+CREATE INDEX IF NOT EXISTS idx_evidence_requirement_tags ON evidence USING GIN (requirement_tags);
+
 CREATE TABLE IF NOT EXISTS leads (
   id UUID PRIMARY KEY,
   email TEXT NOT NULL,

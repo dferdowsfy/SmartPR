@@ -63,9 +63,26 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         `SELECT o.*, o.due_date::text AS due_date,
                 CASE
                   WHEN o.verified_at IS NOT NULL AND o.status IN ('CURRENT','UPCOMING','DUE_SOON','OVERDUE') THEN 'VERIFIED'
-                  WHEN EXISTS (SELECT 1 FROM evidence e WHERE e.obligation_id=o.id AND e.review_status='VERIFIED') THEN 'VERIFIED'
-                  WHEN EXISTS (SELECT 1 FROM evidence e WHERE e.obligation_id=o.id AND e.review_status='NEEDS_REVIEW') THEN 'NEEDS_REVIEW'
-                  WHEN EXISTS (SELECT 1 FROM evidence e WHERE e.obligation_id=o.id) THEN 'FAILED'
+                  WHEN EXISTS (
+                    SELECT 1 FROM evidence e
+                     WHERE e.business_id=o.business_id
+                       AND (e.obligation_id=o.id
+                            OR (o.requirement_id IS NOT NULL AND o.requirement_id = ANY(e.requirement_tags)))
+                       AND e.review_status='VERIFIED'
+                  ) THEN 'VERIFIED'
+                  WHEN EXISTS (
+                    SELECT 1 FROM evidence e
+                     WHERE e.business_id=o.business_id
+                       AND (e.obligation_id=o.id
+                            OR (o.requirement_id IS NOT NULL AND o.requirement_id = ANY(e.requirement_tags)))
+                       AND e.review_status='NEEDS_REVIEW'
+                  ) THEN 'NEEDS_REVIEW'
+                  WHEN EXISTS (
+                    SELECT 1 FROM evidence e
+                     WHERE e.business_id=o.business_id
+                       AND (e.obligation_id=o.id
+                            OR (o.requirement_id IS NOT NULL AND o.requirement_id = ANY(e.requirement_tags)))
+                  ) THEN 'FAILED'
                   ELSE 'NONE' END AS evidence_state,
                 m.title AS matter_title, m.matter_type, m.readiness_score
            FROM obligations o LEFT JOIN matters m ON m.id=o.matter_id
@@ -74,7 +91,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         `SELECT e.id, e.obligation_id, e.matter_id, e.original_filename, e.mime_type,
                 e.size_bytes, e.document_type, e.review_status, e.extracted_fields,
                 e.extraction_confidence, e.issue_date::text, e.expiration_date::text,
-                e.date_source, e.source_reference, e.created_at, o.name AS obligation_name
+                e.date_source, e.source_reference, e.created_at, e.requirement_tags,
+                o.name AS obligation_name, o.requirement_id AS linked_requirement_id
            FROM evidence e LEFT JOIN obligations o ON o.id=e.obligation_id
           WHERE e.business_id=$1 ORDER BY e.created_at DESC`, [businessUuid]),
       pool.query(
