@@ -62,6 +62,7 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     live_url: run.live_url,
     browser_use_session_id: run.browser_use_session_id,
     provider: run.worker === "browser_use" ? agentProvider() : "mock",
+    pause_streak: run.pause_streak,
   };
 }
 
@@ -123,13 +124,13 @@ export function advanceMock(run: AgencyRun): AgencyRun {
     run.updated_at = nowIso();
 
     if (beat.kind === "pause") {
-      run.status = "paused";
-      run.pause_reason = beat.pause_reason;
+      trackPause(run, beat.pause_reason ?? null, PLACEHOLDER_SHOTS.home);
       break;
     }
     if (beat.kind === "review") {
       run.status = "review";
       run.pause_reason = null;
+      resetPauseStreak(run);
       break;
     }
     run.status = "running";
@@ -167,6 +168,38 @@ function detectMarker(text: string): {
     return { status: "failed", pause_reason: null };
   }
   return {};
+}
+
+/**
+ * Track a pause marker on the run, counting consecutive same-reason pauses.
+ * When the user is stuck in a pause loop (same reason 3+ times), an extra
+ * diagnostic event is logged so the UI can show escalated guidance instead
+ * of the identical popup.
+ */
+function trackPause(run: AgencyRun, reason: AgencyPauseReason, shot: string): void {
+  if (reason && reason === run.prev_pause_reason) {
+    run.pause_streak += 1;
+  } else {
+    run.pause_streak = 1;
+    run.prev_pause_reason = reason;
+  }
+  run.status = "paused";
+  run.pause_reason = reason;
+  run.updated_at = nowIso();
+  if (run.pause_streak === 3) {
+    pushEvent(run, {
+      message: `Still blocked on the same step after ${run.pause_streak} attempts. If you already completed it in the live browser, the page may not have saved — look for a Save or Confirm button on the portal page, or press Reconnect and try again.`,
+      message_es: `Sigue bloqueado en el mismo paso después de ${run.pause_streak} intentos. Si ya lo completó en el navegador en vivo, es posible que la página no haya guardado — busque un botón de Guardar o Confirmar en la página del portal, o pulse Reconectar e inténtelo de nuevo.`,
+      screenshot_url: shot,
+      kind: "pause",
+    });
+  }
+}
+
+/** Clear the pause-loop counter when the run moves past the pause. */
+function resetPauseStreak(run: AgencyRun): void {
+  run.pause_streak = 0;
+  run.prev_pause_reason = null;
 }
 
 /**
@@ -208,14 +241,15 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
     });
     const marker = detectMarker(latestText);
     if (marker.status === "paused") {
-      run.status = "paused";
-      run.pause_reason = marker.pause_reason ?? null;
+      trackPause(run, marker.pause_reason ?? null, shot);
     } else if (marker.status === "review") {
       run.status = "review";
       run.pause_reason = null;
+      resetPauseStreak(run);
     } else if (marker.status === "failed") {
       run.status = "failed";
       run.pause_reason = null;
+      resetPauseStreak(run);
     }
   }
 
@@ -234,8 +268,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
       const out = `${bu.result || ""}\n${latestText || ""}`;
       const marker = detectMarker(out);
       if (marker.status === "paused") {
-        run.status = "paused";
-        run.pause_reason = marker.pause_reason ?? null;
+        trackPause(run, marker.pause_reason ?? null, shot);
         pushEvent(run, {
           message: out.trim() || "Paused — waiting for your action on the live browser",
           message_es: out.trim() || "Pausado — esperando su acción en el navegador en vivo",
@@ -245,6 +278,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
       } else if (marker.status === "failed") {
         run.status = "failed";
         run.pause_reason = null;
+        resetPauseStreak(run);
         pushEvent(run, {
           message: out.trim() || "Agent reported a failure",
           message_es: out.trim() || "El agente reportó un error",
@@ -256,6 +290,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
         // the user reviews and submits on the portal.
         run.status = "review";
         run.pause_reason = null;
+        resetPauseStreak(run);
         const portal = getFilingConfig(run.filing_type).portalEn;
         pushEvent(run, {
           message: out.trim() || `Turn complete — review the live browser before submitting on ${portal}.`,
@@ -270,6 +305,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
   if (bu.status === "failed") {
     run.status = "failed";
     run.pause_reason = null;
+    resetPauseStreak(run);
     pushEvent(run, {
       message: bu.error ? `Agent run failed: ${bu.error}` : "Agent run failed",
       message_es: bu.error ? `El agente falló: ${bu.error}` : "El agente falló",
@@ -282,6 +318,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
     run.status = "stopped";
     run.pause_reason = null;
     run.live_url = null;
+    resetPauseStreak(run);
   }
 
   run.updated_at = nowIso();
@@ -373,6 +410,8 @@ export async function createRun(input: {
     bu_message_cursor: null,
     bu_last_step: null,
     passport_snapshot: input.passport || null,
+    pause_streak: 0,
+    prev_pause_reason: null,
   };
 
   if (useBu) {
@@ -516,6 +555,34 @@ export async function resumeRun(id: string): Promise<AgencyRunPublic | null> {
   return toPublic(advanceMock(run));
 }
 
+/**
+ * Record that the user took over the live browser. The run status itself is
+ * unchanged (still paused/running) — this only logs the handoff so the step
+ * log ("notifications") reflects the takeover.
+ */
+export function takeoverRun(id: string): AgencyRunPublic | null {
+  const run = runs().get(id);
+  if (!run) return null;
+  const reasonLabel =
+    run.pause_reason === "USER_LOGIN"
+      ? "login / profile"
+      : run.pause_reason === "USER_UPLOAD"
+        ? "document upload"
+        : run.pause_reason === "CAPTCHA"
+          ? "captcha"
+          : run.pause_reason === "PAYMENT"
+            ? "payment"
+            : "manual control";
+  run.updated_at = nowIso();
+  pushEvent(run, {
+    message: `User took over the browser (${reasonLabel}) — completing the step directly in the live browser`,
+    message_es: `El usuario tomó el control del navegador (${reasonLabel}) — completando el paso directamente en el navegador en vivo`,
+    screenshot_url: PLACEHOLDER_SHOTS.login,
+    kind: "info",
+  });
+  return toPublic(run);
+}
+
 export async function stopRun(id: string): Promise<AgencyRunPublic | null> {
   const run = runs().get(id);
   if (!run) return null;
@@ -557,6 +624,7 @@ export async function stopRun(id: string): Promise<AgencyRunPublic | null> {
   run.status = "stopped";
   run.pause_reason = null;
   run.updated_at = nowIso();
+  resetPauseStreak(run);
   pushEvent(run, {
     message: "Run stopped by user",
     message_es: "Ejecución detenida por el usuario",

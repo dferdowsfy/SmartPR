@@ -197,7 +197,19 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const enterTakeover = () => setTakeover(true);
+  /** Enter inline takeover — also logs the handoff to the step log so the
+   * on-screen notifications reflect that the user is in control. */
+  const enterTakeover = async () => {
+    setTakeover(true);
+    if (!run) return;
+    try {
+      const response = await fetch(`/api/agency-runs/${run.id}/takeover`, { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && result.run) setRun(result.run as AgencyRunPublic);
+    } catch {
+      // Best-effort logging only — takeover itself never depends on it.
+    }
+  };
   /** "I'm done" — exit takeover mode AND hand control back to the agent in one tap. */
   const handBackToAgent = async () => {
     setTakeover(false);
@@ -637,6 +649,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       liveUrl={run.live_url}
                       portalName={L(activeConfig.portalEn, activeConfig.portalEs, lang)}
                       uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
+                      pauseStreak={run.pause_streak ?? 0}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
                       onTakeover={enterTakeover}
@@ -720,6 +733,7 @@ function PauseOverlay({
   liveUrl,
   portalName,
   uploadsText,
+  pauseStreak,
   onResume,
   onStop,
   onTakeover,
@@ -734,6 +748,7 @@ function PauseOverlay({
   liveUrl: string | null;
   portalName: string;
   uploadsText: string;
+  pauseStreak: number;
   onResume: () => void;
   onStop: () => void;
   onTakeover: () => void;
@@ -754,7 +769,7 @@ function PauseOverlay({
     reason === "USER_UPLOAD"
       ? L("Upload required documents", "Suba los documentos requeridos", lang)
       : reason === "USER_LOGIN"
-        ? L(`Your turn — log into ${portalName}`, `Te toca a ti — inicia sesión en ${portalName}`, lang)
+        ? L(`Your turn — ${portalName} needs you`, `Te toca a ti — ${portalName} te necesita`, lang)
         : reason === "CAPTCHA"
           ? L("Complete captcha", "Complete el captcha", lang)
           : reason === "PAYMENT"
@@ -770,8 +785,8 @@ function PauseOverlay({
         )
       : reason === "USER_LOGIN"
         ? L(
-            `Press "Take over the browser" below and type your ${portalName} username, password, and MFA code directly in the live browser on this page. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, press "I'm done" (top right) to hand it back to the assistant.`,
-            `Pulsa "Tomar el control del navegador" abajo y escribe tu usuario, contraseña y código MFA de ${portalName} directamente en el navegador en vivo de esta página. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.`,
+            `Press "Take over the browser" below and complete what ${portalName} is asking for — login, MFA code, or mandatory profile fields (such as SSN) that only you can provide. Fill every required field and press any Save or Confirm button on the page. What you type is private — nobody at SmartPR, admins included, can see this session. When finished, press "I'm done" (top right) to hand it back to the assistant.`,
+            `Pulsa "Tomar el control del navegador" abajo y completa lo que ${portalName} te pide — inicio de sesión, código MFA o campos obligatorios del perfil (como el SSN) que solo tú puedes proveer. Llena todos los campos requeridos y pulsa cualquier botón de Guardar o Confirmar en la página. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando termines, pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.`,
             lang
           )
         : reason === "CAPTCHA"
@@ -867,6 +882,16 @@ function PauseOverlay({
                   lang
                 )}
               </button>
+            )}
+
+            {pauseStreak >= 3 && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
+                {L(
+                  `Still stuck on this step after ${pauseStreak} tries. If you already filled it in the browser, the page may not have saved — look for a Save or Confirm button on the portal page, then press "I'm done".`,
+                  `Sigue atascado en este paso después de ${pauseStreak} intentos. Si ya lo llenó en el navegador, es posible que la página no haya guardado — busque un botón de Guardar o Confirmar en la página del portal y luego pulse "Terminé".`,
+                  lang
+                )}
+              </div>
             )}
 
             <div className="mt-4 flex gap-2">

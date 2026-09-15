@@ -61,6 +61,10 @@ export interface AgencyRun {
   bu_last_step: string | null;
   /** Passport snapshot used for the task prompt (not returned publicly). */
   passport_snapshot: Record<string, unknown> | null;
+  /** Consecutive pauses for the same reason (loop detection). */
+  pause_streak: number;
+  /** Pause reason of the previous pause cycle (for streak comparison). */
+  prev_pause_reason: AgencyPauseReason;
 }
 
 export interface AgencyRunPublic {
@@ -79,4 +83,7 @@ export interface AgencyRunPublic {
   /** Which agent backend actually ran this run — shown in the UI so there is
    * never confusion between Cloud and self-hosted. */
   provider: "browser_use_cloud" | "self_hosted" | "mock";
+  /** Consecutive pauses for the same reason — drives the escalated "still
+   * blocked" messaging when the user is stuck in a pause loop. */
+  pause_streak: number;
 }

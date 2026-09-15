@@ -17,7 +17,7 @@ export function buildAgencyTaskPrompt(input: {
     : "(no passport JSON available — fill only what the user provides on screen; do not invent data)";
 
   const resume = input.resumeHint
-    ? `\n\nRESUME CONTEXT: The human just finished a pause (${input.resumeHint}). Continue from the current page toward pre-submit review. Do not restart from scratch unless the session was lost. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
+    ? `\n\nRESUME CONTEXT: The human just handled the pause (${input.resumeHint}) directly in the live browser — assume they completed the login / typed the sensitive fields / uploaded the documents. Briefly VERIFY the current page state: if the previously blocking step is done (fields filled, gate cleared), CONTINUE forward toward pre-submit review — do NOT re-pause for the same reason. Only pause again if specific fields are still visibly empty or the gate is still literally blocking, and name exactly which fields are still missing. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
     : "";
 
   const procedure = config.procedureEn
@@ -33,11 +33,12 @@ GOAL
 - Spanish UI is OK; follow on-screen Spanish labels.
 
 PREFILL — DO THIS AGGRESSIVELY
+- SEQUENCING: on every page, FIRST fill all non-sensitive fields from the passport, THEN pause for the sensitive ones. Never pause on a page that still has unfilled fields the passport could satisfy — the human should only ever need to fill the sensitive blanks.
 - Fill EVERY form field whose meaning you can identify from the Business Passport JSON below: legal/business names, entity type, addresses, phone, email, dates, organizer/member details, non-sensitive IDs, and anything else with a clear match.
 - For dropdowns/selects: pick the option whose visible text best matches the passport value. Never leave a dropdown on a placeholder/default when the passport identifies the value.
 - For checkboxes/radios that clearly correspond to passport facts, set them.
 - If a field has no passport match and is not sensitive, use visible page context; if truly unknown, leave it blank and note it — do not invent.
-- Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them for the human and pause with the right marker below.
+- Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them blank for the human and pause with the right marker below.
 
 HARD RULES (never violate)
 1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.
