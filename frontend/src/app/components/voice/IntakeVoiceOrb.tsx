@@ -6,7 +6,7 @@
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Square, Type, X } from "lucide-react";
+import { Square, Type, X } from "lucide-react";
 import {
   MIN_AUDIO_BLOB_BYTES,
   appendAudioFormField,
@@ -283,14 +283,7 @@ export function IntakeVoiceOrb({
         ? L("Transcribing…", "Transcribiendo…", lang)
         : state === "error"
           ? L("Something went wrong", "Algo salió mal", lang)
-          : L("Tell SmartPR about your business", "Cuéntele a SmartPR sobre su negocio", lang);
-
-  const pillText =
-    state === "listening"
-      ? L("Speak now — I'll capture what I can.", "Hable ahora — capturaré lo que pueda.", lang)
-      : state === "processing"
-        ? L("Almost there…", "Ya casi…", lang)
-        : L("Speak naturally. I'll fill in what I can.", "Hable con naturalidad. Completaré lo que pueda.", lang);
+          : L("Tell me what you do.", "Cuénteme qué hace.", lang);
 
   const showHints = state !== "error";
 
@@ -420,23 +413,14 @@ export function IntakeVoiceOrb({
                 if (state === "listening") void stopListening();
                 else if (state === "idle") void startListening();
               }}
-              className="flex items-center gap-1.5 rounded-2xl border border-white/80 bg-white px-3.5 py-2 text-left text-[12px] font-semibold leading-snug text-[#1a2e2e] shadow-[0_8px_24px_rgba(36,92,92,0.12)]"
+              className="flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/75 px-3.5 py-1.5 text-left text-[11px] font-medium leading-snug text-slate-500 shadow-[0_4px_14px_rgba(36,92,92,0.07)] backdrop-blur-md"
             >
               <span className="min-w-0 flex-1">{tooltipText}</span>
-              {state === "idle" && (
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
-              )}
             </button>
             <span
               aria-hidden
-              className="absolute left-1/2 top-full -mt-px h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-white/80 bg-white shadow-[2px_2px_4px_rgba(36,92,92,0.06)]"
+              className="absolute left-1/2 top-full -mt-px h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-slate-200/70 bg-white/75 shadow-[2px_2px_4px_rgba(36,92,92,0.05)]"
             />
-          </div>
-        )}
-
-        {showHints && (
-          <div className="pointer-events-none relative z-10 order-3 -mb-0.5 max-w-[13.5rem] rounded-full border border-emerald-100/80 bg-[rgba(209,250,229,0.72)] px-3.5 py-1.5 text-center text-[10.5px] font-medium leading-snug text-[#1f3d3d] shadow-[0_4px_14px_rgba(36,92,92,0.08)] backdrop-blur-md">
-            {pillText}
           </div>
         )}
 
