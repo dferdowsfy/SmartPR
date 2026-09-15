@@ -4,9 +4,15 @@ import { getPool, isEnabled } from "../../../graph/db";
 import { ensureSchema, resolveBusinessUuid } from "../../../graph/store";
 import { getCurrentUser } from "../../../../lib/supabase/server";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../../../compliance/dates";
-import { buildCanonicalFromIntake } from "../../../forms/engine/intake";
 import { selectEntriesForRequirement } from "../../../forms/engine/routing";
 import { getTemplate, isOfficialArtifact } from "../../../forms/artifacts/catalog";
+import {
+  canonicalFromBusinessRow,
+  denormalizedColumnsFromPassport,
+  passportCoverage,
+  passportJsonFromCanonical,
+  type BusinessPassportJson,
+} from "../../../forms/engine/businessPassport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +33,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     const { rows: bizRows } = await pool.query(
       `SELECT b.id, b.public_id, b.name, b.legal_name, b.entity_number, b.business_structure,
               b.business_type, b.industry, b.municipality, b.physical_address,
-              b.onboarding_mode, b.notes, b.created_at, b.updated_at
+              b.onboarding_mode, b.notes, b.created_at, b.updated_at, b.passport_json
          FROM businesses b
          LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$2
         WHERE b.id=$1 AND b.archived=false AND (b.user_id=$2 OR wm.user_id IS NOT NULL)`,
@@ -80,12 +86,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     // client can offer "Complete document". Same five-condition gate the
     // intake requirement cards use: requirement present, registry entry,
     // applicability matches the business's entity type, official artifact.
-    const canonical = buildCanonicalFromIntake({
-      legalName: business.legal_name || business.name,
-      business_structure: business.business_structure ?? undefined,
-      municipality: business.municipality ?? undefined,
-      formationStatus: business.onboarding_mode === "EXISTING" ? "formed_in_puerto_rico" : undefined,
-    });
+    const canonical = canonicalFromBusinessRow(business);
+    const passport = passportCoverage(canonical);
     const presentRequirementIds = new Set(
       obligationResult.rows.map((row) => row.requirement_id).filter((value): value is string => Boolean(value))
     );
@@ -120,6 +122,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       : null;
     return Response.json({
       business,
+      passport: {
+        filled: passport.filled,
+        empty: passport.empty,
+        canonical,
+      },
       overall_readiness: overallReadiness,
       submissions: submissionResult.rows,
       deliverables: deliverableResult.rows,
@@ -142,12 +149,47 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }
-  const allowed = ["legal_name", "entity_number", "business_structure", "business_type", "industry", "municipality", "physical_address", "notes"];
-  const values = allowed.map((key) => typeof body[key] === "string" ? String(body[key]).trim() || null : null);
-  if (!values.some((value) => value !== null)) return Response.json({ error: "No supported fields supplied." }, { status: 400 });
   await ensureSchema();
   const businessUuid = await resolveBusinessUuid(pool, id);
   if (!businessUuid) return Response.json({ error: "not_found" }, { status: 404 });
+
+  // Full Business Passport write: persist JSON and keep list columns in sync.
+  if (body.passport && typeof body.passport === "object") {
+    const passport = body.passport as BusinessPassportJson;
+    const canonical = canonicalFromBusinessRow({ passport_json: passport });
+    const normalized = passportJsonFromCanonical(canonical);
+    const denorm = denormalizedColumnsFromPassport(canonical);
+    const result = await pool.query(
+      `UPDATE businesses SET
+         passport_json=$3::jsonb,
+         legal_name=COALESCE($4,legal_name), name=COALESCE($4,name),
+         entity_number=COALESCE($5,entity_number),
+         business_structure=COALESCE($6,business_structure),
+         municipality=COALESCE($7,municipality),
+         physical_address=COALESCE($8,physical_address),
+         updated_at=now()
+       WHERE id=$1 AND (user_id=$2 OR EXISTS (
+         SELECT 1 FROM workspace_members wm WHERE wm.workspace_id=businesses.workspace_id AND wm.user_id=$2
+       ))
+       RETURNING *`,
+      [
+        businessUuid,
+        user.id,
+        JSON.stringify(normalized),
+        denorm.legal_name,
+        denorm.entity_number,
+        denorm.business_structure,
+        denorm.municipality,
+        denorm.physical_address,
+      ]
+    );
+    if (!result.rows[0]) return Response.json({ error: "not_found" }, { status: 404 });
+    return Response.json({ business: result.rows[0], passport: passportCoverage(canonical) });
+  }
+
+  const allowed = ["legal_name", "entity_number", "business_structure", "business_type", "industry", "municipality", "physical_address", "notes"];
+  const values = allowed.map((key) => typeof body[key] === "string" ? String(body[key]).trim() || null : null);
+  if (!values.some((value) => value !== null)) return Response.json({ error: "No supported fields supplied." }, { status: 400 });
   const result = await pool.query(
     `UPDATE businesses SET
        legal_name=COALESCE($3,legal_name), name=COALESCE($3,name), entity_number=COALESCE($4,entity_number),
@@ -155,7 +197,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
        industry=COALESCE($7,industry), municipality=COALESCE($8,municipality),
        physical_address=COALESCE($9,physical_address), notes=COALESCE($10,notes), updated_at=now()
      WHERE id=$1 AND user_id=$2 RETURNING *`,
-    [id, user.id, ...values]
+    [businessUuid, user.id, ...values]
   );
   if (!result.rows[0]) return Response.json({ error: "not_found" }, { status: 404 });
   return Response.json({ business: result.rows[0] });

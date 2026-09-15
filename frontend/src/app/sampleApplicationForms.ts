@@ -18,7 +18,9 @@ export interface SampleFormField {
   placeholder?: string;
   help?: string;
   options?: SampleFormOption[];
-  profileKey?: "name" | "municipality" | "business_structure" | "number_of_employees";
+  profileKey?: "name" | "municipality" | "business_structure" | "number_of_employees"
+    | "trade_name" | "ein" | "email" | "phone" | "naics_code"
+    | "physical_address" | "mailing_address" | "contact_name" | "contact_email" | "contact_phone";
   /** Puerto Rican Spanish variants, used when the worksheet renders in Spanish. */
   labelEs?: string;
   placeholderEs?: string;
@@ -64,11 +66,21 @@ export interface PreparedSampleApplication {
   data: SampleFormData;
 }
 
-interface PrefillProfile {
+export interface PrefillProfile {
   name?: string;
   municipality?: string;
   business_structure?: string;
   number_of_employees?: number | null;
+  trade_name?: string;
+  ein?: string;
+  email?: string;
+  phone?: string;
+  naics_code?: string;
+  physical_address?: string;
+  mailing_address?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
 }
 
 const ENTITY_OPTIONS: SampleFormOption[] = [
@@ -110,7 +122,7 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
           { key: "legal_name", label: "Proposed legal entity name", type: "text", required: true, profileKey: "name" },
           { key: "entity_type", label: "Entity type", type: "select", required: true, profileKey: "business_structure", options: ENTITY_OPTIONS },
           { key: "principal_address", label: "Principal office address", type: "textarea", required: true },
-          { key: "mailing_address", label: "Mailing address", type: "textarea" },
+          { key: "mailing_address", label: "Mailing address", type: "textarea", profileKey: "mailing_address"},
           { key: "business_purpose", label: "Business purpose", type: "textarea", required: true, placeholder: "Describe the primary purpose of the business." },
         ],
       },
@@ -138,21 +150,21 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
         title: "Business and tax identity",
         fields: [
           { key: "legal_name", label: "Legal business name", type: "text", required: true, profileKey: "name" },
-          { key: "trade_name", label: "Trade name / DBA", type: "text" },
+          { key: "trade_name", label: "Trade name / DBA", type: "text", profileKey: "trade_name"},
           { key: "entity_type", label: "Entity type", type: "select", required: true, profileKey: "business_structure", options: ENTITY_OPTIONS },
-          { key: "ein", label: "Federal EIN", type: "text", required: true, placeholder: "XX-XXXXXXX" },
-          { key: "naics_code", label: "NAICS code", type: "text" },
+          { key: "ein", label: "Federal EIN", type: "text", required: true, placeholder: "XX-XXXXXXX" , profileKey: "ein"},
+          { key: "naics_code", label: "NAICS code", type: "text", profileKey: "naics_code"},
           { key: "business_activity", label: "Primary business activity", type: "textarea", required: true },
         ],
       },
       {
         title: "Operations",
         fields: [
-          { key: "physical_address", label: "Physical business address", type: "textarea", required: true },
+          { key: "physical_address", label: "Physical business address", type: "textarea", required: true , profileKey: "physical_address"},
           { key: "municipality", label: "Municipality", type: "text", required: true, profileKey: "municipality" },
           { key: "operations_start_date", label: "Operations start date", type: "date", required: true },
           { key: "employee_count", label: "Number of employees", type: "number", profileKey: "number_of_employees" },
-          { key: "contact_name", label: "Responsible contact", type: "text", required: true },
+          { key: "contact_name", label: "Responsible contact", type: "text", required: true , profileKey: "contact_name"},
           { key: "contact_email", label: "Contact email", type: "email", required: true },
           { key: "taxable_sales", label: "Will the business make taxable sales?", type: "select", required: true, options: [{ value: "yes", label: "Yes" }, { value: "no", label: "No" }, { value: "unsure", label: "Not sure" }] },
         ],
@@ -171,7 +183,7 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
         title: "Applicant and location",
         fields: [
           { key: "legal_name", label: "Legal business name", type: "text", required: true, profileKey: "name" },
-          { key: "trade_name", label: "Trade name / DBA", type: "text" },
+          { key: "trade_name", label: "Trade name / DBA", type: "text", profileKey: "trade_name"},
           { key: "business_address", label: "Business location address", type: "textarea", required: true },
           { key: "municipality", label: "Municipality", type: "text", required: true, profileKey: "municipality" },
           { key: "cadastral_number", label: "Property cadastral number", type: "text" },
@@ -207,11 +219,11 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
         title: "Establishment",
         fields: [
           { key: "legal_name", label: "Legal business name", type: "text", required: true, profileKey: "name" },
-          { key: "trade_name", label: "Trade name / DBA", type: "text" },
-          { key: "physical_address", label: "Establishment address", type: "textarea", required: true },
+          { key: "trade_name", label: "Trade name / DBA", type: "text", profileKey: "trade_name"},
+          { key: "physical_address", label: "Establishment address", type: "textarea", required: true , profileKey: "physical_address"},
           { key: "municipality", label: "Municipality", type: "text", required: true, profileKey: "municipality" },
-          { key: "phone", label: "Establishment phone", type: "tel", required: true },
-          { key: "email", label: "Contact email", type: "email", required: true },
+          { key: "phone", label: "Establishment phone", type: "tel", required: true , profileKey: "phone"},
+          { key: "email", label: "Contact email", type: "email", required: true , profileKey: "email"},
         ],
       },
       {
@@ -258,7 +270,7 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
         title: "Premises",
         fields: [
           { key: "legal_name", label: "Legal business name", type: "text", required: true, profileKey: "name" },
-          { key: "physical_address", label: "Premises address", type: "textarea", required: true },
+          { key: "physical_address", label: "Premises address", type: "textarea", required: true , profileKey: "physical_address"},
           { key: "municipality", label: "Municipality", type: "text", required: true, profileKey: "municipality" },
           { key: "occupancy_use", label: "Occupancy / use of premises", type: "select", required: true, options: [
             { value: "restaurant", label: "Restaurant / food service" },
@@ -301,10 +313,10 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
         title: "Applicant and premises",
         fields: [
           { key: "legal_name", label: "Legal business name", type: "text", required: true, profileKey: "name" },
-          { key: "trade_name", label: "Trade name / DBA", type: "text" },
-          { key: "physical_address", label: "Premises address", type: "textarea", required: true },
+          { key: "trade_name", label: "Trade name / DBA", type: "text", profileKey: "trade_name"},
+          { key: "physical_address", label: "Premises address", type: "textarea", required: true , profileKey: "physical_address"},
           { key: "municipality", label: "Municipality", type: "text", required: true, profileKey: "municipality" },
-          { key: "owner_name", label: "Owner / authorized representative", type: "text", required: true },
+          { key: "owner_name", label: "Owner / authorized representative", type: "text", required: true , profileKey: "contact_name"},
           { key: "contact_email", label: "Contact email", type: "email", required: true },
           { key: "contact_phone", label: "Contact phone", type: "tel", required: true },
         ],
@@ -339,11 +351,11 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
         title: "Employer",
         fields: [
           { key: "legal_name", label: "Legal business name", type: "text", required: true, profileKey: "name" },
-          { key: "trade_name", label: "Trade name / DBA", type: "text" },
+          { key: "trade_name", label: "Trade name / DBA", type: "text", profileKey: "trade_name"},
           { key: "fein", label: "Federal EIN", type: "text", required: true, placeholder: "XX-XXXXXXX" },
-          { key: "physical_address", label: "Employer address", type: "textarea", required: true },
+          { key: "physical_address", label: "Employer address", type: "textarea", required: true , profileKey: "physical_address"},
           { key: "municipality", label: "Municipality", type: "text", required: true, profileKey: "municipality" },
-          { key: "contact_name", label: "Responsible contact", type: "text", required: true },
+          { key: "contact_name", label: "Responsible contact", type: "text", required: true , profileKey: "contact_name"},
           { key: "contact_email", label: "Contact email", type: "email", required: true },
           { key: "contact_phone", label: "Contact phone", type: "tel", required: true },
         ],

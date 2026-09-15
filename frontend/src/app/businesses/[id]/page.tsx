@@ -13,7 +13,8 @@ import { StatusBadge } from "../../components/compliance/StatusBadge";
 import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } from "../../compliance/types";
 import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
-import { buildCanonicalFromIntake } from "../../forms/engine/intake";
+import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
+import { BusinessPassportPanel } from "../BusinessPassportPanel";
 import { getDocumentDownload, downloadKindLabel } from "../../kb";
 import { L } from "../../i18n";
 import { useLang } from "../../useLang";
@@ -24,6 +25,7 @@ interface BusinessRecord {
   municipality: string | null; business_type: string | null; onboarding_mode: "NEW" | "EXISTING";
   business_structure: string | null; industry: string | null; physical_address: string | null;
   notes: string | null; created_at: string | null;
+  passport_json?: Record<string, unknown> | null;
 }
 interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null }
 interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string; downloaded_at?: string | null }
@@ -258,12 +260,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   const definition = item.form_id ? getDefinition(item.form_id) : undefined;
   const draftKey = `gov-draft-${item.id}-${item.form_id ?? "none"}`;
   const lang = useLang();
-  const canonical = useMemo(() => buildCanonicalFromIntake({
-    legalName: business.legal_name || business.name,
-    business_structure: business.business_structure ?? undefined,
-    municipality: business.municipality ?? undefined,
-    formationStatus: business.onboarding_mode === "EXISTING" ? "formed_in_puerto_rico" : undefined,
-  }), [business]);
+  const canonical = useMemo(() => canonicalFromBusinessRow(business), [business]);
   const initialDraft = useMemo((): GovFormData | undefined => {
     try {
       if (typeof window === "undefined") return undefined;
@@ -633,6 +630,15 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             </div>
           )}
         </header>
+
+        <div className="mt-6">
+          <BusinessPassportPanel
+            businessId={shortId}
+            business={business}
+            lang={lang}
+            onSaved={() => load()}
+          />
+        </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-950/[0.02]">
