@@ -20,7 +20,7 @@ function signOutNow() {
   window.location.assign("/auth/signout");
 }
 
-export function TopNav({ active, extraActions }: { active: "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings" | "enterprise"; extraActions?: ReactNode }) {
+export function TopNav({ active, extraActions }: { active: "start" | "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings" | "enterprise"; extraActions?: ReactNode }) {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLangState] = useState<"en" | "es">("en");
@@ -138,7 +138,7 @@ export function TopNav({ active, extraActions }: { active: "dashboard" | "busine
         </div>
 
         <nav className="nav-tabs" aria-label="Sections">
-          <Link href="/?entry=new-business" className="nav-tab">{navStart}</Link>
+          <Link href="/?entry=new-business" className={`nav-tab ${active === "start" ? "active" : ""}`}>{navStart}</Link>
           <Link href="/businesses" className={`nav-tab ${active === "businesses" || active === "calendar" || active === "filings" || active === "history" || active === "settings" ? "active" : ""}`}>
             {navMyBiz}
           </Link>
