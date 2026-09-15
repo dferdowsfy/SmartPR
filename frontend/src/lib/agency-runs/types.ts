@@ -23,6 +23,21 @@ export type AgencyPauseReason =
 
 export type AgencyWorkerKind = "mock" | "browser_use";
 
+/** Input type for Assistant-panel pending fields (labels/types only — never values). */
+export type AgencyPendingFieldType = "text" | "email" | "password" | "tel" | "number";
+
+/**
+ * A field the human must provide in the Assistant panel while the agent is paused.
+ * Values are never stored on the run — only id/label/type/sensitivity metadata.
+ */
+export interface AgencyPendingField {
+  id: string;
+  label: string;
+  type: AgencyPendingFieldType;
+  sensitive: boolean;
+  optional?: boolean;
+}
+
 export interface AgencyRunEvent {
   index: number;
   message: string;
@@ -65,6 +80,11 @@ export interface AgencyRun {
   pause_streak: number;
   /** Pause reason of the previous pause cycle (for streak comparison). */
   prev_pause_reason: AgencyPauseReason;
+  /**
+   * Fields the human must fill in the Assistant panel (metadata only).
+   * Cleared when pause clears or on successful resume that supplied values.
+   */
+  pending_fields: AgencyPendingField[];
 }
 
 export interface AgencyRunPublic {
@@ -86,4 +106,6 @@ export interface AgencyRunPublic {
   /** Consecutive pauses for the same reason — drives the escalated "still
    * blocked" messaging when the user is stuck in a pause loop. */
   pause_streak: number;
+  /** Required fields for the Assistant panel (ids/labels/types only — never values). */
+  pending_fields: AgencyPendingField[];
 }

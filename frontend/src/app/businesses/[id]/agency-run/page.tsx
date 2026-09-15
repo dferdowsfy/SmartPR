@@ -16,6 +16,7 @@ import type { Lang } from "../../../forms/engine/types";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
+  AgencyPendingField,
   AgencyRunPublic,
   AgencyRunStatus,
 } from "../../../../lib/agency-runs/types";
@@ -23,6 +24,7 @@ import {
   AGENCY_FILING_CONFIGS,
   getFilingConfig,
 } from "../../../../lib/agency-runs/filingTypes";
+import { DEFAULT_LOGIN_PENDING_FIELDS } from "../../../../lib/agency-runs/pendingFields";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -71,11 +73,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * No new window — the iframe stays interactive and an "I'm done" button
    * hands control back to the assistant. */
   const [takeover, setTakeover] = useState(false);
-  /** USER_LOGIN fields typed in the step log (and optionally PauseOverlay).
-   * Never mirrored into event messages — only POSTed to resume. */
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [loginMfa, setLoginMfa] = useState("");
+  /** Pending-field values typed in the Assistant panel (and optionally PauseOverlay).
+   * Never mirrored into event messages — only POSTed to resume as `{ fields }`. */
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   /** Tracks whether the live preview iframe has rendered its first frame —
    * drives the loading animation while the Cloud session spins up. */
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -112,9 +112,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   // Leaving takeover mode whenever a different run loads.
   useEffect(() => {
     setTakeover(false);
-    setLoginEmail("");
-    setLoginPassword("");
-    setLoginMfa("");
+    setFieldValues({});
   }, [run?.id]);
 
   // Reset the preview loading animation whenever the stream is (re)created.
@@ -158,27 +156,23 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const resume = async (credentials?: { email?: string; password?: string; mfa?: string }) => {
+  const resume = async (fields?: Record<string, string>) => {
     if (!run) return;
     setBusy(true);
     setError(null);
     try {
-      const hasCreds = Boolean(
-        credentials &&
-          (credentials.email?.trim() || credentials.password?.trim() || credentials.mfa?.trim())
-      );
+      const cleaned: Record<string, string> = {};
+      if (fields) {
+        for (const [id, value] of Object.entries(fields)) {
+          const v = typeof value === "string" ? value.trim() : "";
+          if (id && v) cleaned[id] = v;
+        }
+      }
+      const hasFields = Object.keys(cleaned).length > 0;
       const response = await fetch(`/api/agency-runs/${run.id}/resume`, {
         method: "POST",
-        headers: hasCreds ? { "Content-Type": "application/json" } : undefined,
-        body: hasCreds
-          ? JSON.stringify({
-              credentials: {
-                ...(credentials!.email?.trim() ? { email: credentials!.email.trim() } : {}),
-                ...(credentials!.password?.trim() ? { password: credentials!.password.trim() } : {}),
-                ...(credentials!.mfa?.trim() ? { mfa: credentials!.mfa.trim() } : {}),
-              },
-            })
-          : undefined,
+        headers: hasFields ? { "Content-Type": "application/json" } : undefined,
+        body: hasFields ? JSON.stringify({ fields: cleaned }) : undefined,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -186,11 +180,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         return;
       }
       setRun(result.run as AgencyRunPublic);
-      if (hasCreds) {
-        setLoginEmail("");
-        setLoginPassword("");
-        setLoginMfa("");
-      }
+      if (hasFields) setFieldValues({});
       setTakeover(false);
     } finally {
       setBusy(false);
@@ -198,11 +188,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   const fillAndContinue = async () => {
-    await resume({
-      email: loginEmail,
-      password: loginPassword,
-      mfa: loginMfa,
-    });
+    await resume(fieldValues);
+  };
+
+  const setFieldValue = (id: string, value: string) => {
+    setFieldValues((prev) => ({ ...prev, [id]: value }));
   };
 
   const stop = async () => {
@@ -235,7 +225,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  /** Enter inline takeover — also logs the handoff to the step log so the
+  /** Enter inline takeover — also logs the handoff to the Assistant panel so the
    * on-screen notifications reflect that the user is in control. */
   const enterTakeover = async () => {
     setTakeover(true);
@@ -307,6 +297,20 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const inReview = run?.status === "review";
   // Active filing config: the run's type once started, otherwise the picker's selection.
   const activeConfig = getFilingConfig(run ? run.filing_type : filingType);
+
+  /** Fields to render in the Assistant panel / PauseOverlay while paused. */
+  const pendingFields: AgencyPendingField[] = useMemo(() => {
+    if (!run || run.status !== "paused") return [];
+    if (run.pending_fields?.length) return run.pending_fields;
+    // Client-side fallback if API omitted pending_fields on USER_LOGIN (preserve #88 UX).
+    if (run.pause_reason === "USER_LOGIN") return DEFAULT_LOGIN_PENDING_FIELDS;
+    return [];
+  }, [run]);
+
+  const canFillFields = pendingFields.some((f) => {
+    if (f.optional) return false;
+    return Boolean((fieldValues[f.id] || "").trim());
+  }) || pendingFields.some((f) => Boolean((fieldValues[f.id] || "").trim()));
   const preflightConfig = getFilingConfig(filingType);
 
   return (
@@ -438,11 +442,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
         {run && (
           <div className="relative mt-6 grid gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-            {/* Step log */}
+            {/* Assistant panel (chat-like required-field inputs + event feed) */}
             <aside className="flex max-h-[70vh] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <h2 className="text-sm font-bold text-[#161616]">
-                  {L("Step log", "Registro de pasos", lang)}
+                  {L("Assistant", "Asistente", lang)}
                 </h2>
                 <StatusPill status={run.status} lang={lang} />
               </div>
@@ -468,56 +472,61 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 ))}
                 <div ref={logEndRef} />
               </ol>
-              {paused && run.pause_reason === "USER_LOGIN" && (
+              {paused && pendingFields.length > 0 && (
                 <div className="space-y-2 border-t border-amber-100 bg-amber-50/60 px-3 py-3">
                   <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-900">
                     <KeyRound className="h-3.5 w-3.5" />
-                    {L("Portal login", "Inicio de sesión", lang)}
+                    {L("Required fields", "Campos requeridos", lang)}
                   </div>
                   <p className="text-[11px] leading-snug text-amber-900/80">
                     {L(
-                      "Type your credentials here — the assistant will fill the portal and continue. Take over remains available if you prefer.",
-                      "Escriba sus credenciales aquí — el asistente llenará el portal y continuará. Tomar el control sigue disponible si lo prefiere.",
+                      "Fill these here — the assistant will inject them into the portal and continue. Take over remains available if you prefer.",
+                      "Complételos aquí — el asistente los inyectará en el portal y continuará. Tomar el control sigue disponible si lo prefiere.",
                       lang
                     )}
                   </p>
-                  <label className="block">
-                    <span className="sr-only">{L("Email", "Correo", lang)}</span>
-                    <input
-                      type="email"
-                      autoComplete="username"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder={L("Email", "Correo", lang)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="sr-only">{L("Password", "Contraseña", lang)}</span>
-                    <input
-                      type="password"
-                      autoComplete="current-password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder={L("Password", "Contraseña", lang)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="sr-only">{L("MFA / OTP (optional)", "MFA / OTP (opcional)", lang)}</span>
-                    <input
-                      type="text"
-                      autoComplete="one-time-code"
-                      inputMode="numeric"
-                      value={loginMfa}
-                      onChange={(e) => setLoginMfa(e.target.value)}
-                      placeholder={L("MFA / OTP (optional)", "MFA / OTP (opcional)", lang)}
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                    />
-                  </label>
+                  {pendingFields.map((field) => (
+                    <label key={field.id} className="block">
+                      <span className="sr-only">
+                        {field.label}
+                        {field.optional ? L(" (optional)", " (opcional)", lang) : ""}
+                      </span>
+                      <input
+                        type={
+                          field.sensitive || field.type === "password"
+                            ? "password"
+                            : field.type === "email"
+                              ? "email"
+                              : field.type === "tel"
+                                ? "tel"
+                                : field.type === "number"
+                                  ? "number"
+                                  : "text"
+                        }
+                        autoComplete={
+                          field.id === "email"
+                            ? "username"
+                            : field.id === "password"
+                              ? "current-password"
+                              : field.id === "mfa"
+                                ? "one-time-code"
+                                : "off"
+                        }
+                        inputMode={field.id === "mfa" || field.type === "tel" ? "numeric" : undefined}
+                        value={fieldValues[field.id] || ""}
+                        onChange={(e) => setFieldValue(field.id, e.target.value)}
+                        placeholder={
+                          field.optional
+                            ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
+                            : field.label
+                        }
+                        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                      />
+                    </label>
+                  ))}
                   <button
                     type="button"
-                    disabled={busy || (!loginEmail.trim() && !loginPassword.trim() && !loginMfa.trim())}
+                    disabled={busy || !canFillFields}
                     onClick={() => void fillAndContinue()}
                     className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                   >
@@ -746,12 +755,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       portalName={L(activeConfig.portalEn, activeConfig.portalEs, lang)}
                       uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
                       pauseStreak={run.pause_streak ?? 0}
-                      loginEmail={loginEmail}
-                      loginPassword={loginPassword}
-                      loginMfa={loginMfa}
-                      onLoginEmail={setLoginEmail}
-                      onLoginPassword={setLoginPassword}
-                      onLoginMfa={setLoginMfa}
+                      pendingFields={pendingFields}
+                      fieldValues={fieldValues}
+                      onFieldChange={setFieldValue}
                       onFillAndContinue={() => void fillAndContinue()}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
@@ -837,12 +843,9 @@ function PauseOverlay({
   portalName,
   uploadsText,
   pauseStreak,
-  loginEmail,
-  loginPassword,
-  loginMfa,
-  onLoginEmail,
-  onLoginPassword,
-  onLoginMfa,
+  pendingFields,
+  fieldValues,
+  onFieldChange,
   onFillAndContinue,
   onResume,
   onStop,
@@ -859,12 +862,9 @@ function PauseOverlay({
   portalName: string;
   uploadsText: string;
   pauseStreak: number;
-  loginEmail: string;
-  loginPassword: string;
-  loginMfa: string;
-  onLoginEmail: (v: string) => void;
-  onLoginPassword: (v: string) => void;
-  onLoginMfa: (v: string) => void;
+  pendingFields: AgencyPendingField[];
+  fieldValues: Record<string, string>;
+  onFieldChange: (id: string, value: string) => void;
   onFillAndContinue: () => void;
   onResume: () => void;
   onStop: () => void;
@@ -874,7 +874,7 @@ function PauseOverlay({
   const icon =
     reason === "USER_UPLOAD" ? (
       <FileUp className="h-6 w-6 text-amber-700" />
-    ) : reason === "USER_LOGIN" ? (
+    ) : reason === "USER_LOGIN" || pendingFields.length > 0 ? (
       <KeyRound className="h-6 w-6 text-amber-700" />
     ) : reason === "PAYMENT" ? (
       <CreditCard className="h-6 w-6 text-amber-700" />
@@ -885,7 +885,7 @@ function PauseOverlay({
   const title =
     reason === "USER_UPLOAD"
       ? L("Upload required documents", "Suba los documentos requeridos", lang)
-      : reason === "USER_LOGIN"
+      : pendingFields.length > 0
         ? L(`Your turn — ${portalName} needs you`, `Te toca a ti — ${portalName} te necesita`, lang)
         : reason === "CAPTCHA"
           ? L("Complete captcha", "Complete el captcha", lang)
@@ -900,10 +900,10 @@ function PauseOverlay({
           `${uploadsText}. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar.`,
           lang
         )
-      : reason === "USER_LOGIN"
+      : pendingFields.length > 0
         ? L(
-            `Enter your ${portalName} email, password, and optional MFA below — SmartPR will fill the portal fields and continue. Or take over the live browser if you prefer to type there yourself. Credentials are used only for this resume and are never stored.`,
-            `Ingrese su correo, contraseña y MFA opcional de ${portalName} abajo — SmartPR llenará los campos del portal y continuará. O tome el control del navegador en vivo si prefiere escribir ahí. Las credenciales solo se usan en esta reanudación y nunca se almacenan.`,
+            `Enter the required fields below — SmartPR will fill the portal and continue. Or take over the live browser if you prefer to type there yourself. Values are used only for this resume and are never stored.`,
+            `Ingrese los campos requeridos abajo — SmartPR llenará el portal y continuará. O tome el control del navegador en vivo si prefiere escribir ahí. Los valores solo se usan en esta reanudación y nunca se almacenan.`,
             lang
           )
         : reason === "CAPTCHA"
@@ -920,8 +920,7 @@ function PauseOverlay({
               )
             : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
 
-  const canFill =
-    Boolean(loginEmail.trim() || loginPassword.trim() || loginMfa.trim());
+  const canFill = pendingFields.some((f) => Boolean((fieldValues[f.id] || "").trim()));
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
@@ -968,33 +967,42 @@ function PauseOverlay({
               </div>
             )}
 
-            {reason === "USER_LOGIN" && (
+            {pendingFields.length > 0 && (
               <div className="mt-3 space-y-2">
-                <input
-                  type="email"
-                  autoComplete="username"
-                  value={loginEmail}
-                  onChange={(e) => onLoginEmail(e.target.value)}
-                  placeholder={L("Email", "Correo", lang)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                />
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  value={loginPassword}
-                  onChange={(e) => onLoginPassword(e.target.value)}
-                  placeholder={L("Password", "Contraseña", lang)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                />
-                <input
-                  type="text"
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  value={loginMfa}
-                  onChange={(e) => onLoginMfa(e.target.value)}
-                  placeholder={L("MFA / OTP (optional)", "MFA / OTP (opcional)", lang)}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                />
+                {pendingFields.map((field) => (
+                  <input
+                    key={field.id}
+                    type={
+                      field.sensitive || field.type === "password"
+                        ? "password"
+                        : field.type === "email"
+                          ? "email"
+                          : field.type === "tel"
+                            ? "tel"
+                            : field.type === "number"
+                              ? "number"
+                              : "text"
+                    }
+                    autoComplete={
+                      field.id === "email"
+                        ? "username"
+                        : field.id === "password"
+                          ? "current-password"
+                          : field.id === "mfa"
+                            ? "one-time-code"
+                            : "off"
+                    }
+                    inputMode={field.id === "mfa" || field.type === "tel" ? "numeric" : undefined}
+                    value={fieldValues[field.id] || ""}
+                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                    placeholder={
+                      field.optional
+                        ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
+                        : field.label
+                    }
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                  />
+                ))}
                 <button
                   type="button"
                   disabled={busy || !canFill}
@@ -1017,7 +1025,7 @@ function PauseOverlay({
               </div>
             )}
 
-            {(reason === "CAPTCHA" || reason === "PAYMENT") && liveUrl && (
+            {(reason === "CAPTCHA" || reason === "PAYMENT") && liveUrl && pendingFields.length === 0 && (
               <button
                 type="button"
                 onClick={onTakeover}
@@ -1053,7 +1061,7 @@ function PauseOverlay({
             )}
 
             <div className="mt-4 flex gap-2">
-              {reason !== "USER_LOGIN" && (
+              {pendingFields.length === 0 && (
                 <button
                   type="button"
                   disabled={busy}
