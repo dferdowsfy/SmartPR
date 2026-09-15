@@ -23,10 +23,18 @@ import {
 import { timelineFor, type MockBeat } from "./mockTimeline";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
 import { PLACEHOLDER_SHOTS } from "./placeholders";
-import { buildResumeTaskPrompt, buildAgencyTaskPrompt, type ResumeCredentials } from "./taskPrompt";
+import { resolvePendingFields } from "./pendingFields";
+import {
+  buildResumeTaskPrompt,
+  buildAgencyTaskPrompt,
+  mergeResumeFields,
+  type ResumeCredentials,
+  type ResumeFields,
+} from "./taskPrompt";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
+  AgencyPendingField,
   AgencyRun,
   AgencyRunEvent,
   AgencyRunPublic,
@@ -63,6 +71,8 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     browser_use_session_id: run.browser_use_session_id,
     provider: run.worker === "browser_use" ? agentProvider() : "mock",
     pause_streak: run.pause_streak,
+    // Labels/types/ids only — never values.
+    pending_fields: run.pending_fields ?? [],
   };
 }
 
@@ -89,6 +99,18 @@ function pushBeat(run: AgencyRun, beat: MockBeat): AgencyRunEvent {
     screenshot_url: PLACEHOLDER_SHOTS[beat.shot],
     kind: beat.kind === "step" ? "info" : beat.kind,
   });
+}
+
+function clearPendingFields(run: AgencyRun): void {
+  run.pending_fields = [];
+}
+
+function applyPendingFields(
+  run: AgencyRun,
+  text: string,
+  reason: AgencyPauseReason
+): void {
+  run.pending_fields = resolvePendingFields(text, reason);
 }
 
 /** Apply any mock beats whose delay has elapsed since segment_started_at. */
@@ -124,17 +146,19 @@ export function advanceMock(run: AgencyRun): AgencyRun {
     run.updated_at = nowIso();
 
     if (beat.kind === "pause") {
-      trackPause(run, beat.pause_reason ?? null, PLACEHOLDER_SHOTS.home);
+      trackPause(run, beat.pause_reason ?? null, PLACEHOLDER_SHOTS.home, beat.message);
       break;
     }
     if (beat.kind === "review") {
       run.status = "review";
       run.pause_reason = null;
+      clearPendingFields(run);
       resetPauseStreak(run);
       break;
     }
     run.status = "running";
     run.pause_reason = null;
+    clearPendingFields(run);
   }
 
   return run;
@@ -171,12 +195,38 @@ function detectMarker(text: string): {
 }
 
 /**
+ * Combine result + lastStepSummary + recent event texts so multi-line
+ * REQUIRED_FIELDS blocks are not lost when the marker and fields span lines
+ * or arrive across result vs events.
+ */
+function latestAgentBlob(bu: BuRun, events: BuEvent[]): string {
+  const chunks: string[] = [];
+  const seen = new Set<string>();
+  const push = (t: string | null | undefined) => {
+    if (!t || !t.trim()) return;
+    if (seen.has(t)) return;
+    seen.add(t);
+    chunks.push(t);
+  };
+  // Prefer result first (completed turn final message often holds the full block).
+  push(bu.result);
+  push(bu.lastStepSummary);
+  for (const e of events) push(e.text);
+  return chunks.join("\n");
+}
+
+/**
  * Track a pause marker on the run, counting consecutive same-reason pauses.
  * When the user is stuck in a pause loop (same reason 3+ times), an extra
  * diagnostic event is logged so the UI can show escalated guidance instead
  * of the identical popup.
  */
-function trackPause(run: AgencyRun, reason: AgencyPauseReason, shot: string): void {
+function trackPause(
+  run: AgencyRun,
+  reason: AgencyPauseReason,
+  shot: string,
+  sourceText?: string
+): void {
   if (reason && reason === run.prev_pause_reason) {
     run.pause_streak += 1;
   } else {
@@ -185,6 +235,7 @@ function trackPause(run: AgencyRun, reason: AgencyPauseReason, shot: string): vo
   }
   run.status = "paused";
   run.pause_reason = reason;
+  applyPendingFields(run, sourceText || "", reason);
   run.updated_at = nowIso();
   if (run.pause_streak === 3) {
     pushEvent(run, {
@@ -210,7 +261,9 @@ function resetPauseStreak(run: AgencyRun): void {
 function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
   if (bu.liveUrl) run.live_url = bu.liveUrl;
 
-  // Latest agent text: worker exposes lastStepSummary; Cloud derives from events.
+  const blob = latestAgentBlob(bu, events);
+
+  // Display / dedupe cursor: prefer lastStepSummary, else latest event text.
   const latestText =
     bu.lastStepSummary ||
     [...events].reverse().find((e) => e.text)?.text ||
@@ -223,13 +276,17 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
   // admins included. A neutral placeholder is recorded instead.
   const loginTakeover =
     run.pause_reason === "USER_LOGIN" ||
-    (latestText ? /PAUSE_USER_LOGIN/.test(latestText.toUpperCase()) : false);
+    (blob ? /PAUSE_USER_LOGIN/.test(blob.toUpperCase()) : false);
 
   const shot = loginTakeover
     ? PLACEHOLDER_SHOTS.login
     : bu.screenshotUrl ||
       run.events[run.events.length - 1]?.screenshot_url ||
       PLACEHOLDER_SHOTS.home;
+
+  // Detect markers against the richest blob so REQUIRED_FIELDS is not missed
+  // when the marker and field lines span result vs lastStepSummary vs events.
+  const detectText = blob || latestText || "";
 
   if (latestText && latestText !== run.bu_last_step) {
     run.bu_last_step = latestText;
@@ -239,16 +296,18 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
       screenshot_url: shot,
       kind: "info",
     });
-    const marker = detectMarker(latestText);
+    const marker = detectMarker(detectText);
     if (marker.status === "paused") {
-      trackPause(run, marker.pause_reason ?? null, shot);
+      trackPause(run, marker.pause_reason ?? null, shot, detectText);
     } else if (marker.status === "review") {
       run.status = "review";
       run.pause_reason = null;
+      clearPendingFields(run);
       resetPauseStreak(run);
     } else if (marker.status === "failed") {
       run.status = "failed";
       run.pause_reason = null;
+      clearPendingFields(run);
       resetPauseStreak(run);
     }
   }
@@ -260,15 +319,20 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
   if (bu.status === "running" && run.status !== "paused" && run.status !== "review") {
     run.status = "running";
     run.pause_reason = null;
+    clearPendingFields(run);
   }
 
   if (bu.status === "completed") {
     // Marker already decided (paused/review/failed from step text) — leave it.
-    if (run.status !== "paused" && run.status !== "review" && run.status !== "failed") {
-      const out = `${bu.result || ""}\n${latestText || ""}`;
+    // Still refresh pending_fields from the full blob if we are paused, in case
+    // REQUIRED_FIELDS only appeared in `result` after the first detect.
+    if (run.status === "paused") {
+      applyPendingFields(run, detectText, run.pause_reason);
+    } else if (run.status !== "review" && run.status !== "failed") {
+      const out = detectText || `${bu.result || ""}\n${latestText || ""}`;
       const marker = detectMarker(out);
       if (marker.status === "paused") {
-        trackPause(run, marker.pause_reason ?? null, shot);
+        trackPause(run, marker.pause_reason ?? null, shot, out);
         pushEvent(run, {
           message: out.trim() || "Paused — waiting for your action on the live browser",
           message_es: out.trim() || "Pausado — esperando su acción en el navegador en vivo",
@@ -278,6 +342,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
       } else if (marker.status === "failed") {
         run.status = "failed";
         run.pause_reason = null;
+        clearPendingFields(run);
         resetPauseStreak(run);
         pushEvent(run, {
           message: out.trim() || "Agent reported a failure",
@@ -290,6 +355,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
         // the user reviews and submits on the portal.
         run.status = "review";
         run.pause_reason = null;
+        clearPendingFields(run);
         resetPauseStreak(run);
         const portal = getFilingConfig(run.filing_type).portalEn;
         pushEvent(run, {
@@ -305,6 +371,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
   if (bu.status === "failed") {
     run.status = "failed";
     run.pause_reason = null;
+    clearPendingFields(run);
     resetPauseStreak(run);
     pushEvent(run, {
       message: bu.error ? `Agent run failed: ${bu.error}` : "Agent run failed",
@@ -318,6 +385,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
     run.status = "stopped";
     run.pause_reason = null;
     run.live_url = null;
+    clearPendingFields(run);
     resetPauseStreak(run);
   }
 
@@ -331,7 +399,7 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
   try {
     const bu = await getAgentRun(run.browser_use_run_id);
 
-    // Append new agent events as step-log events when feasible.
+    // Append new agent events as Assistant events when feasible.
     let events: BuEvent[] = [];
     try {
       const page = await listAgentRunEvents(run.browser_use_run_id, {
@@ -358,14 +426,17 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
         kind: marker.status === "paused" ? "pause" : marker.status === "review" ? "review" : "info",
       });
       if (marker.status === "paused") {
-        run.status = "paused";
-        run.pause_reason = marker.pause_reason ?? null;
+        // Prefer the full blob (result + events) for REQUIRED_FIELDS when available.
+        const blob = latestAgentBlob(bu, events);
+        trackPause(run, marker.pause_reason ?? null, PLACEHOLDER_SHOTS.home, blob || ev.text);
       } else if (marker.status === "review") {
         run.status = "review";
         run.pause_reason = null;
+        clearPendingFields(run);
       } else if (marker.status === "failed") {
         run.status = "failed";
         run.pause_reason = null;
+        clearPendingFields(run);
       }
     }
   } catch (err) {
@@ -412,6 +483,7 @@ export async function createRun(input: {
     passport_snapshot: input.passport || null,
     pause_streak: 0,
     prev_pause_reason: null,
+    pending_fields: [],
   };
 
   if (useBu) {
@@ -495,22 +567,23 @@ export function peekRun(id: string): AgencyRun | null {
 
 export type ResumeRunOptions = {
   /** Ephemeral only — passed into the Browser Use follow-up prompt; never stored on the run. */
+  fields?: ResumeFields | null;
+  /** @deprecated Prefer `fields`. Merged into fields when both are sent. */
   credentials?: ResumeCredentials | null;
 };
 
-function sanitizeCredentials(
-  raw: ResumeCredentials | null | undefined
-): ResumeCredentials | null {
+function sanitizeFields(raw: ResumeFields | null | undefined): ResumeFields | null {
   if (!raw || typeof raw !== "object") return null;
-  const email = typeof raw.email === "string" ? raw.email.trim() : "";
-  const password = typeof raw.password === "string" ? raw.password.trim() : "";
-  const mfa = typeof raw.mfa === "string" ? raw.mfa.trim() : "";
-  if (!email && !password && !mfa) return null;
-  const out: ResumeCredentials = {};
-  if (email) out.email = email;
-  if (password) out.password = password;
-  if (mfa) out.mfa = mfa;
-  return out;
+  const out: ResumeFields = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof k !== "string" || typeof v !== "string") continue;
+    const id = k.trim();
+    const val = v.trim();
+    if (!id || !val) continue;
+    // Cap length to avoid prompt abuse; never log these.
+    out[id.slice(0, 64)] = val.slice(0, 500);
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 export async function resumeRun(
@@ -520,8 +593,11 @@ export async function resumeRun(
   const run = runs().get(id);
   if (!run) return null;
 
-  // Credentials are ephemeral for this call only — never assign onto `run`.
-  const credentials = sanitizeCredentials(options?.credentials);
+  // Field values are ephemeral for this call only — never assign onto `run`.
+  const fields = mergeResumeFields(
+    sanitizeFields(options?.fields),
+    options?.credentials
+  );
 
   if (run.worker === "browser_use") {
     if (run.status !== "paused" && run.status !== "running") {
@@ -530,11 +606,13 @@ export async function resumeRun(
     const prevPause = run.pause_reason;
     run.status = "running";
     run.pause_reason = null;
+    // Clear metadata once values were supplied (or human resumed without fields).
+    clearPendingFields(run);
     run.updated_at = nowIso();
-    if (credentials) {
+    if (fields) {
       pushEvent(run, {
-        message: "User provided login fields from step log — filling and continuing",
-        message_es: "El usuario proporcionó campos de inicio de sesión desde el registro — rellenando y continuando",
+        message: "User provided required fields from Assistant — filling and continuing",
+        message_es: "El usuario proporcionó los campos requeridos desde Asistente — rellenando y continuando",
         screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
         kind: "info",
       });
@@ -551,14 +629,14 @@ export async function resumeRun(
         const bu = await getAgentRun(run.browser_use_run_id);
         if (bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled") {
           // Follow-up turn on the same session with the resume brief.
-          // Credentials (if any) go only into the task message — never logged.
+          // Field values (if any) go only into the task message — never logged.
           const queued = await queueAgentMessage(
             run.browser_use_session_id,
             buildResumeTaskPrompt({
               config: getFilingConfig(run.filing_type),
               pauseReason: prevPause,
               passport: run.passport_snapshot ?? null,
-              credentials,
+              fields,
             })
           );
           if (queued.runId) run.browser_use_run_id = queued.runId;
@@ -581,12 +659,13 @@ export async function resumeRun(
   }
   run.status = "running";
   run.pause_reason = null;
+  clearPendingFields(run);
   run.segment_started_at = nowIso();
   run.updated_at = nowIso();
-  if (credentials) {
+  if (fields) {
     pushEvent(run, {
-      message: "User provided login fields from step log — filling and continuing",
-      message_es: "El usuario proporcionó campos de inicio de sesión desde el registro — rellenando y continuando",
+      message: "User provided required fields from Assistant — filling and continuing",
+      message_es: "El usuario proporcionó los campos requeridos desde Asistente — rellenando y continuando",
       screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
       kind: "info",
     });
@@ -603,8 +682,8 @@ export async function resumeRun(
 
 /**
  * Record that the user took over the live browser. The run status itself is
- * unchanged (still paused/running) — this only logs the handoff so the step
- * log ("notifications") reflects the takeover.
+ * unchanged (still paused/running) — this only logs the handoff so the
+ * Assistant panel ("notifications") reflects the takeover.
  */
 export function takeoverRun(id: string): AgencyRunPublic | null {
   const run = runs().get(id);
@@ -669,6 +748,7 @@ export async function stopRun(id: string): Promise<AgencyRunPublic | null> {
 
   run.status = "stopped";
   run.pause_reason = null;
+  clearPendingFields(run);
   run.updated_at = nowIso();
   resetPauseStreak(run);
   pushEvent(run, {
@@ -695,4 +775,4 @@ export function assertRunOwner(run: AgencyRun, userId: string | null): boolean {
   return run.owner_user_id === userId;
 }
 
-export type { AgencyRunStatus };
+export type { AgencyRunStatus, AgencyPendingField };
