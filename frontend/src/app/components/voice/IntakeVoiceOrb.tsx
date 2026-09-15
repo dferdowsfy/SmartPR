@@ -2,14 +2,42 @@
 
 // Floating SmartPR voice orb for intake Start — STT then existing interpret path.
 // No businessId required. CSS/Tailwind only (respects prefers-reduced-motion).
+// Visual: deep teal core + cyan/mint glass halo + white sparkles (not mic FAB).
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Mic, Square, Type, X } from "lucide-react";
+import { ChevronRight, Square, Type, X } from "lucide-react";
+import {
+  MIN_AUDIO_BLOB_BYTES,
+  appendAudioFormField,
+  pickRecorderMime,
+  startRecorderWithTimeslice,
+  stopRecorderAndCollect,
+  sttErrorMessage,
+} from "./recordAudioBlob";
 
 type OrbState = "idle" | "listening" | "processing" | "error";
 type Lang = "en" | "es";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
+
+/** White multi-sparkle (three 4-point stars) — primary orb icon per mock. */
+function SparkleStarsIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden
+      className={className}
+    >
+      {/* Large center sparkle */}
+      <path d="M12 2.2l1.15 5.35L18.5 8.7l-5.35 1.15L12 15.2l-1.15-5.35L5.5 8.7l5.35-1.15L12 2.2z" />
+      {/* Upper-right small */}
+      <path d="M18.2 3.1l0.55 2.15L20.9 5.8l-2.15.55-.55 2.15-.55-2.15-2.15-.55 2.15-.55.55-2.15z" />
+      {/* Lower-left small */}
+      <path d="M6.3 14.4l0.5 1.95L8.75 16.85l-1.95.5-.5 1.95-.5-1.95-1.95-.5 1.95-.5.5-1.95z" />
+    </svg>
+  );
+}
 
 export interface IntakeVoiceOrbProps {
   lang: Lang;
@@ -27,10 +55,10 @@ export function IntakeVoiceOrb({
   onUseTextInstead,
   busy = false,
 }: IntakeVoiceOrbProps) {
-  const [open, setOpen] = useState(false);
   const [state, setState] = useState<OrbState>("idle");
   const [level, setLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [showPanel, setShowPanel] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -39,6 +67,7 @@ export function IntakeVoiceOrb({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const stoppingRef = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -59,26 +88,30 @@ export function IntakeVoiceOrb({
   const teardownMedia = useCallback(() => {
     stopMeter();
     mediaRecorderRef.current = null;
+    chunksRef.current = [];
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     void audioCtxRef.current?.close().catch(() => undefined);
     audioCtxRef.current = null;
     analyserRef.current = null;
+    stoppingRef.current = false;
   }, [stopMeter]);
 
   useEffect(() => () => teardownMedia(), [teardownMedia]);
 
+  const stopListeningRef = useRef<() => void>(() => undefined);
+
   useEffect(() => {
-    if (!open) return;
+    if (!showPanel && state !== "listening" && state !== "processing") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setOpen(false);
-        if (state === "listening") mediaRecorderRef.current?.stop();
+        setShowPanel(false);
+        if (state === "listening") stopListeningRef.current();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, state]);
+  }, [showPanel, state]);
 
   const startMeter = useCallback(
     (stream: MediaStream) => {
@@ -112,27 +145,42 @@ export function IntakeVoiceOrb({
     async (blob: Blob | null) => {
       setState("processing");
       setError(null);
+      setShowPanel(true);
 
       try {
-        if (!blob || blob.size === 0) {
+        if (!blob || blob.size < MIN_AUDIO_BLOB_BYTES) {
+          console.warn("[IntakeVoiceOrb] audio blob too small", blob?.size ?? 0);
           setState("error");
-          setError(L("Nothing to send.", "No hay nada que enviar.", lang));
+          setError(
+            L(
+              "Recording too short or empty. Hold the orb and speak for a moment, then stop.",
+              "Grabación demasiado corta o vacía. Mantenga el orbe y hable un momento, luego detenga.",
+              lang
+            )
+          );
           return;
         }
 
         const form = new FormData();
         form.append("language", lang);
-        form.append("audio", blob, blob.type.includes("ogg") ? "audio.ogg" : "audio.webm");
+        appendAudioFormField(form, blob);
 
         const res = await fetch("/api/intake/voice", { method: "POST", body: form });
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
+          detail?: unknown;
           transcript?: string;
         };
 
         if (!res.ok) {
+          console.error("[IntakeVoiceOrb] STT failed", res.status, data);
           setState("error");
-          setError(data.error || L("Could not process voice.", "No se pudo procesar la voz.", lang));
+          setError(
+            sttErrorMessage(
+              data,
+              L("Could not process voice.", "No se pudo procesar la voz.", lang)
+            )
+          );
           return;
         }
 
@@ -145,8 +193,9 @@ export function IntakeVoiceOrb({
 
         await onTranscript(transcript);
         setState("idle");
-        setOpen(false);
-      } catch {
+        setShowPanel(false);
+          } catch (err) {
+        console.error("[IntakeVoiceOrb] network/STT error", err);
         setState("error");
         setError(L("Network error. Try again.", "Error de red. Inténtelo de nuevo.", lang));
       }
@@ -159,6 +208,7 @@ export function IntakeVoiceOrb({
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setState("error");
+      setShowPanel(true);
       setError(
         L(
           "Microphone not supported in this browser.",
@@ -166,241 +216,260 @@ export function IntakeVoiceOrb({
           lang
         )
       );
-      setOpen(true);
       return;
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+        },
+      });
       streamRef.current = stream;
-      chunksRef.current = [];
 
-      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : MediaRecorder.isTypeSupported("audio/webm")
-          ? "audio/webm"
-          : MediaRecorder.isTypeSupported("audio/ogg")
-            ? "audio/ogg"
-            : "";
-
-      const recorder = mime
-        ? new MediaRecorder(stream, { mimeType: mime })
-        : new MediaRecorder(stream);
-
+      const { mimeType } = pickRecorderMime();
+      const { recorder, chunks } = startRecorderWithTimeslice(stream, mimeType);
       mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        teardownMedia();
-        void processBlob(blob);
-      };
+      chunksRef.current = chunks;
 
-      recorder.start();
       startMeter(stream);
       setState("listening");
-      setOpen(true);
+      setShowPanel(false);
     } catch {
       teardownMedia();
       setState("error");
+      setShowPanel(true);
       setError(L("Microphone permission denied.", "Permiso de micrófono denegado.", lang));
-      setOpen(true);
     }
-  }, [lang, processBlob, startMeter, teardownMedia]);
+  }, [lang, startMeter, teardownMedia]);
 
-  const stopListening = useCallback(() => {
+  const stopListening = useCallback(async () => {
     const rec = mediaRecorderRef.current;
-    if (rec && rec.state !== "inactive") {
-      rec.stop();
-    } else {
+    if (!rec || stoppingRef.current) return;
+    if (rec.state === "inactive") {
       teardownMedia();
       setState("idle");
+      return;
     }
-  }, [teardownMedia]);
+    stoppingRef.current = true;
+    setState("processing");
+    try {
+      const blob = await stopRecorderAndCollect(rec, chunksRef.current);
+      teardownMedia();
+      await processBlob(blob);
+    } catch (err) {
+      console.error("[IntakeVoiceOrb] stop/collect failed", err);
+      teardownMedia();
+      setState("error");
+      setShowPanel(true);
+      setError(L("Could not finish recording.", "No se pudo terminar la grabación.", lang));
+    }
+  }, [lang, processBlob, teardownMedia]);
 
-  const glowScale = 1 + (reducedMotion ? 0 : level * 0.35);
-  const glowOpacity = 0.35 + (reducedMotion ? 0 : level * 0.45);
+  stopListeningRef.current = () => {
+    void stopListening();
+  };
+
   const blocked = busy || state === "processing";
+  const glowScale = 1 + (reducedMotion ? 0 : level * 0.28);
 
-  const statusLabel =
+  const tooltipText =
     state === "listening"
-      ? L("Listening… tap to stop", "Escuchando… toque para detener", lang)
+      ? L("Listening… tap orb to stop", "Escuchando… toque el orbe para detener", lang)
       : state === "processing"
-        ? L("Processing…", "Procesando…", lang)
+        ? L("Transcribing…", "Transcribiendo…", lang)
         : state === "error"
           ? L("Something went wrong", "Algo salió mal", lang)
           : L("Tell SmartPR about your business", "Cuéntele a SmartPR sobre su negocio", lang);
 
+  const pillText =
+    state === "listening"
+      ? L("Speak now — I'll capture what I can.", "Hable ahora — capturaré lo que pueda.", lang)
+      : state === "processing"
+        ? L("Almost there…", "Ya casi…", lang)
+        : L("Speak naturally. I'll fill in what I can.", "Hable con naturalidad. Completaré lo que pueda.", lang);
+
+  const showHints = state !== "error";
+
   return (
-    <div className="pointer-events-none fixed z-40 flex flex-col items-end gap-3 max-md:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] max-md:right-4 md:right-6 md:top-[min(38%,calc(100%-12rem))]">
-      {open && (
-        <div
-          role="dialog"
-          aria-label={L("SmartPR voice intake", "Admisión por voz SmartPR", lang)}
-          className="pointer-events-auto w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10"
-        >
-          <header className="flex items-start gap-3 border-b border-slate-100 bg-gradient-to-br from-[#245c5c]/[0.08] to-transparent px-4 py-3">
-            <span
-              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-white"
-              aria-hidden
-            >
-              <Mic className="h-4 w-4" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-[#161616]">{statusLabel}</div>
-              <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
-                {L(
-                  "Speak naturally. We'll capture the details we recognize and add them for your review.",
-                  "Hable con naturalidad. Capturaremos los detalles que reconozcamos y los añadiremos para su revisión.",
-                  lang
-                )}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (state === "listening") stopListening();
-                setOpen(false);
-              }}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              aria-label={L("Close", "Cerrar", lang)}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </header>
-
-          <div className="space-y-3 px-4 py-3">
+    <div className="pointer-events-none fixed z-40 flex flex-col items-center gap-2.5 max-md:bottom-[calc(1.25rem+env(safe-area-inset-bottom))] max-md:right-3 md:right-5 md:top-[min(36%,calc(100%-14rem))]">
+      {/* Upper white tooltip */}
+      {showHints && (
+        <div className="pointer-events-auto relative max-w-[14.5rem]">
+          <button
+            type="button"
+            disabled={blocked && state !== "listening"}
+            onClick={() => {
+              if (state === "listening") void stopListening();
+              else if (state === "idle") void startListening();
+            }}
+            className="flex items-center gap-1.5 rounded-2xl border border-white/80 bg-white px-3.5 py-2 text-left text-[12px] font-semibold leading-snug text-[#1a2e2e] shadow-[0_8px_24px_rgba(36,92,92,0.12)]"
+          >
+            <span className="min-w-0 flex-1">{tooltipText}</span>
             {state === "idle" && (
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  disabled={blocked}
-                  onClick={() => void startListening()}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-[#f6f3ea] disabled:opacity-40"
-                >
-                  <Mic className="h-4 w-4" />
-                  {L("Press to speak", "Mantener / pulsar para hablar", lang)}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    onUseTextInstead?.();
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  <Type className="h-4 w-4" />
-                  {L("Use text instead", "Usar texto en su lugar", lang)}
-                </button>
-              </div>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden />
             )}
-
-            {state === "listening" && (
-              <div className="flex flex-col items-center gap-3 py-2">
-                <div
-                  className="relative flex h-16 w-16 items-center justify-center rounded-full bg-brand text-white"
-                  style={{
-                    boxShadow: `0 0 ${18 + level * 28}px rgba(36,92,92,${glowOpacity})`,
-                    transform: reducedMotion ? undefined : `scale(${glowScale})`,
-                    transition: reducedMotion ? undefined : "transform 80ms linear",
-                  }}
-                >
-                  <Mic className="h-6 w-6" />
-                </div>
-                <button
-                  type="button"
-                  onClick={stopListening}
-                  className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-800"
-                >
-                  <Square className="h-3.5 w-3.5 fill-current" />
-                  {L("Stop", "Detener", lang)}
-                </button>
-              </div>
-            )}
-
-            {state === "processing" && (
-              <div className="flex items-center gap-3 py-4 text-sm text-slate-600">
-                <span
-                  className={`inline-block h-4 w-4 rounded-full border-2 border-brand border-t-transparent ${
-                    reducedMotion ? "" : "animate-spin"
-                  }`}
-                  aria-hidden
-                />
-                {L("Transcribing…", "Transcribiendo…", lang)}
-              </div>
-            )}
-
-            {error && (
-              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
-                {error}
-              </p>
-            )}
-
-            {(state === "error" || (state === "idle" && error)) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setState("idle");
-                  setError(null);
-                }}
-                className="w-full text-center text-xs font-semibold text-brand hover:underline"
-              >
-                {L("Try again", "Intentar de nuevo", lang)}
-              </button>
-            )}
-          </div>
+          </button>
+          {/* Arrow / chevron pointing down at orb */}
+          <span
+            aria-hidden
+            className="absolute left-1/2 top-full -mt-px h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-white/80 bg-white shadow-[2px_2px_4px_rgba(36,92,92,0.06)]"
+          />
         </div>
       )}
 
+      {/* Orb + glass halo */}
       <button
         type="button"
         disabled={blocked && state !== "listening"}
         onClick={() => {
           if (state === "listening") {
-            stopListening();
-          } else if (!open) {
-            setOpen(true);
+            void stopListening();
+          } else if (state === "processing") {
+            return;
+          } else if (state === "error") {
             setState("idle");
             setError(null);
-          } else if (state === "idle") {
-            void startListening();
+            setShowPanel(true);
           } else {
-            setOpen(false);
+            void startListening();
           }
         }}
         aria-label={L("SmartPR voice intake", "Admisión por voz SmartPR", lang)}
-        aria-expanded={open}
-        className="pointer-events-auto relative flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-[#245c5c]/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-60"
+        aria-busy={state === "processing" || state === "listening"}
+        className="pointer-events-auto group relative flex h-[4.25rem] w-[4.25rem] items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70"
         style={{
-          boxShadow:
-            state === "listening"
-              ? `0 0 ${20 + level * 36}px rgba(36,92,92,${0.45 + level * 0.4}), 0 10px 24px rgba(36,92,92,0.35)`
-              : undefined,
           transform:
             state === "listening" && !reducedMotion ? `scale(${glowScale})` : undefined,
-          transition: reducedMotion ? undefined : "transform 80ms linear, box-shadow 80ms linear",
+          transition: reducedMotion ? undefined : "transform 90ms linear",
         }}
       >
+        {/* Soft cyan/mint glass halo */}
         <span
           aria-hidden
-          className={`absolute inset-0 rounded-full bg-brand/30 ${
+          className={`absolute inset-[-10px] rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(167,243,208,0.55)_0%,rgba(103,232,249,0.28)_42%,rgba(36,92,92,0.06)_70%,transparent_78%)] ${
             state === "listening" && !reducedMotion ? "animate-pulse" : ""
           }`}
-          style={{ transform: `scale(${1.15 + (reducedMotion ? 0 : level * 0.25)})` }}
+          style={{
+            filter: "blur(0.5px)",
+            opacity: 0.95 + (reducedMotion ? 0 : level * 0.15),
+            transform: `scale(${1 + (reducedMotion ? 0 : level * 0.12)})`,
+          }}
         />
-        {state === "listening" ? (
-          <Square className="relative h-5 w-5 fill-current" />
-        ) : state === "processing" ? (
-          <span
-            className={`relative inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
-              reducedMotion ? "" : "animate-spin"
-            }`}
-          />
-        ) : (
-          <Mic className="relative h-5 w-5" />
-        )}
+        {/* Outer frosted ring */}
+        <span
+          aria-hidden
+          className="absolute inset-[-4px] rounded-full border border-cyan-100/70 bg-gradient-to-br from-white/50 via-teal-100/25 to-cyan-200/30 shadow-[0_10px_28px_rgba(36,92,92,0.18),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-[2px]"
+        />
+        {/* Deep teal core */}
+        <span
+          aria-hidden
+          className="absolute inset-[6px] rounded-full bg-[#245c5c] shadow-[inset_0_2px_6px_rgba(255,255,255,0.18),0_4px_14px_rgba(36,92,92,0.35)]"
+          style={{
+            boxShadow:
+              state === "listening"
+                ? `inset 0 2px 6px rgba(255,255,255,0.2), 0 0 ${16 + level * 28}px rgba(45,212,191,${0.35 + level * 0.35}), 0 6px 18px rgba(36,92,92,0.4)`
+                : undefined,
+          }}
+        />
+        {/* Icon */}
+        <span className="relative z-10 text-white">
+          {state === "listening" ? (
+            <Square className="h-5 w-5 fill-current" />
+          ) : state === "processing" ? (
+            <span
+              className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
+                reducedMotion ? "" : "animate-spin"
+              }`}
+            />
+          ) : (
+            <SparkleStarsIcon className="h-6 w-6 drop-shadow-sm" />
+          )}
+        </span>
       </button>
+
+      {/* Lower translucent mint pill */}
+      {showHints && (
+        <div className="pointer-events-none relative z-10 -mt-0.5 max-w-[13.5rem] rounded-full border border-emerald-100/80 bg-[rgba(209,250,229,0.72)] px-3.5 py-1.5 text-center text-[10.5px] font-medium leading-snug text-[#1f3d3d] shadow-[0_4px_14px_rgba(36,92,92,0.08)] backdrop-blur-md">
+          {pillText}
+        </div>
+      )}
+
+      {/* Compact status / error / text fallback panel — not a chatbot FAB card */}
+      {(showPanel || error) && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-auto mt-1 w-[min(100vw-2rem,16.5rem)] overflow-hidden rounded-2xl border border-teal-100/80 bg-white/95 shadow-lg shadow-teal-950/10 backdrop-blur"
+        >
+          <div className="flex items-start gap-2 px-3 py-2.5">
+            <div className="min-w-0 flex-1 space-y-2">
+              {error && (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] font-medium leading-snug text-amber-950">
+                  {error}
+                </p>
+              )}
+              {state === "processing" && !error && (
+                <p className="flex items-center gap-2 text-[11px] font-medium text-slate-600">
+                  <span
+                    className={`inline-block h-3.5 w-3.5 rounded-full border-2 border-[#245c5c] border-t-transparent ${
+                      reducedMotion ? "" : "animate-spin"
+                    }`}
+                    aria-hidden
+                  />
+                  {L("Transcribing…", "Transcribiendo…", lang)}
+                </p>
+              )}
+              {(state === "error" || state === "idle") && (
+                <div className="flex flex-col gap-1.5">
+                  {state === "error" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setState("idle");
+                        setError(null);
+                        void startListening();
+                      }}
+                      className="w-full rounded-xl bg-[#245c5c] px-3 py-2 text-[12px] font-semibold text-[#f6f3ea]"
+                    >
+                      {L("Try again", "Intentar de nuevo", lang)}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPanel(false);
+                                        setError(null);
+                      setState("idle");
+                      onUseTextInstead?.();
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    <Type className="h-3.5 w-3.5" />
+                    {L("Use text instead", "Usar texto en su lugar", lang)}
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPanel(false);
+                if (state === "error") {
+                  setError(null);
+                  setState("idle");
+                }
+              }}
+              className="rounded-lg p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              aria-label={L("Dismiss", "Cerrar", lang)}
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Mic, Square, Type, X } from "lucide-react";
 import {
+  MIN_AUDIO_BLOB_BYTES,
+  appendAudioFormField,
+  pickRecorderMime,
+  startRecorderWithTimeslice,
+  stopRecorderAndCollect,
+  sttErrorMessage,
+} from "../components/voice/recordAudioBlob";
+import {
   canonicalFromBusinessRow,
   passportJsonFromCanonical,
   type BusinessPassportJson,
@@ -87,6 +95,7 @@ export function PassportVoiceOrb({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const stoppingRef = useRef(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const orbRef = useRef<HTMLButtonElement>(null);
 
@@ -109,11 +118,13 @@ export function PassportVoiceOrb({
   const teardownMedia = useCallback(() => {
     stopMeter();
     mediaRecorderRef.current = null;
+    chunksRef.current = [];
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     void audioCtxRef.current?.close().catch(() => undefined);
     audioCtxRef.current = null;
     analyserRef.current = null;
+    stoppingRef.current = false;
   }, [stopMeter]);
 
   useEffect(() => () => teardownMedia(), [teardownMedia]);
@@ -177,8 +188,19 @@ export function PassportVoiceOrb({
         }
         if (text?.trim()) {
           form.append("text", text.trim());
-        } else if (blob && blob.size > 0) {
-          form.append("audio", blob, blob.type.includes("ogg") ? "audio.ogg" : "audio.webm");
+        } else if (blob && blob.size >= MIN_AUDIO_BLOB_BYTES) {
+          appendAudioFormField(form, blob);
+        } else if (blob) {
+          console.warn("[PassportVoiceOrb] audio blob too small", blob.size);
+          setState("error");
+          setError(
+            L(
+              "Recording too short or empty. Hold the orb and speak for a moment, then stop.",
+              "Grabación demasiado corta o vacía. Mantenga el orbe y hable un momento, luego detenga.",
+              lang
+            )
+          );
+          return;
         } else {
           setState("error");
           setError(L("Nothing to send.", "No hay nada que enviar.", lang));
@@ -188,14 +210,21 @@ export function PassportVoiceOrb({
         const res = await fetch("/api/passport/voice", { method: "POST", body: form });
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
+          detail?: unknown;
           transcript?: string;
           proposals?: PassportVoiceProposal[];
           count?: number;
         };
 
         if (!res.ok) {
+          console.error("[PassportVoiceOrb] STT/voice failed", res.status, data);
           setState("error");
-          setError(data.error || L("Could not process voice.", "No se pudo procesar la voz.", lang));
+          setError(
+            sttErrorMessage(
+              data,
+              L("Could not process voice.", "No se pudo procesar la voz.", lang)
+            )
+          );
           return;
         }
 
@@ -241,34 +270,20 @@ export function PassportVoiceOrb({
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          channelCount: 1,
+        },
+      });
       streamRef.current = stream;
-      chunksRef.current = [];
 
-      const mime =
-        MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-          ? "audio/webm;codecs=opus"
-          : MediaRecorder.isTypeSupported("audio/webm")
-            ? "audio/webm"
-            : MediaRecorder.isTypeSupported("audio/ogg")
-              ? "audio/ogg"
-              : "";
-
-      const recorder = mime
-        ? new MediaRecorder(stream, { mimeType: mime })
-        : new MediaRecorder(stream);
-
+      const { mimeType } = pickRecorderMime();
+      const { recorder, chunks } = startRecorderWithTimeslice(stream, mimeType);
       mediaRecorderRef.current = recorder;
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        teardownMedia();
-        void processBlob(blob);
-      };
+      chunksRef.current = chunks;
 
-      recorder.start();
       startMeter(stream);
       setState("listening");
       setOpen(true);
@@ -287,14 +302,28 @@ export function PassportVoiceOrb({
   }, [lang, processBlob, startMeter, teardownMedia]);
 
   const stopListening = useCallback(() => {
-    const rec = mediaRecorderRef.current;
-    if (rec && rec.state !== "inactive") {
-      rec.stop();
-    } else {
-      teardownMedia();
-      setState("idle");
-    }
-  }, [teardownMedia]);
+    void (async () => {
+      const rec = mediaRecorderRef.current;
+      if (!rec || stoppingRef.current) return;
+      if (rec.state === "inactive") {
+        teardownMedia();
+        setState("idle");
+        return;
+      }
+      stoppingRef.current = true;
+      setState("processing");
+      try {
+        const blob = await stopRecorderAndCollect(rec, chunksRef.current);
+        teardownMedia();
+        await processBlob(blob);
+      } catch (err) {
+        console.error("[PassportVoiceOrb] stop/collect failed", err);
+        teardownMedia();
+        setState("error");
+        setError(L("Could not finish recording.", "No se pudo terminar la grabación.", lang));
+      }
+    })();
+  }, [lang, processBlob, teardownMedia]);
 
   const toggleOrb = useCallback(() => {
     if (state === "listening") {

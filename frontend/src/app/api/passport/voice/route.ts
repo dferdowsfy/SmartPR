@@ -402,8 +402,15 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     if (e instanceof XaiApiError) {
+      const detail = (e.detail || "").trim();
+      console.error("[passport/voice] STT xAI error", e.status, detail);
       return Response.json(
-        { error: `xAI error ${e.status}`, detail: e.detail },
+        {
+          error: detail
+            ? `xAI STT error ${e.status}: ${detail.slice(0, 400)}`
+            : `xAI STT error ${e.status}`,
+          detail: detail || undefined,
+        },
         { status: 502 }
       );
     }
