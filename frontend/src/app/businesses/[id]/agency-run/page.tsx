@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Agency assistant live run panel — Phase 2 UI skeleton.
- * Mock worker advances on poll; no Playwright / real SURI automation in this PR.
+ * Agency assistant live run panel.
+ * Browser Use Cloud when BROWSER_USE_API_KEY is set; mock timeline otherwise.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -90,7 +90,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     if (!run?.id) return;
     if (run.status === "stopped" || run.status === "failed" || run.status === "review") return;
-    // Keep polling while queued/running/paused so the mock timeline advances.
+    // Keep polling while queued/running/paused so mock advances / Browser Use syncs.
     const handle = window.setInterval(() => {
       void poll(run.id);
     }, 900);
@@ -233,8 +233,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               </h1>
               <p className="mt-2 max-w-3xl text-sm text-[#5a5a5a]">
                 {L(
-                  "Skeleton demo: mock steps + placeholder screenshots. Real browser worker lands in a later PR.",
-                  "Demo esqueleto: pasos simulados + capturas de marcador. El trabajador real del navegador llega en un PR posterior.",
+                  "Assisted SURI filing with live browser preview when Browser Use Cloud is configured. Mock timeline runs when the API key is unset.",
+                  "Trámite SURI asistido con vista previa en vivo cuando Browser Use Cloud está configurado. Línea de tiempo simulada si no hay API key.",
                   lang
                 )}
               </p>
@@ -396,20 +396,34 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               </div>
             </aside>
 
-            {/* Screenshot panel */}
+            {/* Live browser / screenshot panel */}
             <section className="relative flex min-h-[70vh] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
               <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                 <h2 className="text-sm font-bold text-[#161616]">
-                  {L("Assisted browser (mock)", "Navegador asistido (simulado)", lang)}
+                  {run.live_url
+                    ? L("Assisted browser (live)", "Navegador asistido (en vivo)", lang)
+                    : run.worker === "browser_use"
+                      ? L("Assisted browser", "Navegador asistido", lang)
+                      : L("Assisted browser (mock)", "Navegador asistido (simulado)", lang)}
                 </h2>
                 <span className="text-[11px] font-medium text-slate-400">
-                  {L("Placeholder screenshots — not live SURI", "Capturas de marcador — no es SURI en vivo", lang)}
+                  {run.live_url
+                    ? L("Live preview — suri.hacienda.pr.gov", "Vista previa en vivo — suri.hacienda.pr.gov", lang)
+                    : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
                 </span>
               </div>
 
               <div className="relative flex flex-1 flex-col bg-slate-900/5 p-3">
                 <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner">
-                  {latestShot ? (
+                  {run.live_url ? (
+                    <iframe
+                      src={run.live_url}
+                      title={L("Live Browser Use session", "Sesión Browser Use en vivo", lang)}
+                      className="h-full w-full border-0 bg-white"
+                      allow="clipboard-read; clipboard-write; autoplay"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : latestShot ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={latestShot.screenshot_url}
@@ -469,8 +483,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   )}
                 </div>
 
-                {/* Filmstrip */}
-                {filmstrip.length > 0 && (
+                {/* Filmstrip — screenshots when not embedding live preview */}
+                {!run.live_url && filmstrip.length > 0 && (
                   <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
                     {filmstrip.map((frame) => (
                       <div
