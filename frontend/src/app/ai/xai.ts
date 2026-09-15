@@ -72,3 +72,61 @@ export async function requestXaiText(options: {
 
   return outputText((await response.json()) as XaiResponse);
 }
+
+export type XaiSttResult = {
+  text: string;
+  language?: string;
+  duration?: number;
+};
+
+/**
+ * REST speech-to-text via POST /v1/stt (multipart).
+ * ~$0.10/hr — not speech-to-speech. Options must precede `file` in the form.
+ */
+export async function requestXaiStt(options: {
+  file: Blob;
+  filename?: string;
+  language?: string;
+  keyterms?: string[];
+  signal?: AbortSignal;
+}): Promise<XaiSttResult> {
+  if (!XAI_API_KEY) throw new Error("XAI_API_KEY is not configured on the server.");
+
+  const form = new FormData();
+  // Option fields must precede `file` per xAI multipart requirements.
+  form.append("format", "true");
+  if (options.language) form.append("language", options.language);
+  for (const term of options.keyterms || []) {
+    const trimmed = term.trim().slice(0, 50);
+    if (trimmed) form.append("keyterm", trimmed);
+  }
+  const filename = options.filename || "audio.webm";
+  form.append("file", options.file, filename);
+
+  const response = await fetch(`${XAI_BASE_URL}/stt`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${XAI_API_KEY}`,
+      Accept: "application/json",
+    },
+    body: form,
+    signal: options.signal,
+  });
+
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 500);
+    throw new XaiApiError(response.status, detail);
+  }
+
+  const payload = (await response.json()) as {
+    text?: string;
+    language?: string;
+    duration?: number;
+  };
+
+  return {
+    text: typeof payload.text === "string" ? payload.text : "",
+    language: typeof payload.language === "string" ? payload.language : undefined,
+    duration: typeof payload.duration === "number" ? payload.duration : undefined,
+  };
+}
