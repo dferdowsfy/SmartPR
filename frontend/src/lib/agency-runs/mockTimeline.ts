@@ -71,8 +71,8 @@ export function timelineFor(filingType: AgencyFilingType): MockBeat[] {
       {
         kind: "pause",
         delayMs: 1000,
-        message: "Paused for uploads: photo ID, utility bill, SSN card. Max 5 MB each. WhatsApp help: +1-301-221-5129",
-        message_es: "Pausa para adjuntos: ID con foto, factura de utilidad, tarjeta SSN. Máx. 5 MB c/u. WhatsApp: +1-301-221-5129",
+        message: "Paused for uploads: photo ID, utility bill, SSN card. Max 5 MB each",
+        message_es: "Pausa para adjuntos: ID con foto, factura de utilidad, tarjeta SSN. Máx. 5 MB c/u",
         shot: "upload",
         pause_reason: "USER_UPLOAD",
       },
@@ -128,8 +128,8 @@ export function timelineFor(filingType: AgencyFilingType): MockBeat[] {
     {
       kind: "pause",
       delayMs: 1000,
-      message: "Paused for supporting uploads (max 5 MB). WhatsApp interventions: +1-301-221-5129",
-      message_es: "Pausa para adjuntos de apoyo (máx. 5 MB). Intervenciones WhatsApp: +1-301-221-5129",
+      message: "Paused for supporting uploads (max 5 MB)",
+      message_es: "Pausa para adjuntos de apoyo (máx. 5 MB)",
       shot: "upload",
       pause_reason: "USER_UPLOAD",
     },

@@ -44,7 +44,6 @@ HARD RULES (never violate)
    - PAUSE_CAPTCHA — captcha / portal challenge
    - PAUSE_PAYMENT — payment required
 5. Prefer Verify Address when the portal requires it before Next.
-6. WhatsApp intervention number for the human (mention if stuck): +1-301-221-5129
 
 BUSINESS PASSPORT JSON (prefill source)
 \`\`\`json

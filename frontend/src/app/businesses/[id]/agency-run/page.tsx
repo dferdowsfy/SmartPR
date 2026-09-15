@@ -314,7 +314,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     <li>{L("Domain allowlist: suri.hacienda.pr.gov only.", "Dominio permitido: solo suri.hacienda.pr.gov.", lang)}</li>
                     <li>{L("Pauses for uploads, login/MFA, and captcha.", "Pausa para adjuntos, inicio de sesión/MFA y captcha.", lang)}</li>
                     <li>{L("Prefill from Business Passport; sensitive IDs are not stored.", "Relleno desde el Pasaporte de Negocio; los ID sensibles no se almacenan.", lang)}</li>
-                    <li>{L("WhatsApp interventions: +1-301-221-5129", "Intervenciones WhatsApp: +1-301-221-5129", lang)}</li>
                   </ul>
                 </div>
               </div>
@@ -591,8 +590,8 @@ function PauseOverlay({
   const body =
     reason === "USER_UPLOAD"
       ? L(
-          "Photo ID, utility bill, and SSN card copy for Register Taxpayer. Max 5 MB per file. Upload into Evidence Locker, then Resume. WhatsApp help: +1-301-221-5129.",
-          "ID con foto, factura de utilidad y copia de tarjeta SSN. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar. WhatsApp: +1-301-221-5129.",
+          "Photo ID, utility bill, and SSN card copy for Register Taxpayer. Max 5 MB per file. Upload into Evidence Locker, then Resume.",
+          "ID con foto, factura de utilidad y copia de tarjeta SSN. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar.",
           lang
         )
       : reason === "USER_LOGIN"
@@ -603,8 +602,8 @@ function PauseOverlay({
           )
         : reason === "CAPTCHA"
           ? L(
-              "Complete the portal captcha / challenge, then Resume. WhatsApp interventions: +1-301-221-5129.",
-              "Complete el captcha / desafío del portal y luego Reanudar. Intervenciones WhatsApp: +1-301-221-5129.",
+              "Complete the portal captcha / challenge, then Resume.",
+              "Complete el captcha / desafío del portal y luego Reanudar.",
               lang
             )
           : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
