@@ -64,9 +64,11 @@ export interface BusinessPassportPanelProps {
   business: BusinessRowFacts & { id?: string };
   lang: Lang;
   onSaved?: (next: { passport_json: unknown; denormalized: Record<string, string | null> }) => void;
+  /** Increment to open the passport editor (e.g. voice orb "Use text instead"). */
+  editSignal?: number;
 }
 
-export function BusinessPassportPanel({ businessId, business, lang, onSaved }: BusinessPassportPanelProps) {
+export function BusinessPassportPanel({ businessId, business, lang, onSaved, editSignal }: BusinessPassportPanelProps) {
   const initial = useMemo(() => canonicalFromBusinessRow(business), [business]);
   const [canonical, setCanonical] = useState<CanonicalApplicationData>(initial);
   const [draft, setDraft] = useState<CanonicalApplicationData>(initial);
@@ -83,6 +85,13 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved }: B
     setEditing(false);
     setOpenGroups({});
   }, [initial]);
+
+  useEffect(() => {
+    if (editSignal == null || editSignal <= 0) return;
+    setDraft(canonical);
+    setMessage(null);
+    setEditing(true);
+  }, [editSignal]); // eslint-disable-line react-hooks/exhaustive-deps -- signal-driven open only
 
   const coverage = useMemo(() => passportCoverage(canonical), [canonical]);
   const totalFields = coverage.filled.length + coverage.empty.length;

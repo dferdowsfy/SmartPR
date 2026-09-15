@@ -15,6 +15,7 @@ import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
+import { PassportVoiceOrb } from "../PassportVoiceOrb";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
 import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
@@ -526,6 +527,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const [loadError, setLoadError] = useState(false);
   const [showAllRequirements, setShowAllRequirements] = useState(false);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
+  const [passportEditSignal, setPassportEditSignal] = useState(0);
   // Requirements the user just marked complete: kept pinned in the
   // "outstanding" list (rendered with their new completed look) instead of
   // silently dropping out of view the instant the list re-sorts.
@@ -666,7 +668,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           <AgencyRunCard businessId={shortId} lang={lang} />
         </div>
 
-        <div className="mt-6">
+        <div id="business-passport" className="mt-6">
           <p className="mb-3 text-sm text-slate-500">
             {L("Stored business facts and evidence stay here — always visible, ready to reuse on every filing.", lang)}
           </p>
@@ -675,6 +677,21 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             business={business}
             lang={lang}
             onSaved={() => load()}
+            editSignal={passportEditSignal}
+          />
+          <PassportVoiceOrb
+            businessId={shortId}
+            lang={lang}
+            business={business}
+            currentPassport={business.passport_json ?? null}
+            onApplied={() => load()}
+            onUseTextInstead={() => {
+              setPassportEditSignal((n) => n + 1);
+              // Scroll passport into view for the text editor path.
+              window.requestAnimationFrame(() => {
+                document.getElementById("business-passport")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              });
+            }}
           />
         </div>
 
