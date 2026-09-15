@@ -149,10 +149,17 @@ export function generatePackagePDF(pkg: SubmissionPackage): Blob {
   return doc.output("blob");
 }
 
-/** Build a ZIP bundle: the PDF, a manifest, and a JSON file per form. */
-export async function generatePackageZip(pkg: SubmissionPackage): Promise<Blob> {
+/** Optional binary payloads keyed by evidenceId for locker files in the ZIP. */
+export type EvidenceBinaryMap = Record<string, Blob | ArrayBuffer | Uint8Array>;
+
+/** Build a ZIP bundle: the PDF, a manifest, forms JSON, and locker evidence. */
+export async function generatePackageZip(
+  pkg: SubmissionPackage,
+  evidenceBinaries?: EvidenceBinaryMap
+): Promise<Blob> {
   const zip = new JSZip();
   zip.file("submission-package.pdf", generatePackagePDF(pkg));
+  const evidenceFiles = pkg.evidenceFiles ?? [];
   zip.file(
     "manifest.json",
     JSON.stringify(
@@ -160,8 +167,10 @@ export async function generatePackageZip(pkg: SubmissionPackage): Promise<Blob> 
         generatedAt: pkg.generatedAt,
         readiness: pkg.readiness,
         formCount: pkg.forms.length,
+        evidenceCount: evidenceFiles.length,
         openIssues: pkg.openIssues,
         disclaimer: pkg.disclaimer,
+        evidence: evidenceFiles,
       },
       null,
       2
@@ -174,6 +183,31 @@ export async function generatePackageZip(pkg: SubmissionPackage): Promise<Blob> 
       .toLowerCase();
     formsDir?.file(`${String(i + 1).padStart(2, "0")}-${safe}.json`, JSON.stringify(form, null, 2));
   });
+  if (evidenceFiles.length > 0) {
+    const evidenceDir = zip.folder("evidence");
+    evidenceDir?.file(
+      "index.json",
+      JSON.stringify({ count: evidenceFiles.length, files: evidenceFiles }, null, 2)
+    );
+    for (const file of evidenceFiles) {
+      const binary = evidenceBinaries?.[file.evidenceId];
+      if (binary) {
+        zip.file(file.zipPath, binary);
+      } else {
+        zip.file(
+          `${file.zipPath}.stub.json`,
+          JSON.stringify(
+            {
+              note: "Binary not embedded in this client bundle; download via /api/evidence/{id}/download or business evidence-package.",
+              ...file,
+            },
+            null,
+            2
+          )
+        );
+      }
+    }
+  }
   return zip.generateAsync({ type: "blob" });
 }
 

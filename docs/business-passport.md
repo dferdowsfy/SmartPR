@@ -36,7 +36,7 @@ Denormalized columns (`legal_name`, `municipality`, `physical_address`,
 - Per-filing answers (capital stock, members lists, attestations, filing year, patente type, licence checkboxes beyond profile activities)
 - Agency portal submission (SmartPR does not auto-submit)
 - OGPe / Salud / Bomberos official PDFs (follow-up #3) — worksheets may prefill identity only
-- Evidence locker / issued certificates (follow-up #2)
+- Evidence locker / issued certificates — see `docs/evidence-locker.md` (SmartPR build #2)
 
 ## Refresh path
 
