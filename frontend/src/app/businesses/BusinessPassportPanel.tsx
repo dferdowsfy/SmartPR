@@ -4,6 +4,7 @@
 // Writes the same CanonicalApplicationData the artifact engine already reads.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { CoreApplicationDetails } from "../forms/engine/CoreApplicationDetails";
 import {
   canonicalFromBusinessRow,
@@ -72,15 +73,20 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved }: B
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  /** Collapsible summary sections — undefined means "default" (first group or
+   * any group with empty fields starts open). */
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setCanonical(initial);
     setDraft(initial);
     setEditing(false);
+    setOpenGroups({});
   }, [initial]);
 
   const coverage = useMemo(() => passportCoverage(canonical), [canonical]);
   const totalFields = coverage.filled.length + coverage.empty.length;
+  const pct = totalFields ? Math.round((coverage.filled.length / totalFields) * 100) : 0;
 
   const onChange = useCallback((next: CanonicalApplicationData) => {
     setDraft(next);
@@ -137,7 +143,7 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved }: B
   };
 
   const summaryGroups = useMemo(() => {
-    return GROUP_ORDER.map((group) => {
+    return GROUP_ORDER.map((group, groupIndex) => {
       const fields = PASSPORT_INTAKE_FIELDS.filter((f) => f.group === group).map((spec) => {
         const raw = readPath(canonical, spec.canonicalKey);
         const value = displayValue(spec, raw, lang);
@@ -147,13 +153,24 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved }: B
           value,
         };
       });
+      const filledCount = fields.filter((f) => f.value).length;
       return {
         group,
+        groupIndex,
         title: lang === "es" ? GROUP_TITLES[group].es : GROUP_TITLES[group].en,
         fields,
+        filledCount,
+        emptyCount: fields.length - filledCount,
       };
     });
   }, [canonical, lang]);
+
+  const toggleGroup = useCallback((group: string, fallbackOpen: boolean) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [group]: !(prev[group] ?? fallbackOpen),
+    }));
+  }, []);
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]">
@@ -164,11 +181,7 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved }: B
               {L("Business Passport", "Pasaporte comercial", lang)}
             </h2>
             <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
-              {L(
-                `${coverage.filled.length} of ${totalFields} filled`,
-                `${coverage.filled.length} de ${totalFields} completados`,
-                lang
-              )}
+              {L(`${pct}% complete`, `${pct}% completado`, lang)}
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500">
@@ -230,33 +243,102 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved }: B
           }}
         />
       ) : (
-        <div className="space-y-4">
-          {summaryGroups.map((section) => (
-            <div key={section.group}>
-              <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                {section.title}
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {section.fields.map((field) => (
-                  <div
-                    key={field.id}
-                    className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5"
-                  >
-                    <div className="text-[11px] font-medium text-slate-500">{field.label}</div>
-                    {field.value ? (
-                      <div className="mt-0.5 text-sm font-semibold text-[#161616] break-words">
-                        {field.value}
-                      </div>
-                    ) : (
-                      <div className="mt-0.5 text-sm font-medium text-slate-400 italic">
-                        {L("Not entered", "No ingresado", lang)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+        <div>
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-600">
+                {L("Profile completeness", "Perfil completado", lang)}
+              </span>
+              <span className="font-bold text-[#161616]">
+                {L(
+                  `${coverage.filled.length} of ${totalFields} fields`,
+                  `${coverage.filled.length} de ${totalFields} campos`,
+                  lang
+                )}
+              </span>
             </div>
-          ))}
+            <div
+              className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-brand transition-all duration-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
+            {summaryGroups.map((section) => {
+              const fallbackOpen = section.groupIndex === 0 || section.emptyCount > 0;
+              const open = openGroups[section.group] ?? fallbackOpen;
+              const complete = section.emptyCount === 0;
+              return (
+                <div key={section.group} className={open ? "bg-white" : "bg-slate-50/50"}>
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(section.group, fallbackOpen)}
+                    aria-expanded={open}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                          open ? "" : "-rotate-90"
+                        }`}
+                      />
+                      <span className="text-sm font-bold text-[#161616]">{section.title}</span>
+                    </span>
+                    <span
+                      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                        complete
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-amber-50 text-amber-800"
+                      }`}
+                    >
+                      {complete
+                        ? L("Complete", "Completo", lang)
+                        : L(
+                            `${section.filledCount}/${section.fields.length}`,
+                            `${section.filledCount}/${section.fields.length}`,
+                            lang
+                          )}
+                    </span>
+                  </button>
+                  {open && (
+                    <div className="grid gap-2 px-4 pb-4 sm:grid-cols-2">
+                      {section.fields.map((field) => (
+                        <div
+                          key={field.id}
+                          className="rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5"
+                        >
+                          <div className="text-[11px] font-medium text-slate-500">
+                            {field.label}
+                          </div>
+                          {field.value ? (
+                            <div className="mt-0.5 break-words text-sm font-semibold text-[#161616]">
+                              {field.value}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={startEdit}
+                              className="mt-0.5 text-sm font-medium italic text-brand hover:underline"
+                            >
+                              {L("+ Add", "+ Agregar", lang)}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

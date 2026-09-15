@@ -7,6 +7,7 @@
  */
 import { randomUUID } from "crypto";
 import {
+  agentProvider,
   agentProviderLabel,
   cancelAgentRun,
   createAgentRun,
@@ -60,6 +61,7 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     worker: run.worker,
     live_url: run.live_url,
     browser_use_session_id: run.browser_use_session_id,
+    provider: run.worker === "browser_use" ? agentProvider() : "mock",
   };
 }
 

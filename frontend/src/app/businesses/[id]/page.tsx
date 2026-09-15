@@ -660,6 +660,12 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           )}
         </header>
 
+        {/* Agency assistant — primary assisted-filing action, kept at the top
+            of the profile so it is never buried below obligations. */}
+        <div className="mt-6">
+          <AgencyRunCard businessId={shortId} lang={lang} />
+        </div>
+
         <div className="mt-6">
           <p className="mb-3 text-sm text-slate-500">
             {L("Stored business facts and evidence stay here — always visible, ready to reuse on every filing.", lang)}
@@ -684,10 +690,6 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             lang={lang}
             onChanged={() => load()}
           />
-        </div>
-
-        <div className="mt-6">
-          <AgencyRunCard businessId={shortId} lang={lang} />
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">

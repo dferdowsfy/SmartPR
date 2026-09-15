@@ -76,4 +76,7 @@ export interface AgencyRunPublic {
   /** Present when Browser Use Cloud backs the run; embed in iframe. */
   live_url: string | null;
   browser_use_session_id: string | null;
+  /** Which agent backend actually ran this run — shown in the UI so there is
+   * never confusion between Cloud and self-hosted. */
+  provider: "browser_use_cloud" | "self_hosted" | "mock";
 }

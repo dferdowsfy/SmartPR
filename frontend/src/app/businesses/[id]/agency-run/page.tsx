@@ -7,8 +7,8 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, Bot, CheckCircle2, CreditCard, FileUp, KeyRound, PauseCircle,
-  Play, RefreshCw, Shield, Square, Upload,
+  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, FileUp, KeyRound, PauseCircle,
+  Play, RefreshCw, Server, Shield, Square, Upload,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
@@ -67,6 +67,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [reconnectBusy, setReconnectBusy] = useState(false);
+  /** Inline takeover: the user drives the embedded live browser directly.
+   * No new window — the iframe stays interactive and an "I'm done" button
+   * hands control back to the assistant. */
+  const [takeover, setTakeover] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -93,6 +97,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [run?.events.length]);
+
+  // Leaving takeover mode whenever a different run loads.
+  useEffect(() => {
+    setTakeover(false);
+  }, [run?.id]);
 
   const start = async () => {
     setBusy(true);
@@ -162,9 +171,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const takeoverBrowser = () => {
-    if (run?.live_url) window.open(run.live_url, "_blank", "noopener,noreferrer");
-  };
+  const enterTakeover = () => setTakeover(true);
+  const exitTakeover = () => setTakeover(false);
 
   const uploadToLocker = async (file: File) => {
     setUploadBusy(true);
@@ -251,6 +259,18 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   lang
                 )}
               </p>
+              {run?.provider && run.provider !== "mock" && (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                  {run.provider === "browser_use_cloud" ? (
+                    <Cloud className="h-3.5 w-3.5 text-sky-600" />
+                  ) : (
+                    <Server className="h-3.5 w-3.5 text-violet-600" />
+                  )}
+                  {run.provider === "browser_use_cloud"
+                    ? L("Powered by Browser Use Cloud", "Con tecnología de Browser Use Cloud", lang)
+                    : L("Powered by self-hosted agent (Grok)", "Con tecnología de agente propio (Grok)", lang)}
+                </p>
+              )}
             </div>
           </div>
         </header>
@@ -424,41 +444,75 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       ? L(`Live preview — ${activeConfig.domains[0]}`, `Vista previa en vivo — ${activeConfig.domains[0]}`, lang)
                       : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
                   </span>
-                  {run.live_url && (
+                  {takeover && run.live_url ? (
                     <button
                       type="button"
-                      disabled={reconnectBusy}
-                      onClick={() => void reconnectPreview()}
-                      title={L("Reload the live preview stream", "Recargar la vista previa en vivo", lang)}
-                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                      onClick={exitTakeover}
+                      title={L(
+                        "Hand control back to the agency assistant",
+                        "Devolver el control al asistente de agencia",
+                        lang
+                      )}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:brightness-95"
                     >
-                      <RefreshCw className="h-3 w-3" />
-                      {reconnectBusy
-                        ? L("Reconnecting…", "Reconectando…", lang)
-                        : L("Reconnect", "Reconectar", lang)}
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {L("I'm done", "Terminé", lang)}
                     </button>
-                  )}
-                  {run.live_url &&
-                    (run.status === "queued" || run.status === "running" || run.status === "paused") && (
-                      <button
-                        type="button"
-                        onClick={() => takeoverBrowser()}
-                        title={L(
-                          "Open the live browser in a new tab and take over whenever you want",
-                          "Abra el navegador en vivo en una pestaña nueva y tome el control cuando quiera",
-                          lang
+                  ) : (
+                    <>
+                      {run.live_url && (
+                        <button
+                          type="button"
+                          disabled={reconnectBusy}
+                          onClick={() => void reconnectPreview()}
+                          title={L("Reload the live preview stream", "Recargar la vista previa en vivo", lang)}
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          {reconnectBusy
+                            ? L("Reconnecting…", "Reconectando…", lang)
+                            : L("Reconnect", "Reconectar", lang)}
+                        </button>
+                      )}
+                      {run.live_url &&
+                        (run.status === "queued" || run.status === "running" || run.status === "paused") && (
+                          <button
+                            type="button"
+                            onClick={enterTakeover}
+                            title={L(
+                              "Click and type directly inside the live browser below",
+                              "Haz clic y escribe directamente dentro del navegador en vivo",
+                              lang
+                            )}
+                            className="inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/5 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/10"
+                          >
+                            <KeyRound className="h-3 w-3" />
+                            {L("Take over", "Tomar control", lang)}
+                          </button>
                         )}
-                        className="inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/5 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/10"
-                      >
-                        <KeyRound className="h-3 w-3" />
-                        {L("Take over", "Tomar control", lang)}
-                      </button>
-                    )}
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="relative flex flex-1 flex-col bg-slate-900/5 p-3">
-                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-inner">
+                {takeover && run.live_url && (
+                  <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                    <KeyRound className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+                    <span>
+                      {L(
+                        "You're in control — click and type directly inside the browser below. Press “I'm done” (top right) when finished to hand it back to the assistant.",
+                        "Tienes el control — haz clic y escribe directamente dentro del navegador. Pulsa “Terminé” (arriba a la derecha) cuando acabes para devolverlo al asistente.",
+                        lang
+                      )}
+                    </span>
+                  </div>
+                )}
+                <div
+                  className={`relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
+                    takeover ? "border-2 border-amber-400" : "border border-slate-200"
+                  }`}
+                >
                   {run.live_url ? (
                     <iframe
                       key={previewKey}
@@ -481,8 +535,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     </div>
                   )}
 
-                  {/* Pause overlay */}
-                  {paused && (
+                  {/* Pause overlay — hidden during inline takeover so the user
+                      can click inside the live browser. Resume/Stop stay
+                      available in the sidebar. */}
+                  {paused && !takeover && (
                     <PauseOverlay
                       lang={lang}
                       reason={run.pause_reason}
@@ -495,13 +551,13 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
-                      onTakeover={() => takeoverBrowser()}
+                      onTakeover={enterTakeover}
                       onUpload={(file) => void uploadToLocker(file)}
                     />
                   )}
 
-                  {/* Review overlay */}
-                  {inReview && (
+                  {/* Review overlay — hidden during inline takeover. */}
+                  {inReview && !takeover && (
                     <div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-950/70 via-slate-950/20 to-transparent p-6">
                       <div className="w-full max-w-lg rounded-2xl border border-emerald-200 bg-white p-5 shadow-xl">
                         <div className="flex items-start gap-3">
@@ -512,15 +568,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                             </div>
                             <p className="mt-1 text-sm text-slate-600">
                               {L(
-                                "Review the last screenshot. The agency assistant never clicks final submit. When ready, take over the browser and complete submission yourself on the portal.",
-                                "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, tome el control del navegador y complete el envío usted mismo en el portal.",
+                                "Review the last screenshot. The agency assistant never clicks final submit. When ready, take over the browser below and complete submission yourself directly in the live browser on this page.",
+                                "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, tome el control del navegador abajo y complete el envío usted mismo directamente en el navegador en vivo de esta página.",
                                 lang
                               )}
                             </p>
                             {run.live_url && (
                               <button
                                 type="button"
-                                onClick={() => takeoverBrowser()}
+                                onClick={enterTakeover}
                                 className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white"
                               >
                                 <KeyRound className="h-3.5 w-3.5" />
@@ -626,20 +682,20 @@ function PauseOverlay({
         )
       : reason === "USER_LOGIN"
         ? L(
-            `Take over the live browser and type your ${portalName} username, password, and MFA code yourself. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, come back here and press Resume.`,
-            `Toma el control del navegador en vivo y escribe tu usuario, contraseña y código MFA de ${portalName}. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, vuelve aquí y pulsa Reanudar.`,
+            `Press "Take over the browser" below and type your ${portalName} username, password, and MFA code directly in the live browser on this page. What you type is private — nobody at SmartPR, admins included, can see this session. When you're logged in, press "I'm done" (top right), then Resume.`,
+            `Pulsa "Tomar el control del navegador" abajo y escribe tu usuario, contraseña y código MFA de ${portalName} directamente en el navegador en vivo de esta página. Lo que escribas es privado — nadie en SmartPR, ni los administradores, puede ver esta sesión. Cuando entres, pulsa "Terminé" (arriba a la derecha) y luego Reanudar.`,
             lang
           )
         : reason === "CAPTCHA"
           ? L(
-              "This one needs a human touch. Take over the browser, complete the captcha or challenge on the portal, then come back here and press Resume.",
-              "Esto necesita toque humano. Toma el control del navegador, completa el captcha o el desafío en el portal, y luego vuelve aquí y pulsa Reanudar.",
+              'This one needs a human touch. Press "Take over the browser", complete the captcha or challenge directly in the live browser on this page, then press "I\'m done" (top right) and Resume.',
+              'Esto necesita toque humano. Pulsa "Tomar el control del navegador", completa el captcha o el desafío directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) y Reanudar.',
               lang
             )
           : reason === "PAYMENT"
             ? L(
-                "Payment is always yours to make — the assistant never touches it. Take over the browser and pay on the portal yourself, then come back here and press Resume.",
-                "El pago siempre lo haces tú — el asistente nunca lo toca. Toma el control del navegador y paga en el portal, luego vuelve aquí y pulsa Reanudar.",
+                'Payment is always yours to make — the assistant never touches it. Press "Take over the browser" and pay directly in the live browser on this page, then press "I\'m done" (top right) and Resume.',
+                'El pago siempre lo haces tú — el asistente nunca lo toca. Pulsa "Tomar el control del navegador" y paga directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) y Reanudar.',
                 lang
               )
             : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
