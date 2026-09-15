@@ -4,7 +4,6 @@
 // Writes the same CanonicalApplicationData the artifact engine already reads.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatAddressLine } from "../forms/artifacts/canonicalFields";
 import { CoreApplicationDetails } from "../forms/engine/CoreApplicationDetails";
 import {
   canonicalFromBusinessRow,
@@ -19,6 +18,15 @@ import type { CanonicalAddress, CanonicalApplicationData, Lang } from "../forms/
 import { localize } from "../forms/engine/types";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
+
+/** Local address formatter — avoids pulling the artifacts tree into this client panel. */
+function formatAddressLine(addr: CanonicalAddress | undefined): string {
+  if (!addr) return "";
+  return [addr.line1, addr.line2, addr.cityOrMunicipality, addr.stateOrTerritory, addr.postalCode]
+    .filter((part) => Boolean(part && String(part).trim()))
+    .join(", ");
+}
+
 
 const GROUP_ORDER: IntakeFieldSpec["group"][] = ["business", "contact", "address", "property"];
 
