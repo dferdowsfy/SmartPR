@@ -45,6 +45,15 @@ const copy = {
       ["02", "One view for every business", "Every yearly filing across your whole portfolio, with its status, in a single list."],
       ["03", "Next year queues itself", "Complete this year's filing and the next cycle — with its reminders — is created automatically."],
     ],
+    assistantEyebrow: "New · Assisted live filing",
+    assistantTitle: "Skip the SURI maze.",
+    assistantBody:
+      "SmartPR's filing assistant opens the government portal for you, fills it in from your business passport, uploads your documents, and stops for your review. You sign in, you submit — nothing gets filed without you. Now in pilot for SURI filings.",
+    assistantPoints: [
+      ["01", "It drives, you supervise", "Watch live as it fills SURI step by step from your business profile."],
+      ["02", "Pauses when it's your turn", "Stops for your SURI login, uploads, captcha, or payment. Your passwords stay yours."],
+      ["03", "You always submit", "The assistant never clicks final submit. You review everything and file it yourself."],
+    ],
     ready: "ready",
     next: "Next",
     continue: "Continue",
@@ -107,6 +116,15 @@ const copy = {
       ["01", "Avisos que sí te llegan", "Las alertas caen en tu buzón de SmartPR antes del vencimiento, no después."],
       ["02", "Todo en una sola vista", "Cada radicación anual de todos tus negocios, con su estatus, en una sola lista."],
       ["03", "El próximo año se monta solo", "Completas la de este año y el próximo ciclo — con sus avisos — se crea automático."],
+    ],
+    assistantEyebrow: "Nuevo · Trámite asistido en vivo",
+    assistantTitle: "Sáltate el revolú de SURI.",
+    assistantBody:
+      "El asistente de trámite de SmartPR abre el portal del gobierno por ti, lo llena con los datos de tu pasaporte de negocio, sube tus documentos y se detiene para que revises. Tú inicias sesión, tú envías — sin tu visto bueno no se radica nada. Ahora en piloto para trámites de SURI.",
+    assistantPoints: [
+      ["01", "Él guía, tú supervisas", "Mira en vivo cada paso mientras llena SURI con los datos de tu negocio."],
+      ["02", "Se detiene cuando te toca a ti", "Pausa para tu inicio de sesión en SURI, tus documentos, el captcha o el pago. Tus contraseñas son tuyas."],
+      ["03", "Tú siempre envías", "El asistente nunca hace clic en enviar. Revisas todo y lo radicas tú mismo."],
     ],
     ready: "listo",
     next: "Siguiente",
@@ -310,6 +328,28 @@ export default function MarketingLanding() {
 
           <FilingPathStory language={language} />
         </div>
+
+        <section id="filing-assistant" className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.assistantEyebrow}</p>
+            <h2>{c.assistantTitle}</h2>
+            <p className={styles.lead}>{c.assistantBody}</p>
+            <ol className={styles.cards}>
+              {c.assistantPoints.map(([n, title, body]) => (
+                <li key={n} className={styles.card}>
+                  <span>{n}</span>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </li>
+              ))}
+            </ol>
+            <div className={styles.techCta}>
+              <button type="button" className={styles.primary} onClick={() => void start()}>
+                {c.heroCta}
+              </button>
+            </div>
+          </div>
+        </section>
 
         <section id="how-it-works" className={styles.section}>
           <div className={styles.sectionInner}>
