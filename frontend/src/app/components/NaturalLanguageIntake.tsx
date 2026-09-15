@@ -60,10 +60,23 @@ export function NaturalLanguageIntake({
     el.style.height = `${Math.min(el.scrollHeight, 190)}px`;
   }, [text]);
 
+  // Voice auto-submit contract:
+  // After STT, IntakeVoiceOrb awaits onTranscript. That MUST run interpret
+  // (not only fill the textarea). Voice uses { force: true } so a stale
+  // loadingRef cannot swallow the call. Arrow → remains for typed text only.
   const interpretDescription = useCallback(
-    async (descriptionRaw: string) => {
+    async (
+      descriptionRaw: string,
+      opts?: { force?: boolean }
+    ): Promise<boolean> => {
       const description = descriptionRaw.trim();
-      if (!description || loadingRef.current) return;
+      if (!description) return false;
+      // Typed path respects the lock; voice path clears a stale lock and proceeds.
+      if (opts?.force) {
+        loadingRef.current = false;
+      } else if (loadingRef.current) {
+        return false;
+      }
       loadingRef.current = true;
       setStatus("loading");
       setChips([]);
@@ -98,7 +111,7 @@ export function NaturalLanguageIntake({
           Object.keys(patch.profile).length === 0 && Object.keys(patch.answers).length === 0;
         if (nothingFound) {
           setStatus("error");
-          return;
+          return false;
         }
 
         onApply(patch, validated);
@@ -110,8 +123,10 @@ export function NaturalLanguageIntake({
           validated.suggested.profileValues.length > 0;
         setPending(hasSuggestions ? validated.suggested : null);
         setStatus("done");
+        return true;
       } catch {
         setStatus("error");
+        return false;
       } finally {
         loadingRef.current = false;
       }
@@ -126,7 +141,11 @@ export function NaturalLanguageIntake({
   const handleVoiceTranscript = useCallback(
     async (transcript: string) => {
       setText(transcript);
-      await interpretDescription(transcript);
+      const ok = await interpretDescription(transcript, { force: true });
+      if (!ok) {
+        // Reject so the orb stays open with an error; transcript remains in the box.
+        throw new Error("interpret_failed");
+      }
     },
     [interpretDescription]
   );

@@ -4,6 +4,11 @@
 // No businessId required. CSS/Tailwind only (respects prefers-reduced-motion).
 // Visual: ChatGPT-like breathing glow (teal #245c5c + mint/cyan halo + sparkles).
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
+//
+// Voice auto-submit: after STT, stays "processing" until onTranscript (interpret)
+// settles — user must not need the Describe → arrow. Phases: Transcribing… →
+// Filling your profile… → brief success → collapse. Interpret failure shows
+// error; transcript stays in the describe box for edit + → fallback.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Square, Type, X } from "lucide-react";
@@ -16,7 +21,9 @@ import {
   sttErrorMessage,
 } from "./recordAudioBlob";
 
-type OrbState = "idle" | "listening" | "processing" | "error";
+type OrbState = "idle" | "listening" | "processing" | "success" | "error";
+/** Sub-phase while state === "processing": STT vs interpret auto-fill. */
+type ProcessingPhase = "transcribing" | "filling";
 type Lang = "en" | "es";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -42,7 +49,11 @@ function SparkleStarsIcon({ className }: { className?: string }) {
 
 export interface IntakeVoiceOrbProps {
   lang: Lang;
-  /** Called after STT with the transcript — parent runs /api/intake/interpret. */
+  /**
+   * Called after STT with the transcript. Parent MUST run interpret (auto-submit)
+   * and settle this promise only when interpret finishes (resolve = success,
+   * reject = failure). Orb stays processing until then — no Describe → required.
+   */
   onTranscript: (transcript: string) => void | Promise<void>;
   /** Focus the existing NaturalLanguageIntake describe box. */
   onUseTextInstead?: () => void;
@@ -57,6 +68,7 @@ export function IntakeVoiceOrb({
   busy = false,
 }: IntakeVoiceOrbProps) {
   const [state, setState] = useState<OrbState>("idle");
+  const [processingPhase, setProcessingPhase] = useState<ProcessingPhase>("transcribing");
   const [level, setLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showPanel, setShowPanel] = useState(false);
@@ -103,7 +115,7 @@ export function IntakeVoiceOrb({
   const stopListeningRef = useRef<() => void>(() => undefined);
 
   useEffect(() => {
-    if (!showPanel && state !== "listening" && state !== "processing") return;
+    if (!showPanel && state !== "listening" && state !== "processing" && state !== "success") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowPanel(false);
@@ -144,7 +156,9 @@ export function IntakeVoiceOrb({
 
   const processBlob = useCallback(
     async (blob: Blob | null) => {
+      // Stay in processing through STT AND parent interpret (onTranscript).
       setState("processing");
+      setProcessingPhase("transcribing");
       setError(null);
       setShowPanel(true);
 
@@ -192,10 +206,28 @@ export function IntakeVoiceOrb({
           return;
         }
 
-        await onTranscript(transcript);
+        // STT done → keep orb processing until interpret settles (no extra click).
+        setProcessingPhase("filling");
+        try {
+          await onTranscript(transcript);
+        } catch (interpretErr) {
+          console.error("[IntakeVoiceOrb] interpret after STT failed", interpretErr);
+          setState("error");
+          setError(
+            L(
+              "Couldn't fill your profile from that. Edit the description above and tap →, or try again.",
+              "No pudimos completar su perfil con eso. Edite la descripción arriba y pulse →, o intente de nuevo.",
+              lang
+            )
+          );
+          return;
+        }
+
+        setState("success");
+        await new Promise((r) => window.setTimeout(r, 900));
         setState("idle");
         setShowPanel(false);
-          } catch (err) {
+      } catch (err) {
         console.error("[IntakeVoiceOrb] network/STT error", err);
         setState("error");
         setError(L("Network error. Try again.", "Error de red. Inténtelo de nuevo.", lang));
@@ -256,6 +288,7 @@ export function IntakeVoiceOrb({
     }
     stoppingRef.current = true;
     setState("processing");
+    setProcessingPhase("transcribing");
     try {
       const blob = await stopRecorderAndCollect(rec, chunksRef.current);
       teardownMedia();
@@ -273,26 +306,37 @@ export function IntakeVoiceOrb({
     void stopListening();
   };
 
-  const blocked = busy || state === "processing";
   const glowScale = 1 + (reducedMotion ? 0 : level * 0.28);
+
+  const processingStatus =
+    processingPhase === "filling"
+      ? L("Filling your profile…", "Completando su perfil…", lang)
+      : L("Transcribing…", "Transcribiendo…", lang);
 
   const tooltipText =
     state === "listening"
       ? L("Listening… tap orb to stop", "Escuchando… toque el orbe para detener", lang)
       : state === "processing"
-        ? L("Transcribing…", "Transcribiendo…", lang)
-        : state === "error"
-          ? L("Something went wrong", "Algo salió mal", lang)
-          : L("Tell SmartPR about your business", "Cuéntele a SmartPR sobre su negocio", lang);
+        ? processingStatus
+        : state === "success"
+          ? L("Profile updated", "Perfil actualizado", lang)
+          : state === "error"
+            ? L("Something went wrong", "Algo salió mal", lang)
+            : L("Tell SmartPR about your business", "Cuéntele a SmartPR sobre su negocio", lang);
 
   const pillText =
     state === "listening"
       ? L("Speak now — I'll capture what I can.", "Hable ahora — capturaré lo que pueda.", lang)
       : state === "processing"
-        ? L("Almost there…", "Ya casi…", lang)
-        : L("Speak naturally. I'll fill in what I can.", "Hable con naturalidad. Completaré lo que pueda.", lang);
+        ? processingPhase === "filling"
+          ? L("Filling your profile…", "Completando su perfil…", lang)
+          : L("Almost there…", "Ya casi…", lang)
+        : state === "success"
+          ? L("Done — fields updated.", "Listo — campos actualizados.", lang)
+          : L("Speak naturally. I'll fill in what I can.", "Hable con naturalidad. Completaré lo que pueda.", lang);
 
   const showHints = state !== "error";
+  const blocked = busy || state === "processing" || state === "success";
 
   return (
     <>
@@ -358,7 +402,12 @@ export function IntakeVoiceOrb({
                       }`}
                       aria-hidden
                     />
-                    {L("Transcribing…", "Transcribiendo…", lang)}
+                    {processingStatus}
+                  </p>
+                )}
+                {state === "success" && !error && (
+                  <p className="text-[11px] font-semibold text-emerald-800">
+                    {L("Done — fields updated.", "Listo — campos actualizados.", lang)}
                   </p>
                 )}
                 {(state === "error" || state === "idle") && (
@@ -458,7 +507,7 @@ export function IntakeVoiceOrb({
             }
           }}
           aria-label={L("SmartPR voice intake", "Admisión por voz SmartPR", lang)}
-          aria-busy={state === "processing" || state === "listening"}
+          aria-busy={state === "processing" || state === "listening" || state === "success"}
           className="pointer-events-auto group relative order-4 flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 md:h-16 md:w-16"
           style={{
             transform:
@@ -535,6 +584,10 @@ export function IntakeVoiceOrb({
                   reducedMotion ? "" : "animate-spin"
                 }`}
               />
+            ) : state === "success" ? (
+              <span className="text-lg font-bold leading-none" aria-hidden>
+                ✓
+              </span>
             ) : (
               <SparkleStarsIcon className="h-6 w-6 drop-shadow-sm" />
             )}
