@@ -7,7 +7,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, FileUp, KeyRound, Loader2, Maximize2,
+  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, Eye, EyeOff, FileUp, KeyRound, Loader2, Maximize2,
   Minimize2, PauseCircle, Play, RefreshCw, Server, Shield, Square, Upload,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
@@ -25,6 +25,10 @@ import {
   getFilingConfig,
 } from "../../../../lib/agency-runs/filingTypes";
 import { DEFAULT_LOGIN_PENDING_FIELDS } from "../../../../lib/agency-runs/pendingFields";
+import {
+  mergeFieldsWithPassportPrefill,
+  prefillFromPassport,
+} from "../../../../lib/agency-runs/prefillFromPassport";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -76,6 +80,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   /** Pending-field values typed in the Assistant panel (and optionally PauseOverlay).
    * Never mirrored into event messages — only POSTed to resume as `{ fields }`. */
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  /** Client-only show/hide for sensitive Assistant inputs — never persisted. */
+  const [revealedFields, setRevealedFields] = useState<Record<string, boolean>>({});
+  const firstEmptyFieldRef = useRef<HTMLInputElement | null>(null);
+  const prefillSeedKeyRef = useRef<string>("");
   /** Tracks whether the live preview iframe has rendered its first frame —
    * drives the loading animation while the Cloud session spins up. */
   const [previewLoaded, setPreviewLoaded] = useState(false);
@@ -113,6 +121,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     setTakeover(false);
     setFieldValues({});
+    setRevealedFields({});
+    prefillSeedKeyRef.current = "";
   }, [run?.id]);
 
   // Reset the preview loading animation whenever the stream is (re)created.
@@ -187,12 +197,12 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const fillAndContinue = async () => {
-    await resume(fieldValues);
-  };
-
   const setFieldValue = (id: string, value: string) => {
     setFieldValues((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const toggleRevealField = (id: string) => {
+    setRevealedFields((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const stop = async () => {
@@ -306,6 +316,47 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     if (run.pause_reason === "USER_LOGIN") return DEFAULT_LOGIN_PENDING_FIELDS;
     return [];
   }, [run]);
+
+  /** Text-field pause: Assistant is the only place to type; live browser is view-only. */
+  const fieldsPause =
+    Boolean(run && run.status === "paused") &&
+    (pendingFields.length > 0 || run?.pause_reason === "USER_LOGIN");
+
+  // Seed non-sensitive values from passport whenever a new fields pause appears.
+  useEffect(() => {
+    if (!run || run.status !== "paused" || pendingFields.length === 0) return;
+    const seedKey = `${run.id}:${run.pause_reason || ""}:${pendingFields.map((f) => f.id).join(",")}`;
+    if (prefillSeedKeyRef.current === seedKey) return;
+    prefillSeedKeyRef.current = seedKey;
+    const seeded = prefillFromPassport(pendingFields, run.passport_snapshot);
+    setFieldValues((prev) => {
+      const next = { ...prev };
+      for (const [id, value] of Object.entries(seeded)) {
+        if (!(next[id] || "").trim()) next[id] = value;
+      }
+      return next;
+    });
+    setRevealedFields({});
+  }, [run, pendingFields]);
+
+  // Auto-focus the first empty required field when a fields pause appears.
+  useEffect(() => {
+    if (!fieldsPause || takeover) return;
+    const handle = window.setTimeout(() => {
+      firstEmptyFieldRef.current?.focus();
+    }, 50);
+    return () => window.clearTimeout(handle);
+  }, [fieldsPause, takeover, pendingFields, run?.id]);
+
+  const fillAndContinue = async () => {
+    if (!run) return;
+    const merged = mergeFieldsWithPassportPrefill(
+      pendingFields,
+      fieldValues,
+      run.passport_snapshot
+    );
+    await resume(merged);
+  };
 
   const canFillFields = pendingFields.some((f) => {
     if (f.optional) return false;
@@ -480,50 +531,92 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   </div>
                   <p className="text-[11px] leading-snug text-amber-900/80">
                     {L(
-                      "Fill these here — the assistant will inject them into the portal and continue. Take over remains available if you prefer.",
-                      "Complételos aquí — el asistente los inyectará en el portal y continuará. Tomar el control sigue disponible si lo prefiere.",
+                      "Type only here in Assistant — the live browser is view-only. Non-sensitive values are prefilled from your passport when possible. Values are never stored.",
+                      "Escriba solo aquí en Asistente — el navegador en vivo es solo lectura. Los valores no sensibles se rellenan desde su pasaporte cuando es posible. Los valores nunca se almacenan.",
                       lang
                     )}
                   </p>
-                  {pendingFields.map((field) => (
-                    <label key={field.id} className="block">
-                      <span className="sr-only">
-                        {field.label}
-                        {field.optional ? L(" (optional)", " (opcional)", lang) : ""}
-                      </span>
-                      <input
-                        type={
-                          field.sensitive || field.type === "password"
-                            ? "password"
-                            : field.type === "email"
-                              ? "email"
-                              : field.type === "tel"
-                                ? "tel"
-                                : field.type === "number"
-                                  ? "number"
-                                  : "text"
-                        }
-                        autoComplete={
-                          field.id === "email"
-                            ? "username"
-                            : field.id === "password"
-                              ? "current-password"
-                              : field.id === "mfa"
-                                ? "one-time-code"
-                                : "off"
-                        }
-                        inputMode={field.id === "mfa" || field.type === "tel" ? "numeric" : undefined}
-                        value={fieldValues[field.id] || ""}
-                        onChange={(e) => setFieldValue(field.id, e.target.value)}
-                        placeholder={
-                          field.optional
-                            ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
-                            : field.label
-                        }
-                        className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                      />
-                    </label>
-                  ))}
+                  {pendingFields.map((field, index) => {
+                    const isSensitive = field.sensitive || field.type === "password";
+                    const revealed = Boolean(revealedFields[field.id]);
+                    const emptyRequired =
+                      !field.optional && !(fieldValues[field.id] || "").trim();
+                    const isFirstEmpty =
+                      emptyRequired &&
+                      pendingFields.findIndex(
+                        (f) => !f.optional && !(fieldValues[f.id] || "").trim()
+                      ) === index;
+                    const inputType = isSensitive
+                      ? revealed
+                        ? "text"
+                        : "password"
+                      : field.type === "email"
+                        ? "email"
+                        : field.type === "tel"
+                          ? "tel"
+                          : field.type === "number"
+                            ? "number"
+                            : "text";
+                    return (
+                      <label key={field.id} className="block">
+                        <span className="sr-only">
+                          {field.label}
+                          {field.optional ? L(" (optional)", " (opcional)", lang) : ""}
+                        </span>
+                        <div className="relative">
+                          <input
+                            ref={isFirstEmpty ? firstEmptyFieldRef : undefined}
+                            type={inputType}
+                            autoComplete={
+                              field.id === "email" || field.id.endsWith("_email")
+                                ? "username"
+                                : field.id === "password"
+                                  ? "current-password"
+                                  : field.id === "mfa"
+                                    ? "one-time-code"
+                                    : "off"
+                            }
+                            inputMode={
+                              field.id === "mfa" || field.type === "tel" ? "numeric" : undefined
+                            }
+                            value={fieldValues[field.id] || ""}
+                            onChange={(e) => setFieldValue(field.id, e.target.value)}
+                            placeholder={
+                              field.optional
+                                ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
+                                : field.label
+                            }
+                            className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand ${
+                              isSensitive ? "pr-9" : ""
+                            }`}
+                          />
+                          {isSensitive && (
+                            <button
+                              type="button"
+                              onClick={() => toggleRevealField(field.id)}
+                              className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-800"
+                              aria-label={
+                                revealed
+                                  ? L("Hide value", "Ocultar valor", lang)
+                                  : L("Show value", "Mostrar valor", lang)
+                              }
+                              title={
+                                revealed
+                                  ? L("Hide", "Ocultar", lang)
+                                  : L("Show", "Mostrar", lang)
+                              }
+                            >
+                              {revealed ? (
+                                <EyeOff className="h-3.5 w-3.5" />
+                              ) : (
+                                <Eye className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
                   <button
                     type="button"
                     disabled={busy || !canFillFields}
@@ -533,10 +626,23 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     <Play className="h-3.5 w-3.5" />
                     {L("Fill & continue", "Llenar y continuar", lang)}
                   </button>
+                  {run.live_url && (
+                    <button
+                      type="button"
+                      onClick={() => void enterTakeover()}
+                      className="w-full text-center text-[11px] font-medium text-slate-500 underline-offset-2 hover:text-brand hover:underline"
+                    >
+                      {L(
+                        "Need to solve a captcha or weird UI? Take over instead",
+                        "¿Necesita resolver un captcha o una UI rara? Tome el control en su lugar",
+                        lang
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
               <div className="flex gap-2 border-t border-slate-100 p-3">
-                {paused && (
+                {paused && pendingFields.length === 0 && (
                   <button
                     type="button"
                     disabled={busy}
@@ -658,13 +764,25 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                         (run.status === "queued" || run.status === "running" || run.status === "paused") && (
                           <button
                             type="button"
-                            onClick={enterTakeover}
-                            title={L(
-                              "Click and type directly inside the live browser below",
-                              "Haz clic y escribe directamente dentro del navegador en vivo",
-                              lang
-                            )}
-                            className="inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/5 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/10"
+                            onClick={() => void enterTakeover()}
+                            title={
+                              fieldsPause
+                                ? L(
+                                    "Need to solve a captcha or weird UI? Take over instead",
+                                    "¿Necesita resolver un captcha o una UI rara? Tome el control en su lugar",
+                                    lang
+                                  )
+                                : L(
+                                    "Click and type directly inside the live browser below",
+                                    "Haz clic y escribe directamente dentro del navegador en vivo",
+                                    lang
+                                  )
+                            }
+                            className={
+                              fieldsPause
+                                ? "inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-50"
+                                : "inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/5 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/10"
+                            }
                           >
                             <KeyRound className="h-3 w-3" />
                             {L("Take over", "Tomar control", lang)}
@@ -688,6 +806,18 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     </span>
                   </div>
                 )}
+                {fieldsPause && !takeover && run.live_url && (
+                  <div className="mb-2 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-950">
+                    <KeyRound className="h-3.5 w-3.5 shrink-0 text-sky-700" />
+                    <span>
+                      {L(
+                        "Fill the fields in Assistant on the left — don't type in this browser.",
+                        "Complete los campos en Asistente a la izquierda — no escriba en este navegador.",
+                        lang
+                      )}
+                    </span>
+                  </div>
+                )}
                 <div
                   className={`relative w-full overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
                     isFullscreen ? "min-h-0 flex-1" : "aspect-[16/10]"
@@ -699,11 +829,24 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                         key={previewKey}
                         src={run.live_url}
                         title={L("Live Browser Use session", "Sesión Browser Use en vivo", lang)}
-                        className="h-full w-full border-0 bg-white"
+                        className={`h-full w-full border-0 bg-white ${
+                          fieldsPause && !takeover ? "pointer-events-none" : ""
+                        }`}
                         allow="clipboard-read; clipboard-write; autoplay"
                         referrerPolicy="no-referrer"
                         onLoad={() => setPreviewLoaded(true)}
                       />
+                      {fieldsPause && !takeover && (
+                        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-2">
+                          <div className="rounded-full border border-sky-200/80 bg-sky-50/95 px-3 py-1 text-[11px] font-semibold text-sky-950 shadow-sm backdrop-blur-sm">
+                            {L(
+                              "Fill the fields in Assistant on the left — don't type in this browser.",
+                              "Complete los campos en Asistente a la izquierda — no escriba en este navegador.",
+                              lang
+                            )}
+                          </div>
+                        </div>
+                      )}
                       {!previewLoaded && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
                           <Loader2 className="h-8 w-8 animate-spin text-brand" />
@@ -757,11 +900,13 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       pauseStreak={run.pause_streak ?? 0}
                       pendingFields={pendingFields}
                       fieldValues={fieldValues}
+                      revealedFields={revealedFields}
                       onFieldChange={setFieldValue}
+                      onToggleReveal={toggleRevealField}
                       onFillAndContinue={() => void fillAndContinue()}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
-                      onTakeover={enterTakeover}
+                      onTakeover={() => void enterTakeover()}
                       onUpload={(file) => void uploadToLocker(file)}
                     />
                   )}
@@ -845,7 +990,9 @@ function PauseOverlay({
   pauseStreak,
   pendingFields,
   fieldValues,
+  revealedFields,
   onFieldChange,
+  onToggleReveal,
   onFillAndContinue,
   onResume,
   onStop,
@@ -864,17 +1011,21 @@ function PauseOverlay({
   pauseStreak: number;
   pendingFields: AgencyPendingField[];
   fieldValues: Record<string, string>;
+  revealedFields: Record<string, boolean>;
   onFieldChange: (id: string, value: string) => void;
+  onToggleReveal: (id: string) => void;
   onFillAndContinue: () => void;
   onResume: () => void;
   onStop: () => void;
   onTakeover: () => void;
   onUpload: (file: File) => void;
 }) {
+  const fieldsMode = pendingFields.length > 0 || reason === "USER_LOGIN";
+
   const icon =
     reason === "USER_UPLOAD" ? (
       <FileUp className="h-6 w-6 text-amber-700" />
-    ) : reason === "USER_LOGIN" || pendingFields.length > 0 ? (
+    ) : fieldsMode ? (
       <KeyRound className="h-6 w-6 text-amber-700" />
     ) : reason === "PAYMENT" ? (
       <CreditCard className="h-6 w-6 text-amber-700" />
@@ -902,8 +1053,8 @@ function PauseOverlay({
         )
       : pendingFields.length > 0
         ? L(
-            `Enter the required fields below — SmartPR will fill the portal and continue. Or take over the live browser if you prefer to type there yourself. Values are used only for this resume and are never stored.`,
-            `Ingrese los campos requeridos abajo — SmartPR llenará el portal y continuará. O tome el control del navegador en vivo si prefiere escribir ahí. Los valores solo se usan en esta reanudación y nunca se almacenan.`,
+            "Type only in Assistant on the left (or below) — the live browser is view-only. Non-sensitive passport values are prefilled when possible. Values are used only for this resume and are never stored.",
+            "Escriba solo en Asistente a la izquierda (o abajo) — el navegador en vivo es solo lectura. Los valores no sensibles del pasaporte se rellenan cuando es posible. Los valores solo se usan en esta reanudación y nunca se almacenan.",
             lang
           )
         : reason === "CAPTCHA"
@@ -969,40 +1120,66 @@ function PauseOverlay({
 
             {pendingFields.length > 0 && (
               <div className="mt-3 space-y-2">
-                {pendingFields.map((field) => (
-                  <input
-                    key={field.id}
-                    type={
-                      field.sensitive || field.type === "password"
-                        ? "password"
-                        : field.type === "email"
-                          ? "email"
-                          : field.type === "tel"
-                            ? "tel"
-                            : field.type === "number"
-                              ? "number"
-                              : "text"
-                    }
-                    autoComplete={
-                      field.id === "email"
-                        ? "username"
-                        : field.id === "password"
-                          ? "current-password"
-                          : field.id === "mfa"
-                            ? "one-time-code"
-                            : "off"
-                    }
-                    inputMode={field.id === "mfa" || field.type === "tel" ? "numeric" : undefined}
-                    value={fieldValues[field.id] || ""}
-                    onChange={(e) => onFieldChange(field.id, e.target.value)}
-                    placeholder={
-                      field.optional
-                        ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
-                        : field.label
-                    }
-                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-                  />
-                ))}
+                {pendingFields.map((field) => {
+                  const isSensitive = field.sensitive || field.type === "password";
+                  const revealed = Boolean(revealedFields[field.id]);
+                  const inputType = isSensitive
+                    ? revealed
+                      ? "text"
+                      : "password"
+                    : field.type === "email"
+                      ? "email"
+                      : field.type === "tel"
+                        ? "tel"
+                        : field.type === "number"
+                          ? "number"
+                          : "text";
+                  return (
+                    <div key={field.id} className="relative">
+                      <input
+                        type={inputType}
+                        autoComplete={
+                          field.id === "email" || field.id.endsWith("_email")
+                            ? "username"
+                            : field.id === "password"
+                              ? "current-password"
+                              : field.id === "mfa"
+                                ? "one-time-code"
+                                : "off"
+                        }
+                        inputMode={field.id === "mfa" || field.type === "tel" ? "numeric" : undefined}
+                        value={fieldValues[field.id] || ""}
+                        onChange={(e) => onFieldChange(field.id, e.target.value)}
+                        placeholder={
+                          field.optional
+                            ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
+                            : field.label
+                        }
+                        className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand ${
+                          isSensitive ? "pr-9" : ""
+                        }`}
+                      />
+                      {isSensitive && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleReveal(field.id)}
+                          className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-800"
+                          aria-label={
+                            revealed
+                              ? L("Hide value", "Ocultar valor", lang)
+                              : L("Show value", "Mostrar valor", lang)
+                          }
+                        >
+                          {revealed ? (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
                 <button
                   type="button"
                   disabled={busy || !canFill}
@@ -1016,10 +1193,13 @@ function PauseOverlay({
                   <button
                     type="button"
                     onClick={onTakeover}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+                    className="w-full text-center text-xs font-medium text-slate-500 underline-offset-2 hover:text-brand hover:underline"
                   >
-                    <KeyRound className="h-3.5 w-3.5" />
-                    {L("Take over the browser", "Tomar el control del navegador", lang)}
+                    {L(
+                      "Need to solve a captcha or weird UI? Take over instead",
+                      "¿Necesita resolver un captcha o una UI rara? Tome el control en su lugar",
+                      lang
+                    )}
                   </button>
                 )}
               </div>
@@ -1053,8 +1233,8 @@ function PauseOverlay({
             {pauseStreak >= 3 && (
               <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
                 {L(
-                  `Still stuck on this step after ${pauseStreak} tries. If you already filled it in the browser, the page may not have saved — look for a Save or Confirm button on the portal page, then press "I'm done".`,
-                  `Sigue atascado en este paso después de ${pauseStreak} intentos. Si ya lo llenó en el navegador, es posible que la página no haya guardado — busque un botón de Guardar o Confirmar en la página del portal y luego pulse "Terminé".`,
+                  `Still stuck on this step after ${pauseStreak} tries. Prefer Fill & continue from Assistant if fields are listed — or Take over only for captcha/odd UI, then press "I'm done".`,
+                  `Sigue atascado en este paso después de ${pauseStreak} intentos. Prefiera Llenar y continuar desde Asistente si hay campos — o Tome el control solo para captcha/UI rara, luego pulse "Terminé".`,
                   lang
                 )}
               </div>

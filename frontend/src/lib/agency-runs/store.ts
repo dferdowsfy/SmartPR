@@ -31,6 +31,7 @@ import {
   type ResumeCredentials,
   type ResumeFields,
 } from "./taskPrompt";
+import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -73,6 +74,8 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     pause_streak: run.pause_streak,
     // Labels/types/ids only — never values.
     pending_fields: run.pending_fields ?? [],
+    // Owner-gated API already; used for Assistant non-sensitive prefill only.
+    passport_snapshot: run.passport_snapshot ?? null,
   };
 }
 
@@ -594,10 +597,17 @@ export async function resumeRun(
   if (!run) return null;
 
   // Field values are ephemeral for this call only — never assign onto `run`.
-  const fields = mergeResumeFields(
-    sanitizeFields(options?.fields),
-    options?.credentials
+  // Merge submitted values with passport prefill for still-empty non-sensitive
+  // pending fields so the agent gets a complete fill set.
+  const submitted =
+    mergeResumeFields(sanitizeFields(options?.fields), options?.credentials) || {};
+  const pendingSnapshot = [...(run.pending_fields ?? [])];
+  const mergedMap = mergeFieldsWithPassportPrefill(
+    pendingSnapshot,
+    submitted,
+    run.passport_snapshot
   );
+  const fields = Object.keys(mergedMap).length > 0 ? mergedMap : null;
 
   if (run.worker === "browser_use") {
     if (run.status !== "paused" && run.status !== "running") {
