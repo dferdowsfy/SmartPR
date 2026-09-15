@@ -7,7 +7,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, FileUp, KeyRound, PauseCircle,
+  AlertTriangle, Bot, CheckCircle2, Cloud, CreditCard, FileUp, KeyRound, Loader2, PauseCircle,
   Play, RefreshCw, Server, Shield, Square, Upload,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
@@ -71,6 +71,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * No new window — the iframe stays interactive and an "I'm done" button
    * hands control back to the assistant. */
   const [takeover, setTakeover] = useState(false);
+  /** Tracks whether the live preview iframe has rendered its first frame —
+   * drives the loading animation while the Cloud session spins up. */
+  const [previewLoaded, setPreviewLoaded] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +105,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   useEffect(() => {
     setTakeover(false);
   }, [run?.id]);
+
+  // Reset the preview loading animation whenever the stream is (re)created.
+  useEffect(() => {
+    setPreviewLoaded(false);
+  }, [previewKey, run?.id, run?.live_url]);
 
   const start = async () => {
     setBusy(true);
@@ -411,7 +419,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     {L("Stop", "Detener", lang)}
                   </button>
                 )}
-                {(run.status === "stopped" || run.status === "review") && (
+                {(run.status === "stopped" || run.status === "review" || run.status === "failed") && (
                   <button
                     type="button"
                     disabled={busy}
@@ -422,7 +430,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     }}
                     className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white"
                   >
-                    {L("New run", "Nueva ejecución", lang)}
+                    {run.status === "failed"
+                      ? L("Try again", "Intentar de nuevo", lang)
+                      : L("New run", "Nueva ejecución", lang)}
                   </button>
                 )}
               </div>
@@ -514,14 +524,36 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   }`}
                 >
                   {run.live_url ? (
-                    <iframe
-                      key={previewKey}
-                      src={run.live_url}
-                      title={L("Live Browser Use session", "Sesión Browser Use en vivo", lang)}
-                      className="h-full w-full border-0 bg-white"
-                      allow="clipboard-read; clipboard-write; autoplay"
-                      referrerPolicy="no-referrer"
-                    />
+                    <>
+                      <iframe
+                        key={previewKey}
+                        src={run.live_url}
+                        title={L("Live Browser Use session", "Sesión Browser Use en vivo", lang)}
+                        className="h-full w-full border-0 bg-white"
+                        allow="clipboard-read; clipboard-write; autoplay"
+                        referrerPolicy="no-referrer"
+                        onLoad={() => setPreviewLoaded(true)}
+                      />
+                      {!previewLoaded && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
+                          <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                          <p className="text-sm font-semibold text-slate-600">
+                            {L(
+                              "Starting secure browser session…",
+                              "Iniciando sesión segura del navegador…",
+                              lang
+                            )}
+                          </p>
+                          <p className="max-w-xs text-center text-xs text-slate-400">
+                            {L(
+                              "This can take up to a minute the first time while the cloud browser spins up.",
+                              "Puede tardar hasta un minuto la primera vez mientras se inicia el navegador en la nube.",
+                              lang
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   ) : latestShot ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -530,8 +562,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       className="h-full w-full object-cover object-top"
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                      {L("Waiting for first frame…", "Esperando el primer fotograma…", lang)}
+                    <div className="flex h-full flex-col items-center justify-center gap-3 bg-white">
+                      <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                      <div className="text-sm font-semibold text-slate-600">
+                        {L("Waiting for first frame…", "Esperando el primer fotograma…", lang)}
+                      </div>
                     </div>
                   )}
 

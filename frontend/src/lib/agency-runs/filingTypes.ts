@@ -125,8 +125,8 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     agencyEs: "Departamento de Estado de Puerto Rico",
     portalEn: "Corporate & Entities Registry",
     portalEs: "Registro de Corporaciones y Entidades",
-    domains: ["rceweb.estado.pr.gov"],
-    startUrl: "https://rceweb.estado.pr.gov/",
+    domains: ["rcp.estado.pr.gov"],
+    startUrl: "https://rcp.estado.pr.gov/en",
     goalEn: "Create/file a juridical entity (corporation or LLC), or file an annual report",
     goalEs: "Crear/radicar una entidad jurídica (corporación o LLC), o radicar un informe anual",
     procedureEn: [
