@@ -18,7 +18,7 @@ import type {
   AgencyPauseReason,
   AgencyRunPublic,
   AgencyRunStatus,
-} from "../../../lib/agency-runs/types";
+} from "../../../../lib/agency-runs/types";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -638,3 +638,4 @@ function PauseOverlay({
     </div>
   );
 }
+
