@@ -96,14 +96,6 @@ export interface UIRequirement {
   downloadNote?: string | null;
 }
 
-/**
- * Lookup for the inline Yes/No a requirement card renders when its only
- * basis is an unanswered question-trigger (`unansweredTriggerQuestionId`).
- * Empty until the classifier starts setting that field — the intake treats
- * a miss as "no inline question", exactly as today.
- */
-export const UNANSWERED_TRIGGER_QUESTIONS: Array<{ questionId: string }> = [];
-
 // Minimal view of the app profile this adapter reads.
 interface ProfileLike {
   municipality?: string;

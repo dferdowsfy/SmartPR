@@ -35,13 +35,15 @@ function classify(
   municipality: string,
   answers: Record<string, boolean | string>,
   entityType: string,
-  potentialDecisions?: Record<string, "applies" | "not_applies" | "not_sure">
+  potentialDecisions?: Record<string, "applies" | "not_applies" | "not_sure">,
+  extraInput?: Record<string, unknown>
 ) {
   const generated = runRulesEngine(KB, {
     municipalityName: municipality,
     businessTypeName: businessType,
     answers,
     entityType,
+    ...extraInput,
   }).requirements;
   return classifyEngineRequirements(generated, {
     kb: KB,
@@ -78,7 +80,22 @@ test("stock corporation receives incorporation, not organization", () => {
   assert.equal(ids.includes("DOC_CERT_INCORPORATION"), true);
   assert.equal(ids.includes("DOC_ARTICLES_ORGANIZATION"), false);
   const incorp = rows.find((r) => r.document_id === "DOC_CERT_INCORPORATION")!;
-  assert.equal(incorp.applicability, "required");
+  // Unknown intent never confirms formation: conditional until the intake
+  // determines this is a new, unformed business.
+  assert.equal(incorp.applicability, "conditional");
+  // Settled new + unformed intent confirms it as required.
+  const confirmed = classify(
+    "Restaurant",
+    "San Juan",
+    { Q_PHYSICAL_LOCATION: true },
+    "stock_corporation",
+    undefined,
+    { businessStatus: "new", entityNotFormed: true }
+  );
+  assert.equal(
+    confirmed.find((r) => r.document_id === "DOC_CERT_INCORPORATION")?.applicability,
+    "required"
+  );
 });
 
 test("LLC receives organization, not incorporation", () => {
