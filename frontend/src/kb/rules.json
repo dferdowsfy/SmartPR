@@ -2612,7 +2612,20 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "commercial_vehicles"
+    ],
+    "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
+    "reviewed_at": "2026-09-16",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "verification set to heuristic with missing_fact_keys",
+        "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+      }
+    ]
   },
   {
     "id": "RULE_0186",
@@ -2626,7 +2639,20 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "commercial_vehicles"
+    ],
+    "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
+    "reviewed_at": "2026-09-16",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "verification set to heuristic with missing_fact_keys",
+        "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+      }
+    ]
   },
   {
     "id": "RULE_0187",
@@ -2640,7 +2666,20 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "commercial_vehicles"
+    ],
+    "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
+    "reviewed_at": "2026-09-16",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "verification set to heuristic with missing_fact_keys",
+        "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+      }
+    ]
   },
   {
     "id": "RULE_0188",
@@ -2654,7 +2693,20 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "commercial_vehicles"
+    ],
+    "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
+    "reviewed_at": "2026-09-16",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "verification set to heuristic with missing_fact_keys",
+        "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+      }
+    ]
   },
   {
     "id": "RULE_0189",
