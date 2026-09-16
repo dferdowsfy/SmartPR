@@ -24,7 +24,12 @@ import {
   AGENCY_FILING_CONFIGS,
   getFilingConfig,
 } from "../../../../lib/agency-runs/filingTypes";
-import { DEFAULT_LOGIN_PENDING_FIELDS } from "../../../../lib/agency-runs/pendingFields";
+import {
+  collectPortalValidationMessages,
+  DEFAULT_LOGIN_PENDING_FIELDS,
+  fieldHasValidationIssue,
+  VALIDATION_HINT_RE,
+} from "../../../../lib/agency-runs/pendingFields";
 import {
   mergeFieldsWithPassportPrefill,
   prefillFromPassport,
@@ -190,7 +195,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         return;
       }
       setRun(result.run as AgencyRunPublic);
-      if (hasFields) setFieldValues({});
+      // Keep fieldValues in React state so a re-pause with the same ids can
+      // edit in place (portal validation errors). Cleared only on new run id.
       setTakeover(false);
     } finally {
       setBusy(false);
@@ -370,6 +376,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     if (f.optional) return false;
     return Boolean((fieldValues[f.id] || "").trim());
   }) || pendingFields.some((f) => Boolean((fieldValues[f.id] || "").trim()));
+
+  const portalValidationMessages = useMemo(
+    () => collectPortalValidationMessages(pendingFields),
+    [pendingFields]
+  );
+  const showValidationBanner =
+    portalValidationMessages.length > 0 ||
+    pendingFields.some((f) => fieldHasValidationIssue(f));
+
   const preflightConfig = getFilingConfig(filingType);
 
   return (
@@ -533,6 +548,28 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               </ol>
               {paused && pendingFields.length > 0 && (
                 <div className="space-y-2 border-t border-amber-100 bg-amber-50/60 px-3 py-3">
+                  {showValidationBanner && (
+                    <div
+                      role="alert"
+                      className="flex gap-2 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-[11px] leading-snug text-rose-950"
+                    >
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                      <div>
+                        <div className="font-bold text-rose-900">
+                          {L(
+                            "Portal rejected a value — fix below",
+                            "El portal rechazó un valor — corríjalo abajo",
+                            lang
+                          )}
+                        </div>
+                        {portalValidationMessages.length > 0 ? (
+                          <p className="mt-1 text-rose-900/90">
+                            {portalValidationMessages.join(" · ")}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-900">
                     <KeyRound className="h-3.5 w-3.5" />
                     {L("Required fields", "Campos requeridos", lang)}
@@ -626,8 +663,19 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                             </button>
                           )}
                         </div>
+                        {field.error ? (
+                          <p className="mt-1 text-[10px] font-medium leading-snug text-rose-700">
+                            {field.error}
+                          </p>
+                        ) : null}
                         {field.hint ? (
-                          <p className="mt-1 text-[10px] leading-snug text-amber-900/70">
+                          <p
+                            className={`mt-1 text-[10px] leading-snug ${
+                              !field.error && VALIDATION_HINT_RE.test(field.hint)
+                                ? "font-medium text-rose-700"
+                                : "text-slate-500"
+                            }`}
+                          >
                             {field.hint}
                           </p>
                         ) : null}
