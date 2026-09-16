@@ -127,3 +127,32 @@ test("contextual lead degrades gracefully with no case facts", () => {
   assert.ok(bare.whyThisApplies.startsWith("Your situation: Hiring employees. "),
     `unexpected lead: ${bare.whyThisApplies.slice(0, 80)}`);
 });
+
+test("OGPe construction permit guidance is construction-first, never solar-only", () => {
+  // Regression (live QA 2026-09-16): the construction-permit card for a
+  // Mayagüez car wash (new construction, no solar) showed solar-photovoltaic
+  // and LUMA guidance text, because the concept was written for the solar
+  // case only. The document is the general OGPe construction permit.
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_OGPE_CONSTRUCTION_PERMIT"), { ...context, language });
+    assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `construction permit (${language})`);
+    assert.doesNotMatch(g.whatThisIs, /solar/i, `whatThisIs (${language})`);
+    assert.doesNotMatch(g.whatYouNeedToDo, /LUMA/i, `whatYouNeedToDo (${language})`);
+    assert.match(g.regulatoryReason, /New construction|construcción nueva/, `regulatoryReason (${language})`);
+    // The validated solar exemption nuance is preserved, not deleted.
+    assert.match(g.regulatoryReason, /1 MW/, `solar nuance kept (${language})`);
+  }
+});
+
+test("off-street parking legal basis never names a specific municipality", () => {
+  // Regression (live QA 2026-09-16): a Caguas filing's parking card cited
+  // San Juan's municipal traffic code as its legal basis, because RULE_0271
+  // (metro flag, all metro municipalities) carried a San Juan citation.
+  const ruleBasis = legalBasisFor("RULE_0271", "DOC_PARKING_COMPLIANCE", kb as any);
+  assert.ok(ruleBasis, "rule citation resolves");
+  assert.doesNotMatch(ruleBasis.citation, /San Juan/i);
+  const docBasis = legalBasisFor("RULE_DOES_NOT_EXIST", "DOC_PARKING_COMPLIANCE", kb as any);
+  assert.ok(docBasis, "document citation fallback resolves");
+  assert.doesNotMatch(docBasis.citation, /San Juan/i);
+  assert.match(docBasis.citation, /Reglamento Conjunto/);
+});

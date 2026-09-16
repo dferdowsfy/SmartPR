@@ -4097,7 +4097,7 @@
     "expected_answer": null,
     "municipality_flag": "metro",
     "requires_document_id": "DOC_PARKING_COMPLIANCE",
-    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula estacionamiento y multas en la vía pública municipal",
+    "citation": "Reglamento Conjunto (Ley 161-2009) — off-street parking requirements are reviewed in the use-permit process via OGPe's Single Business Portal; municipal parking ordinances may add local requirements",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PARKING_COMPLIANCE",
     "citation_source": "document",
@@ -4115,7 +4115,8 @@
         "change": "verification set to heuristic with missing_fact_keys",
         "reason": "Audit 2026-09-16: bare municipality-flag triggers are not regulatory triggers. Rule kept as needs-evaluation guidance, never a confirmed requirement."
       }
-    ]
+    ],
+    "citation_url": "https://www.permisos.pr.gov/"
   },
   {
     "id": "RULE_0272",

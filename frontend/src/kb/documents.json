@@ -671,8 +671,9 @@
     "download_url": null,
     "download_kind": "none",
     "download_note": "Issued via the municipal permits office / OGPe Permiso Único process; no standalone form.",
-    "citation": "Código de Tránsito y Estacionamiento Vehicular del Municipio de San Juan (revisado 20 de marzo de 2025) — regula estacionamiento y multas en la vía pública municipal",
-    "citation_confidence": "page"
+    "citation": "Reglamento Conjunto (Ley 161-2009) — off-street parking requirements are reviewed in the use-permit process via OGPe's Single Business Portal; municipal parking ordinances may add local requirements",
+    "citation_confidence": "page",
+    "citation_url": "https://www.permisos.pr.gov/"
   },
   {
     "id": "DOC_LOADING_ZONE_PERMIT",
