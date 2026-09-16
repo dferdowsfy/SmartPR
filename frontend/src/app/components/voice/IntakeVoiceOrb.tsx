@@ -563,6 +563,17 @@ export function IntakeVoiceOrb({
         .spr-disc-pulse {
           animation: spr-disc-pulse 2.4s ease-in-out infinite;
         }
+        /* Safari (esp. mobile) does not reliably clip GPU-composited,
+           transform-animated descendants with border-radius + overflow
+           alone — the rotating smoke layers paint square corners and the
+           orb intermittently renders as a square. A circular mask is
+           applied at compositing time, so it enforces the clip no matter
+           how the children are composited. 98% -> 100% feather keeps the
+           edge crisp against the border-radius circle. */
+        .spr-orb-clip {
+          -webkit-mask-image: -webkit-radial-gradient(center, circle closest-side, rgba(0,0,0,1) 98%, rgba(0,0,0,0) 100%);
+          mask-image: radial-gradient(circle closest-side, rgba(0,0,0,1) 98%, rgba(0,0,0,0) 100%);
+        }
         @media (prefers-reduced-motion: reduce) {
           .spr-intake-orb-breathe,
           .spr-intake-orb-ring,
@@ -816,6 +827,11 @@ export function IntakeVoiceOrb({
                   "inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
               }}
             >
+            {/* Smoke layers sit inside a masked circular clipper: without the
+                mask, Safari intermittently renders the orb as a square
+                because the rotating (GPU-composited) smoke squares escape
+                the border-radius + overflow clip. */}
+            <span aria-hidden className="spr-orb-clip absolute inset-0 overflow-hidden rounded-full bg-[#0b3532]">
             {/* Smoke layer — slow clockwise swirl */}
             <span
               aria-hidden
@@ -838,6 +854,7 @@ export function IntakeVoiceOrb({
                 mixBlendMode: "screen",
               }}
             />
+            </span>
             {/* Glass depth shading */}
             <span
               aria-hidden
