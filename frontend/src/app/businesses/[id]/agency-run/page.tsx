@@ -33,7 +33,7 @@ import type {
   AgencyRunPublic,
   AgencyRunStatus,
 } from "../../../../lib/agency-runs/types";
-import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
+import { getFilingConfig, AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
 import { DEFAULT_LOGIN_PENDING_FIELDS } from "../../../../lib/agency-runs/pendingFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
@@ -212,43 +212,92 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  /**
+   * Step 1 of start: fetch the pre-flight model (passport items + at most 3
+   * questions) and show it in chat. The run launches only after the human
+   * confirms in the pre-flight card (Start filing) — possibly answering
+   * nothing.
+   */
   const startAction = async (action: AgencyAction) => {
     setActionBusyId(action.id);
     setError(null);
     try {
-      const response = await fetch("/api/agency-actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // objective_en selects the server-resolved variant the human picked
-        // (e.g. Dept. of State new-entity vs annual report); the server only
-        // honors objectives it resolved itself.
-        body: JSON.stringify({
-          business_id: businessId,
-          action_id: action.id,
-          objective_en: action.objective_en ?? null,
-          objective_es: action.objective_es ?? null,
-        }),
+      const params = new URLSearchParams({
+        business_id: businessId,
+        action_id: action.id,
       });
+      if (action.objective_en) params.set("objective_en", action.objective_en);
+      const response = await fetch(`/api/agency-actions/preflight?${params.toString()}`);
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(result.error || L("Could not start run.", "No se pudo iniciar la ejecución.", lang));
+        setError(result.error || L("Could not load the pre-flight check.", "No se pudo cargar la revisión previa.", lang));
         return;
       }
-      const started = result.run as AgencyRunPublic;
-      const brief = (result.brief ?? null) as GoalBrief | null;
-      setRun(started);
-      setGoalBrief(brief);
-      if (brief) {
-        pushMsg({
-          id: `brief-${Date.now()}`,
-          type: "goal-brief",
-          brief,
-          filingLabelEn: action.title_en,
-          filingLabelEs: action.title_es,
-        });
+      let uploadsEn = "";
+      let uploadsEs = "";
+      const cfg = AGENCY_FILING_CONFIGS.find((c) => c.id === action.id);
+      if (cfg) {
+        uploadsEn = cfg.uploadsEn;
+        uploadsEs = cfg.uploadsEs;
       }
+      pushMsg({
+        id: `preflight-${Date.now()}`,
+        type: "preflight",
+        preflight: result.preflight,
+        action,
+        filingLabelEn: result.filing_label_en ?? action.title_en,
+        filingLabelEs: result.filing_label_es ?? action.title_es,
+        uploadsEn,
+        uploadsEs,
+      });
     } finally {
       setActionBusyId(null);
+    }
+  };
+
+  /**
+   * Step 2 of start: the human confirmed the pre-flight card. Launch the run
+   * with the answers baked into the goal brief (portal-account line) and the
+   * up-front sensitive fields into the prompt's FIELDS FILL block.
+   */
+  const confirmPreflightStart = async (
+    msg: Extract<SessionMsg, { type: "preflight" }>,
+    answers: { account_status?: "has_account" | "no_account"; fields?: Record<string, string> }
+  ): Promise<void> => {
+    const action = msg.action;
+    const response = await fetch("/api/agency-actions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // objective_en selects the server-resolved variant the human picked
+      // (e.g. Dept. of State new-entity vs annual report); the server only
+      // honors objectives it resolved itself.
+      body: JSON.stringify({
+        business_id: businessId,
+        action_id: action.id,
+        objective_en: action.objective_en ?? null,
+        objective_es: action.objective_es ?? null,
+        preflight_answers: {
+          ...(answers.account_status ? { account_status: answers.account_status } : {}),
+          ...(answers.fields ? { fields: answers.fields } : {}),
+        },
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || L("Could not start run.", "No se pudo iniciar la ejecución.", lang));
+    }
+    const started = result.run as AgencyRunPublic;
+    const brief = (result.brief ?? null) as GoalBrief | null;
+    setRun(started);
+    setGoalBrief(brief);
+    if (brief) {
+      pushMsg({
+        id: `brief-${Date.now()}`,
+        type: "goal-brief",
+        brief,
+        filingLabelEn: action.title_en,
+        filingLabelEs: action.title_es,
+      });
     }
   };
 
@@ -369,7 +418,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     await resume();
   };
 
-  const uploadToLocker = async (file: File) => {
+  const uploadToLocker = async (file: File, tags?: string[]) => {
     setUploadBusy(true);
     setUploadMsg(null);
     try {
@@ -386,7 +435,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       const form = new FormData();
       form.append("file", file);
       form.append("business_id", businessId);
-      form.append("requirement_tags", activeConfig.evidenceTags.join(","));
+      form.append("requirement_tags", (tags ?? activeConfig.evidenceTags).join(","));
       const response = await fetch("/api/evidence", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -670,6 +719,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               onSelectAgency={(id) => void fetchActions(id)}
               onStartAction={(action) => void startAction(action)}
               actionBusyId={actionBusyId}
+              onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}
+              onUploadEvidence={(file, tags) => void uploadToLocker(file, tags)}
+              uploadBusy={uploadBusy}
               filingType={filingType}
               onFilingTypeChange={setFilingType}
               onLegacyStart={() => void legacyStart()}

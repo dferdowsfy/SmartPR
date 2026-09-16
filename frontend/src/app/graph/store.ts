@@ -178,6 +178,16 @@ CREATE OR REPLACE VIEW v_submission_comparison AS
     SELECT score FROM readiness_scores r WHERE r.submission_id = s.id
     ORDER BY created_at DESC LIMIT 1
   ) rs ON true;
+--- Portal account memory (labels only — never credentials): whether a
+--- business already has an account on an agency portal, so the pre-flight
+--- account question is asked once instead of on every run.
+CREATE TABLE IF NOT EXISTS business_portal_accounts (
+  business_id UUID NOT NULL,
+  agency_id TEXT NOT NULL,
+  has_account BOOLEAN NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (business_id, agency_id));
+CREATE INDEX IF NOT EXISTS idx_bpa_business ON business_portal_accounts (business_id);
 `;
 
 export interface SchemaStatementFailure {

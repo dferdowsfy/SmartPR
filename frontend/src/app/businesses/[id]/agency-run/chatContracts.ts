@@ -26,6 +26,11 @@ import type {
 export type { AgencyFilingType, AgencyPauseReason, AgencyRunEvent, AgencyRunStatus };
 export type { AgencyAction } from "../../../../lib/agency-runs/agencyActions";
 export type { GoalBrief } from "../../../../lib/agency-runs/goalBrief";
+export type {
+  Preflight,
+  PreflightQuestion,
+  PortalAccountStatus,
+} from "../../../../lib/agency-runs/preflight";
 export type { AgencyWorkflowState } from "../../../../lib/agency-runs/workflowStates";
 export type { ChatMilestone } from "../../../../lib/agency-runs/milestoneClassifier";
 

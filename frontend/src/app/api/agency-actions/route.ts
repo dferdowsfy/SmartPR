@@ -23,12 +23,18 @@ import {
 import { getFilingConfig } from "../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../lib/agency-runs/goalBrief";
 import { loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
+import { parseAccountStatusAnswer } from "../../../lib/agency-runs/preflight";
+import {
+  getPortalAccountStatus,
+  setPortalAccountStatus,
+} from "../../../lib/agency-runs/portalAccounts";
 import { getCurrentUser } from "../../../lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function actionsFor(
+/** Resolve agency actions for a business+agency (labels only, no values). Shared with the preflight route. */
+export async function actionsFor(
   businessId: string,
   agencyId: string,
   userId: string | null
@@ -71,6 +77,15 @@ export async function POST(request: Request) {
     action_id?: string;
     objective_en?: string;
     objective_es?: string;
+    /**
+     * Pre-flight answers from chat (optional). account_status is the human's
+     * answer to the portal-account question; fields are up-front sensitive
+     * field values keyed by missing-item id — ephemeral, never persisted.
+     */
+    preflight_answers?: {
+      account_status?: unknown;
+      fields?: Record<string, unknown> | null;
+    } | null;
   };
   try {
     body = await request.json();
@@ -144,6 +159,7 @@ export async function POST(request: Request) {
     action: picked,
     objective_en: picked.objective_en,
     objective_es: picked.objective_es,
+    portal_account: await resolvePortalAccount(businessId, agencyId, body.preflight_answers),
   });
   const passport = await loadPassportForBusiness(businessId, user?.id ?? null);
   const run = await createRun({
@@ -152,6 +168,46 @@ export async function POST(request: Request) {
     owner_user_id: user?.id ?? null,
     passport,
     goalBrief: brief,
+    fields: sanitizePreflightFields(picked, body.preflight_answers?.fields),
   });
   return Response.json({ run, brief }, { status: 201 });
+}
+
+/**
+ * Resolve the portal-account label for the goal brief: the pre-flight answer
+ * wins (and is remembered), otherwise fall back to the remembered label.
+ */
+async function resolvePortalAccount(
+  businessId: string,
+  agencyId: string,
+  answers: { account_status?: unknown } | null | undefined
+): Promise<"has_account" | "no_account" | "unknown"> {
+  const answered = parseAccountStatusAnswer(answers?.account_status);
+  if (answered) {
+    await setPortalAccountStatus(businessId, agencyId, answered === "has_account");
+    return answered;
+  }
+  return getPortalAccountStatus(businessId, agencyId);
+}
+
+/**
+ * Keep only pre-flight field values whose id matches a missing item on the
+ * action the human picked — the agent prompt must never receive arbitrary
+ * client-supplied field ids. Values are trimmed and length-capped; empty
+ * values are dropped so they become mid-run pauses as usual.
+ */
+function sanitizePreflightFields(
+  action: AgencyAction,
+  fields: Record<string, unknown> | null | undefined
+): Record<string, string> | null {
+  if (!fields || typeof fields !== "object") return null;
+  const allowed = new Set((action.missing_items ?? []).map((m) => m.id));
+  const out: Record<string, string> = {};
+  for (const [id, value] of Object.entries(fields)) {
+    if (!allowed.has(id) || typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    out[id] = trimmed.slice(0, 512);
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }

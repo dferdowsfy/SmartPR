@@ -11,6 +11,7 @@
 import type { AgencyFilingConfig } from "./filingTypes";
 import type { AgencyAction } from "./agencyActions";
 import { CANONICAL_LABELS } from "./canonicalFields";
+import type { PortalAccountStatus } from "./preflight";
 
 /**
  * Mirrors the SENSITIVE_ID_RE in prefillFromPassport.ts (that module does not
@@ -30,6 +31,12 @@ export interface GoalBrief {
   known_fields: { label_en: string; label_es: string }[];
   user_input_expected: { id: string; label_en: string; label_es: string; sensitive: boolean }[];
   evidence_available: string[];
+  /**
+   * Remembered/answered portal-account status (labels only). Drives the
+   * PORTAL ACCOUNT line in the prompt block: HAS account → expect a login
+   * gate; NO account → begin with new-account registration.
+   */
+  portal_account?: PortalAccountStatus;
 }
 
 /**
@@ -47,6 +54,8 @@ export function buildGoalBrief(input: {
   action: AgencyAction;
   objective_en?: string | null;
   objective_es?: string | null;
+  /** Portal-account label from memory or the pre-flight answer (labels only). */
+  portal_account?: PortalAccountStatus;
 }): GoalBrief {
   const { config, action } = input;
 
@@ -89,6 +98,7 @@ export function buildGoalBrief(input: {
       sensitive: m.sensitive,
     })),
     evidence_available: action.evidence_available ?? [],
+    portal_account: input.portal_account,
   };
 }
 
@@ -102,6 +112,11 @@ export function goalBriefToPromptBlock(brief: GoalBrief): string {
   lines.push(`AGENCY: ${brief.agency_en} / ${brief.agency_es}`);
   lines.push(`GOAL: ${brief.goal_en}`);
   lines.push(`EXPECTED OUTCOME: ${brief.expected_outcome_en}`);
+  // Only when the pre-flight step (or memory) resolved a portal-account
+  // label — existing briefs without one stay byte-identical.
+  if (brief.portal_account) {
+    lines.push(portalAccountPromptLine(brief.portal_account));
+  }
   lines.push("");
   lines.push(
     `KNOWN INFORMATION (${brief.known_fields.length} field${
@@ -137,6 +152,23 @@ export function goalBriefToPromptBlock(brief: GoalBrief): string {
   }
   lines.push("=== END AGENCY / GOAL BRIEF ===");
   return lines.join("\n");
+}
+
+/**
+ * Render the PORTAL ACCOUNT line for the agent prompt block.
+ * - HAS account: expect a login gate; pause for credentials via USER_LOGIN.
+ * - NO account: begin with new-account registration; pause where a password
+ *   must be created — the agent NEVER invents or reuses a password.
+ * - unknown/omitted: no line (the agent falls back to pausing at either gate).
+ */
+function portalAccountPromptLine(status: PortalAccountStatus | undefined): string {
+  if (status === "has_account") {
+    return "PORTAL ACCOUNT: the human already has an account on this portal — expect a login gate and pause for credentials via USER_LOGIN; never invent or type login credentials yourself.";
+  }
+  if (status === "no_account") {
+    return "PORTAL ACCOUNT: the human does NOT have an account on this portal — begin with new-account registration; pause where a password must be created (never invent one, never reuse one, never type a placeholder).";
+  }
+  return "PORTAL ACCOUNT: unknown — if a login gate appears, pause for credentials via USER_LOGIN; if registration is required, pause where a password must be created (never invent one).";
 }
 
 function leafOf(key: string): string {

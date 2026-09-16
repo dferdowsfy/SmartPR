@@ -29,6 +29,8 @@ import {
   type AgencyAction,
   type ChatMilestone,
   type GoalBrief,
+  type Preflight,
+  type PreflightQuestion,
 } from "./chatContracts";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -58,6 +60,22 @@ export interface GoalBriefMsg {
   filingLabelEn: string;
   filingLabelEs: string;
 }
+/**
+ * Pre-flight session message — shown after Start on an action card, before
+ * the run launches. Passport items first (labels only), then at most 3
+ * questions. Answers are passed to onConfirmPreflight; unanswered questions
+ * simply become mid-run pauses.
+ */
+export interface PreflightMsg {
+  id: string;
+  type: "preflight";
+  preflight: Preflight;
+  action: AgencyAction;
+  filingLabelEn: string;
+  filingLabelEs: string;
+  uploadsEn: string;
+  uploadsEs: string;
+}
 export interface LegacyPickerMsg {
   id: string;
   type: "legacy-picker";
@@ -73,6 +91,7 @@ export type SessionMsg =
   | AgencyPickerMsg
   | ActionListMsg
   | GoalBriefMsg
+  | PreflightMsg
   | LegacyPickerMsg
   | TextMsg;
 
@@ -241,6 +260,324 @@ function ActionCard({
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
         </button>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Pre-flight card — passport-first intake before the run launches      */
+/* ------------------------------------------------------------------ */
+
+export interface PreflightAnswers {
+  account_status?: "has_account" | "no_account";
+  fields?: Record<string, string>;
+}
+
+function PreflightCard({
+  preflight,
+  filingLabelEn,
+  filingLabelEs,
+  uploadsEn,
+  uploadsEs,
+  lang,
+  onUpload,
+  uploadBusy,
+  onConfirm,
+}: {
+  preflight: Preflight;
+  filingLabelEn: string;
+  filingLabelEs: string;
+  uploadsEn: string;
+  uploadsEs: string;
+  lang: Lang;
+  onUpload: (file: File, tags: string[]) => void;
+  uploadBusy: boolean;
+  onConfirm: (answers: PreflightAnswers) => Promise<void>;
+}) {
+  const [accountChoice, setAccountChoice] = useState<"has_account" | "no_account" | null>(null);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [skippedFields, setSkippedFields] = useState<Record<string, boolean>>({});
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [evidenceSkipped, setEvidenceSkipped] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const evidenceFileRef = useRef<HTMLInputElement | null>(null);
+
+  const items = preflight.passport_items ?? [];
+  const inlineItems = items.slice(0, 5);
+
+  const handleConfirm = async () => {
+    setConfirmBusy(true);
+    setConfirmError(null);
+    try {
+      const fields: Record<string, string> = {};
+      for (const q of preflight.questions) {
+        if (q.kind === "sensitive_field" && !skippedFields[q.id]) {
+          const v = (fieldValues[q.id] || "").trim();
+          if (v) fields[q.id] = v;
+        }
+      }
+      await onConfirm({
+        ...(accountChoice ? { account_status: accountChoice } : {}),
+        ...(Object.keys(fields).length > 0 ? { fields } : {}),
+      });
+      setSubmitted(true);
+    } catch (e) {
+      setConfirmError(
+        e instanceof Error ? e.message : L("Could not start the run.", "No se pudo iniciar la ejecución.", lang)
+      );
+    } finally {
+      setConfirmBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-[#fbf8f2] p-3.5">
+      <p className="text-sm font-bold text-[#161616]">
+        {L("Before we start — quick check", "Antes de arrancar — chequeo rápido", lang)}
+      </p>
+      <p className="mt-1 text-xs text-slate-600">
+        {L(
+          `Here's my plan for your ${filingLabelEn}.`,
+          `Este es mi plan para tu ${filingLabelEs}.`,
+          lang
+        )}
+      </p>
+
+      {/* Passport first — labels only, nothing to fill in */}
+      <div className="mt-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5">
+        <p className="text-xs font-semibold text-emerald-900">
+          {L(
+            `Using from your Business Passport (${items.length} items):`,
+            `Estoy usando de tu Pasaporte de Negocio (${items.length}):`,
+            lang
+          )}
+        </p>
+        <p className="mt-1 text-xs leading-snug text-emerald-900/80">
+          {inlineItems.map((f) => L(f.label_en, f.label_es, lang)).join(", ")}
+          {items.length > inlineItems.length ? ` +${items.length - inlineItems.length}` : ""}
+        </p>
+        <p className="mt-1 text-[11px] font-medium text-emerald-900/70">
+          {L("You won't need to re-enter any of this.", "No tienes que volver a escribir nada de esto.", lang)}
+        </p>
+        {items.length > inlineItems.length && (
+          <details className="mt-1">
+            <summary className="cursor-pointer text-[11px] font-semibold text-emerald-800">
+              {L("See all", "Ver todo", lang)}
+            </summary>
+            <ul className="mt-1 space-y-0.5">
+              {items.map((f, i) => (
+                <li key={i} className="flex items-center gap-1.5 text-[11px] text-emerald-900/80">
+                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                  {L(f.label_en, f.label_es, lang)}
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </div>
+
+      {/* Questions second — at most 3, all skippable */}
+      {preflight.questions.length > 0 && !submitted && (
+        <div className="mt-2.5">
+          <p className="text-xs font-semibold text-slate-700">
+            {L("Still need from you:", "Todavía necesito de ti:", lang)}
+          </p>
+          <div className="mt-1.5 space-y-2.5">
+            {preflight.questions.map((q, qi) => {
+              if (q.kind === "account_status") {
+                const portal = L(preflight.portal_name_en, preflight.portal_name_es, lang);
+                return (
+                  <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                    <p className="text-xs font-medium text-slate-800">
+                      {L(
+                        `Do you already have an account on ${portal}?`,
+                        `¿Ya tienes cuenta en ${portal}?`,
+                        lang
+                      )}
+                    </p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {(
+                        [
+                          ["has_account", L("I have an account", "Tengo cuenta", lang)],
+                          ["no_account", L("Create one for me", "Crear una para mí", lang)],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setAccountChoice(value)}
+                          className={`rounded-lg border px-2.5 py-2 text-xs font-semibold transition ${
+                            accountChoice === value
+                              ? "border-brand bg-brand/[0.06] text-brand"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-brand/40"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-[11px] leading-snug text-slate-500">
+                      {L(
+                        "If you don't have one, I'll create it first and pause where a password must be created — I never invent it.",
+                        "Si no tienes, la creo primero y me detengo donde haya que crear la contraseña — nunca la invento.",
+                        lang
+                      )}
+                    </p>
+                  </div>
+                );
+              }
+              if (q.kind === "sensitive_field") {
+                const skipped = Boolean(skippedFields[q.id]);
+                const isRevealed = Boolean(revealed[q.id]);
+                return (
+                  <div key={q.id} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                    <p className="text-xs font-medium text-slate-800">
+                      {L(q.label_en, q.label_es, lang)}
+                    </p>
+                    {skipped ? (
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        {L("I'll ask during the run.", "Te lo pregunto durante la ejecución.", lang)}{" "}
+                        <button
+                          type="button"
+                          onClick={() => setSkippedFields((s) => ({ ...s, [q.id]: false }))}
+                          className="font-semibold text-brand underline"
+                        >
+                          {L("Undo", "Deshacer", lang)}
+                        </button>
+                      </p>
+                    ) : (
+                      <>
+                        <div className="relative mt-1.5">
+                          <input
+                            type={isRevealed ? "text" : "password"}
+                            autoComplete="off"
+                            inputMode={/ssn|itin|tax_id/i.test(q.id) ? "numeric" : undefined}
+                            value={fieldValues[q.id] || ""}
+                            onChange={(e) =>
+                              setFieldValues((v) => ({ ...v, [q.id]: e.target.value }))
+                            }
+                            placeholder={L("Type here (optional)", "Escribe aquí (opcional)", lang)}
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 pr-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setRevealed((r) => ({ ...r, [q.id]: !r[q.id] }))}
+                            className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-800"
+                            aria-label={
+                              isRevealed
+                                ? L("Hide value", "Ocultar valor", lang)
+                                : L("Show value", "Mostrar valor", lang)
+                            }
+                          >
+                            {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                          </button>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-2">
+                          <p className="text-[11px] leading-snug text-slate-500">
+                            {L(
+                              "Used once for this run and never stored.",
+                              "Se usa una sola vez para esta ejecución y no se guarda.",
+                              lang
+                            )}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSkippedFields((s) => ({ ...s, [q.id]: true }));
+                              setFieldValues((v) => ({ ...v, [q.id]: "" }));
+                            }}
+                            className="shrink-0 text-[11px] font-semibold text-brand underline"
+                          >
+                            {L("Ask me later", "Pregúntame después", lang)}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+              // evidence
+              if (evidenceSkipped) {
+                return (
+                  <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                    <p className="text-[11px] text-slate-500">
+                      {L("I'll ask for documents during the run.", "Te pido los documentos durante la ejecución.", lang)}{" "}
+                      <button
+                        type="button"
+                        onClick={() => setEvidenceSkipped(false)}
+                        className="font-semibold text-brand underline"
+                      >
+                        {L("Undo", "Deshacer", lang)}
+                      </button>
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                  <p className="text-xs font-medium text-slate-800">
+                    {L(uploadsEn, uploadsEs, lang)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <input
+                      ref={evidenceFileRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        for (const f of files) onUpload(f, preflight.evidence_tags);
+                        e.target.value = "";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={uploadBusy}
+                      onClick={() => evidenceFileRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand/40 disabled:opacity-50"
+                    >
+                      {uploadBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                      {L("Attach documents", "Adjuntar documentos", lang)}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEvidenceSkipped(true)}
+                      className="text-[11px] font-semibold text-brand underline"
+                    >
+                      {L("I'll provide them during the run", "Los subo durante la ejecución", lang)}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Start — always visible */}
+      {submitted ? (
+        <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+          <CheckCircle2 className="h-4 w-4" />
+          {L("Started — launching your filing…", "Empezado — lanzando tu radicación…", lang)}
+        </p>
+      ) : (
+        <>
+          {confirmError && (
+            <p className="mt-2.5 text-xs font-medium text-rose-700">{confirmError}</p>
+          )}
+          <button
+            type="button"
+            disabled={confirmBusy}
+            onClick={() => void handleConfirm()}
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {confirmBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+            {L("Start filing", "Empezar la radicación", lang)}
+          </button>
+        </>
       )}
     </div>
   );
@@ -634,6 +971,11 @@ export interface AgencyChatProps {
   onSelectAgency: (agencyId: string) => void;
   onStartAction: (action: AgencyAction) => void;
   actionBusyId: string | null;
+  /** Pre-flight confirm → POST /api/agency-actions with the answers. */
+  onConfirmPreflight: (msg: PreflightMsg, answers: PreflightAnswers) => Promise<void>;
+  /** Pre-flight evidence attach — uploads straight to the Evidence Locker. */
+  onUploadEvidence: (file: File, tags: string[]) => void;
+  uploadBusy: boolean;
   filingType: AgencyFilingType;
   onFilingTypeChange: (t: AgencyFilingType) => void;
   onLegacyStart: () => void;
@@ -753,6 +1095,23 @@ export function AgencyChat(props: AgencyChatProps) {
                     {L(b.expected_outcome_en, b.expected_outcome_es, lang)}
                   </p>
                 )}
+              </AssistantBubble>
+            );
+          }
+          if (msg.type === "preflight") {
+            return (
+              <AssistantBubble key={msg.id}>
+                <PreflightCard
+                  preflight={msg.preflight}
+                  filingLabelEn={msg.filingLabelEn}
+                  filingLabelEs={msg.filingLabelEs}
+                  uploadsEn={msg.uploadsEn}
+                  uploadsEs={msg.uploadsEs}
+                  lang={lang}
+                  onUpload={props.onUploadEvidence}
+                  uploadBusy={props.uploadBusy}
+                  onConfirm={(answers) => props.onConfirmPreflight(msg, answers)}
+                />
               </AssistantBubble>
             );
           }

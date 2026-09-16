@@ -37,6 +37,7 @@ import {
 } from "./taskPrompt";
 import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
 import type { GoalBrief } from "./goalBrief";
+import { setPortalAccountStatus } from "./portalAccounts";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -247,6 +248,14 @@ function trackPause(
   run.pause_reason = reason;
   applyPendingFields(run, sourceText || "", reason);
   run.updated_at = nowIso();
+  // A login gate proves the business has a portal account — remember the
+  // label (never credentials) so the pre-flight question is asked once.
+  if (reason === "USER_LOGIN") {
+    const agencyId = getFilingConfig(run.filing_type).agencyId;
+    if (agencyId) {
+      void setPortalAccountStatus(run.business_id, agencyId, true);
+    }
+  }
   if (run.pause_streak === 3) {
     pushEvent(run, {
       message: `Still blocked on the same step after ${run.pause_streak} attempts. If you already completed it in the live browser, the page may not have saved — look for a Save or Confirm button on the portal page, or press Reconnect and try again.`,
@@ -497,6 +506,12 @@ export async function createRun(input: {
   passport?: Record<string, unknown> | null;
   /** Labels-only goal brief from POST /api/agency-actions — drives the agent brief block. */
   goalBrief?: GoalBrief | null;
+  /**
+   * Up-front sensitive field values from the pre-flight step (ephemeral).
+   * Passed ONLY into the task prompt's FIELDS FILL block — never persisted
+   * on the run, never written into events or chat.
+   */
+  fields?: ResumeFields | null;
 }): Promise<AgencyRunPublic> {
   const created = nowIso();
   const useBu = isBrowserUseConfigured();
@@ -539,6 +554,7 @@ export async function createRun(input: {
         config: filingConfig,
         passport: input.passport || null,
         goalBrief: input.goalBrief ?? null,
+        fields: input.fields ?? null,
       });
       const buRun = await createAgentRun({
         task,
