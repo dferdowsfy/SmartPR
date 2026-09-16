@@ -11,8 +11,12 @@ const profile = { name: "Existing LLC", industry: "Food & Beverage", business_ty
 const snapshot = {
   business_id: "voice-test", matter_id: "matter-test",
   state: { profile, canonicalApplication: canonical, currentStep: 1,
-    discoveryAnswers: Object.fromEntries(questions.map((q: { id: string; type: string; options?: string[] }) => [q.id, q.type === "boolean" ? false : q.options?.[0]])),
-    potentialDecisions: Object.fromEntries(["island", "coastal", "tourism", "historic", "metro", "capital", "industrial_port", "airport_host"].map((key) => [key, "not_applies"])),
+    // Restaurant intake is complete, while a Bar-only question remains
+    // unanswered so a stray Passport-time reclassification would reopen it.
+    discoveryAnswers: Object.fromEntries(questions
+      .filter((q: { id: string }) => q.id !== "Q_ALCOHOL_SERVED")
+      .map((q: { id: string; type: string; options?: string[] }) => [q.id, q.type === "boolean" ? false : q.options?.[0]])),
+    potentialDecisions: Object.fromEntries(["coastal", "tourism", "historic", "metro", "capital"].map((key) => [key, "not_applies"])),
   },
 };
 const field = (page: Page, label: RegExp) => page.locator("label").filter({ hasText: label }).locator("..").locator("input").first();
@@ -20,14 +24,19 @@ const field = (page: Page, label: RegExp) => page.locator("label").filter({ hasT
 async function setup(page: Page) {
   const saves: Record<string, unknown>[] = [];
   const modes: unknown[] = [];
-  const state = { transcript: "", values: {} as Record<string, unknown>, failSave: false };
+  const state = {
+    transcript: "",
+    values: {} as Record<string, unknown>,
+    passportInterpretation: {} as Record<string, unknown>,
+    failSave: false,
+  };
   const business = { id: "voice-test", public_id: "voice-test", name: "Existing LLC", legal_name: "Existing LLC", passport_json: canonical, municipality: "San Juan", created_at: "2026-01-01", onboarding_mode: "NEW" };
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === "/api/intake/voice") return route.fulfill({ json: { transcript: state.transcript } });
     if (url.pathname === "/api/intake/interpret") {
       const body = route.request().postDataJSON(); modes.push(body.mode);
-      return route.fulfill({ json: body.mode === "passport" ? { proposals: validatePassportProposals(Object.entries(state.values).map(([fieldId, value]) => ({ fieldId, value, confidence: 0.99, evidence: state.transcript })), state.transcript, "en"), interpretation: {} }
+      return route.fulfill({ json: body.mode === "passport" ? { proposals: validatePassportProposals(Object.entries(state.values).map(([fieldId, value]) => ({ fieldId, value, confidence: 0.99, evidence: state.transcript })), state.transcript, "en"), interpretation: state.passportInterpretation }
         : { interpretation: { businessType: { id: "BT_RESTAURANT", name: "Restaurant", confidence: 0.99 }, municipality: { value: "San Juan", confidence: 0.99 }, profileValues: [], answers: [] } } });
     }
     if (url.pathname === "/api/me") return route.fulfill({ json: { user: { id: "test-user", name: "Test", email: "test@example.com" } } });
@@ -76,6 +85,46 @@ test("post-discovery voice updates canonical fields, autosaves, and requires con
   await expect.poll(() => saves.some((s) => (s.passport as typeof canonical)?.business.legalName === "Caribe Foods LLC")).toBe(true);
   expect(modes).toEqual(["passport"]);
   await expect(page).toHaveURL(/resume=voice-test/);
+});
+
+test("first Passport dictation cannot reclassify the business and reopen discovery", async ({ page }) => {
+  const { state, modes } = await setup(page);
+  state.transcript = "My legal entity name is Caribe Foods LLC.";
+  state.values = { legalName: "Caribe Foods LLC" };
+  state.passportInterpretation = {
+    businessType: { id: "BT_BAR", name: "Bar", confidence: 0.99 },
+    profileValues: [],
+    answers: [],
+  };
+
+  await page.goto("/?resume=voice-test&business=voice-test&matter=matter-test");
+  await expect(page.getByText("Core Application Details", { exact: true })).toBeVisible();
+  await dictate(page);
+
+  await expect(page.locator("#spr-business-type")).toHaveValue("Restaurant");
+  await expect(page.getByText("Core Application Details", { exact: true })).toBeVisible();
+  await expect(page.getByText(/Will alcohol be served/i)).toHaveCount(0);
+  await expect(page.getByText("Proposed: Caribe Foods LLC", { exact: true })).toBeVisible();
+  expect(modes).toEqual(["passport"]);
+});
+
+test("Passport mode remains active when a spoken field makes a new follow-up relevant", async ({ page }) => {
+  const { state, modes } = await setup(page);
+  state.transcript = "Our business municipality is Ponce.";
+  state.values = { municipality: "Ponce" };
+
+  await page.goto("/?resume=voice-test&business=voice-test&matter=matter-test");
+  await expect(page.getByText("Core Application Details", { exact: true })).toBeVisible();
+  await dictate(page);
+
+  await expect(page.locator("#spr-municipality")).toHaveValue("Ponce");
+  await expect(page.getByText("Core Application Details", { exact: true })).toBeVisible();
+
+  state.transcript = "My EIN is 66-1234567.";
+  state.values = { ein: "66-1234567" };
+  await dictate(page);
+  await expect(field(page, /^EIN\s*$/)).toHaveValue("66-1234567");
+  expect(modes).toEqual(["passport", "passport"]);
 });
 
 test("business profile preserves unsaved typing, saves voice values, and surfaces save failures", async ({ page }) => {
