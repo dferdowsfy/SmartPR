@@ -22,6 +22,7 @@ import type {
 } from "../../../../lib/agency-runs/types";
 import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
+import { fieldsAskedAgain } from "../../../../lib/agency-runs/pendingFields";
 import {
   actionStatusChipLabel,
   gateCopy,
@@ -591,6 +592,8 @@ export interface InterventionProps {
   lang: Lang;
   run: AgencyRunPublic;
   pendingFields: AgencyPendingField[];
+  /** Ids the human already supplied once (ids only) — drives the confirm card. */
+  suppliedFieldIds: string[];
   fieldValues: Record<string, string>;
   onFieldChange: (id: string, value: string) => void;
   revealedFields: Record<string, boolean>;
@@ -617,6 +620,9 @@ function InterventionCard(props: InterventionProps) {
   const seedKeyRef = useRef<string>("");
 
   const pauseReason: AgencyPauseReason = run.pause_reason;
+  /** Fields the human already supplied once that the agent is asking for
+   * again — these get a confirm banner instead of blank inputs. */
+  const askedAgain = fieldsAskedAgain(pendingFields, props.suppliedFieldIds);
   /** Text-field pause: the assistant card is the only place to type. */
   const fieldsPause =
     pendingFields.length > 0 || pauseReason === "USER_LOGIN";
@@ -680,6 +686,16 @@ function InterventionCard(props: InterventionProps) {
               {L(
                 `Still stuck on this step after ${run.pause_streak} tries. If fields are listed, fill them and continue — otherwise take over only for captcha or odd UI, then press “I'm done”.`,
                 `Sigo atascado en este paso después de ${run.pause_streak} intentos. Si hay campos, llénalos y continúa — si no, toma el control solo para captcha o pantallas raras, luego pulsa “Terminé”.`,
+                lang
+              )}
+            </div>
+          )}
+
+          {askedAgain.length > 0 && (
+            <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-900">
+              {L(
+                "You already provided this — the assistant is asking again. Confirm it's correct or fix it, then continue.",
+                "Ya me habías dado esto — el asistente lo está pidiendo de nuevo. Confirma que está correcto o corrígelo, y continúa.",
                 lang
               )}
             </div>

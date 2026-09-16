@@ -24,6 +24,51 @@ export const DEFAULT_LOGIN_PENDING_FIELDS: AgencyPendingField[] = [
 ];
 
 /**
+ * Subset of pending fields the human already supplied once (by id). When the
+ * agent re-requests these after a resume, the Assistant shows a confirm card
+ * ("you already provided this") instead of blank inputs — the user only
+ * re-types when a value was actually wrong or rejected.
+ */
+export function fieldsAskedAgain(
+  pending: AgencyPendingField[],
+  suppliedIds: readonly string[] | null | undefined
+): AgencyPendingField[] {
+  if (!pending.length || !suppliedIds || suppliedIds.length === 0) return [];
+  const supplied = new Set(suppliedIds);
+  return pending.filter((f) => supplied.has(f.id));
+}
+
+/**
+ * Ids of a fields map that actually carry a non-empty string value.
+ * Pure — ids only, never values.
+ */
+export function suppliedFieldIdsFrom(
+  fields: Record<string, unknown> | null | undefined
+): string[] {
+  if (!fields || typeof fields !== "object") return [];
+  return Object.keys(fields).filter((id) => {
+    if (typeof id !== "string" || id.trim() === "") return false;
+    const v = (fields as Record<string, unknown>)[id];
+    return typeof v === "string" && v.trim() !== "";
+  });
+}
+
+/**
+ * Merge newly submitted field ids into the run's supplied list (dedup,
+ * insertion order). Ids only — never values. Pure for tests.
+ */
+export function mergeSuppliedFieldIds(
+  existing: readonly string[] | null | undefined,
+  submitted: Record<string, unknown> | null | undefined
+): string[] {
+  const next = [...(existing ?? [])];
+  for (const id of suppliedFieldIdsFrom(submitted)) {
+    if (!next.includes(id)) next.push(id);
+  }
+  return next;
+}
+
+/**
  * Parse a REQUIRED_FIELDS block from agent text.
  *
  * Expected format (line-based, LLM-reliable):

@@ -19,7 +19,7 @@
  * - Takeover mode, reconnect preview, stop, provider badge.
  * - Mock provider timelines flow through the same chat components.
  */
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Bot, Cloud, Eye, EyeOff, Server, Shield,
@@ -104,6 +104,14 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * chat text or events; only POSTed to resume as `{ fields }`). */
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [revealedFields, setRevealedFields] = useState<Record<string, boolean>>({});
+  /** Field values the human already submitted once, keyed by run id.
+   * In-memory only (never persisted) — used to prefill the intervention
+   * card when the agent asks for the same fields again, so the user
+   * confirms instead of re-typing. */
+  const lastSubmittedRef = useRef<{ runId: string | null; values: Record<string, string> }>({
+    runId: null,
+    values: {},
+  });
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [browserOpen, setBrowserOpen] = useState(false);
 
@@ -354,7 +362,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         return false;
       }
       setRun(result.run as AgencyRunPublic);
-      if (hasFields) setFieldValues({});
+      if (hasFields) {
+        // Remember what was submitted (in-memory only) so a later re-ask of
+        // the same fields becomes a confirm card instead of blank re-entry.
+        const mem = lastSubmittedRef.current;
+        lastSubmittedRef.current = {
+          runId: run.id,
+          values: { ...(mem.runId === run.id ? mem.values : {}), ...cleaned },
+        };
+        setFieldValues({});
+      }
       setValidationError(null);
       setTakeover(false);
       return true;
@@ -464,11 +481,22 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const milestones = useMemo(() => {
     if (!run) return [];
     const cfg = getFilingConfig(run.filing_type);
-    return buildChatMilestones(run.events, {
+    const built = buildChatMilestones(run.events, {
       portalEn: cfg.portalEn,
       portalEs: cfg.portalEs,
     });
-  }, [run]);
+    // The goal-brief message already announces the start ("I'm starting your
+    // …") — skip the generic "I'm starting your … filing" milestone so the
+    // run doesn't open with two start bubbles. Legacy direct starts keep it.
+    const hasGoalBriefMsg = msgs.some((m) => m.type === "goal-brief");
+    if (hasGoalBriefMsg && built.length > 0) {
+      const firstIdx = run.events[0]?.index;
+      if (firstIdx != null && built[0]?.id === `m-${firstIdx}`) {
+        return built.slice(1);
+      }
+    }
+    return built;
+  }, [run, msgs]);
 
   const wfState = run
     ? workflowStateForRun({
@@ -490,6 +518,38 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const fieldsPause =
     Boolean(run && run.status === "paused") &&
     (pendingFields.length > 0 || run?.pause_reason === "USER_LOGIN");
+
+  /**
+   * "Asking again" prefill: when the agent re-requests fields the human
+   * already supplied once (tracked server-side by id only), refill the
+   * inputs from this session's last-submitted values (in-memory only) so
+   * the user confirms instead of re-typing. Sensitive fields stay masked
+   * by the card's password inputs; empty slots stay editable.
+   */
+  const suppliedFieldIds: string[] = run?.supplied_field_ids ?? [];
+  const suppliedSig = suppliedFieldIds.join(",");
+  const pendingSig = pendingFields.map((f) => f.id).join(",");
+  useEffect(() => {
+    if (pendingFields.length === 0 || suppliedFieldIds.length === 0) return;
+    const mem = lastSubmittedRef.current;
+    if (mem.runId !== run?.id) return;
+    const supplied = new Set(suppliedFieldIds);
+    setFieldValues((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const f of pendingFields) {
+        if (supplied.has(f.id) && !(next[f.id] || "").trim()) {
+          const v = mem.values[f.id];
+          if (v) {
+            next[f.id] = v;
+            changed = true;
+          }
+        }
+      }
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run?.id, pendingSig, suppliedSig]);
 
   const fillAndContinue = async () => {
     if (!run) return;
@@ -556,6 +616,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           lang,
           run,
           pendingFields,
+          suppliedFieldIds,
           fieldValues,
           onFieldChange: setFieldValue,
           revealedFields,
@@ -607,9 +668,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
+    <div className="flex min-h-dvh flex-col bg-[#f4f1ea]">
       <TopNav active="businesses" />
-      <main className="mx-auto max-w-7xl px-5 py-8">
+      <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href={`/businesses/${businessId}`} className="text-sm font-semibold text-brand">
             ← {L("Business profile", "Perfil del negocio", lang)}
@@ -629,13 +690,17 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-medium tracking-tight md:text-4xl">
                 {L("Agency filing assistant", "Asistente de trámites", lang)}
               </h1>
-              <p className="mt-2 max-w-3xl text-sm text-[#5a5a5a]">
-                {L(
-                  "Tell me what you need — I'll handle the portal work and only ask when a human touch is needed. The browser is there if you want to watch.",
-                  "Dime qué necesitas — yo brego con el portal y solo te pregunto cuando hace falta un toque humano. El navegador está ahí si quieres mirar.",
-                  lang
-                )}
-              </p>
+              {/* Compact the header once a run is active so the chat+browser
+                  workspace keeps the viewport — no dead blank page below. */}
+              {!run && (
+                <p className="mt-2 max-w-3xl text-sm text-[#5a5a5a]">
+                  {L(
+                    "Tell me what you need — I'll handle the portal work and only ask when a human touch is needed. The browser is there if you want to watch.",
+                    "Dime qué necesitas — yo brego con el portal y solo te pregunto cuando hace falta un toque humano. El navegador está ahí si quieres mirar.",
+                    lang
+                  )}
+                </p>
+              )}
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 {run?.provider && run.provider !== "mock" && (
                   <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
@@ -669,13 +734,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         )}
 
         <div
-          className={`relative mt-6 grid gap-6 ${
+          className={`relative mt-6 grid min-h-0 flex-1 gap-6 ${
             browserOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]" : "lg:grid-cols-1"
           }`}
         >
-          {/* Chat — the primary surface */}
+          {/* Chat — the primary surface. Fills the viewport below the page
+              header; the message list scrolls internally so the body never
+              scrolls into blank space. */}
           <section
-            className={`flex min-h-[70vh] max-h-[80vh] flex-col rounded-2xl border border-slate-200 bg-[#fbf8f2] shadow-sm shadow-slate-950/[0.02] ${
+            className={`flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200 bg-[#fbf8f2] shadow-sm shadow-slate-950/[0.02] ${
               browserOpen ? "" : "lg:max-w-3xl"
             }`}
             aria-label={L("Assistant chat", "Chat del asistente", lang)}

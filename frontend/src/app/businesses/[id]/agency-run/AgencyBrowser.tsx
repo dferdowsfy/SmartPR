@@ -9,7 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, EyeOff, FileUp, KeyRound,
+  AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, FileUp, KeyRound,
   Loader2, Maximize2, Minimize2, PauseCircle, Play, RefreshCw, Square, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
@@ -91,7 +91,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          {L("Back to SmartPR", "Volver a SmartPR", lang)}
+          {L("Back to chat", "Volver al chat", lang)}
         </button>
         <span className="ml-auto text-xs font-medium text-slate-400">
           {run.live_url
@@ -115,6 +115,22 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 ? L(`Live preview — ${props.domainsLabel}`, `Vista previa en vivo — ${props.domainsLabel}`, lang)
                 : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
             </span>
+            {/* In fullscreen there is no chat visible — offer an explicit way
+                back. Exits fullscreen AND closes the panel into the chat
+                split view. */}
+            {isFullscreen && (
+              <button
+                type="button"
+                onClick={() => {
+                  void document.exitFullscreen().catch(() => {});
+                  props.onClose();
+                }}
+                className="hidden items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 lg:inline-flex"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                {L("Back to chat", "Volver al chat", lang)}
+              </button>
+            )}
             {run.live_url && (
               <button
                 type="button"
@@ -196,14 +212,6 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                   )}
               </>
             )}
-            <button
-              type="button"
-              onClick={props.onClose}
-              className="hidden items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 lg:inline-flex"
-            >
-              <EyeOff className="h-3 w-3" />
-              {L("Hide browser", "Ocultar navegador", lang)}
-            </button>
           </div>
         </div>
 

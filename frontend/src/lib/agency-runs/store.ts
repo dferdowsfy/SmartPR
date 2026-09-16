@@ -26,6 +26,7 @@ import { PLACEHOLDER_SHOTS } from "./placeholders";
 import {
   displayMessagesForAgentText,
   humanizePauseEvent,
+  mergeSuppliedFieldIds,
   resolvePendingFields,
 } from "./pendingFields";
 import {
@@ -80,6 +81,8 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     pause_streak: run.pause_streak,
     // Labels/types/ids only — never values.
     pending_fields: run.pending_fields ?? [],
+    // Ids only — never values. Safe for the public payload.
+    supplied_field_ids: [...(run.supplied_field_ids ?? [])],
     // GoalBrief is labels-only by construction — safe for public payloads.
     goal_brief: run.goal_brief ?? null,
     // Owner-gated API already; used for Assistant non-sensitive prefill only.
@@ -538,6 +541,9 @@ export async function createRun(input: {
     pause_streak: 0,
     prev_pause_reason: null,
     pending_fields: [],
+    // Seed from up-front (pre-flight) field ids so the agent never re-asks
+    // for values the human already provided at start. Ids only — never values.
+    supplied_field_ids: mergeSuppliedFieldIds([], input.fields),
     goal_brief: input.goalBrief ?? null,
   };
 
@@ -670,6 +676,10 @@ export async function resumeRun(
   // pending fields so the agent gets a complete fill set.
   const submitted =
     mergeResumeFields(sanitizeFields(options?.fields), options?.credentials) || {};
+  // Remember which field ids the human just supplied so a later re-ask of the
+  // same fields becomes a confirm card instead of blank re-entry. Ids only —
+  // never values.
+  run.supplied_field_ids = mergeSuppliedFieldIds(run.supplied_field_ids, submitted);
   const pendingSnapshot = [...(run.pending_fields ?? [])];
   const mergedMap = mergeFieldsWithPassportPrefill(
     pendingSnapshot,

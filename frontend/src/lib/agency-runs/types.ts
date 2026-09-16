@@ -89,6 +89,13 @@ export interface AgencyRun {
    */
   pending_fields: AgencyPendingField[];
   /**
+   * Ids of fields the human has already supplied once (pre-flight or a
+   * previous Fill & continue). Ids only — never values. Used to avoid
+   * asking for the same values twice: when the agent re-requests a
+   * supplied field, the Assistant shows a confirm-instead-of-retype card.
+   */
+  supplied_field_ids: string[];
+  /**
    * Structured goal brief (labels only — never values) attached when the run
    * was started via POST /api/agency-actions. Drives the agent brief block.
    */
@@ -116,6 +123,11 @@ export interface AgencyRunPublic {
   pause_streak: number;
   /** Required fields for the Assistant panel (ids/labels/types only — never values). */
   pending_fields: AgencyPendingField[];
+  /**
+   * Ids of fields the human already supplied once (ids only — never values).
+   * Drives the "asking again" confirm card instead of blank re-entry.
+   */
+  supplied_field_ids: string[];
   /**
    * Structured goal brief (labels only — never values). Null when the run was
    * started directly via POST /api/agency-runs.
