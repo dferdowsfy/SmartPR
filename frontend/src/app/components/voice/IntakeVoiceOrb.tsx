@@ -6,7 +6,7 @@
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Type, X } from "lucide-react";
+import { Pause, Type, Volume2, VolumeX, X } from "lucide-react";
 import {
   MIN_AUDIO_BLOB_BYTES,
   appendAudioFormField,
@@ -21,6 +21,25 @@ type Lang = "en" | "es";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
+/** Optional business context so voice answers can be specific. */
+export interface VoiceChatContext {
+  profile?: {
+    name?: string | null;
+    business_type?: string | null;
+    industry?: string | null;
+    municipality?: string | null;
+    business_structure?: string | null;
+    location_type?: string | null;
+  };
+  requirements?: Array<{
+    code: string;
+    name: string;
+    status?: string;
+    mandatory?: boolean;
+    agency?: string;
+  }>;
+}
+
 export interface IntakeVoiceOrbProps {
   lang: Lang;
   /** Called after STT with the transcript — parent runs /api/intake/interpret. */
@@ -29,6 +48,10 @@ export interface IntakeVoiceOrbProps {
   onUseTextInstead?: () => void;
   /** Optional: parent is already interpreting (disable re-entry). */
   busy?: boolean;
+  /** Answer spoken questions via /api/chat instead of treating them as intake. Default true. */
+  enableVoiceAnswers?: boolean;
+  /** Business context for answers (profile/requirements may be empty). */
+  chatContext?: VoiceChatContext;
 }
 
 export function IntakeVoiceOrb({
@@ -36,12 +59,20 @@ export function IntakeVoiceOrb({
   onTranscript,
   onUseTextInstead,
   busy = false,
+  enableVoiceAnswers = true,
+  chatContext,
 }: IntakeVoiceOrbProps) {
   const [state, setState] = useState<OrbState>("idle");
   const [level, setLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showPanel, setShowPanel] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [answer, setAnswer] = useState<{ question: string; reply: string } | null>(null);
+  const [answering, setAnswering] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [muted, setMuted] = useState(false);
+
+  const historyRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -58,6 +89,43 @@ export function IntakeVoiceOrb({
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
+
+  const stopSpeaking = useCallback(() => {
+    try {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    } catch {
+      // Speech is best-effort.
+    }
+    setSpeaking(false);
+  }, []);
+
+  const speak = useCallback(
+    (text: string) => {
+      if (muted) return;
+      try {
+        if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+        const synth = window.speechSynthesis;
+        synth.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = lang === "es" ? "es-PR" : "en-US";
+        const voices = synth.getVoices?.() ?? [];
+        const match =
+          voices.find((v) =>
+            v.lang?.toLowerCase().startsWith(lang === "es" ? "es-pr" : "en-us")
+          ) || voices.find((v) => v.lang?.toLowerCase().startsWith(lang === "es" ? "es" : "en"));
+        if (match) utter.voice = match;
+        utter.onend = () => setSpeaking(false);
+        utter.onerror = () => setSpeaking(false);
+        setSpeaking(true);
+        synth.speak(utter);
+      } catch {
+        setSpeaking(false);
+      }
+    },
+    [lang, muted]
+  );
 
   const stopMeter = useCallback(() => {
     if (rafRef.current != null) {
@@ -79,7 +147,13 @@ export function IntakeVoiceOrb({
     stoppingRef.current = false;
   }, [stopMeter]);
 
-  useEffect(() => () => teardownMedia(), [teardownMedia]);
+  useEffect(
+    () => () => {
+      teardownMedia();
+      stopSpeaking();
+    },
+    [teardownMedia, stopSpeaking]
+  );
 
   const stopListeningRef = useRef<() => void>(() => undefined);
 
@@ -88,12 +162,13 @@ export function IntakeVoiceOrb({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setShowPanel(false);
+        stopSpeaking();
         if (state === "listening") stopListeningRef.current();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [showPanel, state]);
+  }, [showPanel, state, stopSpeaking]);
 
   const startMeter = useCallback(
     (stream: MediaStream) => {
@@ -121,6 +196,71 @@ export function IntakeVoiceOrb({
       }
     },
     [reducedMotion]
+  );
+
+  const QUESTION_LEAD =
+    /^(what|when|where|which|who|whom|whose|why|how|can|could|should|would|do|does|did|is|are|was|were|will|have|has|tell me|explain|describe|qu[eé]|cu[aá]l|cu[aá]les|cu[aá]ndo|d[oó]nde|c[oó]mo|por qu[eé]|porque|qui[eé]n|dime|expl[ií]came|cu[aá]nto|hay |existe|necesito saber)/i;
+
+  function looksLikeQuestion(t: string): boolean {
+    const s = t.trim();
+    if (!s) return false;
+    if (s.includes("?") || s.includes("¿")) return true;
+    return QUESTION_LEAD.test(s);
+  }
+
+  const answerQuestion = useCallback(
+    async (question: string) => {
+      setAnswering(true);
+      try {
+        const history = [...historyRef.current].slice(-8);
+        const messages: Array<{ role: "user" | "assistant"; content: string }> = [
+          ...history,
+          { role: "user", content: question },
+        ];
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages,
+            context: {
+              profile: chatContext?.profile ?? {},
+              requirements: chatContext?.requirements ?? [],
+              language: lang,
+            },
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          reply?: string;
+          error?: string;
+        };
+        const reply = (data.reply || "").trim();
+        if (!res.ok || !reply) throw new Error(data.error || `chat ${res.status}`);
+        historyRef.current = (
+          [
+            ...historyRef.current,
+            { role: "user", content: question },
+            { role: "assistant", content: reply },
+          ] as Array<{ role: "user" | "assistant"; content: string }>
+        ).slice(-12);
+        setAnswer({ question, reply });
+        setShowPanel(true);
+        setState("idle");
+        speak(reply);
+      } catch (err) {
+        console.error("[IntakeVoiceOrb] chat answer failed", err);
+        setState("error");
+        setError(
+          L(
+            "Couldn't answer that right now. Try again.",
+            "No pude responder ahora. Inténtelo de nuevo.",
+            lang
+          )
+        );
+      } finally {
+        setAnswering(false);
+      }
+    },
+    [chatContext, lang, speak]
   );
 
   const processBlob = useCallback(
@@ -173,6 +313,12 @@ export function IntakeVoiceOrb({
           return;
         }
 
+        // Spoken question → answer it (voice mode). Otherwise → intake flow.
+        if (enableVoiceAnswers && looksLikeQuestion(transcript)) {
+          await answerQuestion(transcript);
+          return;
+        }
+
         await onTranscript(transcript);
         setState("idle");
         setShowPanel(false);
@@ -182,11 +328,14 @@ export function IntakeVoiceOrb({
         setError(L("Network error. Try again.", "Error de red. Inténtelo de nuevo.", lang));
       }
     },
-    [lang, onTranscript]
+    [lang, onTranscript, enableVoiceAnswers, answerQuestion]
   );
 
   const startListening = useCallback(async () => {
     setError(null);
+    stopSpeaking();
+    setAnswer(null);
+    setAnswering(false);
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setState("error");
@@ -225,7 +374,7 @@ export function IntakeVoiceOrb({
       setShowPanel(true);
       setError(L("Microphone permission denied.", "Permiso de micrófono denegado.", lang));
     }
-  }, [lang, startMeter, teardownMedia]);
+  }, [lang, startMeter, stopSpeaking, teardownMedia]);
 
   const stopListening = useCallback(async () => {
     const rec = mediaRecorderRef.current;
@@ -261,7 +410,9 @@ export function IntakeVoiceOrb({
     state === "listening"
       ? L("Listening… tap orb to stop", "Escuchando… toque el orbe para detener", lang)
       : state === "processing"
-        ? L("Transcribing…", "Transcribiendo…", lang)
+        ? answering
+          ? L("Answering…", "Respondiendo…", lang)
+          : L("Transcribing…", "Transcribiendo…", lang)
         : state === "error"
           ? L("Something went wrong", "Algo salió mal", lang)
           : L("Tell me what you want to do.", "Dime qué quieres hacer.", lang);
@@ -343,6 +494,58 @@ export function IntakeVoiceOrb({
           >
             <div className="flex items-start gap-2 px-3 py-2.5">
               <div className="min-w-0 flex-1 space-y-2">
+                {answer && !error && state === "idle" && (
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-semibold leading-snug text-slate-500">
+                      &ldquo;{answer.question}&rdquo;
+                    </p>
+                    <p className="max-h-44 overflow-y-auto text-[12.5px] leading-snug text-[#1a2e2e]">
+                      {answer.reply}
+                    </p>
+                    <div className="flex gap-1.5 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => (speaking ? stopSpeaking() : speak(answer.reply))}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#245c5c] px-3 py-1.5 text-[11px] font-semibold text-[#f6f3ea]"
+                      >
+                        {speaking ? (
+                          <Pause className="h-3.5 w-3.5" />
+                        ) : (
+                          <Volume2 className="h-3.5 w-3.5" />
+                        )}
+                        {speaking
+                          ? L("Stop", "Detener", lang)
+                          : L("Hear it", "Escúchalo", lang)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !muted;
+                          setMuted(next);
+                          if (next) stopSpeaking();
+                        }}
+                        aria-pressed={muted}
+                        aria-label={L(
+                          "Mute voice answers",
+                          "Silenciar respuestas de voz",
+                          lang
+                        )}
+                        title={L("Mute voice answers", "Silenciar respuestas de voz", lang)}
+                        className={`rounded-xl border px-2.5 ${
+                          muted
+                            ? "border-[#245c5c] bg-[#245c5c]/10 text-[#245c5c]"
+                            : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                        }`}
+                      >
+                        {muted ? (
+                          <VolumeX className="h-3.5 w-3.5" />
+                        ) : (
+                          <Volume2 className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {error && (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 px-2.5 py-2 text-[11px] font-medium leading-snug text-amber-950">
                     {error}
@@ -356,7 +559,9 @@ export function IntakeVoiceOrb({
                       }`}
                       aria-hidden
                     />
-                    {L("Transcribing…", "Transcribiendo…", lang)}
+                    {answering
+                      ? L("Answering…", "Respondiendo…", lang)
+                      : L("Transcribing…", "Transcribiendo…", lang)}
                   </p>
                 )}
                 {(state === "error" || state === "idle") && (
@@ -394,6 +599,7 @@ export function IntakeVoiceOrb({
                 type="button"
                 onClick={() => {
                   setShowPanel(false);
+                  stopSpeaking();
                   if (state === "error") {
                     setError(null);
                     setState("idle");
