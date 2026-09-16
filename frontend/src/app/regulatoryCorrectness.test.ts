@@ -52,6 +52,26 @@ test("F01 corporate positive and unknown review cases remain", () => {
     assert.equal(row?.mandatory, false);
   }
 });
+test("F01 project_only and existing_business intents suppress server formation augmentation", async () => {
+  // The server pipeline must not imply "form the entity" for a project with
+  // no new business: the requirement's trigger (new + unformed) is not met.
+  const base = { ...profile, business_structure: "corporation" };
+  for (const snapshot of [null, compileKb(buildSeedNodes(), { version: 1, batchId: null })]) {
+    const { obligations: formed } = await determineObligations(
+      snapshotDb(snapshot), { ...base, project_intent: "new_business" }
+    );
+    assert.ok(formed.some(r => formationIds.includes(r.requirementId)), "new_business keeps formation");
+    for (const intent of ["project_only", "existing_business"]) {
+      const { obligations } = await determineObligations(
+        snapshotDb(snapshot), { ...base, project_intent: intent }
+      );
+      assert.ok(
+        !obligations.some(r => formationIds.includes(r.requirementId)),
+        `formation leaked into persisted obligations for intent=${intent}`
+      );
+    }
+  }
+});
 
 for (const municipalityName of ["Adjuntas", "San Juan"]) {
   for (const coastal of [undefined, "not_sure", "not_applies", "applies"] as const) {

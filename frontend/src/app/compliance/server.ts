@@ -10,6 +10,7 @@ import {
 import { resolveIntakeFacts } from "../ai/intake/relationships";
 import { entityTypeFromLegacyStructure } from "../forms/engine/intake";
 import { normalizeEntityFormationRequirements } from "../forms/engine/requirementAugment";
+import { normalizeProjectIntent } from "../ai/intake/projectIntent";
 import type { KnowledgeBase } from "../rulesEngine";
 import { REMINDER_WINDOWS_DAYS, subtractDays } from "./dates";
 import type { ObligationBlueprint } from "./types";
@@ -144,6 +145,9 @@ export async function determineObligations(
   const entityType = entityTypeFromLegacyStructure(
     (profile as { business_structure?: string }).business_structure
   );
+  const intent = normalizeProjectIntent(
+    (profile as { project_intent?: unknown }).project_intent
+  );
   const resolved = resolveIntakeFacts(
     { profile: profile as Record<string, unknown>, answers: answers as Record<string, unknown> },
     { kb: KB, allowedIndustries: INTAKE_INDUSTRIES }
@@ -155,6 +159,7 @@ export async function determineObligations(
     resolved,
     {
       entityType,
+      projectIntent: intent,
       recommendedIds: new Set(
         published ? (snapshot.docMeta?.recommended ?? []) : ACTIVE_JURISDICTION.docMappings.recommended
       ),
@@ -165,25 +170,34 @@ export async function determineObligations(
   );
   // Formation certificates implied by the entity type, exactly as the UI adds
   // them; exclusivity is enforced inside (no resurrected wrong certificate).
-  const normalized = normalizeEntityFormationRequirements<UIRequirement>(
-    entityType,
-    classified,
-    (def, et) => ({
-      code: def.code,
-      name: def.name,
-      mandatory: true,
-      status: "pending",
-      agency: "Department of State",
-      reason: def.reason,
-      document_id: def.document_id,
-      category: "formation",
-      source_rule: undefined,
-      applicability: "required",
-      kind: "government_application",
-      stage: "entity_formation",
-      triggerFacts: [`entityType:${et}`],
-      acceptsOfficialUpload: true,
-    })
+  // Project-first gating: a requirement fires only when its triggering
+  // conditions are satisfied. For project_only or existing_business intent,
+  // implying "form the entity" would contaminate the project with startup
+  // requirements the user never triggered, so the augmentation is skipped.
+  const formationRelevant = intent !== "project_only" && intent !== "existing_business";
+  const normalized = (
+    formationRelevant
+      ? normalizeEntityFormationRequirements<UIRequirement>(
+          entityType,
+          classified,
+          (def, et) => ({
+            code: def.code,
+            name: def.name,
+            mandatory: true,
+            status: "pending",
+            agency: "Department of State",
+            reason: def.reason,
+            document_id: def.document_id,
+            category: "formation",
+            source_rule: undefined,
+            applicability: "required",
+            kind: "government_application",
+            stage: "entity_formation",
+            triggerFacts: [`entityType:${et}`],
+            acceptsOfficialUpload: true,
+          })
+        )
+      : classified
   ).filter((r) => r.applicability !== "not_applicable");
   const renewals = snapshot.extensions?.renewals ?? [];
   const renewalByDocument = new Map<string, Record<string, unknown>>();
