@@ -58,6 +58,14 @@ const AGENCIES: AgencyOption[] = [
   { id: "OGPE", nameEn: "OGPe", nameEs: "OGPe" },
 ];
 
+/** Fictional rehearsal portal — visible only to admins or with ?demo=1. Never shown to real users. */
+const DEMO_AGENCY: AgencyOption = {
+  id: "DEMO_REHEARSAL",
+  nameEn: "Demo rehearsal portal",
+  nameEs: "Portal de ensayo (demo)",
+  demo: true,
+};
+
 const STATUS_STYLES: Record<AgencyRunStatus, string> = {
   queued: "border-slate-300 bg-slate-100 text-slate-700",
   running: "border-sky-300 bg-sky-50 text-sky-800",
@@ -94,8 +102,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
   const [run, setRun] = useState<AgencyRunPublic | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [uploadBusy, setUploadBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);  const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [reconnectBusy, setReconnectBusy] = useState(false);
@@ -114,6 +121,27 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   });
   const [previewLoaded, setPreviewLoaded] = useState(false);
   const [browserOpen, setBrowserOpen] = useState(false);
+  /** Fictional rehearsal portal — admin-only or ?demo=1. Never for real users. */
+  const [demoVisible, setDemoVisible] = useState(false);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const qp = new URLSearchParams(window.location.search);
+      if (qp.get("demo") === "1") {
+        setDemoVisible(true);
+        return;
+      }
+    }
+    fetch("/api/admin/me")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j?.admin) setDemoVisible(true);
+      })
+      .catch(() => {});
+  }, []);
+  const agencies = useMemo(
+    () => (demoVisible ? [...AGENCIES, DEMO_AGENCY] : AGENCIES),
+    [demoVisible]
+  );
 
   /* Chat-first session state */
   const [msgs, setMsgs] = useState<SessionMsg[]>([{ id: "agency-picker", type: "agency-picker" }]);
@@ -171,7 +199,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   /* ---------------- agency picker → actions → start ---------------- */
 
   const fetchActions = async (agencyId: string) => {
-    const agency = AGENCIES.find((a) => a.id === agencyId);
+    const agency = agencies.find((a) => a.id === agencyId);
     if (!agency) return;
     setActionsLoading(true);
     setActionsLoadingAgency(agencyId);
@@ -780,7 +808,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               runActive={Boolean(run)}
               transientLabel={transientLabel}
               scrollKey={scrollKey}
-              agencies={AGENCIES}
+              agencies={agencies}
               actionsLoading={actionsLoading}
               actionsLoadingAgency={actionsLoadingAgency}
               onSelectAgency={(id) => void fetchActions(id)}

@@ -5,7 +5,8 @@ export type AgencyFilingType =
   | "SURI_REGISTER_TAXPAYER"
   | "SURI_MERCHANT_REGISTRATION"
   | "DEPT_STATE_CORPORATE_FILING"
-  | "OGPE_PERMISO_UNICO";
+  | "OGPE_PERMISO_UNICO"
+  | "DEMO_REHEARSAL_PORTAL";
 
 export type AgencyRunStatus =
   | "queued"

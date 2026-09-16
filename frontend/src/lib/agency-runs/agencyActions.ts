@@ -10,9 +10,9 @@ import { AGENCY_FILING_CONFIGS, type AgencyFilingConfig } from "./filingTypes";
 import { flattenPassportValues } from "./prefillFromPassport";
 import { CANONICAL_LABELS } from "./canonicalFields";
 
-export type AgencyId = "HACIENDA_SURI" | "DEPT_STATE" | "OGPE";
+export type AgencyId = "HACIENDA_SURI" | "DEPT_STATE" | "OGPE" | "DEMO_REHEARSAL";
 
-export const AGENCY_IDS: AgencyId[] = ["HACIENDA_SURI", "DEPT_STATE", "OGPE"];
+export const AGENCY_IDS: AgencyId[] = ["HACIENDA_SURI", "DEPT_STATE", "OGPE", "DEMO_REHEARSAL"];
 
 export function isAgencyId(value: string): value is AgencyId {
   return (AGENCY_IDS as string[]).includes(value);

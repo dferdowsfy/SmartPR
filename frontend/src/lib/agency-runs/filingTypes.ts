@@ -1,4 +1,19 @@
 import type { AgencyFilingType } from "./types";
+import { getSiteUrl } from "../siteUrl";
+
+/**
+ * Host allowlist + start URL for the fictional rehearsal portal.
+ * Resolved from the app's own site URL (NEXT_PUBLIC_SITE_URL override, else
+ * the established prod default) — never a hardcoded portal domain, so the
+ * same entry works on production and local dev.
+ */
+function demoPortalHost(): string {
+  try {
+    return new URL(getSiteUrl()).hostname;
+  } catch {
+    return "localhost";
+  }
+}
 
 /**
  * Filing-type registry — the agency assistant is no longer SURI-only.
@@ -292,6 +307,82 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: [],
     sensitiveNeeds: [],
+  },
+  {
+    id: "DEMO_REHEARSAL_PORTAL",
+    labelEn: "Demo rehearsal portal — practice filing",
+    labelEs: "Portal de ensayo (demo) — radicación de práctica",
+    agencyEn: "SmartPR Demo Portal (fictional)",
+    agencyEs: "Portal de demostración SmartPR (ficticio)",
+    portalEn: "Demo Filing Portal",
+    portalEs: "Portal de Radicación Demo",
+    domains: [demoPortalHost()],
+    startUrl: `${getSiteUrl()}/rehearsal-portal`,
+    goalEn:
+      "Complete a REHEARSAL annual-report filing on the SmartPR demo portal — a fictional portal. Nothing real is filed, no real credentials or data are used.",
+    goalEs:
+      "Completar una radicación de informe anual de ENSAYO en el portal demo de SmartPR — un portal ficticio. No se radica nada real, no se usan credenciales ni datos reales.",
+    procedureEn: [
+      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, use Create account — fill name and email from the passport, then PAUSE at password creation. Never invent a password and never type credentials unprompted.",
+      "If a login form appears: prefill the email from the passport when available, then PAUSE_USER_LOGIN once with REQUIRED_FIELDS (email if still empty, password, MFA if shown). Prefer Assistant-fill — do not loop on login and do not expect the human to type in the live browser.",
+      "On the entity search page: use the registry number from the passport (or the human-supplied value) and select the DEMO ENTITY LLC result.",
+      "On the filing form: prefill EVERY non-sensitive field from the Business Passport first — contact name, email, phone, street, city, postal code, entity type, fiscal year end, business activity — matching the dropdown, checkboxes, and radio buttons. Leave SSN, passwords, payment, and attestations blank.",
+      "If the portal shows an inline validation error after submitting: surface the exact portal message to the chat via the humanized-error path (never invent an explanation), correct the flagged field from passport data when possible, otherwise pause for the human.",
+      "On the identity-verification step: PAUSE for the human — never fill in or invent a Social Security Number.",
+      "On the certification page: PAUSE for human review — never check legal certifications or sign on the human's behalf.",
+      "On the payment page: PAUSE for human review — never enter card details or pay.",
+      "On the final review page: stop at pre-submit review and summarize for the human — never click the final Submit button yourself.",
+    ],
+    procedureEs: [
+      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, use Crear cuenta — llene nombre y correo desde el pasaporte, luego PAUSE en la creación de contraseña. Nunca invente una contraseña ni escriba credenciales sin que se lo pidan.",
+      "Si aparece un formulario de inicio de sesión: rellene el correo desde el pasaporte si está disponible, luego PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS (correo si sigue vacío, contraseña, MFA si se muestra). Prefiera Asistente — no cicle en el login ni espere que el humano escriba en el navegador en vivo.",
+      "En la página de búsqueda de entidad: use el número de registro del pasaporte (o el valor provisto por la persona) y seleccione el resultado DEMO ENTITY LLC.",
+      "En el formulario de radicación: rellene PRIMERO todos los campos no sensibles desde el Pasaporte de Negocio — nombre del contacto, correo, teléfono, dirección, ciudad, código postal, tipo de entidad, cierre fiscal, actividad del negocio — incluyendo el dropdown, los checkboxes y los botones de radio. Deje el Seguro Social, contraseñas, pago y certificaciones en blanco.",
+      "Si el portal muestra un error de validación en línea tras enviar: lleve el mensaje exacto del portal al chat por la vía de error humanizado (nunca invente una explicación), corrija el campo señalado con datos del pasaporte si es posible, o pause para la persona.",
+      "En el paso de verificación de identidad: PAUSE para la persona — nunca llene ni invente un número de Seguro Social.",
+      "En la página de certificación: PAUSE para revisión humana — nunca marque certificaciones legales ni firme en nombre de la persona.",
+      "En la página de pago: PAUSE para revisión humana — nunca ingrese datos de tarjeta ni pague.",
+      "En la página de revisión final: deténgase en la revisión previa al envío y resuma para la persona — nunca haga clic usted mismo en Enviar.",
+    ],
+    uploadsEn: "No uploads required for the rehearsal",
+    uploadsEs: "El ensayo no requiere adjuntos",
+    hintsEn: [
+      "The demo portal is fictional — rehearse freely; nothing here touches a government system.",
+      "The demo accepts any credentials, but you must still pause for the human at every gate: login, password creation, SSN, attestation, payment, final review.",
+      "The first form submit always fails on phone format — expect the inline error and handle it through the humanized-error path.",
+    ],
+    hintsEs: [
+      "El portal demo es ficticio — ensaye con libertad; nada aquí toca un sistema del gobierno.",
+      "El demo acepta cualquier credencial, pero igual debe pausar para la persona en cada puerta: login, creación de contraseña, Seguro Social, certificación, pago y revisión final.",
+      "El primer envío del formulario siempre falla en el formato del teléfono — espere el error en línea y manéjelo por la vía de error humanizado.",
+    ],
+    evidenceTags: [],
+    needsLogin: true,
+    enabled: true,
+    requiresExistingAccount: false,
+    agencyId: "DEMO_REHEARSAL",
+    passportCoverageKeys: [
+      "business.legalName",
+      "business.tradeName",
+      "business.entityType",
+      "business.ein",
+      "business.registryNumber",
+      "contact.fullName",
+      "contact.email",
+      "contact.phone",
+      "addresses.principalPhysical.line1",
+      "addresses.municipality",
+      "addresses.principalPhysical.postalCode",
+      "addresses.state",
+    ],
+    blockedBy: [],
+    sensitiveNeeds: [
+      {
+        id: "demo_ssn",
+        label_en: "Social Security Number",
+        label_es: "Número de Seguro Social",
+      },
+    ],
   },
 ];
 

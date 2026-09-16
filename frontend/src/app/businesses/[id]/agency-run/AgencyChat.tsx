@@ -100,6 +100,8 @@ export interface AgencyOption {
   id: string;
   nameEn: string;
   nameEs: string;
+  /** Fictional rehearsal portal — rendered with a DEMO badge. */
+  demo?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1046,6 +1048,11 @@ export function AgencyChat(props: AgencyChatProps) {
                       <span className="text-sm font-bold text-[#161616]">
                         {L(a.nameEn, a.nameEs, lang)}
                       </span>
+                      {a.demo && (
+                        <span className="ml-auto rounded-md bg-amber-300 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
+                          Demo
+                        </span>
+                      )}
                       {props.actionsLoading && props.actionsLoadingAgency === a.id && (
                         <Loader2 className="ml-auto h-4 w-4 animate-spin text-brand" />
                       )}
