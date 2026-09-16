@@ -31,6 +31,43 @@ for (const entityType of ["sole_proprietorship", "partnership"]) {
     assert.ok(!computeRequirementsFromKB(profile, {}, {}, { entityType }).some(r => formationIds.includes(r.document_id!)));
   });
 }
+test("F02b no-employee sole proprietor: EIN is conditional, never blocking (founder judgment 2026-09-16 §29.1)", () => {
+  // Sole proprietor + no employees + no other EIN trigger → OPTIONAL/CONDITIONAL.
+  // A true sole proprietor with no employees may operate on the owner's SSN
+  // for federal purposes; "sole proprietor + no employees" alone never blocks.
+  const soleNoEmp = computeRequirementsFromKB(
+    { ...profile, business_structure: "sole_proprietorship", number_of_employees: 0 },
+    { Q_EMPLOYEES_HIRED: false },
+    {},
+    { entityType: "sole_proprietorship", projectIntent: "new_business" }
+  ).find(r => r.document_id === "DOC_EIN");
+  assert.ok(soleNoEmp, "EIN should still surface for a no-employee sole proprietor");
+  assert.equal(soleNoEmp?.applicability, "conditional");
+  assert.equal(soleNoEmp?.mandatory, false);
+  // Positive control: hiring employees keeps the EIN required (RULE_0620 basis).
+  const soleWithEmp = computeRequirementsFromKB(
+    { ...profile, business_structure: "sole_proprietorship", number_of_employees: 3 },
+    { Q_EMPLOYEES_HIRED: true },
+    {},
+    { entityType: "sole_proprietorship", projectIntent: "new_business" }
+  ).find(r => r.document_id === "DOC_EIN");
+  assert.equal(soleWithEmp?.applicability, "required");
+  assert.equal(soleWithEmp?.mandatory, true);
+});
+test("alcohol-license prerequisites are children of the alcohol license, never generic restaurant requirements (founder judgment 2026-09-16 §29.2)", () => {
+  // A restaurant that does NOT sell alcohol must not receive ASUME, CRIM, or
+  // criminal-record prerequisites through the alcohol-license path.
+  const restaurantProfile = { business_type: "Restaurant", municipality: "Trujillo Alto", location_type: "Restaurant Location", number_of_employees: 8 };
+  const noAlcohol = computeRequirementsFromKB(restaurantProfile, { Q_ALCOHOL_SOLD: false }, {}, { entityType: "limited_liability_company", projectIntent: "new_business" }).map(r => r.document_id);
+  for (const id of ["DOC_ALCOHOL_LICENSE", "DOC_ASUME_CLEARANCE", "DOC_CRIM_CLEARANCE", "DOC_BACKGROUND_CHECK"]) {
+    assert.ok(!noAlcohol.includes(id), `${id} must not fire for a restaurant with no alcohol`);
+  }
+  // Positive control: selling alcohol surfaces the license and its prerequisites.
+  const withAlcohol = computeRequirementsFromKB(restaurantProfile, { Q_ALCOHOL_SOLD: true }, {}, { entityType: "limited_liability_company", projectIntent: "new_business" }).map(r => r.document_id);
+  for (const id of ["DOC_ALCOHOL_LICENSE", "DOC_ASUME_CLEARANCE", "DOC_CRIM_CLEARANCE", "DOC_BACKGROUND_CHECK"]) {
+    assert.ok(withAlcohol.includes(id), `${id} should fire when alcohol is sold`);
+  }
+});
 test("F01 persisted obligations exclude sole-proprietor incorporation in bundled and snapshot modes", async () => {
   for (const snapshot of [null, compileKb(buildSeedNodes(), { version: 1, batchId: null })]) {
     const { obligations } = await determineObligations(snapshotDb(snapshot), { ...profile, business_structure: "sole_proprietorship" });

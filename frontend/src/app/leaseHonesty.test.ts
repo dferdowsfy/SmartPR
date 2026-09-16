@@ -246,3 +246,32 @@ test("home-based neighbors: commercial, online-only and unknown locations unchan
     undefined
   );
 });
+
+// --- 7b. REG-HOME-PHYSICAL-001 order-dependence (2026-09-16 evening QA) ---
+//
+// computeRequirementsFromSnapshot re-asserts the caller's raw answers over
+// buildEngineInput's permit-model correction. The intake model deliberately
+// records Q_PHYSICAL_LOCATION=true for a home ("a home is a physical
+// place"), so without the re-applied correction a home-based business got
+// RULE_0007 (Permiso Único) and RULE_0008 (Zoning) as REQUIRED — the exact
+// bug REG-HOME-PHYSICAL-001 was supposed to kill.
+test("home-based: raw Q_PHYSICAL_LOCATION=true in answers does not defeat the correction (order-dependence)", () => {
+  const reqs = computeRequirementsFromKB(
+    HOME_BOOKKEEPER,
+    { Q_HOME_BASED: true, Q_PHYSICAL_LOCATION: true, employees_hired: false },
+    {}
+  );
+  const docs = reqs.map((r) => r.document_id);
+  assert.ok(!docs.includes("DOC_PERMISO_UNICO"), "no Permiso Único even when raw answers carry Q_PHYSICAL_LOCATION=true");
+  assert.ok(!docs.includes("DOC_ZONING"), "no Zoning even when raw answers carry Q_PHYSICAL_LOCATION=true");
+});
+
+test("home-based: non-home business with Q_PHYSICAL_LOCATION=true still fires the premises rules", () => {
+  const reqs = computeRequirementsFromKB(
+    { ...HOME_BOOKKEEPER, location_type: "Commercial Office" },
+    { Q_PHYSICAL_LOCATION: true, employees_hired: false },
+    {}
+  );
+  const docs = reqs.map((r) => r.document_id);
+  assert.ok(docs.includes("DOC_PERMISO_UNICO"), "commercial premises still trigger Permiso Único");
+});

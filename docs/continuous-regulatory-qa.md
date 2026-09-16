@@ -1267,3 +1267,84 @@ PROJECT FACT
 If that chain cannot be established, investigate the result.
 
 The system should become more accurate every day because every discovered failure becomes a permanent regression test.
+
+---
+
+# 29. FOUNDER REGULATORY JUDGMENTS (RESOLVED 2026-09-16)
+
+The following four regulatory judgments were issued directly by the founder on
+2026-09-16 after independent research against primary sources. They are
+SETTLED — apply them as high-confidence fixes per section 14.3. Do not
+re-litigate them, do not mark them REQUIRES_REGULATORY_REVIEW, and do not
+weaken them to "uncertain" because a model would hedge.
+
+## 29.1 EIN for a no-employee sole proprietor — CONDITIONAL, never blocking
+
+The IRS requires an EIN when the business has employees, owes certain federal
+taxes, or has an entity structure such as a corporation/partnership/LLC. A
+true sole proprietor with no employees and no other EIN-triggering tax
+obligation may operate using the owner's SSN for federal purposes. An EIN can
+still be requested voluntarily, and another Puerto Rico filing might
+independently require one, but "sole proprietor + no employees" alone is not
+enough to block progress.
+
+SmartPR logic:
+
+sole_prop + no_employees + no_other_EIN_trigger → EIN = OPTIONAL/CONDITIONAL, not BLOCKING.
+
+## 29.2 Alcohol-license prerequisites belong to the alcohol license, not to restaurants
+
+ASUME certification, CRIM clearance, and the criminal-record certificate are
+legitimate requirements on the alcohol-license path: Hacienda's official
+requirements for a Licencia de Traficante al Detalle de Bebidas Alcohólicas
+include Merchant Registration, ASUME certification, municipal patent,
+negative CRIM movable-property debt certification, use permit,
+criminal-record certificate, tax filing/debt compliance, and projected
+sales.
+
+The graph must model these as children/prerequisites of:
+
+Sells alcohol → Retail Alcoholic Beverage License
+
+never as generic requirements of:
+
+Restaurant.
+
+A restaurant with no alcohol must not receive them through this license.
+
+## 29.3 No universal municipal home-occupation permit
+
+Do NOT create a universal separate "municipal home-occupation authorization"
+requirement. OGPe handles non-residential business uses through the Permiso
+Único / use-authorization framework, and Puerto Rico planning rules separately
+define and constrain ocupaciones domiciliarias. There is no authoritative
+support for a second statewide municipal home-occupation permit sitting on
+top of Permiso Único.
+
+SmartPR logic:
+
+home_based_business → evaluate whether the activity qualifies as an allowed
+home occupation → evaluate use/zoning + Permiso Único.
+
+Add a municipality-specific authorization ONLY when SmartPR holds an actual
+municipal ordinance or source establishing one. Never invent:
+"home-based = separate municipal home-occupation permit."
+
+## 29.4 Short-term rentals — Puerto Rico Tourism Company requirements (PR-wide)
+
+The Puerto Rico Tourism Company explicitly requires: residences, apartments,
+studios, villas, and other properties rented for less than 90 days must
+register as an innkeeper (hostelero), obtain an Innkeeper Identification
+Number, collect the 7% room-occupancy tax, and file the monthly room-tax
+return by the 10th of the following month. This is Puerto Rico-wide — it
+applies in Toa Baja and every other municipality.
+
+The graph must contain, for short_term_rental < 90 days:
+
+→ PR Tourism Company Innkeeper Registration
+→ Innkeeper ID
+→ 7% Room Occupancy Tax
+→ Monthly Room Tax Return
+
+Do NOT invent a Toa Baja-specific (or any municipality-specific) STR permit
+without an authoritative municipal source establishing one.

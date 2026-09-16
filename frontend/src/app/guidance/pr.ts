@@ -29,6 +29,13 @@ export const PR_GUIDANCE_SOURCES = {
   solarOgpe: source("SRC_GUIDANCE_SOLAR_OGPE", "OGPe", "Single Business Portal — construction and use permits", "https://www.permisos.pr.gov/", "Construction and use permits for energy projects are processed through OGPe's Single Business Portal; rooftop photovoltaic systems of 1 MW or less on existing structures are exempt from OGPe construction and use permits."),
   daco: source("SRC_GUIDANCE_DACO", "Departamento de Asuntos del Consumidor", "Registro de Contratistas — Ley 146-1995 / Regl. 8172", "https://www.daco.pr.gov/", "DACO contractor certification is required before offering construction estimates or work on property the business does not own; urbanizador/constructor license under Regl. 8172; inscription renewed annually."),
   sam: source("SRC_GUIDANCE_SAM", "General Services Administration", "SAM.gov entity registration — annual renewal requirement", "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements", "Entity registration in SAM.gov must be renewed every 365 days to remain active; registration is required to bid on federal contracts and receive federal awards."),
+  // Founder judgment 2026-09-16 (§29.2): ASUME, CRIM and the criminal-record
+  // certificate are prerequisites of the retail alcohol beverage license, not
+  // generic restaurant requirements. Hacienda's official license-requirements
+  // page lists them for the Licencia de Traficante al Detalle de Bebidas
+  // Alcohólicas.
+  alcoholReqs: source("SRC_GUIDANCE_ALCOHOL_REQS", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas", "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas", "Hacienda's internal-revenue license requirements list the ASUME certification, the CRIM debt certification, and the criminal-record certificate among the prerequisites for the retail alcoholic-beverage dealer license."),
+  antecedentes: source("SRC_GUIDANCE_ANTECEDENTES", "Policía de Puerto Rico", "Ley 254-1974, Art. 1 (34 L.P.R.A. § 1725)", "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Polic%C3%ADa/254-1974/254-1974.pdf", "Authorizes the Puerto Rico Police to issue the Certificado de Antecedentes Penales."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -36,6 +43,10 @@ const municipality = condition("municipality", "Municipality", "Municipio");
 const business = condition("businessType", "Commercial activity", "Actividad comercial");
 const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_ALCOHOL_LICENSE: { en: ["alcohol"], es: ["alcohol", "alcohólic"] },
+  // §29.2: alcohol-license prerequisites — children of the alcohol license.
+  DOC_ASUME_CLEARANCE: { en: ["asume", "child support clearance"], es: ["asume", "sustento de menores"] },
+  DOC_CRIM_CLEARANCE: { en: ["crim", "property debt clearance"], es: ["crim", "deuda contributiva"] },
+  DOC_BACKGROUND_CHECK: { en: ["criminal record", "antecedentes penales"], es: ["antecedentes penales", "certificado de antecedentes"] },
   DOC_EIN: { en: ["ein", "federal tax identifier"], es: ["ein", "identificador contributivo"] },
   DOC_SAM_REGISTRATION: { en: ["sam.gov", "federal registration", "federal contractor"], es: ["sam.gov", "registro federal", "contratista federal"] },
   DOC_CONTRACTOR_LICENSE: { en: ["DACO", "contractor registry", "urbanizador", "constructor"], es: ["DACO", "registro de contratistas", "urbanizador", "constructor"] },
@@ -80,6 +91,28 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Confirm the sales category, complete the alcohol-license application, and supply the supporting evidence requested for that category.", "Confirma la categoría de venta, completa la solicitud de licencia de alcohol y aporta la evidencia de respaldo correspondiente."),
     text("Issuance authorizes only the alcohol sales covered by that license, subject to its conditions; a prepared application is not authorization.", "La expedición autoriza solo las ventas de alcohol cubiertas por la licencia y sus condiciones; una solicitud preparada no es una autorización."),
   ]),
+  // §29.2 (founder judgment 2026-09-16): ASUME, CRIM and the criminal-record
+  // certificate are prerequisites of the retail alcohol beverage license —
+  // never generic restaurant requirements. Modeled as children of
+  // DOC_ALCOHOL_LICENSE via dependencies.
+  DOC_ASUME_CLEARANCE: concept("DOC_ASUME_CLEARANCE", [[condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)]], [PR_GUIDANCE_SOURCES.alcoholReqs], [
+    text("Hacienda requires the ASUME child-support clearance as a prerequisite for the retail alcohol beverage license — it proves the applicant owes no child-support debt to ASUME.", "Hacienda exige la certificación de ASUME como prerrequisito de la licencia de bebidas alcohólicas al detal — acredita que el solicitante no tiene deuda de sustento de menores con ASUME."),
+    text("The ASUME clearance certifies child-support compliance; without it Hacienda will not issue the alcohol dealer license.", "La certificación de ASUME acredita el cumplimiento con el sustento de menores; sin ella Hacienda no expide la licencia de traficante de alcohol."),
+    text("Request the ASUME certification through ASUME/Familia offices and file it with the alcohol-license application in SURI.", "Solicita la certificación de ASUME en las oficinas de ASUME/Familia y radícala junto a la solicitud de licencia de alcohol en SURI."),
+    text("Once Hacienda accepts the ASUME clearance, the alcohol-license file moves forward; an expired or missing clearance stalls issuance.", "Una vez Hacienda acepta la certificación de ASUME, el expediente de la licencia de alcohol avanza; una certificación vencida o ausente detiene la expedición."),
+  ], ["DOC_ALCOHOL_LICENSE"]),
+  DOC_CRIM_CLEARANCE: concept("DOC_CRIM_CLEARANCE", [[condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)]], [PR_GUIDANCE_SOURCES.alcoholReqs], [
+    text("Hacienda requires the CRIM property debt clearance as a prerequisite for the retail alcohol beverage license — it certifies the applicant has no outstanding movable-property tax debt with CRIM.", "Hacienda exige la certificación de deuda del CRIM como prerrequisito de la licencia de bebidas alcohólicas al detal — certifica que el solicitante no tiene deuda contributiva sobre propiedad mueble con el CRIM."),
+    text("The CRIM clearance proves municipal property-tax compliance; Hacienda treats it as a gate for the alcohol dealer license.", "La certificación del CRIM prueba el cumplimiento contributivo municipal; Hacienda la trata como un filtro para la licencia de traficante de alcohol."),
+    text("Obtain the negative debt certification through the CRIM360 portal and attach it to the alcohol-license application.", "Obtén la certificación negativa de deuda en el portal CRIM360 y anéxala a la solicitud de licencia de alcohol."),
+    text("A clean CRIM clearance lets the alcohol-license application proceed; unresolved CRIM debt blocks the license until paid.", "Una certificación del CRIM limpia deja avanzar la solicitud de licencia de alcohol; una deuda contributiva sin resolver bloquea la licencia hasta saldarla."),
+  ], ["DOC_ALCOHOL_LICENSE"]),
+  DOC_BACKGROUND_CHECK: concept("DOC_BACKGROUND_CHECK", [[condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)]], [PR_GUIDANCE_SOURCES.alcoholReqs, PR_GUIDANCE_SOURCES.antecedentes], [
+    text("Hacienda requires the criminal-record certificate as a prerequisite for the retail alcohol beverage license — the Policía de Puerto Rico issues the Certificado de Antecedentes Penales under Ley 254-1974.", "Hacienda exige el certificado de antecedentes penales como prerrequisito de la licencia de bebidas alcohólicas al detal — la Policía de Puerto Rico lo expide bajo la Ley 254-1974."),
+    text("The criminal record certificate documents the applicant's history for the alcohol dealer license file.", "El certificado de antecedentes penales documenta el historial del solicitante para el expediente de la licencia de alcohol."),
+    text("Apply for the Certificado de Antecedentes Penales through the official pr.gov portal (free online) and include it with the license application.", "Solicita el Certificado de Antecedentes Penales en el portal oficial de pr.gov (gratis en línea) e inclúyelo con la solicitud de licencia."),
+    text("With the criminal record certificate on file, the background prerequisite is satisfied; Hacienda reviews the remaining license requirements.", "Con el certificado de antecedentes penales en el expediente, el prerrequisito de antecedentes queda satisfecho; Hacienda revisa los demás requisitos de la licencia."),
+  ], ["DOC_ALCOHOL_LICENSE"]),
   DOC_EIN: concept("DOC_EIN", [[employee]], [PR_GUIDANCE_SOURCES.ein], [
     text("Employers need a federal tax identifier for employment-tax reporting. The EIN identifies the business to the IRS.", "Los patronos necesitan un identificador contributivo federal para informar contribuciones sobre el empleo. El EIN identifica al negocio ante el IRS."),
     text("IRS confirmation is official evidence of the EIN assigned to the business, not the application for that number.", "La confirmación del IRS es evidencia oficial del EIN asignado al negocio, no la solicitud de ese número."),

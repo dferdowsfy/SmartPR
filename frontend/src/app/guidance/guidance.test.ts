@@ -28,7 +28,7 @@ const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREE
 // pursuing federal contracts, so it stays provisional for the bar profile.
 const CONTRACTOR_GATED = new Set(["DOC_SAM_REGISTRATION", "DOC_CONTRACTOR_LICENSE"]);
 
-test("same Bayamón bar: all twenty-four source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all twenty-seven source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
@@ -48,7 +48,7 @@ test("same Bayamón bar: all twenty-four source-backed explanations are distinct
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 24);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 27);
   }
 });
 

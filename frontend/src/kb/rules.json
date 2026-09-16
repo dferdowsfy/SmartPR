@@ -574,20 +574,6 @@
     "citation_source": "document"
   },
   {
-    "id": "RULE_0035",
-    "rule_type": "question_trigger",
-    "business_type_id": null,
-    "question_id": "Q_HOME_BASED",
-    "expected_answer": "true",
-    "municipality_flag": null,
-    "requires_document_id": "DOC_HOME_DECLARATION",
-    "citation": "Permiso de Uso Domiciliario — OGPe (negocio operado desde el hogar)",
-    "citation_url": "https://www.permisos.pr.gov/",
-    "citation_confidence": "page",
-    "citation_inherited_from": "DOC_HOME_DECLARATION",
-    "citation_source": "document"
-  },
-  {
     "id": "RULE_0036",
     "rule_type": "question_trigger",
     "business_type_id": null,
@@ -599,7 +585,17 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/210-2015.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PROPERTY_DEED",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "supporting_evidence",
+    "verification": "verified",
+    "trigger_summary": "A property deed proves ownership/site control as evidence for another filing; it is not an independent regulatory requirement.",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to supporting_evidence",
+        "reason": "QA 2026-09-16 evening: deed is evidence of tenure, never a standalone requirement (symmetric with RULE_0037 lease audit fix)."
+      }
+    ]
   },
   {
     "id": "RULE_0037",

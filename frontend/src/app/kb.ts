@@ -432,6 +432,23 @@ const sameAnswerValue = (a: unknown, b: unknown): boolean => {
  * relationships can only teach the engine something new, never retract a
  * requirement the same profile + answers already produced.
  */
+/**
+ * Permit-model correction (REG-HOME-PHYSICAL-001): the intake model
+ * deliberately counts a home as a physical place (Q_PHYSICAL_LOCATION=true
+ * for home-based), but the permit rules and guidance concepts read
+ * Q_PHYSICAL_LOCATION as "nonresidential commercial premises"
+ * (RULE_0007/0008 trigger text: "Nonresidential business location").
+ * Re-assert the permit meaning here so a home-based business never
+ * satisfies the nonresidential premise. Idempotent — safe to apply after
+ * any later pass that re-asserts raw caller answers (see
+ * computeRequirementsFromSnapshot).
+ */
+function applyPermitModelCorrections(a: Record<string, boolean | string | undefined>): void {
+  if (a["Q_HOME_BASED"] === true) {
+    a["Q_PHYSICAL_LOCATION"] = false;
+  }
+}
+
 export function buildEngineInput(
   profile: ProfileLike,
   answers: Record<string, unknown> = {},
@@ -574,18 +591,18 @@ export function buildEngineInput(
     }
   }
 
-  // Permit-model correction (REG-HOME-PHYSICAL-001): the intake model
-  // deliberately counts a home as a physical place (Q_PHYSICAL_LOCATION=true
-  // for home-based), but the permit rules and guidance concepts read
-  // Q_PHYSICAL_LOCATION as "nonresidential commercial premises"
-  // (RULE_0007/0008 trigger text: "Nonresidential business location").
-  // Re-assert the permit meaning here so a home-based business never
-  // satisfies the nonresidential premise: the two models diverge only at
-  // this translation point, and the intake-side derivations above
-  // (Q_HOME_BASED, Q_ONLINE_ONLY) are left untouched.
-  if (a["Q_HOME_BASED"] === true) {
-    a["Q_PHYSICAL_LOCATION"] = false;
-  }
+/**
+ * Permit-model correction (REG-HOME-PHYSICAL-001): the intake model
+ * deliberately counts a home as a physical place (Q_PHYSICAL_LOCATION=true
+ * for home-based), but the permit rules and guidance concepts read
+ * Q_PHYSICAL_LOCATION as "nonresidential commercial premises"
+ * (RULE_0007/0008 trigger text: "Nonresidential business location").
+ * Re-assert the permit meaning here so a home-based business never
+ * satisfies the nonresidential premise. Idempotent — safe to apply after
+ * any later pass that re-asserts raw caller answers (see
+ * computeRequirementsFromSnapshot).
+ */
+  applyPermitModelCorrections(a);
 
   // Project-first wiring: the intent branch drives the engine's formation
   // gating (businessStatus / entityNotFormed) and the validated project
@@ -850,6 +867,13 @@ export function computeRequirementsFromSnapshot(
     const direct = answers[question.id];
     if (direct !== undefined) input.answers[question.id] = direct as boolean | string;
   }
+  // REG-HOME-PHYSICAL-001 order-dependence (2026-09-16 QA): the loop above
+  // re-asserts the caller's raw answers over buildEngineInput's permit-model
+  // correction, so a home-based business whose intake record carries
+  // Q_PHYSICAL_LOCATION=true would wrongly satisfy the nonresidential
+  // premise and fire RULE_0007/RULE_0008. The correction is idempotent, so
+  // re-apply it last — the permit meaning always wins.
+  applyPermitModelCorrections(input.answers);
   const { requirements } = runRulesEngine(snapshot, input);
   const classified = classifyEngineRequirements(requirements, {
     kb: snapshot,

@@ -411,12 +411,25 @@ export function classifyEngineRequirements(
       applicability = "conditional";
       triggerFacts.push("entityType:unknown");
     }
-    // F02: an EIN is required when the business will have employees, but when
-    // the entity type is still unknown we must not claim it as a definite
-    // requirement — the IRS single-owner exception may apply.
-    if (unknownEntity && row.document_id === EIN_DOC && !truthyAnswer(options.answers?.["Q_EMPLOYEES_HIRED"])) {
+    // F02 + founder judgment 2026-09-16 (§29.1): an EIN is required when the
+    // business will have employees, but a sole proprietor with no employees
+    // and no other EIN trigger may operate on the owner's SSN for federal
+    // purposes — the EIN is optional/conditional, never blocking. The only
+    // modeled EIN triggers are the new-business baseline (RULE_0002) and
+    // hiring employees (RULE_0620); an employee basis keeps it required.
+    // Unknown entity stays conditional per F02 (the IRS single-owner
+    // exception may apply).
+    const einEmployeeBasis = basisIds.includes("RULE_0620");
+    if (
+      row.document_id === EIN_DOC &&
+      !truthyAnswer(options.answers?.["Q_EMPLOYEES_HIRED"]) &&
+      !einEmployeeBasis &&
+      (unknownEntity || options.entityType === "sole_proprietorship")
+    ) {
       applicability = "conditional";
-      triggerFacts.push("entityType:unknown");
+      triggerFacts.push(
+        unknownEntity ? "entityType:unknown" : "entityType:sole_proprietorship+no_employees"
+      );
     }
 
     const selectedState = basisStates.includes("required") ? "required"
