@@ -2207,13 +2207,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         // Persist the full Business Passport when the user has edited core facts
         // (canonicalOverride) so regenerated artifacts pick up the same values.
         if (canonicalOverride) {
-          const passportCanonical = buildCanonicalFromIntake({
-            legalName: profile.name || undefined,
-            business_structure: profile.business_structure || undefined,
-            municipality: profile.municipality || undefined,
-            employeeCount: profile.number_of_employees,
-          }, canonicalOverride);
-          businessPatch.passport = passportJsonFromCanonical(passportCanonical);
+          businessPatch.passport = passportJsonFromCanonical(canonicalOverride);
         }
         // Seed the Business Passport with official identifiers the interpreter
         // extracted from the intake narrative (EIN, formation date, Hacienda
@@ -2293,6 +2287,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     sampleFormDrafts, preparedSampleApplications, govFormDrafts,
     preparedGovApplications, canonicalOverride, currentStep, readinessScore,
   ]);
+
+  // Typing and voice enter the same canonical state. Keep the existing intake
+  // mirrors current so deterministic requirement evaluation sees accepted edits.
+  const updatePassport = (next: CanonicalApplicationData) => {
+    setCanonicalOverride(next);
+    setProfile((previous) => ({
+      ...previous,
+      // Keep the discovery section mounted while a user clears/retypes a name.
+      ...(next.business.legalName !== canonicalApplication.business.legalName ? { name: next.business.legalName || previous.name } : {}),
+      ...(next.business.entityType !== canonicalApplication.business.entityType ? { business_structure: next.business.entityType === 'limited_liability_company' ? 'llc' : next.business.entityType === 'stock_corporation' ? 'corporation' : next.business.entityType } : {}),
+      ...(next.addresses.municipality !== canonicalApplication.addresses.municipality ? { municipality: next.addresses.municipality || previous.municipality } : {}),
+      ...(next.business.employeeCount !== canonicalApplication.business.employeeCount ? { number_of_employees: next.business.employeeCount ?? null } : {}),
+    }));
+  };
 
   // Load / recompute requirements (powered by the design-accurate compute function)
   const loadRequirements = async () => {
@@ -3634,20 +3642,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     });
     if (canonicalOverride) {
       // The override is authoritative for everything the user has entered
-      // (Core Application Details + in-form write-back). Entity type always
-      // follows the intake dropdown so routing stays consistent; formation
-      // status follows the dropdown only for a foreign corporation.
-      const entityType = base.business.entityType;
-      const formationStatus = entityType === 'foreign_corporation' ? 'formed_outside_puerto_rico' : canonicalOverride.business.formationStatus;
-      return {
-        ...canonicalOverride,
-        business: {
-          ...canonicalOverride.business,
-          entityType,
-          formationStatus,
-          legalName: canonicalOverride.business.legalName || base.business.legalName,
-        },
-      };
+      // (Core Application Details + in-form write-back), including confirmed
+      // voice edits. Do not overwrite those facts with older intake values.
+      return canonicalOverride;
     }
     return base;
   }, [
@@ -4565,6 +4562,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   allowedIndustries={INDUSTRIES}
                   allowedLocationTypes={LOCATION_TYPES}
                   onApply={applyInterpretedIntake}
+                  passport={baseProfileReady && intakeQuestionsComplete ? {
+                    canonical: canonicalApplication,
+                    unconfirmedDefaults: canonicalOverride ? [] : ['formationStatus', ...(profile.business_structure ? [] : ['entityType'])],
+                    onChange: updatePassport,
+                  } : undefined}
                 />
 
                 <div className="spr-field full">
@@ -4635,7 +4637,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
                 <div className="spr-field spr-field-static">
                   <label htmlFor="spr-structure">{t('businessStructure')}</label>
-                  <select id="spr-structure" value={profile.business_structure} onChange={e => setProfile({ ...profile, business_structure: e.target.value })}>
+                  <select id="spr-structure" value={profile.business_structure} onChange={e => {
+                    const structure = e.target.value;
+                    setProfile({ ...profile, business_structure: structure });
+                    setCanonicalOverride((current) => current ? { ...current, business: { ...current.business, entityType: entityTypeFromLegacyStructure(structure) } } : current);
+                  }}>
                     <option value="">{L('Select entity type', language)}</option>
                     <option value="corporation">{L('Stock corporation', language)}</option>
                     <option value="nonprofit_nonstock_corporation">{L('Nonprofit non-stock corporation', language)}</option>
@@ -4756,7 +4762,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   passportMode
                   canonical={canonicalApplication}
                   lang={language}
-                  onChange={(next) => setCanonicalOverride(next)}
+                  onChange={updatePassport}
                 />
               </div>
             )}

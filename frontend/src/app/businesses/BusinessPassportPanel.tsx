@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { CoreApplicationDetails } from "../forms/engine/CoreApplicationDetails";
+import { PassportVoiceOrb } from "./PassportVoiceOrb";
 import {
   canonicalFromBusinessRow,
   PASSPORT_INTAKE_FIELDS,
@@ -114,11 +115,11 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
     setEditing(false);
   };
 
-  const save = async () => {
+  const save = async (value = draft, fromVoice = false) => {
     setBusy(true);
     setMessage(null);
     try {
-      const passport_json = passportJsonFromCanonical(draft);
+      const passport_json = passportJsonFromCanonical(value);
       const response = await fetch(`/api/businesses/${businessId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -127,16 +128,17 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
         setMessage(result.error || L("Could not save passport.", "No se pudo guardar el pasaporte.", lang));
+        if (fromVoice) throw new Error("passport_save_failed");
         return;
       }
-      setCanonical(draft);
-      setEditing(false);
+      setCanonical(value);
+      if (!fromVoice) setEditing(false);
       setMessage(L(
         "Passport saved. Regenerated downloads will use these values.",
         "Pasaporte guardado. Las descargas regeneradas usarán estos valores.",
         lang
       ));
-      onSaved?.({
+      if (!fromVoice) onSaved?.({
         passport_json: result.business?.passport_json ?? passport_json,
         denormalized: {
           legal_name: result.business?.legal_name ?? null,
@@ -183,6 +185,14 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]">
+      <PassportVoiceOrb canonical={editing ? draft : canonical} lang={lang} disabled={busy}
+        onUseTextInstead={startEdit}
+        onChange={async (next) => {
+          setDraft(next);
+          // Keep failed saves visible/editable and never replace subsequent typing.
+          setEditing(true);
+          await save(next, true);
+        }} />
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">

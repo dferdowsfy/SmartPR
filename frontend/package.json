@@ -17,7 +17,9 @@
     "forms:verify": "node --experimental-strip-types scripts/verify-deliverable-output.ts",
     "test:regulatory-correctness": "tsx --test src/app/regulatoryCorrectness.test.ts src/app/requirementApplicability.test.ts src/app/rulesEngine.test.ts src/app/incentives/engine.test.ts src/app/incentives/catalog.test.ts src/app/guidance/guidance.test.ts src/app/forms/engine/formEngine.test.ts src/app/forms/engine/businessPassport.test.ts src/app/compliance/evidenceLocker.test.ts",
     "rk:resync": "tsx scripts/rk-resync-from-seed.ts",
-    "test:rk": "tsx --test src/app/rk/publication.test.ts src/app/rk/discoveryParity.test.ts"
+    "test:rk": "tsx --test src/app/rk/publication.test.ts src/app/rk/discoveryParity.test.ts",
+    "test:voice": "tsx --test src/app/ai/intake/passportExtraction.test.ts src/app/ai/intake/voiceRoutes.test.ts src/app/ai/intake/intakeInterpretation.test.ts src/app/ai/intake/relationships.test.ts src/app/ai/intake/graphRelationships.test.ts src/app/forms/engine/businessPassport.test.ts",
+    "test:voice:ui": "playwright test --config playwright.voice.config.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
@@ -38,6 +40,7 @@
     "stripe": "^18.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
