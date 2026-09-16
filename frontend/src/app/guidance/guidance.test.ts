@@ -28,7 +28,7 @@ const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREE
 // pursuing federal contracts, so it stays provisional for the bar profile.
 const CONTRACTOR_GATED = new Set(["DOC_SAM_REGISTRATION", "DOC_CONTRACTOR_LICENSE"]);
 
-test("same Bayamón bar: all twenty-three source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all twenty-four source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
@@ -48,7 +48,7 @@ test("same Bayamón bar: all twenty-three source-backed explanations are distinc
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 23);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 24);
   }
 });
 
@@ -94,9 +94,16 @@ test("physical premises do not imply a signed lease; ownership contradicts lease
   assert.match(g.whatYouNeedToDo, /signed lease/);
 });
 
-test("local Bayamón sources cannot assert another municipality's requirements", () => {
-  for (const id of ["DOC_PATENTE_MUNICIPAL", "DOC_LEASE_AGREEMENT"]) {
-    assert.equal(buildRequirementGuidance(req(id), { ...ctx, municipality: "San Juan" }).status, "GUIDANCE_NEEDS_REVIEW");
+test("municipal guidance is municipality-generic: no other municipality's name leaks", () => {
+  for (const id of ["DOC_PATENTE_MUNICIPAL", "DOC_MUNICIPAL_REGISTRATION", "DOC_MUNICIPAL_TAX_COMPLIANCE", "DOC_LEASE_AGREEMENT"]) {
+    for (const municipality of ["Guaynabo", "San Juan", "Ponce"]) {
+      const muniCtx = { ...ctx, municipality, engineInput: buildEngineInput({ ...profile, municipality }, answers) };
+      const g = buildRequirementGuidance(req(id), muniCtx);
+      assert.equal(g.status, "VALIDATED", `${id} in ${municipality}: ${g.reviewReasons}`);
+      assert.doesNotMatch(JSON.stringify({ ...g, sources: undefined }), /Bayamón/i, `${id} must not name Bayamón for a ${municipality} business`);
+      assert.doesNotMatch(JSON.stringify(g.sources), /Bayamón|municipiodebayamon/i, `${id} must not cite Bayamón sources for a ${municipality} business`);
+      assert.match(g.whyThisApplies, new RegExp(municipality), `${id} names the actual municipality`);
+    }
   }
 });
 
@@ -237,4 +244,16 @@ test("provisional caveat names the case instead of speaking generically", () => 
   const g = buildRequirementGuidance(req("DOC_LUMA_INTERCONNECTION"), { ...ctx, language: "es" });
   assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW");
   assert.match(g.whyThisApplies, /Bar en Bayamón/);
+});
+
+test("DTRH employer registration renders a validated description, never the placeholder", () => {
+  // Regression: live QA 2026-09-16 showed "A validated description of this
+  // document is still pending." for a Guaynabo catering business hiring 6.
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_DTRH_EMPLOYER_REG"), { ...ctx, language });
+    assert.equal(g.status, "VALIDATED", `DTRH: ${g.reviewReasons}`);
+    assert.doesNotMatch(g.whatThisIs, /still pending|aún está pendiente/);
+    assert.match(g.whatThisIs, /DTRH/);
+    assert.match(JSON.stringify(g.sources), /trabajo\.pr\.gov/);
+  }
 });
