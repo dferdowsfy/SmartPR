@@ -57,7 +57,12 @@ import {
   projectIntentWhyAsk,
   PROJECT_INTENT_VALUES,
   type ProjectIntent,
+  shouldCreateBusinessRecord,
 } from './ai/intake/projectIntent';
+import {
+  normalizeLinkableBusinesses,
+  type LinkableBusiness,
+} from './ai/intake/linkBusiness';
 import {
   projectPassportFromContext,
   validateProjectPassport,
@@ -1015,8 +1020,17 @@ function resolveFactsFor(
 // (forms/engine/requirementAugment) so both produce the same requirement set.
 function normalizeEntityFormationRequirements(
   entityType: EntityType,
-  existing: Requirement[]
+  existing: Requirement[],
+  project: { projectIntent?: ProjectIntent | null } = {}
 ): Requirement[] {
+  // Project-first: formation documents are generated only when a new
+  // business may be forming. An existing business — or a property/project
+  // with no business — never gets formation steps invented for it, even
+  // when an entity type is known.
+  const intent = project.projectIntent ?? null;
+  if (intent === "existing_business" || intent === "project_only") {
+    return existing;
+  }
   return normalizeFormationShared<Requirement>(entityType, existing, (d, et) =>
     ({
       document_id: d.document_id,
@@ -1058,7 +1072,7 @@ function computeRequirements(
     }
   ) as Requirement[];
 
-  return normalizeEntityFormationRequirements(entityType, fromKb);
+  return normalizeEntityFormationRequirements(entityType, fromKb, { projectIntent: project.projectIntent ?? null });
 }
 
 // Advisory historical insights shape (from /api/graph/similar).
@@ -1361,6 +1375,7 @@ export default function SmartPRIntake() {
   // matter remain valid; new portfolio entry points always provide one.
   const matterIdRef = useRef<string | null>(null);
   const formationStartAttemptedRef = useRef(false);
+  const formationResetDoneRef = useRef(false);
   // Signed-in user (null when anonymous, undefined while loading).
   const [me, setMe] = useState<{
     id: string;
@@ -1481,14 +1496,28 @@ export default function SmartPRIntake() {
     if (matterId) matterIdRef.current = matterId;
   }, []);
 
+  // Project-first intake branch: existing_business | new_business |
+  // project_only. Null until the interpreter determines it or the user picks
+  // it in the intent card — never defaulted. Declared up here because the
+  // entry/creation effects below read it in their dependency arrays.
+  const [projectIntent, setProjectIntent] = useState<ProjectIntent | null>(null);
+  // Whether the current intent is settled (user-picked, interpreter-applied
+  // at high confidence, or proceeded-past). The ?entry=new-business default
+  // alone does NOT confirm: the user may still switch to project_only, and a
+  // project_only intent must never trigger business/matter creation.
+  const [projectIntentConfirmed, setProjectIntentConfirmed] = useState(false);
+
   // The authenticated portfolio's “File a New Business” action lands directly
-  // in this existing intake. Create only the persistent container records here;
-  // the existing intake/rules/document state machine remains unchanged.
+  // in this existing intake. Reset the slate here; the entry point itself
+  // declares the project-first branch (new_business) — the user can still
+  // change it via the intent question, and the creation effect below honors
+  // whatever branch is current. The existing intake/rules/document state
+  // machine remains unchanged.
   useEffect(() => {
-    if (!me || formationStartAttemptedRef.current) return;
+    if (!me || formationResetDoneRef.current) return;
     const params = new URLSearchParams(window.location.search);
     if (params.get('entry') !== 'new-business' || params.get('business')) return;
-    formationStartAttemptedRef.current = true;
+    formationResetDoneRef.current = true;
     // This page is a single long-lived component reused across client-side
     // navigations (e.g. from an existing business straight into "New
     // Business" without a full page reload) — so a fresh entry must clear
@@ -1528,6 +1557,33 @@ export default function SmartPRIntake() {
     businessIdRef.current = null;
     matterIdRef.current = null;
     setBusinessId(null);
+    // The entry point declares the branch: the portfolio's "New Business"
+    // action means new_business. The intent question / interpreter can still
+    // move the session to another branch afterwards.
+    setProjectIntent("new_business");
+    setProjectPassport(null);
+  }, [me]);
+
+  // Business/matter creation, gated on the settled project-first branch. Only
+  // a new business gets a business record: for existing_business the business
+  // already exists (the picker links it — never created), and for
+  // project_only the Project Passport is the artifact, so no business record
+  // or matter is ever created. Unknown intent creates nothing until the
+  // branch is determined, and the ?entry=new-business default alone does not
+  // confirm the branch — the user may still switch to project_only before
+  // anything is created (see shouldCreateBusinessRecord).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const decision = shouldCreateBusinessRecord({
+      signedIn: !!me,
+      alreadyAttempted: formationStartAttemptedRef.current,
+      projectIntent,
+      intentConfirmed: projectIntentConfirmed,
+      entryParam: params.get("entry"),
+      businessParam: params.get("business"),
+    });
+    if (!decision) return;
+    formationStartAttemptedRef.current = true;
     void (async () => {
       try {
         const response = await fetch('/api/matters', {
@@ -1552,7 +1608,7 @@ export default function SmartPRIntake() {
         // the next fresh entry; guest progress continues saving on-device.
       }
     })();
-  }, [me]);
+  }, [me, projectIntent, projectIntentConfirmed]);
 
   // Load the published knowledge-base snapshot (admin-controlled rules); the
   // bundled static KB is the fallback, so failures are harmless.
@@ -1602,6 +1658,8 @@ export default function SmartPRIntake() {
           // is revalidated against its schema version.
           if (normalizeProjectIntent(st.projectIntent)) {
             setProjectIntent(normalizeProjectIntent(st.projectIntent));
+            // A restored session was settled before it was saved.
+            setProjectIntentConfirmed(true);
           }
           const restoredPassport = validateProjectPassport(st.projectPassport);
           if (restoredPassport) setProjectPassport(restoredPassport);
@@ -1689,10 +1747,8 @@ export default function SmartPRIntake() {
   // scope, square footage, …). Preserved alongside the intake so requirements
   // reasoning, Agency Assist briefs, and the passport can use them.
   const [projectContext, setProjectContext] = useState<ProjectContext>({});
-  // Project-first intake branch: existing_business | new_business |
-  // project_only. Null until the interpreter determines it or the user picks
-  // it in the intent card — never defaulted.
-  const [projectIntent, setProjectIntent] = useState<ProjectIntent | null>(null);
+  // (projectIntent / projectIntentConfirmed are declared above the
+  // entry/creation effects, which read them in their dependency arrays.)
   // The Project Passport: project/property facts for the active intent,
   // rebuilt whenever intent or project context changes. Linked to an existing
   // business id only for existing_business; null for new_business and
@@ -1702,6 +1758,44 @@ export default function SmartPRIntake() {
   projectIntentRef.current = projectIntent;
   const projectContextRef = useRef<ProjectContext>({});
   projectContextRef.current = projectContext;
+  // Linkable businesses for the existing_business picker (item 5): when the
+  // intent is existing_business and no ?business= id is attached, the user
+  // picks which business the project belongs to instead of the intake
+  // silently proceeding with an empty profile.
+  const [linkableBusinesses, setLinkableBusinesses] = useState<LinkableBusiness[] | null>(null);
+  const [linkBusinessId, setLinkBusinessId] = useState("");
+  useEffect(() => {
+    if (!me || projectIntent !== "existing_business" || businessId) {
+      return;
+    }
+    let cancelled = false;
+    setLinkableBusinesses(null);
+    fetch("/api/businesses")
+      .then((r) => (r.ok ? r.json() : { businesses: [] }))
+      .then((d) => {
+        // Rows without a usable public id are dropped so the picker can
+        // never link to one (?business= would be unusable).
+        if (!cancelled) setLinkableBusinesses(normalizeLinkableBusinesses(d));
+      })
+      .catch(() => {
+        if (!cancelled) setLinkableBusinesses([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [me, projectIntent, businessId]);
+
+  /** Link the picked existing business: updates the URL + state so the
+   *  passport-prefill effect picks it up exactly like a ?business= landing. */
+  const linkExistingBusiness = (publicId: string) => {
+    if (!publicId) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("business", publicId);
+    window.history.replaceState(null, "", `/?${params.toString()}`);
+    businessIdRef.current = publicId;
+    setBusinessId(publicId);
+    existingBizPrefillRef.current = false;
+  };
   // Profile/answer keys filled at 0.60–0.85 confidence: applied but visibly
   // marked as needing the user's confirmation. Cleared when the user edits or
   // confirms the field.
@@ -2292,7 +2386,15 @@ export default function SmartPRIntake() {
     const incomingIntent = normalizeProjectIntent(appliedIntent ?? suggestedIntent);
     const effectiveIntent = incomingIntent ?? projectIntentRef.current;
     if (incomingIntent) {
-      setProjectIntent((prev) => prev ?? incomingIntent);
+      const prev = projectIntentRef.current;
+      setProjectIntent((p) => p ?? incomingIntent);
+      // A high-confidence (≥0.85) read settles the branch when it
+      // establishes it or agrees with the settled one; a suggested
+      // (0.60–0.85) read or a conflicting read leaves the branch
+      // unconfirmed so the user settles it explicitly.
+      if (appliedIntent && (prev === null || prev === incomingIntent)) {
+        setProjectIntentConfirmed(true);
+      }
       if (suggestedIntent && !appliedIntent) {
         setConfirmationsNeeded((prev) => ({ ...prev, project_intent: true }));
       }
@@ -2359,6 +2461,8 @@ export default function SmartPRIntake() {
 
 // Quick loaders for demo readiness - instantly shows different requirements per business type
 const loadExample = (example: Partial<BusinessProfile>) => {
+  // Proceeding with the shown intent settles the branch.
+  if (projectIntent) setProjectIntentConfirmed(true);
   const newProfile = { ...profile, ...example };
   setProfile(newProfile);
   const newAnswers = { ...getFollowUpQuestions(newProfile.industry) };
@@ -2373,6 +2477,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Step 1: Save profile + compute discovery requirements (client-side)
   const handleStartDiscovery = async () => {
+    // The user proceeds with the shown intent — the branch is settled.
+    if (projectIntent) setProjectIntentConfirmed(true);
     setIsLoading(true);
     const answers = {
       ...getFollowUpQuestions(),
@@ -2534,6 +2640,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             },
           }),
         })];
+        // project_only: the Project Passport is the artifact — never write
+        // business facts to a business record. (No business is created for
+        // this branch, and if the user switched branches mid-flow the stale
+        // record is left untouched.)
+        const skipBusinessWrites = projectIntentRef.current === "project_only";
         const businessPatch: Record<string, unknown> = {
           legal_name: profile.name || undefined,
           business_structure: profile.business_structure || undefined,
@@ -2543,7 +2654,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         };
         // Persist the full Business Passport when the user has edited core facts
         // (canonicalOverride) so regenerated artifacts pick up the same values.
-        if (canonicalOverride) {
+        if (canonicalOverride && !skipBusinessWrites) {
           businessPatch.passport = passportJsonFromCanonical(canonicalOverride);
         }
         // Seed the Business Passport with official identifiers the interpreter
@@ -2551,7 +2662,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         // merchant registration, physical address). Sent as a merge so existing
         // passport data is preserved; only fires when those fields changed.
         let officialPassportSent: string | null = null;
-        if (!businessPatch.passport && businessIdRef.current) {
+        if (!businessPatch.passport && businessIdRef.current && !skipBusinessWrites) {
           const officialPassport = buildOfficialDetailsPassport(profile);
           const fingerprint = officialPassport ? JSON.stringify(officialPassport) : "";
           if (fingerprint && fingerprint !== lastOfficialPassportRef.current) {
@@ -2566,7 +2677,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         // returns 400 and used to mark an otherwise successful snapshot save as
         // failed.
         const hasBusinessFields = Object.entries(businessPatch).some(([key, value]) => key !== 'passport' && Boolean(value));
-        if (businessIdRef.current && (hasBusinessFields || businessPatch.passport)) {
+        if (businessIdRef.current && !skipBusinessWrites && (hasBusinessFields || businessPatch.passport)) {
           // Passport write syncs denormalized columns server-side; otherwise patch columns only.
           const body = businessPatch.passport
             ? { passport: businessPatch.passport }
@@ -2642,6 +2753,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Load / recompute requirements (powered by the design-accurate compute function)
   const loadRequirements = async () => {
+    // Recomputing with the shown intent settles the branch.
+    if (projectIntent) setProjectIntentConfirmed(true);
     setIsLoading(true);
     const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext });
     setRequirements(computed);
@@ -4024,13 +4137,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     if (!profile.business_structure || requirements.length === 0) return;
     const entityType = entityTypeFromLegacyStructure(profile.business_structure);
     setRequirements((current) => {
-      const normalized = normalizeEntityFormationRequirements(entityType, current);
+      const normalized = normalizeEntityFormationRequirements(entityType, current, { projectIntent });
       const unchanged =
         normalized.length === current.length &&
         normalized.every((requirement, index) => requirement === current[index]);
       return unchanged ? current : normalized;
     });
-  }, [profile.business_structure, requirements.length]);
+  }, [profile.business_structure, requirements.length, projectIntent]);
 
   // Requirement ids currently present (from the rules engine output) plus any
   // deterministic entity-type formation requirements.
@@ -4513,7 +4626,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       badge,
       why,
       action,
-      answerPrompt,
+      // Inline answer prompt for an unanswered trigger question (unfinished:
+      // the classifier never sets unansweredTriggerQuestionId yet, so this
+      // stays undefined and the card renders no prompt).
+      answerPrompt: undefined,
       secondary,
       secondaryOnCompleted,
       download,
@@ -4958,6 +5074,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                             className="spr-intent-option"
                             onClick={() => {
                               setProjectIntent(intent);
+                              setProjectIntentConfirmed(true);
                               clearConfirmation('project_intent');
                             }}
                           >
@@ -4974,6 +5091,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                         className="spr-link"
                         onClick={() => {
                           setProjectIntent(null);
+                          setProjectIntentConfirmed(false);
                           clearConfirmation('project_intent');
                         }}
                       >
@@ -4982,6 +5100,60 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     </div>
                   )}
                 </div>
+
+                {/* Existing-business picker: when the intent is
+                    existing_business and no ?business= id is attached, offer
+                    the user's businesses to link instead of silently
+                    proceeding with an empty profile. */}
+                {projectIntent === "existing_business" && !businessId && (
+                  <div className="spr-field full">
+                    <label htmlFor="spr-link-business">
+                      {L("Which business is this project for?", language)}
+                    </label>
+                    <p className="spr-hint">
+                      {L(
+                        "Link the existing business to reuse its Business Passport — you won't be asked again for what it already knows.",
+                        language
+                      )}
+                    </p>
+                    {linkableBusinesses === null ? (
+                      <p className="spr-hint">{L("Loading your businesses…", language)}</p>
+                    ) : linkableBusinesses.length === 0 ? (
+                      <p className="spr-hint">
+                        {L(
+                          "No businesses on your account yet — continue and we'll keep this project standalone.",
+                          language
+                        )}
+                      </p>
+                    ) : (
+                      <div className="spr-intent-selected">
+                        <select
+                          id="spr-link-business"
+                          value={linkBusinessId}
+                          onChange={(e) => setLinkBusinessId(e.target.value)}
+                        >
+                          <option value="">
+                            {L("Select a business…", language)}
+                          </option>
+                          {linkableBusinesses.map((b) => (
+                            <option key={b.public_id} value={b.public_id}>
+                              {b.legal_name || b.name || b.public_id}
+                              {b.municipality ? ` — ${b.municipality}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="spr-intent-option"
+                          disabled={!linkBusinessId}
+                          onClick={() => linkExistingBusiness(linkBusinessId)}
+                        >
+                          {L("Link business", language)}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="spr-field full">
                   <label htmlFor="spr-business-name">

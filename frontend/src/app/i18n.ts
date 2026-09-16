@@ -12,6 +12,13 @@ export const ES: Record<string, string> = {
   "Privacy Policy": "Política de privacidad",
   "Needs verification": "Necesita verificación",
   "Needs confirmation": "Necesita confirmación",
+  // ---- Project-first: existing-business picker ----
+  "Which business is this project for?": "¿Para cuál negocio es este proyecto?",
+  "Link the existing business to reuse its Business Passport — you won't be asked again for what it already knows.": "Vincula el negocio existente para reutilizar su Pasaporte de Negocio — no te volveremos a preguntar lo que ya sabemos.",
+  "Loading your businesses…": "Cargando tus negocios…",
+  "No businesses on your account yet — continue and we'll keep this project standalone.": "Aún no tienes negocios en tu cuenta — continúa y mantendremos este proyecto independiente.",
+  "Select a business…": "Selecciona un negocio…",
+  "Link business": "Vincular negocio",
   // ---- Project-context follow-ups (intake parser) ----
   "Is your business the owner and operator of this project?": "¿Tu negocio es el dueño y operador de este proyecto?",
   "Owner-built projects follow a different permit path than work filed by a third party, so SmartPR needs to know who is responsible for the project.": "Los proyectos construidos por el dueño siguen una ruta de permisos distinta a los que radica un tercero, por eso SmartPR necesita saber quién es responsable del proyecto.",

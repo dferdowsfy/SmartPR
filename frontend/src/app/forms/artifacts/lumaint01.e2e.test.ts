@@ -109,7 +109,7 @@ test("the customer signature line is never populated", async () => {
     "customer_signature is a hand-signature line SmartPR must leave blank"
   );
   assert.ok(
-    LUMAINT01.notices?.some((notice) => /firma del cliente/i.test(notice.es)),
+    LUMAINT01.notices?.some((notice) => /firma del cliente/i.test(notice.es ?? "")),
     "the form must tell the filer the signature line is theirs to complete by hand"
   );
 });

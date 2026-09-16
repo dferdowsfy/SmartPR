@@ -53,8 +53,9 @@ export function businessStatusForIntent(
 /**
  * Whether the entity is not yet formed. A new business is forming (true);
  * an existing business has its entity (false). project_only/unknown stays
- * null — unknown preserves current engine behavior; project_only never
- * reaches formation rules because requires_business already excludes it.
+ * null — formation rules then fire only as unresolved/conditional, never as
+ * confirmed; project_only never reaches formation rules because
+ * requires_business already excludes it.
  */
 export function entityNotFormedForIntent(
   intent: ProjectIntent | null | undefined
@@ -88,4 +89,53 @@ export function projectIntentWhyAsk(lang: "en" | "es"): string {
   return lang === "es"
     ? "Un proyecto de un negocio existente sigue una ruta distinta a la de un negocio nuevo, y una propiedad sin negocio no necesita trámites de formación."
     : "A project for an existing business follows a different path than a new one, and a property with no business tied to it needs no formation filings.";
+}
+
+/**
+ * Whether the intake may create a persistent business record / matter for
+ * this intent. Only a new business gets a business record: for
+ * existing_business the business already exists (link it, don't create it),
+ * and for project_only the Project Passport is the artifact — no business
+ * record or matter is ever created. Unknown intent creates nothing until
+ * the branch is determined.
+ */
+export function createsBusinessRecordForIntent(
+  intent: ProjectIntent | null | undefined
+): boolean {
+  return intent === "new_business";
+}
+
+/** Inputs to the business/matter creation decision. Pure and testable. */
+export interface BusinessRecordCreationInput {
+  /** The user is signed in (guests never get server-side records). */
+  signedIn: boolean;
+  /** A creation attempt already fired for this entry (never double-create). */
+  alreadyAttempted: boolean;
+  /** The current project-first branch. */
+  projectIntent: ProjectIntent | null | undefined;
+  /**
+   * The intent is settled — the user picked it, the interpreter applied it
+   * at high confidence, or the user proceeded past the intent step with it
+   * shown. The `?entry=new-business` default alone does NOT confirm: the
+   * user may still switch to project_only before anything is created.
+   */
+  intentConfirmed: boolean;
+  /** The `entry` URL param (the portfolio's "New Business" action). */
+  entryParam: string | null | undefined;
+  /** The `business` URL param (a record is already attached). */
+  businessParam: string | null | undefined;
+}
+
+/**
+ * Whether the intake may create a business record + matter right now.
+ * A project_only intent can never create — even confirmed — and an
+ * unconfirmed new_business (the entry default the user hasn't settled)
+ * waits instead of racing ahead of a possible switch to project_only.
+ */
+export function shouldCreateBusinessRecord(input: BusinessRecordCreationInput): boolean {
+  if (!input.signedIn || input.alreadyAttempted) return false;
+  if (!createsBusinessRecordForIntent(input.projectIntent)) return false;
+  if (!input.intentConfirmed) return false;
+  if (input.entryParam !== "new-business" || input.businessParam) return false;
+  return true;
 }

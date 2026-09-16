@@ -43,6 +43,17 @@ export interface RequirementDownload {
   downloadedHint: string;
   onDownload: () => void;
 }
+/** Inline Yes/No prompt for an unanswered trigger question — rendered in
+ * the action column when a requirement is conditional only because the
+ * triggering answer is still unknown. */
+export interface RequirementAnswerPrompt {
+  /** Localized question text, e.g. "Does the business handle hazardous materials?" */
+  prompt: string;
+  yesLabel: string;
+  noLabel: string;
+  onYes: () => void;
+  onNo: () => void;
+}
 
 export interface RequirementCardProps {
   index: number;

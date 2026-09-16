@@ -235,6 +235,14 @@ export function classifyEngineRequirements(
     else if (basisStates.includes("conditional")) applicability = "conditional";
     else applicability = "not_applicable";
 
+    // Project-first honesty: a formation requirement whose new+unformed basis
+    // was never confirmed (intent unknown) is unresolved — conditional, never
+    // presented as a confirmed requirement. Unknown never fires silently.
+    if (row.formation_unresolved) {
+      applicability = "conditional";
+      triggerFacts.push("formationGate:unresolved");
+    }
+
     if (row.document_id === CORP_FORMATION && options.entityType === "limited_liability_company") {
       continue;
     }
