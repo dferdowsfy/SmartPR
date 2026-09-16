@@ -21,25 +21,6 @@ type Lang = "en" | "es";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
-/** White multi-sparkle (three 4-point stars) — primary orb icon per mock. */
-function SparkleStarsIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-      className={className}
-    >
-      {/* Large center sparkle */}
-      <path d="M12 2.2l1.15 5.35L18.5 8.7l-5.35 1.15L12 15.2l-1.15-5.35L5.5 8.7l5.35-1.15L12 2.2z" />
-      {/* Upper-right small */}
-      <path d="M18.2 3.1l0.55 2.15L20.9 5.8l-2.15.55-.55 2.15-.55-2.15-2.15-.55 2.15-.55.55-2.15z" />
-      {/* Lower-left small */}
-      <path d="M6.3 14.4l0.5 1.95L8.75 16.85l-1.95.5-.5 1.95-.5-1.95-1.95-.5 1.95-.5.5-1.95z" />
-    </svg>
-  );
-}
-
 export interface IntakeVoiceOrbProps {
   lang: Lang;
   /** Called after STT with the transcript — parent runs /api/intake/interpret. */
@@ -569,9 +550,7 @@ export function IntakeVoiceOrb({
                   reducedMotion ? "" : "animate-spin"
                 }`}
               />
-            ) : (
-              <SparkleStarsIcon className="h-6 w-6 drop-shadow-sm" />
-            )}
+            ) : null}
           </span>
         </button>
       </div>
