@@ -429,3 +429,119 @@ export function projectContextBriefLines(
   }
   return lines;
 }
+
+/**
+ * "We understood:" chips for project-context facts.
+ *
+ * The natural-language strip used to show only business-level facts
+ * (business type, municipality, profile values) — a rich project description
+ * like "renovate an existing commercial building… 12,000 sq ft… interior
+ * demolition, electrical and plumbing" surfaced as a single "Guaynabo" chip,
+ * making context extraction invisible. These chips prove the semantic
+ * extraction ran: project type, scale, trades, and tenure appear next to the
+ * keyword-level facts.
+ *
+ * Facts are split by confidence band so the caller can mark 0.60–0.85 facts
+ * as needing confirmation, mirroring the visible-field bands.
+ */
+export interface ProjectContextChip {
+  label: string;
+  /** True when the fact is 0.60–0.85: filled but flagged for confirmation. */
+  needsConfirmation: boolean;
+}
+
+/** Short, user-recognizable label for one project fact. Null = no chip. */
+function projectFactChipLabel(key: ProjectContextKey, value: string | number | boolean): string | null {
+  switch (key) {
+    case "project_type":
+      return `Project: ${String(value)}`;
+    case "property_type":
+      return String(value);
+    case "existing_building":
+      return value === true ? "Existing building" : null;
+    case "renovation":
+      return value === true ? "Renovation" : null;
+    case "expansion":
+      return value === true ? "Expansion" : null;
+    case "new_construction":
+      return value === true ? "New construction" : null;
+    case "change_of_use":
+      return value === true ? "Change of use" : null;
+    case "square_footage":
+      return `${Number(value).toLocaleString("en-US")} sq ft`;
+    case "interior_demolition":
+      return value === true ? "Interior demolition" : null;
+    case "new_walls":
+      return value === true ? "New walls" : null;
+    case "layout_changes":
+      return value === true ? "Layout changes" : null;
+    case "structural_work":
+      return value === true ? "Structural work" : null;
+    case "electrical_work":
+      return value === true ? "Electrical work" : null;
+    case "plumbing_work":
+      return value === true ? "Plumbing work" : null;
+    case "mechanical_work":
+      return value === true ? "Mechanical work" : null;
+    case "exterior_work":
+      return value === true ? "Exterior work" : null;
+    case "site_work":
+      return value === true ? "Site work" : null;
+    case "occupancy_change":
+      return value === true ? "Occupancy change" : null;
+    case "existing_use":
+      return `Current use: ${value}`;
+    case "proposed_use":
+      return `Planned use: ${value}`;
+    case "business_activity":
+      return String(value);
+    case "employee_count": {
+      const n = Number(value);
+      return `Project crew: ${n}`;
+    }
+    case "estimated_project_value":
+      return `Est. $${Number(value).toLocaleString("en-US")}`;
+    case "land_disturbance_acres":
+      return `${value} ac disturbed`;
+    case "grading":
+      return value === true ? "Grading" : null;
+    case "excavation":
+      return value === true ? "Excavation" : null;
+    case "parking_changes":
+      return value === true ? "Parking changes" : null;
+    case "loading_changes":
+      return value === true ? "Loading changes" : null;
+    case "property_tenure":
+      return value === "owned" ? "Property owned" : value === "leased" ? "Property leased" : null;
+    case "known_permitting_issue":
+      return "Permitting issues noted";
+    // No chip: already covered by the business-level municipality chip.
+    case "municipality":
+    // No chip: long-form notes live in the Project Passport, not the strip.
+    case "scope_of_work":
+    case "historical_project_status":
+    // No chip: internal derivation detail, not user-recognizable.
+    case "business_is_owner_operator":
+    case "construction_approvals_required":
+    case "part_of_larger_common_plan":
+      return null;
+    default:
+      return null;
+  }
+}
+
+export function projectContextChips(
+  context: ProjectContext | undefined | null
+): ProjectContextChip[] {
+  if (!context) return [];
+  const chips: ProjectContextChip[] = [];
+  for (const [key, fact] of Object.entries(context) as Array<
+    [ProjectContextKey, ProjectContextFact]
+  >) {
+    if (!projectFactKnown(context, key)) continue;
+    const label = projectFactChipLabel(key, fact.value);
+    if (!label) continue;
+    chips.push({ label, needsConfirmation: fact.confidence < 0.85 });
+  }
+  return chips;
+}

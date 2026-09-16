@@ -19,6 +19,7 @@ import {
   projectContextFollowUps,
   projectContextAnswerToFacts,
   projectContextBriefLines,
+  projectContextChips,
   type ProjectContext,
 } from "./projectContext.ts";
 import {
@@ -394,4 +395,42 @@ test("validateInterpretation: a stated business name is kept with evidence, neve
   assert.equal(name?.value, "Caribe Metalworks LLC");
   assert.ok(name?.evidence?.includes("Caribe Metalworks LLC"));
   assert.equal(name?.requiresConfirmation, false);
+});
+
+test("projectContextChips: Guaynabo fixture surfaces semantic facts as chips", () => {
+  const { context } = validateProjectContext(GUAYNABO_MODEL_RESPONSE.projectContext);
+  const chips = projectContextChips(context);
+  const labels = chips.map((c) => c.label);
+  // The semantic extraction must be visible — not just the "Guaynabo" keyword.
+  assert.ok(labels.some((l) => l.includes("12,000 sq ft")), `missing sqft chip: ${labels}`);
+  assert.ok(labels.includes("Renovation"), `missing renovation chip: ${labels}`);
+  assert.ok(labels.includes("Expansion"), `missing expansion chip: ${labels}`);
+  assert.ok(labels.includes("Interior demolition"), `missing demolition chip: ${labels}`);
+  assert.ok(labels.includes("Electrical work"), `missing electrical chip: ${labels}`);
+  assert.ok(labels.includes("Plumbing work"), `missing plumbing chip: ${labels}`);
+  assert.ok(labels.includes("Existing building"), `missing existing-building chip: ${labels}`);
+  assert.ok(labels.includes("New construction"), `missing new-construction chip: ${labels}`);
+  assert.ok(labels.includes("Permitting issues noted"), `missing permitting chip: ${labels}`);
+  // No chip for the municipality (already a business-level chip) or for
+  // long-form/internal notes.
+  assert.ok(!labels.includes("Guaynabo"), `municipality must not duplicate: ${labels}`);
+  assert.ok(!labels.some((l) => l.includes("fell through")), `history note must not chip: ${labels}`);
+});
+
+test("projectContextChips: 0.60-0.85 facts are flagged for confirmation", () => {
+  const { context } = validateProjectContext({
+    renovation: { value: true, confidence: 0.95, evidence: "renovate" },
+    grading: { value: true, confidence: 0.7, evidence: "maybe grading" },
+  });
+  const chips = projectContextChips(context);
+  const reno = chips.find((c) => c.label === "Renovation");
+  const grading = chips.find((c) => c.label === "Grading");
+  assert.ok(reno && !reno.needsConfirmation, "0.95 fact applies silently");
+  assert.ok(grading && grading.needsConfirmation, "0.70 fact needs confirmation");
+});
+
+test("projectContextChips: empty/null context yields no chips, never throws", () => {
+  assert.deepEqual(projectContextChips(null), []);
+  assert.deepEqual(projectContextChips({}), []);
+  assert.deepEqual(projectContextChips(undefined), []);
 });

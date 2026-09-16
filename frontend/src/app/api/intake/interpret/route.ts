@@ -191,6 +191,9 @@ PROJECT INTENT — determine what the description is about. Set "project_intent"
 to exactly one of:
 - "existing_business": the speaker's business already exists and operates
   ("we operate", "our company", "already operating", "our hotel", "our plant").
+  Renovating, expanding, or altering an EXISTING commercial building or
+  property that is already operating commercially is existing_business —
+  the speaker is working on a live operation, not starting from zero.
 - "new_business": the speaker is starting a business that does not exist yet
   ("I want to open", "starting a", "planning to launch").
 - "project_only": a property or construction project with no business being
@@ -199,8 +202,10 @@ to exactly one of:
 CONFIDENCE BANDS apply (≥0.85 fill silently; 0.60–0.85 requires_confirmation;
 below 0.60 omit the field). A construction project FOR an existing company is
 existing_business, NOT project_only — project_only means no business of the
-speaker's is involved at all. Never default: when nothing supports an intent,
-omit it.
+speaker's is involved at all. "We are renovating our existing building" or
+"the property was already operating commercially" points to existing_business
+even when the speaker never says the words "my business". Never default: when
+nothing supports an intent, omit it.
 
 PROJECT CONTEXT — preserve facts about the PROJECT itself, not just the
 business. The visible intake fields (business name, municipality, industry,
@@ -279,7 +284,10 @@ work, and some changes to the building layout. The property was already
 operating commercially. We needed construction and related approvals, but
 the permitting process became a major issue and the project eventually fell
 through."
--> municipality Guaynabo; projectContext: project_type "renovation and
+-> municipality Guaynabo; project_intent existing_business (confidence 0.80,
+   requires_confirmation true — "The property was already operating
+   commercially": a live commercial operation being renovated, not a new
+   venture); projectContext: project_type "renovation and
    expansion", existing_building true, renovation true, expansion true,
    new_construction true, property_type "commercial building",
    existing_use "commercial", proposed_use "warehouse + office",

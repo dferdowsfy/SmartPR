@@ -1525,6 +1525,11 @@ export default function SmartPRIntake() {
   // alone does NOT confirm: the user may still switch to project_only, and a
   // project_only intent must never trigger business/matter creation.
   const [projectIntentConfirmed, setProjectIntentConfirmed] = useState(false);
+  // Ref mirror so async interpretation callbacks (which may resolve after a
+  // later render) never override an explicit user intent choice with a stale
+  // "unconfirmed" read.
+  const projectIntentConfirmedRef = useRef(false);
+  projectIntentConfirmedRef.current = projectIntentConfirmed;
 
   // The authenticated portfolio's “File a New Business” action lands directly
   // in this existing intake. Reset the slate here; the entry point itself
@@ -2406,7 +2411,17 @@ export default function SmartPRIntake() {
     const effectiveIntent = incomingIntent ?? projectIntentRef.current;
     if (incomingIntent) {
       const prev = projectIntentRef.current;
-      setProjectIntent((p) => p ?? incomingIntent);
+      // The interpreter moves the session to the branch the user actually
+      // described — including off the unconfirmed ?entry=new-business
+      // default — but never off an explicit user choice or a settled
+      // high-confidence read. Without this, a signed-in session entering
+      // via ?entry=new-business could never reach the existing-business
+      // branch from a description alone.
+      if (!projectIntentConfirmedRef.current) {
+        setProjectIntent(incomingIntent);
+      } else {
+        setProjectIntent((p) => p ?? incomingIntent);
+      }
       // A high-confidence (≥0.85) read settles the branch when it
       // establishes it or agrees with the settled one; a suggested
       // (0.60–0.85) read or a conflicting read leaves the branch

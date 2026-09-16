@@ -23,6 +23,7 @@ import {
 } from "../ai/intake/validateInterpretation";
 import {
   validateProjectContext,
+  projectContextChips,
   type ProjectContext,
 } from "../ai/intake/projectContext";
 import { projectIntentLabel } from "../ai/intake/projectIntent";
@@ -104,6 +105,21 @@ export function NaturalLanguageIntake({
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 190)}px`;
   }, [text]);
+
+  /**
+   * Chips for project-context facts (the semantic/context extraction, not
+   * just keyword-level business fields). 0.60–0.85 facts are filled but
+   * visibly marked as needing confirmation, mirroring the business fields.
+   */
+  const buildProjectContextChips = useCallback(
+    (validated: ValidatedInterpretation) => {
+      const marker = L("needs confirmation", "necesita confirmación");
+      return projectContextChips(validated.projectContext).map((c) => ({
+        label: c.needsConfirmation ? `${c.label} (${marker})` : c.label,
+      }));
+    },
+    [L]
+  );
 
   /**
    * Chips for 0.60–0.85 "suggested" facts. They are filled by onApply and
@@ -191,8 +207,9 @@ export function NaturalLanguageIntake({
 
         onApply(patch, validated);
         // Suggested (0.60–0.85) facts are filled by onApply; show them in the
-        // strip visibly marked as needing confirmation.
-        setChips([...patch.chips, ...buildSuggestedChips(validated)]);
+        // strip visibly marked as needing confirmation. Project-context chips
+        // prove the semantic extraction ran — not just keyword-level fields.
+        setChips([...patch.chips, ...buildSuggestedChips(validated), ...buildProjectContextChips(validated)]);
         setStatus("done");
       } catch {
         setStatus("error");
@@ -200,7 +217,7 @@ export function NaturalLanguageIntake({
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips, buildProjectContextChips]
   );
 
   const interpret = () => {
@@ -255,7 +272,7 @@ export function NaturalLanguageIntake({
           return;
         }
         onApply(patch, validated);
-        mergeChips([...patch.chips, ...buildSuggestedChips(validated)]);
+        mergeChips([...patch.chips, ...buildSuggestedChips(validated), ...buildProjectContextChips(validated)]);
         setStatus("done");
       } catch {
         setStatus("error");
@@ -263,7 +280,7 @@ export function NaturalLanguageIntake({
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips, buildSuggestedChips]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips, buildSuggestedChips, buildProjectContextChips]
   );
 
   const handleVoiceTranscript = useCallback(
