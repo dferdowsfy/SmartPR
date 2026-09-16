@@ -335,3 +335,41 @@ test("bucketForApplicability maps statuses to review buckets", () => {
   assert.equal(bucketForApplicability("completed"), "info");
   assert.equal(bucketForApplicability("not_applicable"), "not_applicable");
 });
+
+test("REG-TRANSPORT-001: logistics/warehouse business without vehicle facts — transport permit is not REQUIRED", () => {
+  // QA 2026-09-16: NTSP/CSP transport authorization applies to persons
+  // transporting cargo/passengers for hire, not to every business whose
+  // type says "logistics"/"warehouse". Business-type-only rules
+  // (RULE_0185–RULE_0188) are heuristics gated on commercial_vehicles;
+  // Q_COMMERCIAL_VEHICLES (RULE_0022) remains the authoritative trigger.
+  const DOC_TRANSPORT = docByName("transportation / puc permit");
+  const DOC_VEHICLE = docByName("commercial vehicle registration");
+
+  const base: EngineInput = {
+    municipalityName: "Cataño",
+    businessTypeName: "Logistics Company",
+    businessStatus: "existing",
+    answers: { Q_PHYSICAL_LOCATION: true },
+  };
+
+  const noVehicleFacts = classify(base, "existing").classified;
+  const transport = byId(noVehicleFacts, DOC_TRANSPORT);
+  const vehicle = byId(noVehicleFacts, DOC_VEHICLE);
+  assert.ok(transport, "transport permit must be surfaced as an evaluation");
+  assert.ok(vehicle, "vehicle registration must be surfaced as an evaluation");
+  assert.notEqual(transport.applicability, "required", "transport permit must not be REQUIRED without vehicle facts");
+  assert.notEqual(vehicle.applicability, "required", "vehicle registration must not be REQUIRED without vehicle facts");
+  assert.ok(
+    transport.missingFacts?.includes("commercial_vehicles"),
+    "transport permit must name commercial_vehicles as the missing fact"
+  );
+
+  const withVehicles = classify(
+    { ...base, answers: { ...base.answers, Q_COMMERCIAL_VEHICLES: true } },
+    "existing"
+  ).classified;
+  const transportReq = byId(withVehicles, DOC_TRANSPORT);
+  assert.ok(transportReq, "transport permit must fire when commercial vehicles are confirmed");
+  assert.equal(transportReq.applicability, "required", "transport permit must be REQUIRED with confirmed vehicle use");
+  assert.equal(transportReq.source_rule_id, "RULE_0022", "authoritative trigger must be the Q_COMMERCIAL_VEHICLES rule");
+});
