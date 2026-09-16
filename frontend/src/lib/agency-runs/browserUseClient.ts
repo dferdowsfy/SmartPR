@@ -335,21 +335,27 @@ export async function cancelAgentRun(runId: string): Promise<BuRun> {
 /**
  * Steer the conversation: queues a follow-up message on the session. Starts a
  * new run when the session is idle. Returns the (possibly new) run id.
+ *
+ * Pass `interrupt: true` when the current run is still active (e.g. waiting on
+ * a pause) so the agent stops waiting and applies FIELDS FILL immediately.
+ * Default false preserves prior behavior for plain Resume / takeover handoff.
  */
 export async function queueAgentMessage(
   sessionId: string,
-  text: string
+  text: string,
+  opts?: { interrupt?: boolean }
 ): Promise<{ runId: string | null }> {
+  const interrupt = Boolean(opts?.interrupt);
   if (agentProvider() === "self_hosted") {
     const raw = await workerFetch<{ runId?: string | null }>(
       `/api/v4/sessions/${encodeURIComponent(sessionId)}/queue`,
-      { method: "POST", body: JSON.stringify({ text, interrupt: false }) }
+      { method: "POST", body: JSON.stringify({ text, interrupt }) }
     );
     return { runId: raw.runId ?? null };
   }
   const queued = await cloudClient().sessions.sendMessage(sessionId, {
     text,
-    interrupt: false,
+    interrupt,
   });
   return { runId: queued.runId ?? null };
 }

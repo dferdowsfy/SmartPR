@@ -32,7 +32,9 @@ export const DEFAULT_LOGIN_PENDING_FIELDS: AgencyPendingField[] = [
  * - id=email; label=Email; type=email; sensitive=false
  * - id=password; label=Password; type=password; sensitive=true
  * - id=mfa; label=MFA code; type=text; sensitive=true; optional=true
+ * - id=ssn; label=SSN; type=text; sensitive=true; hint=9 digits as shown on the portal
  * ```
+ * Hints must not contain `;` (they are the value after `hint=` on that segment).
  */
 export function parseRequiredFields(text: string): AgencyPendingField[] {
   if (!text || typeof text !== "string") return [];
@@ -85,9 +87,11 @@ export function parseRequiredFields(text: string): AgencyPendingField[] {
     const type: AgencyPendingFieldType = FIELD_TYPES.has(typeRaw) ? typeRaw : "text";
     const sensitive = /^(true|1|yes)$/i.test(map.sensitive || "");
     const optional = /^(true|1|yes)$/i.test(map.optional || "");
+    const hint = map.hint?.trim() || undefined;
 
     const field: AgencyPendingField = { id, label, type, sensitive };
     if (optional) field.optional = true;
+    if (hint) field.hint = hint.slice(0, 240);
     fields.push(field);
   }
 
@@ -106,4 +110,118 @@ export function resolvePendingFields(
   if (parsed.length > 0) return parsed;
   if (pauseReason === "USER_LOGIN") return [...DEFAULT_LOGIN_PENDING_FIELDS];
   return [];
+}
+
+/** True when agent text is mostly pause/marker protocol (ugly in Assistant). */
+export function looksLikePauseMarkerSpam(text: string): boolean {
+  if (!text) return false;
+  const upper = text.toUpperCase();
+  return (
+    /PAUSE_USER_LOGIN|PAUSE_USER_UPLOAD|PAUSE_CAPTCHA|PAUSE_PAYMENT|REQUIRED_FIELDS\s*:/i.test(
+      upper
+    ) || /\bUSER_LOGIN\b/.test(upper)
+  );
+}
+
+/**
+ * Short bilingual Assistant copy for a pause — never dump raw REQUIRED_FIELDS.
+ * Raw text stays for internal parsing only.
+ */
+export function humanizePauseEvent(
+  reason: AgencyPauseReason,
+  fields: AgencyPendingField[],
+  rawText?: string
+): { message: string; message_es: string } {
+  const labels = fields.map((f) => f.label).filter(Boolean);
+  const ids = fields.map((f) => f.id.toLowerCase());
+  const hasSsn = ids.some((id) => /^(ssn|itin|tax_id|id_number|numero_id)$/.test(id) || id.includes("ssn"));
+  const hasLogin =
+    reason === "USER_LOGIN" ||
+    ids.some((id) => id === "password" || id === "email" || id === "mfa");
+
+  if (labels.length > 0) {
+    const listEn = labels.join(", ");
+    const listEs = labels.join(", ");
+    if (hasSsn && !hasLogin) {
+      return {
+        message: `The portal needs your ID / SSN (${listEn}) — enter it in Assistant`,
+        message_es: `El portal necesita su ID / SSN (${listEs}) — escríbalo en Asistente`,
+      };
+    }
+    if (hasLogin) {
+      return {
+        message: `Sign-in needed (${listEn}) — enter it in Assistant`,
+        message_es: `Se necesita inicio de sesión (${listEs}) — escríbalo en Asistente`,
+      };
+    }
+    return {
+      message: `The portal needs: ${listEn} — enter ${labels.length === 1 ? "it" : "them"} in Assistant`,
+      message_es: `El portal necesita: ${listEs} — escríbalo${labels.length === 1 ? "" : "s"} en Asistente`,
+    };
+  }
+
+  if (reason === "USER_UPLOAD") {
+    return {
+      message: "Upload required documents, then Resume",
+      message_es: "Suba los documentos requeridos y luego Reanudar",
+    };
+  }
+  if (reason === "CAPTCHA") {
+    return {
+      message: "Complete the captcha in the live browser (Take over)",
+      message_es: "Complete el captcha en el navegador en vivo (Tomar el control)",
+    };
+  }
+  if (reason === "PAYMENT") {
+    return {
+      message: "Complete payment in the live browser (Take over)",
+      message_es: "Complete el pago en el navegador en vivo (Tomar el control)",
+    };
+  }
+  if (reason === "USER_LOGIN") {
+    return {
+      message: "The portal needs your sign-in — enter it in Assistant",
+      message_es: "El portal necesita su inicio de sesión — escríbalo en Asistente",
+    };
+  }
+
+  // Strip protocol lines from any leftover prose so Assistant stays readable.
+  const cleaned = (rawText || "")
+    .split(/\r?\n/)
+    .filter((line) => {
+      const t = line.trim();
+      if (!t) return false;
+      if (/^PAUSE_/i.test(t)) return false;
+      if (/^REQUIRED_FIELDS\s*:/i.test(t)) return false;
+      if (/^-\s*id=/i.test(t)) return false;
+      return true;
+    })
+    .join(" ")
+    .trim()
+    .slice(0, 280);
+
+  if (cleaned) {
+    return { message: cleaned, message_es: cleaned };
+  }
+
+  return {
+    message: "Paused — waiting for your action",
+    message_es: "Pausado — esperando su acción",
+  };
+}
+
+/**
+ * Display messages for Assistant events. When the agent blob is marker spam,
+ * return a humanized pause message; otherwise keep a trimmed copy of the text.
+ */
+export function displayMessagesForAgentText(
+  raw: string,
+  pauseReason: AgencyPauseReason | undefined,
+  fields: AgencyPendingField[]
+): { message: string; message_es: string } {
+  if (looksLikePauseMarkerSpam(raw)) {
+    return humanizePauseEvent(pauseReason ?? null, fields, raw);
+  }
+  const trimmed = raw.trim().slice(0, 500);
+  return { message: trimmed, message_es: trimmed };
 }

@@ -91,7 +91,7 @@ export function buildAgencyTaskPrompt(input: {
 
   const resume = input.resumeHint
     ? hasFields
-      ? `\n\nRESUME CONTEXT: The human provided required fields from the Assistant panel so you can fill them on the current page. ${fieldsBlock ? "Follow FIELDS FILL below, then" : ""} briefly VERIFY the page state and CONTINUE toward pre-submit review — do NOT re-pause for the same fields if they are now filled. Only pause again if other gates remain or listed fields are still empty, and emit REQUIRED_FIELDS for whatever is still missing. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
+      ? `\n\nRESUME CONTEXT: The human provided required fields from the Assistant panel so you can fill them on the current page. ${fieldsBlock ? "Follow FIELDS FILL below, then" : ""} briefly VERIFY the page state and CONTINUE toward pre-submit review — do NOT re-pause for the same fields if they are now filled. Only pause again if other gates remain or listed fields are still empty / rejected, and emit REQUIRED_FIELDS for whatever is still missing — include any on-screen validation error in hint=. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
       : `\n\nRESUME CONTEXT: The human just handled the pause (${input.resumeHint}) directly in the live browser — assume they completed the login / typed the sensitive fields / uploaded the documents. Briefly VERIFY the current page state: if the previously blocking step is done (fields filled, gate cleared), CONTINUE forward toward pre-submit review — do NOT re-pause for the same reason. Only pause again if specific fields are still visibly empty or the gate is still literally blocking, and name exactly which fields are still missing via REQUIRED_FIELDS. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
     : "";
 
@@ -120,7 +120,7 @@ HUMAN INPUT PATH (login / required text fields)
 - When you PAUSE_USER_LOGIN or pause for required text fields, the human types ONLY in the SmartPR Assistant panel on the left — NOT in the live browser iframe (it is view-only until Fill & continue).
 - Do NOT expect the human to type into the live browser for email/password/MFA or other required text fields.
 - Wait for resume with FIELDS FILL values; then type those exact values into the matching controls and continue.
-- Keep emitting accurate REQUIRED_FIELDS for whatever is still empty after passport prefill (ids/labels/types/sensitivity only — never echo secrets).
+- Keep emitting accurate REQUIRED_FIELDS for whatever is still empty after passport prefill (ids/labels/types/sensitivity/hints only — never echo secrets). Include format hints and any on-screen validation errors in hint=.
 
 HARD RULES (never violate)
 1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.
@@ -144,12 +144,15 @@ After the marker line, emit:
 REQUIRED_FIELDS:
 - id=<slug>; label=<human label>; type=<text|email|password|tel|number>; sensitive=<true|false>
 - id=<slug>; label=<human label>; type=<...>; sensitive=<...>; optional=true
+- id=<slug>; label=<human label>; type=<...>; sensitive=<...>; hint=<short format or on-screen error — no semicolons>
 
 Rules for the block:
 - List ONLY fields that are currently empty/required on screen AND that the passport cannot fill (or that are sensitive — passwords, MFA, SSN, ITIN, etc.). Never list email/phone/name/address/EIN/etc. when the passport already has a clear value — fill those yourself before pausing.
 - Use stable id slugs: email, password, mfa, ssn, itin, phone, legal_name, …
 - type must be one of: text | email | password | tel | number
-- sensitive=true for passwords, MFA, SSN/ITIN — the UI will use password-style inputs where appropriate.
+- sensitive=true for passwords, MFA, SSN/ITIN. Prefer type=password ONLY for actual passwords; use type=text with sensitive=true for SSN/ITIN/ID so the human can verify format with show/hide.
+- ALWAYS include hint= for SSN/ITIN/ID (and any format-sensitive field): describe the expected format as the portal shows it (e.g. "9 digits — dashes or no dashes as shown"). Do not put ";" inside hint values.
+- On re-pause after a failed fill (portal validation error visible on screen): REQUIRED_FIELDS MUST include that on-screen validation error text in hint= so the human can correct without reading under a modal.
 - For PAUSE_USER_UPLOAD the fields block may be empty (upload UI already exists).
 - For PAUSE_CAPTCHA / PAUSE_PAYMENT usually no text fields — takeover stays primary; you may emit an empty REQUIRED_FIELDS: block or omit field lines.
 - On login pages: pause once with REQUIRED_FIELDS (email if passport has no email, password, mfa if shown). Prefer the Assistant-fill path. Do NOT loop on login.
@@ -165,7 +168,12 @@ REQUIRED_FIELDS:
 Example (sensitive profile blank):
 PAUSE_USER_LOGIN
 REQUIRED_FIELDS:
-- id=ssn; label=SSN; type=password; sensitive=true
+- id=ssn; label=SSN / ID; type=text; sensitive=true; hint=9 digits as shown on the portal (dashes OK)
+
+Example (re-pause after bad format):
+PAUSE_USER_LOGIN
+REQUIRED_FIELDS:
+- id=ssn; label=SSN / ID; type=text; sensitive=true; hint=Portal error: enter exactly 9 digits without letters
 
 BUSINESS PASSPORT JSON (prefill source)
 \`\`\`json
