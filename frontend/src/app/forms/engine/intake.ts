@@ -124,6 +124,9 @@ export interface IntakeProfileInput {
   phone?: string;
   ein?: string;
   einPending?: boolean;
+  incorporationDate?: string;
+  naicsCode?: string;
+  merchantRegistrationNumber?: string;
   operationsStartDate?: string;
   employeeCount?: number | null;
   municipality?: string;
@@ -156,6 +159,9 @@ export function buildCanonicalFromIntake(
       phone: input.phone ?? base.business.phone,
       ein: input.ein ?? base.business.ein,
       einPending: input.einPending ?? base.business.einPending,
+      incorporationDate: input.incorporationDate ?? base.business.incorporationDate,
+      naicsCode: input.naicsCode ?? base.business.naicsCode,
+      merchantRegistrationNumber: input.merchantRegistrationNumber ?? base.business.merchantRegistrationNumber,
       operationsStartDate: input.operationsStartDate ?? base.business.operationsStartDate,
       employeeCount: input.employeeCount ?? base.business.employeeCount ?? undefined,
     },

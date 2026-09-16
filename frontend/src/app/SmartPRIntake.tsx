@@ -1158,6 +1158,65 @@ function buildOfficialDetailsPassport(profile: BusinessProfile): BusinessPasspor
   return passport;
 }
 
+/**
+ * Merge spoken/interpreted profile fields into an existing canonical override
+ * so follow-up voice keeps populating the passport section even after the
+ * user has typed into it. Only fields the voice actually provided are
+ * touched — everything else the user entered is preserved. The most recent
+ * input (spoken or typed) always wins.
+ */
+function mergeSpokenIntoCanonical(
+  prev: CanonicalApplicationData,
+  profilePatch: Partial<BusinessProfile>
+): CanonicalApplicationData {
+  const business = { ...prev.business };
+  const contact = { ...prev.contact };
+  const addresses = { ...prev.addresses };
+  let touched = false;
+
+  const setBusiness = (key: keyof CanonicalApplicationData["business"], value: unknown) => {
+    if (typeof value === "string" && value.trim()) {
+      (business as Record<string, unknown>)[key] = value.trim();
+      touched = true;
+    }
+  };
+
+  setBusiness("tradeName", profilePatch.trade_name);
+  setBusiness("email", profilePatch.email);
+  setBusiness("phone", profilePatch.phone);
+  setBusiness("ein", profilePatch.ein);
+  setBusiness("incorporationDate", profilePatch.incorporation_date);
+  setBusiness("naicsCode", profilePatch.naics_code);
+  setBusiness("merchantRegistrationNumber", profilePatch.merchant_registration_number);
+  if (profilePatch.for_profit_status === "for_profit" || profilePatch.for_profit_status === "nonprofit") {
+    business.forProfitStatus = profilePatch.for_profit_status;
+    touched = true;
+  }
+  if (typeof profilePatch.owner_name === "string" && profilePatch.owner_name.trim()) {
+    contact.fullName = profilePatch.owner_name.trim();
+    touched = true;
+  }
+  if (typeof profilePatch.physical_address === "string" && profilePatch.physical_address.trim()) {
+    const prior = addresses.principalPhysical;
+    const municipality =
+      (typeof profilePatch.municipality === "string" && profilePatch.municipality.trim()) ||
+      prior?.cityOrMunicipality ||
+      "";
+    addresses.principalPhysical = {
+      line1: profilePatch.physical_address.trim(),
+      line2: prior?.line2,
+      cityOrMunicipality: municipality,
+      stateOrTerritory: prior?.stateOrTerritory || "PR",
+      postalCode: prior?.postalCode || "",
+      country: prior?.country || "US",
+    };
+    touched = true;
+  }
+
+  if (!touched) return prev;
+  return { ...prev, business, contact, addresses };
+}
+
 export default function SmartPRIntake() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   // Deliverables paywall, surfaced upfront: locked users see a lock on the
@@ -1928,6 +1987,11 @@ export default function SmartPRIntake() {
       setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...Object.keys(patch.answers)])));
     }
     if (patch.profile.municipality) setPotentialDecisions({});
+    // Follow-up voice keeps populating the passport section even after the
+    // user has typed into it: merge spoken fields into the canonical
+    // override so the visible fields update. No override yet → the
+    // canonicalApplication memo derives them from the profile instead.
+    setCanonicalOverride((prev) => (prev ? mergeSpokenIntoCanonical(prev, profilePatch) : prev));
   };
 
   const handlePotentialAnswer = (definition: PotentialDef, decision: PotentialDecision) => {
@@ -3530,14 +3594,43 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // during core intake, reused across every applicable government form. In-form
   // edits are captured in `canonicalOverride` (write-back); otherwise it is
   // derived from the SmartPR business profile.
+  //
+  // Every field the voice/text interpreter extracts (trade name, owner, email,
+  // phone, EIN, formation date, NAICS, merchant registration, for-profit
+  // status, physical address) flows into the passport section, so spoken
+  // values populate the visible fields instead of only appearing as chips.
   const canonicalApplication: CanonicalApplicationData = useMemo(() => {
+    const forProfitStatus =
+      profile.for_profit_status === "for_profit" || profile.for_profit_status === "nonprofit"
+        ? profile.for_profit_status
+        : profile.business_structure === "nonprofit_nonstock_corporation"
+          ? "nonprofit"
+          : undefined;
+    const physicalAddress = profile.physical_address?.trim();
     const base = buildCanonicalFromIntake({
       legalName: profile.name || '',
+      tradeName: profile.trade_name?.trim() || undefined,
       business_structure: profile.business_structure,
       municipality: profile.municipality,
       employeeCount: profile.number_of_employees,
+      email: profile.email?.trim() || undefined,
+      phone: profile.phone?.trim() || undefined,
+      ein: profile.ein?.trim() || undefined,
+      incorporationDate: profile.incorporation_date?.trim() || undefined,
+      naicsCode: profile.naics_code?.trim() || undefined,
+      merchantRegistrationNumber: profile.merchant_registration_number?.trim() || undefined,
+      forProfitStatus,
+      contact: profile.owner_name?.trim() ? { fullName: profile.owner_name.trim() } : undefined,
+      principalPhysical: physicalAddress
+        ? {
+            line1: physicalAddress,
+            cityOrMunicipality: profile.municipality?.trim() || "",
+            stateOrTerritory: "PR",
+            postalCode: "",
+            country: "US",
+          }
+        : undefined,
       formationStatus: profile.business_structure === 'foreign_corporation' ? 'formed_outside_puerto_rico' : undefined,
-      forProfitStatus: profile.business_structure === 'nonprofit_nonstock_corporation' ? 'nonprofit' : undefined,
     });
     if (canonicalOverride) {
       // The override is authoritative for everything the user has entered
@@ -3557,7 +3650,23 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       };
     }
     return base;
-  }, [profile.name, profile.business_structure, profile.municipality, profile.number_of_employees, canonicalOverride]);
+  }, [
+    profile.name,
+    profile.trade_name,
+    profile.business_structure,
+    profile.municipality,
+    profile.number_of_employees,
+    profile.email,
+    profile.phone,
+    profile.ein,
+    profile.owner_name,
+    profile.physical_address,
+    profile.incorporation_date,
+    profile.merchant_registration_number,
+    profile.naics_code,
+    profile.for_profit_status,
+    canonicalOverride,
+  ]);
 
   // Older snapshots may predate entity-specific formation requirements, and a
   // user can also change the entity type after requirements were computed.

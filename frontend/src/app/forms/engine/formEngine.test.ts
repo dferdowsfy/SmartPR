@@ -475,3 +475,52 @@ test("corporate / professional / LLP name designations validate", () => {
   const errsGood = validateForm(CORPREG01, { corporation_name: "Acme Widgets Inc.", corporation_purpose: "x" }, c);
   assert.equal(errsGood.some((e) => e.fieldId === "corporation_name"), false);
 });
+
+test("voice-extracted passport fields populate the canonical passport object", () => {
+  // Mirrors what the intake voice orb extracts when the user names passport
+  // fields ("trade name is …", "the owner is …", "email … is …"): every one
+  // must land on the canonical paths the passport section renders.
+  const c = buildCanonicalFromIntake({
+    legalName: "Amigos LLC",
+    tradeName: "Jose's",
+    email: "jandreas@gmail.com",
+    phone: "7876911133",
+    ein: "12-3456789",
+    incorporationDate: "2026-06-01",
+    naicsCode: "722511",
+    merchantRegistrationNumber: "168-56-97810",
+    forProfitStatus: "for_profit",
+    contact: { fullName: "Jose Andreas" },
+    principalPhysical: {
+      line1: "1 Calle Luna 8",
+      cityOrMunicipality: "San Juan",
+      stateOrTerritory: "PR",
+      postalCode: "",
+      country: "US",
+    },
+  });
+  assert.equal(c.business.tradeName, "Jose's");
+  assert.equal(c.business.email, "jandreas@gmail.com");
+  assert.equal(c.business.phone, "7876911133");
+  assert.equal(c.business.ein, "12-3456789");
+  assert.equal(c.business.incorporationDate, "2026-06-01");
+  assert.equal(c.business.naicsCode, "722511");
+  assert.equal(c.business.merchantRegistrationNumber, "168-56-97810");
+  assert.equal(c.business.forProfitStatus, "for_profit");
+  assert.equal(c.contact.fullName, "Jose Andreas");
+  assert.equal(c.addresses.principalPhysical?.line1, "1 Calle Luna 8");
+  assert.equal(c.addresses.principalPhysical?.cityOrMunicipality, "San Juan");
+});
+
+test("voice-extracted passport fields never clobber already-filled values", () => {
+  const base = buildCanonicalFromIntake({
+    legalName: "Amigos LLC",
+    tradeName: "Typed Name",
+    contact: { fullName: "Typed Owner" },
+  });
+  // A partial voice update (only email spoken) keeps the typed trade name.
+  const c = buildCanonicalFromIntake({ email: "jandreas@gmail.com" }, base);
+  assert.equal(c.business.tradeName, "Typed Name");
+  assert.equal(c.contact.fullName, "Typed Owner");
+  assert.equal(c.business.email, "jandreas@gmail.com");
+});
