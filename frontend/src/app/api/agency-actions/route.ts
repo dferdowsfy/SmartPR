@@ -23,7 +23,7 @@ import {
 import { getFilingConfig } from "../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../lib/agency-runs/goalBrief";
 import { loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
-import { loadProjectContextForBusiness } from "../../../lib/agency-runs/projectContextLoader";
+import { loadProjectContextForBusiness, loadProjectIntentForBusiness } from "../../../lib/agency-runs/projectContextLoader";
 import { parseAccountStatusAnswer } from "../../../lib/agency-runs/preflight";
 import {
   getPortalAccountStatus,
@@ -165,6 +165,9 @@ export async function POST(request: Request) {
     // only — the brief marks them as never driving requirement decisions).
     project_context:
       (await loadProjectContextForBusiness(businessId, user?.id ?? null)) ?? undefined,
+    // Intake branch for this filing (labels only in the prompt block).
+    project_intent:
+      (await loadProjectIntentForBusiness(businessId, user?.id ?? null)) ?? undefined,
   });
   const passport = await loadPassportForBusiness(businessId, user?.id ?? null);
   const run = await createRun({

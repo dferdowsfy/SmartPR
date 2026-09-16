@@ -20,6 +20,8 @@ import { CANONICAL_LABELS } from "./canonicalFields";
 import type { PortalAccountStatus } from "./preflight";
 import type { ProjectContext } from "../../app/ai/intake/projectContext";
 import { projectContextBriefLines } from "../../app/ai/intake/projectContext";
+import type { ProjectIntent } from "../../app/ai/intake/projectIntent";
+import { normalizeProjectIntent, projectIntentLabel } from "../../app/ai/intake/projectIntent";
 
 /**
  * Mirrors the SENSITIVE_ID_RE in prefillFromPassport.ts (that module does not
@@ -52,6 +54,13 @@ export interface GoalBrief {
    * Defaults to empty so existing callers keep working unchanged.
    */
   project_context?: ProjectContext;
+  /**
+   * The intake's project-intent branch (existing_business | new_business |
+   * project_only), snake_case like the rest of the brief. Tells the agent
+   * which branch the filing belongs to — e.g. a project_only filing has no
+   * business identity to prefill. Omitted when never determined.
+   */
+  project_intent?: ProjectIntent | null;
 }
 
 /**
@@ -77,6 +86,11 @@ export function buildGoalBrief(input: {
    * empty so existing callers keep working unchanged.
    */
   project_context?: ProjectContext;
+  /**
+   * The intake's project-intent branch. Normalized defensively (the brief
+   * boundary converts); omitted from the brief when never determined.
+   */
+  project_intent?: ProjectIntent | string | null;
 }): GoalBrief {
   const { config, action } = input;
 
@@ -123,6 +137,8 @@ export function buildGoalBrief(input: {
     // Safe by default: the prompt block marks every entry as background only,
     // never a requirement decision.
     project_context: input.project_context ?? {},
+    // Canonical snake_case intent; never defaulted — omitted when unknown.
+    project_intent: normalizeProjectIntent(input.project_intent),
   };
 }
 
@@ -140,6 +156,14 @@ export function goalBriefToPromptBlock(brief: GoalBrief): string {
   // label — existing briefs without one stay byte-identical.
   if (brief.portal_account) {
     lines.push(portalAccountPromptLine(brief.portal_account));
+  }
+  // Project intent branch: labels only. Tells the agent whether this filing
+  // belongs to an existing business, a new business, or a standalone
+  // property/project (project_only — no business identity exists to prefill).
+  if (brief.project_intent) {
+    lines.push(
+      `PROJECT INTENT: ${projectIntentLabel(brief.project_intent, "en")} / ${projectIntentLabel(brief.project_intent, "es")}`
+    );
   }
   lines.push("");
   lines.push(

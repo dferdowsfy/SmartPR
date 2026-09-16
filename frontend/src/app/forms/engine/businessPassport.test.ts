@@ -163,7 +163,7 @@ test("worksheet prefill bridge exposes passport facts under legacy keys", () => 
 
 test("mergePreferFilled does not treat empty string as an override", () => {
   const merged = mergePreferFilled(
-    { a: "keep", nested: { b: "keep-b" } },
+    { a: "keep", nested: { b: "keep-b" } } as { a: string; nested: { b: string; c?: string } },
     { a: "", nested: { b: "new-b", c: "add" } }
   );
   assert.equal(merged.a, "keep");

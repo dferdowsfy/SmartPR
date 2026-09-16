@@ -2443,3 +2443,15 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   display: inline-block; padding: 6px 14px; border-radius: 999px;
   background: #e8f5ee; color: #146642; font-size: 13.5px; font-weight: 700;
 }
+
+/* Project-first intake helpers: explanatory hint text under a field and a
+   quiet text-button style for secondary actions (e.g. "Change" the intent). */
+.spr-hint {
+  margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: #5b6b64;
+}
+.spr-link {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--accent, #0ea371); font-size: 13.5px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.spr-link:hover { color: #0b7a55; }

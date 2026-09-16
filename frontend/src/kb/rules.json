@@ -33,7 +33,8 @@
     "exemptions_note": "Single-member LLCs with no employees that are taxed as disregarded entities may use the owner's SSN instead of a separate EIN (IRS).",
     "citation": "https://www.irs.gov/faqs/small-business-self-employed-other-business/entities/entities-2",
     "citation_source": "rule",
-    "requires_business": true
+    "requires_business": true,
+    "requires_new_unformed_business": true
   },
   {
     "id": "RULE_0003",

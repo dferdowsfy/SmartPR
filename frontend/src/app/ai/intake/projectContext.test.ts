@@ -341,3 +341,57 @@ test("projectContextBriefLines: only known facts, nothing invented", () => {
   assert.ok(bare.every((l) => !l.includes("evidence:")));
   assert.deepEqual(projectContextBriefLines(null), []);
 });
+
+// --- Guaynabo fixture: confidence/evidence retention + name honesty ----------
+
+test("validateProjectContext: Guaynabo facts carry confidence and evidence", () => {
+  const { context } = validateProjectContext(GUAYNABO_MODEL_RESPONSE.projectContext);
+  // Every retained key fact keeps its confidence and a verbatim evidence quote.
+  for (const key of [
+    "project_type",
+    "existing_building",
+    "renovation",
+    "expansion",
+    "property_type",
+    "existing_use",
+    "proposed_use",
+    "square_footage",
+    "interior_demolition",
+    "electrical_work",
+    "plumbing_work",
+    "construction_approvals_required",
+    "known_permitting_issue",
+    "historical_project_status",
+  ] as const) {
+    const fact = context[key];
+    assert.ok(fact, `${key} must be retained`);
+    assert.ok(typeof fact.confidence === "number" && fact.confidence >= 0.85, `${key} keeps confidence`);
+    assert.ok(typeof fact.evidence === "string" && fact.evidence.length > 0, `${key} keeps evidence`);
+  }
+  // The permitting problem and the failed prior attempt are facts too.
+  assert.equal(context.known_permitting_issue?.value, "permitting process became a major issue");
+  assert.equal(context.historical_project_status?.value, "project fell through");
+});
+
+test("validateInterpretation: business name stays blank when the user never states it", () => {
+  const validated = validateInterpretation(GUAYNABO_MODEL_RESPONSE, MIN_KB, KB_OPTIONS);
+  const all = [...validated.profileValues, ...validated.suggested.profileValues];
+  assert.ok(!all.some((p) => p.key === "name"), "no name may be invented from the description");
+  assert.ok(!validated.discarded.some((d) => d.field.includes("name")), "no name entry to discard either");
+});
+
+test("validateInterpretation: a stated business name is kept with evidence, never altered", () => {
+  const raw: RawInterpretation = {
+    summary: "Existing manufacturer renovating a building in Guaynabo.",
+    municipality: { value: "Guaynabo", confidence: 0.95, evidence: "in Guaynabo" },
+    profileValues: [
+      { key: "name", value: "Caribe Metalworks LLC", confidence: 0.92, evidence: "Caribe Metalworks LLC is an existing manufacturing company" },
+    ],
+  };
+  const validated = validateInterpretation(raw, MIN_KB, KB_OPTIONS);
+  const name = validated.profileValues.find((p) => p.key === "name");
+  assert.ok(name, "a stated business name must be retained");
+  assert.equal(name?.value, "Caribe Metalworks LLC");
+  assert.ok(name?.evidence?.includes("Caribe Metalworks LLC"));
+  assert.equal(name?.requiresConfirmation, false);
+});

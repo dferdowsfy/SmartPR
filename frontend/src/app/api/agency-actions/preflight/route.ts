@@ -16,7 +16,7 @@ import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../../lib/agency-runs/goalBrief";
 import { buildPreflight } from "../../../../lib/agency-runs/preflight";
 import { getPortalAccountStatus } from "../../../../lib/agency-runs/portalAccounts";
-import { loadProjectContextForBusiness } from "../../../../lib/agency-runs/projectContextLoader";
+import { loadProjectContextForBusiness, loadProjectIntentForBusiness } from "../../../../lib/agency-runs/projectContextLoader";
 import { getCurrentUser } from "../../../../lib/supabase/server";
 import { actionsFor } from "../route";
 
@@ -75,6 +75,9 @@ export async function GET(request: Request) {
     // only, never a requirement decision.
     project_context:
       (await loadProjectContextForBusiness(businessId, user?.id ?? null)) ?? undefined,
+    // Intake branch for this filing (labels only in the prompt block).
+    project_intent:
+      (await loadProjectIntentForBusiness(businessId, user?.id ?? null)) ?? undefined,
   });
   const preflight = buildPreflight({ config, action: picked, brief, portalAccount });
 

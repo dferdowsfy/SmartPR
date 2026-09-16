@@ -14,15 +14,23 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 import { runRulesEngine, type KnowledgeBase, type EngineInput } from "../../rulesEngine.ts";
+import { classifyEngineRequirements } from "../../requirementApplicability.ts";
+import { buildEngineInput, computeRequirementsFromKB } from "../../kb.ts";
 import {
   isValidProjectIntent,
   normalizeProjectIntent,
+  createsBusinessRecordForIntent,
+  shouldCreateBusinessRecord,
   businessStatusForIntent,
   entityNotFormedForIntent,
   projectIntentLabel,
   projectIntentQuestionText,
   projectIntentWhyAsk,
 } from "./projectIntent.ts";
+import { validateProjectContext } from "./projectContext.ts";
+import { buildGoalBrief, goalBriefToPromptBlock } from "../../../lib/agency-runs/goalBrief.ts";
+import type { AgencyFilingConfig } from "../../../lib/agency-runs/filingTypes.ts";
+import type { AgencyAction } from "../../../lib/agency-runs/agencyActions.ts";
 import { validateInterpretation } from "./validateInterpretation.ts";
 import {
   projectPassportFromContext,
@@ -162,7 +170,7 @@ const engineDocs = (input: EngineInput): string[] =>
   runRulesEngine(KB, input).debug.documentsGenerated;
 
 test("KB audit: formation rules carry the new-business gate", () => {
-  for (const id of ["RULE_0001", "RULE_0598", "RULE_0599"]) {
+  for (const id of ["RULE_0001", "RULE_0002", "RULE_0598", "RULE_0599"]) {
     assert.equal(
       rulesById.get(id)?.requires_new_unformed_business, true,
       `${id} must be gated to new + unformed`
@@ -181,8 +189,10 @@ test("KB audit: formation rules carry the new-business gate", () => {
 
 test("formation: Certificate of Incorporation fires only for new + unformed", () => {
   const muni = { municipalityName: "San Juan", businessTypeName: null, answers: {} };
-  const formed = engineDocs({ ...muni, businessStatus: "new", entityNotFormed: true });
-  assert.ok(formed.includes("DOC_CERT_INCORPORATION"), "new+unformed must require incorporation");
+  const formed = runRulesEngine(KB, { ...muni, businessStatus: "new", entityNotFormed: true });
+  const formedDoc = formed.requirements.find((r) => r.document_id === "DOC_CERT_INCORPORATION");
+  assert.ok(formedDoc, "new+unformed must require incorporation");
+  assert.ok(!formedDoc.formation_unresolved, "confirmed new+unformed is not unresolved");
 
   const existing = engineDocs({ ...muni, businessStatus: "existing", entityNotFormed: false });
   assert.ok(!existing.includes("DOC_CERT_INCORPORATION"), "existing business must NOT get incorporation");
@@ -190,10 +200,13 @@ test("formation: Certificate of Incorporation fires only for new + unformed", ()
   const projectOnly = engineDocs({ ...muni, businessStatus: "project_only", entityNotFormed: null });
   assert.ok(!projectOnly.includes("DOC_CERT_INCORPORATION"), "project_only must NOT get incorporation");
 
-  // Unknown intent preserves current behavior (the assumed-new-business
-  // baseline) — the gate only narrows known intents.
-  const unknown = engineDocs({ ...muni, businessStatus: null, entityNotFormed: null });
-  assert.ok(unknown.includes("DOC_CERT_INCORPORATION"), "unknown intent keeps the current baseline");
+  // Unknown intent is honest, not silent: the requirement still surfaces (so
+  // nothing is hidden) but is flagged formation-unresolved — the classifier
+  // renders it conditional, never confirmed.
+  const unknown = runRulesEngine(KB, { ...muni, businessStatus: null, entityNotFormed: null });
+  const unknownDoc = unknown.requirements.find((r) => r.document_id === "DOC_CERT_INCORPORATION");
+  assert.ok(unknownDoc, "unknown intent must not silently drop the formation requirement");
+  assert.equal(unknownDoc.formation_unresolved, true, "unknown intent marks it unresolved");
 });
 
 test("project_only: zero business requirements, even with a municipality", () => {
@@ -217,19 +230,27 @@ test("project_only: zero business requirements, even with a municipality", () =>
   }
 });
 
-test("unknown intent preserves current baseline behavior", () => {
-  const docs = engineDocs({
-    municipalityName: "San Juan",
-    businessTypeName: null,
-    answers: {},
-    businessStatus: null,
-    entityNotFormed: null,
-  });
-  // Baselines still fire when intent was never determined — the formation
-  // baseline included, exactly as before this gate existed.
-  assert.ok(docs.includes("DOC_EIN"), "EIN baseline preserved for unknown intent");
-  assert.ok(docs.includes("DOC_MERCHANT_REGISTRATION"), "merchant reg baseline preserved");
-  assert.ok(docs.includes("DOC_CERT_INCORPORATION"), "formation baseline preserved when unknown");
+test("unknown intent: formation requirements are conditional, never confirmed", () => {
+  const input = buildEngineInput({ municipality: "San Juan" }, {}, {}, { projectIntent: null });
+  const { requirements } = runRulesEngine(KB, input);
+  const classified = classifyEngineRequirements(requirements, { kb: KB });
+
+  // Formation-gated requirements surface as unresolved/conditional — the
+  // honest "more information needed" state, never a confirmed requirement.
+  for (const id of ["DOC_CERT_INCORPORATION", "DOC_EIN"]) {
+    const req = classified.find((r) => r.document_id === id);
+    assert.ok(req, `${id} must surface for unknown intent (not silently dropped)`);
+    assert.equal(req.applicability, "conditional", `${id} must be conditional, never confirmed`);
+    assert.equal(req.mandatory, false, `${id} must not be mandatory while unresolved`);
+    assert.ok(
+      req.triggerFacts.includes("formationGate:unresolved"),
+      `${id} must carry the unresolved trigger fact`
+    );
+  }
+  // Non-formation business baselines keep their current behavior.
+  const merchant = classified.find((r) => r.document_id === "DOC_MERCHANT_REGISTRATION");
+  assert.ok(merchant, "merchant registration baseline preserved for unknown intent");
+  assert.equal(merchant.applicability, "required");
 });
 
 test("construction permits fire from project facts alone", () => {
@@ -297,4 +318,301 @@ test("projectPassport: build, round-trip, and branch rules", () => {
   assert.equal(validateProjectPassport(null), null);
 
   assert.equal(projectPassportTitle(only!), "renovation — Guaynabo");
+});
+
+// --- buildEngineInput wiring: intent + project context -> engine -------------
+
+test("buildEngineInput: intent and project context reach the engine", () => {
+  const only = buildEngineInput(
+    { municipality: "Guaynabo" },
+    {},
+    {},
+    {
+      projectIntent: "project_only",
+      projectContext: {
+        project_type: { value: "renovation", confidence: 0.9, evidence: "renovate" },
+        square_footage: { value: 12000, confidence: 0.95 },
+      },
+    }
+  );
+  assert.equal(only.businessStatus, "project_only");
+  assert.equal(only.entityNotFormed, null);
+  assert.deepEqual(only.projectFacts, { project_type: "renovation", square_footage: 12000 });
+
+  const formation = buildEngineInput({ municipality: "San Juan" }, {}, {}, { projectIntent: "new_business" });
+  assert.equal(formation.businessStatus, "new");
+  assert.equal(formation.entityNotFormed, true);
+
+  const legacy = buildEngineInput({ municipality: "San Juan" }, {}, {});
+  assert.equal(legacy.businessStatus, null);
+  assert.equal(legacy.entityNotFormed, null);
+  assert.equal(legacy.projectFacts, null);
+});
+
+test("buildEngineInput: project_only quarantines stale business facts", () => {
+  const input = buildEngineInput(
+    {
+      municipality: "Guaynabo",
+      business_type: "Restaurant",
+      industry: "Food & Beverage",
+      business_structure: "llc",
+      number_of_employees: 10,
+    },
+    { employees_hired: true },
+    { Q_EMPLOYEES_HIRED: true },
+    { projectIntent: "project_only", projectContext: { project_type: { value: "renovation", confidence: 0.9 } } }
+  );
+  assert.equal(input.businessTypeName, null, "business type must not reach the engine");
+  assert.deepEqual(input.answers, {}, "business answers must not reach the engine");
+  assert.equal(input.entityType, null, "entity type must not reach the engine");
+  assert.equal(input.municipalityName, "Guaynabo", "project location is kept");
+  assert.deepEqual(input.projectFacts, { project_type: "renovation" });
+});
+
+test("engine: project facts alone fire construction requirements (no business profile)", () => {
+  const input = buildEngineInput(
+    { municipality: "Guaynabo" },
+    {},
+    {},
+    { projectIntent: "project_only", projectContext: { project_type: { value: "renovation", confidence: 0.9 } } }
+  );
+  const docs = runRulesEngine(KB, input).debug.documentsGenerated;
+  assert.ok(docs.includes("DOC_OGPE_CONSTRUCTION_PERMIT"), "renovation fires the OGPe construction permit");
+  assert.ok(!docs.includes("DOC_EIN"), "no business facts -> no business requirements");
+  assert.ok(!docs.includes("DOC_MERCHANT_REGISTRATION"), "no business facts -> no business requirements");
+  assert.ok(!docs.includes("DOC_CERT_INCORPORATION"), "no business facts -> no formation requirements");
+});
+
+// --- Full intent path: model JSON -> validation -> engine input -> engine ---
+
+test("end-to-end: LLM JSON flows through validation into the engine and goal brief", () => {
+  const raw = {
+    summary: "Property owner building a warehouse before finding tenants.",
+    projectIntent: { value: "project_only", confidence: 0.9, evidence: "as the property owner, before finding tenants" },
+    municipality: { value: "Guaynabo", confidence: 0.88, evidence: "in Guaynabo" },
+    projectContext: {
+      project_type: { value: "new_construction", confidence: 0.9, evidence: "building a new warehouse" },
+      proposed_use: { value: "warehouse", confidence: 0.85, evidence: "warehouse" },
+    },
+  };
+  const validated = validateInterpretation(raw, KB);
+  assert.equal(validated.projectIntent?.value, "project_only");
+  assert.equal(validated.municipality?.value, "Guaynabo");
+
+  const { context } = validateProjectContext(raw.projectContext);
+  const input = buildEngineInput(
+    { municipality: validated.municipality?.value },
+    {},
+    {},
+    { projectIntent: validated.projectIntent?.value ?? null, projectContext: context }
+  );
+  assert.equal(input.businessStatus, "project_only");
+  const docs = runRulesEngine(KB, input).debug.documentsGenerated;
+  assert.ok(docs.includes("DOC_OGPE_CONSTRUCTION_PERMIT"));
+  assert.ok(!docs.includes("DOC_CERT_INCORPORATION"));
+  assert.ok(!docs.includes("DOC_EIN"));
+
+  const brief = buildGoalBrief({
+    config: BRIEF_CONFIG,
+    action: BRIEF_ACTION,
+    project_intent: validated.projectIntent?.value ?? null,
+  });
+  assert.equal(brief.project_intent, "project_only");
+  assert.ok(goalBriefToPromptBlock(brief).includes("PROJECT INTENT: Property / project only / Solo propiedad / proyecto"));
+});
+
+// --- Scenario tests: project_only / existing_business / new_business --------
+
+const FORMATION_AND_BUSINESS_IDS = [
+  "DOC_CERT_INCORPORATION",
+  "DOC_ARTICLES_ORGANIZATION",
+  "DOC_EIN",
+  "DOC_MERCHANT_REGISTRATION",
+  "DOC_PATENTE_MUNICIPAL",
+  "DOC_MUNICIPAL_REGISTRATION",
+  "DOC_MUNICIPAL_TAX_COMPLIANCE",
+  "DOC_ANNUAL_REPORT",
+];
+
+test("scenario: project_only warehouse build gets zero business requirements", () => {
+  const reqs = computeRequirementsFromKB(
+    { municipality: "Guaynabo" },
+    {},
+    {},
+    {
+      projectIntent: "project_only",
+      projectContext: {
+        project_type: { value: "new_construction", confidence: 0.92, evidence: "building a new warehouse" },
+        proposed_use: { value: "warehouse", confidence: 0.9, evidence: "warehouse" },
+      },
+    }
+  );
+  const ids = reqs.map((r) => r.document_id);
+  for (const id of FORMATION_AND_BUSINESS_IDS) {
+    assert.ok(!ids.includes(id), `project_only must not require ${id}`);
+  }
+  assert.ok(ids.includes("DOC_OGPE_CONSTRUCTION_PERMIT"), "construction permit fires from project facts alone");
+});
+
+test("scenario: existing hotel renovation gets zero formation requirements", () => {
+  const reqs = computeRequirementsFromKB(
+    { municipality: "San Juan", business_type: "Hotel", industry: "Accommodation & Tourism" },
+    {},
+    {},
+    {
+      projectIntent: "existing_business",
+      projectContext: { project_type: { value: "renovation", confidence: 0.9, evidence: "renovating rooms" } },
+    }
+  );
+  const ids = reqs.map((r) => r.document_id);
+  assert.ok(!ids.includes("DOC_CERT_INCORPORATION"), "existing business must not get incorporation");
+  assert.ok(!ids.includes("DOC_EIN"), "existing business must not get baseline EIN");
+  assert.ok(ids.includes("DOC_OGPE_CONSTRUCTION_PERMIT"), "renovation permit fires from project facts");
+});
+
+test("scenario: new restaurant gets formation requirements", () => {
+  const reqs = computeRequirementsFromKB(
+    { municipality: "San Juan", business_type: "Restaurant", industry: "Food & Beverage" },
+    {},
+    {},
+    { projectIntent: "new_business" }
+  );
+  const ids = reqs.map((r) => r.document_id);
+  assert.ok(ids.includes("DOC_CERT_INCORPORATION"), "new business gets incorporation");
+  assert.ok(ids.includes("DOC_EIN"), "new business gets EIN");
+});
+
+test("scenario: switching to project_only mid-flow drops stale business requirements", () => {
+  const profile = { municipality: "Guaynabo", business_type: "Restaurant", number_of_employees: 10 };
+  const before = computeRequirementsFromKB(profile, { employees_hired: true }, {}, { projectIntent: "new_business" });
+  const after = computeRequirementsFromKB(
+    profile,
+    { employees_hired: true },
+    {},
+    { projectIntent: "project_only", projectContext: { project_type: { value: "renovation", confidence: 0.9 } } }
+  );
+  const beforeIds = new Set(before.map((r) => r.document_id));
+  const afterIds = new Set(after.map((r) => r.document_id));
+  assert.ok(beforeIds.has("DOC_CERT_INCORPORATION"), "new business gets formation");
+  assert.ok(beforeIds.has("DOC_EIN"), "new business gets EIN");
+  assert.ok(!afterIds.has("DOC_CERT_INCORPORATION"), "project_only drops formation");
+  assert.ok(!afterIds.has("DOC_EIN"), "project_only drops business EIN");
+  assert.ok(!afterIds.has("DOC_MERCHANT_REGISTRATION"), "project_only drops merchant registration");
+  assert.ok(afterIds.has("DOC_OGPE_CONSTRUCTION_PERMIT"), "project_only keeps the construction permit");
+});
+
+// --- Record-creation gate -----------------------------------------------------
+
+test("createsBusinessRecordForIntent: only new_business creates records", () => {
+  assert.equal(createsBusinessRecordForIntent("new_business"), true);
+  assert.equal(createsBusinessRecordForIntent("existing_business"), false, "existing work links, never creates");
+  assert.equal(createsBusinessRecordForIntent("project_only"), false, "project work uses the Project Passport");
+  assert.equal(createsBusinessRecordForIntent(null), false);
+  assert.equal(createsBusinessRecordForIntent(undefined), false);
+});
+
+// --- Goal brief carries project_intent ----------------------------------------
+
+const BRIEF_CONFIG: AgencyFilingConfig = {
+  id: "OGPE_PERMISO_UNICO",
+  labelEn: "OGPe Permiso Unico",
+  labelEs: "OGPe Permiso Unico",
+  agencyEn: "OGPe",
+  agencyEs: "OGPe",
+  portalEn: "sbp.ogpe.pr.gov",
+  portalEs: "sbp.ogpe.pr.gov",
+  domains: ["sbp.ogpe.pr.gov"],
+  startUrl: "https://sbp.ogpe.pr.gov",
+  goalEn: "File the Permiso Unico",
+  goalEs: "Solicitar el Permiso Unico",
+  procedureEn: [],
+  procedureEs: [],
+  uploadsEn: "None",
+  uploadsEs: "Ninguno",
+  hintsEn: [],
+  hintsEs: [],
+  evidenceTags: [],
+  needsLogin: false,
+  enabled: true,
+  requiresExistingAccount: false,
+};
+
+const BRIEF_ACTION: AgencyAction = {
+  id: "a1",
+  filing_type: "OGPE_PERMISO_UNICO",
+  agency_id: "ogpe",
+  title_en: "File the Permiso Unico",
+  title_es: "Solicitar el Permiso Unico",
+  agency_en: "OGPe",
+  agency_es: "OGPe",
+  status: "ready",
+  known: 1,
+  total: 3,
+  missing_items: [],
+  blocked_by: [],
+  evidence_available: [],
+  objective_en: "File the Permiso Unico",
+  objective_es: "Solicitar el Permiso Unico",
+};
+
+test("goalBrief: project_intent reaches the agent brief and prompt block", () => {
+  const brief = buildGoalBrief({ config: BRIEF_CONFIG, action: BRIEF_ACTION, project_intent: "project_only" });
+  assert.equal(brief.project_intent, "project_only");
+  const block = goalBriefToPromptBlock(brief);
+  assert.ok(block.includes("PROJECT INTENT: Property / project only / Solo propiedad / proyecto"));
+
+  const noIntent = buildGoalBrief({ config: BRIEF_CONFIG, action: BRIEF_ACTION });
+  assert.equal(noIntent.project_intent, null);
+  assert.ok(!goalBriefToPromptBlock(noIntent).includes("PROJECT INTENT:"));
+});
+
+// --- Creation guard: shouldCreateBusinessRecord --------------------------------
+
+const CREATION_BASE = {
+  signedIn: true,
+  alreadyAttempted: false,
+  projectIntent: "new_business" as const,
+  intentConfirmed: true,
+  entryParam: "new-business",
+  businessParam: null,
+};
+
+test("shouldCreateBusinessRecord: confirmed new_business via the entry creates", () => {
+  assert.equal(shouldCreateBusinessRecord(CREATION_BASE), true);
+});
+
+test("shouldCreateBusinessRecord: project_only NEVER creates, even confirmed", () => {
+  assert.equal(
+    shouldCreateBusinessRecord({ ...CREATION_BASE, projectIntent: "project_only" }),
+    false,
+    "a project-only intent can never create a business/matter"
+  );
+});
+
+test("shouldCreateBusinessRecord: existing_business never creates", () => {
+  assert.equal(
+    shouldCreateBusinessRecord({ ...CREATION_BASE, projectIntent: "existing_business" }),
+    false
+  );
+});
+
+test("shouldCreateBusinessRecord: unknown intent never creates", () => {
+  assert.equal(shouldCreateBusinessRecord({ ...CREATION_BASE, projectIntent: null }), false);
+});
+
+test("shouldCreateBusinessRecord: unconfirmed new_business waits (no race with a later switch)", () => {
+  // The ?entry=new-business default alone does not confirm the branch: the
+  // user may still switch to project_only before anything is created.
+  assert.equal(
+    shouldCreateBusinessRecord({ ...CREATION_BASE, intentConfirmed: false }),
+    false
+  );
+});
+
+test("shouldCreateBusinessRecord: guests, repeats, and attached records never create", () => {
+  assert.equal(shouldCreateBusinessRecord({ ...CREATION_BASE, signedIn: false }), false);
+  assert.equal(shouldCreateBusinessRecord({ ...CREATION_BASE, alreadyAttempted: true }), false);
+  assert.equal(shouldCreateBusinessRecord({ ...CREATION_BASE, businessParam: "biz_123" }), false);
+  assert.equal(shouldCreateBusinessRecord({ ...CREATION_BASE, entryParam: null }), false);
+  assert.equal(shouldCreateBusinessRecord({ ...CREATION_BASE, entryParam: "other" }), false);
 });

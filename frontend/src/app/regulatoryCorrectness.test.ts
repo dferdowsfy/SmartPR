@@ -39,9 +39,13 @@ test("F01 persisted obligations exclude sole-proprietor incorporation in bundled
   }
 });
 test("F01 corporate positive and unknown review cases remain", () => {
+  // Positive case: a settled new_business intent still yields a mandatory
+  // corporate formation requirement.
   for (const entityType of ["stock_corporation", "close_corporation", "professional_corporation", "nonprofit_nonstock_corporation"]) {
-    assert.equal(computeRequirementsFromKB(profile, {}, {}, { entityType }).find(r => r.document_id === formationIds[0])?.mandatory, true);
+    assert.equal(computeRequirementsFromKB(profile, {}, {}, { entityType, projectIntent: "new_business" }).find(r => r.document_id === formationIds[0])?.mandatory, true);
   }
+  // Unknown intent never confirms formation: the requirement surfaces as
+  // conditional/unresolved (the honest "more information needed" state).
   for (const entityType of [undefined, "other"]) {
     const row = computeRequirementsFromKB(profile, {}, {}, { entityType }).find(r => r.document_id === formationIds[0]);
     assert.equal(row?.applicability, "conditional");

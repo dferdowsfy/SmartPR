@@ -45,9 +45,9 @@ export interface KBRule {
    * Project-first gate (data-driven): when true, the rule never fires for an
    * existing business, for a property/project with no business, or when the
    * entity is known to be formed. When the intent was never determined the
-   * rule fires as before — the gate only narrows known intents. Marks the
-   * "form the entity" requirements. The engine interprets the gate; the KB
-   * decides which rules carry it.
+   * rule still fires but is marked formation-unresolved: the classifier
+   * renders it as conditional ("more information needed"), never as a
+   * confirmed requirement. Unknown never fires silently.
    */
   requires_new_unformed_business?: boolean | null;
   /**
@@ -120,7 +120,8 @@ export interface EngineInput {
   businessStatus?: BusinessStatus | null;
   /**
    * Whether the entity is not yet formed. Null/omitted = unknown, and
-   * formation-gated rules fail closed (stay silent).
+   * formation-gated rules then fire as unresolved (conditional), never as
+   * confirmed — unknown never fires silently.
    */
   entityNotFormed?: boolean | null;
   /**
@@ -151,6 +152,12 @@ export interface GeneratedRequirement {
   source_rule_id: string;
   /** All matched bases survive document deduplication, in evaluation order. */
   matched_rules?: { rule_id: string; reason: string }[];
+  /**
+   * Set when a requires_new_unformed_business rule matched but the
+   * new+unformed basis was never confirmed (intent unknown). The
+   * requirement is unresolved/conditional — never presented as confirmed.
+   */
+  formation_unresolved?: boolean;
 }
 
 export interface EngineDebug {
@@ -226,22 +233,28 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     : null;
 
   // documentId -> first matching rule (keep the strongest/earliest reason).
-  const matched = new Map<string, { rule: KBRule; reason: string }>();
+  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean }>();
   const rulesMatched: EngineDebug["rulesMatched"] = [];
   const triggered: EngineDebug["questionsTriggered"] = [];
   const triggeredSeen = new Set<string>();
   const projectFactsTriggered: EngineDebug["projectFactsTriggered"] = [];
   const projectFactSeen = new Set<string>();
 
-  const add = (rule: KBRule, reason: string) => {
+  const add = (rule: KBRule, reason: string, formationUnresolved = false) => {
     rulesMatched.push({
       rule_id: rule.id,
       rule_type: rule.rule_type,
       document_id: rule.requires_document_id,
       reason,
     });
-    if (!matched.has(rule.requires_document_id)) {
-      matched.set(rule.requires_document_id, { rule, reason });
+    const existing = matched.get(rule.requires_document_id);
+    if (!existing) {
+      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved });
+    } else if (existing.formationUnresolved && !formationUnresolved) {
+      // A confirmed basis outweighs an unresolved formation basis: the
+      // requirement is genuinely triggered (e.g. an EIN for hiring), so the
+      // unresolved flag is cleared even though the earliest reason is kept.
+      existing.formationUnresolved = false;
     }
   };
 
@@ -250,6 +263,8 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
   // intervals and supersession cycles fail loud here, never silently.
   const effectiveRules = filterEffective(kb.rules, input.asOf);
   for (const rule of effectiveRules) {
+    // Reset per rule: set by the formation gate below when the rule carries it.
+    let formationGateUnresolved = false;
     // Entity-scoped rules never fire for an excluded legal form (F01/F02:
     // e.g. incorporation for sole proprietorships, universal EIN for sole
     // props). An unknown entity type falls through; the classifier marks the
@@ -258,23 +273,27 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       continue;
     }
     // Project-first gates (data-driven; the KB decides which rules carry them):
-    // - requires_new_unformed_business: "form the entity" requirements never
-    //   fire for an existing business, for a property/project with no
-    //   business, or when the entity is known to be formed. When the intent
-    //   was never determined the rule fires exactly as before this gate
-    //   existed — the gate only narrows behavior for known intents, never
-    //   for legacy/unknown flows.
+    // - requires_new_unformed_business: "form the entity" requirements fire
+    //   confirmed only for a new business whose entity is not yet formed.
+    //   They never fire for an existing business, for a property/project
+    //   with no business, or when the entity is known to be formed. When the
+    //   intent was never determined they still fire but are flagged
+    //   formation-unresolved: the classifier renders them conditional, never
+    //   confirmed. Unknown never fires silently.
     // - requires_business: business requirements (municipality baselines,
     //   EIN, etc.) fire for new/existing businesses and when the intent is
     //   unknown (current behavior), but never for project_only.
     if (rule.requires_new_unformed_business) {
-      if (
+      const excluded =
         input.businessStatus === "existing" ||
         input.businessStatus === "project_only" ||
-        input.entityNotFormed === false
-      ) {
+        input.entityNotFormed === false;
+      if (excluded) {
         continue;
       }
+      formationGateUnresolved = !(
+        input.businessStatus === "new" && input.entityNotFormed === true
+      );
     }
     if (
       rule.requires_business &&
@@ -286,7 +305,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       case "municipality":
         // Universal / municipality baseline — applies whenever a municipality
         // is selected (every PR business has one).
-        if (municipality) add(rule, `Municipality selected (${municipality.name})`);
+        if (municipality) add(rule, `Municipality selected (${municipality.name})`, formationGateUnresolved);
         break;
 
       case "municipality_flag":
@@ -297,13 +316,13 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
             (businessType && rule.business_type_id === businessType.id))
         ) {
           const btPart = rule.business_type_id && businessType ? ` + Business Type = ${businessType.name}` : "";
-          add(rule, `Municipality Flag = ${rule.municipality_flag}${btPart}`);
+          add(rule, `Municipality Flag = ${rule.municipality_flag}${btPart}`, formationGateUnresolved);
         }
         break;
 
       case "business_type":
         if (businessType && rule.business_type_id === businessType.id) {
-          add(rule, `Business Type = ${businessType.name}`);
+          add(rule, `Business Type = ${businessType.name}`, formationGateUnresolved);
         }
         break;
 
@@ -323,7 +342,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
             const reason = userProvided
               ? `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`
               : `Question: ${q ? q.question : rule.question_id} | Derived answer: ${answerText}`;
-            add(rule, reason);
+            add(rule, reason, formationGateUnresolved);
             if (!triggeredSeen.has(rule.question_id)) {
               triggeredSeen.add(rule.question_id);
               triggered.push({
@@ -343,7 +362,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
         if (rule.fact_key) {
           const fact = input.projectFacts?.[rule.fact_key];
           if (projectFactMatches(fact, rule.expected_answer)) {
-            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`);
+            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`, formationGateUnresolved);
             if (!projectFactSeen.has(rule.fact_key)) {
               projectFactSeen.add(rule.fact_key);
               projectFactsTriggered.push({ fact_key: rule.fact_key, value: fact });
@@ -355,7 +374,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     }
   }
 
-  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason }]) => {
+  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved }]) => {
     const d = docById.get(docId);
     return {
       document_id: docId,
@@ -365,6 +384,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       reason,
       source_rule_id: rule.id,
       matched_rules: rulesMatched.filter(match => match.document_id === docId).map(({ rule_id, reason }) => ({ rule_id, reason })),
+      ...(formationUnresolved ? { formation_unresolved: true } : {}),
     };
   });
 

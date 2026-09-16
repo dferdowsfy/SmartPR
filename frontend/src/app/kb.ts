@@ -32,6 +32,7 @@ import {
   entityNotFormedForIntent,
 } from "./ai/intake/projectIntent";
 import type { ProjectContext } from "./ai/intake/projectContext";
+import { projectFactsForEngine } from "./ai/intake/projectContext";
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
 
@@ -94,6 +95,14 @@ export interface UIRequirement {
   downloadKind?: string | null;
   downloadNote?: string | null;
 }
+
+/**
+ * Lookup for the inline Yes/No a requirement card renders when its only
+ * basis is an unanswered question-trigger (`unansweredTriggerQuestionId`).
+ * Empty until the classifier starts setting that field — the intake treats
+ * a miss as "no inline question", exactly as today.
+ */
+export const UNANSWERED_TRIGGER_QUESTIONS: Array<{ questionId: string }> = [];
 
 // Minimal view of the app profile this adapter reads.
 interface ProfileLike {
@@ -499,25 +508,47 @@ export function buildEngineInput(
     }
   }
 
+  // Project-first wiring: the intent branch drives the engine's formation
+  // gating (businessStatus / entityNotFormed) and the validated project
+  // facts feed project_fact rules, so construction permits trigger from
+  // project facts alone — no business formation data required.
+  const projectIntent = extra?.projectIntent ?? null;
+  const businessStatus = businessStatusForIntent(projectIntent);
+  // Quarantine: a property/project with no business must never feed
+  // business facts to the engine as if a business existed. If the user
+  // switches to project_only mid-flow, already-collected business answers
+  // are dropped here — the Project Passport (not the profile) carries the
+  // project forward.
+  const projectOnly = businessStatus === "project_only";
+
   return {
     municipalityName: (p.municipality as string) || null,
-    businessTypeName: resolveBusinessTypeName(p.business_type as string),
-    answers: a,
+    businessTypeName: projectOnly ? null : resolveBusinessTypeName(p.business_type as string),
+    answers: projectOnly ? {} : a,
     answerProvenance,
     // Canonical entity type so entity-scoped rules (excluded_entity_types)
     // stay silent for legal forms they can never apply to. "other" means the
     // user hasn't picked a known form — rules treat that as unknown, and the
     // classifier marks the resulting items conditional rather than required.
-    entityType: entityTypeFromLegacyStructure(p.business_structure as string | undefined),
+    entityType: projectOnly
+      ? null
+      : entityTypeFromLegacyStructure(p.business_structure as string | undefined),
+    businessStatus,
+    entityNotFormed: entityNotFormedForIntent(projectIntent),
+    projectFacts: projectFactsForEngine(extra?.projectContext ?? null),
   };
 }
 
 export function runRulesEngineForProfile(
   profile: ProfileLike,
   answers: Record<string, unknown> = {},
-  resolved: Record<string, boolean | string> = {}
+  resolved: Record<string, boolean | string> = {},
+  extra?: {
+    projectIntent?: ProjectIntent | null;
+    projectContext?: ProjectContext | null;
+  }
 ): EngineResult {
-  return runRulesEngine(KB, buildEngineInput(profile, answers, resolved));
+  return runRulesEngine(KB, buildEngineInput(profile, answers, resolved, extra));
 }
 
 // The full deterministic applicability pipeline, parameterized by the KB
@@ -684,6 +715,7 @@ export function computeRequirementsFromSnapshot(
   // an invented answer.
   return appendUnansweredTriggerConditionals(enriched, snapshot, input, legacyCodeMap)
     .sort((a, b) => orderIndex(a.document_id!) - orderIndex(b.document_id!));
+  return enriched;
 }
 
 // Drop-in replacement for the old hardcoded computeRequirements().

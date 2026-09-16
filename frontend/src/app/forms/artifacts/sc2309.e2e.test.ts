@@ -160,11 +160,11 @@ test("signature, notary and official-use blocks are never populated", async () =
     );
   }
   assert.ok(
-    SC2309.notices?.some((notice) => /firme la línea 'firma' a mano/i.test(notice.es)),
+    SC2309.notices?.some((notice) => /firme la línea 'firma' a mano/i.test(notice.es ?? "")),
     "the form must tell the filer the signature line is theirs to complete by hand"
   );
   assert.ok(
-    SC2309.notices?.some((notice) => /jurado y suscrito ante mí/i.test(notice.es)),
+    SC2309.notices?.some((notice) => /jurado y suscrito ante mí/i.test(notice.es ?? "")),
     "the form must explain the notary block is completed at signing"
   );
 });

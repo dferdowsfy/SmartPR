@@ -162,8 +162,8 @@ test("compileKb filters rules and documents by asOf at pack compilation", () => 
     node("document", { id: "DOC_GONE", name: "Gone", agency: "Agency", category: "State", effective_to: "2020-01-01" }),
   ];
   const compiled = compileKb(nodes, { version: 1, batchId: null }, "2026-09-12");
-  assert.deepEqual(compiled.rules.map((r: { id: string }) => r.id).sort(), ["R_NEW", "R_OK"]);
-  assert.deepEqual(compiled.documents.map((d: { id: string }) => d.id), ["DOC_X"]);
+  assert.deepEqual(compiled.rules.map((r: Record<string, unknown>) => r.id).sort(), ["R_NEW", "R_OK"]);
+  assert.deepEqual(compiled.documents.map((d: Record<string, unknown>) => d.id), ["DOC_X"]);
 });
 
 test("compileKb with no asOf keeps undated bundled rows (golden parity safe)", () => {

@@ -184,6 +184,25 @@ function isTrue(
   return context?.[key]?.value === true;
 }
 
+/**
+ * Flatten validated project-context facts into the raw value record the
+ * rules engine reads for `project_fact` rules (fact key -> raw value). Only
+ * known facts are included; nothing is invented. Returns null when there is
+ * nothing to feed the engine.
+ */
+export function projectFactsForEngine(
+  context: ProjectContext | undefined | null
+): Record<string, unknown> | null {
+  if (!context) return null;
+  const out: Record<string, unknown> = {};
+  for (const [key, fact] of Object.entries(context) as Array<
+    [ProjectContextKey, ProjectContextFact]
+  >) {
+    if (projectFactKnown(context, key)) out[key] = fact.value;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 /** True when the description involves a construction/project (not just a business). */
 export function projectIsActive(context: ProjectContext | undefined | null): boolean {
   if (!context) return false;
