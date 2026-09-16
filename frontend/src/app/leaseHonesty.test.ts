@@ -193,3 +193,56 @@ test("lease: guidance is provisional while the lease answer is unknown", () => {
   );
   assert.notEqual(guidance.status, "VALIDATED", "unknown lease must not validate guidance");
 });
+
+// --- 7. Home-based is not a nonresidential physical location (REG-HOME-PHYSICAL-001) ---
+//
+// 2026-09-16 QA (Carolina home-based bookkeeper): buildEngineInput set
+// Q_PHYSICAL_LOCATION=true for ANY known non-online location, including
+// "Home-Based Business". That fired RULE_0007 (Permiso Único) and RULE_0008
+// (Zoning) whose own trigger text says "Nonresidential business location" —
+// a direct contradiction of the home-based fact. Q_PHYSICAL_LOCATION means a
+// nonresidential commercial premises, so a home-based location must resolve
+// it to false, never true.
+
+const HOME_BOOKKEEPER = {
+  business_type: "Bookkeeping Service",
+  municipality: "Carolina",
+  location_type: "Home-Based Business",
+  number_of_employees: 0,
+};
+
+test("home-based: Q_PHYSICAL_LOCATION is false, never true", () => {
+  const input = engineInputFor(HOME_BOOKKEEPER, { employees_hired: false });
+  assert.equal(input.answers["Q_PHYSICAL_LOCATION"], false);
+  assert.equal(input.answers["Q_HOME_BASED"], true);
+});
+
+test("home-based: Permiso Único and Zoning rules do not fire (REG-HOME-PHYSICAL-001)", () => {
+  const input = engineInputFor(HOME_BOOKKEEPER, { employees_hired: false });
+  const debug = runRulesEngine(KB, input).debug;
+  const matched = debug.rulesMatched.map((r) => r.rule_id);
+  assert.ok(!matched.includes("RULE_0007"), "RULE_0007 (Permiso Único) must not fire for a home-based business");
+  assert.ok(!matched.includes("RULE_0008"), "RULE_0008 (Zoning) must not fire for a home-based business");
+  const reqs = computeRequirementsFromKB(HOME_BOOKKEEPER, { employees_hired: false }, {});
+  const docs = reqs.map((r) => r.document_id);
+  assert.ok(!docs.includes("DOC_PERMISO_UNICO"), "no Permiso Único requirement for a home-based business");
+  assert.ok(!docs.includes("DOC_ZONING"), "no Zoning requirement for a home-based business");
+});
+
+test("home-based neighbors: commercial, online-only and unknown locations unchanged", () => {
+  // Commercial premises still count as a physical (nonresidential) location.
+  assert.equal(
+    engineInputFor({ ...HOME_BOOKKEEPER, location_type: "Restaurant Location" }).answers["Q_PHYSICAL_LOCATION"],
+    true
+  );
+  // Online-only has no physical premises.
+  assert.equal(
+    engineInputFor({ ...HOME_BOOKKEEPER, location_type: "Online Only" }).answers["Q_PHYSICAL_LOCATION"],
+    false
+  );
+  // A location the user never chose stays unknown — never invented.
+  assert.equal(
+    engineInputFor({ business_type: "Bookkeeping Service", municipality: "Carolina" }).answers["Q_PHYSICAL_LOCATION"],
+    undefined
+  );
+});

@@ -427,7 +427,7 @@ export function buildEngineInput(
   };
 
   const a: Record<string, boolean | string | undefined> = {
-    Q_PHYSICAL_LOCATION: locKnown ? !online : undefined,
+    Q_PHYSICAL_LOCATION: locKnown ? (!online && !isHomeBasedLocation(loc)) : undefined,
     Q_HOME_BASED: locKnown ? isHomeBasedLocation(loc) : undefined,
     Q_ONLINE_ONLY: locKnown ? online : undefined,
     Q_FOOD_PREPARED: on("food_prepared_or_sold", "food_prepared_on_site", "food_prepared"),
@@ -504,6 +504,19 @@ export function buildEngineInput(
     if (prev === undefined || !sameAnswerValue(prev, value)) {
       answerProvenance[q.id] = "derived";
     }
+  }
+
+  // Permit-model correction (REG-HOME-PHYSICAL-001): the intake model
+  // deliberately counts a home as a physical place (Q_PHYSICAL_LOCATION=true
+  // for home-based), but the permit rules and guidance concepts read
+  // Q_PHYSICAL_LOCATION as "nonresidential commercial premises"
+  // (RULE_0007/0008 trigger text: "Nonresidential business location").
+  // Re-assert the permit meaning here so a home-based business never
+  // satisfies the nonresidential premise: the two models diverge only at
+  // this translation point, and the intake-side derivations above
+  // (Q_HOME_BASED, Q_ONLINE_ONLY) are left untouched.
+  if (a["Q_HOME_BASED"] === true) {
+    a["Q_PHYSICAL_LOCATION"] = false;
   }
 
   // Project-first wiring: the intent branch drives the engine's formation
