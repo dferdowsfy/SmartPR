@@ -16,6 +16,13 @@ const FIELD_TYPES = new Set<AgencyPendingFieldType>([
   "number",
 ]);
 
+/**
+ * Hints that look like portal validation failures (when error= was not used).
+ * Used by Assistant UI to surface a prominent alert banner.
+ */
+export const VALIDATION_HINT_RE =
+  /error|invalid|inválid|incorrect|no es válido|formato|rejected|must |debe /i;
+
 /** Fallback when USER_LOGIN pause has no parsed REQUIRED_FIELDS (preserves #88 UX). */
 export const DEFAULT_LOGIN_PENDING_FIELDS: AgencyPendingField[] = [
   { id: "email", label: "Email", type: "email", sensitive: false },
@@ -99,8 +106,9 @@ export function mergeSuppliedFieldIds(
  * - id=password; label=Password; type=password; sensitive=true
  * - id=mfa; label=MFA code; type=text; sensitive=true; optional=true
  * - id=ssn; label=SSN; type=text; sensitive=true; hint=9 digits as shown on the portal
+ * - id=ssn; label=SSN; type=text; sensitive=true; hint=9 digits; error=Portal: el número de ID no es válido
  * ```
- * Hints must not contain `;` (they are the value after `hint=` on that segment).
+ * Hints and errors must not contain `;` (they are the value after `hint=` / `error=` on that segment).
  */
 export function parseRequiredFields(text: string): AgencyPendingField[] {
   if (!text || typeof text !== "string") return [];
@@ -154,10 +162,12 @@ export function parseRequiredFields(text: string): AgencyPendingField[] {
     const sensitive = /^(true|1|yes)$/i.test(map.sensitive || "");
     const optional = /^(true|1|yes)$/i.test(map.optional || "");
     const hint = map.hint?.trim() || undefined;
+    const error = map.error?.trim() || undefined;
 
     const field: AgencyPendingField = { id, label, type, sensitive };
     if (optional) field.optional = true;
     if (hint) field.hint = hint.slice(0, 240);
+    if (error) field.error = error.slice(0, 240);
     fields.push(field);
   }
 
@@ -176,6 +186,33 @@ export function resolvePendingFields(
   if (parsed.length > 0) return parsed;
   if (pauseReason === "USER_LOGIN") return [...DEFAULT_LOGIN_PENDING_FIELDS];
   return [];
+}
+
+/** True when a field has an explicit error= or a hint that looks like validation failure. */
+export function fieldHasValidationIssue(field: AgencyPendingField): boolean {
+  if (field.error?.trim()) return true;
+  if (field.hint?.trim() && VALIDATION_HINT_RE.test(field.hint)) return true;
+  return false;
+}
+
+/**
+ * Unique portal validation messages for the Assistant alert banner.
+ * Prefers error=; falls back to validation-looking hints.
+ */
+export function collectPortalValidationMessages(
+  fields: AgencyPendingField[]
+): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const f of fields) {
+    const msg = (f.error?.trim() || (f.hint?.trim() && VALIDATION_HINT_RE.test(f.hint) ? f.hint.trim() : "")) || "";
+    if (!msg) continue;
+    const key = msg.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(msg);
+  }
+  return out;
 }
 
 /** True when agent text is mostly pause/marker protocol (ugly in Assistant). */
@@ -198,6 +235,15 @@ export function humanizePauseEvent(
   fields: AgencyPendingField[],
   rawText?: string
 ): { message: string; message_es: string } {
+  const hasFieldError = fields.some((f) => fieldHasValidationIssue(f));
+  if (hasFieldError) {
+    return {
+      message: "SURI rejected a value — see the error in Assistant and fix below",
+      message_es:
+        "SURI rechazó un valor — vea el error en Asistente y corríjalo abajo",
+    };
+  }
+
   const labels = fields.map((f) => f.label).filter(Boolean);
   const ids = fields.map((f) => f.id.toLowerCase());
   const hasSsn = ids.some((id) => /^(ssn|itin|tax_id|id_number|numero_id)$/.test(id) || id.includes("ssn"));

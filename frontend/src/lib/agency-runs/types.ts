@@ -40,6 +40,8 @@ export interface AgencyPendingField {
   optional?: boolean;
   /** Format / validation hint shown under the Assistant input (never a secret). */
   hint?: string;
+  /** Exact on-screen portal validation message (never a secret). Prefer over burying errors in hint. */
+  error?: string;
 }
 
 export interface AgencyRunEvent {
