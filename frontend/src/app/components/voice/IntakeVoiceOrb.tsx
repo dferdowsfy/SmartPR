@@ -304,6 +304,18 @@ export function IntakeVoiceOrb({
           0%, 100% { opacity: 0.35; }
           50% { opacity: 0.7; }
         }
+        @keyframes spr-smoke-swirl {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes spr-smoke-swirl-rev {
+          from { transform: rotate(360deg); }
+          to { transform: rotate(0deg); }
+        }
+        @keyframes spr-smoke-drift {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(10%, -12%) scale(1.15); }
+        }
         .spr-intake-orb-breathe {
           animation: spr-orb-breathe 3.2s ease-in-out infinite;
         }
@@ -316,11 +328,23 @@ export function IntakeVoiceOrb({
         .spr-intake-orb-shimmer {
           animation: spr-orb-shimmer 2.8s ease-in-out infinite;
         }
+        .spr-smoke-swirl {
+          animation: spr-smoke-swirl 26s linear infinite;
+        }
+        .spr-smoke-swirl-rev {
+          animation: spr-smoke-swirl-rev 38s linear infinite;
+        }
+        .spr-smoke-drift {
+          animation: spr-smoke-drift 9s ease-in-out infinite;
+        }
         @media (prefers-reduced-motion: reduce) {
           .spr-intake-orb-breathe,
           .spr-intake-orb-ring,
           .spr-intake-orb-ring-delay,
-          .spr-intake-orb-shimmer {
+          .spr-intake-orb-shimmer,
+          .spr-smoke-swirl,
+          .spr-smoke-swirl-rev,
+          .spr-smoke-drift {
             animation: none !important;
           }
         }
@@ -491,24 +515,44 @@ export function IntakeVoiceOrb({
             aria-hidden
             className="absolute inset-[-3px] rounded-full border border-cyan-100/80 bg-gradient-to-br from-white/55 via-teal-100/30 to-cyan-200/35 shadow-[0_10px_28px_rgba(36,92,92,0.2),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-[2px]"
           />
-          {/* Deep teal core */}
+          {/* Smoky green glass core */}
           <span
             aria-hidden
-            className="absolute inset-[5px] rounded-full bg-[#245c5c] shadow-[inset_0_2px_6px_rgba(255,255,255,0.22),0_4px_16px_rgba(36,92,92,0.38)]"
+            className="absolute inset-[5px] overflow-hidden rounded-full bg-[radial-gradient(circle_at_50%_45%,#34d399_0%,#0d9488_42%,#115e59_72%,#0b3532_100%)]"
             style={{
               boxShadow:
                 state === "listening"
-                  ? `inset 0 2px 6px rgba(255,255,255,0.22), 0 0 ${18 + level * 32}px rgba(45,212,191,${0.4 + level * 0.4}), 0 6px 18px rgba(36,92,92,0.42)`
-                  : !reducedMotion
-                    ? "inset 0 2px 6px rgba(255,255,255,0.22), 0 0 22px rgba(45,212,191,0.28), 0 4px 16px rgba(36,92,92,0.38)"
-                    : "inset 0 2px 6px rgba(255,255,255,0.22), 0 0 16px rgba(45,212,191,0.22), 0 4px 14px rgba(36,92,92,0.35)",
+                  ? `inset 0 -10px 18px rgba(4,47,46,0.6), inset 0 6px 14px rgba(255,255,255,0.18), 0 0 ${18 + level * 32}px rgba(45,212,191,${0.4 + level * 0.4}), 0 6px 18px rgba(36,92,92,0.42)`
+                  : "inset 0 -10px 18px rgba(4,47,46,0.6), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
             }}
-          />
-          {/* Specular highlight */}
-          <span
-            aria-hidden
-            className="absolute inset-[7px] rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,0.35)_0%,transparent_45%)]"
-          />
+          >
+            {/* Smoke layer — slow clockwise swirl */}
+            <span
+              aria-hidden
+              className={`absolute -inset-[25%] ${!reducedMotion ? "spr-smoke-swirl" : ""}`}
+            >
+              <span className="absolute left-[8%] top-[10%] h-[62%] w-[62%] rounded-full bg-[radial-gradient(circle,rgba(167,243,208,0.85)_0%,rgba(110,231,183,0.4)_48%,transparent_70%)] blur-[6px]" />
+              <span className="absolute bottom-[6%] right-[10%] h-[70%] w-[70%] rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.8)_0%,rgba(13,148,136,0.38)_50%,transparent_72%)] blur-[8px]" />
+              <span
+                className={`absolute right-[16%] top-[8%] h-[40%] w-[40%] rounded-full bg-[radial-gradient(circle,rgba(236,253,245,0.95)_0%,rgba(167,243,208,0.4)_55%,transparent_75%)] blur-[5px] ${
+                  !reducedMotion ? "spr-smoke-drift" : ""
+                }`}
+              />
+            </span>
+            {/* Smoke layer — counter swirl for depth */}
+            <span
+              aria-hidden
+              className={`absolute -inset-[25%] ${!reducedMotion ? "spr-smoke-swirl-rev" : ""}`}
+            >
+              <span className="absolute bottom-[10%] left-[12%] h-[58%] w-[58%] rounded-full bg-[radial-gradient(circle,rgba(5,150,105,0.65)_0%,rgba(4,120,87,0.3)_52%,transparent_72%)] blur-[7px]" />
+              <span className="absolute left-[30%] top-[32%] h-[52%] w-[52%] rounded-full bg-[radial-gradient(circle,rgba(110,231,183,0.55)_0%,rgba(52,211,153,0.22)_55%,transparent_75%)] blur-[9px]" />
+            </span>
+            {/* Glass sheen */}
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_26%,rgba(255,255,255,0.5)_0%,rgba(255,255,255,0.08)_30%,transparent_48%)]"
+            />
+          </span>
           {/* Icon */}
           <span className="relative z-10 text-white">
             {state === "listening" ? (
