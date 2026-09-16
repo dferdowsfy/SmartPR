@@ -6,7 +6,7 @@
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Square, Type, X } from "lucide-react";
+import { Type, X } from "lucide-react";
 import {
   MIN_AUDIO_BLOB_BYTES,
   appendAudioFormField,
@@ -312,9 +312,9 @@ export function IntakeVoiceOrb({
           from { transform: rotate(360deg); }
           to { transform: rotate(0deg); }
         }
-        @keyframes spr-smoke-drift {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(10%, -12%) scale(1.15); }
+        @keyframes spr-listening-dot {
+          0%, 100% { transform: scale(1); opacity: 0.65; }
+          50% { transform: scale(1.4); opacity: 1; }
         }
         .spr-intake-orb-breathe {
           animation: spr-orb-breathe 3.2s ease-in-out infinite;
@@ -329,13 +329,13 @@ export function IntakeVoiceOrb({
           animation: spr-orb-shimmer 2.8s ease-in-out infinite;
         }
         .spr-smoke-swirl {
-          animation: spr-smoke-swirl 26s linear infinite;
+          animation: spr-smoke-swirl 16s linear infinite;
         }
         .spr-smoke-swirl-rev {
-          animation: spr-smoke-swirl-rev 38s linear infinite;
+          animation: spr-smoke-swirl-rev 26s linear infinite;
         }
-        .spr-smoke-drift {
-          animation: spr-smoke-drift 9s ease-in-out infinite;
+        .spr-listening-dot {
+          animation: spr-listening-dot 1.8s ease-in-out infinite;
         }
         @media (prefers-reduced-motion: reduce) {
           .spr-intake-orb-breathe,
@@ -344,7 +344,7 @@ export function IntakeVoiceOrb({
           .spr-intake-orb-shimmer,
           .spr-smoke-swirl,
           .spr-smoke-swirl-rev,
-          .spr-smoke-drift {
+          .spr-listening-dot {
             animation: none !important;
           }
         }
@@ -510,11 +510,6 @@ export function IntakeVoiceOrb({
               transform: `scale(${1 + (reducedMotion ? 0 : level * 0.1)})`,
             }}
           />
-          {/* Outer frosted ring */}
-          <span
-            aria-hidden
-            className="absolute inset-[-3px] rounded-full border border-cyan-100/80 bg-gradient-to-br from-white/55 via-teal-100/30 to-cyan-200/35 shadow-[0_10px_28px_rgba(36,92,92,0.2),inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-[2px]"
-          />
           {/* Smoky green glass core */}
           <span
             aria-hidden
@@ -562,7 +557,12 @@ export function IntakeVoiceOrb({
           {/* Icon */}
           <span className="relative z-10 text-white">
             {state === "listening" ? (
-              <Square className="h-5 w-5 fill-current" />
+              <span
+                aria-hidden
+                className={`h-2.5 w-2.5 rounded-full bg-white/90 shadow-[0_0_10px_rgba(255,255,255,0.9)] ${
+                  !reducedMotion ? "spr-listening-dot" : ""
+                }`}
+              />
             ) : state === "processing" ? (
               <span
                 className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
