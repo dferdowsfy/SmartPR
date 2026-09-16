@@ -78,6 +78,11 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;
   if (key === "Q_EXISTING_LEASE") {
+    // All of these are USER-PROVIDED facts (passport occupancyType, explicit
+    // owns_property answers) — never engine defaults. There is no
+    // physical-location-implies-lease inference here or anywhere else: a
+    // location may be owned, so a missing lease answer stays unknown and
+    // the guidance falls through to provisional/verify framing.
     if (ctx.occupancyType === "owned" || ctx.occupancyType === "other" || yes(a.owns_property) || yes(p.owns_property) || yes(a.Q_OWNS_PROPERTY)) return false;
     if (ctx.occupancyType === "leased") return true;
   }

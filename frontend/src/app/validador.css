@@ -828,6 +828,31 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   text-decoration: none; white-space: nowrap;
 }
 .rq-download-btn:hover { background: var(--accent-soft); }
+
+/* Inline "more information needed" answer prompt. The requirement is only on
+   the list because the triggering answer is unknown; the Yes/No writes a
+   real discovery answer and reruns the engine — it never invents one. */
+.rq-answer-prompt {
+  margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+  background: var(--bg-tint); border: 1px dashed var(--border, #e2e8f0);
+}
+.rq-answer-prompt-q {
+  font-size: 13px; font-weight: 600; color: var(--text, #161616);
+  margin-bottom: 8px; line-height: 1.35;
+}
+.rq-answer-prompt-btns { display: flex; gap: 8px; }
+.rq-answer-btn {
+  flex: 1; padding: 8px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+}
+.rq-answer-yes {
+  background: var(--brand); border: 1px solid var(--brand); color: #fff;
+}
+.rq-answer-yes:hover { filter: brightness(0.94); }
+.rq-answer-no {
+  background: var(--surface); border: 1px solid var(--brand); color: var(--brand);
+}
+.rq-answer-no:hover { background: var(--accent-soft); }
 .rq-downloaded-hint {
   color: var(--accent); font-size: 11.5px; line-height: 1.4; text-align: right;
 }
@@ -2385,4 +2410,21 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   .spr-main-workarea .spr-form-actions { width: 100%; }
   .spr-main-workarea .spr-primary { width: 100%; min-width: 0; }
   .spr-live-body { padding: 20px 18px; }
+}
+
+/* "Needs confirmation" badge for interpreter-filled fields (0.60–0.85
+   confidence): the value is applied but the user should verify it. */
+.spr-confirm-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  vertical-align: middle;
+  white-space: nowrap;
 }

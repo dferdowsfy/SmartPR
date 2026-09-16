@@ -16,9 +16,11 @@ import {
   type KnowledgeBase,
   type EngineInput,
   type EngineResult,
+  type KBDocument,
 } from "./rulesEngine";
 import type { PotentialDecision } from "./potentialRequirements";
-import { classifyEngineRequirements, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
+import { classifyEngineRequirements, kindForDocument, stageForDocument, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
+import { filterEffective } from "./temporal";
 import type { EntityType } from "./forms/engine/types";
 import { entityTypeFromLegacyStructure } from "./forms/engine/intake.ts";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
@@ -70,6 +72,14 @@ export interface UIRequirement {
   stage?: RequirementStage;
   triggerFacts?: string[];
   acceptsOfficialUpload?: boolean;
+  /**
+   * Set when this requirement exists only because a question-trigger rule's
+   * answer is still unknown: the requirement is conditional and the UI
+   * renders an inline Yes/No for this KB question id instead of asking for
+   * an upload. Never set alongside a real "Answer:" — the answer genuinely
+   * has not been given yet.
+   */
+  unansweredTriggerQuestionId?: string;
   // Document enrichment (agency/download links) — populated by the shared
   // pipeline from the snapshot's own documents.
   agencyUrl?: string | null;
@@ -338,6 +348,21 @@ function resolveBusinessTypeName(name?: string): string | null {
 const engineTruthy = (v: unknown): boolean =>
   v === true || v === "true" || v === "yes" || v === "Yes";
 
+/** Loose answer equality for provenance: did the resolver merely restate
+ * what the user already provided? */
+const sameAnswerValue = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+  if (typeof a === "boolean" || typeof b === "boolean") {
+    const toBool = (v: unknown) =>
+      v === true || v === "true" || v === "yes" || v === "Yes" ? true
+      : v === false || v === "false" || v === "no" || v === "No" ? false
+      : undefined;
+    const x = toBool(a), y = toBool(b);
+    return x !== undefined && x === y;
+  }
+  return String(a).toLowerCase() === String(b).toLowerCase();
+};
+
 /**
  * Translate the app profile + discovery answers into KB question answers.
  *
@@ -368,11 +393,24 @@ export function buildEngineInput(
   // The intake spells online-only two ways depending on which dropdown the
   // location came from; both must mean "no physical premises" here.
   const online = isOnlineOnlyLocation(loc);
+  // A location the user never chose tells the engine nothing: the
+  // location-derived answers stay unknown instead of inventing "yes, a
+  // physical location" (which used to cascade into an invented lease).
+  const locKnown = loc !== "";
+  // Tri-state read of a single answer key: an explicit No is recorded as
+  // false (so "more information needed" stops asking), an unanswered
+  // question stays undefined (so the engine cannot invent an answer).
+  const boolOf = (key: string): boolean | undefined => {
+    const v = (p[key] ?? da[key]) as unknown;
+    if (v === true || v === "true" || v === "yes" || v === "Yes") return true;
+    if (v === false || v === "false" || v === "no" || v === "No") return false;
+    return undefined;
+  };
 
   const a: Record<string, boolean | string | undefined> = {
-    Q_PHYSICAL_LOCATION: !online,
-    Q_HOME_BASED: isHomeBasedLocation(loc),
-    Q_ONLINE_ONLY: online,
+    Q_PHYSICAL_LOCATION: locKnown ? !online : undefined,
+    Q_HOME_BASED: locKnown ? isHomeBasedLocation(loc) : undefined,
+    Q_ONLINE_ONLY: locKnown ? online : undefined,
     Q_FOOD_PREPARED: on("food_prepared_or_sold", "food_prepared_on_site", "food_prepared"),
     Q_FOOD_SOLD: on("food_prepared_or_sold", "food_sold"),
     Q_FOOD_SERVED: on("food_served", "food_prepared_or_sold"),
@@ -398,8 +436,9 @@ export function buildEngineInput(
     Q_TOURISM_ACTIVITY:
       on("tourism_activity", "water_activities", "excursions") || p.industry === "Accommodation & Tourism",
     Q_OWNS_PROPERTY: on("owns_property"),
-    Q_EXISTING_LEASE:
-      on("existing_lease") || (loc !== "" && !isHomeBasedLocation(loc) && !online),
+    // The lease is NEVER inferred: a physical location may be owned, and an
+    // unanswered lease question stays unknown so the UI can ask it honestly.
+    Q_EXISTING_LEASE: boolOf("existing_lease"),
     Q_CHILDREN_PRESENT: on("children_present"),
     Q_PESTICIDES: on("pesticides"),
     Q_AGRICULTURE_PRODUCTION: on("agriculture_production", "food_products_sold") || p.industry === "Agriculture & Farming",
@@ -425,18 +464,34 @@ export function buildEngineInput(
     }
   }
 
+  // Provenance for the "Answer:" invariant: every value above traces to
+  // something the user provided (a profile field, a discovery answer, or a
+  // direct translation of one). The resolver loop below may only ever
+  // strengthen the engine's picture — when it determines a value the user
+  // did not provide, that question is marked "derived" so requirement cards
+  // never present it as the user's answer.
+  const answerProvenance: Record<string, "user" | "derived"> = {};
+  for (const k of Object.keys(a)) {
+    if (a[k] !== undefined) answerProvenance[k] = "user";
+  }
+
   // Relationship-resolved facts, applied additively (see the doc comment).
   for (const q of KB.questions) {
     const value = resolved[q.id];
     if (value === undefined) continue;
     if (engineTruthy(a[q.id]) && !engineTruthy(value)) continue;
+    const prev = a[q.id];
     a[q.id] = value;
+    if (prev === undefined || !sameAnswerValue(prev, value)) {
+      answerProvenance[q.id] = "derived";
+    }
   }
 
   return {
     municipalityName: (p.municipality as string) || null,
     businessTypeName: resolveBusinessTypeName(p.business_type as string),
     answers: a,
+    answerProvenance,
     // Canonical entity type so entity-scoped rules (excluded_entity_types)
     // stay silent for legal forms they can never apply to. "other" means the
     // user hasn't picked a known form — rules treat that as unknown, and the
@@ -457,6 +512,89 @@ export function runRulesEngineForProfile(
 // snapshot it matches against. This is the single implementation both the
 // intake UI and the server obligation pipeline (compliance/server.ts) run:
 // the same engine input, the same classifier, the same formation rules.
+// Question-trigger rules whose unknown answer should surface a conditional
+// "more information needed" requirement with an inline answer control,
+// instead of silently dropping the requirement until the question is asked.
+// Curated deliberately: synthesizing for every question-trigger rule would
+// flood the checklist with conditionals for questions the intake never asks
+// (e.g. alcohol for a law firm). Each entry names the KB question and the
+// wizard/discovery key an inline answer must be written to.
+export const UNANSWERED_TRIGGER_QUESTIONS: Array<{ questionId: string; writeKey: string }> = [
+  { questionId: "Q_EXISTING_LEASE", writeKey: "existing_lease" },
+];
+
+/**
+ * For curated question-trigger rules whose answer is genuinely unknown
+ * (undefined — not an explicit No), append a conditional requirement so the
+ * checklist can ask the question inline instead of either inventing an
+ * answer or hiding the requirement. Never fires when the document is
+ * already required, when the answer is known, or when the trigger is
+ * impossible (e.g. no physical location for a lease).
+ */
+function appendUnansweredTriggerConditionals(
+  reqs: UIRequirement[],
+  snapshot: KnowledgeBase,
+  input: EngineInput,
+  legacyCode: Record<string, string>,
+): UIRequirement[] {
+  const present = new Set(reqs.map((r) => r.document_id));
+  const docById = new Map(snapshot.documents.map((d) => [d.id, d]));
+  const out = [...reqs];
+  for (const rule of filterEffective(snapshot.rules, input.asOf)) {
+    if (rule.rule_type !== "question_trigger" || !rule.question_id || !rule.requires_document_id) continue;
+    const trigger = UNANSWERED_TRIGGER_QUESTIONS.find((t) => t.questionId === rule.question_id);
+    if (!trigger) continue;
+    if (present.has(rule.requires_document_id)) continue;
+    // Unknown means undefined: an explicit No (false) is a real answer and
+    // correctly yields no requirement at all.
+    if (input.answers[rule.question_id] !== undefined) continue;
+    // A lease is impossible without a physical location — don't ask.
+    if (rule.question_id === "Q_EXISTING_LEASE" && input.answers["Q_PHYSICAL_LOCATION"] === false) continue;
+    const d = docById.get(rule.requires_document_id) as
+      | (KBDocument & {
+          agency_url?: string | null;
+          agency_note?: string;
+          download_url?: string | null;
+          download_kind?: string;
+          download_note?: string;
+        })
+      | undefined;
+    if (!d) continue;
+    const name = d.name || rule.requires_document_id;
+    const agency = d.agency || "";
+    const category = d.category || "";
+    out.push({
+      code: legacyCode[rule.requires_document_id] || rule.requires_document_id.toLowerCase(),
+      name,
+      mandatory: false,
+      status: "pending",
+      agency,
+      // Machine-readable marker — the UI renders localized copy plus the
+      // inline Yes/No. Deliberately NOT the "Question: … | Answer: …" shape:
+      // there is no answer yet, and the invariant forbids claiming one.
+      reason: `UNANSWERED_QUESTION:${rule.question_id}`,
+      document_id: rule.requires_document_id,
+      category,
+      source_rule: rule.id,
+      applicability: "conditional",
+      kind: kindForDocument(rule.requires_document_id, name, category),
+      stage: stageForDocument(rule.requires_document_id, name, category),
+      triggerFacts: [`rule:${rule.id}`, `unanswered:${rule.question_id}`],
+      acceptsOfficialUpload: false,
+      unansweredTriggerQuestionId: rule.question_id,
+      // Same "where to get this" metadata as a real requirement — the card
+      // may become required the moment the user answers Yes.
+      agencyUrl: d.agency_url ?? null,
+      agencyNote: d.agency_note ?? null,
+      downloadUrl: d.download_url ?? null,
+      downloadKind: d.download_kind ?? null,
+      downloadNote: d.download_note ?? null,
+    });
+    present.add(rule.requires_document_id);
+  }
+  return out;
+}
+
 // Direct answers are carried for admin-published questions that may not exist
 // in the bundled adapter — the rules engine, not AI, still decides.
 export function computeRequirementsFromSnapshot(
@@ -501,7 +639,8 @@ export function computeRequirementsFromSnapshot(
       download_note?: string;
     }>).map((d) => [d.id, d])
   );
-  return classified
+  const legacyCodeMap: Record<string, string> = options.legacyCode ?? kbMeta.legacyCode;
+  const enriched: UIRequirement[] = classified
     .map((r) => ({
       code: r.code,
       name: r.document_name,
@@ -522,7 +661,11 @@ export function computeRequirementsFromSnapshot(
       downloadUrl: docById.get(r.document_id)?.download_url ?? null,
       downloadKind: docById.get(r.document_id)?.download_kind ?? null,
       downloadNote: docById.get(r.document_id)?.download_note ?? null,
-    }))
+    }));
+  // Curated unanswered-trigger conditionals (e.g. the lease question):
+  // honest "more information needed" cards with an inline Yes/No, never
+  // an invented answer.
+  return appendUnansweredTriggerConditionals(enriched, snapshot, input, legacyCodeMap)
     .sort((a, b) => orderIndex(a.document_id!) - orderIndex(b.document_id!));
 }
 

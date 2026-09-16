@@ -44,6 +44,17 @@ export interface RequirementDownload {
   onDownload: () => void;
 }
 
+export interface RequirementAnswerPrompt {
+  /** The question to answer inline, already localized (e.g. "Do you lease
+   * your commercial space?"). Only ever shown when the answer is genuinely
+   * unknown — answering writes a real discovery answer. */
+  prompt: string;
+  yesLabel: string;
+  noLabel: string;
+  onYes: () => void;
+  onNo: () => void;
+}
+
 export interface RequirementCardProps {
   index: number;
   icon: ReactNode;
@@ -68,6 +79,11 @@ export interface RequirementCardProps {
    * column — the direct official destination for this requirement, never
    * hidden inside the "Why do I need this?" disclosure. */
   download?: RequirementDownload;
+  /** "More information needed" inline Yes/No — rendered in the action
+   * column when the requirement is conditional only because the triggering
+   * answer is still unknown. Answering writes a real discovery answer and
+   * reruns the engine; it never invents one. */
+  answerPrompt?: RequirementAnswerPrompt;
   /** Extraction panels, AI findings, multi-stage processing — rendered full
    * width below the card's three zones, unchanged in substance from before. */
   extra?: ReactNode;
@@ -126,6 +142,7 @@ export function RequirementCard({
   whyLabel,
   why,
   action,
+  answerPrompt,
   secondary,
   download,
   extra,
@@ -153,6 +170,19 @@ export function RequirementCard({
 
         <div className="rq-card-right">
           <ActionButton action={action} />
+          {answerPrompt && (
+            <div className="rq-answer-prompt" role="group" aria-label={answerPrompt.prompt}>
+              <div className="rq-answer-prompt-q">{answerPrompt.prompt}</div>
+              <div className="rq-answer-prompt-btns">
+                <button type="button" className="rq-answer-btn rq-answer-yes" onClick={answerPrompt.onYes}>
+                  {answerPrompt.yesLabel}
+                </button>
+                <button type="button" className="rq-answer-btn rq-answer-no" onClick={answerPrompt.onNo}>
+                  {answerPrompt.noLabel}
+                </button>
+              </div>
+            </div>
+          )}
           {download && action.kind !== "completed" && (
             <>
               <a

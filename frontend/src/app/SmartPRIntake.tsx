@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
-import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel } from './kb';
+import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
+import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { buildRequirementGuidance, legalBasisFor } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
@@ -168,6 +169,12 @@ interface Requirement {
    * pursue an incentive that needs it — never on requirements the rules
    * engine would have surfaced anyway. Shown as a small contextual label. */
   incentiveLabel?: string;
+  /**
+   * Set when this requirement exists only because a question-trigger rule's
+   * answer is still unknown: the card renders an inline Yes/No for this KB
+   * question instead of asking for an upload. Mirrors UIRequirement in kb.ts.
+   */
+  unansweredTriggerQuestionId?: string;
 }
 
 function potentialItemsForProfile(
@@ -379,7 +386,23 @@ function businessTypeOptionsFor(industry: string | undefined): string[] {
   return [...hardcoded, ...kbNames.filter((n) => !seen.has(n.toLowerCase()))];
 }
 
+// The lease question — every physical-location business gets it unless the
+// snapshot/bundled path already supplies it. Added here once rather than in
+// each branch so future branches inherit it. Short-term rentals are
+// excluded: they answer `str_ownership` instead.
+const EXISTING_LEASE_QUESTION: DiscoveryQuestion = {
+  id: "existing_lease",
+  text: "Will the business lease its commercial space?",
+  whyWeAsk: "A lease agreement is required when the business leases its space — owners skip it.",
+};
+
 function hardcodedQuestionsForBusinessType(businessType: string): DiscoveryQuestion[] {
+  const list = hardcodedQuestionsForBusinessTypeBase(businessType);
+  if (list.some((q) => q.id === "existing_lease" || q.id === "str_ownership")) return list;
+  return [...list, EXISTING_LEASE_QUESTION];
+}
+
+function hardcodedQuestionsForBusinessTypeBase(businessType: string): DiscoveryQuestion[] {
   const bt = businessType.toLowerCase().trim();
 
   // Short-Term Rental / Airbnb is its own archetype — property, ownership,
@@ -660,6 +683,8 @@ const PHYSICAL_PRESENCE_QUESTIONS = new Set<string>([
   "employees_work_on_site",
   "inventory_stored",
   "products_stored",
+  // Leasing commercial space is impossible without a physical location.
+  "existing_lease",
 ]);
 
 const HOME_BASED_NOT_APPLICABLE = new Set<string>([
@@ -686,7 +711,9 @@ export function filterQuestionsByContext(
   locationType: string | undefined
 ): DiscoveryQuestion[] {
   const loc = (locationType || "").trim();
-  if (loc === "Online Only") {
+  // Canonical helpers so every spelling of online-only/home-based (legacy
+  // literals included) gets the same treatment.
+  if (isOnlineOnlyLocation(loc) || loc === "online_only") {
     return questions.filter((q) => !PHYSICAL_PRESENCE_QUESTIONS.has(q.id));
   }
   if (loc === "Home-Based Business") {
@@ -1778,6 +1805,13 @@ export default function SmartPRIntake() {
     return L(req.name, language);
   };
   const trReqReason = (req: { code: string; reason: string }) => {
+    // Machine-readable marker for the "more information needed" conditional:
+    // never show it raw — the card renders the prompt and inline Yes/No.
+    if (/^UNANSWERED_QUESTION:/.test(req.reason)) {
+      return language === 'es'
+        ? 'Todavía no sabemos si esto aplica a tu negocio — contesta la pregunta aquí mismo para confirmarlo.'
+        : 'We don’t know yet whether this applies to your business — answer the question right here to confirm.';
+    }
     if (language === 'es') {
       if (req.code === 'patente_municipal')
         return `Impuesto/licencia municipal requerido en el municipio de ${profile.municipality}. Usualmente requiere primero el Permiso Único.`;
@@ -1803,6 +1837,10 @@ export default function SmartPRIntake() {
 
       const questionMatch = req.reason.match(/^Question: (.+) \| Answer: Yes$/);
       if (questionMatch) return `Pregunta: ${questionMatch[1]} | Respuesta: Sí`;
+
+      // Derived values are labeled honestly, never as the user's own answer.
+      const derivedMatch = req.reason.match(/^Question: (.+) \| Derived answer: (.+)$/);
+      if (derivedMatch) return `Pregunta: ${derivedMatch[1]} | Respuesta derivada: ${derivedMatch[2]}`;
     }
     return L(req.reason, language);
   };
@@ -1874,7 +1912,13 @@ export default function SmartPRIntake() {
       if (aiPrefilledKeys.includes(wizardKey)) return true;
       if (discoveryAnswers[wizardKey] !== undefined) return false;
       const questionId = questionIdForAnswerKey(wizardKey);
-      return questionId !== null && intakeFacts.resolvedQuestionIds.has(questionId);
+      if (questionId === null || !intakeFacts.resolvedQuestionIds.has(questionId)) return false;
+      // Only user/explicit facts suppress: derived/inferred facts mean the
+      // question genuinely has not been answered yet, and presenting an
+      // engine-derived value as the user's answer is how invented answers
+      // end up on requirement cards.
+      const origin = intakeFacts.resolvedQuestionOrigins?.[questionId];
+      return origin === "user" || origin === "explicit";
     },
     [aiPrefilledKeys, discoveryAnswers, intakeFacts]
   );
@@ -2316,6 +2360,19 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     setRequirements(computed);
     setCurrentStep(3);
     setIsLoading(false);
+  };
+
+  // Answering the inline "more information needed" question on a requirement
+  // card writes a REAL discovery answer — exactly what the wizard would have
+  // recorded — and reruns the engine immediately. `setDiscoveryAnswers` is
+  // async, so the recompute uses the locally merged answers: otherwise the
+  // card would flash the stale unknown state for a render. A Yes turns the
+  // conditional into REQUIRED with "Answer: Yes" (user-provided, hence the
+  // honest label); a No removes the requirement entirely.
+  const answerTriggerQuestion = (writeKey: string, value: boolean) => {
+    const nextAnswers = { ...discoveryAnswers, [writeKey]: value };
+    setDiscoveryAnswers(nextAnswers);
+    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions));
   };
 
   // When business_type changes, also ensure location is valid (already handled in onChange)
@@ -3781,6 +3838,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const isConditional = req.applicability === 'conditional';
     const isReviewCondition = req.kind === 'review_condition';
     const canUpload = req.acceptsOfficialUpload !== false;
+    // Conditional only because a question-trigger answer is still unknown:
+    // the card asks the question inline (Yes/No) instead of asking for an
+    // upload. The answer is genuinely missing — never invented.
+    const triggerQuestion = req.unansweredTriggerQuestionId
+      ? UNANSWERED_TRIGGER_QUESTIONS.find((t) => t.questionId === req.unansweredTriggerQuestionId)
+      : undefined;
 
     // Two ways SmartPR can prepare a requirement for the user, in priority
     // order: (1) an official, code-backed government PDF it can prefill —
@@ -3817,6 +3880,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     if (state === 'done') {
       action = { kind: 'completed', label: L('Completed', language) };
       bucket = 'completed';
+    } else if (triggerQuestion) {
+      // The inline Yes/No below is the action: answer it and the requirement
+      // becomes required (Yes) or disappears (No). No upload yet — the
+      // document may not even be needed.
+      action = { kind: 'none', label: '' };
+      bucket = 'needs_action';
     } else if (isConditional || isReviewCondition) {
       action = { kind: 'none', label: '' };
       bucket = 'none';
@@ -3870,6 +3939,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
     const badge: RequirementBadge | null =
       state === 'done' ? null
+      : triggerQuestion ? { label: L('More information needed', language), tone: 'gray' }
       : isConditional ? { label: L('Needs verification', language), tone: 'gray' }
       : isReviewCondition ? { label: L('Review condition', language), tone: 'gray' }
       : req.mandatory ? { label: L('Required', language), tone: 'amber' }
@@ -4146,6 +4216,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       onDownload: () => handleDownloadClick(req.code),
     } : undefined;
 
+    // Inline answer control for the "more information needed" card. Writing
+    // the answer is a REAL discovery answer: the engine reruns immediately
+    // and the card becomes REQUIRED with "Answer: Yes" (or disappears on
+    // No) — the provenance is the user, not an assumption.
+    const answerPrompt = triggerQuestion ? {
+      prompt: L('Do you lease your commercial space?', language),
+      yesLabel: L('Yes', language),
+      noLabel: L('No', language),
+      onYes: () => answerTriggerQuestion(triggerQuestion.writeKey, true),
+      onNo: () => answerTriggerQuestion(triggerQuestion.writeKey, false),
+    } : undefined;
+
     return {
       req, bucket, state,
       name,
@@ -4156,6 +4238,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       badge,
       why,
       action,
+      answerPrompt,
       secondary,
       secondaryOnCompleted,
       download,
@@ -4903,6 +4986,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 whyLabel={L('Why do I need this?', language)}
                 why={c.why}
                 action={c.action}
+                answerPrompt={c.answerPrompt}
                 secondary={c.secondary}
                 secondaryOnCompleted={c.secondaryOnCompleted}
                 download={c.download}
@@ -4938,6 +5022,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       whyLabel={L('Why do I need this?', language)}
                       why={c.why}
                       action={c.action}
+                      answerPrompt={c.answerPrompt}
                       secondary={c.secondary}
                       secondaryOnCompleted={c.secondaryOnCompleted}
                       download={c.download}

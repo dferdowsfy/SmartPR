@@ -85,6 +85,14 @@ export interface EngineInput {
   /** Date-only UTC (`YYYY-MM-DD`) the evaluation is "as of". Rules not in
    *  force at this date never fire. Defaults to today (UTC). */
   asOf?: string | Date | null;
+  /**
+   * Answer provenance, set by `buildEngineInput` in kb.ts: "user" when the
+   * value traces to something the user provided (profile, discovery answer,
+   * or a direct translation of one), "derived" when the relationship
+   * resolver determined it. Requirement-card reasons may only use "Answer:"
+   * for user-provided answers — derived ones are labeled as derived.
+   */
+  answerProvenance?: Record<string, "user" | "derived">;
 }
 
 export interface GeneratedRequirement {
@@ -212,8 +220,15 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
             const q = qById.get(rule.question_id);
             // Report the answer that actually matched (select labels included),
             // not a blanket "Yes" — the matched basis is what review relies on.
+            // Honesty invariant: "Answer:" is reserved for answers the user
+            // actually provided. Values the relationship resolver derived are
+            // labeled as derived so the card never presents them as the
+            // user's own answer.
             const answerText = typeof ans === "string" ? ans : "Yes";
-            const reason = `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`;
+            const userProvided = input.answerProvenance?.[rule.question_id] !== "derived";
+            const reason = userProvided
+              ? `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`
+              : `Question: ${q ? q.question : rule.question_id} | Derived answer: ${answerText}`;
             add(rule, reason);
             if (!triggeredSeen.has(rule.question_id)) {
               triggeredSeen.add(rule.question_id);
