@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  askedAgainWithValues,
   fieldsAskedAgain,
   mergeSuppliedFieldIds,
   suppliedFieldIdsFrom,
@@ -111,6 +112,46 @@ describe("supplied_field_ids on runs (ids only — never values)", () => {
     assert.deepEqual(
       fieldsAskedAgain(pending, after.supplied_field_ids).map((f) => f.id),
       ["email", "password"]
+    );
+  });
+});
+
+describe("askedAgainWithValues (banner misfire guard)", () => {
+  const pending = [field("registry_number"), field("email")];
+
+  it("returns the field only when a non-empty value was actually retained", () => {
+    const again = askedAgainWithValues(pending, ["registry_number"], {
+      registry_number: "482916",
+    });
+    assert.deepEqual(again.map((f) => f.id), ["registry_number"]);
+  });
+
+  it("returns [] when the id is supplied but no value was retained (the misfire case)", () => {
+    // e.g. id seeded from pre-flight before the client ever saw the value
+    assert.deepEqual(
+      askedAgainWithValues(pending, ["registry_number"], {}),
+      []
+    );
+    assert.deepEqual(
+      askedAgainWithValues(pending, ["registry_number"], {
+        registry_number: "   ",
+      }),
+      []
+    );
+    assert.deepEqual(askedAgainWithValues(pending, ["registry_number"], null), []);
+  });
+
+  it("ignores values for fields that are not supplied ids", () => {
+    assert.deepEqual(
+      askedAgainWithValues(pending, ["email"], { registry_number: "482916" }),
+      []
+    );
+  });
+
+  it("returns [] when nothing is pending", () => {
+    assert.deepEqual(
+      askedAgainWithValues([], ["registry_number"], { registry_number: "1" }),
+      []
     );
   });
 });

@@ -34,7 +34,10 @@ import type {
   AgencyRunStatus,
 } from "../../../../lib/agency-runs/types";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
-import { DEFAULT_LOGIN_PENDING_FIELDS } from "../../../../lib/agency-runs/pendingFields";
+import {
+  DEFAULT_LOGIN_PENDING_FIELDS,
+  askedAgainWithValues,
+} from "../../../../lib/agency-runs/pendingFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, type AgencyOption, type SessionMsg } from "./AgencyChat";
@@ -326,6 +329,19 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     const brief = (result.brief ?? null) as GoalBrief | null;
     setRun(started);
     setGoalBrief(brief);
+    // Retain pre-flight field values in-memory (never persisted) so that a
+    // later re-ask of the same fields pre-fills from this session and the
+    // "asking again" banner only renders when a value was actually provided.
+    if (answers.fields && typeof answers.fields === "object") {
+      const prefilled: Record<string, string> = {};
+      for (const [id, v] of Object.entries(answers.fields)) {
+        const val = typeof v === "string" ? v.trim() : "";
+        if (id && val) prefilled[id] = val;
+      }
+      if (Object.keys(prefilled).length > 0) {
+        lastSubmittedRef.current = { runId: started.id, values: prefilled };
+      }
+    }
     if (brief) {
       pushMsg({
         id: `brief-${Date.now()}`,
@@ -557,6 +573,20 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const suppliedFieldIds: string[] = run?.supplied_field_ids ?? [];
   const suppliedSig = suppliedFieldIds.join(",");
   const pendingSig = pendingFields.map((f) => f.id).join(",");
+  /**
+   * Value-backed "asking again" set for the banner: the banner (and its
+   * pre-filled value) renders ONLY when we actually retain a
+   * previously-submitted non-empty value for the field id in this run.
+   * An id marked supplied without a retained value (e.g. seeded from
+   * pre-flight before the client ever saw the value) renders the normal
+   * empty prompt instead of a misfiring banner.
+   */
+  const askedAgainFields = useMemo(() => {
+    const mem = lastSubmittedRef.current;
+    if (mem.runId !== run?.id) return [];
+    return askedAgainWithValues(pendingFields, suppliedFieldIds, mem.values);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run?.id, pendingSig, suppliedSig]);
   useEffect(() => {
     if (pendingFields.length === 0 || suppliedFieldIds.length === 0) return;
     const mem = lastSubmittedRef.current;
@@ -645,6 +675,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           run,
           pendingFields,
           suppliedFieldIds,
+          askedAgainFields,
           fieldValues,
           onFieldChange: setFieldValue,
           revealedFields,
@@ -696,7 +727,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#f4f1ea]">
+    // When the browser panel is open the workspace locks to exactly the
+    // viewport: the chat column keeps a fixed height and its message list
+    // scrolls internally (new messages scroll up inside it), the browser
+    // panel stays fixed in view, and the body never grows a blank page
+    // below the frame. Browser closed → normal scrolling page.
+    <div
+      className={`flex flex-col bg-[#f4f1ea] ${
+        browserOpen ? "h-dvh overflow-hidden" : "min-h-dvh"
+      }`}
+    >
       <TopNav active="businesses" />
       <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

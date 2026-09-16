@@ -323,9 +323,10 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEs:
       "Completar una radicación de informe anual de ENSAYO en el portal demo de SmartPR — un portal ficticio. No se radica nada real, no se usan credenciales ni datos reales.",
     procedureEn: [
-      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, use Create account — fill name and email from the passport, then PAUSE at password creation. Never invent a password and never type credentials unprompted.",
+      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, click Create account on the landing — NEVER click Log in and NEVER pause for login credentials on the create-account path. Fill name and email from the passport, then PAUSE at password creation. Never invent a password and never type credentials unprompted.",
       "If a login form appears: prefill the email from the passport when available, then PAUSE_USER_LOGIN once with REQUIRED_FIELDS (email if still empty, password, MFA if shown). Prefer Assistant-fill — do not loop on login and do not expect the human to type in the live browser.",
-      "On the entity search page: use the registry number from the passport (or the human-supplied value) and select the DEMO ENTITY LLC result.",
+      "After demo registration completes, the portal shows a fictional registry number and a Continue button — go DIRECTLY to the filing form. Never visit the entity search page on the registration path.",
+      "On the entity search page (login path only): enter any 6+ digits yourself (e.g. 482916) — demo numbers are fictional, any number works — then select the DEMO ENTITY LLC result and Continue. NEVER ask the human for a registry number on the demo portal.",
       "On the filing form: prefill EVERY non-sensitive field from the Business Passport first — contact name, email, phone, street, city, postal code, entity type, fiscal year end, business activity — matching the dropdown, checkboxes, and radio buttons. Leave SSN, passwords, payment, and attestations blank.",
       "If the portal shows an inline validation error after submitting: surface the exact portal message to the chat via the humanized-error path (never invent an explanation), correct the flagged field from passport data when possible, otherwise pause for the human.",
       "On the identity-verification step: PAUSE for the human — never fill in or invent a Social Security Number.",
@@ -334,9 +335,10 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
       "On the final review page: stop at pre-submit review and summarize for the human — never click the final Submit button yourself.",
     ],
     procedureEs: [
-      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, use Crear cuenta — llene nombre y correo desde el pasaporte, luego PAUSE en la creación de contraseña. Nunca invente una contraseña ni escriba credenciales sin que se lo pidan.",
+      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, pulse Crear cuenta en la portada — NUNCA pulse Iniciar sesión ni pause por credenciales en la ruta de crear cuenta. Llene nombre y correo desde el pasaporte, luego PAUSE en la creación de contraseña. Nunca invente una contraseña ni escriba credenciales sin que se lo pidan.",
       "Si aparece un formulario de inicio de sesión: rellene el correo desde el pasaporte si está disponible, luego PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS (correo si sigue vacío, contraseña, MFA si se muestra). Prefiera Asistente — no cicle en el login ni espere que el humano escriba en el navegador en vivo.",
-      "En la página de búsqueda de entidad: use el número de registro del pasaporte (o el valor provisto por la persona) y seleccione el resultado DEMO ENTITY LLC.",
+      "Tras completar el registro demo, el portal muestra un número de registro ficticio y un botón Continuar — vaya DIRECTO al formulario de radicación. Nunca visite la página de búsqueda de entidad en la ruta de registro.",
+      "En la página de búsqueda de entidad (solo ruta de inicio de sesión): escriba usted mismo cualquier número de 6+ dígitos (p. ej. 482916) — los números demo son ficticios, cualquiera funciona — luego seleccione el resultado DEMO ENTITY LLC y pulse Continuar. NUNCA le pida a la persona un número de registro en el portal demo.",
       "En el formulario de radicación: rellene PRIMERO todos los campos no sensibles desde el Pasaporte de Negocio — nombre del contacto, correo, teléfono, dirección, ciudad, código postal, tipo de entidad, cierre fiscal, actividad del negocio — incluyendo el dropdown, los checkboxes y los botones de radio. Deje el Seguro Social, contraseñas, pago y certificaciones en blanco.",
       "Si el portal muestra un error de validación en línea tras enviar: lleve el mensaje exacto del portal al chat por la vía de error humanizado (nunca invente una explicación), corrija el campo señalado con datos del pasaporte si es posible, o pause para la persona.",
       "En el paso de verificación de identidad: PAUSE para la persona — nunca llene ni invente un número de Seguro Social.",
@@ -349,11 +351,13 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     hintsEn: [
       "The demo portal is fictional — rehearse freely; nothing here touches a government system.",
       "The demo accepts any credentials, but you must still pause for the human at every gate: login, password creation, SSN, attestation, payment, final review.",
+      "Demo registry numbers are fictional — entering any 6+ digits on the demo search page is expected. Never ask the human for a registry number.",
       "The first form submit always fails on phone format — expect the inline error and handle it through the humanized-error path.",
     ],
     hintsEs: [
       "El portal demo es ficticio — ensaye con libertad; nada aquí toca un sistema del gobierno.",
       "El demo acepta cualquier credencial, pero igual debe pausar para la persona en cada puerta: login, creación de contraseña, Seguro Social, certificación, pago y revisión final.",
+      "Los números de registro demo son ficticios — escribir cualquier número de 6+ dígitos en la búsqueda demo es lo esperado. Nunca le pida a la persona un número de registro.",
       "El primer envío del formulario siempre falla en el formato del teléfono — espere el error en línea y manéjelo por la vía de error humanizado.",
     ],
     evidenceTags: [],

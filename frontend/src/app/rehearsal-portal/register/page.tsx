@@ -31,7 +31,14 @@ export default function RehearsalRegisterPage() {
         className="mt-6 space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          router.push("/rehearsal-portal/search");
+          // A brand-new registration has no registry number yet — the demo
+          // portal issues a fictional one so the filing can continue without
+          // ever visiting the entity search page.
+          const fictional = String(
+            Math.floor(100000 + Math.random() * 900000)
+          );
+          setField("fictionalRegistryNumber", fictional);
+          router.push("/rehearsal-portal/registered");
         }}
       >
         <TextInput

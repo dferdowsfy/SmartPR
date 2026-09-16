@@ -166,3 +166,42 @@ describe("objective override", () => {
     assert.equal(brief.goal_en, getFilingConfig("SURI_REGISTER_TAXPAYER").goalEn);
   });
 });
+
+describe("portal account status threading", () => {
+  it("no_account brief line directs the agent to registration, not login", async () => {
+    const brief = await suriBrief();
+    const withStatus = buildGoalBrief({
+      config: getFilingConfig("SURI_REGISTER_TAXPAYER"),
+      action: { id: "x", filing_type: "SURI_REGISTER_TAXPAYER" } as never,
+      portal_account: "no_account",
+    });
+    assert.equal(withStatus.portal_account, "no_account");
+    const block = goalBriefToPromptBlock(withStatus);
+    assert.ok(
+      block.includes("does NOT have an account"),
+      "prompt must carry the no-account line"
+    );
+    assert.ok(
+      block.includes("new-account registration"),
+      "prompt must direct the agent to registration"
+    );
+    void brief;
+  });
+
+  it("has_account brief line expects a login gate via USER_LOGIN", async () => {
+    const withStatus = buildGoalBrief({
+      config: getFilingConfig("SURI_REGISTER_TAXPAYER"),
+      action: { id: "x", filing_type: "SURI_REGISTER_TAXPAYER" } as never,
+      portal_account: "has_account",
+    });
+    const block = goalBriefToPromptBlock(withStatus);
+    assert.ok(block.includes("already has an account"));
+    assert.ok(block.includes("USER_LOGIN"));
+  });
+
+  it("omits the PORTAL ACCOUNT line when status is unknown (backwards compatible)", async () => {
+    const brief = await suriBrief();
+    const block = goalBriefToPromptBlock(brief);
+    assert.ok(!block.includes("PORTAL ACCOUNT:"));
+  });
+});

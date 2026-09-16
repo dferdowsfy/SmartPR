@@ -40,6 +40,12 @@ export default function RehearsalSearchPage() {
           "Busca en el registro ficticio por número de registro."
         )}
       </PageSub>
+      <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-900">
+        {t(
+          "Demo: enter any 6+ digits (e.g. 482916) — any number works here.",
+          "Demo: escribe cualquier número de 6+ dígitos (p. ej. 482916) — cualquiera funciona aquí."
+        )}
+      </p>
       <form className="mt-6 space-y-4" onSubmit={submit}>
         <TextInput
           id="search-registry"

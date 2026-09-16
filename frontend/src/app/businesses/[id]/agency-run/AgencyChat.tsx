@@ -22,7 +22,6 @@ import type {
 } from "../../../../lib/agency-runs/types";
 import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
-import { fieldsAskedAgain } from "../../../../lib/agency-runs/pendingFields";
 import {
   actionStatusChipLabel,
   gateCopy,
@@ -596,6 +595,12 @@ export interface InterventionProps {
   pendingFields: AgencyPendingField[];
   /** Ids the human already supplied once (ids only) — drives the confirm card. */
   suppliedFieldIds: string[];
+  /**
+   * Value-backed "asking again" subset: pending fields for which we actually
+   * retain a previously-submitted value in this run. The banner renders ONLY
+   * for these — never on an id alone.
+   */
+  askedAgainFields: AgencyPendingField[];
   fieldValues: Record<string, string>;
   onFieldChange: (id: string, value: string) => void;
   revealedFields: Record<string, boolean>;
@@ -624,7 +629,9 @@ function InterventionCard(props: InterventionProps) {
   const pauseReason: AgencyPauseReason = run.pause_reason;
   /** Fields the human already supplied once that the agent is asking for
    * again — these get a confirm banner instead of blank inputs. */
-  const askedAgain = fieldsAskedAgain(pendingFields, props.suppliedFieldIds);
+  // Banner renders ONLY for fields with an actually-retained prior value
+  // (computed by the parent) — never on a bare supplied id.
+  const askedAgain = props.askedAgainFields ?? [];
   /** Text-field pause: the assistant card is the only place to type. */
   const fieldsPause =
     pendingFields.length > 0 || pauseReason === "USER_LOGIN";

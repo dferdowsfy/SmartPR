@@ -80,3 +80,45 @@ describe("DEMO_REHEARSAL_PORTAL filing config", () => {
     assert.equal(action.status, "ready");
   });
 });
+
+describe("DEMO_REHEARSAL_PORTAL registration-path hardening", () => {
+  const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
+  const proc = config.procedureEn.join("\n");
+
+  it("create-account path never touches login", () => {
+    assert.ok(
+      proc.includes("NEVER click Log in"),
+      "brief must forbid the login path when the human has no account"
+    );
+    assert.ok(
+      proc.includes("NEVER pause for login credentials on the create-account path")
+    );
+  });
+
+  it("registration path skips entity search via the fictional-number Continue", () => {
+    assert.ok(
+      proc.includes("go DIRECTLY to the filing form"),
+      "brief must send the agent straight to filing after registration"
+    );
+    assert.ok(
+      proc.includes("Never visit the entity search page on the registration path")
+    );
+  });
+
+  it("agent must never ask the human for a registry number on the demo portal", () => {
+    assert.ok(
+      proc.includes("NEVER ask the human for a registry number"),
+      "demo numbers are fictional — the agent supplies them itself"
+    );
+    assert.ok(
+      proc.includes("enter any 6+ digits yourself"),
+      "search path must be self-service with any 6+ digits"
+    );
+  });
+
+  it("task prompt carries the registration-path directives", () => {
+    const task = buildAgencyTaskPrompt({ config, passport: null, goalBrief: null });
+    assert.ok(task.includes("NEVER click Log in"));
+    assert.ok(task.includes("NEVER ask the human for a registry number"));
+  });
+});

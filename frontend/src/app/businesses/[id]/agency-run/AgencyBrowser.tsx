@@ -78,7 +78,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       ref={sectionRef}
       className={
         props.open
-          ? "fixed inset-0 z-50 flex flex-col bg-[#f4f1ea] lg:static lg:z-auto lg:min-h-0"
+          ? "fixed inset-0 z-50 flex min-h-0 flex-col bg-[#f4f1ea] lg:static lg:z-auto lg:min-h-0"
           : "hidden"
       }
       aria-label={L("Live browser", "Navegador en vivo", lang)}

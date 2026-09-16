@@ -39,6 +39,27 @@ export function fieldsAskedAgain(
 }
 
 /**
+ * Value-backed variant of fieldsAskedAgain. The "you already provided this"
+ * banner (and its pre-filled value) may ONLY render when we actually retain
+ * a previously-submitted non-empty value for that field id in this run —
+ * otherwise the card renders as the normal empty prompt. Guards against the
+ * misfire where an id is marked supplied (e.g. seeded from pre-flight) but
+ * no value was ever retained client-side.
+ */
+export function askedAgainWithValues(
+  pending: AgencyPendingField[],
+  suppliedIds: readonly string[] | null | undefined,
+  valuesById: Record<string, string> | null | undefined
+): AgencyPendingField[] {
+  if (!pending.length || !suppliedIds || suppliedIds.length === 0) return [];
+  if (!valuesById || typeof valuesById !== "object") return [];
+  const supplied = new Set(suppliedIds);
+  return pending.filter(
+    (f) => supplied.has(f.id) && Boolean((valuesById[f.id] || "").trim())
+  );
+}
+
+/**
  * Ids of a fields map that actually carry a non-empty string value.
  * Pure — ids only, never values.
  */
