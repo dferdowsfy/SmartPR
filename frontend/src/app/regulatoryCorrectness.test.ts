@@ -89,11 +89,17 @@ for (const municipalityName of ["Adjuntas", "San Juan"]) {
     });
   }
 }
-test("F05 flag-only environmental basis remains conditional, confirmable and suppressible", () => {
+test("F05 flag-only environmental basis needs info when undecided, likely required when confirmed", () => {
   const generated = runRulesEngine(bundle, { municipalityName: "San Juan", businessTypeName: "Hotel", answers: { Q_HAZARDOUS_MATERIALS: false } }).requirements;
-  for (const [coastal, expected] of [["not_sure", "conditional"], ["applies", "required"], ["not_applies", "not_applicable"]] as const) {
+  // The coastal basis is a heuristic planning association: undecided → ask
+  // for the missing facts; confirmed → likely required, never confirmed.
+  for (const [coastal, expected] of [["not_sure", "needs_more_information"], ["applies", "likely_required"], ["not_applies", "not_applicable"]] as const) {
     const row = classifyEngineRequirements(generated, { kb: bundle, potentialDecisions: { coastal } }).find(r => r.document_id === "DOC_ENVIRONMENTAL_PERMIT");
     assert.equal(row?.applicability, expected);
+    assert.equal(row?.mandatory, false);
+    if (expected !== "not_applicable") {
+      assert.ok(row?.triggerFacts.includes("heuristic:requires_regulatory_review"));
+    }
   }
   assert.ok(!runRulesEngine(bundle, { municipalityName: "Adjuntas", businessTypeName: "Hotel", answers: { Q_HAZARDOUS_MATERIALS: false } }).requirements.some(r => r.document_id === "DOC_ENVIRONMENTAL_PERMIT"));
 });

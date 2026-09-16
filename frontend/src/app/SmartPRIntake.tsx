@@ -92,7 +92,7 @@ import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
 import { IncentivesSidebar } from './components/incentives/IncentivesSidebar';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
-import { classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
+import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft } from '../lib/guestDraft';
 import { useDeliverablesAccess } from '../lib/billing/useDeliverablesAccess';
 import { readRestaurantHandoff } from './restaurants/model';
@@ -2547,7 +2547,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         stage: meta.stage,
         triggerFacts: [`municipality_flag:${flag}`],
         acceptsOfficialUpload: meta.acceptsOfficialUpload,
-        mandatory: meta.applicability === 'required',
+        mandatory: bucketForApplicability(meta.applicability) === 'required',
       };
     }).filter((item) => {
       if (!item.code.startsWith('potential_')) return true;
@@ -4032,7 +4032,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   );
 
   const liveAgencies = Array.from(new Set([
-    ...liveReqs.filter((requirement) => requirement.applicability !== 'not_applicable' && requirement.applicability !== 'conditional').map((requirement) => requirement.agency),
+    ...liveReqs.filter((requirement) => bucketForApplicability(requirement.applicability ?? 'conditional') !== 'not_applicable').map((requirement) => requirement.agency),
     ...liveConfirmedPotentialItems.map((item) => item.agency),
   ].filter(Boolean)));
 
@@ -4316,7 +4316,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // document may not even be needed.
       action = { kind: 'none', label: '' };
       bucket = 'needs_action';
-    } else if (isConditional || isReviewCondition) {
+    } else if (isConditional || isReviewCondition
+      || req.applicability === 'verify_existing'
+      || req.applicability === 'needs_more_information'
+      || req.applicability === 'supporting_evidence'
+      || req.applicability === 'likely_required') {
+      // Not a confirmed new filing: verify-existing items need a records
+      // check (not a new application), heuristic/conditional items need
+      // facts first, and evidence items ride along with their parent filing.
       action = { kind: 'none', label: '' };
       bucket = 'none';
     } else if (isFormPackage) {
@@ -4370,6 +4377,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const badge: RequirementBadge | null =
       state === 'done' ? null
       : triggerQuestion ? { label: L('More information needed', language), tone: 'gray' }
+      : req.applicability === 'needs_more_information' ? { label: L('More information needed', language), tone: 'gray' }
+      : req.applicability === 'verify_existing' ? { label: L('Verify existing', language), tone: 'blue' }
+      : req.applicability === 'likely_required' ? { label: L('Likely required', language), tone: 'amber' }
+      : req.applicability === 'supporting_evidence' ? { label: L('Supporting evidence', language), tone: 'gray' }
       : isConditional ? { label: L('Needs verification', language), tone: 'gray' }
       : isReviewCondition ? { label: L('Review condition', language), tone: 'gray' }
       : req.mandatory ? { label: L('Required', language), tone: 'amber' }
@@ -4914,8 +4925,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   } else if (profile.alcohol_sold === false || discoveryAnswers.alcohol_sold === false) {
     intelligenceSignals.push({ label: language === 'es' ? 'Alcohol: no' : 'Alcohol: no', state: 'not-applicable' });
   }
-  const liveRequired = liveReqs.filter((r) => r.applicability === 'required').length;
-  const liveConditional = liveReqs.filter((r) => r.applicability === 'conditional').length;
+  const liveRequired = liveReqs.filter((r) => bucketForApplicability(r.applicability ?? 'conditional') === 'required').length;
+  const liveConditional = liveReqs.filter((r) => bucketForApplicability(r.applicability ?? 'conditional') === 'attention').length;
   const liveFacts = intelligenceSignals.filter((s) => s.state === 'confirmed').length;
   const notApplicableDecision = potentialItems.find((item) => potentialDecisions[item.flag] === 'not_applies');
   if (notApplicableDecision) {

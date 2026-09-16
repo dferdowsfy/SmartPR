@@ -119,13 +119,15 @@ test("lease: unknown lease + online-only location → no lease requirement at al
 
 // --- 4. Real answers drive the real requirement ----------------------------
 
-test("lease: explicit Yes → REQUIRED with Answer: Yes", () => {
+test("lease: explicit Yes → supporting evidence with Answer: Yes (not a standalone requirement)", () => {
   const answers = { existing_lease: true };
   const reqs = computeRequirementsFromKB(RESTAURANT, answers, {});
   const lease = reqs.find((r) => r.document_id === "DOC_LEASE_AGREEMENT");
-  assert.ok(lease, "lease is required after a Yes");
-  assert.equal(lease!.applicability, "required");
-  assert.equal(lease!.mandatory, true);
+  assert.ok(lease, "lease surfaces after a Yes");
+  // A lease is supporting evidence for the application, not an independent
+  // regulatory requirement — it must never present as a mandatory filing.
+  assert.equal(lease!.applicability, "supporting_evidence");
+  assert.equal(lease!.mandatory, false);
   assert.equal(lease!.unansweredTriggerQuestionId, undefined);
   assert.ok(lease!.reason.includes("Answer: Yes"), `reason names the user's answer: ${lease!.reason}`);
 });

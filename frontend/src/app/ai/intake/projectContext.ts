@@ -48,6 +48,13 @@ export const PROJECT_CONTEXT_KEYS = [
   "known_permitting_issue",
   "historical_project_status",
   "construction_approvals_required",
+  "land_disturbance_acres",
+  "grading",
+  "excavation",
+  "part_of_larger_common_plan",
+  "parking_changes",
+  "loading_changes",
+  "property_tenure",
 ] as const;
 
 export type ProjectContextKey = (typeof PROJECT_CONTEXT_KEYS)[number];
@@ -65,6 +72,7 @@ const NUMERIC_KEYS: ReadonlySet<string> = new Set([
   "square_footage",
   "employee_count",
   "estimated_project_value",
+  "land_disturbance_acres",
 ]);
 
 // ---------------------------------------------------------------------------

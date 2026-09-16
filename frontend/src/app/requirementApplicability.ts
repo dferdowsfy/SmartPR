@@ -16,10 +16,68 @@ import type { EntityType } from "./forms/engine/types";
 
 export type Applicability =
   | "required"
+  | "likely_required"
+  | "verify_existing"
   | "conditional"
+  | "needs_more_information"
+  | "supporting_evidence"
   | "recommended"
   | "not_applicable"
+  | "blocked"
   | "completed";
+
+/**
+ * Regulatory applicability is conditional far more often than binary. These
+ * statuses replace the old required/not-required bluntness:
+ * - required: a verified rule's trigger is satisfied by known facts.
+ * - likely_required: the trigger is satisfied but the rule itself is a
+ *   heuristic (unverified against an authoritative source) — evaluate, don't
+ *   assume.
+ * - verify_existing: the obligation may already be satisfied (e.g. merchant
+ *   registration for an operating business) — verify, don't re-file.
+ * - conditional: depends on a fact that is not yet known but will resolve
+ *   (e.g. entity type, a flag confirmation).
+ * - needs_more_information: specific missing facts block the decision — the
+ *   UI should ask for them, not guess.
+ * - supporting_evidence: a document proving something for another filing,
+ *   not an independent requirement.
+ * - not_applicable / blocked / completed: as before.
+ */
+export function bucketForApplicability(a: Applicability): "required" | "attention" | "info" | "not_applicable" {
+  switch (a) {
+    case "required":
+    case "likely_required":
+      return "required";
+    case "verify_existing":
+    case "conditional":
+    case "needs_more_information":
+    case "blocked":
+      return "attention";
+    case "supporting_evidence":
+    case "completed":
+      return "info";
+    case "recommended":
+      return "info";
+    case "not_applicable":
+      return "not_applicable";
+  }
+}
+
+/** Localized-badge copy is the caller's job; this is the canonical EN label. */
+export function labelForApplicability(a: Applicability): string {
+  switch (a) {
+    case "required": return "Required";
+    case "likely_required": return "Likely required";
+    case "verify_existing": return "Verify existing";
+    case "conditional": return "Needs verification";
+    case "needs_more_information": return "More information needed";
+    case "supporting_evidence": return "Supporting evidence";
+    case "recommended": return "Recommended";
+    case "not_applicable": return "Not applicable";
+    case "blocked": return "Blocked";
+    case "completed": return "Completed";
+  }
+}
 
 export type RequirementKind =
   | "government_application"
@@ -52,6 +110,21 @@ export interface ClassifiedRequirement {
   kind: RequirementKind;
   stage: RequirementStage;
   triggerFacts: string[];
+  /**
+   * Fact keys that must be known before this requirement can be decided.
+   * The UI asks for these instead of guessing — a requirement is never
+   * emitted whose only explanation is "Municipality selected."
+   */
+  missingFacts: string[];
+  /**
+   * 0–1 confidence in this classification: 0.9 verified rule + user-given
+   * facts, 0.7 verified rule + derived facts, 0.5 heuristic rule (unverified
+   * against an authoritative source), 0.4 unresolved basis. Never shown as
+   * false precision — bands, not decimals, in UI copy.
+   */
+  confidence: number;
+  /** Human-readable regulatory basis carried from the rule, when present. */
+  triggerSummary?: string;
   acceptsOfficialUpload: boolean;
 }
 
@@ -186,14 +259,25 @@ export interface ClassifyOptions {
   potentialDecisions?: Record<string, PotentialDecision>;
   legacyCode?: Record<string, string>;
   recommendedIds?: Set<string>;
+  /**
+   * Project-first intent: drives verify_existing mapping for compliance-mode
+   * rules. An existing/operating business verifies existing compliance
+   * instead of filing anew; a new business files for the first time.
+   */
+  businessStatus?: "new" | "existing" | "project_only" | null;
 }
 
 const APPLICABILITY_RANK: Record<Applicability, number> = {
-  required: 3,
-  conditional: 2,
+  required: 5,
+  likely_required: 4,
+  verify_existing: 3,
+  conditional: 3,
+  needs_more_information: 3,
+  supporting_evidence: 2,
   recommended: 1,
+  blocked: 3,
   not_applicable: 0,
-  completed: 3,
+  completed: 5,
 };
 
 export function classifyEngineRequirements(
@@ -221,19 +305,73 @@ export function classifyEngineRequirements(
     });
     const kind = kindForDocument(row.document_id, row.document_name, row.category);
     const recommended = options.recommendedIds?.has(row.document_id) ?? false;
+    // Per-basis rule metadata: a document can aggregate several independent
+    // bases (e.g. a verified hazard trigger + a heuristic coastal-flag
+    // association). Each basis is judged on its own verification — a
+    // verified basis is authoritative even when another basis is heuristic.
+    // Rules without an explicit verification marker are legacy verified
+    // rules, never heuristic.
+    const basisRules = basisIds.map((id) => options.kb.rules.find((r) => r.id === id));
+    const basisHeuristic = basisRules.map((r) => r?.verification === "heuristic");
+    const anyHeuristic = basisHeuristic.some(Boolean);
+    const missingFacts = [
+      ...new Set(
+        basisRules.flatMap((r, i) =>
+          basisHeuristic[i] && r?.missing_fact_keys?.length ? r.missing_fact_keys : []
+        )
+      ),
+    ];
+    if (row.missing_fact_keys?.length) {
+      for (const k of row.missing_fact_keys) if (!missingFacts.includes(k)) missingFacts.push(k);
+    }
 
     let applicability: Applicability = recommended ? "recommended" : "required";
     const triggerFacts: string[] = [];
 
-    const basisStates = flags.map((flag, index) => {
+    // Each basis is judged on its own verification: a verified required
+    // basis stays required even when a sibling basis is heuristic. A
+    // heuristic basis can only ever reach likely_required — unverified
+    // rules are never treated as authoritative, no matter the rule order.
+    const basisStates: Array<"required" | "likely_required" | "conditional" | "not_applicable"> = flags.map((flag, index) => {
       triggerFacts.push(flag ? `municipality_flag:${flag}` : `rule:${basisIds[index]}`);
-      if (!flag) return "required";
+      const confirmed = !basisHeuristic[index];
+      if (!flag) return confirmed ? "required" : "likely_required";
       const decision = decisionForFlag(options.potentialDecisions, flag);
-      return decision === "not_applies" ? "not_applicable" : decision === "applies" ? "required" : "conditional";
+      if (decision === "not_applies") return "not_applicable";
+      if (decision === "applies") return confirmed ? "required" : "likely_required";
+      return "conditional";
     });
+    if (anyHeuristic) triggerFacts.push("heuristic:requires_regulatory_review");
     if (basisStates.includes("required")) applicability = recommended ? "recommended" : "required";
-    else if (basisStates.includes("conditional")) applicability = "conditional";
+    else if (basisStates.includes("likely_required")) applicability = recommended ? "recommended" : "likely_required";
+    else if (basisStates.includes("conditional")) {
+      // An undecided heuristic basis that names its missing facts becomes
+      // "needs more information" so the UI asks for them instead of
+      // guessing; other undecided bases stay conditional.
+      applicability = anyHeuristic && missingFacts.length ? "needs_more_information" : "conditional";
+    }
     else applicability = "not_applicable";
+
+    // Compliance posture follows the winning basis: the basis that
+    // determined the outcome decides whether this is a new filing, a
+    // verify-existing obligation, or supporting evidence. Existing
+    // businesses verify; new businesses file; unknown status keeps the
+    // obligation required (it is certain) while the reason text covers
+    // both postures.
+    const winIdx = (() => {
+      for (const s of ["required", "likely_required", "conditional"] as const) {
+        const i = basisStates.indexOf(s);
+        if (i >= 0) return i;
+      }
+      return 0;
+    })();
+    const winCompliance = basisRules[winIdx]?.compliance_mode ?? row.compliance_mode ?? null;
+    if (winCompliance === "verify_existing" && applicability !== "not_applicable") {
+      if (options.businessStatus === "existing") applicability = "verify_existing";
+      else if (options.businessStatus === "new") applicability = recommended ? "recommended" : "required";
+    } else if (winCompliance === "supporting_evidence" && applicability !== "not_applicable") {
+      applicability = "supporting_evidence";
+    }
 
     // Project-first honesty: a formation requirement whose new+unformed basis
     // was never confirmed (intent unknown) is unresolved — conditional, never
@@ -260,10 +398,18 @@ export function classifyEngineRequirements(
     }
 
     const selectedState = basisStates.includes("required") ? "required"
+      : basisStates.includes("likely_required") ? "likely_required"
       : basisStates.includes("conditional") ? "conditional" : "not_applicable";
     const independentIndex = flags.findIndex(flag => flag === null);
     const basis = bases[independentIndex >= 0 ? independentIndex : basisStates.indexOf(selectedState)];
     const mandatory = applicability === "required" && !recommended;
+    // Confidence bands (never false precision — UI renders bands, not decimals):
+    // 0.9 verified winning basis + user-given facts; 0.7 verified + derived
+    // facts; 0.5 heuristic winning basis; 0.4 unresolved basis. Lowest
+    // applicable wins.
+    let confidence = 0.9;
+    if (basisHeuristic[winIdx]) confidence = Math.min(confidence, 0.5);
+    if (row.formation_unresolved) confidence = Math.min(confidence, 0.4);
     const classified: ClassifiedRequirement = {
       document_id: row.document_id,
       document_name: row.document_name,
@@ -277,6 +423,9 @@ export function classifyEngineRequirements(
       kind,
       stage: stageForDocument(row.document_id, row.document_name, row.category),
       triggerFacts: triggerFacts.length ? triggerFacts : [`rule:${row.source_rule_id}`],
+      missingFacts,
+      confidence,
+      ...(row.trigger_summary ? { triggerSummary: row.trigger_summary } : {}),
       acceptsOfficialUpload: kind !== "review_condition" && kind !== "informational_notice" && applicability === "required",
     };
 

@@ -245,6 +245,19 @@ determine:
   to the project (e.g. "project fell through").
 - "construction_approvals_required" :: true when the speaker says construction
   or related approvals are/were needed.
+- "land_disturbance_acres" :: numeric acres of land disturbed by the project
+  (grading, excavation, clearing) when stated. Interior floor area is NOT land
+  disturbance — never copy square_footage here. Omit when not stated.
+- "grading" / "excavation" :: true when grading or excavation is stated.
+  Omit when not stated — never assume.
+- "part_of_larger_common_plan" :: true when the project is part of a larger
+  common plan of development. Omit when not stated.
+- "parking_changes" :: true when parking is added, removed, or reconfigured.
+  Omit when not stated.
+- "loading_changes" :: true when loading zones or truck access change.
+  Omit when not stated.
+- "property_tenure" :: "owned" when the speaker owns the property, "leased"
+  when they lease it. Omit when not stated — never infer tenure.
 
 BUSINESS vs PROJECT. Never infer the business's Industry from construction
 work. "We own a warehouse and are renovating it" does NOT mean the industry

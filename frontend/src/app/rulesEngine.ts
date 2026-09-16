@@ -66,6 +66,50 @@ export interface KBRule {
    */
   excluded_entity_types?: string[] | string | null;
   /**
+   * Compliance posture for this rule's document — what the applicant must do
+   * about an obligation that may already exist:
+   * - "new_application" (default): a new filing the applicant must complete.
+   * - "verify_existing": the obligation may already be satisfied (e.g. the
+   *   merchant registration of an already-operating business). The applicant
+   *   verifies existing compliance instead of filing anew.
+   * - "supporting_evidence": the document is evidence for another filing
+   *   (e.g. a lease proving site control), not an independent requirement.
+   */
+  compliance_mode?: "new_application" | "verify_existing" | "supporting_evidence" | null;
+  /**
+   * Rule verification level. "heuristic" rules are planning-level
+   * associations (e.g. business-type + metro flag) that have NOT been verified
+   * against an authoritative regulatory source. They may inform
+   * "needs evaluation" guidance but can never present as confirmed
+   * requirements — unverified rules are never treated as authoritative.
+   */
+  verification?: "verified" | "heuristic" | null;
+  /**
+   * Fact keys that must be known before this requirement can be decided
+   * (e.g. land_disturbance_acres for stormwater). Surfaced to the caller as
+   * missing facts so the UI can ask for them instead of guessing.
+   */
+  missing_fact_keys?: string[] | null;
+  /**
+   * Project-fact keys that actively SUPPRESS this rule when explicitly
+   * false/zero (negative facts). E.g. site_work=false suppresses the
+   * stormwater heuristic: interior-only work with no land disturbance does
+   * not trigger construction stormwater coverage.
+   */
+  negated_fact_keys?: string[] | null;
+  /**
+   * Human-readable statement of WHY this rule exists (the regulatory basis).
+   * Every requirement the engine emits must be explainable through this.
+   */
+  trigger_summary?: string | null;
+  /** ISO date (YYYY-MM-DD) this rule was last reviewed. Audit traceability. */
+  reviewed_at?: string | null;
+  /**
+   * Append-only audit trail for rule changes: { date, change, reason }.
+   * Previous rule text is preserved here, never silently rewritten.
+   */
+  change_log?: Array<{ date: string; change: string; reason: string }> | null;
+  /**
    * Temporal validity (date-only UTC `YYYY-MM-DD`). A rule is in force at
    * `asOf` when effective_from <= asOf and (effective_to is null or
    * asOf < effective_to — exclusive end). Undated rules are current law as
@@ -141,6 +185,23 @@ export interface EngineInput {
    * for user-provided answers — derived ones are labeled as derived.
    */
   answerProvenance?: Record<string, "user" | "derived">;
+  /**
+   * Fact metadata for audit traceability: every fact the engine reads
+   * carries its source, its scope namespace (business vs project vs
+   * property), and the confidence of the extraction. Project-specific
+   * reasoning reads only project/property-scoped facts; business rules read
+   * only business-scoped facts — a stale or out-of-scope fact can never
+   * trigger a rule it does not belong to.
+   */
+  factMeta?: Record<string, FactMeta>;
+}
+
+/** Audit metadata for a single fact the engine consumed. */
+export interface FactMeta {
+  source: "user_intake" | "passport" | "derived" | "admin";
+  scope: "business" | "project" | "property";
+  confidence?: number;
+  timestamp?: string;
 }
 
 export interface GeneratedRequirement {
@@ -158,6 +219,15 @@ export interface GeneratedRequirement {
    * requirement is unresolved/conditional — never presented as confirmed.
    */
   formation_unresolved?: boolean;
+  /**
+   * Rule metadata carried through for the classifier: compliance posture,
+   * verification level, missing facts, and the human-readable trigger
+   * summary. The classifier renders these; it never re-derives them.
+   */
+  compliance_mode?: KBRule["compliance_mode"];
+  verification?: KBRule["verification"];
+  missing_fact_keys?: string[] | null;
+  trigger_summary?: string | null;
 }
 
 export interface EngineDebug {
@@ -169,6 +239,12 @@ export interface EngineDebug {
   /** Project-context facts that fired project_fact rules. */
   projectFactsTriggered: { fact_key: string; value: unknown }[];
   rulesMatched: { rule_id: string; rule_type: string; document_id: string; reason: string }[];
+  /**
+   * Rules suppressed by explicitly negative facts (e.g. site_work=false
+   * suppressing the stormwater heuristic). Suppression is recorded, never
+   * silent — the graph shows WHY a requirement did not apply.
+   */
+  rulesSuppressed: { rule_id: string; document_id: string; suppressed_by: string }[];
   documentsGenerated: string[];
 }
 
@@ -198,7 +274,8 @@ function answerMatches(answer: boolean | string | undefined, expected: string | 
 }
 
 // Compare a project-context fact against a rule's expected_answer. For
-// boolean triggers the expected_answer is "true"; otherwise a
+// boolean triggers the expected_answer is "true"; numeric comparisons use
+// ">=N", "<=N", ">N", "<N" (e.g. land_disturbance_acres >= 1); otherwise a
 // case-insensitive substring match, so a project_type of
 // "renovation and expansion" matches expected_answer "renovation".
 function projectFactMatches(fact: unknown, expected: string | null): boolean {
@@ -212,7 +289,34 @@ function projectFactMatches(fact: unknown, expected: string | null): boolean {
       (typeof fact === "number" && fact > 0)
     );
   }
+  const cmp = /^\s*(>=|<=|>|<)\s*(-?\d+(?:\.\d+)?)\s*$/.exec(expected);
+  if (cmp) {
+    const n = typeof fact === "number" ? fact : Number(String(fact).replace(/,/g, ""));
+    if (!Number.isFinite(n)) return false;
+    const target = Number(cmp[2]);
+    switch (cmp[1]) {
+      case ">=": return n >= target;
+      case "<=": return n <= target;
+      case ">": return n > target;
+      case "<": return n < target;
+    }
+  }
   return String(fact).toLowerCase().includes(expected.toLowerCase());
+}
+
+/**
+ * True when a project fact is explicitly negative: false, "no"/"false", or
+ * numeric zero. Negative facts actively suppress rules (e.g. site_work=false
+ * suppresses the stormwater heuristic) instead of merely not triggering them.
+ */
+function isNegativeFact(fact: unknown): boolean {
+  if (fact === false || fact === "false" || fact === "no" || fact === "No") return true;
+  if (typeof fact === "number") return fact === 0;
+  if (typeof fact === "string") {
+    const n = Number(fact.replace(/,/g, ""));
+    if (fact.trim() !== "" && Number.isFinite(n)) return n === 0;
+  }
+  return false;
 }
 
 export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineResult {
@@ -235,6 +339,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
   // documentId -> first matching rule (keep the strongest/earliest reason).
   const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean }>();
   const rulesMatched: EngineDebug["rulesMatched"] = [];
+  const rulesSuppressed: EngineDebug["rulesSuppressed"] = [];
   const triggered: EngineDebug["questionsTriggered"] = [];
   const triggeredSeen = new Set<string>();
   const projectFactsTriggered: EngineDebug["projectFactsTriggered"] = [];
@@ -263,6 +368,27 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
   // intervals and supersession cycles fail loud here, never silently.
   const effectiveRules = filterEffective(kb.rules, input.asOf);
   for (const rule of effectiveRules) {
+    // Negative-fact suppression: an explicitly negative fact (false / 0 /
+    // "no") listed in the rule's negated_fact_keys suppresses the rule and
+    // is recorded in debug — the graph shows WHY a requirement did not
+    // apply. Unknown (undefined) never suppresses: absence of evidence is
+    // not evidence of absence.
+    if (rule.negated_fact_keys?.length) {
+      const suppressing = rule.negated_fact_keys.find((key) => {
+        const pf = input.projectFacts?.[key];
+        if (pf !== undefined && isNegativeFact(pf)) return true;
+        const ans = input.answers[key];
+        return ans !== undefined && isNegativeFact(ans);
+      });
+      if (suppressing) {
+        rulesSuppressed.push({
+          rule_id: rule.id,
+          document_id: rule.requires_document_id,
+          suppressed_by: suppressing,
+        });
+        continue;
+      }
+    }
     // Reset per rule: set by the formation gate below when the rule carries it.
     let formationGateUnresolved = false;
     // Entity-scoped rules never fire for an excluded legal form (F01/F02:
@@ -385,6 +511,10 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       source_rule_id: rule.id,
       matched_rules: rulesMatched.filter(match => match.document_id === docId).map(({ rule_id, reason }) => ({ rule_id, reason })),
       ...(formationUnresolved ? { formation_unresolved: true } : {}),
+      ...(rule.compliance_mode ? { compliance_mode: rule.compliance_mode } : {}),
+      ...(rule.verification ? { verification: rule.verification } : {}),
+      ...(rule.missing_fact_keys?.length ? { missing_fact_keys: rule.missing_fact_keys } : {}),
+      ...(rule.trigger_summary ? { trigger_summary: rule.trigger_summary } : {}),
     };
   });
 
@@ -398,6 +528,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       questionsTriggered: triggered,
       projectFactsTriggered,
       rulesMatched,
+      rulesSuppressed,
       documentsGenerated: requirements.map((r) => r.document_id),
     },
   };

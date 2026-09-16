@@ -85,12 +85,14 @@ test("negative historic decision suppresses historic-basis requirements only", (
   assert.ok(historicBasis.every((r) => r.applicability === "not_applicable"));
   assert.ok(historicBasis.every((r) => r.mandatory === false));
   // ...but a historic decline must not smear across flags: the metro-basis
-  // traffic study still applies.
+  // traffic study still applies — as likely_required, since the underlying
+  // rule is heuristic (unverified against the municipal ordinance).
   const metroRows = classified.filter((r) =>
     (r.triggerFacts ?? []).some((f) => f === "municipality_flag:metro")
   );
   assert.ok(metroRows.length > 0);
-  assert.ok(metroRows.every((r) => r.applicability === "required"));
+  assert.ok(metroRows.every((r) => r.applicability === "likely_required"));
+  assert.ok(metroRows.every((r) => r.mandatory === false));
 });
 
 test("unanswered historic stays conditional, not required", () => {
@@ -112,14 +114,20 @@ test("review conditions do not accept official upload", () => {
   assert.ok(reviews.every((r) => r.acceptsOfficialUpload === false || r.kind === "review_condition"));
 });
 
-test("metro traffic study stays conditional until the metro fact is known", () => {
+test("metro traffic study needs more information until evaluated, never confirmed required", () => {
   const unanswered = classify("limited_liability_company", {});
   const traffic = unanswered.find((r) => r.document_id === "DOC_TRAFFIC_IMPACT_STUDY");
   assert.ok(traffic);
-  assert.equal(traffic?.applicability, "conditional");
+  // Heuristic rule with missing facts: the UI must ask, not guess.
+  assert.equal(traffic?.applicability, "needs_more_information");
+  assert.ok((traffic?.missingFacts ?? []).length > 0);
+  assert.ok((traffic?.triggerFacts ?? []).includes("heuristic:requires_regulatory_review"));
   const confirmed = classify("limited_liability_company", { metro: "applies" });
   const trafficOn = confirmed.find((r) => r.document_id === "DOC_TRAFFIC_IMPACT_STUDY");
-  assert.equal(trafficOn?.applicability, "required");
+  // Even with the flag confirmed, a heuristic rule is only likely required —
+  // unverified rules are never treated as authoritative.
+  assert.equal(trafficOn?.applicability, "likely_required");
+  assert.equal(trafficOn?.mandatory, false);
 });
 
 test("applyEntityFormationExclusivity is a pure swap", () => {

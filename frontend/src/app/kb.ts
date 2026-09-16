@@ -78,6 +78,12 @@ export interface UIRequirement {
   kind?: RequirementKind;
   stage?: RequirementStage;
   triggerFacts?: string[];
+  /** Fact keys that must be known before this requirement can be decided. */
+  missingFacts?: string[];
+  /** 0–1 confidence band for this classification (see requirementApplicability). */
+  confidence?: number;
+  /** Human-readable regulatory basis from the rule, when present. */
+  triggerSummary?: string;
   acceptsOfficialUpload?: boolean;
   /**
    * Set when this requirement exists only because a question-trigger rule's
@@ -513,11 +519,28 @@ export function buildEngineInput(
   // project forward.
   const projectOnly = businessStatus === "project_only";
 
+  // Fact metadata for audit traceability: every fact the engine reads
+  // carries its source and its scope namespace. Business-scoped facts
+  // (profile/discovery answers) never leak into project reasoning and
+  // project-scoped facts never trigger business rules — the namespaces are
+  // enforced by construction (separate input fields) and recorded here.
+  const projectFacts = projectFactsForEngine(extra?.projectContext ?? null);
+  const factMeta: Record<string, import("./rulesEngine").FactMeta> = {};
+  for (const k of Object.keys(projectOnly ? {} : a)) {
+    factMeta[k] = { source: "user_intake", scope: "business" };
+  }
+  if (projectFacts) {
+    for (const k of Object.keys(projectFacts)) {
+      factMeta[k] = { source: "user_intake", scope: "project" };
+    }
+  }
+
   return {
     municipalityName: (p.municipality as string) || null,
     businessTypeName: projectOnly ? null : resolveBusinessTypeName(p.business_type as string),
     answers: projectOnly ? {} : a,
     answerProvenance,
+    factMeta,
     // Canonical entity type so entity-scoped rules (excluded_entity_types)
     // stay silent for legal forms they can never apply to. "other" means the
     // user hasn't picked a known form — rules treat that as unknown, and the
@@ -527,7 +550,7 @@ export function buildEngineInput(
       : entityTypeFromLegacyStructure(p.business_structure as string | undefined),
     businessStatus,
     entityNotFormed: entityNotFormedForIntent(projectIntent),
-    projectFacts: projectFactsForEngine(extra?.projectContext ?? null),
+    projectFacts,
   };
 }
 
@@ -666,6 +689,8 @@ export function computeRequirementsFromSnapshot(
     potentialDecisions: options.potentialDecisions,
     legacyCode: options.legacyCode ?? kbMeta.legacyCode,
     recommendedIds: options.recommendedIds ?? kbMeta.recommended,
+    // Verify-existing compliance mapping needs the project-first intent.
+    businessStatus: input.businessStatus ?? null,
   });
   // Enrich with the snapshot's own document metadata (agency/download links)
   // and apply the canonical display order — identical for UI and server.
@@ -695,6 +720,9 @@ export function computeRequirementsFromSnapshot(
       kind: r.kind,
       stage: r.stage,
       triggerFacts: r.triggerFacts,
+      missingFacts: r.missingFacts,
+      confidence: r.confidence,
+      triggerSummary: r.triggerSummary,
       acceptsOfficialUpload: r.acceptsOfficialUpload,
       agencyUrl: docById.get(r.document_id)?.agency_url ?? null,
       agencyNote: docById.get(r.document_id)?.agency_note ?? null,
