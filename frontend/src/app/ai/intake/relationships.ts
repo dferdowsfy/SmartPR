@@ -223,6 +223,14 @@ export interface ResolutionResult {
   profileValues: Record<string, unknown>;
   /** Question ids that are known and must therefore not be asked again. */
   resolvedQuestionIds: Set<string>;
+  /**
+   * Provenance of each question in `resolvedQuestionIds`: "user" when the
+   * user provided it, "explicit" when an imported/interpreted fact carries
+   * explicit authority, "derived"/"inferred" when the resolver produced it.
+   * Wizard suppression must only consult "user"/"explicit": a derived
+   * answer is not the user's answer.
+   */
+  resolvedQuestionOrigins: Record<string, FactOrigin>;
   trace: TraceEntry[];
   iterations: number;
 }
@@ -570,11 +578,13 @@ export function resolveFacts(seeds: SeedFact[], options: ResolveOptions): Resolu
   const questionValues: Record<string, boolean | string> = {};
   const profileValues: Record<string, unknown> = {};
   const resolvedQuestionIds = new Set<string>();
+  const resolvedQuestionOrigins: Record<string, FactOrigin> = {};
 
   for (const [key, fact] of store.facts) {
     facts[key] = fact;
     if (fact.ref.type === "question") {
       resolvedQuestionIds.add(fact.ref.key);
+      resolvedQuestionOrigins[fact.ref.key] = fact.origin;
       if (typeof fact.value === "boolean" || typeof fact.value === "string") {
         questionValues[fact.ref.key] = fact.value;
       }
@@ -591,6 +601,7 @@ export function resolveFacts(seeds: SeedFact[], options: ResolveOptions): Resolu
     questionValues,
     profileValues,
     resolvedQuestionIds,
+    resolvedQuestionOrigins,
     trace,
     iterations,
   };

@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 import { clampCandidates, type KbCandidates } from "../../../ai/intake/kbCandidates";
 import { BUSINESS_STRUCTURE_VALUES } from "../../../ai/intake/validateInterpretation";
+import { validateProjectContext } from "../../../ai/intake/projectContext";
 import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 import {
   isXaiConfigured,
@@ -116,14 +117,24 @@ ${questions}
 Return ONLY valid JSON (no markdown, no commentary) with this exact structure:
 {
   "summary": "one short sentence describing the business",
-  "businessType": { "id": "BT_...", "name": "...", "confidence": 0.0 },
-  "municipality": { "value": "...", "confidence": 0.0 },
-  "profileValues": [ { "key": "industry", "value": "...", "confidence": 0.0 } ],
-  "answers": [ { "questionId": "Q_...", "value": true, "confidence": 0.0 } ]
+  "businessType": { "id": "BT_...", "name": "...", "confidence": 0.0, "evidence": "short quote" },
+  "municipality": { "value": "...", "confidence": 0.0, "evidence": "short quote" },
+  "profileValues": [ { "key": "industry", "value": "...", "confidence": 0.0, "evidence": "short quote" } ],
+  "answers": [ { "questionId": "Q_...", "value": true, "confidence": 0.0, "evidence": "short quote" } ],
+  "project_intent": { "value": "existing_business", "confidence": 0.0, "evidence": "short quote" },
+  "projectContext": { "<fact key>": { "value": ..., "confidence": 0.0, "evidence": "short quote" } }
 }
 
 Omit "businessType" or "municipality" entirely when unknown. Use an empty array
-for "profileValues"/"answers" when nothing is known.
+for "profileValues"/"answers" and an empty object for "projectContext" when
+nothing is known. Omit "project_intent" when the description does not support
+any of the three intents at confidence 0.60 or above.
+
+Every extracted fact MUST carry an "evidence" field: a short verbatim quote
+from the user's sentence that supports it (never a quote you invented). When
+a fact's confidence is between 0.60 and 0.85 you may also set
+"requires_confirmation": true on that entry — the app will fill the value but
+visibly mark it as needing confirmation.
 
 ALLOWED profileValues KEYS (use these exact keys, omit any you cannot determine):
 - "industry" :: one of: ${(allowedIndustries || []).join(" | ") || "(not supplied)"}
@@ -174,7 +185,100 @@ Example: "I want to open a bar with 10 employees in Bayamón"
 -> businessType BT_BAR, municipality Bayamón,
    profileValues [{ number_of_employees: 10 }], answers [].
    (SmartPR derives the industry, the employee bracket, and that employees will
-   be hired — all from those facts.)${
+   be hired — all from those facts.)
+
+PROJECT INTENT — determine what the description is about. Set "project_intent"
+to exactly one of:
+- "existing_business": the speaker's business already exists and operates
+  ("we operate", "our company", "already operating", "our hotel", "our plant").
+- "new_business": the speaker is starting a business that does not exist yet
+  ("I want to open", "starting a", "planning to launch").
+- "project_only": a property or construction project with no business being
+  formed or operated by the speaker ("as the property owner", "pre-tenant",
+  "before finding tenants", no business described at all).
+CONFIDENCE BANDS apply (≥0.85 fill silently; 0.60–0.85 requires_confirmation;
+below 0.60 omit the field). A construction project FOR an existing company is
+existing_business, NOT project_only — project_only means no business of the
+speaker's is involved at all. Never default: when nothing supports an intent,
+omit it.
+
+PROJECT CONTEXT — preserve facts about the PROJECT itself, not just the
+business. The visible intake fields (business name, municipality, industry,
+…) only describe the business; a rich description also states what is being
+built, renovated, or operated. Extract those project facts into
+"projectContext" as an object keyed by fact key, each with { value,
+confidence, evidence }. Use ONLY these fact keys, omit any you cannot
+determine:
+
+- "project_type" :: one of: renovation, new_construction, expansion,
+  change_of_use, or a short phrase when none fits (e.g. "renovation and expansion").
+- "existing_building" :: true when the project alters an already-existing building.
+- "new_construction" :: true when the project builds something new (can be true
+  alongside "renovation": an expansion adds new construction to an existing building).
+- "renovation" :: true when existing space is remodeled, altered, or rehabilitated.
+- "expansion" :: true when floor area or capacity is added.
+- "change_of_use" :: true when the property's use changes.
+- "municipality" :: project municipality when stated.
+- "property_type" :: e.g. "commercial building", "warehouse", "industrial facility".
+- "existing_use" :: how the property is currently used (e.g. "commercial").
+- "proposed_use" :: the intended use after the project (e.g. "warehouse + office").
+- "square_footage" :: numeric floor area when stated (e.g. 12000).
+- "scope_of_work" :: short summary of the work described.
+- "structural_work" / "electrical_work" / "plumbing_work" / "mechanical_work" ::
+  true when that trade is part of the work. Omit when not stated — never assume.
+- "interior_demolition" :: true when interior demolition is stated.
+- "new_walls" :: true when new walls / partitions are stated.
+- "layout_changes" :: true when the building layout is modified.
+- "exterior_work" :: true when exterior work is stated. Omit when not stated.
+- "site_work" :: true when site/parking/grading work is stated. Omit when not stated.
+- "occupancy_change" :: true when the occupancy or permitted use changes.
+  Omit when the description does not say.
+- "business_activity" :: what the business DOES (e.g. "manufacturing"),
+  ONLY when the speaker states it.
+- "business_is_owner_operator" :: true when the speaker says their business
+  owns and operates the project; false when they say someone else does. Omit otherwise.
+- "employee_count" :: numeric headcount when stated.
+- "estimated_project_value" :: numeric estimated cost when stated.
+- "known_permitting_issue" :: short note when the speaker says permitting was
+  or is a problem (e.g. "permitting process became a major issue").
+- "historical_project_status" :: short note when the speaker says what happened
+  to the project (e.g. "project fell through").
+- "construction_approvals_required" :: true when the speaker says construction
+  or related approvals are/were needed.
+
+BUSINESS vs PROJECT. Never infer the business's Industry from construction
+work. "We own a warehouse and are renovating it" does NOT mean the industry
+is Construction — the business may be manufacturing, wholesale distribution,
+real estate, or unresolved, while construction is only the regulatory domain
+of the project. Only set an industry (or businessType/business_activity) when
+the speaker states what the business does.
+
+CONFIDENCE BANDS. >= 0.85: the fact is stated plainly. 0.60–0.85: the fact
+is strongly implied but not stated outright — set requires_confirmation true
+on that entry. Below 0.60: omit the fact entirely. Unknown remains unknown:
+never fill a projectContext fact by guessing, and never copy a business fact
+into projectContext (or vice versa) unless the sentence supports it.
+
+Example: "We were planning to renovate an existing commercial building in
+Guaynabo to add a new 12,000-square-foot warehouse and office area. The
+project included interior demolition, new walls, electrical and plumbing
+work, and some changes to the building layout. The property was already
+operating commercially. We needed construction and related approvals, but
+the permitting process became a major issue and the project eventually fell
+through."
+-> municipality Guaynabo; projectContext: project_type "renovation and
+   expansion", existing_building true, renovation true, expansion true,
+   new_construction true, property_type "commercial building",
+   existing_use "commercial", proposed_use "warehouse + office",
+   square_footage 12000, scope_of_work "interior demolition, new walls,
+   electrical and plumbing work, layout changes", interior_demolition true,
+   new_walls true, layout_changes true, electrical_work true,
+   plumbing_work true, construction_approvals_required true,
+   known_permitting_issue "permitting process became a major issue",
+   historical_project_status "project fell through"; structural_work,
+   exterior_work, site_work, occupancy_change OMITTED (not stated);
+   industry NOT set to Construction.
+${
     isEs ? '\n\nWrite the "summary" field in Spanish. Keep all ids and JSON keys exactly as specified.' : ""
   }
 
@@ -276,7 +380,7 @@ export async function POST(request: Request) {
         },
         { role: "user", content: description },
       ],
-      maxOutputTokens: passportMode ? 6500 : 900,
+      maxOutputTokens: passportMode ? 6500 : 1600,
       temperature: 0.1,
       signal: controller.signal,
     });
@@ -296,8 +400,13 @@ export async function POST(request: Request) {
       }
       return Response.json({ interpretation: discovery, proposals: validatePassportProposals(parsed.proposals, description, isEs ? "es" : "en"), ai_model: XAI_MODEL });
     }
+    const stripped = stripUnknownIds(parsed, candidates);
+    // Project-context facts are validated defensively: malformed entries are
+    // dropped individually and never destroy the rest of the interpretation.
+    const { context: projectContext } = validateProjectContext(parsed.projectContext);
     return Response.json({
-      interpretation: stripUnknownIds(parsed, candidates),
+      interpretation: stripped,
+      projectContext,
       ai_model: XAI_MODEL,
     });
   } catch (e) {

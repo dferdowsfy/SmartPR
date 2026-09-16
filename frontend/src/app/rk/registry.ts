@@ -84,6 +84,7 @@ export const RULE_TYPES = [
   "question_trigger",
   "municipality",
   "municipality_flag",
+  "project_fact",
 ];
 
 export const MANDATORINESS = ["mandatory", "conditional", "informational"];

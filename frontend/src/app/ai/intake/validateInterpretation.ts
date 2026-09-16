@@ -9,6 +9,9 @@
 // ============================================================================
 
 import type { KnowledgeBase } from "../../rulesEngine.ts";
+import type { ProjectContext } from "./projectContext.ts";
+import type { ProjectIntent } from "./projectIntent.ts";
+import { normalizeProjectIntent } from "./projectIntent.ts";
 import {
   QUESTION_KEY_MAP,
   LOCATION_QUESTION_IDS,
@@ -38,10 +41,14 @@ export function classifyConfidence(confidence: number | undefined): Confidence {
 
 export interface RawInterpretation {
   summary?: unknown;
-  businessType?: { id?: unknown; name?: unknown; confidence?: unknown } | null;
-  municipality?: { value?: unknown; confidence?: unknown } | null;
-  profileValues?: Array<{ key?: unknown; value?: unknown; confidence?: unknown }> | null;
-  answers?: Array<{ questionId?: unknown; value?: unknown; confidence?: unknown }> | null;
+  businessType?: { id?: unknown; name?: unknown; confidence?: unknown; evidence?: unknown; requires_confirmation?: unknown } | null;
+  municipality?: { value?: unknown; confidence?: unknown; evidence?: unknown; requires_confirmation?: unknown } | null;
+  profileValues?: Array<{ key?: unknown; value?: unknown; confidence?: unknown; evidence?: unknown; requires_confirmation?: unknown }> | null;
+  answers?: Array<{ questionId?: unknown; value?: unknown; confidence?: unknown; evidence?: unknown; requires_confirmation?: unknown }> | null;
+  /** Project intent: existing_business | new_business | project_only. */
+  projectIntent?: { value?: unknown; confidence?: unknown; evidence?: unknown; requires_confirmation?: unknown } | null;
+  /** Project-context facts, validated separately by validateProjectContext. */
+  projectContext?: unknown;
 }
 
 // --- Validated output ------------------------------------------------------
@@ -51,25 +58,51 @@ export interface ValidatedAnswer {
   question: string;
   value: boolean | string;
   confidence: number;
+  /** Short verbatim quote from the description supporting this fact. */
+  evidence?: string;
+  /** True when the value is filled but must be visibly marked as needing confirmation. */
+  requiresConfirmation: boolean;
 }
 
 export interface ValidatedProfileValue {
   key: string;
   value: string | number;
   confidence: number;
+  /** Short verbatim quote from the description supporting this fact. */
+  evidence?: string;
+  /** True when the value is filled but must be visibly marked as needing confirmation. */
+  requiresConfirmation: boolean;
+}
+
+export interface ValidatedFact {
+  confidence: number;
+  /** Short verbatim quote from the description supporting this fact. */
+  evidence?: string;
+  /** True when the value is filled but must be visibly marked as needing confirmation. */
+  requiresConfirmation: boolean;
 }
 
 export interface ValidatedInterpretation {
   summary: string;
-  businessType?: { id: string; name: string; confidence: number };
-  municipality?: { value: string; confidence: number };
+  businessType?: { id: string; name: string } & ValidatedFact;
+  municipality?: { value: string } & ValidatedFact;
   /** Validated profile values, keyed by SmartPR profile field. */
   profileValues: ValidatedProfileValue[];
   answers: ValidatedAnswer[];
+  /**
+   * The determined project intent (existing_business | new_business |
+   * project_only). Drives intake branching and rules-engine gating.
+   */
+  projectIntent?: { value: ProjectIntent } & ValidatedFact;
+  /** Validated project-context facts (see projectContext.ts). Attached by the
+   *  caller after validateInterpretation — the server validates it defensively
+   *  and the client re-validates here, never trusting the raw model output. */
+  projectContext?: ProjectContext;
   /** Same shapes as above but needing user confirmation (0.60–0.84). */
   suggested: {
-    businessType?: { id: string; name: string; confidence: number };
-    municipality?: { value: string; confidence: number };
+    businessType?: { id: string; name: string } & ValidatedFact;
+    municipality?: { value: string } & ValidatedFact;
+    projectIntent?: { value: ProjectIntent } & ValidatedFact;
     profileValues: ValidatedProfileValue[];
     answers: ValidatedAnswer[];
   };
@@ -146,6 +179,26 @@ function asString(v: unknown): string {
 }
 
 /**
+ * Pull the evidence quote off a raw entry: a short verbatim quote from the
+ * user's description. Empty or missing evidence stays undefined.
+ */
+function extractEvidence(entry: { evidence?: unknown } | undefined | null): string | undefined {
+  const e = asString(entry?.evidence).slice(0, 300);
+  return e ? e : undefined;
+}
+
+/**
+ * A fact requires visible confirmation when its confidence band is
+ * "suggested" (0.60–0.84) or the model explicitly flagged it.
+ */
+function extractRequiresConfirmation(
+  entry: { requires_confirmation?: unknown } | undefined | null,
+  band: Confidence
+): boolean {
+  return band === "suggested" || entry?.requires_confirmation === true;
+}
+
+/**
  * Coerce a model answer to the type the KB question declares.
  * Returns `undefined` when the value cannot be represented — the caller then
  * discards it so the normal intake asks the question instead.
@@ -212,8 +265,15 @@ export function validateInterpretation(
     } else if (!match) {
       drop("businessType", `unknown business type id "${id}"`);
     } else {
-      const value = { id: match.id, name: match.name, confidence };
       const band = classifyConfidence(confidence);
+      const evidence = extractEvidence(raw.businessType);
+      const value = {
+        id: match.id,
+        name: match.name,
+        confidence,
+        requiresConfirmation: extractRequiresConfirmation(raw.businessType, band),
+        ...(evidence ? { evidence } : {}),
+      };
       if (band === "applied") out.businessType = value;
       else if (band === "suggested") out.suggested.businessType = value;
       else drop("businessType", `confidence ${confidence} below ${SUGGEST_THRESHOLD}`);
@@ -230,11 +290,40 @@ export function validateInterpretation(
     } else if (!match) {
       drop("municipality", `unknown municipality "${value}"`);
     } else {
-      const v = { value: match.name, confidence };
       const band = classifyConfidence(confidence);
+      const evidence = extractEvidence(raw.municipality);
+      const v = {
+        value: match.name,
+        confidence,
+        requiresConfirmation: extractRequiresConfirmation(raw.municipality, band),
+        ...(evidence ? { evidence } : {}),
+      };
       if (band === "applied") out.municipality = v;
       else if (band === "suggested") out.suggested.municipality = v;
       else drop("municipality", `confidence ${confidence} below ${SUGGEST_THRESHOLD}`);
+    }
+  }
+
+  // --- Project intent: closed set, same confidence bands --------------------
+  // existing_business | new_business | project_only. Drives intake branching
+  // and rules-engine gating — never invented, never defaulted.
+  if (raw.projectIntent) {
+    const value = normalizeProjectIntent(raw.projectIntent.value);
+    const confidence = asNumber(raw.projectIntent.confidence);
+    if (!value) {
+      drop("projectIntent", `unknown intent "${asString(raw.projectIntent.value)}"`);
+    } else {
+      const band = classifyConfidence(confidence);
+      const evidence = extractEvidence(raw.projectIntent);
+      const v = {
+        value,
+        confidence,
+        requiresConfirmation: extractRequiresConfirmation(raw.projectIntent, band),
+        ...(evidence ? { evidence } : {}),
+      };
+      if (band === "applied") out.projectIntent = v;
+      else if (band === "suggested") out.suggested.projectIntent = v;
+      else drop("projectIntent", `confidence ${confidence} below ${SUGGEST_THRESHOLD}`);
     }
   }
 
@@ -339,7 +428,14 @@ export function validateInterpretation(
     }
 
     const band = classifyConfidence(confidence);
-    const record: ValidatedProfileValue = { key, value: resolved, confidence };
+    const evidence = extractEvidence(entry);
+    const record: ValidatedProfileValue = {
+      key,
+      value: resolved,
+      confidence,
+      requiresConfirmation: extractRequiresConfirmation(entry, band),
+      ...(evidence ? { evidence } : {}),
+    };
     if (band === "applied") out.profileValues.push(record);
     else if (band === "suggested") out.suggested.profileValues.push(record);
     else drop(`profileValues.${key}`, `confidence ${confidence} below ${SUGGEST_THRESHOLD}`);
@@ -374,8 +470,16 @@ export function validateInterpretation(
       continue;
     }
     seen.add(questionId);
-    const record: ValidatedAnswer = { questionId, question: question.question, value, confidence };
     const band = classifyConfidence(confidence);
+    const evidence = extractEvidence(entry);
+    const record: ValidatedAnswer = {
+      questionId,
+      question: question.question,
+      value,
+      confidence,
+      requiresConfirmation: extractRequiresConfirmation(entry, band),
+      ...(evidence ? { evidence } : {}),
+    };
     if (band === "applied") out.answers.push(record);
     else if (band === "suggested") out.suggested.answers.push(record);
     else drop(`answers.${questionId}`, `confidence ${confidence} below ${SUGGEST_THRESHOLD}`);
@@ -408,6 +512,22 @@ export interface IntakePatch {
     derivedValue: unknown;
     relationshipId?: string;
   }[];
+}
+
+/** Promote 0.60–0.85 "suggested" facts into an applied-shape interpretation so
+ *  callers can fill them through the same validated → patch path, visibly
+ *  marked as needing confirmation. */
+export function promoteSuggested(validated: ValidatedInterpretation): ValidatedInterpretation {
+  return {
+    summary: "",
+    businessType: validated.suggested.businessType,
+    municipality: validated.suggested.municipality,
+    projectIntent: validated.suggested.projectIntent,
+    profileValues: validated.suggested.profileValues,
+    answers: validated.suggested.answers,
+    suggested: { profileValues: [], answers: [] },
+    discarded: [],
+  };
 }
 
 /** Human-readable chip text for a profile value. */

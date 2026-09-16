@@ -21,7 +21,7 @@ test("existing discovery route keeps prompt, request contract, and interpretatio
   t.mock.method(globalThis, "fetch", async (url: unknown, options: RequestInit) => {
     assert.equal(url, "https://api.x.ai/v1/responses");
     const body = JSON.parse(String(options.body));
-    assert.equal(body.max_output_tokens, 900);
+    assert.equal(body.max_output_tokens, 1600);
     assert.equal(body.store, false);
     assert.match(body.input[0].content, /You are the SmartPR intake interpretation engine/);
     assert.doesNotMatch(body.input[0].content, /ADDITIONAL PASSPORT MODE/);

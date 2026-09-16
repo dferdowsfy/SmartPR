@@ -16,14 +16,22 @@ import {
   type KnowledgeBase,
   type EngineInput,
   type EngineResult,
+  type KBDocument,
 } from "./rulesEngine";
 import type { PotentialDecision } from "./potentialRequirements";
-import { classifyEngineRequirements, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
+import { classifyEngineRequirements, kindForDocument, stageForDocument, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
+import { filterEffective } from "./temporal";
 import type { EntityType } from "./forms/engine/types";
 import { entityTypeFromLegacyStructure } from "./forms/engine/intake.ts";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
 import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
+import type { ProjectIntent } from "./ai/intake/projectIntent";
+import {
+  businessStatusForIntent,
+  entityNotFormedForIntent,
+} from "./ai/intake/projectIntent";
+import type { ProjectContext } from "./ai/intake/projectContext";
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
 
@@ -70,6 +78,14 @@ export interface UIRequirement {
   stage?: RequirementStage;
   triggerFacts?: string[];
   acceptsOfficialUpload?: boolean;
+  /**
+   * Set when this requirement exists only because a question-trigger rule's
+   * answer is still unknown: the requirement is conditional and the UI
+   * renders an inline Yes/No for this KB question id instead of asking for
+   * an upload. Never set alongside a real "Answer:" — the answer genuinely
+   * has not been given yet.
+   */
+  unansweredTriggerQuestionId?: string;
   // Document enrichment (agency/download links) — populated by the shared
   // pipeline from the snapshot's own documents.
   agencyUrl?: string | null;
@@ -338,6 +354,21 @@ function resolveBusinessTypeName(name?: string): string | null {
 const engineTruthy = (v: unknown): boolean =>
   v === true || v === "true" || v === "yes" || v === "Yes";
 
+/** Loose answer equality for provenance: did the resolver merely restate
+ * what the user already provided? */
+const sameAnswerValue = (a: unknown, b: unknown): boolean => {
+  if (a === b) return true;
+  if (typeof a === "boolean" || typeof b === "boolean") {
+    const toBool = (v: unknown) =>
+      v === true || v === "true" || v === "yes" || v === "Yes" ? true
+      : v === false || v === "false" || v === "no" || v === "No" ? false
+      : undefined;
+    const x = toBool(a), y = toBool(b);
+    return x !== undefined && x === y;
+  }
+  return String(a).toLowerCase() === String(b).toLowerCase();
+};
+
 /**
  * Translate the app profile + discovery answers into KB question answers.
  *
@@ -352,7 +383,13 @@ const engineTruthy = (v: unknown): boolean =>
 export function buildEngineInput(
   profile: ProfileLike,
   answers: Record<string, unknown> = {},
-  resolved: Record<string, boolean | string> = {}
+  resolved: Record<string, boolean | string> = {},
+  extra?: {
+    /** Project-first intake branch; drives formation gating + project facts. */
+    projectIntent?: ProjectIntent | null;
+    /** Validated project-context facts; values feed project_fact rules. */
+    projectContext?: ProjectContext | null;
+  }
 ): EngineInput {
   const p = profile || {};
   const da = answers || {};
@@ -469,9 +506,14 @@ export function computeRequirementsFromSnapshot(
     potentialDecisions?: Record<string, PotentialDecision>;
     recommendedIds?: Set<string>;
     legacyCode?: Record<string, string>;
+    projectIntent?: ProjectIntent | null;
+    projectContext?: ProjectContext | null;
   } = {}
 ): UIRequirement[] {
-  const input = buildEngineInput(profile, answers, resolved);
+  const input = buildEngineInput(profile, answers, resolved, {
+    projectIntent: options.projectIntent ?? null,
+    projectContext: options.projectContext ?? null,
+  });
   for (const question of snapshot.questions as Array<{ id: string }>) {
     const direct = answers[question.id];
     if (direct !== undefined) input.answers[question.id] = direct as boolean | string;
@@ -501,7 +543,8 @@ export function computeRequirementsFromSnapshot(
       download_note?: string;
     }>).map((d) => [d.id, d])
   );
-  return classified
+  const legacyCodeMap: Record<string, string> = options.legacyCode ?? kbMeta.legacyCode;
+  const enriched: UIRequirement[] = classified
     .map((r) => ({
       code: r.code,
       name: r.document_name,
@@ -534,10 +577,14 @@ export function computeRequirementsFromKB(
   options: {
     entityType?: EntityType | string | null;
     potentialDecisions?: Record<string, PotentialDecision>;
+    projectIntent?: ProjectIntent | null;
+    projectContext?: ProjectContext | null;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
     entityType: options.entityType,
     potentialDecisions: options.potentialDecisions,
+    projectIntent: options.projectIntent,
+    projectContext: options.projectContext,
   });
 }

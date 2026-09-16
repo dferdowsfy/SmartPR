@@ -205,3 +205,42 @@ describe("portal account status threading", () => {
     assert.ok(!block.includes("PORTAL ACCOUNT:"));
   });
 });
+
+describe("project context block", () => {
+  const project_context = {
+    renovation: { value: true, confidence: 0.95, evidence: "planning to renovate" },
+    square_footage: { value: 12000, confidence: 0.95, evidence: "12,000-square-foot" },
+    proposed_use: { value: "warehouse + office", confidence: 0.9, evidence: "warehouse and office area" },
+  };
+
+  function briefWithContext() {
+    return buildGoalBrief({
+      config: getFilingConfig("SURI_REGISTER_TAXPAYER"),
+      action: { id: "x", filing_type: "SURI_REGISTER_TAXPAYER" } as never,
+      project_context,
+    });
+  }
+
+  it("renders a safe PROJECT CONTEXT block with values but no evidence quotes", () => {
+    const block = goalBriefToPromptBlock(briefWithContext());
+    assert.ok(block.includes("PROJECT CONTEXT"), "prompt must carry the project context block");
+    assert.ok(block.includes("renovation: true"), "block must include fact values");
+    assert.ok(block.includes("square_footage: 12000"));
+    assert.ok(!block.includes("12,000-square-foot"), "evidence quotes must not reach the agent prompt");
+    assert.ok(
+      block.includes("NEVER to decide requirements"),
+      "block must restate that the model never decides requirements"
+    );
+  });
+
+  it("omits the block when there is no project context (backwards compatible)", async () => {
+    const brief = await suriBrief();
+    const block = goalBriefToPromptBlock(brief);
+    assert.ok(!block.includes("PROJECT CONTEXT"));
+  });
+
+  it("project_context defaults to empty so existing callers keep working", async () => {
+    const brief = await suriBrief();
+    assert.deepEqual(brief.project_context, {});
+  });
+});

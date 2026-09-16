@@ -29,12 +29,36 @@ export interface KBDocument {
 }
 export interface KBRule {
   id: string;
-  rule_type: "business_type" | "question_trigger" | "municipality" | "municipality_flag";
+  rule_type: "business_type" | "question_trigger" | "municipality" | "municipality_flag" | "project_fact";
   business_type_id: string | null;
   question_id: string | null;
+  /**
+   * For project_fact rules: the project-context fact key (e.g. "project_type",
+   * "structural_work"). Kept separate from question_id so the knowledge graph
+   * does not create dangling applies_to edges to non-question nodes.
+   */
+  fact_key?: string | null;
   expected_answer: string | null;
   municipality_flag: Flag | null;
   requires_document_id: string;
+  /**
+   * Project-first gate (data-driven): when true, the rule never fires for an
+   * existing business, for a property/project with no business, or when the
+   * entity is known to be formed. When the intent was never determined the
+   * rule fires as before — the gate only narrows known intents. Marks the
+   * "form the entity" requirements. The engine interprets the gate; the KB
+   * decides which rules carry it.
+   */
+  requires_new_unformed_business?: boolean | null;
+  /**
+   * Project-first gate (data-driven): when true, the rule fires only when a
+   * business is actually involved (businessStatus "new" or "existing", or
+   * unknown — preserving current behavior when intent was never determined).
+   * Skips for "project_only": a property/project with no business generates
+   * zero business requirements (construction permits still fire via
+   * project_fact rules).
+   */
+  requires_business?: boolean | null;
   /**
    * Optional entity-type scoping: the rule never fires for these canonical
    * entity types (e.g. Certificate of Incorporation for sole proprietorships).
@@ -74,6 +98,8 @@ export interface KnowledgeBase {
 }
 
 // Engine inputs. `answers` maps KB question id -> answer value (boolean or string).
+export type BusinessStatus = "new" | "existing" | "project_only";
+
 export interface EngineInput {
   municipalityName?: string | null;
   businessTypeName?: string | null;
@@ -82,9 +108,38 @@ export interface EngineInput {
    *  entity-scoped rules (excluded_entity_types) stay silent for legal forms
    *  they can never apply to, instead of emitting false mandatory duties. */
   entityType?: string | null;
+  /**
+   * Project-first gating: "new" = forming a new business, "existing" = the
+   * business already exists, "project_only" = a property/project with no
+   * business involved. Null/omitted = unknown (intent was never determined —
+   * behaves exactly as before this gate existed). Rules carrying
+   * requires_new_unformed_business stay silent for "existing", for
+   * "project_only", and when the entity is known formed; rules carrying
+   * requires_business fire for everything except "project_only".
+   */
+  businessStatus?: BusinessStatus | null;
+  /**
+   * Whether the entity is not yet formed. Null/omitted = unknown, and
+   * formation-gated rules fail closed (stay silent).
+   */
+  entityNotFormed?: boolean | null;
+  /**
+   * Project-context facts (projectContext.ts fact key -> raw value) for
+   * project_fact rules. Lets construction/renovation permits trigger from
+   * project facts without any business being formed.
+   */
+  projectFacts?: Record<string, unknown> | null;
   /** Date-only UTC (`YYYY-MM-DD`) the evaluation is "as of". Rules not in
    *  force at this date never fire. Defaults to today (UTC). */
   asOf?: string | Date | null;
+  /**
+   * Answer provenance, set by `buildEngineInput` in kb.ts: "user" when the
+   * value traces to something the user provided (profile, discovery answer,
+   * or a direct translation of one), "derived" when the relationship
+   * resolver determined it. Requirement-card reasons may only use "Answer:"
+   * for user-provided answers — derived ones are labeled as derived.
+   */
+  answerProvenance?: Record<string, "user" | "derived">;
 }
 
 export interface GeneratedRequirement {
@@ -104,6 +159,8 @@ export interface EngineDebug {
   businessType: string | null;
   businessTypeId: string | null;
   questionsTriggered: { question_id: string; question: string; answer: boolean | string }[];
+  /** Project-context facts that fired project_fact rules. */
+  projectFactsTriggered: { fact_key: string; value: unknown }[];
   rulesMatched: { rule_id: string; rule_type: string; document_id: string; reason: string }[];
   documentsGenerated: string[];
 }
@@ -133,6 +190,24 @@ function answerMatches(answer: boolean | string | undefined, expected: string | 
   return String(answer).toLowerCase() === expected.toLowerCase();
 }
 
+// Compare a project-context fact against a rule's expected_answer. For
+// boolean triggers the expected_answer is "true"; otherwise a
+// case-insensitive substring match, so a project_type of
+// "renovation and expansion" matches expected_answer "renovation".
+function projectFactMatches(fact: unknown, expected: string | null): boolean {
+  if (fact === undefined || fact === null || fact === "") return false;
+  if (expected === null || expected === "true") {
+    return (
+      fact === true ||
+      fact === "true" ||
+      fact === "yes" ||
+      fact === "Yes" ||
+      (typeof fact === "number" && fact > 0)
+    );
+  }
+  return String(fact).toLowerCase().includes(expected.toLowerCase());
+}
+
 export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineResult {
   const docById = new Map(kb.documents.map((d) => [d.id, d]));
   const qById = new Map(kb.questions.map((q) => [q.id, q]));
@@ -155,6 +230,8 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
   const rulesMatched: EngineDebug["rulesMatched"] = [];
   const triggered: EngineDebug["questionsTriggered"] = [];
   const triggeredSeen = new Set<string>();
+  const projectFactsTriggered: EngineDebug["projectFactsTriggered"] = [];
+  const projectFactSeen = new Set<string>();
 
   const add = (rule: KBRule, reason: string) => {
     rulesMatched.push({
@@ -178,6 +255,31 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     // props). An unknown entity type falls through; the classifier marks the
     // resulting items conditional rather than required.
     if (input.entityType && excludedEntityTypes(rule).includes(input.entityType)) {
+      continue;
+    }
+    // Project-first gates (data-driven; the KB decides which rules carry them):
+    // - requires_new_unformed_business: "form the entity" requirements never
+    //   fire for an existing business, for a property/project with no
+    //   business, or when the entity is known to be formed. When the intent
+    //   was never determined the rule fires exactly as before this gate
+    //   existed — the gate only narrows behavior for known intents, never
+    //   for legacy/unknown flows.
+    // - requires_business: business requirements (municipality baselines,
+    //   EIN, etc.) fire for new/existing businesses and when the intent is
+    //   unknown (current behavior), but never for project_only.
+    if (rule.requires_new_unformed_business) {
+      if (
+        input.businessStatus === "existing" ||
+        input.businessStatus === "project_only" ||
+        input.entityNotFormed === false
+      ) {
+        continue;
+      }
+    }
+    if (
+      rule.requires_business &&
+      input.businessStatus === "project_only"
+    ) {
       continue;
     }
     switch (rule.rule_type) {
@@ -212,8 +314,15 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
             const q = qById.get(rule.question_id);
             // Report the answer that actually matched (select labels included),
             // not a blanket "Yes" — the matched basis is what review relies on.
+            // Honesty invariant: "Answer:" is reserved for answers the user
+            // actually provided. Values the relationship resolver derived are
+            // labeled as derived so the card never presents them as the
+            // user's own answer.
             const answerText = typeof ans === "string" ? ans : "Yes";
-            const reason = `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`;
+            const userProvided = input.answerProvenance?.[rule.question_id] !== "derived";
+            const reason = userProvided
+              ? `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`
+              : `Question: ${q ? q.question : rule.question_id} | Derived answer: ${answerText}`;
             add(rule, reason);
             if (!triggeredSeen.has(rule.question_id)) {
               triggeredSeen.add(rule.question_id);
@@ -226,6 +335,23 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
           }
         }
         break;
+
+      case "project_fact": {
+        // Project-context facts trigger construction/renovation permits
+        // without any business being formed. `fact_key` names the fact
+        // key (e.g. "project_type", "structural_work").
+        if (rule.fact_key) {
+          const fact = input.projectFacts?.[rule.fact_key];
+          if (projectFactMatches(fact, rule.expected_answer)) {
+            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`);
+            if (!projectFactSeen.has(rule.fact_key)) {
+              projectFactSeen.add(rule.fact_key);
+              projectFactsTriggered.push({ fact_key: rule.fact_key, value: fact });
+            }
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -250,6 +376,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       businessType: businessType ? businessType.name : null,
       businessTypeId: businessType ? businessType.id : null,
       questionsTriggered: triggered,
+      projectFactsTriggered,
       rulesMatched,
       documentsGenerated: requirements.map((r) => r.document_id),
     },

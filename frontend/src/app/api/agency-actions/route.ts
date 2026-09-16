@@ -23,6 +23,7 @@ import {
 import { getFilingConfig } from "../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../lib/agency-runs/goalBrief";
 import { loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
+import { loadProjectContextForBusiness } from "../../../lib/agency-runs/projectContextLoader";
 import { parseAccountStatusAnswer } from "../../../lib/agency-runs/preflight";
 import {
   getPortalAccountStatus,
@@ -160,6 +161,10 @@ export async function POST(request: Request) {
     objective_en: picked.objective_en,
     objective_es: picked.objective_es,
     portal_account: await resolvePortalAccount(businessId, agencyId, body.preflight_answers),
+    // Project-context facts from the latest intake snapshot (background
+    // only — the brief marks them as never driving requirement decisions).
+    project_context:
+      (await loadProjectContextForBusiness(businessId, user?.id ?? null)) ?? undefined,
   });
   const passport = await loadPassportForBusiness(businessId, user?.id ?? null);
   const run = await createRun({

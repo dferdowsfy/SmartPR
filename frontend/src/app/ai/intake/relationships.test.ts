@@ -398,14 +398,18 @@ test("chips: a fact the business type does NOT imply keeps its chip", () => {
 // QUESTION SKIPPING — the wizard's own keys, end to end
 // ===========================================================================
 
-/** The page's suppression predicate, in the form the wizard applies it. */
+/** The page's suppression predicate, in the form the wizard applies it:
+ * only USER-PROVIDED or explicit facts suppress — derived/inferred facts
+ * never do (a resolution the engine made is not the user's answer). */
 function suppressed(r: ResolutionResult, answers: Record<string, unknown>, wizardKey: string) {
   if (answers[wizardKey] !== undefined) return false;
   const id = questionIdForAnswerKey(wizardKey);
-  return id !== null && r.resolvedQuestionIds.has(id);
+  if (id === null || !r.resolvedQuestionIds.has(id)) return false;
+  const origin = r.resolvedQuestionOrigins[id];
+  return origin === "user" || origin === "explicit";
 }
 
-test("skipping: \"a bar with 10 employees in Bayamón\" drops both employee questions", () => {
+test("skipping: derived facts never suppress wizard questions", () => {
   const profile = { business_type: "Bar", municipality: "Bayamón", number_of_employees: 10 };
   const r = resolve(profile);
   // The bar's wizard list, as page.tsx builds it for food & beverage types.
@@ -415,13 +419,22 @@ test("skipping: \"a bar with 10 employees in Bayamón\" drops both employee ques
   ];
   const asked = wizard.filter((key) => !suppressed(r, {}, key));
 
-  assert.ok(!asked.includes("employees_work_on_site"), "the staffing question is already answered");
-  assert.ok(!asked.includes("alcohol_sold"), "a bar sells alcohol by definition");
-  // Everything genuinely unknown is still asked.
-  assert.deepEqual(asked, [
-    "food_prepared_on_site", "customers_consume_on_site", "outdoor_seating",
-    "live_entertainment", "food_delivered", "food_truck_or_mobile",
-  ]);
+  // Both are engine derivations, not user answers: "a bar sells alcohol by
+  // definition" and "10 employees means staff on site" are conclusions the
+  // resolver drew, so the wizard still asks — and any requirement card may
+  // only say "Derived answer", never "Answer".
+  assert.ok(asked.includes("alcohol_sold"), "a derived alcohol answer does not suppress the question");
+  assert.ok(asked.includes("employees_work_on_site"), "a derived staffing answer does not suppress the question");
+  assert.equal(r.resolvedQuestionOrigins["Q_ALCOHOL_SOLD"], "derived");
+  assert.equal(r.resolvedQuestionOrigins["Q_EMPLOYEES_HIRED"], "derived");
+  assert.deepEqual(asked, wizard);
+});
+
+test("skipping: a user-answered question still suppresses it", () => {
+  const r = resolve({ business_type: "Bar" }, { alcohol_sold: true });
+  assert.equal(r.resolvedQuestionOrigins["Q_ALCOHOL_SOLD"], "user");
+  assert.equal(suppressed(r, { alcohol_sold: true }, "alcohol_sold"), false); // answered here, Back shows it
+  assert.equal(suppressed(r, {}, "outdoor_seating"), false);
 });
 
 test("skipping: a plain restaurant still gets asked its whole list", () => {
