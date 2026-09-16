@@ -192,16 +192,120 @@ export interface EngineInput {
    * reasoning reads only project/property-scoped facts; business rules read
    * only business-scoped facts — a stale or out-of-scope fact can never
    * trigger a rule it does not belong to.
+   *
+   * HARD RULE (enforced by isFactAdmissible): in strict mode (input.sessionId
+   * set) a fact triggers a rule only when its provenance is established —
+   * bound to the current intake session and explicitly confirmed, or a
+   * persistent passport fact for the same business on a business rule. Facts
+   * without admissible provenance cannot trigger; the attempt is recorded in
+   * debug.provenanceBlocked, never silent.
    */
   factMeta?: Record<string, FactMeta>;
+  /**
+   * The intake/project session being evaluated. Binds every fact to the
+   * current project: a fact whose meta carries a different session id is
+   * stale (carried over from a previous intake) and can never trigger.
+   * Absent = legacy callers without session identity (historical behavior).
+   */
+  sessionId?: string | null;
+  /** The business this evaluation is for (existing-business link). */
+  businessId?: string | null;
 }
 
 /** Audit metadata for a single fact the engine consumed. */
 export interface FactMeta {
   source: "user_intake" | "passport" | "derived" | "admin";
   scope: "business" | "project" | "property";
+  /**
+   * Intake/project session this fact was established in. A fact bound to a
+   * different session is stale (e.g. carried over from a previous intake).
+   */
+  sessionId?: string | null;
+  /** Business a persistent (passport) fact belongs to. */
+  businessId?: string | null;
+  /**
+   * True when the fact was explicitly established or confirmed during the
+   * current intake: a manual answer, a high-confidence (≥0.85) read of the
+   * current narrative, or a user-confirmed suggestion. Suggested-but-
+   * unconfirmed interpretations are present but inert.
+   */
+  confirmedInCurrentIntake?: boolean;
   confidence?: number;
   timestamp?: string;
+}
+
+/**
+ * Where a requirement's triggering fact came from. Every requirement the
+ * engine emits carries this so the product can answer "why is this here?"
+ * with the exact fact and its source — e.g. hazardous_materials = true,
+ * source: current intake.
+ */
+export interface TriggerFactProvenance {
+  key: string;
+  value: unknown;
+  source: FactMeta["source"];
+  scope: FactMeta["scope"];
+  sessionId?: string | null;
+  /** Business a passport-scope fact belongs to. Absent for intake facts. */
+  businessId?: string | null;
+  confirmedInCurrentIntake?: boolean;
+}
+
+/**
+ * Full triggering identity for provenance dedup: two provenance records are
+ * the same trigger only when the fact, its value, where it was established,
+ * what it describes, and the session/business it belongs to all match. The
+ * same fact re-established in a new session (or for another business) is a
+ * distinct record and must be kept.
+ */
+export function sameTriggerProvenance(a: TriggerFactProvenance, b: TriggerFactProvenance): boolean {
+  return (
+    a.key === b.key &&
+    a.source === b.source &&
+    a.scope === b.scope &&
+    String(a.value) === String(b.value) &&
+    (a.sessionId ?? null) === (b.sessionId ?? null) &&
+    (a.businessId ?? null) === (b.businessId ?? null)
+  );
+}
+
+/**
+ * Hard provenance rule: a requirement can only use a fact if the fact
+ * belongs to the current project (same session, explicitly established or
+ * confirmed during the current intake), or is a persistent business-level
+ * fact legitimately applicable to the current project (passport fact for
+ * the same business, used by a business rule). Anything else — stale
+ * session facts, suggested-but-unconfirmed interpretations, cross-scope
+ * facts, facts with no provenance at all — can never trigger.
+ *
+ * Strict mode engages only when the evaluation carries a session identity
+ * (input.sessionId). Callers without one keep the historical behavior;
+ * every production path goes through buildEngineInput, which always sets it.
+ */
+function isFactAdmissible(
+  meta: FactMeta | undefined,
+  input: EngineInput,
+  kind: "business" | "project"
+): boolean {
+  if (!input.sessionId) return true;
+  if (!meta) return false;
+  if (kind === "business" ? meta.scope !== "business" : meta.scope !== "project" && meta.scope !== "property") {
+    return false;
+  }
+  if (meta.source === "passport") {
+    if (kind !== "business") return false;
+    // Fail closed: a passport fact is only usable when we know which
+    // business it belongs to and it matches the business under evaluation.
+    // A passport fact for an unidentified or different business can never
+    // trigger — or suppress — a requirement.
+    if (!input.businessId || !meta.businessId || input.businessId !== meta.businessId) return false;
+    return true;
+  }
+  return (
+    !!meta.sessionId &&
+    meta.sessionId === input.sessionId &&
+    meta.confirmedInCurrentIntake === true
+  );
 }
 
 export interface GeneratedRequirement {
@@ -219,6 +323,12 @@ export interface GeneratedRequirement {
    * requirement is unresolved/conditional — never presented as confirmed.
    */
   formation_unresolved?: boolean;
+  /**
+   * Where each triggering fact came from (fact key, value, source, scope).
+   * Survives document deduplication — every requirement can say exactly
+   * which fact triggered it and where that fact was established.
+   */
+  triggerFactProvenance?: TriggerFactProvenance[];
   /**
    * Rule metadata carried through for the classifier: compliance posture,
    * verification level, missing facts, and the human-readable trigger
@@ -245,6 +355,13 @@ export interface EngineDebug {
    * silent — the graph shows WHY a requirement did not apply.
    */
   rulesSuppressed: { rule_id: string; document_id: string; suppressed_by: string }[];
+  /**
+   * Rules that would have fired but were blocked because their triggering
+   * fact lacked admissible provenance (stale session, unconfirmed
+   * suggestion, cross-scope, or no provenance at all). A blocked rule is
+   * recorded, never silent — the absence of the requirement is explained.
+   */
+  provenanceBlocked: { rule_id: string; document_id: string; fact_key: string; reason: string }[];
   documentsGenerated: string[];
 }
 
@@ -337,15 +454,52 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     : null;
 
   // documentId -> first matching rule (keep the strongest/earliest reason).
-  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean }>();
+  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean; provenances: TriggerFactProvenance[] }>();
   const rulesMatched: EngineDebug["rulesMatched"] = [];
   const rulesSuppressed: EngineDebug["rulesSuppressed"] = [];
   const triggered: EngineDebug["questionsTriggered"] = [];
   const triggeredSeen = new Set<string>();
   const projectFactsTriggered: EngineDebug["projectFactsTriggered"] = [];
   const projectFactSeen = new Set<string>();
+  const provenanceBlocked: EngineDebug["provenanceBlocked"] = [];
 
-  const add = (rule: KBRule, reason: string, formationUnresolved = false) => {
+  /**
+   * Provenance gate for a triggering fact. Returns a TriggerFactProvenance
+   * when the fact is admissible (and may fire); records a block and returns
+   * null otherwise. Stale, unconfirmed, cross-scope, or provenance-less
+   * facts can never trigger a requirement — the block is recorded in debug,
+   * never silent.
+   */
+  const gateFact = (
+    rule: KBRule,
+    factKey: string,
+    kind: "business" | "project",
+    value: unknown
+  ): TriggerFactProvenance | null => {
+    const meta = input.factMeta?.[factKey];
+    if (isFactAdmissible(meta, input, kind)) {
+      return {
+        key: factKey,
+        value,
+        source: meta?.source ?? "user_intake",
+        scope: meta?.scope ?? kind,
+        sessionId: meta?.sessionId ?? null,
+        businessId: meta?.businessId ?? null,
+        confirmedInCurrentIntake: meta?.confirmedInCurrentIntake ?? false,
+      };
+    }
+    provenanceBlocked.push({
+      rule_id: rule.id,
+      document_id: rule.requires_document_id,
+      fact_key: factKey,
+      reason: !meta
+        ? "fact has no provenance metadata — cannot establish where it came from"
+        : `fact provenance inadmissible (source=${meta.source}, scope=${meta.scope}, confirmed=${meta.confirmedInCurrentIntake ?? false})`,
+    });
+    return null;
+  };
+
+  const add = (rule: KBRule, reason: string, formationUnresolved = false, provenance?: TriggerFactProvenance) => {
     rulesMatched.push({
       rule_id: rule.id,
       rule_type: rule.rule_type,
@@ -354,12 +508,22 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     });
     const existing = matched.get(rule.requires_document_id);
     if (!existing) {
-      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved });
-    } else if (existing.formationUnresolved && !formationUnresolved) {
-      // A confirmed basis outweighs an unresolved formation basis: the
-      // requirement is genuinely triggered (e.g. an EIN for hiring), so the
-      // unresolved flag is cleared even though the earliest reason is kept.
-      existing.formationUnresolved = false;
+      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved, provenances: provenance ? [provenance] : [] });
+    } else {
+      // Every matched basis keeps its provenance: the requirement names all
+      // the facts that triggered it. Deduplicated on the full triggering
+      // identity — key, value, source, scope, session, business — so the same
+      // fact established twice (e.g. re-confirmed in a new session) keeps
+      // both records, while exact duplicates collapse.
+      if (provenance && !existing.provenances.some((p) => sameTriggerProvenance(p, provenance))) {
+        existing.provenances.push(provenance);
+      }
+      if (existing.formationUnresolved && !formationUnresolved) {
+        // A confirmed basis outweighs an unresolved formation basis: the
+        // requirement is genuinely triggered (e.g. an EIN for hiring), so the
+        // unresolved flag is cleared even though the earliest reason is kept.
+        existing.formationUnresolved = false;
+      }
     }
   };
 
@@ -372,13 +536,21 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     // "no") listed in the rule's negated_fact_keys suppresses the rule and
     // is recorded in debug — the graph shows WHY a requirement did not
     // apply. Unknown (undefined) never suppresses: absence of evidence is
-    // not evidence of absence.
+    // not evidence of absence. Suppression needs the same provenance as
+    // triggering: a stale, unconfirmed, or provenance-less "no" must not
+    // silently kill a valid requirement (its block is recorded, never
+    // silent).
     if (rule.negated_fact_keys?.length) {
       const suppressing = rule.negated_fact_keys.find((key) => {
         const pf = input.projectFacts?.[key];
-        if (pf !== undefined && isNegativeFact(pf)) return true;
+        if (pf !== undefined && isNegativeFact(pf)) {
+          return gateFact(rule, key, "project", pf) !== null;
+        }
         const ans = input.answers[key];
-        return ans !== undefined && isNegativeFact(ans);
+        if (ans !== undefined && isNegativeFact(ans)) {
+          return gateFact(rule, key, "business", ans) !== null;
+        }
+        return false;
       });
       if (suppressing) {
         rulesSuppressed.push({
@@ -430,8 +602,12 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     switch (rule.rule_type) {
       case "municipality":
         // Universal / municipality baseline — applies whenever a municipality
-        // is selected (every PR business has one).
-        if (municipality) add(rule, `Municipality selected (${municipality.name})`, formationGateUnresolved);
+        // is selected (every PR business has one). The municipality fact
+        // passes the provenance gate like any other trigger.
+        if (municipality) {
+          const prov = gateFact(rule, "municipality", "business", municipality.name);
+          if (prov) add(rule, `Municipality selected (${municipality.name})`, formationGateUnresolved, prov);
+        }
         break;
 
       case "municipality_flag":
@@ -442,13 +618,15 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
             (businessType && rule.business_type_id === businessType.id))
         ) {
           const btPart = rule.business_type_id && businessType ? ` + Business Type = ${businessType.name}` : "";
-          add(rule, `Municipality Flag = ${rule.municipality_flag}${btPart}`, formationGateUnresolved);
+          const prov = gateFact(rule, "municipality", "business", municipality?.name ?? null);
+          if (prov) add(rule, `Municipality Flag = ${rule.municipality_flag}${btPart}`, formationGateUnresolved, prov);
         }
         break;
 
       case "business_type":
         if (businessType && rule.business_type_id === businessType.id) {
-          add(rule, `Business Type = ${businessType.name}`, formationGateUnresolved);
+          const prov = gateFact(rule, "business_type", "business", businessType.name);
+          if (prov) add(rule, `Business Type = ${businessType.name}`, formationGateUnresolved, prov);
         }
         break;
 
@@ -468,7 +646,9 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
             const reason = userProvided
               ? `Question: ${q ? q.question : rule.question_id} | Answer: ${answerText}`
               : `Question: ${q ? q.question : rule.question_id} | Derived answer: ${answerText}`;
-            add(rule, reason, formationGateUnresolved);
+            const prov = gateFact(rule, rule.question_id, "business", ans);
+            if (!prov) break;
+            add(rule, reason, formationGateUnresolved, prov);
             if (!triggeredSeen.has(rule.question_id)) {
               triggeredSeen.add(rule.question_id);
               triggered.push({
@@ -488,7 +668,9 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
         if (rule.fact_key) {
           const fact = input.projectFacts?.[rule.fact_key];
           if (projectFactMatches(fact, rule.expected_answer)) {
-            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`, formationGateUnresolved);
+            const prov = gateFact(rule, rule.fact_key, "project", fact);
+            if (!prov) break;
+            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`, formationGateUnresolved, prov);
             if (!projectFactSeen.has(rule.fact_key)) {
               projectFactSeen.add(rule.fact_key);
               projectFactsTriggered.push({ fact_key: rule.fact_key, value: fact });
@@ -500,7 +682,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     }
   }
 
-  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved }]) => {
+  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved, provenances }]) => {
     const d = docById.get(docId);
     return {
       document_id: docId,
@@ -510,6 +692,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       reason,
       source_rule_id: rule.id,
       matched_rules: rulesMatched.filter(match => match.document_id === docId).map(({ rule_id, reason }) => ({ rule_id, reason })),
+      ...(provenances.length > 0 ? { triggerFactProvenance: provenances } : {}),
       ...(formationUnresolved ? { formation_unresolved: true } : {}),
       ...(rule.compliance_mode ? { compliance_mode: rule.compliance_mode } : {}),
       ...(rule.verification ? { verification: rule.verification } : {}),
@@ -529,6 +712,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       projectFactsTriggered,
       rulesMatched,
       rulesSuppressed,
+      provenanceBlocked,
       documentsGenerated: requirements.map((r) => r.document_id),
     },
   };

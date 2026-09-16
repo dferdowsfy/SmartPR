@@ -238,9 +238,13 @@ test("10c. every write key is one buildEngineInput() actually reads", () => {
   // Guards the bridge: if kb.ts renames an answer key, this fails loudly
   // instead of silently dropping interpreted answers on the floor.
   // Entries may wrap across lines, so match on whitespace-collapsed source.
+  // Scoped to the answers object inside buildEngineInput(): other tables in
+  // kb.ts (e.g. DERIVED_SOURCE_KEYS) also mention Q_ ids and must not match.
   const flat = KB_TS_SOURCE.replace(/\s+/g, " ");
+  const answersObj = flat.indexOf("const a: Record<string, boolean | string | undefined> = {");
+  assert.ok(answersObj !== -1, "answers object must exist in buildEngineInput()");
   for (const [questionId, binding] of Object.entries(QUESTION_KEY_MAP)) {
-    const start = flat.indexOf(`${questionId}:`);
+    const start = flat.indexOf(`${questionId}:`, answersObj);
     assert.ok(start !== -1, `${questionId} must be mapped in buildEngineInput()`);
     // The entry runs until the next Q_* key in the answers object.
     const rest = flat.slice(start + questionId.length + 1);

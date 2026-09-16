@@ -34,7 +34,14 @@
     "citation": "https://www.irs.gov/faqs/small-business-self-employed-other-business/entities/entities-2",
     "citation_source": "rule",
     "requires_business": true,
-    "requires_new_unformed_business": true
+    "requires_new_unformed_business": true,
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "verify_existing candidacy reviewed: declined",
+        "reason": "This rule carries requires_new_unformed_business, so the engine excludes it for existing businesses — it can never fire in the existing-business branch, making a verify_existing posture unreachable dead metadata. Existing-business EIN coverage comes from RULE_0620 (employees basis, verify_existing). No applicability change."
+      }
+    ]
   },
   {
     "id": "RULE_0003",
@@ -176,7 +183,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0008",
@@ -358,7 +373,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0021",
@@ -736,7 +759,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0050",
@@ -792,7 +823,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0054",
@@ -848,7 +887,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0058",
@@ -904,7 +951,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0062",
@@ -960,7 +1015,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0066",
@@ -1030,7 +1093,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0071",
@@ -1086,7 +1157,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0075",
@@ -1142,7 +1221,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0079",
@@ -1198,7 +1285,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0083",
@@ -1268,7 +1363,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0088",
@@ -1786,7 +1889,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0125",
@@ -1814,7 +1925,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0127",
@@ -1842,7 +1961,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0129",
@@ -1870,7 +1997,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0131",
@@ -1898,7 +2033,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0133",
@@ -1926,7 +2069,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0135",
@@ -1954,7 +2105,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0137",
@@ -1982,7 +2141,15 @@
     "citation_url": "https://www.cfse.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_WORKERS_COMP",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0139",
@@ -3406,7 +3573,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0239",
@@ -3420,7 +3595,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0240",
@@ -3434,7 +3617,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0241",
@@ -3448,7 +3639,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0242",
@@ -3476,7 +3675,15 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_PERMISO_UNICO",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0244",
@@ -11887,7 +12094,15 @@
     "municipality_flag": null,
     "requires_document_id": "DOC_DTRH_EMPLOYER_REG",
     "citation": "https://patronos.trabajo.pr.gov/patronos/Help/Help_ES/radicacindesolicituddenmeropatronalparadesempleoeincapacidad.htm",
-    "citation_source": "rule"
+    "citation_source": "rule",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0620",
@@ -11898,7 +12113,15 @@
     "municipality_flag": null,
     "requires_document_id": "DOC_EIN",
     "citation": "https://www.irs.gov/faqs/small-business-self-employed-other-business/entities/entities-2",
-    "citation_source": "rule"
+    "citation_source": "rule",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0621",

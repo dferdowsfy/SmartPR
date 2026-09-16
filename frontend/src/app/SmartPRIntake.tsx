@@ -34,7 +34,7 @@ import { CoreApplicationDetails } from './forms/engine/CoreApplicationDetails';
 // Optional AI-assisted natural-language intake shortcut. The interpreter only
 // fills EXISTING intake fields — the rules engine still decides requirements.
 import { NaturalLanguageIntake } from './components/NaturalLanguageIntake';
-import { mirrorAnswersToProfile, questionIdForAnswerKey } from './ai/intake/questionKeyMap';
+import { mirrorAnswersToProfile, questionIdForAnswerKey, QUESTION_KEY_MAP, WIZARD_KEY_TO_QUESTION } from './ai/intake/questionKeyMap';
 // Intake is a connected fact model: the resolver derives every fact that is
 // logically certain from what the user already told us, so SmartPR never asks a
 // question it can answer. It produces facts only — requirements still come
@@ -1073,7 +1073,21 @@ function computeRequirements(
   profile: BusinessProfile,
   answers: Record<string, any>,
   potentialDecisions: Record<string, PotentialDecision> = {},
-  project: { projectIntent?: ProjectIntent | null; projectContext?: ProjectContext | null } = {}
+  project: {
+    projectIntent?: ProjectIntent | null;
+    projectContext?: ProjectContext | null;
+    /**
+     * Fact provenance for the engine's hard rule (session identity, confirmed
+     * keys, passport keys). Always supplied by the intake UI; omitted only by
+     * legacy callers, which keep the historical behavior.
+     */
+    provenance?: {
+      sessionId?: string | null;
+      businessId?: string | null;
+      confirmedKeys?: Iterable<string>;
+      passportKeys?: Iterable<string>;
+    };
+  } = {}
 ): Requirement[] {
   const entityType = entityTypeFromLegacyStructure(profile.business_structure);
   const fromKb = computeRequirementsFromKB(
@@ -1088,6 +1102,10 @@ function computeRequirements(
       // from project facts alone.
       projectIntent: project.projectIntent ?? null,
       projectContext: project.projectContext ?? null,
+      sessionId: project.provenance?.sessionId ?? null,
+      businessId: project.provenance?.businessId ?? null,
+      confirmedKeys: project.provenance?.confirmedKeys,
+      passportKeys: project.provenance?.passportKeys,
     }
   ) as Requirement[];
 
@@ -1709,7 +1727,7 @@ export default function SmartPRIntake() {
         location_type: su.location_type || '',
       };
       setProfile(prev => ({ ...prev, ...restored }));
-      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, { projectIntent, projectContext });
+      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
       setRequirements(computed);
       if (su.business_id) {
         businessIdRef.current = su.business_id;
@@ -1826,6 +1844,35 @@ export default function SmartPRIntake() {
   const [confirmationsNeeded, setConfirmationsNeeded] = useState<Record<string, boolean>>({});
 
   /** Clear a "needs confirmation" flag once the user manually edits or confirms the field. */
+  /**
+   * Every intake key that establishes the same fact as `key`: the key itself,
+   * its KB question id, the writeKey/aliases the interpreter writes, and the
+   * wizard keys that answer the same question. Used so a manual touch to any
+   * spelling of a fact releases all of them from interpreter ownership.
+   */
+  const relatedIntakeKeys = (key: string): string[] => {
+    const keys = new Set<string>([key]);
+    const qid = questionIdForAnswerKey(key) ?? WIZARD_KEY_TO_QUESTION[key] ?? null;
+    if (qid) {
+      keys.add(qid);
+      const binding = QUESTION_KEY_MAP[qid];
+      if (binding) {
+        keys.add(binding.writeKey);
+        for (const al of binding.aliases ?? []) keys.add(al);
+      }
+      for (const [wk, wq] of Object.entries(WIZARD_KEY_TO_QUESTION)) {
+        if (wq === qid) keys.add(wk);
+      }
+    } else {
+      const binding = QUESTION_KEY_MAP[key];
+      if (binding) {
+        keys.add(binding.writeKey);
+        for (const al of binding.aliases ?? []) keys.add(al);
+      }
+    }
+    return [...keys];
+  };
+
   const clearConfirmation = (key: string) =>
     setConfirmationsNeeded((prev) => {
       // Answer flags are registered under both the writeKey and the Q_
@@ -1837,6 +1884,42 @@ export default function SmartPRIntake() {
       for (const k of keys) next[k] = false;
       return next;
     });
+  /**
+   * A manual touch (wizard answer, field edit, intent choice) makes the fact
+   * the user's own: drop the "needs confirmation" flag AND release every
+   * spelling of the key from interpreter ownership, so a later fresh
+   * description never quarantines a fact the user explicitly set.
+   */
+  const markUserTouched = (key: string) => {
+    for (const k of relatedIntakeKeys(key)) interpretedKeysRef.current.delete(k);
+    clearConfirmation(key);
+  };
+
+  /**
+   * Provenance the requirements engine needs for the hard rule: the intake
+   * session identity, which fact keys were explicitly confirmed during this
+   * session, and which keys arrived via the linked business's passport.
+   * Confirmed = has a value and is not flagged needing confirmation.
+   * Suggested-but-unconfirmed interpretations and quarantined facts from a
+   * previous description are excluded — present in state, but inert.
+   */
+  const provenanceExtra = () => {
+    const valuedKeys = (obj: Record<string, unknown>): string[] =>
+      Object.keys(obj).filter((k) => {
+        const v = obj[k];
+        return v !== undefined && v !== null && v !== "";
+      });
+    const confirmedKeys = [
+      ...valuedKeys(profile as unknown as Record<string, unknown>),
+      ...valuedKeys(discoveryAnswers as Record<string, unknown>),
+    ].filter((k) => !confirmationsNeeded[k]);
+    return {
+      sessionId: intakeSessionIdRef.current,
+      businessId: businessIdRef.current ?? businessId,
+      confirmedKeys,
+      passportKeys: [...passportFilledKeysRef.current],
+    };
+  };
 
   /** Small "Needs confirmation" badge rendered next to interpreter-filled fields. */
   const confirmationBadge = (key: string) =>
@@ -2065,6 +2148,30 @@ export default function SmartPRIntake() {
   // linked business's passport says the entity is formed.
   const existingBizPrefillRef = useRef(false);
   const [existingBizFormed, setExistingBizFormed] = useState(false);
+  /**
+   * Fact provenance for the requirements engine (the hard rule: a requirement
+   * can only use a fact that belongs to the current project, is a persistent
+   * business-level fact legitimately applicable to it, or was explicitly
+   * confirmed during the current intake).
+   *
+   * - intakeSessionIdRef: the intake session. A fresh (replacement)
+   *   description mints a new one, so facts from the previous description
+   *   can never silently carry over.
+   * - interpretedKeysRef: profile/answer keys the interpreter wrote and the
+   *   user has not since touched. On a fresh description these are
+   *   quarantined (kept visible, flagged needing confirmation, inert until
+   *   re-confirmed) instead of silently inherited.
+   * - interpretedContextKeysRef: project-context keys merged from
+   *   interpretations (not user-stated pc_* follow-ups). A fresh description
+   *   drops them; the new description re-establishes what still applies.
+   * - passportFilledKeysRef: keys filled from the linked business's passport
+   *   (existing-business prefill). Persistent business facts — admissible for
+   *   business rules when the business matches, never for project rules.
+   */
+  const intakeSessionIdRef = useRef<string>(crypto.randomUUID());
+  const interpretedKeysRef = useRef<Set<string>>(new Set());
+  const interpretedContextKeysRef = useRef<Set<string>>(new Set());
+  const passportFilledKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     // Project-context follow-ups: deterministic questions for meaningful
     // project unknowns (renovation scope, occupancy change, …). Generated
@@ -2154,14 +2261,45 @@ export default function SmartPRIntake() {
         const data = await res.json();
         const b = data?.business;
         if (b) {
-          setProfile((prev) => ({
-            ...prev,
-            name: prev.name || b.legal_name || b.name || "",
-            municipality: prev.municipality || b.municipality || "",
-            business_structure: prev.business_structure || b.business_structure || "",
-            business_type: prev.business_type || b.business_type || "",
-            industry: prev.industry || b.industry || "",
-          }));
+          // Record exactly which keys the passport filled: they are persistent
+          // business-level facts (admissible for business rules when the
+          // business matches), not current-intake facts. Only keys the user
+          // had not already set are filled — user input always wins.
+          //
+          // The filled keys are derived synchronously here (not inside the
+          // setProfile updater): updater functions run later during render,
+          // so reading a local collected inside one would always see an
+          // empty list and the passport keys would never be tracked.
+          const filledKeys: string[] = [];
+          const patch: Record<string, unknown> = {};
+          const candidates: Record<string, unknown> = {
+            name: b.legal_name || b.name || "",
+            municipality: b.municipality || "",
+            business_structure: b.business_structure || "",
+            business_type: b.business_type || "",
+            industry: b.industry || "",
+          };
+          for (const [k, v] of Object.entries(candidates)) {
+            if (!(profile as unknown as Record<string, unknown>)[k] && v) {
+              patch[k] = v;
+              filledKeys.push(k);
+            }
+          }
+          for (const k of filledKeys) passportFilledKeysRef.current.add(k);
+          if (Object.keys(patch).length > 0) {
+            setProfile((prev) => {
+              // Re-check against the latest state: a value the user typed
+              // after this effect captured profile still wins over the
+              // passport fill.
+              const next = { ...prev };
+              for (const [k, v] of Object.entries(patch)) {
+                if (!(next as Record<string, unknown>)[k]) {
+                  (next as Record<string, unknown>)[k] = v;
+                }
+              }
+              return next;
+            });
+          }
         }
         const formationStatus: string | undefined = data?.passport?.canonical?.formationStatus;
         if (formationStatus && formationStatus.startsWith("formed")) {
@@ -2306,7 +2444,7 @@ export default function SmartPRIntake() {
 
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
     // A manual answer confirms the field — drop any "needs confirmation" flag.
-    clearConfirmation(q.id);
+    markUserTouched(q.id);
     // Advance past the question just answered. Recorded and derived answers
     // are skipped by `nextUnansweredQuestion` on the next render.
     setCurrentQuestionIndex(activeQuestionIndex + 1);
@@ -2319,8 +2457,65 @@ export default function SmartPRIntake() {
    * user would have entered by hand. No requirement is created here: the
    * existing rules engine runs later over these same values.
    */
-  const applyInterpretedIntake = (patch: IntakePatch, validated?: ValidatedInterpretation) => {
+  /**
+   * Replacement hygiene for a new description: mints a new provenance
+   * session and quarantines every narrative-derived fact from the previous
+   * description. Interpreter-owned profile/answer keys are flagged needing
+   * confirmation (they stay visible but are inert for the engine until the
+   * user re-confirms them or the new description re-establishes them);
+   * interpreter-owned project-context keys are dropped synchronously — both
+   * from state and from the ref — so a same-tick merge can never reintroduce
+   * them. Manually answered questions and passport-filled facts are
+   * untouched: they belong to the user or the linked business, not the
+   * narrative.
+   */
+  const quarantineNarrativeFacts = () => {
+    intakeSessionIdRef.current = crypto.randomUUID();
+    const quarantined = [...interpretedKeysRef.current];
+    interpretedKeysRef.current = new Set();
+    if (quarantined.length > 0) {
+      setConfirmationsNeeded((prev) => {
+        const next = { ...prev };
+        for (const k of quarantined) next[k] = true;
+        return next;
+      });
+    }
+    const staleContext = [...interpretedContextKeysRef.current];
+    interpretedContextKeysRef.current = new Set();
+    if (staleContext.length > 0) {
+      const stale = new Set(staleContext);
+      const next: ProjectContext = {};
+      for (const [k, v] of Object.entries(projectContextRef.current)) {
+        if (!stale.has(k)) (next as Record<string, unknown>)[k] = v;
+      }
+      // Update the ref synchronously: the project-context merge later in
+      // this tick reads the ref, and must see the stripped base — never the
+      // old description's facts.
+      projectContextRef.current = next;
+      setProjectContext(next);
+    }
+  };
+
+  /**
+   * The user tapped Edit on the interpreted strip: they are about to replace
+   * the description. Start replacement hygiene immediately instead of
+   * waiting for the new description to be submitted — stale narrative facts
+   * must not keep driving requirements while the user retypes.
+   */
+  const handleNarrativeEdit = () => {
+    quarantineNarrativeFacts();
+  };
+
+  const applyInterpretedIntake = (patch: IntakePatch, validated?: ValidatedInterpretation, opts?: { fresh?: boolean }) => {
     const numericFields = ['number_of_employees', 'number_of_vehicles', 'number_of_rental_units'];
+
+    if (opts?.fresh) {
+      // A replacement description starts a new provenance session and
+      // quarantines the previous description's narrative facts (see
+      // quarantineNarrativeFacts). The new interpretation's applied reads
+      // below re-establish facts in the fresh session.
+      quarantineNarrativeFacts();
+    }
 
     // Suggested (0.60–0.85) values are filled but visibly marked as needing
     // confirmation. They never overwrite a high-confidence value from the same
@@ -2396,6 +2591,43 @@ export default function SmartPRIntake() {
         return next;
       });
     }
+    // A high-confidence (applied, not suggested) read re-establishes the fact
+    // in the current session — including after a fresh description quarantined
+    // it. The interpreter restating a fact the user already confirmed keeps it
+    // confirmed; it never silently re-flags settled facts.
+    {
+      const appliedKeys = new Set<string>([
+        ...Object.keys(profilePatch),
+        ...Object.keys(fullAnswers),
+      ]);
+      for (const k of Object.keys(fullAnswers)) {
+        const qid = questionIdForAnswerKey(k);
+        if (qid) appliedKeys.add(qid);
+      }
+      for (const k of confirmKeys) appliedKeys.delete(k);
+      if (appliedKeys.size > 0) {
+        setConfirmationsNeeded((prev) => {
+          let changed = false;
+          const next = { ...prev };
+          for (const k of appliedKeys) {
+            if (next[k]) {
+              next[k] = false;
+              changed = true;
+            }
+          }
+          return changed ? next : prev;
+        });
+      }
+      // Track narrative-derived keys for the next fresh description's
+      // quarantine. Keys the user touches afterwards are released by
+      // markUserTouched.
+      for (const k of Object.keys(profilePatch)) interpretedKeysRef.current.add(k);
+      for (const k of Object.keys(fullAnswers)) {
+        interpretedKeysRef.current.add(k);
+        const qid = questionIdForAnswerKey(k);
+        if (qid) interpretedKeysRef.current.add(qid);
+      }
+    }
     if (fullProfile.municipality) setPotentialDecisions({});
     // Follow-up voice keeps populating the passport section even after the
     // user has typed into it: merge spoken fields into the canonical
@@ -2435,6 +2667,9 @@ export default function SmartPRIntake() {
     }
 
     // Project context: merge follow-up extractions into the retained facts.
+    // On a fresh description quarantineNarrativeFacts already dropped the old
+    // description's keys synchronously (state and ref), so the merge base
+    // below can never reintroduce them.
     const incoming = validated?.projectContext;
     const mergedContext =
       incoming && Object.keys(incoming).length > 0
@@ -2442,6 +2677,9 @@ export default function SmartPRIntake() {
         : projectContextRef.current;
     if (incoming && Object.keys(incoming).length > 0) {
       setProjectContext(mergedContext);
+      // Narrative-derived context keys are dropped on the next fresh
+      // description (user-stated pc_* follow-up facts are never tracked here).
+      for (const k of Object.keys(incoming)) interpretedContextKeysRef.current.add(k);
     }
 
     // Rebuild the Project Passport from the current intent + context so it
@@ -2501,7 +2739,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   setProfile(newProfile);
   const newAnswers = { ...getFollowUpQuestions(newProfile.industry) };
   setDiscoveryAnswers(newAnswers);
-  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, { projectIntent, projectContext });
+  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
   setRequirements(computed);
   setReadinessScore(null);
   setFindings([]);
@@ -2545,7 +2783,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Discovery + requirements are computed entirely client-side.
     setBusinessId('local-' + Date.now());
     setDiscoveryAnswers(answers);
-    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, { projectIntent, projectContext });
+    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
     const merged = mergeConfirmedPotentialRequirements(
       baseRequirements,
       potentialItemsForProfile(profile, baseRequirements),
@@ -2592,7 +2830,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // submissionIdRef from the URL; first capture mints a fresh id.
       const submissionId = submissionIdRef.current || newSubmissionId();
       submissionIdRef.current = submissionId;
-      const engineInput = buildEngineInput(p as any, answers, resolveFactsFor(p, answers).questionValues);
+      const engineInput = buildEngineInput(p as any, answers, resolveFactsFor(p, answers).questionValues, {
+        projectIntent, projectContext, ...provenanceExtra(),
+      });
       const qText = new Map(KB.questions.map((q) => [q.id, q.question]));
       // buildEngineInput expands the profile into EVERY canonical Q_* question,
       // defaulting the ones the user never engaged with to `false`. Capturing
@@ -2790,7 +3030,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Recomputing with the shown intent settles the branch.
     if (projectIntent) setProjectIntentConfirmed(true);
     setIsLoading(true);
-    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext });
+    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
     setRequirements(computed);
     setCurrentStep(3);
     setIsLoading(false);
@@ -2806,7 +3046,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const answerTriggerQuestion = (writeKey: string, value: boolean) => {
     const nextAnswers = { ...discoveryAnswers, [writeKey]: value };
     setDiscoveryAnswers(nextAnswers);
-    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, { projectIntent, projectContext }));
+    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() }));
   };
 
   // When business_type changes, also ensure location is valid (already handled in onChange)
@@ -4002,7 +4242,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // document that is already required for the selected business profile.
   const potentialItems = potentialItemsForProfile(
     profile,
-    computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext })
+    computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() })
   );
 
   // Render one requirement row (shared by Mandatory + Recommended sections).
@@ -4036,7 +4276,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // intelligence panel and progress stats update as they answer.
   const liveReqs = React.useMemo(() => {
     try {
-      return computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext });
+      return computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
     } catch {
       return [] as Requirement[];
     }
@@ -4415,7 +4655,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       { document_id: req.document_id, code: req.code, name, agency: req.agency, reason: trReqReason(req), applicability: req.applicability, triggerFacts: req.triggerFacts },
       { language, municipality: profile.municipality, businessTypeName: profile.business_type, discoveryAnswers,
         profile: profile as unknown as Record<string, unknown>, entityType: entityTypeFromLegacyStructure(profile.business_structure), occupancyType: canonicalApplication.property.occupancyType, kb: KB,
-        engineInput: buildEngineInput({ ...profile, number_of_employees: profile.number_of_employees ?? undefined }, discoveryAnswers, resolveFactsFor(profile, discoveryAnswers).questionValues) }
+        engineInput: buildEngineInput({ ...profile, number_of_employees: profile.number_of_employees ?? undefined }, discoveryAnswers, resolveFactsFor(profile, discoveryAnswers).questionValues, {
+          projectIntent, projectContext, ...provenanceExtra(),
+        }) }
     );
     const why = (
       <div className="rq-guidance">
@@ -4744,7 +4986,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   /** Let the user correct something the interpreter got wrong. */
   const reopenAnsweredQuestion = (questionId: string) => {
     setAiPrefilledKeys((prev) => prev.filter((id) => id !== questionId));
-    clearConfirmation(questionId);
+    markUserTouched(questionId);
     setDiscoveryAnswers((prev) => {
       const next = { ...prev };
       delete next[questionId];
@@ -5178,6 +5420,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   allowedIndustries={INDUSTRIES}
                   allowedLocationTypes={LOCATION_TYPES}
                   onApply={applyInterpretedIntake}
+                  onEdit={handleNarrativeEdit}
                   passport={passportModeActive ? {
                     canonical: canonicalApplication,
                     unconfirmedDefaults: canonicalOverride ? [] : ['formationStatus', ...(profile.business_structure ? [] : ['entityType'])],
@@ -5202,7 +5445,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                             onClick={() => {
                               setProjectIntent(intent);
                               setProjectIntentConfirmed(true);
-                              clearConfirmation('project_intent');
+                              markUserTouched('project_intent');
                             }}
                           >
                             {projectIntentLabel(intent, language)}
@@ -5219,7 +5462,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                         onClick={() => {
                           setProjectIntent(null);
                           setProjectIntentConfirmed(false);
-                          clearConfirmation('project_intent');
+                          markUserTouched('project_intent');
                         }}
                       >
                       {L('Change', language)}
@@ -5291,7 +5534,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     id="spr-business-name"
                     placeholder={isProjectOnly ? L('e.g. Guaynabo warehouse expansion', language) : L('Your business name', language)}
                     value={profile.name}
-                    onChange={e => { setProfile({ ...profile, name: e.target.value }); clearConfirmation('name'); }}
+                    onChange={e => { setProfile({ ...profile, name: e.target.value }); markUserTouched('name'); }}
                     required
                   />
                 </div>
@@ -5304,7 +5547,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     onChange={e => {
                       setProfile({ ...profile, municipality: e.target.value });
                       setPotentialDecisions({});
-                      clearConfirmation('municipality');
+                      markUserTouched('municipality');
                     }}
                   >
                     <option value="">{t('selectMunicipality')}</option>
@@ -5339,7 +5582,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       const allowed = LOCATION_TYPES_BY_BUSINESS_TYPE[newBt] || LOCATION_TYPES;
                       const newLoc = allowed.includes(profile.location_type || '') ? profile.location_type : '';
                       setProfile({ ...profile, business_type: newBt, location_type: newLoc });
-                      clearConfirmation('business_type');
+                      markUserTouched('business_type');
                     }}
                   >
                     <option value="">{t('selectBusinessType')}</option>
@@ -5350,7 +5593,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 <div className="spr-field">
                   <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
-                  <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); clearConfirmation('location_type'); }}>
+                  <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
                     <option value="">{t('selectLocationType')}</option>
                     {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => (
                       <option key={lt} value={lt}>{lt}</option>
@@ -5363,7 +5606,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
                     const structure = e.target.value;
                     setProfile({ ...profile, business_structure: structure });
-                    clearConfirmation('business_structure');
+                    markUserTouched('business_structure');
                     setCanonicalOverride((current) => current ? { ...current, business: { ...current.business, entityType: entityTypeFromLegacyStructure(structure) } } : current);
                   }}>
                     <option value="">{L('Select entity type', language)}</option>
@@ -5392,7 +5635,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     value={profile.number_of_employees ?? ''}
                     onChange={e => {
                       const raw = e.target.value;
-                      clearConfirmation('number_of_employees');
+                      markUserTouched('number_of_employees');
                       if (raw === '') {
                         setProfile({ ...profile, number_of_employees: null });
                         return;

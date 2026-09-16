@@ -327,6 +327,28 @@ export function classifyEngineRequirements(
 
     let applicability: Applicability = recommended ? "recommended" : "required";
     const triggerFacts: string[] = [];
+    // Provenance: every requirement names the exact fact that triggered it
+    // and the full triggering identity — where the fact was established
+    // (source), what it describes (scope), and the session/business it
+    // belongs to. A requirement can only use a fact with admissible
+    // provenance; this is the receipt.
+    for (const prov of row.triggerFactProvenance ?? []) {
+      const src =
+        prov.source === "passport"
+          ? "business passport"
+          : prov.source === "derived"
+            ? "derived from your answers"
+            : prov.source === "admin"
+              ? "SmartPR data"
+              : "current intake";
+      const identity = [
+        `source: ${src}`,
+        `scope: ${prov.scope}`,
+        ...(prov.sessionId ? [`session: ${prov.sessionId}`] : []),
+        ...(prov.businessId ? [`business: ${prov.businessId}`] : []),
+      ].join(", ");
+      triggerFacts.push(`fact:${prov.key}=${String(prov.value)} [${identity}]`);
+    }
 
     // Each basis is judged on its own verification: a verified required
     // basis stays required even when a sibling basis is heuristic. A

@@ -35,8 +35,16 @@ export interface NaturalLanguageIntakeProps {
   lang: "en" | "es";
   allowedIndustries?: string[];
   allowedLocationTypes?: string[];
-  /** Apply the high-confidence values to the existing profile + answers. */
-  onApply: (patch: IntakePatch, validated: ValidatedInterpretation) => void;
+  /** Apply the high-confidence values to the existing profile + answers.
+   * `opts.fresh` marks a replacement description (the main interpret action):
+   * the intake starts a new provenance session and quarantines facts the
+   * previous description established instead of silently inheriting them.
+   * Follow-up interpretations omit it and merge into the current session. */
+  onApply: (patch: IntakePatch, validated: ValidatedInterpretation, opts?: { fresh?: boolean }) => void;
+  /** Fires when the user taps Edit on the interpreted strip: the parent
+   * starts replacement hygiene immediately (quarantining narrative-derived
+   * facts) instead of waiting for a new description to be submitted. */
+  onEdit?: () => void;
   /** When true, show the floating voice orb (intake Start). Default true. */
   showVoiceOrb?: boolean;
   /** Enabled only once discovery is complete; writes the existing canonical state. */
@@ -81,6 +89,7 @@ export function NaturalLanguageIntake({
   allowedIndustries,
   allowedLocationTypes,
   onApply,
+  onEdit,
   showVoiceOrb = true,
   passport,
 }: NaturalLanguageIntakeProps) {
@@ -205,7 +214,10 @@ export function NaturalLanguageIntake({
           return;
         }
 
-        onApply(patch, validated);
+        // Fresh description (the main interpret action, including after Edit):
+        // a new provenance session — facts the previous description
+        // established are quarantined, never silently inherited.
+        onApply(patch, validated, { fresh: true });
         // Suggested (0.60–0.85) facts are filled by onApply; show them in the
         // strip visibly marked as needing confirmation. Project-context chips
         // prove the semantic extraction ran — not just keyword-level fields.
@@ -372,6 +384,10 @@ export function NaturalLanguageIntake({
             onClick={() => {
               setChips([]);
               setStatus("idle");
+              // Tell the parent now: it quarantines the narrative-derived
+              // facts immediately so nothing stale keeps driving requirements
+              // while the user retypes the description.
+              onEdit?.();
             }}
           >
             {L("Edit", "Editar")}

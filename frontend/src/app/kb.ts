@@ -33,6 +33,51 @@ import {
 } from "./ai/intake/projectIntent";
 import type { ProjectContext } from "./ai/intake/projectContext";
 import { projectFactsForEngine } from "./ai/intake/projectContext";
+import { INTAKE_RELATIONSHIPS } from "./ai/intake/relationshipRegistry";
+import type { FactMeta } from "./rulesEngine";
+
+/**
+ * Reverse map: KB question id -> the profile/discovery answer keys that
+ * legitimately establish it (from the relationship registry). Used to
+ * inherit confirmation: a resolver-derived answer counts as confirmed only
+ * when the fact it was derived from was confirmed.
+ */
+let questionSourceKeysCache: Map<string, Set<string>> | null = null;
+function questionSourceKeys(): Map<string, Set<string>> {
+  if (!questionSourceKeysCache) {
+    const m = new Map<string, Set<string>>();
+    for (const rel of INTAKE_RELATIONSHIPS) {
+      for (const effect of rel.effects) {
+        const target = effect.target;
+        if (target.type === "question") {
+          let s = m.get(target.key);
+          if (!s) {
+            s = new Set();
+            m.set(target.key, s);
+          }
+          // The source key is the profile/discovery key (or business type id
+          // for business_type sources) the derivation was computed from.
+          s.add(rel.source.key);
+        }
+      }
+    }
+    questionSourceKeysCache = m;
+  }
+  return questionSourceKeysCache;
+}
+
+/**
+ * Derivation sources buildEngineInput hardcodes (not registry relationships):
+ * the location dropdown establishes the three location questions; the
+ * industry dropdown establishes the tourism/agriculture questions.
+ */
+const DERIVED_SOURCE_KEYS: Record<string, string[]> = {
+  Q_PHYSICAL_LOCATION: ["location_type"],
+  Q_HOME_BASED: ["location_type"],
+  Q_ONLINE_ONLY: ["location_type"],
+  Q_TOURISM_ACTIVITY: ["industry"],
+  Q_AGRICULTURE_PRODUCTION: ["industry"],
+};
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
 
@@ -396,6 +441,29 @@ export function buildEngineInput(
     projectIntent?: ProjectIntent | null;
     /** Validated project-context facts; values feed project_fact rules. */
     projectContext?: ProjectContext | null;
+    /**
+     * Intake session identity. When set, the engine enforces strict fact
+     * provenance: only facts explicitly confirmed during this session (or
+     * passport facts for the same business, on business rules) may trigger.
+     * Absent = legacy callers without session identity (historical behavior).
+     */
+    sessionId?: string | null;
+    /** Business this evaluation belongs to (existing-business link). */
+    businessId?: string | null;
+    /**
+     * Fact keys explicitly established or confirmed during the current
+     * intake: manual answers, high-confidence (≥0.85) reads, user-confirmed
+     * suggestions. For KB questions, either the Q_ id or an answer key that
+     * establishes it (QUESTION_KEY_MAP writeKey/aliases, or a relationship
+     * source key such as "number_of_employees").
+     */
+    confirmedKeys?: Iterable<string>;
+    /**
+     * Fact keys that arrived via the business passport (linked existing
+     * business), not via the current intake. Admissible for business rules
+     * when the business matches; never for project rules.
+     */
+    passportKeys?: Iterable<string>;
   }
 ): EngineInput {
   const p = profile || {};
@@ -533,18 +601,95 @@ export function buildEngineInput(
   const projectOnly = businessStatus === "project_only";
 
   // Fact metadata for audit traceability: every fact the engine reads
-  // carries its source and its scope namespace. Business-scoped facts
-  // (profile/discovery answers) never leak into project reasoning and
-  // project-scoped facts never trigger business rules — the namespaces are
-  // enforced by construction (separate input fields) and recorded here.
+  // carries its source, its scope namespace, and — in strict mode — the
+  // session it was established in and whether it was explicitly confirmed
+  // during the current intake. The engine's provenance gate (isFactAdmissible
+  // in rulesEngine.ts) enforces the hard rule: a requirement can only use a
+  // fact that belongs to the current project, is a persistent business-level
+  // fact legitimately applicable to it, or was explicitly confirmed during
+  // the current intake. Suggested-but-unconfirmed interpretations are present
+  // in the input but inert — they can never trigger.
   const projectFacts = projectFactsForEngine(extra?.projectContext ?? null);
-  const factMeta: Record<string, import("./rulesEngine").FactMeta> = {};
-  for (const k of Object.keys(projectOnly ? {} : a)) {
-    factMeta[k] = { source: "user_intake", scope: "business" };
+  const strict = !!extra?.sessionId;
+  const confirmedKeys = new Set(extra?.confirmedKeys ?? []);
+  const passportKeys = new Set(extra?.passportKeys ?? []);
+  const relSourceKeys = questionSourceKeys();
+
+  /**
+   * Confirmation for a KB question: its Q_ id is confirmed, or any answer
+   * key that establishes it is confirmed (the QUESTION_KEY_MAP writeKey and
+   * aliases the intake writes, or a relationship source key the value was
+   * derived from — confirmation inherits from the basis, never invented).
+   */
+  const isQuestionConfirmed = (qid: string): boolean => {
+    if (confirmedKeys.has(qid)) return true;
+    const binding = QUESTION_KEY_MAP[qid];
+    if (binding) {
+      if (confirmedKeys.has(binding.writeKey)) return true;
+      if ((binding.aliases ?? []).some((al) => confirmedKeys.has(al))) return true;
+    }
+    const sources = relSourceKeys.get(qid);
+    if (sources) {
+      for (const k of sources) if (confirmedKeys.has(k)) return true;
+    }
+    const derived = DERIVED_SOURCE_KEYS[qid];
+    if (derived?.some((k) => confirmedKeys.has(k))) return true;
+    return false;
+  };
+  const isPassportKey = (qid: string): boolean => {
+    if (passportKeys.has(qid)) return true;
+    const binding = QUESTION_KEY_MAP[qid];
+    if (binding) {
+      if (passportKeys.has(binding.writeKey)) return true;
+      if ((binding.aliases ?? []).some((al) => passportKeys.has(al))) return true;
+    }
+    return false;
+  };
+
+  const factMeta: Record<string, FactMeta> = {};
+  const stampBusinessFact = (key: string, confirmed: boolean, passport: boolean) => {
+    factMeta[key] = {
+      source: passport ? "passport" : "user_intake",
+      scope: "business",
+      sessionId: extra?.sessionId ?? null,
+      businessId: extra?.businessId ?? null,
+      // Legacy callers (no session identity) keep the historical behavior:
+      // every defined answer reads as established. Strict mode fails closed.
+      confirmedInCurrentIntake: strict ? confirmed : true,
+    };
+  };
+  if (!projectOnly) {
+    for (const k of Object.keys(a)) {
+      if (a[k] === undefined) continue;
+      stampBusinessFact(k, isQuestionConfirmed(k), isPassportKey(k));
+    }
+    // Municipality and business type are consumed directly by the engine
+    // (not via the answers map) — they pass the same gate.
+    if (p.municipality) {
+      stampBusinessFact("municipality", confirmedKeys.has("municipality"), passportKeys.has("municipality"));
+    }
+    if (p.business_type) {
+      stampBusinessFact("business_type", confirmedKeys.has("business_type"), passportKeys.has("business_type"));
+    }
   }
   if (projectFacts) {
     for (const k of Object.keys(projectFacts)) {
-      factMeta[k] = { source: "user_intake", scope: "project" };
+      const fact = extra?.projectContext?.[k as keyof ProjectContext];
+      const confidence =
+        fact && typeof fact === "object" && "confidence" in fact && typeof fact.confidence === "number"
+          ? fact.confidence
+          : 0;
+      factMeta[k] = {
+        source: "user_intake",
+        scope: "project",
+        sessionId: extra?.sessionId ?? null,
+        businessId: extra?.businessId ?? null,
+        // Project facts: high-confidence (≥0.85) reads are established;
+        // suggested (0.60–0.85) facts stay inert until the user confirms or
+        // restates them. Legacy callers keep the historical behavior.
+        confirmedInCurrentIntake: strict ? confidence >= 0.85 || confirmedKeys.has(k) : true,
+        confidence,
+      };
     }
   }
 
@@ -554,6 +699,8 @@ export function buildEngineInput(
     answers: projectOnly ? {} : a,
     answerProvenance,
     factMeta,
+    sessionId: extra?.sessionId ?? null,
+    businessId: extra?.businessId ?? null,
     // Canonical entity type so entity-scoped rules (excluded_entity_types)
     // stay silent for legal forms they can never apply to. "other" means the
     // user hasn't picked a known form — rules treat that as unknown, and the
@@ -574,6 +721,10 @@ export function runRulesEngineForProfile(
   extra?: {
     projectIntent?: ProjectIntent | null;
     projectContext?: ProjectContext | null;
+    sessionId?: string | null;
+    businessId?: string | null;
+    confirmedKeys?: Iterable<string>;
+    passportKeys?: Iterable<string>;
   }
 ): EngineResult {
   return runRulesEngine(KB, buildEngineInput(profile, answers, resolved, extra));
@@ -680,11 +831,20 @@ export function computeRequirementsFromSnapshot(
     legacyCode?: Record<string, string>;
     projectIntent?: ProjectIntent | null;
     projectContext?: ProjectContext | null;
+    /** Fact provenance for the engine's hard rule (see buildEngineInput). */
+    sessionId?: string | null;
+    businessId?: string | null;
+    confirmedKeys?: Iterable<string>;
+    passportKeys?: Iterable<string>;
   } = {}
 ): UIRequirement[] {
   const input = buildEngineInput(profile, answers, resolved, {
     projectIntent: options.projectIntent ?? null,
     projectContext: options.projectContext ?? null,
+    sessionId: options.sessionId ?? null,
+    businessId: options.businessId ?? null,
+    confirmedKeys: options.confirmedKeys,
+    passportKeys: options.passportKeys,
   });
   for (const question of snapshot.questions as Array<{ id: string }>) {
     const direct = answers[question.id];
@@ -761,6 +921,11 @@ export function computeRequirementsFromKB(
     potentialDecisions?: Record<string, PotentialDecision>;
     projectIntent?: ProjectIntent | null;
     projectContext?: ProjectContext | null;
+    /** Fact provenance for the engine's hard rule (see buildEngineInput). */
+    sessionId?: string | null;
+    businessId?: string | null;
+    confirmedKeys?: Iterable<string>;
+    passportKeys?: Iterable<string>;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
@@ -768,5 +933,9 @@ export function computeRequirementsFromKB(
     potentialDecisions: options.potentialDecisions,
     projectIntent: options.projectIntent,
     projectContext: options.projectContext,
+    sessionId: options.sessionId,
+    businessId: options.businessId,
+    confirmedKeys: options.confirmedKeys,
+    passportKeys: options.passportKeys,
   });
 }
