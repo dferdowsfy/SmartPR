@@ -475,3 +475,53 @@ test("official identifiers below the auto-apply threshold are suggested, never a
   assert.equal(validated.suggested.profileValues[0].key, "ein");
   assert.equal(patch.profile.ein, undefined);
 });
+
+test("every explicitly named identity field is parsed: DBA, owner, email, phone, NAICS, for-profit", () => {
+  const { patch } = interpret({
+    profileValues: [
+      { key: "trade_name", value: "Luna's Bar", confidence: 0.94 },
+      { key: "owner_name", value: "Jose Rivera", confidence: 0.95 },
+      { key: "email", value: "jose@example.com", confidence: 0.97 },
+      { key: "phone", value: "(787) 555-0123", confidence: 0.96 },
+      { key: "naics_code", value: "722511", confidence: 0.95 },
+      { key: "for_profit_status", value: "for_profit", confidence: 0.98 },
+    ],
+  });
+  assert.equal(patch.profile.trade_name, "Luna's Bar");
+  assert.equal(patch.profile.owner_name, "Jose Rivera");
+  assert.equal(patch.profile.email, "jose@example.com");
+  assert.equal(patch.profile.phone, "7875550123");
+  assert.equal(patch.profile.naics_code, "722511");
+  assert.equal(patch.profile.for_profit_status, "for_profit");
+  assert.deepEqual(patch.chips.map((c) => c.label), [
+    "DBA Luna's Bar",
+    "Owner: Jose Rivera",
+    "jose@example.com",
+    "7875550123",
+    "NAICS 722511",
+    "For profit",
+  ]);
+});
+
+test("an invalid email, short phone number, or bad NAICS code is discarded", () => {
+  const { validated, patch } = interpret({
+    profileValues: [
+      { key: "email", value: "not-an-email", confidence: 0.95 },
+      { key: "phone", value: "123", confidence: 0.95 },
+      { key: "naics_code", value: "ABC", confidence: 0.95 },
+    ],
+  });
+  assert.equal(validated.profileValues.length, 0);
+  assert.equal(patch.profile.email, undefined);
+  assert.equal(patch.profile.phone, undefined);
+  assert.equal(patch.profile.naics_code, undefined);
+  assert.equal(validated.discarded.length, 3);
+});
+
+test("'nonprofit' is accepted as for_profit_status", () => {
+  const { patch } = interpret({
+    profileValues: [{ key: "for_profit_status", value: "nonprofit", confidence: 0.97 }],
+  });
+  assert.equal(patch.profile.for_profit_status, "nonprofit");
+  assert.deepEqual(patch.chips.map((c) => c.label), ["Nonprofit"]);
+});

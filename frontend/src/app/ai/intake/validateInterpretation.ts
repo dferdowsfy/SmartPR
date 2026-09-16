@@ -86,10 +86,11 @@ export interface ValidatedInterpretation {
  * as XX-XXXXXXX; `date` must be a real calendar date in ISO YYYY-MM-DD form.
  * Anything not listed here is ignored.
  */
-const PROFILE_FIELD_KINDS: Record<string, "option" | "number" | "text" | "ein" | "date"> = {
+const PROFILE_FIELD_KINDS: Record<string, "option" | "number" | "text" | "ein" | "date" | "email" | "phone"> = {
   industry: "option",
   location_type: "option",
   business_structure: "option",
+  for_profit_status: "option",
   number_of_employees: "number",
   // Counts the relationship resolver turns into the KB's own select buckets
   // (Q_FLEET_SIZE / Q_RENTAL_UNITS) — see relationshipRegistry.ts.
@@ -103,7 +104,15 @@ const PROFILE_FIELD_KINDS: Record<string, "option" | "number" | "text" | "ein" |
   incorporation_date: "date",
   merchant_registration_number: "text",
   physical_address: "text",
+  trade_name: "text",
+  owner_name: "text",
+  email: "email",
+  phone: "phone",
+  naics_code: "text",
 };
+
+/** for_profit_status is the only option-kind field with a fixed value list. */
+const FOR_PROFIT_STATUS_VALUES = ["for_profit", "nonprofit"];
 
 /** Entity/filing types the intake's structure selector offers. */
 export const BUSINESS_STRUCTURE_VALUES = [
@@ -279,10 +288,32 @@ export function validateInterpretation(
         continue;
       }
       resolved = s;
+    } else if (kind === "email") {
+      // Basic shape check — the model must still only copy a stated address.
+      const v = asString(entry?.value).toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
+        drop(`profileValues.${key}`, `"${asString(entry?.value)}" is not a valid email`);
+        continue;
+      }
+      resolved = v;
+    } else if (kind === "phone") {
+      // 7–15 digits; keep a stated country-code "+" prefix, drop formatting.
+      const raw = asString(entry?.value);
+      const digits = raw.replace(/\D/g, "");
+      if (digits.length < 7 || digits.length > 15) {
+        drop(`profileValues.${key}`, `"${raw}" is not a valid phone number`);
+        continue;
+      }
+      resolved = raw.trim().startsWith("+") ? `+${digits}` : digits;
     } else {
       const value = asString(entry?.value);
       if (!value) {
         drop(`profileValues.${key}`, "missing value");
+        continue;
+      }
+      // NAICS codes are 2–6 digits; anything else is a misheard number.
+      if (key === "naics_code" && !/^\d{2,6}$/.test(value)) {
+        drop(`profileValues.${key}`, `"${value}" is not a valid NAICS code`);
         continue;
       }
       if (kind === "option") {
@@ -290,6 +321,7 @@ export function validateInterpretation(
           key === "industry" ? options.allowedIndustries
           : key === "location_type" ? options.allowedLocationTypes
           : key === "business_structure" ? BUSINESS_STRUCTURE_VALUES
+          : key === "for_profit_status" ? FOR_PROFIT_STATUS_VALUES
           : undefined;
         if (!allowed || allowed.length === 0) {
           drop(`profileValues.${key}`, "no allowed values configured");
@@ -394,6 +426,14 @@ function profileChipLabel(pv: ValidatedProfileValue): string {
   if (pv.key === "physical_address") {
     const s = String(pv.value);
     return s.length > 34 ? `${s.slice(0, 33)}…` : s;
+  }
+  if (pv.key === "trade_name") return `DBA ${pv.value}`;
+  if (pv.key === "owner_name") return `Owner: ${pv.value}`;
+  if (pv.key === "email") return String(pv.value);
+  if (pv.key === "phone") return String(pv.value);
+  if (pv.key === "naics_code") return `NAICS ${pv.value}`;
+  if (pv.key === "for_profit_status") {
+    return pv.value === "nonprofit" ? "Nonprofit" : "For profit";
   }
   return String(pv.value);
 }

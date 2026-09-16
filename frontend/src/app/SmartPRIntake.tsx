@@ -121,6 +121,13 @@ interface BusinessProfile {
   incorporation_date?: string;
   merchant_registration_number?: string;
   physical_address?: string;
+  /** Any explicitly named field the speaker states is parsed — no exceptions. */
+  trade_name?: string;
+  owner_name?: string;
+  email?: string;
+  phone?: string;
+  naics_code?: string;
+  for_profit_status?: string;
 }
 
 interface Finding {
@@ -1108,6 +1115,20 @@ function buildOfficialDetailsPassport(profile: BusinessProfile): BusinessPasspor
   if (incorporationDate) business.incorporationDate = incorporationDate;
   const merchantReg = profile.merchant_registration_number?.trim();
   if (merchantReg) business.merchantRegistrationNumber = merchantReg;
+  const tradeName = profile.trade_name?.trim();
+  if (tradeName) business.tradeName = tradeName;
+  const naics = profile.naics_code?.trim();
+  if (naics) business.naicsCode = naics;
+  const bizEmail = profile.email?.trim();
+  if (bizEmail) business.email = bizEmail;
+  const bizPhone = profile.phone?.trim();
+  if (bizPhone) business.phone = bizPhone;
+  const forProfit = profile.for_profit_status?.trim();
+  if (forProfit === "for_profit" || forProfit === "nonprofit") business.forProfitStatus = forProfit;
+
+  const contact: Record<string, string> = {};
+  const ownerName = profile.owner_name?.trim();
+  if (ownerName) contact.fullName = ownerName;
 
   let addresses: BusinessPassportJson["addresses"] | undefined;
   const street = profile.physical_address?.trim();
@@ -1123,12 +1144,15 @@ function buildOfficialDetailsPassport(profile: BusinessProfile): BusinessPasspor
     };
   }
 
-  if (Object.keys(business).length === 0 && !addresses) return null;
+  if (Object.keys(business).length === 0 && Object.keys(contact).length === 0 && !addresses) return null;
   const passport: BusinessPassportJson = {};
   if (Object.keys(business).length > 0) {
     // Partial on purpose: the server normalizes this into the full canonical
     // shape (canonicalFromBusinessRow) before persisting.
     passport.business = business as unknown as BusinessPassportJson["business"];
+  }
+  if (Object.keys(contact).length > 0) {
+    passport.contact = contact as unknown as BusinessPassportJson["contact"];
   }
   if (addresses) passport.addresses = addresses;
   return passport;

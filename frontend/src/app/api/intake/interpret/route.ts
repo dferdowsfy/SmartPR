@@ -148,6 +148,18 @@ ALLOWED profileValues KEYS (use these exact keys, omit any you cannot determine)
 - "physical_address" :: the principal physical address street line as stated
   (e.g. "1 Cavet 8"). Street address only — the municipality stays its own
   fact, never folded into this value.
+- "trade_name" :: the "doing business as" / DBA name, ONLY when the speaker
+  states one (e.g. 'doing business as "Luna\'s Bar"' -> "Luna's Bar").
+- "owner_name" :: the owner's full name, ONLY when the speaker states it
+  (e.g. "my name is Jose Rivera" -> "Jose Rivera"). Never invent.
+- "email" :: the business email address, ONLY when the speaker clearly states
+  it (e.g. "my email is jose at example dot com" -> "jose@example.com").
+- "phone" :: the business phone number, ONLY when the speaker clearly states
+  the digits. Return digits (and a leading + for country code when stated).
+- "naics_code" :: the NAICS industry code, digits only, ONLY when the speaker
+  clearly states it (e.g. "NAICS 722511" -> "722511").
+- "for_profit_status" :: "for_profit" when the speaker says the business is
+  for-profit, "nonprofit" when they say nonprofit. Omit when not stated.
 
 IDENTIFIERS AND DATES ARE COPIED, NEVER CREATED. If the speaker does not
 state the digits or the date, omit the key entirely — do not guess.
