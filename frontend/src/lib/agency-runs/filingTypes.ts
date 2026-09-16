@@ -40,6 +40,20 @@ export interface AgencyFilingConfig {
   enabled: boolean;
   /** Shown disabled with an "existing account required" note. */
   requiresExistingAccount: boolean;
+  /** Agency group this filing belongs to (used by agency-action resolution). */
+  agencyId?: string;
+  /**
+   * Canonical passport dotted paths (e.g. "business.legalName") that drive
+   * readiness scoring for this filing.
+   */
+  passportCoverageKeys?: string[];
+  /** Filing types that must be completed before this one can start. */
+  blockedBy?: AgencyFilingType[];
+  /**
+   * Sensitive values the human must supply (labels only — never values).
+   * Surfaced as missing items with sensitive=true.
+   */
+  sensitiveNeeds?: { id: string; label_en: string; label_es: string }[];
 }
 
 export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
@@ -87,6 +101,27 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     needsLogin: true,
     enabled: true,
     requiresExistingAccount: false,
+    agencyId: "HACIENDA_SURI",
+    passportCoverageKeys: [
+      "business.legalName",
+      "business.tradeName",
+      "business.ein",
+      "contact.fullName",
+      "contact.email",
+      "contact.phone",
+      "addresses.principalPhysical.line1",
+      "addresses.municipality",
+      "addresses.principalPhysical.postalCode",
+      "addresses.state",
+    ],
+    blockedBy: [],
+    sensitiveNeeds: [
+      {
+        id: "ssn",
+        label_en: "SSN (Social Security Number)",
+        label_es: "Número de Seguro Social",
+      },
+    ],
   },
   {
     id: "SURI_MERCHANT_REGISTRATION",
@@ -126,6 +161,21 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     needsLogin: true,
     enabled: false,
     requiresExistingAccount: true,
+    agencyId: "HACIENDA_SURI",
+    passportCoverageKeys: [
+      "business.legalName",
+      "business.tradeName",
+      "business.ein",
+      "business.registryNumber",
+      "contact.fullName",
+      "contact.email",
+      "contact.phone",
+      "addresses.principalPhysical.line1",
+      "addresses.municipality",
+      "addresses.principalPhysical.postalCode",
+    ],
+    blockedBy: ["SURI_REGISTER_TAXPAYER"],
+    sensitiveNeeds: [],
   },
   {
     id: "DEPT_STATE_CORPORATE_FILING",
@@ -167,6 +217,23 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     needsLogin: true,
     enabled: true,
     requiresExistingAccount: false,
+    agencyId: "DEPT_STATE",
+    passportCoverageKeys: [
+      "business.legalName",
+      "business.tradeName",
+      "business.entityType",
+      "business.ein",
+      "business.registryNumber",
+      "contact.fullName",
+      "contact.email",
+      "contact.phone",
+      "addresses.principalPhysical.line1",
+      "addresses.municipality",
+      "addresses.principalPhysical.postalCode",
+      "addresses.state",
+    ],
+    blockedBy: [],
+    sensitiveNeeds: [],
   },
   {
     id: "OGPE_PERMISO_UNICO",
@@ -208,6 +275,21 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     needsLogin: true,
     enabled: true,
     requiresExistingAccount: false,
+    agencyId: "OGPE",
+    passportCoverageKeys: [
+      "business.legalName",
+      "business.tradeName",
+      "business.entityType",
+      "contact.fullName",
+      "contact.email",
+      "contact.phone",
+      "addresses.principalPhysical.line1",
+      "addresses.municipality",
+      "addresses.principalPhysical.postalCode",
+      "addresses.state",
+    ],
+    blockedBy: [],
+    sensitiveNeeds: [],
   },
 ];
 

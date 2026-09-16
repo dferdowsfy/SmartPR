@@ -1,0 +1,128 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { resolveAgencyActions } from "./agencyActions";
+import { getFilingConfig } from "./filingTypes";
+import {
+  buildGoalBrief,
+  goalBriefToPromptBlock,
+  stripSensitivePassport,
+} from "./goalBrief";
+
+const passport = {
+  business: {
+    legalName: "Café Plaza LLC",
+    tradeName: "Café Plaza",
+    ein: "66-1234567",
+  },
+  contact: { fullName: "Ana Rivera", email: "ana@cafeplaza.pr" },
+};
+
+async function suriBrief() {
+  const actions = await resolveAgencyActions({
+    business_id: "biz-1",
+    agency_id: "HACIENDA_SURI",
+    passport,
+    priorRuns: [],
+  });
+  const action = actions.find((a) => a.filing_type === "SURI_REGISTER_TAXPAYER");
+  assert.ok(action);
+  return buildGoalBrief({ config: getFilingConfig("SURI_REGISTER_TAXPAYER"), action });
+}
+
+describe("buildGoalBrief", () => {
+  it("carries labels only — never passport values", async () => {
+    const brief = await suriBrief();
+    const dumped = JSON.stringify(brief);
+    for (const secret of ["Café Plaza", "66-1234567", "Ana Rivera", "ana@cafeplaza.pr"]) {
+      assert.ok(!dumped.includes(secret), `leaked value: ${secret}`);
+    }
+    assert.ok(brief.agency_en.length > 0);
+    assert.ok(brief.agency_es.length > 0);
+    assert.ok(brief.goal_en.length > 0);
+    assert.ok(brief.goal_es.length > 0);
+    assert.ok(brief.expected_outcome_en.length > 0);
+    assert.ok(brief.expected_outcome_es.length > 0);
+  });
+
+  it("known_fields = coverage keys with values, as labels", async () => {
+    const brief = await suriBrief();
+    const labels = brief.known_fields.map((f) => f.label_en);
+    assert.ok(labels.includes("Legal business name"));
+    assert.ok(labels.includes("Contact full name"));
+    // contact.phone was not in the passport → must not be "known".
+    assert.ok(!labels.includes("Phone"));
+    for (const f of brief.known_fields) {
+      assert.ok(f.label_en.length > 0 && f.label_es.length > 0);
+    }
+  });
+
+  it("user_input_expected lists missing items with sensitivity, no values", async () => {
+    const brief = await suriBrief();
+    const ssn = brief.user_input_expected.find((f) => f.id === "ssn");
+    assert.ok(ssn, "expected ssn as user input");
+    assert.equal(ssn.sensitive, true);
+    assert.ok(ssn.label_es.includes("Seguro Social"));
+    const phone = brief.user_input_expected.find((f) => f.id === "contact.phone");
+    assert.ok(phone, "expected contact.phone as user input");
+    assert.equal(phone.sensitive, false);
+    const dumped = JSON.stringify(brief.user_input_expected);
+    assert.ok(!dumped.includes("787"), "no phone value may appear");
+  });
+
+  it("evidence_available flows from the action", async () => {
+    const brief = await suriBrief();
+    assert.deepEqual(brief.evidence_available, [
+      "DOC_PHOTO_ID",
+      "DOC_UTILITY_BILL",
+      "DOC_SSN_CARD",
+    ]);
+  });
+});
+
+describe("goalBriefToPromptBlock", () => {
+  it("renders all sections as plain text, labels only", async () => {
+    const brief = await suriBrief();
+    const block = goalBriefToPromptBlock(brief);
+    for (const section of [
+      "AGENCY:",
+      "GOAL:",
+      "EXPECTED OUTCOME:",
+      "KNOWN INFORMATION",
+      "USER INPUT EXPECTED",
+      "AVAILABLE EVIDENCE",
+    ]) {
+      assert.ok(block.includes(section), `missing section: ${section}`);
+    }
+    assert.ok(block.includes("Legal business name"));
+    assert.ok(block.includes("SSN (Social Security Number)"));
+    assert.ok(!block.includes("Café Plaza"), "value leaked into prompt block");
+    assert.ok(!block.includes("66-1234567"), "EIN leaked into prompt block");
+  });
+});
+
+describe("stripSensitivePassport", () => {
+  it("removes sensitive leaves at any depth, keeps the rest", () => {
+    const cleaned = stripSensitivePassport({
+      business: { legalName: "Café Plaza LLC", ssn: "123-45-6789", tax_id: "66-1234567" },
+      contact: { email: "ana@cafeplaza.pr", mfa: "000000" },
+      password: "hunter2",
+      addresses: [{ line1: "123 Calle Principal", pin: "1234" }],
+    });
+    assert.deepEqual(cleaned, {
+      business: { legalName: "Café Plaza LLC" },
+      contact: { email: "ana@cafeplaza.pr" },
+      addresses: [{ line1: "123 Calle Principal" }],
+    });
+  });
+
+  it("returns null for null input and passes through non-sensitive data", () => {
+    assert.equal(stripSensitivePassport(null), null);
+    assert.deepEqual(stripSensitivePassport({ a: 1 }), { a: 1 });
+  });
+
+  it("does not mutate the original passport", () => {
+    const original = { business: { ssn: "x", legalName: "Y" } };
+    stripSensitivePassport(original);
+    assert.deepEqual(original, { business: { ssn: "x", legalName: "Y" } });
+  });
+});

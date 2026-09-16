@@ -1,4 +1,5 @@
 /** Agency assistant run types — mock worker or Browser Use Cloud. */
+import type { GoalBrief } from "./goalBrief";
 
 export type AgencyFilingType =
   | "SURI_REGISTER_TAXPAYER"
@@ -87,6 +88,11 @@ export interface AgencyRun {
    * Cleared when pause clears or on successful resume that supplied values.
    */
   pending_fields: AgencyPendingField[];
+  /**
+   * Structured goal brief (labels only — never values) attached when the run
+   * was started via POST /api/agency-actions. Drives the agent brief block.
+   */
+  goal_brief?: GoalBrief | null;
 }
 
 export interface AgencyRunPublic {
@@ -110,6 +116,11 @@ export interface AgencyRunPublic {
   pause_streak: number;
   /** Required fields for the Assistant panel (ids/labels/types only — never values). */
   pending_fields: AgencyPendingField[];
+  /**
+   * Structured goal brief (labels only — never values). Null when the run was
+   * started directly via POST /api/agency-runs.
+   */
+  goal_brief: GoalBrief | null;
   /**
    * Owner-only passport snapshot for Assistant-panel prefill (non-sensitive mapping
    * happens client-side). Never contains field values the user typed in Assistant.

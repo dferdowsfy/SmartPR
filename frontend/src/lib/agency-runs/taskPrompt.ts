@@ -1,4 +1,9 @@
 import type { AgencyFilingConfig } from "./filingTypes";
+import {
+  goalBriefToPromptBlock,
+  stripSensitivePassport,
+  type GoalBrief,
+} from "./goalBrief";
 
 /** Ephemeral login fields for USER_LOGIN resume — never persisted on the run. */
 export type ResumeCredentials = {
@@ -60,10 +65,16 @@ export function buildAgencyTaskPrompt(input: {
   credentials?: ResumeCredentials | null;
   /** Ephemeral field values from the Assistant panel (never persisted). */
   fields?: ResumeFields | null;
+  /** Labels-only goal brief from the agency-action flow (never values). */
+  goalBrief?: GoalBrief | null;
 }): string {
   const { config } = input;
-  const passportBlock = input.passport
-    ? JSON.stringify(input.passport, null, 2)
+  // SECURITY: strip sensitive leaves (SSN, passwords, MFA, …) before the
+  // passport is embedded in the prompt — the agent must never see values
+  // the passport cannot fill.
+  const safePassport = stripSensitivePassport(input.passport);
+  const passportBlock = safePassport
+    ? JSON.stringify(safePassport, null, 2)
     : "(no passport JSON available — fill only what the user provides on screen; do not invent data)";
 
   const fields = mergeResumeFields(input.fields, input.credentials);
@@ -99,8 +110,14 @@ export function buildAgencyTaskPrompt(input: {
     .map((step, i) => `${i + 1}. ${step}`)
     .join("\n");
 
-  return `You are SmartPR's agency filing assistant controlling a real browser for ${config.agencyEn} (${config.portalEn}).
+  // Structured goal brief — so the agent is never sent in with just
+  // "Go to SURI". Labels only, no values, no secrets.
+  const goalBriefBlock = input.goalBrief
+    ? `\n\n${goalBriefToPromptBlock(input.goalBrief)}\n`
+    : "";
 
+  return `You are SmartPR's agency filing assistant controlling a real browser for ${config.agencyEn} (${config.portalEn}).
+${goalBriefBlock}
 GOAL
 - Filing: ${config.labelEn}
 - ${config.goalEn}

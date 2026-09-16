@@ -36,6 +36,7 @@ import {
   type ResumeFields,
 } from "./taskPrompt";
 import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
+import type { GoalBrief } from "./goalBrief";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -78,6 +79,8 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     pause_streak: run.pause_streak,
     // Labels/types/ids only — never values.
     pending_fields: run.pending_fields ?? [],
+    // GoalBrief is labels-only by construction — safe for public payloads.
+    goal_brief: run.goal_brief ?? null,
     // Owner-gated API already; used for Assistant non-sensitive prefill only.
     passport_snapshot: run.passport_snapshot ?? null,
   };
@@ -492,6 +495,8 @@ export async function createRun(input: {
   filing_type: AgencyFilingType;
   owner_user_id?: string | null;
   passport?: Record<string, unknown> | null;
+  /** Labels-only goal brief from POST /api/agency-actions — drives the agent brief block. */
+  goalBrief?: GoalBrief | null;
 }): Promise<AgencyRunPublic> {
   const created = nowIso();
   const useBu = isBrowserUseConfigured();
@@ -518,6 +523,7 @@ export async function createRun(input: {
     pause_streak: 0,
     prev_pause_reason: null,
     pending_fields: [],
+    goal_brief: input.goalBrief ?? null,
   };
 
   if (useBu) {
@@ -532,6 +538,7 @@ export async function createRun(input: {
       const task = buildAgencyTaskPrompt({
         config: filingConfig,
         passport: input.passport || null,
+        goalBrief: input.goalBrief ?? null,
       });
       const buRun = await createAgentRun({
         task,
@@ -597,6 +604,21 @@ export async function getRun(id: string): Promise<AgencyRunPublic | null> {
 /** Internal accessor for ownership checks. */
 export function peekRun(id: string): AgencyRun | null {
   return runs().get(id) || null;
+}
+
+/**
+ * Read-only list of prior runs for a business (filing type + status only).
+ * Used by agency-action resolution to mark completed/blocked filings.
+ */
+export function listRunsForBusiness(
+  businessId: string
+): { filing_type: AgencyFilingType; status: AgencyRunStatus }[] {
+  const out: { filing_type: AgencyFilingType; status: AgencyRunStatus }[] = [];
+  for (const run of runs().values()) {
+    if (run.business_id !== businessId) continue;
+    out.push({ filing_type: run.filing_type, status: run.status });
+  }
+  return out;
 }
 
 export type ResumeRunOptions = {
