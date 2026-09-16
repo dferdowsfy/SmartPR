@@ -17,9 +17,15 @@ import { buildKbCandidates } from "../ai/intake/kbCandidates";
 import {
   toIntakePatch,
   validateInterpretation,
+  promoteSuggested,
   type IntakePatch,
   type ValidatedInterpretation,
 } from "../ai/intake/validateInterpretation";
+import {
+  validateProjectContext,
+  type ProjectContext,
+} from "../ai/intake/projectContext";
+import { projectIntentLabel } from "../ai/intake/projectIntent";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
 import { PassportVoiceReview, usePassportVoiceInput, type PassportInputTarget } from "./voice/PassportVoiceReview";
 
@@ -38,6 +44,36 @@ export interface NaturalLanguageIntakeProps {
 
 type Status = "idle" | "loading" | "done" | "error";
 
+/**
+ * Attach validated project-context facts to a validated interpretation.
+ * The server already validated defensively; the client re-validates here and
+ * never trusts the raw model output.
+ */
+function attachProjectContext(
+  validated: ValidatedInterpretation,
+  data: { projectContext?: unknown } | null | undefined
+): void {
+  const { context } = validateProjectContext(data?.projectContext);
+  if (Object.keys(context).length > 0) validated.projectContext = context;
+}
+
+/** True when the interpretation produced any usable fact — visible fields (at
+ *  any confidence band), suggested facts, project context, or project intent. */
+function hasAnyFact(patch: IntakePatch, validated: ValidatedInterpretation): boolean {
+  const suggested = validated.suggested;
+  return (
+    Object.keys(patch.profile).length > 0 ||
+    Object.keys(patch.answers).length > 0 ||
+    suggested.profileValues.length > 0 ||
+    suggested.answers.length > 0 ||
+    suggested.businessType != null ||
+    suggested.municipality != null ||
+    validated.projectIntent != null ||
+    suggested.projectIntent != null ||
+    Object.keys(validated.projectContext ?? {}).length > 0
+  );
+}
+
 export function NaturalLanguageIntake({
   kb,
   lang,
@@ -53,7 +89,6 @@ export function NaturalLanguageIntake({
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [chips, setChips] = useState<{ label: string }[]>([]);
-  const [pending, setPending] = useState<ValidatedInterpretation["suggested"] | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const loadingRef = useRef(false);
   // Tracks whether the description box already has content, so the first
@@ -70,6 +105,30 @@ export function NaturalLanguageIntake({
     el.style.height = `${Math.min(el.scrollHeight, 190)}px`;
   }, [text]);
 
+  /**
+   * Chips for 0.60–0.85 "suggested" facts. They are filled by onApply and
+   * visibly marked as needing confirmation — no separate "Also apply?" step.
+   */
+  const buildSuggestedChips = useCallback(
+    (validated: ValidatedInterpretation) => {
+      const promoted = toIntakePatch(promoteSuggested(validated), { kb, allowedIndustries });
+      const marker = L("needs confirmation", "necesita confirmación");
+      const chips = promoted.chips.map((c) => ({ ...c, label: `${c.label} (${marker})` }));
+      // The intent card is the confirmation surface for project intent — add
+      // a chip here too so the interpretation summary reads complete.
+      const intent = validated.suggested.projectIntent ?? validated.projectIntent;
+      if (intent) {
+        chips.push({
+          label: `${L("Project intent", "Tipo de proyecto")}: ${projectIntentLabel(intent.value, lang)}${
+            intent.requiresConfirmation ? ` (${marker})` : ""
+          }`,
+        });
+      }
+      return chips;
+    },
+    [kb, lang, allowedIndustries]
+  );
+
   const interpretDescription = useCallback(
     async (descriptionRaw: string) => {
       const description = descriptionRaw.trim();
@@ -77,7 +136,6 @@ export function NaturalLanguageIntake({
       loadingRef.current = true;
       setStatus("loading");
       setChips([]);
-      setPending(null);
       try {
         if (passport) {
           const res = await fetch("/api/intake/interpret", {
@@ -117,25 +175,24 @@ export function NaturalLanguageIntake({
           allowedIndustries,
           allowedLocationTypes,
         });
+        attachProjectContext(validated, data);
         // The KB lets toIntakePatch reconcile contradictory model answers and
         // hide chips that merely restate a fact another chip already implies.
         const patch = toIntakePatch(validated, { kb, allowedIndustries });
 
-        const nothingFound =
-          Object.keys(patch.profile).length === 0 && Object.keys(patch.answers).length === 0;
+        // A project-context-only result (rich project description, no visible
+        // business fields) is a success, not an error — the facts are kept
+        // and feed follow-up questions, goal briefs, and the passport.
+        const nothingFound = !hasAnyFact(patch, validated);
         if (nothingFound) {
           setStatus("error");
           return;
         }
 
         onApply(patch, validated);
-        setChips(patch.chips);
-        const hasSuggestions =
-          validated.suggested.businessType ||
-          validated.suggested.municipality ||
-          validated.suggested.answers.length > 0 ||
-          validated.suggested.profileValues.length > 0;
-        setPending(hasSuggestions ? validated.suggested : null);
+        // Suggested (0.60–0.85) facts are filled by onApply; show them in the
+        // strip visibly marked as needing confirmation.
+        setChips([...patch.chips, ...buildSuggestedChips(validated)]);
         setStatus("done");
       } catch {
         setStatus("error");
@@ -143,7 +200,7 @@ export function NaturalLanguageIntake({
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips]
   );
 
   const interpret = () => {
@@ -190,21 +247,15 @@ export function NaturalLanguageIntake({
           allowedIndustries,
           allowedLocationTypes,
         });
+        attachProjectContext(validated, data);
         const patch = toIntakePatch(validated, { kb, allowedIndustries });
-        const nothingFound =
-          Object.keys(patch.profile).length === 0 && Object.keys(patch.answers).length === 0;
+        const nothingFound = !hasAnyFact(patch, validated);
         if (nothingFound) {
           setStatus("error");
           return;
         }
         onApply(patch, validated);
-        mergeChips(patch.chips);
-        const hasSuggestions =
-          validated.suggested.businessType ||
-          validated.suggested.municipality ||
-          validated.suggested.answers.length > 0 ||
-          validated.suggested.profileValues.length > 0;
-        setPending(hasSuggestions ? validated.suggested : null);
+        mergeChips([...patch.chips, ...buildSuggestedChips(validated)]);
         setStatus("done");
       } catch {
         setStatus("error");
@@ -212,7 +263,7 @@ export function NaturalLanguageIntake({
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips, buildSuggestedChips]
   );
 
   const handleVoiceTranscript = useCallback(
@@ -244,23 +295,6 @@ export function NaturalLanguageIntake({
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     window.setTimeout(() => el.focus(), 120);
   }, []);
-
-  const applySuggestion = (suggested: ValidatedInterpretation["suggested"]) => {
-    // Promote confirmed suggestions through the same validated -> patch path.
-    const promoted: ValidatedInterpretation = {
-      summary: "",
-      businessType: suggested.businessType,
-      municipality: suggested.municipality,
-      profileValues: suggested.profileValues,
-      answers: suggested.answers,
-      suggested: { profileValues: [], answers: [] },
-      discarded: [],
-    };
-    const patch = toIntakePatch(promoted, { kb, allowedIndustries });
-    onApply(patch, promoted);
-    setChips((current) => [...current, ...patch.chips]);
-    setPending(null);
-  };
 
   return (
     <div className="spr-nl">
@@ -320,7 +354,6 @@ export function NaturalLanguageIntake({
             className="spr-nl-edit"
             onClick={() => {
               setChips([]);
-              setPending(null);
               setStatus("idle");
             }}
           >
@@ -329,26 +362,13 @@ export function NaturalLanguageIntake({
         </div>
       )}
 
-      {status === "done" && pending && (
-        <div className="spr-nl-suggest">
-          <span>
-            {L("Also apply?", "¿Aplicar también?")}{" "}
-            {[
-              pending.businessType?.name,
-              pending.municipality?.value,
-              ...pending.profileValues.map((p) => p.value),
-              ...pending.answers.filter((a) => a.value === true).map((a) => a.question),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-          <button type="button" className="spr-nl-edit" onClick={() => applySuggestion(pending)}>
-            {L("Yes", "Sí")}
-          </button>
-          <button type="button" className="spr-nl-edit" onClick={() => setPending(null)}>
-            {L("No", "No")}
-          </button>
-        </div>
+      {status === "done" && chips.length === 0 && (
+        <p className="spr-nl-kept" role="status">
+          {L(
+            "Got it — I kept the project details you mentioned. A few follow-up questions will help pin down the rest.",
+            "Entendido — guardé los detalles del proyecto que mencionaste. Unas preguntas de seguimiento ayudarán a completar lo demás."
+          )}
+        </p>
       )}
 
       {status === "error" && (

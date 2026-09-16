@@ -26,6 +26,12 @@ import { entityTypeFromLegacyStructure } from "./forms/engine/intake.ts";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
 import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
+import type { ProjectIntent } from "./ai/intake/projectIntent";
+import {
+  businessStatusForIntent,
+  entityNotFormedForIntent,
+} from "./ai/intake/projectIntent";
+import type { ProjectContext } from "./ai/intake/projectContext";
 
 export const KB: KnowledgeBase = ACTIVE_JURISDICTION.kb;
 
@@ -377,7 +383,13 @@ const sameAnswerValue = (a: unknown, b: unknown): boolean => {
 export function buildEngineInput(
   profile: ProfileLike,
   answers: Record<string, unknown> = {},
-  resolved: Record<string, boolean | string> = {}
+  resolved: Record<string, boolean | string> = {},
+  extra?: {
+    /** Project-first intake branch; drives formation gating + project facts. */
+    projectIntent?: ProjectIntent | null;
+    /** Validated project-context facts; values feed project_fact rules. */
+    projectContext?: ProjectContext | null;
+  }
 ): EngineInput {
   const p = profile || {};
   const da = answers || {};
@@ -607,9 +619,14 @@ export function computeRequirementsFromSnapshot(
     potentialDecisions?: Record<string, PotentialDecision>;
     recommendedIds?: Set<string>;
     legacyCode?: Record<string, string>;
+    projectIntent?: ProjectIntent | null;
+    projectContext?: ProjectContext | null;
   } = {}
 ): UIRequirement[] {
-  const input = buildEngineInput(profile, answers, resolved);
+  const input = buildEngineInput(profile, answers, resolved, {
+    projectIntent: options.projectIntent ?? null,
+    projectContext: options.projectContext ?? null,
+  });
   for (const question of snapshot.questions as Array<{ id: string }>) {
     const direct = answers[question.id];
     if (direct !== undefined) input.answers[question.id] = direct as boolean | string;
@@ -677,10 +694,14 @@ export function computeRequirementsFromKB(
   options: {
     entityType?: EntityType | string | null;
     potentialDecisions?: Record<string, PotentialDecision>;
+    projectIntent?: ProjectIntent | null;
+    projectContext?: ProjectContext | null;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
     entityType: options.entityType,
     potentialDecisions: options.potentialDecisions,
+    projectIntent: options.projectIntent,
+    projectContext: options.projectContext,
   });
 }

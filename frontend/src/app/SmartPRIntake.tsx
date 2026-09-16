@@ -40,7 +40,30 @@ import { mirrorAnswersToProfile, questionIdForAnswerKey } from './ai/intake/ques
 // question it can answer. It produces facts only — requirements still come
 // exclusively from the rules engine.
 import { resolveIntakeFacts, type ResolutionResult } from './ai/intake/relationships';
-import type { IntakePatch } from './ai/intake/validateInterpretation';
+import type { IntakePatch, ValidatedInterpretation } from './ai/intake/validateInterpretation';
+import { toIntakePatch } from './ai/intake/validateInterpretation';
+import {
+  mergeProjectContext,
+  projectContextAnswerToFacts,
+  projectContextFollowUps,
+  projectFactKnown,
+  validateProjectContext,
+  type ProjectContext,
+} from './ai/intake/projectContext';
+import {
+  normalizeProjectIntent,
+  projectIntentLabel,
+  projectIntentQuestionText,
+  projectIntentWhyAsk,
+  PROJECT_INTENT_VALUES,
+  type ProjectIntent,
+} from './ai/intake/projectIntent';
+import {
+  projectPassportFromContext,
+  validateProjectPassport,
+  projectPassportTitle,
+  type ProjectPassportJson,
+} from './forms/engine/projectPassport';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
 import { selectFormForRequirement, selectEntriesForRequirement } from './forms/engine/routing';
 import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms/engine/intake';
@@ -1034,14 +1057,23 @@ function normalizeEntityFormationRequirements(
 function computeRequirements(
   profile: BusinessProfile,
   answers: Record<string, any>,
-  potentialDecisions: Record<string, PotentialDecision> = {}
+  potentialDecisions: Record<string, PotentialDecision> = {},
+  project: { projectIntent?: ProjectIntent | null; projectContext?: ProjectContext | null } = {}
 ): Requirement[] {
   const entityType = entityTypeFromLegacyStructure(profile.business_structure);
   const fromKb = computeRequirementsFromKB(
     profile as any,
     answers,
     resolveFactsFor(profile, answers).questionValues,
-    { entityType, potentialDecisions }
+    {
+      entityType,
+      potentialDecisions,
+      // Project-first gating: formation requirements fire only for a new
+      // business whose entity is not yet formed; construction permits fire
+      // from project facts alone.
+      projectIntent: project.projectIntent ?? null,
+      projectContext: project.projectContext ?? null,
+    }
   ) as Requirement[];
 
   return normalizeEntityFormationRequirements(entityType, fromKb);
@@ -1578,6 +1610,19 @@ export default function SmartPRIntake() {
           if (st.canonicalApplication) setCanonicalOverride(st.canonicalApplication);
           if (typeof st.readinessScore === 'number') setReadinessScore(st.readinessScore);
           if (typeof st.currentStep === 'number') setCurrentStep(st.currentStep);
+          // Project-context facts persist with the intake state; validate on
+          // restore so a malformed snapshot can never corrupt the session.
+          if (st.projectContext && typeof st.projectContext === 'object') {
+            const { context } = validateProjectContext(st.projectContext);
+            if (Object.keys(context).length > 0) setProjectContext(context);
+          }
+          // Project-first state: intent is a closed set; the Project Passport
+          // is revalidated against its schema version.
+          if (normalizeProjectIntent(st.projectIntent)) {
+            setProjectIntent(normalizeProjectIntent(st.projectIntent));
+          }
+          const restoredPassport = validateProjectPassport(st.projectPassport);
+          if (restoredPassport) setProjectPassport(restoredPassport);
           if (snap.business_id) {
             businessIdRef.current = snap.business_id;
             setBusinessId(snap.business_id);
@@ -1600,7 +1645,7 @@ export default function SmartPRIntake() {
         location_type: su.location_type || '',
       };
       setProfile(prev => ({ ...prev, ...restored }));
-      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions);
+      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, { projectIntent, projectContext });
       setRequirements(computed);
       if (su.business_id) {
         businessIdRef.current = su.business_id;
@@ -1658,6 +1703,46 @@ export default function SmartPRIntake() {
   // These are skipped in the guided flow so AI reduces intake work without
   // removing the questions it could not determine.
   const [aiPrefilledKeys, setAiPrefilledKeys] = useState<string[]>([]);
+  // Project-context facts extracted from the user's description (renovation
+  // scope, square footage, …). Preserved alongside the intake so requirements
+  // reasoning, Agency Assist briefs, and the passport can use them.
+  const [projectContext, setProjectContext] = useState<ProjectContext>({});
+  // Project-first intake branch: existing_business | new_business |
+  // project_only. Null until the interpreter determines it or the user picks
+  // it in the intent card — never defaulted.
+  const [projectIntent, setProjectIntent] = useState<ProjectIntent | null>(null);
+  // The Project Passport: project/property facts for the active intent,
+  // rebuilt whenever intent or project context changes. Linked to an existing
+  // business id only for existing_business; null for new_business and
+  // project_only.
+  const [projectPassport, setProjectPassport] = useState<ProjectPassportJson | null>(null);
+  const projectIntentRef = useRef<ProjectIntent | null>(null);
+  projectIntentRef.current = projectIntent;
+  const projectContextRef = useRef<ProjectContext>({});
+  projectContextRef.current = projectContext;
+  // Profile/answer keys filled at 0.60–0.85 confidence: applied but visibly
+  // marked as needing the user's confirmation. Cleared when the user edits or
+  // confirms the field.
+  const [confirmationsNeeded, setConfirmationsNeeded] = useState<Record<string, boolean>>({});
+
+  /** Clear a "needs confirmation" flag once the user manually edits or confirms the field. */
+  const clearConfirmation = (key: string) =>
+    setConfirmationsNeeded((prev) => {
+      // Answer flags are registered under both the writeKey and the Q_
+      // question id — clear whichever forms exist.
+      const questionId = questionIdForAnswerKey(key);
+      const keys = questionId && questionId !== key ? [key, questionId] : [key];
+      if (!keys.some((k) => prev[k])) return prev;
+      const next = { ...prev };
+      for (const k of keys) next[k] = false;
+      return next;
+    });
+
+  /** Small "Needs confirmation" badge rendered next to interpreter-filled fields. */
+  const confirmationBadge = (key: string) =>
+    confirmationsNeeded[key] ? (
+      <span className="spr-confirm-badge">{L('Needs confirmation', language)}</span>
+    ) : null;
 
   // Workspace / final deliverables
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
@@ -1874,8 +1959,32 @@ export default function SmartPRIntake() {
   // Dynamic question flow based on Business Type AND Location Type. We filter
   // out questions whose answer is implied by the location (e.g. nothing about
   // customers visiting "the location" when there is no physical location).
+  //
+  // Project-first branching state (declared before the effects that read it):
+  // existing_business skips the entity-type formation question once the
+  // linked business's passport says the entity is formed.
+  const existingBizPrefillRef = useRef(false);
+  const [existingBizFormed, setExistingBizFormed] = useState(false);
   useEffect(() => {
-    if (profile.business_type) {
+    // Project-context follow-ups: deterministic questions for meaningful
+    // project unknowns (renovation scope, occupancy change, …). Generated
+    // from retained facts only — never repeats what the user already said.
+    // The owner/operator question is suppressed only when the description
+    // already established that relationship; a business name alone does not
+    // answer "what company or entity owns or operates the project?".
+    const projectFollowUps: DiscoveryQuestion[] = projectContextFollowUps(projectContext, {
+      ownerKnown: projectFactKnown(projectContext, "business_is_owner_operator"),
+    });
+    // project_only: no business type is ever set, and even if one leaked in,
+    // a property/project with no business asks zero business-formation
+    // questions — only the deterministic project follow-ups.
+    if (projectIntent === "project_only") {
+      setQuestionList(projectFollowUps);
+      const firstUnanswered = projectFollowUps.findIndex(
+        (question) => discoveryAnswersRef.current[question.id] === undefined
+      );
+      setCurrentQuestionIndex(firstUnanswered >= 0 ? firstUnanswered : projectFollowUps.length);
+    } else if (profile.business_type) {
       // Pre-answered questions STAY in the list so progress totals stay honest
       // and they can be shown as completed; the flow just advances past them.
       // Rebuilding this list when the KB finishes loading must not restart the
@@ -1884,24 +1993,98 @@ export default function SmartPRIntake() {
         getQuestionsForBusinessType(profile.business_type),
         profile.location_type
       );
-      setQuestionList(list);
-      const firstUnanswered = list.findIndex(
+      // existing_business with a formed entity: the passport already answers
+      // the entity-type formation question — never ask it again.
+      const intentFiltered =
+        projectIntent === "existing_business" && existingBizFormed
+          ? list.filter((q) => q.id !== "Q_BUSINESS_STRUCTURE")
+          : list;
+      const fullList = [...intentFiltered, ...projectFollowUps];
+      setQuestionList(fullList);
+      const firstUnanswered = fullList.findIndex(
         (question) => discoveryAnswersRef.current[question.id] === undefined
       );
-      setCurrentQuestionIndex(firstUnanswered >= 0 ? firstUnanswered : list.length);
+      setCurrentQuestionIndex(firstUnanswered >= 0 ? firstUnanswered : fullList.length);
+    } else if (projectFollowUps.length > 0) {
+      // Rich project description but no resolved business type yet: still ask
+      // the deterministic project follow-ups so the retained context gets
+      // refined instead of sitting idle. Base intake (profile fields) is
+      // untouched — these only feed the guided-question list.
+      setQuestionList(projectFollowUps);
+      const firstUnanswered = projectFollowUps.findIndex(
+        (question) => discoveryAnswersRef.current[question.id] === undefined
+      );
+      setCurrentQuestionIndex(firstUnanswered >= 0 ? firstUnanswered : projectFollowUps.length);
     } else {
       setQuestionList([]);
       setCurrentQuestionIndex(0);
     }
-  }, [profile.business_type, profile.location_type, kbReady]);
+  }, [profile.business_type, profile.location_type, kbReady, projectContext, projectIntent, existingBizFormed]);
+
+  // Project-first branching.
+  //
+  // - existing_business: when a business is linked (?business=<id>), pull its
+  //   record once and reuse the Business Passport facts (name, municipality,
+  //   structure, type, industry) for any empty profile fields — the user is
+  //   never re-asked what the passport already knows. When the passport says
+  //   the entity is formed, the entity-type formation question is skipped in
+  //   the guided list.
+  // - new_business: the current formation flow continues unchanged.
+  // - project_only: the guided list carries only project follow-ups — zero
+  //   business-formation questions; the engine adds zero business
+  //   requirements.
+  useEffect(() => {
+    if (projectIntent) {
+      // Keep the Project Passport in step with the intent. Only
+      // existing_business links a business id; the other branches never do.
+      setProjectPassport((prev) =>
+        projectPassportFromContext({
+          intent: projectIntent,
+          business_id: projectIntent === "existing_business" ? (prev?.business_id ?? businessId) : null,
+          projectContext: projectContextRef.current,
+        })
+      );
+    }
+    if (projectIntent !== "existing_business" || !businessId || existingBizPrefillRef.current) return;
+    existingBizPrefillRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/businesses/${businessId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const b = data?.business;
+        if (b) {
+          setProfile((prev) => ({
+            ...prev,
+            name: prev.name || b.legal_name || b.name || "",
+            municipality: prev.municipality || b.municipality || "",
+            business_structure: prev.business_structure || b.business_structure || "",
+            business_type: prev.business_type || b.business_type || "",
+            industry: prev.industry || b.industry || "",
+          }));
+        }
+        const formationStatus: string | undefined = data?.passport?.canonical?.formationStatus;
+        if (formationStatus && formationStatus.startsWith("formed")) {
+          setExistingBizFormed(true);
+        }
+        setProjectPassport((prev) =>
+          projectPassportFromContext({
+            intent: "existing_business",
+            business_id: businessId,
+            projectContext: projectContextRef.current,
+          }) ?? prev
+        );
+      } catch { /* prefill is best-effort; the intake stays usable */ }
+    })();
+  }, [projectIntent, businessId]);
 
   // ==========================================================================
   // Question suppression.
   //
   // Before a discovery question is shown, ask whether its answer is already
-  // known — because the user stated it, because the interpreter extracted it,
-  // or because the relationship resolver derived it with certainty. A known
-  // answer is never asked again, anywhere in the intake.
+  // known from a USER-PROVIDED or explicitly imported fact. Derived and
+  // inferred facts NEVER suppress a question: a resolution the engine made
+  // on the user's behalf is not the user's answer.
   //
   // Manual answers remain part of the guided-question total, but forward
   // navigation skips them. Back explicitly removes the prior answer before
@@ -1939,6 +2122,10 @@ export default function SmartPRIntake() {
   // questions answered by the user so totals do not shrink while progressing.
   const activeQuestionIndex = nextUnansweredQuestion(currentQuestionIndex);
   const guidedQuestions = questionList.filter((q) => !isQuestionPreAnswered(q.id));
+  // project_only asks zero business-formation questions: the visible profile
+  // keeps only the project name and the project municipality; industry,
+  // business type, location type, entity type, and headcount never appear.
+  const isProjectOnly = projectIntent === 'project_only';
   const guidedQuestionsAnswered = guidedQuestions
     .filter((q) => discoveryAnswers[q.id] !== undefined).length;
   const activeGuidedQuestionNumber = activeQuestionIndex < questionList.length
@@ -1948,6 +2135,26 @@ export default function SmartPRIntake() {
   const handleQuestionAnswer = (value: boolean | string) => {
     const q = questionList[activeQuestionIndex];
     if (!q) return;
+
+    // Project-context follow-ups (pc_*): record the fact at confidence 1 —
+    // the user just stated it — and move on. These feed follow-up reasoning
+    // and briefs; they never touch the requirements engine.
+    if (q.id.startsWith("pc_")) {
+      const facts = projectContextAnswerToFacts(q.id, value, language);
+      if (facts.length > 0) {
+        setProjectContext((prev) => {
+          const next = { ...prev };
+          for (const { key, fact } of facts) next[key] = fact;
+          return next;
+        });
+      }
+      setDiscoveryAnswers((prev) => ({ ...prev, [q.id]: value }));
+      // Advance past the question just answered; the questionList effect
+      // recomputes firstUnanswered once the new fact removes this question.
+      setCurrentQuestionIndex(activeQuestionIndex + 1);
+      return;
+    }
+
     // Every existing `updates.x = yes` branch below is id-gated and keeps
     // working unchanged: select-type answers are strings, so `yes` is simply
     // false for them and none of those ids match a select question anyway.
@@ -1998,6 +2205,8 @@ export default function SmartPRIntake() {
     }
 
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
+    // A manual answer confirms the field — drop any "needs confirmation" flag.
+    clearConfirmation(q.id);
     // Advance past the question just answered. Recorded and derived answers
     // are skipped by `nextUnansweredQuestion` on the next render.
     setCurrentQuestionIndex(activeQuestionIndex + 1);
@@ -2010,10 +2219,54 @@ export default function SmartPRIntake() {
    * user would have entered by hand. No requirement is created here: the
    * existing rules engine runs later over these same values.
    */
-  const applyInterpretedIntake = (patch: IntakePatch) => {
+  const applyInterpretedIntake = (patch: IntakePatch, validated?: ValidatedInterpretation) => {
     const numericFields = ['number_of_employees', 'number_of_vehicles', 'number_of_rental_units'];
+
+    // Suggested (0.60–0.85) values are filled but visibly marked as needing
+    // confirmation. They never overwrite a high-confidence value from the same
+    // interpretation.
+    const confirmKeys: string[] = [];
+    const fullProfile: Record<string, unknown> = { ...patch.profile };
+    const fullAnswers: Record<string, boolean | string> = { ...patch.answers };
+    const suggested = validated?.suggested;
+    if (
+      suggested &&
+      (suggested.businessType ||
+        suggested.municipality ||
+        suggested.profileValues.length > 0 ||
+        suggested.answers.length > 0)
+    ) {
+      const promoted: ValidatedInterpretation = {
+        summary: "",
+        businessType: suggested.businessType,
+        municipality: suggested.municipality,
+        profileValues: suggested.profileValues,
+        answers: suggested.answers,
+        suggested: { profileValues: [], answers: [] },
+        discarded: [],
+      };
+      const suggestedPatch = toIntakePatch(promoted, { kb: KB, allowedIndustries: INDUSTRIES });
+      for (const [key, value] of Object.entries(suggestedPatch.profile)) {
+        if (!(key in fullProfile)) {
+          fullProfile[key] = value;
+          confirmKeys.push(key);
+        }
+      }
+      for (const [key, value] of Object.entries(suggestedPatch.answers)) {
+        if (!(key in fullAnswers)) {
+          fullAnswers[key] = value;
+          confirmKeys.push(key);
+          // Answer patches are keyed by writeKey, but guided questions and
+          // the "answered from description" list may look up the Q_ question
+          // id — flag both so the badge appears and clears either way.
+          const questionId = questionIdForAnswerKey(key);
+          if (questionId && questionId !== key) confirmKeys.push(questionId);
+        }
+      }
+    }
+
     const profilePatch: Partial<BusinessProfile> = {};
-    for (const [key, value] of Object.entries(patch.profile)) {
+    for (const [key, value] of Object.entries(fullProfile)) {
       if (numericFields.includes(key)) {
         (profilePatch as Record<string, unknown>)[key] = typeof value === 'number' ? value : null;
       } else {
@@ -2022,26 +2275,67 @@ export default function SmartPRIntake() {
     }
     // Mirror booleans onto the profile the same way handleQuestionAnswer does,
     // since question filtering and follow-up context read the profile.
-    Object.assign(profilePatch, mirrorAnswersToProfile(patch.answers));
+    Object.assign(profilePatch, mirrorAnswersToProfile(fullAnswers));
 
     setProfile((prev) => {
       const next = { ...prev, ...profilePatch };
       // Changing the industry normally clears business_type; keep the
       // interpreted type when the interpreter supplied one.
-      if (typeof patch.profile.business_type === 'string') next.business_type = patch.profile.business_type;
+      if (typeof fullProfile.business_type === 'string') next.business_type = fullProfile.business_type as string;
       return next;
     });
 
-    if (Object.keys(patch.answers).length > 0) {
-      setDiscoveryAnswers((prev) => ({ ...prev, ...patch.answers }));
-      setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...Object.keys(patch.answers)])));
+    if (Object.keys(fullAnswers).length > 0) {
+      setDiscoveryAnswers((prev) => ({ ...prev, ...fullAnswers }));
+      setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...Object.keys(fullAnswers)])));
     }
-    if (patch.profile.municipality) setPotentialDecisions({});
+    if (confirmKeys.length > 0) {
+      setConfirmationsNeeded((prev) => {
+        const next = { ...prev };
+        for (const key of confirmKeys) next[key] = true;
+        return next;
+      });
+    }
+    if (fullProfile.municipality) setPotentialDecisions({});
     // Follow-up voice keeps populating the passport section even after the
     // user has typed into it: merge spoken fields into the canonical
     // override so the visible fields update. No override yet → the
     // canonicalApplication memo derives them from the profile instead.
     setCanonicalOverride((prev) => (prev ? mergeSpokenIntoCanonical(prev, profilePatch) : prev));
+
+    // Project intent: applied (≥0.85) sets it silently; suggested (0.60–0.85)
+    // sets it but flags it for confirmation in the intent card.
+    const appliedIntent = validated?.projectIntent?.value ?? null;
+    const suggestedIntent = validated?.suggested?.projectIntent?.value ?? null;
+    const incomingIntent = normalizeProjectIntent(appliedIntent ?? suggestedIntent);
+    const effectiveIntent = incomingIntent ?? projectIntentRef.current;
+    if (incomingIntent) {
+      setProjectIntent((prev) => prev ?? incomingIntent);
+      if (suggestedIntent && !appliedIntent) {
+        setConfirmationsNeeded((prev) => ({ ...prev, project_intent: true }));
+      }
+    }
+
+    // Project context: merge follow-up extractions into the retained facts.
+    const incoming = validated?.projectContext;
+    const mergedContext =
+      incoming && Object.keys(incoming).length > 0
+        ? mergeProjectContext(projectContextRef.current, incoming)
+        : projectContextRef.current;
+    if (incoming && Object.keys(incoming).length > 0) {
+      setProjectContext(mergedContext);
+    }
+
+    // Rebuild the Project Passport from the current intent + context so it
+    // always reflects what the intake knows (the linked business id for an
+    // existing business is attached by the intent-branch effect).
+    setProjectPassport((prev) =>
+      projectPassportFromContext({
+        intent: effectiveIntent,
+        business_id: prev?.business_id ?? null,
+        projectContext: mergedContext,
+      })
+    );
   };
 
   const handlePotentialAnswer = (definition: PotentialDef, decision: PotentialDecision) => {
@@ -2075,6 +2369,8 @@ export default function SmartPRIntake() {
     setCanonicalOverride(null);
     setCurrentQuestionIndex(0);
     setAiPrefilledKeys([]);
+    // An industry change invalidates every interpreter-filled value.
+    setConfirmationsNeeded({});
   };
 
   const progress = Math.round(((currentStep - 1) / 8) * 100);
@@ -2085,7 +2381,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   setProfile(newProfile);
   const newAnswers = { ...getFollowUpQuestions(newProfile.industry) };
   setDiscoveryAnswers(newAnswers);
-  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions);
+  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, { projectIntent, projectContext });
   setRequirements(computed);
   setReadinessScore(null);
   setFindings([]);
@@ -2127,7 +2423,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Discovery + requirements are computed entirely client-side.
     setBusinessId('local-' + Date.now());
     setDiscoveryAnswers(answers);
-    const baseRequirements = computeRequirements(profile, answers, potentialDecisions);
+    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, { projectIntent, projectContext });
     const merged = mergeConfirmedPotentialRequirements(
       baseRequirements,
       potentialItemsForProfile(profile, baseRequirements),
@@ -2244,6 +2540,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               govFormDrafts, preparedGovApplications,
               canonicalApplication: canonicalOverride,
               currentStep, readinessScore,
+              // Project-context facts ride with the intake state so resume
+              // restores them exactly (see restore below).
+              projectContext,
+              // Project-first state: the intent branch and the Project
+              // Passport persist with the intake; both are validated on
+              // restore so a malformed snapshot can never corrupt the
+              // session.
+              projectIntent,
+              projectPassport,
             },
           }),
         })];
@@ -2356,7 +2661,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Load / recompute requirements (powered by the design-accurate compute function)
   const loadRequirements = async () => {
     setIsLoading(true);
-    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions);
+    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext });
     setRequirements(computed);
     setCurrentStep(3);
     setIsLoading(false);
@@ -2372,7 +2677,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const answerTriggerQuestion = (writeKey: string, value: boolean) => {
     const nextAnswers = { ...discoveryAnswers, [writeKey]: value };
     setDiscoveryAnswers(nextAnswers);
-    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions));
+    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, { projectIntent, projectContext }));
   };
 
   // When business_type changes, also ensure location is valid (already handled in onChange)
@@ -3568,7 +3873,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // document that is already required for the selected business profile.
   const potentialItems = potentialItemsForProfile(
     profile,
-    computeRequirements(profile, discoveryAnswers, potentialDecisions)
+    computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext })
   );
 
   // Render one requirement row (shared by Mandatory + Recommended sections).
@@ -3602,7 +3907,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // intelligence panel and progress stats update as they answer.
   const liveReqs = React.useMemo(() => {
     try {
-      return computeRequirements(profile, discoveryAnswers, potentialDecisions);
+      return computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext });
     } catch {
       return [] as Requirement[];
     }
@@ -4285,6 +4590,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   /** Let the user correct something the interpreter got wrong. */
   const reopenAnsweredQuestion = (questionId: string) => {
     setAiPrefilledKeys((prev) => prev.filter((id) => id !== questionId));
+    clearConfirmation(questionId);
     setDiscoveryAnswers((prev) => {
       const next = { ...prev };
       delete next[questionId];
@@ -4599,7 +4905,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         businessName={profile.name}
         businessId={businessId}
         municipality={profile.municipality}
-        matterTitle={language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation'}
+        matterTitle={
+          isProjectOnly
+            ? (projectPassport ? projectPassportTitle(projectPassport) : null) ??
+              (language === 'es' ? 'Proyecto de propiedad' : 'Property project')
+            : (language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation')
+        }
         matterStatus={matterStatus}
         stage={view}
         availableStages={availableStages}
@@ -4661,33 +4972,83 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   } : undefined}
                 />
 
+                {/* Project-first intent: asked early, never defaulted. The
+                    interpreter may pre-select it (with a needs-confirmation
+                    badge at 0.60–0.85); the user can always change it. */}
                 <div className="spr-field full">
-                  <label htmlFor="spr-business-name">{t('businessName')}</label>
+                  <label>{projectIntentQuestionText(language)}{confirmationBadge('project_intent')}</label>
+                  {projectIntent === null ? (
+                    <div>
+                      <p className="spr-hint">{projectIntentWhyAsk(language)}</p>
+                      <div className="spr-intent-options" role="group" aria-label={projectIntentQuestionText(language)}>
+                        {PROJECT_INTENT_VALUES.map((intent) => (
+                          <button
+                            key={intent}
+                            type="button"
+                            className="spr-intent-option"
+                            onClick={() => {
+                              setProjectIntent(intent);
+                              clearConfirmation('project_intent');
+                            }}
+                          >
+                            {projectIntentLabel(intent, language)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="spr-intent-selected">
+                      <span className="spr-intent-chip">{projectIntentLabel(projectIntent, language)}</span>
+                      <button
+                        type="button"
+                        className="spr-link"
+                        onClick={() => {
+                          setProjectIntent(null);
+                          clearConfirmation('project_intent');
+                        }}
+                      >
+                      {L('Change', language)}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="spr-field full">
+                  <label htmlFor="spr-business-name">
+                    {isProjectOnly ? L('Project name', language) : t('businessName')}
+                    {confirmationBadge('name')}
+                  </label>
                   <input
                     id="spr-business-name"
-                    placeholder={L('Your business name', language)}
+                    placeholder={isProjectOnly ? L('e.g. Guaynabo warehouse expansion', language) : L('Your business name', language)}
                     value={profile.name}
-                    onChange={e => setProfile({ ...profile, name: e.target.value })}
+                    onChange={e => { setProfile({ ...profile, name: e.target.value }); clearConfirmation('name'); }}
                     required
                   />
                 </div>
 
                 <div className="spr-field">
-                  <label htmlFor="spr-municipality">{t('municipality')}</label>
+                  <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
                   <select
                     id="spr-municipality"
                     value={profile.municipality}
                     onChange={e => {
                       setProfile({ ...profile, municipality: e.target.value });
                       setPotentialDecisions({});
+                      clearConfirmation('municipality');
                     }}
                   >
                     <option value="">{t('selectMunicipality')}</option>
                     {municipalityOptions.map((m: string) => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
+                {/* project_only asks zero business-formation questions: industry,
+                    business type, location type, entity type, and headcount
+                    are business fields and never appear for a property-only
+                    project. */}
+                {!isProjectOnly && (<>
                 <div className="spr-field">
-                  <label htmlFor="spr-industry">{t('industry')}</label>
+                  <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
                     id="spr-industry"
                     value={profile.industry}
@@ -4699,7 +5060,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
 
                 <div className="spr-field">
-                  <label htmlFor="spr-business-type">{t('businessType')}</label>
+                  <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
                     id="spr-business-type"
                     key={profile.industry || 'none'}
@@ -4709,6 +5070,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       const allowed = LOCATION_TYPES_BY_BUSINESS_TYPE[newBt] || LOCATION_TYPES;
                       const newLoc = allowed.includes(profile.location_type || '') ? profile.location_type : '';
                       setProfile({ ...profile, business_type: newBt, location_type: newLoc });
+                      clearConfirmation('business_type');
                     }}
                   >
                     <option value="">{t('selectBusinessType')}</option>
@@ -4718,8 +5080,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 <div className="spr-field">
-                  <label htmlFor="spr-location-type">{t('locationType')}</label>
-                  <select id="spr-location-type" value={profile.location_type} onChange={e => setProfile({ ...profile, location_type: e.target.value })}>
+                  <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
+                  <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); clearConfirmation('location_type'); }}>
                     <option value="">{t('selectLocationType')}</option>
                     {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => (
                       <option key={lt} value={lt}>{lt}</option>
@@ -4728,10 +5090,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
 
                 <div className="spr-field spr-field-static">
-                  <label htmlFor="spr-structure">{t('businessStructure')}</label>
+                  <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
                     const structure = e.target.value;
                     setProfile({ ...profile, business_structure: structure });
+                    clearConfirmation('business_structure');
                     setCanonicalOverride((current) => current ? { ...current, business: { ...current.business, entityType: entityTypeFromLegacyStructure(structure) } } : current);
                   }}>
                     <option value="">{L('Select entity type', language)}</option>
@@ -4748,7 +5111,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 <div className="spr-field">
-                  <label htmlFor="spr-employees">{t('numEmployees')}</label>
+                  <label htmlFor="spr-employees">{t('numEmployees')}{confirmationBadge('number_of_employees')}</label>
                   <input
                     id="spr-employees"
                     type="number"
@@ -4760,6 +5123,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     value={profile.number_of_employees ?? ''}
                     onChange={e => {
                       const raw = e.target.value;
+                      clearConfirmation('number_of_employees');
                       if (raw === '') {
                         setProfile({ ...profile, number_of_employees: null });
                         return;
@@ -4770,6 +5134,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     }}
                   />
                 </div>
+                </>)}
               </div>
 
               {/* Questions already answered from the description — shown as
@@ -4785,6 +5150,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       <li key={item.id}>
                         <CheckCircle className="i" style={{ width: 14, height: 14 }} />
                         <span className="spr-answered-text">{L(item.text, language)}</span>
+                        {confirmationsNeeded[item.id] && (
+                          <span className="spr-confirm-badge">{L('Needs confirmation', language)}</span>
+                        )}
                         <span className="spr-answered-value">
                           {item.value === true ? t('yes') : item.value === false ? t('no') : String(item.value)}
                         </span>

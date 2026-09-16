@@ -18,7 +18,9 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Corporaciones%20Privadas/164-2009/164-2009.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CERT_INCORPORATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_new_unformed_business": true,
+    "requires_business": true
   },
   {
     "id": "RULE_0002",
@@ -30,7 +32,8 @@
     "requires_document_id": "DOC_EIN",
     "exemptions_note": "Single-member LLCs with no employees that are taxed as disregarded entities may use the owner's SSN instead of a separate EIN (IRS).",
     "citation": "https://www.irs.gov/faqs/small-business-self-employed-other-business/entities/entities-2",
-    "citation_source": "rule"
+    "citation_source": "rule",
+    "requires_business": true
   },
   {
     "id": "RULE_0003",
@@ -44,7 +47,8 @@
     "citation_url": "https://hacienda.pr.gov/node/1651",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_MERCHANT_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_business": true
   },
   {
     "id": "RULE_0004",
@@ -58,7 +62,8 @@
     "citation_url": "https://www.municipiodebayamon.com/servicios-municipales/empresas/patente-municipal/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PATENTE_MUNICIPAL",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_business": true
   },
   {
     "id": "RULE_0005",
@@ -72,7 +77,8 @@
     "citation_url": "https://www.municipiodebayamon.com/servicios-municipales/oficina-de-permisos/permiso-unico-pu/",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_MUNICIPAL_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_business": true
   },
   {
     "id": "RULE_0006",
@@ -86,7 +92,8 @@
     "citation_url": "https://docs.pr.gov/files/OGP/Website_OGP/CartasCirculares/CC2022/CC-002-2022.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_MUNICIPAL_TAX_COMPLIANCE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_business": true
   },
   {
     "id": "RULE_0007",
@@ -8119,7 +8126,8 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Corporaciones%20Privadas/164-2009/164-2009.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FOREIGN_CORPORATION_AUTHORIZATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_new_unformed_business": true
   },
   {
     "id": "RULE_0599",
@@ -8133,7 +8141,8 @@
     "citation_url": "http://app.estado.gobierno.pr/formularios/corporaciones/CORPREG06.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_LLP_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "requires_new_unformed_business": true
   },
   {
     "id": "RULE_0600",
@@ -8600,7 +8609,8 @@
     ],
     "citation": "Art. 15.01(A), Law 164-2009 (Ley General de Corporaciones) — corporations file Informe Anual by April 15; Art. 21.03(C) — LLCs pay annual fee by April 15. Dept of State.",
     "notes": "Annual recurring obligation for corporations and LLCs (domestic and foreign authorized to do business in PR). Sole proprietorships, partnerships and LLPs do not file entity annual reports with the Department of State.",
-    "citation_source": "rule"
+    "citation_source": "rule",
+    "requires_business": true
   },
   {
     "id": "RULE_0637",
@@ -8685,5 +8695,65 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
     "citation_source": "document"
+  },
+  {
+    "id": "RULE_0643",
+    "rule_type": "project_fact",
+    "business_type_id": null,
+    "question_id": null,
+    "expected_answer": "new_construction",
+    "municipality_flag": null,
+    "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
+    "citation_url": "https://www.permisos.pr.gov/",
+    "citation_confidence": "statute",
+    "citation_inherited_from": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation_source": "document",
+    "fact_key": "project_type"
+  },
+  {
+    "id": "RULE_0644",
+    "rule_type": "project_fact",
+    "business_type_id": null,
+    "question_id": null,
+    "expected_answer": "renovation",
+    "municipality_flag": null,
+    "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
+    "citation_url": "https://www.permisos.pr.gov/",
+    "citation_confidence": "statute",
+    "citation_inherited_from": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation_source": "document",
+    "fact_key": "project_type"
+  },
+  {
+    "id": "RULE_0645",
+    "rule_type": "project_fact",
+    "business_type_id": null,
+    "question_id": null,
+    "expected_answer": "true",
+    "municipality_flag": null,
+    "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
+    "citation_url": "https://www.permisos.pr.gov/",
+    "citation_confidence": "statute",
+    "citation_inherited_from": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation_source": "document",
+    "fact_key": "structural_work"
+  },
+  {
+    "id": "RULE_0646",
+    "rule_type": "project_fact",
+    "business_type_id": null,
+    "question_id": null,
+    "expected_answer": "true",
+    "municipality_flag": null,
+    "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
+    "citation_url": "https://www.permisos.pr.gov/",
+    "citation_confidence": "statute",
+    "citation_inherited_from": "DOC_OGPE_CONSTRUCTION_PERMIT",
+    "citation_source": "document",
+    "fact_key": "construction_approvals_required"
   }
 ]

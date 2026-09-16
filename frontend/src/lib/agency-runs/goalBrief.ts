@@ -2,7 +2,13 @@
  * Structured goal brief for agency filings.
  *
  * SECURITY CONTRACT (audited below):
- * - GoalBrief carries LABELS ONLY — never field values, never secrets.
+ * - GoalBrief carries LABELS ONLY for passport/business identity fields —
+ *   never field values, never secrets.
+ * - EXCEPTION: `project_context` intentionally carries non-sensitive PROJECT
+ *   facts (renovation scope, square footage, permitting history, …) as
+ *   values — never evidence quotes, never identity/credential data. The
+ *   prompt marks them background-only: the agent must NEVER use them to
+ *   decide requirements, forms, documents, or agencies.
  * - `stripSensitivePassport` removes any key whose leaf matches the same
  *   sensitive-ID regex used by prefillFromPassport's isPrefillBlocked, so the
  *   passport JSON embedded in the task prompt can never leak SSNs,
@@ -12,6 +18,8 @@ import type { AgencyFilingConfig } from "./filingTypes";
 import type { AgencyAction } from "./agencyActions";
 import { CANONICAL_LABELS } from "./canonicalFields";
 import type { PortalAccountStatus } from "./preflight";
+import type { ProjectContext } from "../../app/ai/intake/projectContext";
+import { projectContextBriefLines } from "../../app/ai/intake/projectContext";
 
 /**
  * Mirrors the SENSITIVE_ID_RE in prefillFromPassport.ts (that module does not
@@ -37,6 +45,13 @@ export interface GoalBrief {
    * gate; NO account → begin with new-account registration.
    */
   portal_account?: PortalAccountStatus;
+  /**
+   * Project-context facts (renovation scope, square footage, permitting
+   * history, …) collected during intake. They are background only — the
+   * agent must NEVER use them to decide requirements, forms, or agencies.
+   * Defaults to empty so existing callers keep working unchanged.
+   */
+  project_context?: ProjectContext;
 }
 
 /**
@@ -56,6 +71,12 @@ export function buildGoalBrief(input: {
   objective_es?: string | null;
   /** Portal-account label from memory or the pre-flight answer (labels only). */
   portal_account?: PortalAccountStatus;
+  /**
+   * Project-context facts (renovation scope, square footage, permitting
+   * history, …). Background only — never requirement decisions. Defaults to
+   * empty so existing callers keep working unchanged.
+   */
+  project_context?: ProjectContext;
 }): GoalBrief {
   const { config, action } = input;
 
@@ -99,6 +120,9 @@ export function buildGoalBrief(input: {
     })),
     evidence_available: action.evidence_available ?? [],
     portal_account: input.portal_account,
+    // Safe by default: the prompt block marks every entry as background only,
+    // never a requirement decision.
+    project_context: input.project_context ?? {},
   };
 }
 
@@ -149,6 +173,21 @@ export function goalBriefToPromptBlock(brief: GoalBrief): string {
     for (const tag of brief.evidence_available) {
       lines.push(`- ${tag}`);
     }
+  }
+  // Project context: background facts about the project (scope, size,
+  // history). Values only — no evidence quotes — plus an explicit warning
+  // that these must NEVER drive requirement/form/agency decisions. The
+  // deterministic rules engine remains the sole authority on requirements.
+  // These are non-sensitive user-stated project facts (the closed key list
+  // has no credential/ID keys), consistent with the passport JSON values
+  // the task prompt already carries.
+  const contextLines = projectContextBriefLines(brief.project_context, { includeEvidence: false });
+  if (contextLines.length > 0) {
+    lines.push("");
+    lines.push(
+      "PROJECT CONTEXT (background facts about the project — use to understand context, NEVER to decide requirements, forms, documents, or agencies; those come only from the structured requirements list):"
+    );
+    for (const fact of contextLines) lines.push(`- ${fact}`);
   }
   lines.push("=== END AGENCY / GOAL BRIEF ===");
   return lines.join("\n");
