@@ -126,3 +126,43 @@ describe("stripSensitivePassport", () => {
     assert.deepEqual(original, { business: { ssn: "x", legalName: "Y" } });
   });
 });
+
+describe("objective override", () => {
+  it("resolved objective replaces the ambiguous config goal text", async () => {
+    const actions = await resolveAgencyActions({
+      business_id: "biz-1",
+      agency_id: "DEPT_STATE",
+      passport,
+      priorRuns: [],
+    });
+    // `passport` fixture has no formation signals → both variants offered.
+    assert.equal(actions.length, 2);
+    const config = getFilingConfig("DEPT_STATE_CORPORATE_FILING");
+    const brief = buildGoalBrief({
+      config,
+      action: actions[0],
+      objective_en: actions[0].objective_en,
+      objective_es: actions[0].objective_es,
+    });
+    assert.equal(brief.goal_en, actions[0].objective_en);
+    assert.ok(!brief.goal_en.includes("or file an annual report"));
+    const block = goalBriefToPromptBlock(brief);
+    assert.ok(block.includes(actions[0].objective_en!));
+  });
+
+  it("falls back to config goal when no objective is resolved", async () => {
+    const actions = await resolveAgencyActions({
+      business_id: "biz-1",
+      agency_id: "HACIENDA_SURI",
+      passport,
+      priorRuns: [],
+    });
+    const action = actions.find((a) => a.filing_type === "SURI_REGISTER_TAXPAYER");
+    assert.ok(action);
+    const brief = buildGoalBrief({
+      config: getFilingConfig("SURI_REGISTER_TAXPAYER"),
+      action,
+    });
+    assert.equal(brief.goal_en, getFilingConfig("SURI_REGISTER_TAXPAYER").goalEn);
+  });
+});

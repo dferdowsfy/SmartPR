@@ -41,6 +41,7 @@ import { AgencyChat, type AgencyOption, type SessionMsg } from "./AgencyChat";
 import {
   buildChatMilestones,
   chatScrollKey,
+  failureReason,
   humanizeValidationError,
   isTerminalWorkflowState,
   workflowStateForRun,
@@ -218,7 +219,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       const response = await fetch("/api/agency-actions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ business_id: businessId, action_id: action.id }),
+        // objective_en selects the server-resolved variant the human picked
+        // (e.g. Dept. of State new-entity vs annual report); the server only
+        // honors objectives it resolved itself.
+        body: JSON.stringify({
+          business_id: businessId,
+          action_id: action.id,
+          objective_en: action.objective_en ?? null,
+          objective_es: action.objective_es ?? null,
+        }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -476,11 +485,20 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           tone: "info" as const,
         }
       : run?.status === "failed"
-        ? {
-            textEn: "The run hit a problem. You can try again or start a new run.",
-            textEs: "La ejecución tuvo un problema. Puedes intentarlo de nuevo o empezar otra.",
-            tone: "warn" as const,
-          }
+        ? (() => {
+            // Surface the actual underlying reason (humanized) instead of a
+            // generic "hit a problem" — otherwise failures can't be diagnosed.
+            const reason = failureReason(run.events, lang);
+            return {
+              textEn: reason
+                ? `The run hit a problem. ${reason} You can try again or start a new run.`
+                : "The run hit a problem. You can try again or start a new run.",
+              textEs: reason
+                ? `La ejecución tuvo un problema. ${reason} Puedes intentarlo de nuevo o empezar otra.`
+                : "La ejecución tuvo un problema. Puedes intentarlo de nuevo o empezar otra.",
+              tone: "warn" as const,
+            };
+          })()
         : null;
 
   const intervention =

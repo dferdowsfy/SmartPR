@@ -5,6 +5,7 @@ import {
   buildChatMilestones,
   chatScrollKey,
   gateCopy,
+  failureReason,
   humanizeValidationError,
   interventionHeading,
   isTerminalWorkflowState,
@@ -215,5 +216,58 @@ describe("chatScrollKey", () => {
     assert.notEqual(chatScrollKey(a), chatScrollKey({ ...a, milestoneCount: 3 }));
     assert.notEqual(chatScrollKey(a), chatScrollKey({ ...a, transient: "Waiting" }));
     assert.equal(chatScrollKey(a), chatScrollKey(a));
+  });
+});
+
+describe("failureReason", () => {
+  it("extracts and humanizes the provider error from the failure event", () => {
+    const events = [
+      event(0, "Run started", "info"),
+      event(1, "Agent run failed: the login page never loaded (timeout after 30000 ms)", "info"),
+    ];
+    const reason = failureReason(events, "en");
+    assert.ok(reason);
+    // Technical internals are translated, never shown raw.
+    assert.ok(!reason.includes("timeout after 30000 ms"));
+    assert.ok(!reason.includes("Agent run failed:"));
+  });
+
+  it("quotes a human-readable portal error verbatim", () => {
+    const events = [
+      event(0, "Agent run failed: Invalid credentials. Please try again.", "info"),
+    ];
+    const reason = failureReason(events, "en");
+    assert.ok(reason?.includes("Invalid credentials. Please try again."));
+  });
+
+  it("uses the Spanish event text when lang is es", () => {
+    const events = [
+      {
+        index: 0,
+        message: "Agent run failed: boom",
+        message_es: "El agente falló: boom",
+        screenshot_url: "",
+        created_at: "",
+        kind: "info" as const,
+      },
+    ];
+    const reason = failureReason(events, "es");
+    assert.ok(reason);
+    assert.ok(!reason.includes("Agent run failed:"));
+  });
+
+  it("returns null when no failure event exists", () => {
+    assert.equal(failureReason([event(0, "Run started", "info")], "en"), null);
+    assert.equal(failureReason([], "en"), null);
+    assert.equal(failureReason(null, "en"), null);
+  });
+
+  it("never echoes SSN-shaped values from the raw error", () => {
+    const events = [
+      event(0, "Agent run failed: rejected value 123-45-6789 on the form", "info"),
+    ];
+    const reason = failureReason(events, "en");
+    assert.ok(reason);
+    assert.ok(!reason.includes("123-45-6789"));
   });
 });

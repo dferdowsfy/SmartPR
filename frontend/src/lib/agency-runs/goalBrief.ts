@@ -36,10 +36,17 @@ export interface GoalBrief {
  * Build a labels-only brief from the filing config + resolved agency action.
  * Known fields = coverage keys with a known passport value (labels only).
  * User input expected = the action's missing items (ids/labels/sensitivity).
+ *
+ * `objective_en` / `objective_es` override the config's generic goal text when
+ * the agency-action resolution pinned down a concrete objective (e.g. Dept. of
+ * State annual report vs new-entity creation) — the agent must never be sent
+ * in with an ambiguous goal.
  */
 export function buildGoalBrief(input: {
   config: AgencyFilingConfig;
   action: AgencyAction;
+  objective_en?: string | null;
+  objective_es?: string | null;
 }): GoalBrief {
   const { config, action } = input;
 
@@ -62,11 +69,16 @@ export function buildGoalBrief(input: {
       };
     });
 
+  const goal_en =
+    input.objective_en?.trim() || action.objective_en?.trim() || config.goalEn;
+  const goal_es =
+    input.objective_es?.trim() || action.objective_es?.trim() || config.goalEs;
+
   return {
     agency_en: config.agencyEn,
     agency_es: config.agencyEs,
-    goal_en: config.goalEn,
-    goal_es: config.goalEs,
+    goal_en,
+    goal_es,
     expected_outcome_en: `Complete ${config.labelEn} and stop at pre-submit review — the human reviews and submits.`,
     expected_outcome_es: `Completar ${config.labelEs} y detenerse en la revisión previa al envío — el humano revisa y envía.`,
     known_fields,

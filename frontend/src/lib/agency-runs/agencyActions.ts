@@ -37,9 +37,129 @@ export interface AgencyAction {
   }[];
   blocked_by: string[];
   evidence_available: string[];
+  /**
+   * Resolved concrete objective for this action (labels only). Used when one
+   * filing type covers distinct workflows — e.g. Dept. of State "create a new
+   * entity" vs "file the annual report" — so the browser agent is never sent
+   * in with an ambiguous goal and has to guess which workflow to run.
+   */
+  objective_en?: string;
+  objective_es?: string;
 }
 
 const COMPLETED_STATUSES = new Set(["review", "completed"]);
+
+/* ------------------------------------------------------------------ */
+/* Dept. of State objective resolution                                  */
+/*                                                                     */
+/* DEPT_STATE_CORPORATE_FILING covers two distinct portal workflows:   */
+/* creating a new juridical entity vs filing the annual report of an    */
+/* existing one. Sending the agent in with "do either" makes it guess. */
+/* Resolve the concrete objective from passport formation signals; when */
+/* the signals are inconclusive, surface both variants as separate     */
+/* action cards so the human picks — never let the agent guess.        */
+/* ------------------------------------------------------------------ */
+
+type DeptStateObjective = "annual_report" | "new_entity" | "ambiguous";
+
+const FORMED_STATUSES = new Set([
+  "formed_in_puerto_rico",
+  "formed_outside_puerto_rico",
+]);
+
+const OBJECTIVES: Record<
+  Exclude<DeptStateObjective, "ambiguous">,
+  { title_en: string; title_es: string; objective_en: string; objective_es: string }
+> = {
+  new_entity: {
+    title_en: "Dept. of State — Create a new entity",
+    title_es: "Departamento de Estado — Crear una nueva entidad",
+    objective_en:
+      "Create and file a NEW juridical entity (corporation or LLC) in the Corporate & Entities Registry. Do NOT file an annual report.",
+    objective_es:
+      "Crear y radicar una NUEVA entidad jurídica (corporación o LLC) en el Registro de Corporaciones y Entidades. NO radique un informe anual.",
+  },
+  annual_report: {
+    title_en: "Dept. of State — File the annual report",
+    title_es: "Departamento de Estado — Radicar el informe anual",
+    objective_en:
+      "File the ANNUAL REPORT (informe anual) for the EXISTING entity in the Corporate & Entities Registry. Do NOT create a new entity.",
+    objective_es:
+      "Radicar el INFORME ANUAL de la entidad EXISTENTE en el Registro de Corporaciones y Entidades. NO cree una nueva entidad.",
+  },
+};
+
+function flatGet(flat: Map<string, string>, ...keys: string[]): string {
+  for (const key of keys) {
+    const v = flat.get(key);
+    if (v && v.trim()) return v.trim();
+  }
+  return "";
+}
+
+function resolveDeptStateObjective(flat: Map<string, string>): DeptStateObjective {
+  // Keys are lowercased by flattenPassportValues; check dotted + snake + leaf.
+  const registryNumber = flatGet(
+    flat,
+    "business.registrynumber",
+    "business.registry_number",
+    "registrynumber",
+    "registry_number",
+    "entity_number"
+  );
+  const incorporationDate = flatGet(
+    flat,
+    "business.incorporationdate",
+    "business.incorporation_date",
+    "incorporationdate",
+    "incorporation_date"
+  );
+  const formationStatus = flatGet(
+    flat,
+    "business.formationstatus",
+    "business.formation_status",
+    "formationstatus",
+    "formation_status"
+  ).toLowerCase();
+  const formed =
+    Boolean(registryNumber || incorporationDate) ||
+    FORMED_STATUSES.has(formationStatus);
+  const notFormed = formationStatus === "not_formed";
+  if (formed && !notFormed) return "annual_report";
+  if (notFormed && !formed) return "new_entity";
+  return "ambiguous";
+}
+
+/**
+ * Split (or annotate) the Dept. of State corporate filing action with its
+ * resolved concrete objective. Returns one action when the passport signals
+ * are conclusive, or two clearly-labeled variants when they are not.
+ */
+function withDeptStateObjective(
+  action: AgencyAction,
+  flat: Map<string, string>
+): AgencyAction[] {
+  const resolved = resolveDeptStateObjective(flat);
+  if (resolved === "ambiguous") {
+    return (["new_entity", "annual_report"] as const).map((variant) => ({
+      ...action,
+      title_en: OBJECTIVES[variant].title_en,
+      title_es: OBJECTIVES[variant].title_es,
+      objective_en: OBJECTIVES[variant].objective_en,
+      objective_es: OBJECTIVES[variant].objective_es,
+    }));
+  }
+  const o = OBJECTIVES[resolved];
+  return [
+    {
+      ...action,
+      title_en: o.title_en,
+      title_es: o.title_es,
+      objective_en: o.objective_en,
+      objective_es: o.objective_es,
+    },
+  ];
+}
 
 /**
  * True when the coverage key is present (non-empty) in the flattened passport.
@@ -146,7 +266,14 @@ export async function resolveAgencyActions(input: {
   // Best-effort requirement enrichment intentionally resolves registry-only:
   // the requirements engine is a POST-only admin crawl endpoint, not a
   // per-business requirements lookup, so no requirements are invented here.
-  return configs.map((config) =>
+  const actions = configs.map((config) =>
     actionForConfig(config, agency_id, flat, completed)
+  );
+  // Dept. of State covers two distinct workflows — resolve the concrete
+  // objective so the agent never has to guess between them.
+  return actions.flatMap((action) =>
+    action.filing_type === "DEPT_STATE_CORPORATE_FILING"
+      ? withDeptStateObjective(action, flat)
+      : [action]
   );
 }

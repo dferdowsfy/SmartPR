@@ -210,6 +210,11 @@ function ActionCard({
           lang
         )}
       </p>
+      {action.objective_en && (
+        <p className="mt-1 text-xs text-slate-600">
+          {L(action.objective_en, action.objective_es ?? action.objective_en, lang)}
+        </p>
+      )}
       {missing.length > 0 && action.status === "blocked" && (
         <p className="mt-1.5 text-xs text-slate-600">
           <span className="font-semibold">{L("Still needed:", "Falta:", lang)} </span>

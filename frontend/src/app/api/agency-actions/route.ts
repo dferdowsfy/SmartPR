@@ -66,7 +66,12 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  let body: { business_id?: string; action_id?: string };
+  let body: {
+    business_id?: string;
+    action_id?: string;
+    objective_en?: string;
+    objective_es?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -105,10 +110,19 @@ export async function POST(request: Request) {
   }
 
   const actions = await actionsFor(businessId, agencyId, user?.id ?? null);
-  const action = actions.find((a) => a.id === actionId);
+  const candidates = actions.filter((a) => a.id === actionId);
+  const action = candidates[0];
   if (!action) {
     return Response.json({ error: "action not found for this business." }, { status: 404 });
   }
+
+  // When one filing type resolves to multiple objective variants (e.g. Dept.
+  // of State new-entity vs annual report), honor the variant the human picked
+  // in chat — but only if it matches a server-resolved objective. Never take
+  // free-form objective text from the client into the agent prompt.
+  const requestedObjective = String(body.objective_en || "").trim();
+  const picked =
+    candidates.find((a) => a.objective_en === requestedObjective) ?? action;
 
   if (action.status === "blocked") {
     return Response.json(
@@ -125,7 +139,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const brief = buildGoalBrief({ config, action });
+  const brief = buildGoalBrief({
+    config,
+    action: picked,
+    objective_en: picked.objective_en,
+    objective_es: picked.objective_es,
+  });
   const passport = await loadPassportForBusiness(businessId, user?.id ?? null);
   const run = await createRun({
     business_id: businessId,

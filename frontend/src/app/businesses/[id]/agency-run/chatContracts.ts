@@ -123,6 +123,32 @@ export function interventionHeading(pauseReason: AgencyPauseReason, lang: Lang):
   return L(h.title_en, h.title_es, lang);
 }
 
+const FAILURE_PREFIXES = ["Agent run failed:", "El agente falló:"];
+
+/**
+ * Extract the underlying failure reason from a run's events for the terminal
+ * failure bubble. The store records the raw provider error as
+ * "Agent run failed: <error>"; this strips the prefix and humanizes it so
+ * chat shows the actual reason instead of a generic "hit a problem".
+ * Returns null when no failure event is present.
+ */
+export function failureReason(
+  events: { message?: string; message_es?: string }[] | undefined | null,
+  lang: Lang
+): string | null {
+  if (!events || events.length === 0) return null;
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i];
+    const text = lang === "es" ? ev?.message_es : ev?.message;
+    if (typeof text !== "string") continue;
+    const prefix = FAILURE_PREFIXES.find((p) => text.startsWith(p));
+    if (!prefix) continue;
+    const raw = text.slice(prefix.length).trim();
+    return humanizeValidationError(raw || undefined, lang);
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Chat scroll key — single stable key so the thread scrolls on change  */
 /* ------------------------------------------------------------------ */

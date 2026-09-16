@@ -190,13 +190,15 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEn: "Create/file a juridical entity (corporation or LLC), or file an annual report",
     goalEs: "Crear/radicar una entidad jurídica (corporación o LLC), o radicar un informe anual",
     procedureEn: [
-      "From the registry homepage, open the online services for creating a new juridical entity (or annual reports)",
+      "Follow the OBJECTIVE named in the goal brief above exactly — it names ONE transaction (new-entity creation OR annual report filing). Do that one only; never do both, never pick the other one.",
+      "From the registry homepage, open the online services for the transaction named in the objective",
       "If login is required: PAUSE_USER_LOGIN once with REQUIRED_FIELDS and prefer Assistant-fill — do not expect the human to type in the live browser",
       "Prefill entity name, entity type, organizers/members, registered agent, and addresses from the Business Passport",
       "Pause for document uploads, captcha, or payment as the portal requires; stop at pre-submit review",
     ],
     procedureEs: [
-      "Desde la página del registro, abra los servicios en línea para crear una nueva entidad jurídica (o informes anuales)",
+      "Siga EXACTAMENTE el OBJETIVO indicado en el resumen de objetivo anterior — nombra UNA transacción (creación de nueva entidad O radicación de informe anual). Haga solo esa; nunca ambas, nunca la otra.",
+      "Desde la página del registro, abra los servicios en línea para la transacción nombrada en el objetivo",
       "Si se requiere inicio de sesión: PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS y prefiera Asistente — no espere que el humano escriba en el navegador en vivo",
       "Rellene nombre de la entidad, tipo de entidad, organizadores/miembros, agente residente y direcciones desde el Pasaporte de Negocio",
       "Pause para adjuntos, captcha o pago según lo pida el portal; deténgase en la revisión previa al envío",

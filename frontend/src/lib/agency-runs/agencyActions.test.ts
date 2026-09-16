@@ -197,3 +197,48 @@ describe("isAgencyId", () => {
     assert.equal(isAgencyId(""), false);
   });
 });
+
+describe("Dept. of State objective resolution", () => {
+  async function deptActions(passport: unknown) {
+    return resolveAgencyActions({
+      business_id: "biz-1",
+      agency_id: "DEPT_STATE",
+      passport: passport as Record<string, unknown>,
+      priorRuns: [],
+    });
+  }
+
+  it("registry number present → single annual-report action", async () => {
+    const actions = await deptActions(fullPassport);
+    assert.equal(actions.length, 1);
+    assert.ok(actions[0].objective_en?.includes("ANNUAL REPORT"));
+    assert.ok(actions[0].title_en.includes("annual report"));
+  });
+
+  it("formationStatus not_formed → single new-entity action", async () => {
+    const actions = await deptActions({
+      business: { legalName: "New Co LLC", formationStatus: "not_formed" },
+    });
+    assert.equal(actions.length, 1);
+    assert.ok(actions[0].objective_en?.includes("NEW juridical entity"));
+    assert.ok(actions[0].title_en.includes("new entity"));
+  });
+
+  it("no formation signals → both variants as separate cards", async () => {
+    const actions = await deptActions(thinPassport);
+    assert.equal(actions.length, 2);
+    const objectives = actions.map((a) => a.objective_en ?? "");
+    assert.ok(objectives.some((o) => o.includes("NEW juridical entity")));
+    assert.ok(objectives.some((o) => o.includes("ANNUAL REPORT")));
+    // Same filing type — the chosen card's objective travels via the POST body.
+    assert.ok(actions.every((a) => a.filing_type === "DEPT_STATE_CORPORATE_FILING"));
+  });
+
+  it("incorporation date alone signals an existing entity", async () => {
+    const actions = await deptActions({
+      business: { legalName: "Old Co Inc.", incorporationDate: "2020-03-15" },
+    });
+    assert.equal(actions.length, 1);
+    assert.ok(actions[0].objective_en?.includes("ANNUAL REPORT"));
+  });
+});
