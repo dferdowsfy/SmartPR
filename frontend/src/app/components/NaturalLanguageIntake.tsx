@@ -87,9 +87,12 @@ export function NaturalLanguageIntake({
           if (!res.ok) throw new Error(`interpret ${res.status}`);
           const data = await res.json();
           await receivePassport(data.proposals, description);
-          const validated = validateInterpretation(data.interpretation, kb, { allowedIndustries, allowedLocationTypes });
-          const patch = toIntakePatch(validated, { kb, allowedIndustries });
-          if (Object.keys(patch.profile).length || Object.keys(patch.answers).length) onApply(patch, validated);
+          // Discovery is already complete when Passport mode is enabled. Do
+          // not replay the model's parallel discovery interpretation here: a
+          // loose business-type guess can rebuild the guided-question list,
+          // hide the Passport fields, and make the user answer intake twice.
+          // Before this point, the unchanged discovery branch below remains
+          // responsible for business classification and question answers.
           setStatus("done");
           return;
         }

@@ -1303,6 +1303,11 @@ export default function SmartPRIntake() {
   // Holds the requirement code; the per-form rows resolve live at render time.
   const [activeGovPackage, setActiveGovPackage] = useState<{ requirementCode: string } | null>(null);
   const [canonicalOverride, setCanonicalOverride] = useState<CanonicalApplicationData | null>(null);
+  // Once the user reaches Passport entry, keep that phase available for the
+  // rest of this intake. A spoken municipality or employee count can make a
+  // new regulatory follow-up relevant; it must not hide the just-populated
+  // Passport or switch the next recording back to discovery mode.
+  const [passportPhaseStarted, setPassportPhaseStarted] = useState(false);
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -1471,6 +1476,7 @@ export default function SmartPRIntake() {
     setPreparedSampleApplications({});
     setGovFormDrafts({});
     setPreparedGovApplications({});
+    setPassportPhaseStarted(false);
     setCurrentQuestionIndex(0);
     setAiPrefilledKeys([]);
     setCurrentStep(1);
@@ -2291,6 +2297,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Typing and voice enter the same canonical state. Keep the existing intake
   // mirrors current so deterministic requirement evaluation sees accepted edits.
   const updatePassport = (next: CanonicalApplicationData) => {
+    setPassportPhaseStarted(true);
     setCanonicalOverride(next);
     setProfile((previous) => ({
       ...previous,
@@ -4215,6 +4222,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : -1;
   const intakeQuestionsComplete = activeQuestionIndex >= questionList.length
     && answeredPotentialCount === potentialItems.length;
+  const passportReadyNow = baseProfileReady && intakeQuestionsComplete;
+  const passportModeActive = passportPhaseStarted || passportReadyNow;
   const canGoBackInIntake = guidedQuestionsAnswered > 0 || answeredPotentialCount > 0;
   /** Last guided question before `start` that has a recorded manual answer. */
   const previousAnsweredQuestion = (start: number): number => {
@@ -4562,7 +4571,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   allowedIndustries={INDUSTRIES}
                   allowedLocationTypes={LOCATION_TYPES}
                   onApply={applyInterpretedIntake}
-                  passport={baseProfileReady && intakeQuestionsComplete ? {
+                  passport={passportModeActive ? {
                     canonical: canonicalApplication,
                     unconfirmedDefaults: canonicalOverride ? [] : ['formationStatus', ...(profile.business_structure ? [] : ['entityType'])],
                     onChange: updatePassport,
@@ -4755,7 +4764,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               )}
             </div>
 
-            {baseProfileReady && intakeQuestionsComplete && (
+            {passportModeActive && (
               <div style={{ margin: '4px 0 8px', borderTop: '1px solid var(--border, #e2e8f0)', paddingTop: 12 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>{L('Core Application Details', language)}</h3>
                 <CoreApplicationDetails
