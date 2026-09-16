@@ -283,7 +283,7 @@ export function IntakeVoiceOrb({
         ? L("Transcribing…", "Transcribiendo…", lang)
         : state === "error"
           ? L("Something went wrong", "Algo salió mal", lang)
-          : L("Tell me what you do.", "Cuénteme qué hace.", lang);
+          : L("Tell me what you want to do.", "Dime qué quieres hacer.", lang);
 
   const showHints = state !== "error";
 
@@ -518,35 +518,41 @@ export function IntakeVoiceOrb({
           {/* Smoky green glass core */}
           <span
             aria-hidden
-            className="absolute inset-[5px] overflow-hidden rounded-full bg-[radial-gradient(circle_at_50%_45%,#34d399_0%,#0d9488_42%,#115e59_72%,#0b3532_100%)]"
+            className="absolute inset-[5px] overflow-hidden rounded-full bg-[#0b3532]"
             style={{
               boxShadow:
                 state === "listening"
-                  ? `inset 0 -10px 18px rgba(4,47,46,0.6), inset 0 6px 14px rgba(255,255,255,0.18), 0 0 ${18 + level * 32}px rgba(45,212,191,${0.4 + level * 0.4}), 0 6px 18px rgba(36,92,92,0.42)`
-                  : "inset 0 -10px 18px rgba(4,47,46,0.6), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
+                  ? `inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.18), 0 0 ${18 + level * 32}px rgba(45,212,191,${0.4 + level * 0.4}), 0 6px 18px rgba(36,92,92,0.42)`
+                  : "inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
             }}
           >
             {/* Smoke layer — slow clockwise swirl */}
             <span
               aria-hidden
-              className={`absolute -inset-[25%] ${!reducedMotion ? "spr-smoke-swirl" : ""}`}
-            >
-              <span className="absolute left-[8%] top-[10%] h-[62%] w-[62%] rounded-full bg-[radial-gradient(circle,rgba(167,243,208,0.85)_0%,rgba(110,231,183,0.4)_48%,transparent_70%)] blur-[6px]" />
-              <span className="absolute bottom-[6%] right-[10%] h-[70%] w-[70%] rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.8)_0%,rgba(13,148,136,0.38)_50%,transparent_72%)] blur-[8px]" />
-              <span
-                className={`absolute right-[16%] top-[8%] h-[40%] w-[40%] rounded-full bg-[radial-gradient(circle,rgba(236,253,245,0.95)_0%,rgba(167,243,208,0.4)_55%,transparent_75%)] blur-[5px] ${
-                  !reducedMotion ? "spr-smoke-drift" : ""
-                }`}
-              />
-            </span>
-            {/* Smoke layer — counter swirl for depth */}
+              className={`absolute -inset-[30%] ${!reducedMotion ? "spr-smoke-swirl" : ""}`}
+              style={{
+                backgroundImage: "url(/orb-smoke-green.png)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            {/* Smoke layer — counter swirl at different scale for depth */}
             <span
               aria-hidden
-              className={`absolute -inset-[25%] ${!reducedMotion ? "spr-smoke-swirl-rev" : ""}`}
-            >
-              <span className="absolute bottom-[10%] left-[12%] h-[58%] w-[58%] rounded-full bg-[radial-gradient(circle,rgba(5,150,105,0.65)_0%,rgba(4,120,87,0.3)_52%,transparent_72%)] blur-[7px]" />
-              <span className="absolute left-[30%] top-[32%] h-[52%] w-[52%] rounded-full bg-[radial-gradient(circle,rgba(110,231,183,0.55)_0%,rgba(52,211,153,0.22)_55%,transparent_75%)] blur-[9px]" />
-            </span>
+              className={`absolute -inset-[30%] ${!reducedMotion ? "spr-smoke-swirl-rev" : ""}`}
+              style={{
+                backgroundImage: "url(/orb-smoke-green.png)",
+                backgroundSize: "160%",
+                backgroundPosition: "30% 65%",
+                opacity: 0.5,
+                mixBlendMode: "screen",
+              }}
+            />
+            {/* Glass depth shading */}
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,transparent_55%,rgba(4,32,30,0.55)_100%)]"
+            />
             {/* Glass sheen */}
             <span
               aria-hidden
