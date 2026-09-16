@@ -54,6 +54,47 @@ export interface IntakeVoiceOrbProps {
   chatContext?: VoiceChatContext;
 }
 
+/**
+ * White waveform signal bars, like a voice-activity indicator.
+ * Idle: green globe backdrop, gentle static silhouette (short, tall, medium, short).
+ * Listening: bars dance with the live mic level.
+ */
+function WaveformBars({
+  live,
+  level,
+  phase,
+  reducedMotion,
+}: {
+  live: boolean;
+  level: number;
+  phase: number;
+  reducedMotion: boolean;
+}) {
+  const idleHeights = [9, 21, 14, 9];
+  return (
+    <span className="flex items-center gap-[3px]" aria-hidden>
+      {idleHeights.map((base, i) => {
+        const height = live
+          ? 5 + 24 * Math.min(1, 0.18 + level * (0.55 + 0.45 * Math.sin(phase + i * 1.35)))
+          : base;
+        return (
+          <span
+            key={i}
+            className={`w-[3px] rounded-full bg-white/95 ${
+              !live && !reducedMotion ? "spr-wave-bar" : ""
+            }`}
+            style={{
+              height: `${Math.round(height)}px`,
+              animationDelay: !live && !reducedMotion ? `${i * 0.28}s` : undefined,
+              boxShadow: "0 0 6px rgba(255,255,255,0.35)",
+            }}
+          />
+        );
+      })}
+    </span>
+  );
+}
+
 export function IntakeVoiceOrb({
   lang,
   onTranscript,
@@ -81,6 +122,8 @@ export function IntakeVoiceOrb({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
   const stoppingRef = useRef(false);
+  /** Advances every meter frame so the listening waveform bars keep dancing. */
+  const phaseRef = useRef(0);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -187,6 +230,7 @@ export function IntakeVoiceOrb({
           let sum = 0;
           for (let i = 0; i < data.length; i++) sum += data[i];
           const avg = sum / data.length / 255;
+          phaseRef.current += 0.28;
           setLevel(Math.min(1, avg * 2.2));
           rafRef.current = requestAnimationFrame(tick);
         };
@@ -453,9 +497,13 @@ export function IntakeVoiceOrb({
           from { transform: rotate(360deg); }
           to { transform: rotate(0deg); }
         }
-        @keyframes spr-listening-dot {
-          0%, 100% { transform: scale(1); opacity: 0.65; }
-          50% { transform: scale(1.4); opacity: 1; }
+        @keyframes spr-orb-alive {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.07); }
+        }
+        @keyframes spr-wave-bar {
+          0%, 100% { transform: scaleY(0.75); }
+          50% { transform: scaleY(1.15); }
         }
         .spr-intake-orb-breathe {
           animation: spr-orb-breathe 3.2s ease-in-out infinite;
@@ -470,13 +518,17 @@ export function IntakeVoiceOrb({
           animation: spr-orb-shimmer 2.8s ease-in-out infinite;
         }
         .spr-smoke-swirl {
-          animation: spr-smoke-swirl 16s linear infinite;
+          animation: spr-smoke-swirl 9s linear infinite;
         }
         .spr-smoke-swirl-rev {
-          animation: spr-smoke-swirl-rev 26s linear infinite;
+          animation: spr-smoke-swirl-rev 15s linear infinite;
         }
-        .spr-listening-dot {
-          animation: spr-listening-dot 1.8s ease-in-out infinite;
+        .spr-orb-alive {
+          animation: spr-orb-alive 4.5s ease-in-out infinite;
+        }
+        .spr-wave-bar {
+          animation: spr-wave-bar 2.2s ease-in-out infinite;
+          transform-origin: center;
         }
         @media (prefers-reduced-motion: reduce) {
           .spr-intake-orb-breathe,
@@ -485,7 +537,8 @@ export function IntakeVoiceOrb({
           .spr-intake-orb-shimmer,
           .spr-smoke-swirl,
           .spr-smoke-swirl-rev,
-          .spr-listening-dot {
+          .spr-orb-alive,
+          .spr-wave-bar {
             animation: none !important;
           }
         }
@@ -706,17 +759,28 @@ export function IntakeVoiceOrb({
               transform: `scale(${1 + (reducedMotion ? 0 : level * 0.1)})`,
             }}
           />
-          {/* Smoky green glass core */}
-          <span
-            aria-hidden
-            className="absolute inset-[5px] overflow-hidden rounded-full bg-[#0b3532]"
-            style={{
-              boxShadow:
-                state === "listening"
-                  ? `inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.18), 0 0 ${18 + level * 32}px rgba(45,212,191,${0.4 + level * 0.4}), 0 6px 18px rgba(36,92,92,0.42)`
-                  : "inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
-            }}
-          >
+          {state === "listening" || state === "processing" ? (
+            /* Mic ON: dark signal disc with white waveform bars, like the reference. */
+            <span
+              aria-hidden
+              className="absolute inset-[5px] overflow-hidden rounded-full bg-[#303036]"
+              style={{
+                boxShadow:
+                  "inset 0 -8px 16px rgba(0,0,0,0.5), inset 0 4px 10px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.35)",
+              }}
+            />
+          ) : (
+            /* Motion globe — green smoke, kept visibly alive. */
+            <span
+              aria-hidden
+              className={`absolute inset-[5px] overflow-hidden rounded-full bg-[#0b3532] ${
+                !reducedMotion ? "spr-orb-alive" : ""
+              }`}
+              style={{
+                boxShadow:
+                  "inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
+              }}
+            >
             {/* Smoke layer — slow clockwise swirl */}
             <span
               aria-hidden
@@ -749,15 +813,16 @@ export function IntakeVoiceOrb({
               aria-hidden
               className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_26%,rgba(255,255,255,0.5)_0%,rgba(255,255,255,0.08)_30%,transparent_48%)]"
             />
-          </span>
-          {/* Icon */}
-          <span className="relative z-10 text-white">
+            </span>
+          )}
+          {/* Icon: white waveform signal — live bars while listening, calm on the globe */}
+          <span className="relative z-10">
             {state === "listening" ? (
-              <span
-                aria-hidden
-                className={`h-2.5 w-2.5 rounded-full bg-white/90 shadow-[0_0_10px_rgba(255,255,255,0.9)] ${
-                  !reducedMotion ? "spr-listening-dot" : ""
-                }`}
+              <WaveformBars
+                live
+                level={level}
+                phase={phaseRef.current}
+                reducedMotion={reducedMotion}
               />
             ) : state === "processing" ? (
               <span
@@ -765,7 +830,9 @@ export function IntakeVoiceOrb({
                   reducedMotion ? "" : "animate-spin"
                 }`}
               />
-            ) : null}
+            ) : (
+              <WaveformBars live={false} level={0} phase={0} reducedMotion={reducedMotion} />
+            )}
           </span>
         </button>
       </div>
