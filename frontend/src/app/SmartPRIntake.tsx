@@ -47,6 +47,7 @@ import {
   projectContextAnswerToFacts,
   projectContextFollowUps,
   projectFactKnown,
+  projectIsActive,
   validateProjectContext,
   type ProjectContext,
 } from './ai/intake/projectContext';
@@ -4037,17 +4038,28 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Intake completion: 5 core profile fields + business and municipality
   // questions. All answers are collected before the checklist is generated.
-  const intakeFieldsDone = [profile.name, profile.municipality, profile.industry, profile.business_type, profile.location_type].filter(Boolean).length;
+  // project_only collects only the project name and municipality as base
+  // profile fields — industry, business type, and location type are never
+  // asked, so they must not inflate the progress denominator either.
+  const intakeFieldsDone = (isProjectOnly
+    ? [profile.name, profile.municipality]
+    : [profile.name, profile.municipality, profile.industry, profile.business_type, profile.location_type]
+  ).filter(Boolean).length;
   const answeredPotentialCount = potentialItems.filter((item) => potentialDecisions[item.flag]).length;
   // Totals count only questions SmartPR still needs. A question it can already
   // answer is not work the user has to do, so it must not inflate the progress
   // denominator either.
   const intakeQuestionTotal = guidedQuestions.length + potentialItems.length;
-  const intakeTotal = 5 + intakeQuestionTotal;
+  const intakeTotal = (isProjectOnly ? 2 : 5) + intakeQuestionTotal;
   const intakeDone = intakeFieldsDone + guidedQuestionsAnswered + answeredPotentialCount;
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
-  const baseProfileReady = Boolean(profile.name && profile.municipality && profile.industry && profile.business_type && profile.location_type);
-  const intakeDisplayTotal = Math.max(7, intakeTotal);
+  // project_only readiness is the project name + municipality: without this
+  // branch the "See my requirements" button could never enable for a
+  // property-only project, because the business fields are never collected.
+  const baseProfileReady = isProjectOnly
+    ? Boolean(profile.name && profile.municipality)
+    : Boolean(profile.name && profile.municipality && profile.industry && profile.business_type && profile.location_type);
+  const intakeDisplayTotal = isProjectOnly ? intakeTotal : Math.max(7, intakeTotal);
   const intakeDisplayDone = intakeDone + (
     baseProfileReady && intakeDone === intakeTotal
       ? Math.max(0, intakeDisplayTotal - intakeTotal)
@@ -4850,16 +4862,41 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const activeSampleData = activeSampleFormCode ? (sampleFormDrafts[activeSampleFormCode] || {}) : {};
   const deliverablesReady = totalMandatory > 0 && completedMandatory === totalMandatory;
 
+  // project_only: the panel describes the project, not a business. Business
+  // type and location type are never collected for a property-only project,
+  // so those signals read from the retained project context instead of
+  // always showing a "needed" state that can never be satisfied.
+  const projectTypeParts: string[] = [];
+  const proposedUseValue = projectContext?.proposed_use?.value;
+  const projectTypeValue = projectContext?.project_type?.value;
+  if (typeof proposedUseValue === "string" && proposedUseValue) projectTypeParts.push(proposedUseValue);
+  else if (typeof projectTypeValue === "string" && projectTypeValue) projectTypeParts.push(projectTypeValue);
+  if (projectContext?.new_construction?.value === true) projectTypeParts.push(language === 'es' ? 'construcción nueva' : 'new construction');
+  if (projectContext?.renovation?.value === true) projectTypeParts.push(language === 'es' ? 'renovación' : 'renovation');
+  if (projectContext?.expansion?.value === true) projectTypeParts.push(language === 'es' ? 'ampliación' : 'expansion');
+  const projectTypeSignal = projectTypeParts.length > 0
+    ? { label: `${language === 'es' ? 'Proyecto' : 'Project'}: ${projectTypeParts.join(', ')}`, state: 'confirmed' as const }
+    : { label: language === 'es' ? 'Se necesita el tipo de proyecto' : 'Project type needed', state: 'needs-info' as const };
+  const projectScopeSignal = projectFactKnown(projectContext, "square_footage")
+    ? { label: `${language === 'es' ? 'Tamaño' : 'Size'}: ~${Number(projectContext?.square_footage?.value).toLocaleString('en-US')} ${language === 'es' ? 'pies cuadrados' : 'sq ft'}`, state: 'confirmed' as const }
+    : projectFactKnown(projectContext, "scope_of_work")
+      ? { label: `${language === 'es' ? 'Alcance' : 'Scope'}: ${String(projectContext?.scope_of_work?.value).slice(0, 60)}`, state: 'confirmed' as const }
+      : { label: language === 'es' ? 'Se necesita el alcance del proyecto' : 'Project scope needed', state: 'needs-info' as const };
+
   const intelligenceSignals: NonNullable<SmartPRLiveData['signals']> = [
-    profile.business_type
-      ? { label: language === 'es' ? `Tipo de negocio: ${profile.business_type}` : `Business type: ${profile.business_type}`, state: 'confirmed' }
-      : { label: language === 'es' ? 'Se necesita el tipo de negocio' : 'Business type needed', state: 'needs-info' },
+    isProjectOnly
+      ? projectTypeSignal
+      : profile.business_type
+        ? { label: language === 'es' ? `Tipo de negocio: ${profile.business_type}` : `Business type: ${profile.business_type}`, state: 'confirmed' }
+        : { label: language === 'es' ? 'Se necesita el tipo de negocio' : 'Business type needed', state: 'needs-info' },
     profile.municipality
       ? { label: language === 'es' ? `Municipio: ${profile.municipality}` : `Municipality: ${profile.municipality}`, state: 'confirmed' }
       : { label: language === 'es' ? 'Se necesita el municipio' : 'Municipality needed', state: 'needs-info' },
-    profile.location_type
-      ? { label: language === 'es' ? `Ubicación: ${profile.location_type}` : `Location: ${profile.location_type}`, state: 'confirmed' as const }
-      : { label: language === 'es' ? 'Se necesita el tipo de ubicación' : 'Physical location needed', state: 'needs-info' as const },
+    isProjectOnly
+      ? projectScopeSignal
+      : profile.location_type
+        ? { label: language === 'es' ? `Ubicación: ${profile.location_type}` : `Location: ${profile.location_type}`, state: 'confirmed' as const }
+        : { label: language === 'es' ? 'Se necesita el tipo de ubicación' : 'Physical location needed', state: 'needs-info' as const },
   ];
   if (profile.business_structure) {
     intelligenceSignals.push({
@@ -4888,7 +4925,27 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     });
   }
 
-  const nextIntakeAction = !profile.name
+  const projectTypeKnown = projectTypeParts.length > 0;
+
+  // project_only: the action chain is project-centric — a property-only
+  // project never asks for a business industry or business type. When no
+  // project has been described yet there are no guided questions, so the
+  // action points at the intake box where the description is entered.
+  const nextIntakeAction = isProjectOnly
+    ? (!profile.name
+      ? (language === 'es' ? 'Ponle un nombre al proyecto para identificarlo en la solicitud.' : 'Give the project a name so the filing has a clear identity.')
+      : !profile.municipality
+        ? (language === 'es' ? 'Indica el municipio donde está el proyecto.' : 'Tell us which municipality the project is in.')
+        : !projectIsActive(projectContext)
+          ? (language === 'es' ? 'Cuéntanos del proyecto en el recuadro de arriba — por ejemplo, "construcción de un almacén nuevo" o "renovación de 20 habitaciones".' : 'Describe your project in the box above — for example, "new warehouse construction" or "renovating 20 hotel rooms".')
+          : !projectTypeKnown
+            ? (language === 'es' ? 'Describe el tipo de proyecto: construcción nueva, renovación o ampliación.' : 'Describe the project type — new construction, renovation, or expansion.')
+            : currentQuestion
+              ? L(currentQuestion.text, language)
+              : currentPotentialQuestion
+                ? L(currentPotentialQuestion.followUp, language)
+                : (language === 'es' ? 'Revisa el perfil y genera los requisitos.' : 'Review the profile, then generate the requirements.'))
+    : !profile.name
     ? (language === 'es' ? 'Ingresa el nombre legal o de trabajo del negocio.' : 'Enter the business name so this filing has a clear identity.')
     : !profile.municipality
       ? (language === 'es' ? 'Indica el municipio donde operará el negocio.' : 'Tell us which municipality the business will operate in.')
@@ -4904,7 +4961,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 ? L(currentPotentialQuestion.followUp, language)
                 : (language === 'es' ? 'Revisa el perfil y genera los requisitos.' : 'Review the profile, then generate the requirements.');
 
-  const whyAsking = !profile.municipality
+  const whyAsking = isProjectOnly
+    ? (!profile.name
+      ? (language === 'es' ? 'El nombre identifica el proyecto en la solicitud.' : 'A name gives the project a clear identity on the filing.')
+      : !profile.municipality
+        ? (language === 'es' ? 'El municipio puede afectar licencias y permisos locales.' : 'Your municipality can affect local licensing and permitting requirements.')
+        : !projectIsActive(projectContext)
+          ? (language === 'es' ? 'Sin una descripción del proyecto, SmartPR no puede determinar qué permisos aplican.' : 'Without a project description, SmartPR cannot determine which permits apply.')
+          : !projectTypeKnown
+            ? (language === 'es' ? 'El tipo de proyecto determina qué permisos de construcción y agencias aplican.' : 'The project type determines which construction permits and agencies apply.')
+            : currentQuestion?.whyWeAsk
+              ? L(currentQuestion.whyWeAsk, language)
+              : currentPotentialQuestion
+                ? L(currentPotentialQuestion.why, language)
+                : (language === 'es' ? 'Cada respuesta reduce la incertidumbre antes de aplicar las reglas regulatorias.' : 'Each answer reduces uncertainty before the deterministic regulatory rules are applied.'))
+    : !profile.municipality
     ? (language === 'es' ? 'El municipio puede afectar licencias y permisos locales.' : 'Your municipality can affect local licensing and permitting requirements.')
     : !profile.location_type
       ? (language === 'es' ? 'La ubicación física puede activar permisos de uso, salud o seguridad.' : 'A physical location can trigger use, health, or safety permits.')
