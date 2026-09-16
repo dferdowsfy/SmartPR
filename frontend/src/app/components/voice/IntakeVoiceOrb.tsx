@@ -56,36 +56,43 @@ export interface IntakeVoiceOrbProps {
 
 /**
  * White waveform signal bars, like a voice-activity indicator.
- * Idle: green globe backdrop, gentle static silhouette (short, tall, medium, short).
- * Listening: bars dance with the live mic level.
+ * Idle: gentle pulsing silhouette on the green globe.
+ * Listening: bars bounce continuously (staggered, like a voice assistant
+ * hearing sound) while their base height follows the live mic level.
  */
 function WaveformBars({
   live,
   level,
-  phase,
   reducedMotion,
 }: {
   live: boolean;
   level: number;
-  phase: number;
   reducedMotion: boolean;
 }) {
   const idleHeights = [9, 21, 14, 9];
+  // Per-bar shape so the waveform reads even when the mic level is steady.
+  const liveFactors = [0.6, 1.0, 0.78, 0.52];
   return (
     <span className="flex items-center gap-[3px]" aria-hidden>
       {idleHeights.map((base, i) => {
         const height = live
-          ? 5 + 24 * Math.min(1, 0.18 + level * (0.55 + 0.45 * Math.sin(phase + i * 1.35)))
+          ? Math.round((7 + 19 * Math.min(1, level)) * liveFactors[i])
           : base;
         return (
           <span
             key={i}
             className={`w-[3px] rounded-full bg-white/95 ${
-              !live && !reducedMotion ? "spr-wave-bar" : ""
+              live
+                ? !reducedMotion
+                  ? "spr-wave-live"
+                  : ""
+                : !reducedMotion
+                  ? "spr-wave-bar"
+                  : ""
             }`}
             style={{
-              height: `${Math.round(height)}px`,
-              animationDelay: !live && !reducedMotion ? `${i * 0.28}s` : undefined,
+              height: `${height}px`,
+              animationDelay: !reducedMotion ? `${i * (live ? 0.14 : 0.28)}s` : undefined,
               boxShadow: "0 0 6px rgba(255,255,255,0.35)",
             }}
           />
@@ -122,8 +129,6 @@ export function IntakeVoiceOrb({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
   const stoppingRef = useRef(false);
-  /** Advances every meter frame so the listening waveform bars keep dancing. */
-  const phaseRef = useRef(0);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -230,7 +235,6 @@ export function IntakeVoiceOrb({
           let sum = 0;
           for (let i = 0; i < data.length; i++) sum += data[i];
           const avg = sum / data.length / 255;
-          phaseRef.current += 0.28;
           setLevel(Math.min(1, avg * 2.2));
           rafRef.current = requestAnimationFrame(tick);
         };
@@ -505,6 +509,17 @@ export function IntakeVoiceOrb({
           0%, 100% { transform: scaleY(0.75); }
           50% { transform: scaleY(1.15); }
         }
+        /* Active-listening waveform: continuous staggered bounce that mimics
+           understanding sound, even when the mic level holds steady. */
+        @keyframes spr-wave-live {
+          0%, 100% { transform: scaleY(0.45); }
+          50% { transform: scaleY(1.35); }
+        }
+        /* Soft breathing pulse on the dark signal disc while listening. */
+        @keyframes spr-disc-pulse {
+          0%, 100% { transform: scale(1); filter: brightness(1); }
+          50% { transform: scale(1.045); filter: brightness(1.18); }
+        }
         .spr-intake-orb-breathe {
           animation: spr-orb-breathe 3.2s ease-in-out infinite;
         }
@@ -530,6 +545,13 @@ export function IntakeVoiceOrb({
           animation: spr-wave-bar 2.2s ease-in-out infinite;
           transform-origin: center;
         }
+        .spr-wave-live {
+          animation: spr-wave-live 0.9s ease-in-out infinite;
+          transform-origin: center;
+        }
+        .spr-disc-pulse {
+          animation: spr-disc-pulse 2.4s ease-in-out infinite;
+        }
         @media (prefers-reduced-motion: reduce) {
           .spr-intake-orb-breathe,
           .spr-intake-orb-ring,
@@ -538,7 +560,9 @@ export function IntakeVoiceOrb({
           .spr-smoke-swirl,
           .spr-smoke-swirl-rev,
           .spr-orb-alive,
-          .spr-wave-bar {
+          .spr-wave-bar,
+          .spr-wave-live,
+          .spr-disc-pulse {
             animation: none !important;
           }
         }
@@ -760,10 +784,13 @@ export function IntakeVoiceOrb({
             }}
           />
           {state === "listening" || state === "processing" ? (
-            /* Mic ON: dark signal disc with white waveform bars, like the reference. */
+            /* Mic ON: dark signal disc with a pulsating white waveform —
+               no globe in the active state. */
             <span
               aria-hidden
-              className="absolute inset-[5px] overflow-hidden rounded-full bg-[#303036]"
+              className={`absolute inset-[5px] overflow-hidden rounded-full bg-[#303036] ${
+                state === "listening" && !reducedMotion ? "spr-disc-pulse" : ""
+              }`}
               style={{
                 boxShadow:
                   "inset 0 -8px 16px rgba(0,0,0,0.5), inset 0 4px 10px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.35)",
@@ -815,15 +842,10 @@ export function IntakeVoiceOrb({
             />
             </span>
           )}
-          {/* Icon: white waveform signal — live bars while listening, calm on the globe */}
+          {/* Icon: white waveform signal — pulsating while listening, calm on the globe */}
           <span className="relative z-10">
             {state === "listening" ? (
-              <WaveformBars
-                live
-                level={level}
-                phase={phaseRef.current}
-                reducedMotion={reducedMotion}
-              />
+              <WaveformBars live level={level} reducedMotion={reducedMotion} />
             ) : state === "processing" ? (
               <span
                 className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
@@ -831,7 +853,7 @@ export function IntakeVoiceOrb({
                 }`}
               />
             ) : (
-              <WaveformBars live={false} level={0} phase={0} reducedMotion={reducedMotion} />
+              <WaveformBars live={false} level={0} reducedMotion={reducedMotion} />
             )}
           </span>
         </button>
