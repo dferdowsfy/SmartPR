@@ -786,6 +786,24 @@ deploys from `main`). Distinguish: FIXED_IN_CODE, VERIFIED_IN_TESTS,
 VERIFIED_IN_PRODUCTION. Do not claim a production fix merely because source
 code was edited.
 
+## 14.15 Municipality coverage
+
+Every scenario runs in a real Puerto Rico municipality. Rotate through the
+metro roster so that coverage reaches all major metro municipalities, not
+just San Juan:
+
+- San Juan metro: San Juan, Bayamón, Carolina, Guaynabo, Cataño,
+  Trujillo Alto, Toa Baja, Toa Alta, Dorado
+- Other major cities: Ponce, Mayagüez, Caguas, Arecibo
+
+Each cycle must place its 3 scenarios in municipalities, preferring roster
+members marked untested or with recent failures in the quality memory. When
+choosing scenario types, pick types that stress municipal guidance (patente,
+municipal registration, municipal tax compliance, permits routing through
+municipalities). Record every municipality exercised in the run report and
+update its status in the quality memory — the goal is the full roster
+verified, with every future guidance change re-regression-tested across it.
+
 # 15. NEVER FIX BY HARDCODING TEST CASES
 
 Do not write:
