@@ -15,6 +15,7 @@ export const dynamic = "force-dynamic";
 
 import { clampCandidates, type KbCandidates } from "../../../ai/intake/kbCandidates";
 import { BUSINESS_STRUCTURE_VALUES } from "../../../ai/intake/validateInterpretation";
+import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 import {
   isXaiConfigured,
   requestXaiText,
@@ -25,6 +26,7 @@ import {
 const MAX_DESCRIPTION_CHARS = 1200;
 
 interface InterpretPayload {
+  mode?: "passport";
   description?: string;
   candidates?: KbCandidates;
   lang?: string;
@@ -244,7 +246,12 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const description = (payload.description || "").slice(0, MAX_DESCRIPTION_CHARS).trim();
+  const passportMode = payload.mode === "passport";
+  const limit = passportMode ? 12000 : MAX_DESCRIPTION_CHARS;
+  if (typeof payload.description !== "string" || (passportMode && payload.description.length > limit)) {
+    return Response.json({ error: `Description must be text of at most ${limit} characters.` }, { status: 400 });
+  }
+  const description = payload.description.slice(0, limit).trim();
   if (!description) {
     return Response.json({ error: "A business description is required." }, { status: 400 });
   }
@@ -253,6 +260,7 @@ export async function POST(request: Request) {
     payload.candidates ?? { businessTypes: [], municipalities: [], questions: [] }
   );
   const isEs = payload.lang === "es";
+  const discoveryPrompt = buildSystemPrompt(candidates, isEs, payload.allowedIndustries, payload.allowedLocationTypes);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
@@ -262,11 +270,13 @@ export async function POST(request: Request) {
       input: [
         {
           role: "system",
-          content: buildSystemPrompt(candidates, isEs, payload.allowedIndustries, payload.allowedLocationTypes),
+          content: passportMode
+            ? `${discoveryPrompt}\n\nADDITIONAL PASSPORT MODE:\n${passportExtractionPrompt()}\nFor this request combine both outputs as {"interpretation": <the discovery JSON described above>, "proposals": <the Passport proposals array>}. Passport fields require explicit evidence even when discovery permits inference. Keep discovery and Passport outputs separate. Never use a discovery inference as a Passport fact.`
+            : discoveryPrompt,
         },
         { role: "user", content: description },
       ],
-      maxOutputTokens: 900,
+      maxOutputTokens: passportMode ? 6500 : 900,
       temperature: 0.1,
       signal: controller.signal,
     });
@@ -275,6 +285,17 @@ export async function POST(request: Request) {
       return Response.json({ error: "Could not parse the AI response." }, { status: 502 });
     }
 
+    if (passportMode) {
+      const discovery = parsed.interpretation && typeof parsed.interpretation === "object" && !Array.isArray(parsed.interpretation)
+        ? stripUnknownIds(parsed.interpretation as Record<string, unknown>, candidates) : {};
+      // These overlapping facts must go through Passport's stricter validator
+      // and conflict review, never the legacy blind-merge path.
+      delete discovery.municipality;
+      if (Array.isArray(discovery.profileValues)) {
+        discovery.profileValues = discovery.profileValues.filter((p) => p && ["industry", "location_type", "number_of_vehicles", "number_of_rental_units"].includes(p.key));
+      }
+      return Response.json({ interpretation: discovery, proposals: validatePassportProposals(parsed.proposals, description, isEs ? "es" : "en"), ai_model: XAI_MODEL });
+    }
     return Response.json({
       interpretation: stripUnknownIds(parsed, candidates),
       ai_model: XAI_MODEL,

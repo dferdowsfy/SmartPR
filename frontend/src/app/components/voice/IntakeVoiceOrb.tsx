@@ -5,8 +5,8 @@
 // Visual: ChatGPT-like breathing glow (teal #245c5c + mint/cyan halo + sparkles).
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Pause, Type, Volume2, VolumeX, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { MicOff, Pause, Square, Type, Volume2, VolumeX, X } from "lucide-react";
 import {
   MIN_AUDIO_BLOB_BYTES,
   appendAudioFormField,
@@ -16,7 +16,7 @@ import {
   sttErrorMessage,
 } from "./recordAudioBlob";
 
-type OrbState = "idle" | "listening" | "processing" | "error";
+type OrbState = "idle" | "requesting" | "listening" | "processing" | "error";
 type Lang = "en" | "es";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -52,6 +52,7 @@ export interface IntakeVoiceOrbProps {
   enableVoiceAnswers?: boolean;
   /** Business context for answers (profile/requirements may be empty). */
   chatContext?: VoiceChatContext;
+  feedback?: ReactNode;
 }
 
 /**
@@ -109,6 +110,7 @@ export function IntakeVoiceOrb({
   busy = false,
   enableVoiceAnswers = true,
   chatContext,
+  feedback,
 }: IntakeVoiceOrbProps) {
   const [state, setState] = useState<OrbState>("idle");
   const [level, setLevel] = useState(0);
@@ -129,6 +131,8 @@ export function IntakeVoiceOrb({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
   const stoppingRef = useRef(false);
+  const requestingRef = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -196,9 +200,13 @@ export function IntakeVoiceOrb({
   }, [stopMeter]);
 
   useEffect(
-    () => () => {
-      teardownMedia();
-      stopSpeaking();
+    () => {
+      mountedRef.current = true;
+      return () => {
+        mountedRef.current = false;
+        teardownMedia();
+        stopSpeaking();
+      };
     },
     [teardownMedia, stopSpeaking]
   );
@@ -389,6 +397,7 @@ export function IntakeVoiceOrb({
   );
 
   const startListening = useCallback(async () => {
+    if (requestingRef.current || mediaRecorderRef.current) return;
     setError(null);
     stopSpeaking();
     setAnswer(null);
@@ -408,6 +417,8 @@ export function IntakeVoiceOrb({
     }
 
     try {
+      requestingRef.current = true;
+      setState("requesting");
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -415,6 +426,7 @@ export function IntakeVoiceOrb({
           channelCount: 1,
         },
       });
+      if (!mountedRef.current) { stream.getTracks().forEach((track) => track.stop()); return; }
       streamRef.current = stream;
 
       const { mimeType } = pickRecorderMime();
@@ -430,7 +442,7 @@ export function IntakeVoiceOrb({
       setState("error");
       setShowPanel(true);
       setError(L("Microphone permission denied.", "Permiso de micrófono denegado.", lang));
-    }
+    } finally { requestingRef.current = false; }
   }, [lang, startMeter, stopSpeaking, teardownMedia]);
 
   const stopListening = useCallback(async () => {
@@ -460,19 +472,18 @@ export function IntakeVoiceOrb({
     void stopListening();
   };
 
-  const blocked = busy || state === "processing";
-  const glowScale = 1 + (reducedMotion ? 0 : level * 0.28);
+  const blocked = busy || state === "processing" || state === "requesting";
 
   const tooltipText =
-    state === "listening"
-      ? L("Listening… tap orb to stop", "Escuchando… toque el orbe para detener", lang)
+    state === "requesting" ? L("Mic off · Allow microphone access…", "Micrófono apagado · Permita el acceso…", lang) : state === "listening"
+      ? L("Mic on · Listening — tap to finish", "Micrófono activo · Escuchando — toque para terminar", lang)
       : state === "processing"
         ? answering
           ? L("Answering…", "Respondiendo…", lang)
-          : L("Transcribing…", "Transcribiendo…", lang)
+          : L("Mic off · Processing…", "Micrófono apagado · Procesando…", lang)
         : state === "error"
           ? L("Something went wrong", "Algo salió mal", lang)
-          : L("Tell me what you want to do.", "Dime qué quieres hacer.", lang);
+          : L("Mic off · Tap to speak", "Micrófono apagado · Toque para hablar", lang);
 
   const showHints = state !== "error";
 
@@ -571,6 +582,7 @@ export function IntakeVoiceOrb({
       <div
         className="pointer-events-none fixed z-40 flex flex-col items-end gap-2.5 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] md:bottom-[calc(1.35rem+env(safe-area-inset-bottom,0px))] md:right-[max(1.25rem,env(safe-area-inset-right,0px))]"
       >
+        {feedback && <div className="pointer-events-auto order-1 max-h-[45vh] w-[min(100vw-2rem,22rem)] overflow-y-auto">{feedback}</div>}
         {/* Compact status / error panel — opens upward above hints */}
         {(showPanel || error) && (
           <div
@@ -712,7 +724,7 @@ export function IntakeVoiceOrb({
               }}
               className="flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/75 px-3.5 py-1.5 text-left text-[11px] font-medium leading-snug text-slate-500 shadow-[0_4px_14px_rgba(36,92,92,0.07)] backdrop-blur-md"
             >
-              <span className="min-w-0 flex-1">{tooltipText}</span>
+              <span role="status" aria-live="polite" className="min-w-0 flex-1">{tooltipText}</span>
             </button>
             <span
               aria-hidden
@@ -738,20 +750,16 @@ export function IntakeVoiceOrb({
               void startListening();
             }
           }}
-          aria-label={L("SmartPR voice intake", "Admisión por voz SmartPR", lang)}
-          aria-busy={state === "processing" || state === "listening"}
-          className="pointer-events-auto group relative order-4 flex h-[3.75rem] w-[3.75rem] items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 md:h-16 md:w-16"
-          style={{
-            transform:
-              state === "listening" && !reducedMotion ? `scale(${glowScale})` : undefined,
-            transition: reducedMotion ? undefined : "transform 90ms linear",
-          }}
+          aria-label={state === "listening" ? L("Stop recording and use speech", "Terminar grabación y usar voz", lang) : L("Start voice input — microphone off", "Activar voz — micrófono apagado", lang)}
+          aria-pressed={state === "listening"}
+          aria-busy={state === "processing"}
+          className={`pointer-events-auto group relative order-4 flex items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 ${state === "listening" ? "h-24 w-24 ring-4 ring-teal-600 ring-offset-4" : "h-[3.75rem] w-[3.75rem] md:h-16 md:w-16"}`}
         >
           {/* Soft ambient bloom */}
           <span
             aria-hidden
             className={`absolute inset-[-18px] rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(94,234,212,0.45)_0%,rgba(167,243,208,0.28)_38%,rgba(36,92,92,0.08)_62%,transparent_75%)] ${
-              !reducedMotion ? "spr-intake-orb-breathe" : ""
+              state === "listening" && !reducedMotion ? "spr-intake-orb-breathe" : ""
             }`}
             style={{
               opacity: state === "listening" ? 0.95 + level * 0.2 : 0.85,
@@ -759,7 +767,7 @@ export function IntakeVoiceOrb({
             }}
           />
           {/* Gentle ambient rings */}
-          {!reducedMotion && (
+          {state === "listening" && !reducedMotion && (
             <>
               <span
                 aria-hidden
@@ -845,7 +853,7 @@ export function IntakeVoiceOrb({
           {/* Icon: white waveform signal — pulsating while listening, calm on the globe */}
           <span className="relative z-10">
             {state === "listening" ? (
-              <WaveformBars live level={level} reducedMotion={reducedMotion} />
+              <span className="flex flex-col items-center gap-1"><WaveformBars live level={level} reducedMotion={reducedMotion} /><Square className="h-3 w-3 fill-white text-white" /></span>
             ) : state === "processing" ? (
               <span
                 className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
@@ -853,7 +861,7 @@ export function IntakeVoiceOrb({
                 }`}
               />
             ) : (
-              <WaveformBars live={false} level={0} reducedMotion={reducedMotion} />
+              <MicOff className="h-6 w-6 text-white" />
             )}
           </span>
         </button>

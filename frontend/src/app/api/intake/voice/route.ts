@@ -12,7 +12,7 @@ import {
 } from "../../../ai/xai";
 
 const MAX_AUDIO_BYTES = 12 * 1024 * 1024;
-const MAX_TRANSCRIPT_CHARS = 1200; // match /api/intake/interpret
+const MAX_TRANSCRIPT_CHARS = 12000; // Full multi-field Passport dictation.
 
 /** Keyterms bias STT toward Puerto Rico / SmartPR business vocabulary. */
 const PR_KEYTERMS = [
@@ -87,7 +87,10 @@ export async function POST(request: Request) {
       keyterms: PR_KEYTERMS,
       signal: controller.signal,
     });
-    const transcript = (stt.text || "").trim().slice(0, MAX_TRANSCRIPT_CHARS);
+    const transcript = (stt.text || "").trim();
+    if (transcript.length > MAX_TRANSCRIPT_CHARS) {
+      return Response.json({ error: lang === "es" ? "La grabación es demasiado larga. Divídala en partes más cortas." : "The recording is too long. Please split it into shorter parts." }, { status: 413 });
+    }
 
     if (!transcript) {
       return Response.json(

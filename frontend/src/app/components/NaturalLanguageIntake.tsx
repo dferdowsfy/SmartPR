@@ -21,6 +21,7 @@ import {
   type ValidatedInterpretation,
 } from "../ai/intake/validateInterpretation";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
+import { PassportVoiceReview, usePassportVoiceInput, type PassportInputTarget } from "./voice/PassportVoiceReview";
 
 export interface NaturalLanguageIntakeProps {
   kb: KnowledgeBase;
@@ -31,6 +32,8 @@ export interface NaturalLanguageIntakeProps {
   onApply: (patch: IntakePatch, validated: ValidatedInterpretation) => void;
   /** When true, show the floating voice orb (intake Start). Default true. */
   showVoiceOrb?: boolean;
+  /** Enabled only once discovery is complete; writes the existing canonical state. */
+  passport?: PassportInputTarget;
 }
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -42,7 +45,10 @@ export function NaturalLanguageIntake({
   allowedLocationTypes,
   onApply,
   showVoiceOrb = true,
+  passport,
 }: NaturalLanguageIntakeProps) {
+  const passportReview = usePassportVoiceInput(passport, lang);
+  const receivePassport = passportReview.receive;
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -73,6 +79,20 @@ export function NaturalLanguageIntake({
       setChips([]);
       setPending(null);
       try {
+        if (passport) {
+          const res = await fetch("/api/intake/interpret", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ description, mode: "passport", lang, candidates: buildKbCandidates(kb, description), allowedIndustries, allowedLocationTypes }),
+          });
+          if (!res.ok) throw new Error(`interpret ${res.status}`);
+          const data = await res.json();
+          await receivePassport(data.proposals, description);
+          const validated = validateInterpretation(data.interpretation, kb, { allowedIndustries, allowedLocationTypes });
+          const patch = toIntakePatch(validated, { kb, allowedIndustries });
+          if (Object.keys(patch.profile).length || Object.keys(patch.answers).length) onApply(patch, validated);
+          setStatus("done");
+          return;
+        }
         // Candidates come from the ACTIVE KB — the same one the rules engine uses.
         const candidates = buildKbCandidates(kb, description);
         const res = await fetch("/api/intake/interpret", {
@@ -120,7 +140,7 @@ export function NaturalLanguageIntake({
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport]
   );
 
   const interpret = () => {
@@ -196,6 +216,10 @@ export function NaturalLanguageIntake({
     async (transcript: string) => {
       const t = transcript.trim();
       if (!t) return;
+      if (passport) {
+        await interpretDescription(t);
+        return;
+      }
       if (!textRef.current.trim()) {
         // First voice input: it IS the business description.
         textRef.current = t;
@@ -208,7 +232,7 @@ export function NaturalLanguageIntake({
       // profile — the description box stays exactly as it was.
       await interpretFollowUp(t);
     },
-    [interpretDescription, interpretFollowUp]
+    [interpretDescription, interpretFollowUp, passport]
   );
 
   const focusDescribeBox = useCallback(() => {
@@ -340,9 +364,11 @@ export function NaturalLanguageIntake({
       {showVoiceOrb && (
         <IntakeVoiceOrb
           lang={lang}
-          busy={status === "loading"}
+          busy={status === "loading" || passportReview.saving}
           onTranscript={handleVoiceTranscript}
           onUseTextInstead={focusDescribeBox}
+          enableVoiceAnswers={!passport}
+          feedback={<PassportVoiceReview review={passportReview} lang={lang} />}
         />
       )}
     </div>

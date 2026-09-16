@@ -14,238 +14,18 @@ import {
   XaiApiError,
   XAI_MODEL,
 } from "../../../ai/xai";
-import {
-  PASSPORT_INTAKE_FIELDS,
-  type BusinessPassportJson,
-} from "../../../forms/engine/businessPassport";
-import { ENTITY_TYPE_OPTIONS, FORMATION_STATUS_OPTIONS } from "../../../forms/engine/intake";
-import type { IntakeFieldSpec } from "../../../forms/engine/intake";
+import type { BusinessPassportJson } from "../../../forms/engine/businessPassport";
+import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 
-const MAX_AUDIO_BYTES = 12 * 1024 * 1024; // ~12 MB voice clips
-const MAX_TRANSCRIPT_CHARS = 4000;
-const MIN_CONFIDENCE = 0.6;
-
-const FORBIDDEN_FIELD_IDS = new Set(["ssn", "password", "passwords", "socialSecurity"]);
-
-/** Keyterms bias STT toward Puerto Rico / SmartPR business vocabulary. */
-const PR_KEYTERMS = [
-  "SmartPR",
-  "Puerto Rico",
-  "Hacienda",
-  "Registro de Comerciante",
-  "Department of State",
-  "Departamento de Estado",
-  "EIN",
-  "NAICS",
-  "LLC",
-  "corporación",
-  "municipio",
-  "San Juan",
-  "Bayamón",
-  "Ponce",
-  "Caguas",
-  "Mayagüez",
-  "Carolina",
-  "Guaynabo",
-  "Arecibo",
-  "catastral",
-];
-
-type PassportVoiceProposal = {
-  fieldId: string;
-  canonicalKey: string;
-  label: { en: string; es: string };
-  value: unknown;
-  confidence: number;
-  displayValue: string;
-};
-
-function fieldCatalog(): string {
-  return PASSPORT_INTAKE_FIELDS.map((f) => {
-    const opts =
-      f.options && f.options.length
-        ? ` :: allowed values = ${f.options.map((o) => o.value).join(" | ")}`
-        : "";
-    const typeHint =
-      f.type === "address"
-        ? " :: value = { line1, line2?, cityOrMunicipality, stateOrTerritory?, postalCode, country }"
-        : f.type === "number"
-          ? " :: value = number"
-          : f.type === "checkbox"
-            ? " :: value = boolean"
-            : f.type === "select"
-              ? ""
-              : ` :: type=${f.type}`;
-    return `- ${f.id} :: ${f.canonicalKey} :: ${f.label.en} / ${f.label.es}${typeHint}${opts}`;
-  }).join("\n");
-}
-
-function buildExtractPrompt(isEs: boolean): string {
-  return `You are SmartPR's Business Passport voice extractor for Puerto Rico businesses.
-
-Given a transcript of the owner describing their business, extract ONLY facts that map to the catalog below.
-
-RULES:
-1. Return ONLY valid JSON — no markdown, no commentary.
-2. Only use fieldId values from the catalog. Never invent field ids.
-3. Only extract facts explicitly stated or strongly implied. Omit unknowns.
-4. NEVER invent SSN, EIN, passwords, or registry/merchant numbers. Include EIN or registry/merchant numbers ONLY when the speaker clearly states the digits/value.
-5. NEVER invent passwords or security credentials (those fields do not exist — do not invent them).
-6. Confidence: explicit 0.90–0.99, strong implication 0.70–0.89, uncertain <0.60 (omit those).
-7. For entityType use only: ${ENTITY_TYPE_OPTIONS.map((o) => o.value).join(", ")}.
-8. For formationStatus use only: ${FORMATION_STATUS_OPTIONS.map((o) => o.value).join(", ")}.
-9. For addresses, return a structured object. Prefer Puerto Rico (PR) as stateOrTerritory and country "US" when implied.
-10. Do not invent legal names — only when the speaker names the business.
-
-CATALOG:
-${fieldCatalog()}
-
-Return this exact JSON shape:
-{
-  "summary": "one short sentence",
-  "proposals": [
-    { "fieldId": "legalName", "value": "...", "confidence": 0.95 }
-  ]
-}
-${isEs ? 'Write "summary" in Spanish. Keep fieldId and JSON keys in English.' : ""}
-
-Return ONLY the JSON.`;
-}
+const MAX_AUDIO_BYTES = 12 * 1024 * 1024;
+const MAX_TRANSCRIPT_CHARS = 12000;
+const PR_KEYTERMS = ["SmartPR", "Puerto Rico", "Hacienda", "Registro de Comerciante", "Departamento de Estado", "EIN", "NAICS", "LLC", "San Juan", "Bayamón", "catastral"];
 
 function parseJsonObject(raw: string): Record<string, unknown> | null {
-  const cleaned = (raw || "").replace(/```json|```/g, "").trim();
   try {
-    return JSON.parse(cleaned) as Record<string, unknown>;
-  } catch {
-    const match = cleaned.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    try {
-      return JSON.parse(match[0]) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-  }
-}
-
-function displayFor(spec: IntakeFieldSpec, value: unknown, lang: "en" | "es"): string {
-  if (value === undefined || value === null || value === "") return "";
-  if (spec.type === "checkbox") {
-    if (value === true) return lang === "es" ? "Sí" : "Yes";
-    if (value === false) return lang === "es" ? "No" : "No";
-    return "";
-  }
-  if (spec.type === "address" && value && typeof value === "object") {
-    const a = value as Record<string, unknown>;
-    return [a.line1, a.line2, a.cityOrMunicipality, a.stateOrTerritory, a.postalCode]
-      .filter((p) => Boolean(p && String(p).trim()))
-      .join(", ");
-  }
-  if (spec.type === "select" && spec.options) {
-    const match = spec.options.find((o) => o.value === String(value));
-    if (match) return (lang === "es" ? match.label.es : match.label.en) || match.label.en;
-  }
-  return String(value).trim();
-}
-
-function normalizeAddress(raw: unknown): Record<string, string> | null {
-  if (typeof raw === "string") {
-    const line = raw.trim();
-    if (!line) return null;
-    return {
-      line1: line,
-      cityOrMunicipality: "",
-      postalCode: "",
-      country: "US",
-      stateOrTerritory: "PR",
-    };
-  }
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const o = raw as Record<string, unknown>;
-  const line1 = typeof o.line1 === "string" ? o.line1.trim() : "";
-  if (!line1) return null;
-  return {
-    line1,
-    line2: typeof o.line2 === "string" ? o.line2.trim() : "",
-    cityOrMunicipality: typeof o.cityOrMunicipality === "string" ? o.cityOrMunicipality.trim() : "",
-    stateOrTerritory:
-      typeof o.stateOrTerritory === "string" && o.stateOrTerritory.trim()
-        ? o.stateOrTerritory.trim()
-        : "PR",
-    postalCode: typeof o.postalCode === "string" ? o.postalCode.trim() : "",
-    country: typeof o.country === "string" && o.country.trim() ? o.country.trim() : "US",
-  };
-}
-
-function sanitizeProposals(
-  raw: unknown,
-  lang: "en" | "es"
-): PassportVoiceProposal[] {
-  if (!Array.isArray(raw)) return [];
-  const byId = new Map(PASSPORT_INTAKE_FIELDS.map((f) => [f.id, f]));
-  const out: PassportVoiceProposal[] = [];
-  const seen = new Set<string>();
-
-  for (const item of raw) {
-    if (!item || typeof item !== "object") continue;
-    const row = item as Record<string, unknown>;
-    const fieldId = typeof row.fieldId === "string" ? row.fieldId.trim() : "";
-    if (!fieldId || FORBIDDEN_FIELD_IDS.has(fieldId) || seen.has(fieldId)) continue;
-    const spec = byId.get(fieldId);
-    if (!spec) continue;
-
-    const confidence =
-      typeof row.confidence === "number" && Number.isFinite(row.confidence)
-        ? row.confidence
-        : 0;
-    if (confidence < MIN_CONFIDENCE) continue;
-
-    // Extra guard: never invent EIN / registry / merchant numbers from low signal.
-    if (
-      (fieldId === "ein" ||
-        fieldId === "registryNumber" ||
-        fieldId === "merchantRegistrationNumber") &&
-      confidence < 0.85
-    ) {
-      continue;
-    }
-
-    let value: unknown = row.value;
-    if (spec.type === "address") {
-      value = normalizeAddress(value);
-      if (!value) continue;
-    } else if (spec.type === "number") {
-      const n = typeof value === "number" ? value : Number(String(value).replace(/,/g, ""));
-      if (!Number.isFinite(n)) continue;
-      value = n;
-    } else if (spec.type === "checkbox") {
-      if (typeof value !== "boolean") continue;
-    } else if (spec.type === "select") {
-      const allowed = new Set((spec.options || []).map((o) => o.value));
-      if (typeof value !== "string" || !allowed.has(value)) continue;
-    } else {
-      if (value === undefined || value === null) continue;
-      const text = String(value).trim();
-      if (!text) continue;
-      // Reject anything that looks like a password dump or SSN pattern we shouldn't store.
-      if (/\bssn\b/i.test(text) && fieldId !== "ein") continue;
-      value = text;
-    }
-
-    const displayValue = displayFor(spec, value, lang);
-    if (!displayValue) continue;
-
-    seen.add(fieldId);
-    out.push({
-      fieldId,
-      canonicalKey: spec.canonicalKey,
-      label: spec.label,
-      value,
-      confidence,
-      displayValue,
-    });
-  }
-
-  return out;
+    const value: unknown = JSON.parse(raw.replace(/```json|```/g, "").trim());
+    return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+  } catch { return null; }
 }
 
 async function assertBusinessAccess(userId: string, businessId: string): Promise<boolean> {
@@ -370,13 +150,13 @@ export async function POST(request: Request) {
 
     const text = await requestXaiText({
       input: [
-        { role: "system", content: buildExtractPrompt(lang === "es") },
+        { role: "system", content: passportExtractionPrompt() },
         {
           role: "user",
           content: `Transcript:\n"""${transcript}"""`,
         },
       ],
-      maxOutputTokens: 1200,
+      maxOutputTokens: 6500,
       temperature: 0.1,
       signal: controller.signal,
     });
@@ -386,7 +166,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Could not parse the AI response." }, { status: 502 });
     }
 
-    const proposals = sanitizeProposals(parsed.proposals, lang);
+    const proposals = validatePassportProposals(parsed.proposals, transcript, lang);
     const summary =
       typeof parsed.summary === "string" && parsed.summary.trim()
         ? parsed.summary.trim().slice(0, 280)

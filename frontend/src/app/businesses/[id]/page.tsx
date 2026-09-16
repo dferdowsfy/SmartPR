@@ -15,7 +15,6 @@ import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
-import { PassportVoiceOrb } from "../PassportVoiceOrb";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
 import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
@@ -527,7 +526,6 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const [loadError, setLoadError] = useState(false);
   const [showAllRequirements, setShowAllRequirements] = useState(false);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
-  const [passportEditSignal, setPassportEditSignal] = useState(0);
   // Requirements the user just marked complete: kept pinned in the
   // "outstanding" list (rendered with their new completed look) instead of
   // silently dropping out of view the instant the list re-sorts.
@@ -677,21 +675,6 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             business={business}
             lang={lang}
             onSaved={() => load()}
-            editSignal={passportEditSignal}
-          />
-          <PassportVoiceOrb
-            businessId={shortId}
-            lang={lang}
-            business={business}
-            currentPassport={business.passport_json ?? null}
-            onApplied={() => load()}
-            onUseTextInstead={() => {
-              setPassportEditSignal((n) => n + 1);
-              // Scroll passport into view for the text editor path.
-              window.requestAnimationFrame(() => {
-                document.getElementById("business-passport")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              });
-            }}
           />
         </div>
 
