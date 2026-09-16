@@ -36,6 +36,8 @@ export interface AgencyPendingField {
   type: AgencyPendingFieldType;
   sensitive: boolean;
   optional?: boolean;
+  /** Format / validation hint shown under the Assistant input (never a secret). */
+  hint?: string;
 }
 
 export interface AgencyRunEvent {

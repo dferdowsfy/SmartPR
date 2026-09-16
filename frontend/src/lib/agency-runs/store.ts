@@ -23,7 +23,11 @@ import {
 import { timelineFor, type MockBeat } from "./mockTimeline";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
 import { PLACEHOLDER_SHOTS } from "./placeholders";
-import { resolvePendingFields } from "./pendingFields";
+import {
+  displayMessagesForAgentText,
+  humanizePauseEvent,
+  resolvePendingFields,
+} from "./pendingFields";
 import {
   buildResumeTaskPrompt,
   buildAgencyTaskPrompt,
@@ -293,13 +297,24 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
 
   if (latestText && latestText !== run.bu_last_step) {
     run.bu_last_step = latestText;
-    pushEvent(run, {
-      message: latestText,
-      message_es: latestText,
-      screenshot_url: shot,
-      kind: "info",
-    });
     const marker = detectMarker(detectText);
+    // Parse fields before display so pause events stay human-readable (no raw
+    // REQUIRED_FIELDS spam in the Assistant panel).
+    const previewFields =
+      marker.status === "paused"
+        ? resolvePendingFields(detectText, marker.pause_reason ?? null)
+        : [];
+    const display = displayMessagesForAgentText(
+      latestText,
+      marker.pause_reason ?? run.pause_reason,
+      previewFields
+    );
+    pushEvent(run, {
+      message: display.message,
+      message_es: display.message_es,
+      screenshot_url: shot,
+      kind: marker.status === "paused" ? "pause" : "info",
+    });
     if (marker.status === "paused") {
       trackPause(run, marker.pause_reason ?? null, shot, detectText);
     } else if (marker.status === "review") {
@@ -336,9 +351,15 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
       const marker = detectMarker(out);
       if (marker.status === "paused") {
         trackPause(run, marker.pause_reason ?? null, shot, out);
+        const pauseFields = resolvePendingFields(out, marker.pause_reason ?? null);
+        const pauseDisplay = humanizePauseEvent(
+          marker.pause_reason ?? null,
+          pauseFields,
+          out
+        );
         pushEvent(run, {
-          message: out.trim() || "Paused — waiting for your action on the live browser",
-          message_es: out.trim() || "Pausado — esperando su acción en el navegador en vivo",
+          message: pauseDisplay.message,
+          message_es: pauseDisplay.message_es,
           screenshot_url: shot,
           kind: "pause",
         });
@@ -422,16 +443,26 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
       // Skip the latest-step text we already logged in applyRunStatus.
       if (ev.text === run.bu_last_step) continue;
       const marker = detectMarker(ev.text);
+      const blob = latestAgentBlob(bu, events);
+      const parseText = blob || ev.text;
+      const evFields =
+        marker.status === "paused"
+          ? resolvePendingFields(parseText, marker.pause_reason ?? null)
+          : [];
+      const evDisplay = displayMessagesForAgentText(
+        ev.text,
+        marker.pause_reason ?? run.pause_reason,
+        evFields
+      );
       pushEvent(run, {
-        message: ev.text.slice(0, 500),
-        message_es: ev.text.slice(0, 500),
+        message: evDisplay.message,
+        message_es: evDisplay.message_es,
         screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
         kind: marker.status === "paused" ? "pause" : marker.status === "review" ? "review" : "info",
       });
       if (marker.status === "paused") {
         // Prefer the full blob (result + events) for REQUIRED_FIELDS when available.
-        const blob = latestAgentBlob(bu, events);
-        trackPause(run, marker.pause_reason ?? null, PLACEHOLDER_SHOTS.home, blob || ev.text);
+        trackPause(run, marker.pause_reason ?? null, PLACEHOLDER_SHOTS.home, parseText);
       } else if (marker.status === "review") {
         run.status = "review";
         run.pause_reason = null;
@@ -616,7 +647,8 @@ export async function resumeRun(
     const prevPause = run.pause_reason;
     run.status = "running";
     run.pause_reason = null;
-    // Clear metadata once values were supplied (or human resumed without fields).
+    // Clear metadata optimistically; restore on queue failure when fields were sent
+    // so the user can retry instead of silently losing their first Fill & continue.
     clearPendingFields(run);
     run.updated_at = nowIso();
     if (fields) {
@@ -637,9 +669,20 @@ export async function resumeRun(
     if (run.browser_use_session_id && run.browser_use_run_id) {
       try {
         const bu = await getAgentRun(run.browser_use_run_id);
-        if (bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled") {
-          // Follow-up turn on the same session with the resume brief.
-          // Field values (if any) go only into the task message — never logged.
+        const terminal =
+          bu.status === "completed" ||
+          bu.status === "failed" ||
+          bu.status === "cancelled";
+        // CRITICAL: when the human supplied field values, ALWAYS queue the
+        // FIELDS FILL prompt — even if the BU run is still running/idle/queued.
+        // SmartPR may mark paused while the cloud run is still "running"; skipping
+        // the queue made Fill & continue appear to succeed without sending values
+        // (user had to type twice). Prefer interrupt so the agent applies fills now.
+        // Plain Resume / I'm done (no fields): keep prior behavior — queue only
+        // when the turn is terminal.
+        const shouldQueue = Boolean(fields) || terminal;
+        if (shouldQueue) {
+          // Field values go only into the task message — never logged.
           const queued = await queueAgentMessage(
             run.browser_use_session_id,
             buildResumeTaskPrompt({
@@ -647,19 +690,43 @@ export async function resumeRun(
               pauseReason: prevPause,
               passport: run.passport_snapshot ?? null,
               fields,
-            })
+            }),
+            { interrupt: Boolean(fields) && !terminal }
           );
           if (queued.runId) run.browser_use_run_id = queued.runId;
         }
-        // If still running, human used live view; keep syncing.
       } catch (err) {
-        pushEvent(run, {
-          message: `Resume dispatch warning: ${sanitizeError(err)}`,
-          message_es: `Aviso al reanudar: ${sanitizeError(err)}`,
-          screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
-          kind: "info",
-        });
+        if (fields) {
+          // Keep pending_fields so the user can retry; do not silently clear.
+          run.pending_fields = pendingSnapshot;
+          run.status = "paused";
+          run.pause_reason = prevPause;
+          pushEvent(run, {
+            message: `Could not send your fields to the agent — try Fill & continue again. (${sanitizeError(err)})`,
+            message_es: `No se pudieron enviar los campos al agente — intente Llenar y continuar de nuevo. (${sanitizeError(err)})`,
+            screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+            kind: "info",
+          });
+        } else {
+          pushEvent(run, {
+            message: `Resume dispatch warning: ${sanitizeError(err)}`,
+            message_es: `Aviso al reanudar: ${sanitizeError(err)}`,
+            screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+            kind: "info",
+          });
+        }
       }
+    } else if (fields) {
+      // No session to deliver to — restore so the user can retry after reconnect.
+      run.pending_fields = pendingSnapshot;
+      run.status = "paused";
+      run.pause_reason = prevPause;
+      pushEvent(run, {
+        message: "Could not send your fields — the browser session is missing. Try again or Reconnect.",
+        message_es: "No se pudieron enviar los campos — falta la sesión del navegador. Intente de nuevo o Reconectar.",
+        screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+        kind: "info",
+      });
     }
     return toPublic(await syncBrowserUse(run));
   }

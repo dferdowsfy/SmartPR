@@ -2,6 +2,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   DEFAULT_LOGIN_PENDING_FIELDS,
+  displayMessagesForAgentText,
+  humanizePauseEvent,
   parseRequiredFields,
   resolvePendingFields,
 } from "./pendingFields";
@@ -34,16 +36,17 @@ REQUIRED_FIELDS:
     assert.equal(fields[2].sensitive, true);
   });
 
-  it("parses SSN-style sensitive fields", () => {
+  it("parses SSN-style sensitive fields with type=text and hint", () => {
     const text = `PAUSE_USER_LOGIN
 REQUIRED_FIELDS:
-- id=ssn; label=SSN; type=password; sensitive=true
+- id=ssn; label=SSN; type=text; sensitive=true; hint=9 digits as shown on the portal (dashes OK)
 `;
     const fields = parseRequiredFields(text);
     assert.equal(fields.length, 1);
     assert.equal(fields[0].id, "ssn");
-    assert.equal(fields[0].type, "password");
+    assert.equal(fields[0].type, "text");
     assert.equal(fields[0].sensitive, true);
+    assert.equal(fields[0].hint, "9 digits as shown on the portal (dashes OK)");
   });
 
   it("returns empty when block has no field lines", () => {
@@ -82,10 +85,35 @@ describe("resolvePendingFields", () => {
   it("prefers parsed fields over login fallback", () => {
     const text = `PAUSE_USER_LOGIN
 REQUIRED_FIELDS:
-- id=ssn; label=SSN; type=password; sensitive=true
+- id=ssn; label=SSN; type=text; sensitive=true; hint=Must be 9 digits
 `;
     const fields = resolvePendingFields(text, "USER_LOGIN");
     assert.equal(fields.length, 1);
     assert.equal(fields[0].id, "ssn");
+    assert.equal(fields[0].hint, "Must be 9 digits");
+  });
+});
+
+describe("humanizePauseEvent", () => {
+  it("does not dump raw REQUIRED_FIELDS for SSN pauses", () => {
+    const fields = [
+      { id: "ssn", label: "SSN", type: "text" as const, sensitive: true, hint: "9 digits" },
+    ];
+    const h = humanizePauseEvent("USER_LOGIN", fields, "PAUSE_USER_LOGIN\nREQUIRED_FIELDS:\n- id=ssn; ...");
+    assert.match(h.message, /SSN/i);
+    assert.match(h.message, /Assistant/i);
+    assert.doesNotMatch(h.message, /REQUIRED_FIELDS/);
+    assert.doesNotMatch(h.message_es, /REQUIRED_FIELDS/);
+  });
+
+  it("displayMessagesForAgentText humanizes marker spam", () => {
+    const raw = `PAUSE_USER_LOGIN
+REQUIRED_FIELDS:
+- id=ssn; label=SSN; type=text; sensitive=true; hint=wrong format
+`;
+    const fields = parseRequiredFields(raw);
+    const d = displayMessagesForAgentText(raw, "USER_LOGIN", fields);
+    assert.doesNotMatch(d.message, /REQUIRED_FIELDS|id=ssn/);
+    assert.match(d.message, /Assistant/i);
   });
 });

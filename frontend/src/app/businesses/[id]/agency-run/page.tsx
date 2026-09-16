@@ -77,7 +77,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * No new window — the iframe stays interactive and an "I'm done" button
    * hands control back to the assistant. */
   const [takeover, setTakeover] = useState(false);
-  /** Pending-field values typed in the Assistant panel (and optionally PauseOverlay).
+  /** Pending-field values typed in the Assistant panel (single input surface).
    * Never mirrored into event messages — only POSTed to resume as `{ fields }`. */
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   /** Client-only show/hide for sensitive Assistant inputs — never persisted. */
@@ -308,7 +308,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   // Active filing config: the run's type once started, otherwise the picker's selection.
   const activeConfig = getFilingConfig(run ? run.filing_type : filingType);
 
-  /** Fields to render in the Assistant panel / PauseOverlay while paused. */
+  /** Fields to render in the Assistant panel while paused. */
   const pendingFields: AgencyPendingField[] = useMemo(() => {
     if (!run || run.status !== "paused") return [];
     if (run.pending_fields?.length) return run.pending_fields;
@@ -336,7 +336,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       }
       return next;
     });
-    setRevealedFields({});
+    // Sensitive non-password fields (SSN/ITIN) default to shown so format is
+    // easy to verify; actual passwords stay masked until the user toggles.
+    const defaults: Record<string, boolean> = {};
+    for (const f of pendingFields) {
+      if ((f.sensitive || f.type === "password") && f.type !== "password") {
+        defaults[f.id] = true;
+      }
+    }
+    setRevealedFields(defaults);
   }, [run, pendingFields]);
 
   // Auto-focus the first empty required field when a fields pause appears.
@@ -577,7 +585,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                                     : "off"
                             }
                             inputMode={
-                              field.id === "mfa" || field.type === "tel" ? "numeric" : undefined
+                              field.id === "mfa" ||
+                              field.type === "tel" ||
+                              /ssn|itin|tax_id/i.test(field.id)
+                                ? "numeric"
+                                : undefined
                             }
                             value={fieldValues[field.id] || ""}
                             onChange={(e) => setFieldValue(field.id, e.target.value)}
@@ -614,6 +626,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                             </button>
                           )}
                         </div>
+                        {field.hint ? (
+                          <p className="mt-1 text-[10px] leading-snug text-amber-900/70">
+                            {field.hint}
+                          </p>
+                        ) : null}
                       </label>
                     );
                   })}
@@ -883,10 +900,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                     </div>
                   )}
 
-                  {/* Pause overlay — hidden during inline takeover so the user
-                      can click inside the live browser. Resume/Stop stay
-                      available in the sidebar. */}
-                  {paused && !takeover && (
+                  {/* Pause overlay — only for uploads / captcha / payment.
+                      Field/login pauses use Assistant + the slim view-only
+                      banner so the live portal (and its validation errors)
+                      stay readable — no duplicate SSN form over the iframe. */}
+                  {paused && !takeover && !fieldsPause && (
                     <PauseOverlay
                       lang={lang}
                       reason={run.pause_reason}
@@ -898,12 +916,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                       portalName={L(activeConfig.portalEn, activeConfig.portalEs, lang)}
                       uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
                       pauseStreak={run.pause_streak ?? 0}
-                      pendingFields={pendingFields}
-                      fieldValues={fieldValues}
-                      revealedFields={revealedFields}
-                      onFieldChange={setFieldValue}
-                      onToggleReveal={toggleRevealField}
-                      onFillAndContinue={() => void fillAndContinue()}
                       onResume={() => void resume()}
                       onStop={() => void stop()}
                       onTakeover={() => void enterTakeover()}
@@ -988,12 +1000,6 @@ function PauseOverlay({
   portalName,
   uploadsText,
   pauseStreak,
-  pendingFields,
-  fieldValues,
-  revealedFields,
-  onFieldChange,
-  onToggleReveal,
-  onFillAndContinue,
   onResume,
   onStop,
   onTakeover,
@@ -1009,80 +1015,74 @@ function PauseOverlay({
   portalName: string;
   uploadsText: string;
   pauseStreak: number;
-  pendingFields: AgencyPendingField[];
-  fieldValues: Record<string, string>;
-  revealedFields: Record<string, boolean>;
-  onFieldChange: (id: string, value: string) => void;
-  onToggleReveal: (id: string) => void;
-  onFillAndContinue: () => void;
   onResume: () => void;
   onStop: () => void;
   onTakeover: () => void;
   onUpload: (file: File) => void;
 }) {
-  const fieldsMode = pendingFields.length > 0 || reason === "USER_LOGIN";
+  // Field/login pauses never reach this overlay (gated by !fieldsPause above).
+  // Keep a light, non-blurring chrome so captcha/payment still leave the live
+  // page readable; uploads keep a centered card for the file UI.
+  const isUpload = reason === "USER_UPLOAD";
+  const isGate = reason === "CAPTCHA" || reason === "PAYMENT";
 
-  const icon =
-    reason === "USER_UPLOAD" ? (
-      <FileUp className="h-6 w-6 text-amber-700" />
-    ) : fieldsMode ? (
-      <KeyRound className="h-6 w-6 text-amber-700" />
-    ) : reason === "PAYMENT" ? (
-      <CreditCard className="h-6 w-6 text-amber-700" />
-    ) : (
-      <PauseCircle className="h-6 w-6 text-amber-700" />
-    );
+  const icon = isUpload ? (
+    <FileUp className="h-6 w-6 text-amber-700" />
+  ) : reason === "PAYMENT" ? (
+    <CreditCard className="h-6 w-6 text-amber-700" />
+  ) : (
+    <PauseCircle className="h-6 w-6 text-amber-700" />
+  );
 
-  const title =
-    reason === "USER_UPLOAD"
-      ? L("Upload required documents", "Suba los documentos requeridos", lang)
-      : pendingFields.length > 0
-        ? L(`Your turn — ${portalName} needs you`, `Te toca a ti — ${portalName} te necesita`, lang)
-        : reason === "CAPTCHA"
-          ? L("Complete captcha", "Complete el captcha", lang)
-          : reason === "PAYMENT"
-            ? L("Complete payment", "Complete el pago", lang)
-            : L("Paused for your action", "Pausado para su acción", lang);
+  const title = isUpload
+    ? L("Upload required documents", "Suba los documentos requeridos", lang)
+    : reason === "CAPTCHA"
+      ? L("Complete captcha", "Complete el captcha", lang)
+      : reason === "PAYMENT"
+        ? L("Complete payment", "Complete el pago", lang)
+        : L("Paused for your action", "Pausado para su acción", lang);
 
-  const body =
-    reason === "USER_UPLOAD"
+  const body = isUpload
+    ? L(
+        `${uploadsText}. Max 5 MB per file. Upload into Evidence Locker, then Resume.`,
+        `${uploadsText}. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar.`,
+        lang
+      )
+    : reason === "CAPTCHA"
       ? L(
-          `${uploadsText}. Max 5 MB per file. Upload into Evidence Locker, then Resume.`,
-          `${uploadsText}. Máx. 5 MB por archivo. Suba al Casillero de evidencia y luego Reanudar.`,
+          'This one needs a human touch. Press "Take over the browser", complete the captcha or challenge directly in the live browser on this page, then press "I\'m done" (top right) to hand it back to the assistant.',
+          'Esto necesita toque humano. Pulsa "Tomar el control del navegador", completa el captcha o el desafío directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.',
           lang
         )
-      : pendingFields.length > 0
+      : reason === "PAYMENT"
         ? L(
-            "Type only in Assistant on the left (or below) — the live browser is view-only. Non-sensitive passport values are prefilled when possible. Values are used only for this resume and are never stored.",
-            "Escriba solo en Asistente a la izquierda (o abajo) — el navegador en vivo es solo lectura. Los valores no sensibles del pasaporte se rellenan cuando es posible. Los valores solo se usan en esta reanudación y nunca se almacenan.",
+            'Payment is always yours to make — the assistant never touches it. Press "Take over the browser" and pay directly in the live browser on this page, then press "I\'m done" (top right) to hand it back to the assistant.',
+            'El pago siempre lo haces tú — el asistente nunca lo toca. Pulsa "Tomar el control del navegador" y paga directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.',
             lang
           )
-        : reason === "CAPTCHA"
-          ? L(
-              'This one needs a human touch. Press "Take over the browser", complete the captcha or challenge directly in the live browser on this page, then press "I\'m done" (top right) to hand it back to the assistant.',
-              'Esto necesita toque humano. Pulsa "Tomar el control del navegador", completa el captcha o el desafío directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.',
-              lang
-            )
-          : reason === "PAYMENT"
-            ? L(
-                'Payment is always yours to make — the assistant never touches it. Press "Take over the browser" and pay directly in the live browser on this page, then press "I\'m done" (top right) to hand it back to the assistant.',
-                'El pago siempre lo haces tú — el asistente nunca lo toca. Pulsa "Tomar el control del navegador" y paga directamente en el navegador en vivo de esta página, luego pulsa "Terminé" (arriba a la derecha) para devolverle el control al asistente.',
-                lang
-              )
-            : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
+        : L("Take the required action, then Resume.", "Realice la acción requerida y luego Reanudar.", lang);
 
-  const canFill = pendingFields.some((f) => Boolean((fieldValues[f.id] || "").trim()));
+  const shellClass = isGate
+    ? "absolute inset-0 flex items-end justify-center bg-gradient-to-t from-slate-950/55 via-slate-950/10 to-transparent p-4 pointer-events-none"
+    : "absolute inset-0 flex items-center justify-center bg-slate-950/40 p-4";
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
-      <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-5 shadow-xl">
+    <div className={shellClass}>
+      <div
+        className={`w-full max-w-md rounded-2xl border border-amber-200 bg-white/95 p-5 shadow-xl ${
+          isGate ? "pointer-events-auto mb-2" : ""
+        }`}
+      >
         <div className="flex items-start gap-3">
           {icon}
           <div className="min-w-0 flex-1">
             <div className="font-bold text-[#161616]">{title}</div>
             <p className="mt-1 text-sm text-slate-600">{body}</p>
+            {portalName ? (
+              <p className="mt-1 text-[11px] font-medium text-slate-400">{portalName}</p>
+            ) : null}
 
-            {reason === "USER_UPLOAD" && (
+            {isUpload && (
               <div className="mt-3 space-y-2">
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
                   <AlertTriangle className="mr-1 inline h-3 w-3 text-amber-600" />
@@ -1118,94 +1118,7 @@ function PauseOverlay({
               </div>
             )}
 
-            {pendingFields.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {pendingFields.map((field) => {
-                  const isSensitive = field.sensitive || field.type === "password";
-                  const revealed = Boolean(revealedFields[field.id]);
-                  const inputType = isSensitive
-                    ? revealed
-                      ? "text"
-                      : "password"
-                    : field.type === "email"
-                      ? "email"
-                      : field.type === "tel"
-                        ? "tel"
-                        : field.type === "number"
-                          ? "number"
-                          : "text";
-                  return (
-                    <div key={field.id} className="relative">
-                      <input
-                        type={inputType}
-                        autoComplete={
-                          field.id === "email" || field.id.endsWith("_email")
-                            ? "username"
-                            : field.id === "password"
-                              ? "current-password"
-                              : field.id === "mfa"
-                                ? "one-time-code"
-                                : "off"
-                        }
-                        inputMode={field.id === "mfa" || field.type === "tel" ? "numeric" : undefined}
-                        value={fieldValues[field.id] || ""}
-                        onChange={(e) => onFieldChange(field.id, e.target.value)}
-                        placeholder={
-                          field.optional
-                            ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
-                            : field.label
-                        }
-                        className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand ${
-                          isSensitive ? "pr-9" : ""
-                        }`}
-                      />
-                      {isSensitive && (
-                        <button
-                          type="button"
-                          onClick={() => onToggleReveal(field.id)}
-                          className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-800"
-                          aria-label={
-                            revealed
-                              ? L("Hide value", "Ocultar valor", lang)
-                              : L("Show value", "Mostrar valor", lang)
-                          }
-                        >
-                          {revealed ? (
-                            <EyeOff className="h-3.5 w-3.5" />
-                          ) : (
-                            <Eye className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  disabled={busy || !canFill}
-                  onClick={onFillAndContinue}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  {L("Fill & continue", "Llenar y continuar", lang)}
-                </button>
-                {liveUrl && (
-                  <button
-                    type="button"
-                    onClick={onTakeover}
-                    className="w-full text-center text-xs font-medium text-slate-500 underline-offset-2 hover:text-brand hover:underline"
-                  >
-                    {L(
-                      "Need to solve a captcha or weird UI? Take over instead",
-                      "¿Necesita resolver un captcha o una UI rara? Tome el control en su lugar",
-                      lang
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {(reason === "CAPTCHA" || reason === "PAYMENT") && liveUrl && pendingFields.length === 0 && (
+            {isGate && liveUrl && (
               <button
                 type="button"
                 onClick={onTakeover}
@@ -1216,7 +1129,7 @@ function PauseOverlay({
               </button>
             )}
 
-            {reason === "USER_UPLOAD" && liveUrl && (
+            {isUpload && liveUrl && (
               <button
                 type="button"
                 onClick={onTakeover}
@@ -1241,17 +1154,15 @@ function PauseOverlay({
             )}
 
             <div className="mt-4 flex gap-2">
-              {pendingFields.length === 0 && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={onResume}
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  {L("Resume", "Reanudar", lang)}
-                </button>
-              )}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onResume}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                <Play className="h-3.5 w-3.5" />
+                {L("Resume", "Reanudar", lang)}
+              </button>
               <button
                 type="button"
                 disabled={busy}
