@@ -6,7 +6,7 @@
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { MicOff, Pause, Square, Type, Volume2, VolumeX, X } from "lucide-react";
+import { Pause, Square, Type, Volume2, VolumeX, X } from "lucide-react";
 import {
   MIN_AUDIO_BLOB_BYTES,
   appendAudioFormField,
@@ -861,7 +861,7 @@ export function IntakeVoiceOrb({
                 }`}
               />
             ) : (
-              <MicOff className="h-6 w-6 text-white" />
+              <WaveformBars live={false} level={0} reducedMotion={reducedMotion} />
             )}
           </span>
         </button>
