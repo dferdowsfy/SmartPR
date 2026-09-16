@@ -443,7 +443,7 @@ const sameAnswerValue = (a: unknown, b: unknown): boolean => {
  * any later pass that re-asserts raw caller answers (see
  * computeRequirementsFromSnapshot).
  */
-function applyPermitModelCorrections(a: Record<string, boolean | string | undefined>): void {
+export function applyPermitModelCorrections(a: Record<string, boolean | string | undefined>): void {
   if (a["Q_HOME_BASED"] === true) {
     a["Q_PHYSICAL_LOCATION"] = false;
   }

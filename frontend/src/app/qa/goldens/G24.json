@@ -1,0 +1,149 @@
+{
+  "id": "G24",
+  "title": "Tire recycling & manufacturing, 30 employees, industrial port zone — Yabucoa",
+  "status": "draft",
+  "profile": {
+    "business_type": "Tire Recycling & Manufacturing",
+    "municipality": "Yabucoa",
+    "location_type": "Industrial Facility",
+    "number_of_employees": 30,
+    "industry": "Manufacturing"
+  },
+  "answers": {
+    "Q_PRODUCTS_MANUFACTURED": true,
+    "Q_PRODUCTS_DISTRIBUTED": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_OWNS_PROPERTY": true,
+    "Q_HAZARDOUS_MATERIALS": true,
+    "Q_CHEMICALS_USED": true,
+    "Q_ENVIRONMENTAL_IMPACT": true,
+    "Q_IMPORT_EXPORT": true,
+    "Q_COMMERCIAL_VEHICLES": true
+  },
+  "options": {
+    "entityType": "corporation",
+    "projectIntent": "new_business"
+  },
+  "expected": [
+    {
+      "document_id": "DOC_CERT_INCORPORATION",
+      "name": "Certificate of Incorporation",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0001"
+    },
+    {
+      "document_id": "DOC_EIN",
+      "name": "IRS EIN Confirmation Letter",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0002"
+    },
+    {
+      "document_id": "DOC_MERCHANT_REGISTRATION",
+      "name": "Merchant Registration Certificate (Registro de Comerciante)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0003"
+    },
+    {
+      "document_id": "DOC_PERMISO_UNICO",
+      "name": "Permiso Único",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0007"
+    },
+    {
+      "document_id": "DOC_ZONING",
+      "name": "Zoning / Use Certification",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0008"
+    },
+    {
+      "document_id": "DOC_PATENTE_MUNICIPAL",
+      "name": "Patente Municipal",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0004"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_REGISTRATION",
+      "name": "Municipal Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0005"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+      "name": "Municipal Tax Compliance Certificate",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0006"
+    },
+    {
+      "document_id": "DOC_FIRE_CERT",
+      "name": "Fire Safety Certification (Certificado de Bomberos)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0027"
+    },
+    {
+      "document_id": "DOC_WORKERS_COMP",
+      "name": "Workers Compensation Insurance (CFSE)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0020"
+    },
+    {
+      "document_id": "DOC_VEHICLE_REGISTRATION",
+      "name": "Commercial Vehicle Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0021"
+    },
+    {
+      "document_id": "DOC_TRANSPORT_PERMIT",
+      "name": "Transportation / PUC Permit",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0022"
+    },
+    {
+      "document_id": "DOC_ENVIRONMENTAL_PERMIT",
+      "name": "Environmental Permit",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0023"
+    },
+    {
+      "document_id": "DOC_IMPORT_EXPORT_REG",
+      "name": "Import / Export Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0028"
+    },
+    {
+      "document_id": "DOC_PROPERTY_DEED",
+      "name": "Property Deed (Escritura)",
+      "applicability": "supporting_evidence",
+      "mandatory": false,
+      "source_rule": "RULE_0036"
+    },
+    {
+      "document_id": "DOC_DTRH_EMPLOYER_REG",
+      "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0619"
+    },
+    {
+      "document_id": "DOC_LEASE_AGREEMENT",
+      "name": "Lease Agreement",
+      "applicability": "conditional",
+      "mandatory": false,
+      "source_rule": "RULE_0037"
+    }
+  ],
+  "expectedAbsent": []
+}

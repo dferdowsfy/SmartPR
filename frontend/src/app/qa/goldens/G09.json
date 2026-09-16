@@ -1,0 +1,63 @@
+{
+  "id": "G09",
+  "title": "E-commerce business, online only, solo — Arecibo",
+  "status": "draft",
+  "profile": {
+    "business_type": "E-commerce Business",
+    "municipality": "Arecibo",
+    "location_type": "Online Only",
+    "number_of_employees": 0,
+    "industry": "Retail"
+  },
+  "answers": {
+    "Q_ONLINE_ONLY": true,
+    "Q_RETAIL_SALES": true,
+    "Q_EMPLOYEES_HIRED": false,
+    "Q_INVENTORY_STORED": false
+  },
+  "options": {
+    "entityType": "limited_liability_company",
+    "projectIntent": "new_business"
+  },
+  "expected": [
+    {
+      "document_id": "DOC_EIN",
+      "name": "IRS EIN Confirmation Letter",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0002"
+    },
+    {
+      "document_id": "DOC_MERCHANT_REGISTRATION",
+      "name": "Merchant Registration Certificate (Registro de Comerciante)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0003"
+    },
+    {
+      "document_id": "DOC_PATENTE_MUNICIPAL",
+      "name": "Patente Municipal",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0004"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_REGISTRATION",
+      "name": "Municipal Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0005"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+      "name": "Municipal Tax Compliance Certificate",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0006"
+    }
+  ],
+  "expectedAbsent": [
+    "DOC_PERMISO_UNICO",
+    "DOC_ZONING"
+  ]
+}

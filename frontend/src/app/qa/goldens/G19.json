@@ -1,0 +1,130 @@
+{
+  "id": "G19",
+  "title": "Law firm, 2 employees, licensed professionals — Guaynabo",
+  "status": "draft",
+  "profile": {
+    "business_type": "Law Firm",
+    "municipality": "Guaynabo",
+    "location_type": "Office Space",
+    "number_of_employees": 2,
+    "industry": "Professional Services"
+  },
+  "answers": {
+    "Q_PROFESSIONAL_LICENSES": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_CUSTOMERS_VISIT": true
+  },
+  "options": {
+    "entityType": "professional_corporation",
+    "projectIntent": "new_business"
+  },
+  "expected": [
+    {
+      "document_id": "DOC_CERT_INCORPORATION",
+      "name": "Certificate of Incorporation",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0001"
+    },
+    {
+      "document_id": "DOC_EIN",
+      "name": "IRS EIN Confirmation Letter",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0002"
+    },
+    {
+      "document_id": "DOC_MERCHANT_REGISTRATION",
+      "name": "Merchant Registration Certificate (Registro de Comerciante)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0003"
+    },
+    {
+      "document_id": "DOC_PERMISO_UNICO",
+      "name": "Permiso Único",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0007"
+    },
+    {
+      "document_id": "DOC_ZONING",
+      "name": "Zoning / Use Certification",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0008"
+    },
+    {
+      "document_id": "DOC_PATENTE_MUNICIPAL",
+      "name": "Patente Municipal",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0004"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_REGISTRATION",
+      "name": "Municipal Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0005"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+      "name": "Municipal Tax Compliance Certificate",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0006"
+    },
+    {
+      "document_id": "DOC_PROFESSIONAL_LICENSE",
+      "name": "Professional License",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0029"
+    },
+    {
+      "document_id": "DOC_WORKERS_COMP",
+      "name": "Workers Compensation Insurance (CFSE)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0020"
+    },
+    {
+      "document_id": "DOC_LEASE_AGREEMENT",
+      "name": "Lease Agreement",
+      "applicability": "supporting_evidence",
+      "mandatory": false,
+      "source_rule": "RULE_0037"
+    },
+    {
+      "document_id": "DOC_STORMWATER_PLAN",
+      "name": "Stormwater Management Plan (NPDES MS4)",
+      "applicability": "needs_more_information",
+      "mandatory": false,
+      "source_rule": "RULE_0269"
+    },
+    {
+      "document_id": "DOC_WASTE_COLLECTION_CONTRACT",
+      "name": "Commercial Solid Waste Collection Contract",
+      "applicability": "needs_more_information",
+      "mandatory": false,
+      "source_rule": "RULE_0270"
+    },
+    {
+      "document_id": "DOC_PARKING_COMPLIANCE",
+      "name": "Off-Street Parking Compliance Certificate",
+      "applicability": "needs_more_information",
+      "mandatory": false,
+      "source_rule": "RULE_0271"
+    },
+    {
+      "document_id": "DOC_DTRH_EMPLOYER_REG",
+      "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0619"
+    }
+  ],
+  "expectedAbsent": []
+}

@@ -1,0 +1,92 @@
+{
+  "id": "G04",
+  "title": "Home-based bookkeeping practice, solo, 0 employees — Carolina",
+  "status": "draft",
+  "profile": {
+    "business_type": "Accounting Firm",
+    "municipality": "Carolina",
+    "location_type": "Home-Based Business",
+    "number_of_employees": 0,
+    "industry": "Professional Services"
+  },
+  "answers": {
+    "Q_HOME_BASED": true,
+    "Q_PHYSICAL_LOCATION": true,
+    "Q_EMPLOYEES_HIRED": false,
+    "Q_CUSTOMERS_VISIT": false,
+    "Q_PROFESSIONAL_LICENSES": true
+  },
+  "options": {
+    "entityType": "sole_proprietorship",
+    "projectIntent": "new_business"
+  },
+  "expected": [
+    {
+      "document_id": "DOC_EIN",
+      "name": "IRS EIN Confirmation Letter",
+      "applicability": "conditional",
+      "mandatory": false,
+      "source_rule": "RULE_0002"
+    },
+    {
+      "document_id": "DOC_MERCHANT_REGISTRATION",
+      "name": "Merchant Registration Certificate (Registro de Comerciante)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0003"
+    },
+    {
+      "document_id": "DOC_PATENTE_MUNICIPAL",
+      "name": "Patente Municipal",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0004"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_REGISTRATION",
+      "name": "Municipal Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0005"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+      "name": "Municipal Tax Compliance Certificate",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0006"
+    },
+    {
+      "document_id": "DOC_PROFESSIONAL_LICENSE",
+      "name": "Professional License",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0029"
+    },
+    {
+      "document_id": "DOC_STORMWATER_PLAN",
+      "name": "Stormwater Management Plan (NPDES MS4)",
+      "applicability": "needs_more_information",
+      "mandatory": false,
+      "source_rule": "RULE_0269"
+    },
+    {
+      "document_id": "DOC_WASTE_COLLECTION_CONTRACT",
+      "name": "Commercial Solid Waste Collection Contract",
+      "applicability": "needs_more_information",
+      "mandatory": false,
+      "source_rule": "RULE_0270"
+    },
+    {
+      "document_id": "DOC_PARKING_COMPLIANCE",
+      "name": "Off-Street Parking Compliance Certificate",
+      "applicability": "needs_more_information",
+      "mandatory": false,
+      "source_rule": "RULE_0271"
+    }
+  ],
+  "expectedAbsent": [
+    "DOC_PERMISO_UNICO",
+    "DOC_ZONING"
+  ]
+}

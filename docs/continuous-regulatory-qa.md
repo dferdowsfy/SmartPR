@@ -750,6 +750,35 @@ Rico municipalities. If construction rules produce false positives, generate
 more combinations of renovation, new construction, owned vs leased property,
 structural vs interior-only work, land disturbance, and occupancy change.
 
+## 14.10a Golden scenarios — the correctness oracle
+
+`frontend/src/app/qa/` holds the golden-scenario framework (built 2026-09-16
+at Darius's direction to answer "do the rules output the CORRECT
+requirements?"). 25 scenarios in `scenarioDefs.ts`; expected requirement sets
+in `goldens/G##.json`.
+
+- Every cycle, run `npm run test:goldens` (also inside
+  `test:regulatory-correctness`). All green is the bar.
+- `status: "validated"` goldens assert EXACT set equality — any drift fails
+  loudly and must be investigated, never papered over.
+- `status: "draft"` goldens report drift without failing. Drift means engine
+  behavior changed for that scenario: record it in the run report and route
+  the scenario for Darius's review. NEVER "fix" a golden to match new
+  output without his correction.
+- The `[coverage]` output lists rules that have NEVER fired in any scenario
+  test (baseline 2026-09-16: 136/643, 21.2%). Treat the uncovered list as
+  targeting input: design adversarial scenarios that SHOULD fire those
+  rules — that is where the next false negatives are hiding. When new
+  scenarios legitimately raise coverage, refresh the baseline with
+  `npm run qa:update-coverage-baseline` (documented in `src/app/qa/README.md`).
+- The property tests (`requirementProperties.test.ts`) enforce bug-class
+  invariants: rule-order independence, no cross-municipality leakage in
+  user-facing text, no placeholder text, determinism. A failure here is a
+  real defect class, not a flaky test.
+- To add a scenario: append inputs to `scenarioDefs.ts`, run
+  `npm run qa:snapshot-goldens`, review the draft output yourself, and leave
+  it `draft` until Darius validates it.
+
 ## 14.11 Quality memory
 
 Maintain the persistent QA knowledge base at

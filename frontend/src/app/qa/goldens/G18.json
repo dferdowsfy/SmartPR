@@ -1,0 +1,116 @@
+{
+  "id": "G18",
+  "title": "Farm, agricultural production, 2 employees — Arecibo",
+  "status": "draft",
+  "profile": {
+    "business_type": "Farm",
+    "municipality": "Arecibo",
+    "location_type": "Agricultural Land",
+    "number_of_employees": 2,
+    "industry": "Agriculture & Farming"
+  },
+  "answers": {
+    "Q_AGRICULTURE_PRODUCTION": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_OWNS_PROPERTY": true,
+    "Q_PESTICIDES": true
+  },
+  "options": {
+    "entityType": "sole_proprietorship",
+    "projectIntent": "new_business"
+  },
+  "expected": [
+    {
+      "document_id": "DOC_EIN",
+      "name": "IRS EIN Confirmation Letter",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0002"
+    },
+    {
+      "document_id": "DOC_MERCHANT_REGISTRATION",
+      "name": "Merchant Registration Certificate (Registro de Comerciante)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0003"
+    },
+    {
+      "document_id": "DOC_PERMISO_UNICO",
+      "name": "Permiso Único",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0007"
+    },
+    {
+      "document_id": "DOC_ZONING",
+      "name": "Zoning / Use Certification",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0008"
+    },
+    {
+      "document_id": "DOC_PATENTE_MUNICIPAL",
+      "name": "Patente Municipal",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0004"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_REGISTRATION",
+      "name": "Municipal Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0005"
+    },
+    {
+      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
+      "name": "Municipal Tax Compliance Certificate",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0006"
+    },
+    {
+      "document_id": "DOC_WORKERS_COMP",
+      "name": "Workers Compensation Insurance (CFSE)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0020"
+    },
+    {
+      "document_id": "DOC_PROPERTY_DEED",
+      "name": "Property Deed (Escritura)",
+      "applicability": "supporting_evidence",
+      "mandatory": false,
+      "source_rule": "RULE_0036"
+    },
+    {
+      "document_id": "DOC_PESTICIDE_LICENSE",
+      "name": "Pesticide Applicator License",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0040"
+    },
+    {
+      "document_id": "DOC_AGRICULTURE_REGISTRATION",
+      "name": "Bona Fide Farmer Registration",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0041"
+    },
+    {
+      "document_id": "DOC_DTRH_EMPLOYER_REG",
+      "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+      "applicability": "required",
+      "mandatory": true,
+      "source_rule": "RULE_0619"
+    },
+    {
+      "document_id": "DOC_LEASE_AGREEMENT",
+      "name": "Lease Agreement",
+      "applicability": "conditional",
+      "mandatory": false,
+      "source_rule": "RULE_0037"
+    }
+  ],
+  "expectedAbsent": []
+}
