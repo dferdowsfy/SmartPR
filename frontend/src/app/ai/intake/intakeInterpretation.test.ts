@@ -419,3 +419,59 @@ test("only true answers mirror onto the profile (false never asserts a negative)
   assert.equal(mirrored.outdoor_seating, true);
   assert.equal(mirrored.alcohol_sold, undefined);
 });
+
+// --- Official identifiers: dictated details must land in fields, not the text box ---
+
+test("a dictated EIN is normalized to XX-XXXXXXX and the chip masks all but the last 4", () => {
+  const { validated, patch } = interpret({
+    profileValues: [{ key: "ein", value: "158258967", confidence: 0.95 }],
+  });
+  assert.equal(validated.profileValues[0].value, "15-8258967");
+  assert.equal(patch.profile.ein, "15-8258967");
+  assert.deepEqual(patch.chips.map((c) => c.label), ["EIN ••••8967"]);
+});
+
+test("an EIN that is not 9 digits is discarded, never stored", () => {
+  const { validated, patch } = interpret({
+    profileValues: [{ key: "ein", value: "12345", confidence: 0.95 }],
+  });
+  assert.equal(validated.profileValues.length, 0);
+  assert.equal(patch.profile.ein, undefined);
+  assert.ok(validated.discarded.some((d) => d.field === "profileValues.ein"));
+});
+
+test("a dictated formation date lands as ISO and reads as a friendly chip", () => {
+  const { patch } = interpret({
+    profileValues: [{ key: "incorporation_date", value: "2027-01-01", confidence: 0.96 }],
+  });
+  assert.equal(patch.profile.incorporation_date, "2027-01-01");
+  assert.deepEqual(patch.chips.map((c) => c.label), ["Formed Jan 1, 2027"]);
+});
+
+test("an impossible calendar date is discarded", () => {
+  const { validated } = interpret({
+    profileValues: [{ key: "incorporation_date", value: "2027-02-30", confidence: 0.96 }],
+  });
+  assert.equal(validated.profileValues.length, 0);
+  assert.ok(validated.discarded.some((d) => d.field === "profileValues.incorporation_date"));
+});
+
+test("merchant registration number and physical address pass through as stated", () => {
+  const { patch } = interpret({
+    profileValues: [
+      { key: "merchant_registration_number", value: "168-56-97810", confidence: 0.93 },
+      { key: "physical_address", value: "1 Cavet 8", confidence: 0.9 },
+    ],
+  });
+  assert.equal(patch.profile.merchant_registration_number, "168-56-97810");
+  assert.equal(patch.profile.physical_address, "1 Cavet 8");
+  assert.deepEqual(patch.chips.map((c) => c.label), ["Merchant reg. 168-56-97810", "1 Cavet 8"]);
+});
+
+test("official identifiers below the auto-apply threshold are suggested, never applied", () => {
+  const { validated, patch } = interpret({
+    profileValues: [{ key: "ein", value: "158258967", confidence: 0.7 }],
+  });
+  assert.equal(validated.suggested.profileValues[0].key, "ein");
+  assert.equal(patch.profile.ein, undefined);
+});

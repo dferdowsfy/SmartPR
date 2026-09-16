@@ -198,14 +198,23 @@ export function IntakeVoiceOrb({
     [reducedMotion]
   );
 
-  const QUESTION_LEAD =
-    /^(what|when|where|which|who|whom|whose|why|how|can|could|should|would|do|does|did|is|are|was|were|will|have|has|tell me|explain|describe|qu[eé]|cu[aá]l|cu[aá]les|cu[aá]ndo|d[oó]nde|c[oó]mo|por qu[eé]|porque|qui[eé]n|dime|expl[ií]came|cu[aá]nto|hay |existe|necesito saber)/i;
+  const QUESTION_WH =
+    /^(what|when|where|which|who|whom|whose|why|how|qu[eé]|cu[aá]l(es)?|cu[aá]ndo|d[oó]nde|c[oó]mo|por\s*qu[eé]|qui[eé]n(es)?|cu[aá]nto)/i;
+  const QUESTION_IMPERATIVE = /^(tell me|explain|describe|dime|expl[ií]came?)/i;
+  // Auxiliary-led questions need a subject right after the auxiliary:
+  // "Do I need…?" is a question, "Do catering" is a field-filling statement.
+  const QUESTION_AUX_SUBJECT =
+    /^(can|could|should|would|do|does|did|is|are|was|were|will|have|has)\s+(you|i|we|they|he|she|it|this|that|there|my|your|our|their|the|a|an|smartpr)\b/i;
 
   function looksLikeQuestion(t: string): boolean {
     const s = t.trim();
     if (!s) return false;
-    if (s.includes("?") || s.includes("¿")) return true;
-    return QUESTION_LEAD.test(s);
+    if (/[?¿]/.test(s)) return true;
+    if (QUESTION_WH.test(s)) return true;
+    if (QUESTION_IMPERATIVE.test(s)) return true;
+    if (/^necesito saber/i.test(s)) return true;
+    if (QUESTION_AUX_SUBJECT.test(s)) return true;
+    return false;
   }
 
   const answerQuestion = useCallback(

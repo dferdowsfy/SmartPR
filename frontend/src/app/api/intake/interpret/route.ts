@@ -135,6 +135,22 @@ ALLOWED profileValues KEYS (use these exact keys, omit any you cannot determine)
   ("an Airbnb with 3 units" -> 3)
 - "name" :: the business name ONLY when the user actually names it
   (e.g. "a bar called Luna's" -> "Luna's"). Never invent a name.
+- "ein" :: the business's 9-digit US federal Employer Identification Number.
+  Return digits only (e.g. "E I N number is 1 5 8 2 5 8 9 6 7 8 9" ->
+  "15825896789"). Include ONLY when the speaker clearly states the digits.
+  Never invent, and never reformat a different number (phone, SSN) as an EIN.
+- "incorporation_date" :: the business formation / incorporation / organization
+  date as ISO YYYY-MM-DD (e.g. "Formation date January 1st, 2027" ->
+  "2027-01-01"). Only when a real calendar date is stated.
+- "merchant_registration_number" :: the Hacienda Registro de Comerciante
+  (merchant registration) number, exactly as stated. Only when the speaker
+  clearly states it — never invent.
+- "physical_address" :: the principal physical address street line as stated
+  (e.g. "1 Cavet 8"). Street address only — the municipality stays its own
+  fact, never folded into this value.
+
+IDENTIFIERS AND DATES ARE COPIED, NEVER CREATED. If the speaker does not
+state the digits or the date, omit the key entirely — do not guess.
 
 EXTRACT EVERY FACT THE SENTENCE STATES. If the user states a headcount, a
 vehicle or unit count, an entity type, an industry, or a location type, return

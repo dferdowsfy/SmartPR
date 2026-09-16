@@ -82,9 +82,11 @@ export interface ValidatedInterpretation {
  *
  * `option` fields must match one of the app's existing choices; `number` fields
  * are parsed and clamped; `text` fields are free-form (a business name cannot
- * be validated against a list). Anything not listed here is ignored.
+ * be validated against a list). `ein` must be exactly 9 digits and is stored
+ * as XX-XXXXXXX; `date` must be a real calendar date in ISO YYYY-MM-DD form.
+ * Anything not listed here is ignored.
  */
-const PROFILE_FIELD_KINDS: Record<string, "option" | "number" | "text"> = {
+const PROFILE_FIELD_KINDS: Record<string, "option" | "number" | "text" | "ein" | "date"> = {
   industry: "option",
   location_type: "option",
   business_structure: "option",
@@ -94,6 +96,13 @@ const PROFILE_FIELD_KINDS: Record<string, "option" | "number" | "text"> = {
   number_of_vehicles: "number",
   number_of_rental_units: "number",
   name: "text",
+  // Official identifiers the speaker states outright. They seed the Business
+  // Passport (EIN, formation date, merchant registration, street address) so
+  // they never sit unparsed in the description box.
+  ein: "ein",
+  incorporation_date: "date",
+  merchant_registration_number: "text",
+  physical_address: "text",
 };
 
 /** Entity/filing types the intake's structure selector offers. */
@@ -246,6 +255,30 @@ export function validateInterpretation(
         continue;
       }
       resolved = n;
+    } else if (kind === "ein") {
+      // Exactly 9 digits, stored in the canonical XX-XXXXXXX display form.
+      // The prompt forbids invention; validation enforces the shape.
+      const digits = asString(entry?.value).replace(/\D/g, "");
+      if (digits.length !== 9) {
+        drop(`profileValues.${key}`, `"${asString(entry?.value)}" is not a 9-digit EIN`);
+        continue;
+      }
+      resolved = `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    } else if (kind === "date") {
+      // ISO YYYY-MM-DD and a real calendar date (rejects 2027-02-30 etc.).
+      const s = asString(entry?.value);
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+      const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+      const real =
+        !!m && !!d &&
+        d.getFullYear() === Number(m[1]) &&
+        d.getMonth() === Number(m[2]) - 1 &&
+        d.getDate() === Number(m[3]);
+      if (!real) {
+        drop(`profileValues.${key}`, `"${s}" is not a valid YYYY-MM-DD date`);
+        continue;
+      }
+      resolved = s;
     } else {
       const value = asString(entry?.value);
       if (!value) {
@@ -354,7 +387,25 @@ function profileChipLabel(pv: ValidatedProfileValue): string {
   if (pv.key === "business_structure") {
     return String(pv.value).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   }
+  // Official identifiers: confirm capture without flashing the full value.
+  if (pv.key === "ein") return `EIN ••••${String(pv.value).slice(-4)}`;
+  if (pv.key === "incorporation_date") return `Formed ${formatShortDate(String(pv.value))}`;
+  if (pv.key === "merchant_registration_number") return `Merchant reg. ${pv.value}`;
+  if (pv.key === "physical_address") {
+    const s = String(pv.value);
+    return s.length > 34 ? `${s.slice(0, 33)}…` : s;
+  }
   return String(pv.value);
+}
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2027-01-01" -> "Jan 1, 2027". Input is already validated as a real date. */
+function formatShortDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  const month = SHORT_MONTHS[Number(m[2]) - 1] ?? m[2];
+  return `${month} ${Number(m[3])}, ${m[1]}`;
 }
 
 export interface IntakePatchOptions {

@@ -9,6 +9,7 @@ import { getTemplate, isOfficialArtifact } from "../../../forms/artifacts/catalo
 import {
   canonicalFromBusinessRow,
   denormalizedColumnsFromPassport,
+  mergePreferFilled,
   passportCoverage,
   passportJsonFromCanonical,
   type BusinessPassportJson,
@@ -173,7 +174,22 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
   // Full Business Passport write: persist JSON and keep list columns in sync.
   if (body.passport && typeof body.passport === "object") {
-    const passport = body.passport as BusinessPassportJson;
+    let incoming = body.passport as BusinessPassportJson;
+    if (body.mergePassport === true) {
+      // Partial write (e.g. official identifiers extracted during intake):
+      // merge into the stored passport so previously captured fields survive.
+      // mergePreferFilled lets a restated value win while preserving the rest.
+      const existing = await pool.query(
+        `SELECT passport_json FROM businesses WHERE id=$1`,
+        [businessUuid]
+      );
+      const existingJson = (existing.rows[0]?.passport_json ?? {}) as BusinessPassportJson;
+      incoming = mergePreferFilled(
+        existingJson as unknown as Record<string, unknown>,
+        incoming as unknown as Partial<Record<string, unknown>>
+      ) as unknown as BusinessPassportJson;
+    }
+    const passport = incoming;
     const canonical = canonicalFromBusinessRow({ passport_json: passport });
     const normalized = passportJsonFromCanonical(canonical);
     const denorm = denormalizedColumnsFromPassport(canonical);

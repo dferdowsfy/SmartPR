@@ -43,7 +43,7 @@ import type { IntakePatch } from './ai/intake/validateInterpretation';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
 import { selectFormForRequirement, selectEntriesForRequirement } from './forms/engine/routing';
 import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms/engine/intake';
-import { passportJsonFromCanonical, worksheetPrefillFromPassport } from './forms/engine/businessPassport';
+import { passportJsonFromCanonical, worksheetPrefillFromPassport, type BusinessPassportJson } from './forms/engine/businessPassport';
 import { requirementFormState, actionsForFormState } from './forms/engine/application';
 import { generatePreparationPdf } from './forms/engine/pdfGenerator';
 import { getTemplate, isOfficialArtifact } from './forms/artifacts/catalog';
@@ -111,6 +111,16 @@ interface BusinessProfile {
   short_term_rental: boolean | null;
   medical_waste: boolean | null;
   import_export: boolean | null;
+  /**
+   * Official identifiers extracted from the intake narrative (EIN, formation
+   * date, Hacienda merchant registration, principal street address). They are
+   * seeded into the Business Passport on save so dictated details never sit
+   * unparsed in the description box.
+   */
+  ein?: string;
+  incorporation_date?: string;
+  merchant_registration_number?: string;
+  physical_address?: string;
 }
 
 interface Finding {
@@ -1082,6 +1092,48 @@ function ExtractionPanel({ ext, docType, language }: { ext: ExtractionResult; do
   );
 }
 
+/**
+ * Build a partial Business Passport from the official identifiers the intake
+ * interpreter extracted from the user's narrative (EIN, formation date,
+ * Hacienda merchant registration, principal street address). Returns null
+ * when there is nothing to seed. The server merges this into the existing
+ * passport (mergePreferFilled), so previously stored passport data is never
+ * clobbered by a partial write.
+ */
+function buildOfficialDetailsPassport(profile: BusinessProfile): BusinessPassportJson | null {
+  const business: Record<string, string> = {};
+  const ein = profile.ein?.trim();
+  if (ein) business.ein = ein;
+  const incorporationDate = profile.incorporation_date?.trim();
+  if (incorporationDate) business.incorporationDate = incorporationDate;
+  const merchantReg = profile.merchant_registration_number?.trim();
+  if (merchantReg) business.merchantRegistrationNumber = merchantReg;
+
+  let addresses: BusinessPassportJson["addresses"] | undefined;
+  const street = profile.physical_address?.trim();
+  if (street) {
+    addresses = {
+      principalPhysical: {
+        line1: street,
+        cityOrMunicipality: profile.municipality?.trim() || "",
+        stateOrTerritory: "PR",
+        postalCode: "",
+        country: "US",
+      },
+    };
+  }
+
+  if (Object.keys(business).length === 0 && !addresses) return null;
+  const passport: BusinessPassportJson = {};
+  if (Object.keys(business).length > 0) {
+    // Partial on purpose: the server normalizes this into the full canonical
+    // shape (canonicalFromBusinessRow) before persisting.
+    passport.business = business as unknown as BusinessPassportJson["business"];
+  }
+  if (addresses) passport.addresses = addresses;
+  return passport;
+}
+
 export default function SmartPRIntake() {
   const [currentStep, setCurrentStep] = useState<Step>(1);
   // Deliverables paywall, surfaced upfront: locked users see a lock on the
@@ -1193,6 +1245,9 @@ export default function SmartPRIntake() {
   // requires a user-facing save or retry action.
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveResetTimerRef = useRef<number | null>(null);
+  // Fingerprint of the last official-details passport write, so the debounced
+  // autosave only PATCHes the passport when those fields actually changed.
+  const lastOfficialPassportRef = useRef<string>("");
   useEffect(() => () => {
     if (saveResetTimerRef.current !== null) window.clearTimeout(saveResetTimerRef.current);
   }, []);
@@ -2072,6 +2127,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           }, canonicalOverride);
           businessPatch.passport = passportJsonFromCanonical(passportCanonical);
         }
+        // Seed the Business Passport with official identifiers the interpreter
+        // extracted from the intake narrative (EIN, formation date, Hacienda
+        // merchant registration, physical address). Sent as a merge so existing
+        // passport data is preserved; only fires when those fields changed.
+        let officialPassportSent: string | null = null;
+        if (!businessPatch.passport && businessIdRef.current) {
+          const officialPassport = buildOfficialDetailsPassport(profile);
+          const fingerprint = officialPassport ? JSON.stringify(officialPassport) : "";
+          if (fingerprint && fingerprint !== lastOfficialPassportRef.current) {
+            writes.push(fetch(`/api/businesses/${businessIdRef.current}`, {
+              method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ passport: officialPassport, mergePassport: true }),
+            }));
+            officialPassportSent = fingerprint;
+          }
+        }
         // A brand-new intake has no business fields yet. Sending an empty PATCH
         // returns 400 and used to mark an otherwise successful snapshot save as
         // failed.
@@ -2088,6 +2159,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         }
         const responses = await Promise.all(writes);
         if (responses.some((response) => !response.ok)) throw new Error('Could not persist filing progress.');
+        // The official-details passport write succeeded: remember its
+        // fingerprint so the next autosave doesn't resend identical data.
+        // (On failure we throw above, so a failed write is retried.)
+        if (officialPassportSent) lastOfficialPassportRef.current = officialPassportSent;
       }
       setSaveState('saved');
       if (saveResetTimerRef.current !== null) window.clearTimeout(saveResetTimerRef.current);

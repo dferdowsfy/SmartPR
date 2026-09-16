@@ -50,6 +50,10 @@ export function NaturalLanguageIntake({
   const [pending, setPending] = useState<ValidatedInterpretation["suggested"] | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const loadingRef = useRef(false);
+  // Tracks whether the description box already has content, so the first
+  // voice input becomes the description while later follow-ups are treated
+  // as incremental facts (never appended to the box).
+  const textRef = useRef("");
 
   // Grow with the text so a long description wraps into view instead of
   // scrolling sideways on one line. Capped so the field never runs away.
@@ -123,12 +127,88 @@ export function NaturalLanguageIntake({
     void interpretDescription(text);
   };
 
+  /**
+   * Merge follow-up chips into the existing "We understood:" strip: a chip
+   * with the same label is replaced in place (the fact was restated), new
+   * chips are appended. Earlier facts never disappear.
+   */
+  const mergeChips = useCallback(
+    (next: { label: string; detail?: string; questionId?: string }[]) => {
+      setChips((current) => {
+        const labels = new Set(next.map((c) => c.label));
+        const kept = current.filter((c) => !labels.has(c.label));
+        return [...kept, ...next];
+      });
+    },
+    []
+  );
+
+  const interpretFollowUp = useCallback(
+    async (transcript: string) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      setStatus("loading");
+      try {
+        const candidates = buildKbCandidates(kb, transcript);
+        const res = await fetch("/api/intake/interpret", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: transcript,
+            candidates,
+            lang,
+            allowedIndustries,
+            allowedLocationTypes,
+          }),
+        });
+        if (!res.ok) throw new Error(`interpret ${res.status}`);
+        const data = await res.json();
+        const validated = validateInterpretation(data?.interpretation, kb, {
+          allowedIndustries,
+          allowedLocationTypes,
+        });
+        const patch = toIntakePatch(validated, { kb, allowedIndustries });
+        const nothingFound =
+          Object.keys(patch.profile).length === 0 && Object.keys(patch.answers).length === 0;
+        if (nothingFound) {
+          setStatus("error");
+          return;
+        }
+        onApply(patch, validated);
+        mergeChips(patch.chips);
+        const hasSuggestions =
+          validated.suggested.businessType ||
+          validated.suggested.municipality ||
+          validated.suggested.answers.length > 0 ||
+          validated.suggested.profileValues.length > 0;
+        setPending(hasSuggestions ? validated.suggested : null);
+        setStatus("done");
+      } catch {
+        setStatus("error");
+      } finally {
+        loadingRef.current = false;
+      }
+    },
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips]
+  );
+
   const handleVoiceTranscript = useCallback(
     async (transcript: string) => {
-      setText(transcript);
-      await interpretDescription(transcript);
+      const t = transcript.trim();
+      if (!t) return;
+      if (!textRef.current.trim()) {
+        // First voice input: it IS the business description.
+        textRef.current = t;
+        setText(t);
+        await interpretDescription(t);
+        return;
+      }
+      // Follow-up: an incremental fact ("It will have ten employees").
+      // Interpret it on its own and merge the new facts into the existing
+      // profile — the description box stays exactly as it was.
+      await interpretFollowUp(t);
     },
-    [interpretDescription]
+    [interpretDescription, interpretFollowUp]
   );
 
   const focusDescribeBox = useCallback(() => {
@@ -168,7 +248,10 @@ export function NaturalLanguageIntake({
           rows={2}
           value={text}
           placeholder={L("Describe your business...", "Describa su negocio...")}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            textRef.current = e.target.value;
+            setText(e.target.value);
+          }}
           onKeyDown={(e) => {
             // Enter submits; Shift+Enter adds a line break.
             if (e.key === "Enter" && !e.shiftKey) {
