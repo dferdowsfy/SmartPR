@@ -372,6 +372,7 @@ import {
   type VoiceDeliverableType,
 } from "./deliverables";
 import { createMatterRecord } from "../matters";
+import { projectRequirementsToObligations } from "../../app/graph/store";
 
 const MATTER_LABEL: Record<string, string> = {
   NEW_BUSINESS_FORMATION: "new business formation",
@@ -568,6 +569,41 @@ async function executePendingAction(
       await persistVoiceFact(db, ctx, businessId, mId, def, p.factValue as boolean | string | number);
       const after = await evaluateVoiceRequirements(db, businessId, mId);
       const diff = diffRequirements(before, after);
+      // Project the recalculated requirements into the authoritative
+      // obligation store through the SAME projection the intake flow uses,
+      // so voice reads (get_requirements / get_missing_items / get_readiness)
+      // and the web UI see the identical requirement set.
+      let projectionMatterId = mId;
+      if (!projectionMatterId) {
+        try {
+          projectionMatterId = (await resolveVoiceMatter(db, businessId, null)).id;
+        } catch {
+          projectionMatterId = null;
+        }
+      }
+      if (projectionMatterId) {
+        const oClient = await acquireMatterClient(db);
+        try {
+          await oClient.query("BEGIN");
+          await projectRequirementsToObligations(oClient, {
+            businessId,
+            matterId: projectionMatterId,
+            userId: ctx.userId,
+            requirements: after.map((r) => ({
+              document_id: r.document_id,
+              name: r.document_name,
+              agency: r.agency,
+              source_rule: r.source_rule_id,
+            })),
+          });
+          await oClient.query("COMMIT");
+        } catch (err) {
+          await oClient.query("ROLLBACK").catch(() => undefined);
+          throw err;
+        } finally {
+          releaseMatterClient(db, oClient);
+        }
+      }
       await logAudit3(db, {
         userId: ctx.userId,
         action: "requirements_recalculated",
@@ -578,6 +614,7 @@ async function executePendingAction(
           added: diff.added.length,
           removed: diff.removed.length,
           changed: diff.changed.length,
+          obligations_projected: Boolean(projectionMatterId),
         },
       });
       return {

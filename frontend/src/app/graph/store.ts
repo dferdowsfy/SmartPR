@@ -309,6 +309,95 @@ function hash(value: unknown): string {
 
 // ---- event handlers -----------------------------------------------------
 
+/** One engine requirement in the shape the obligation projection consumes. */
+export interface ProjectedRequirement {
+  document_id?: string | null;
+  /** Display name: intake `document`, engine `document_name`. */
+  name: string;
+  agency?: string | null;
+  mandatory?: boolean | null;
+  source_rule?: string | null;
+  /** Explicitly user-provided expiry (YYYY-MM-DD); never estimated. */
+  expiry_date?: string | null;
+}
+
+/**
+ * Project authoritative engine output into the persistent compliance model.
+ * This projection never creates requirements on its own; it mirrors only the
+ * requirements supplied by the deterministic rules engine.
+ *
+ * Shared by the intake capture path and the voice fact-confirmation path so
+ * both surfaces persist obligations through the same code. Idempotent via
+ * the (matter_id, requirement_id, cycle_index) upsert.
+ */
+export async function projectRequirementsToObligations(
+  c: PoolClient,
+  opts: {
+    businessId: string;
+    /** Matter anchoring the obligations (dedupe key). Must be non-null for dedupe to work. */
+    matterId: string;
+    userId?: string | null;
+    requirements: ProjectedRequirement[];
+  }
+): Promise<void> {
+  const { businessId, matterId, userId, requirements } = opts;
+  const renewalMetadata = await renewalMetadataForDocuments(
+    c,
+    requirements.map((r) => r.document_id).filter((id): id is string => Boolean(id))
+  );
+  for (const requirement of requirements) {
+    const requirementId = requirement.document_id || requirement.name;
+    const renewal = renewalMetadata.get(requirementId);
+    // Only ever a date the user explicitly provided ("I don't know" arrives
+    // as absent). Never estimated here.
+    const expiry = validDateOnly(requirement.expiry_date);
+    const obligationId = randomUUID();
+    const upserted = await c.query<{ id: string }>(
+      `INSERT INTO obligations
+         (id, business_id, matter_id, requirement_id, graph_entity_id, name, agency,
+          status, mandatory, source, source_reference, renewal_frequency_months,
+          renewal_reference, next_action, due_date, due_date_source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'MISSING',$8,'REGULATORY_GRAPH',$9,$10,$11,'Upload current evidence',
+          $12::date, CASE WHEN $12::date IS NOT NULL THEN 'USER_PROVIDED' END)
+       ON CONFLICT (matter_id, requirement_id, cycle_index) DO UPDATE SET
+         name = EXCLUDED.name, agency = EXCLUDED.agency, mandatory = EXCLUDED.mandatory,
+         source_reference = EXCLUDED.source_reference,
+         renewal_frequency_months = COALESCE(EXCLUDED.renewal_frequency_months, obligations.renewal_frequency_months),
+         renewal_reference = COALESCE(EXCLUDED.renewal_reference, obligations.renewal_reference),
+         due_date = COALESCE(EXCLUDED.due_date, obligations.due_date),
+         due_date_source = COALESCE(EXCLUDED.due_date_source, obligations.due_date_source),
+         updated_at = now()
+       RETURNING id`,
+      [obligationId, businessId, matterId, requirementId, renewal?.graphEntityId ?? requirementId,
+        requirement.name, requirement.agency ?? null, requirement.mandatory ?? true,
+        requirement.source_rule ?? null, renewal?.frequencyMonths ?? null, renewal?.reference ?? null,
+        expiry]
+    );
+    // Schedule the 60/30/7-day email reminders for a user-provided date.
+    // scheduleObligationNotifications cancels stale PENDING rows first, so
+    // re-captures stay idempotent.
+    const persistedId = upserted.rows[0]?.id;
+    if (expiry && persistedId && userId && businessId) {
+      const owner = await c.query<{ workspace_id: string | null; business_name: string | null }>(
+        `SELECT workspace_id, COALESCE(legal_name, name) AS business_name
+           FROM businesses WHERE id = $1 LIMIT 1`,
+        [businessId]
+      );
+      if (owner.rows[0]) {
+        await scheduleObligationNotifications(c, {
+          userId,
+          workspaceId: owner.rows[0].workspace_id,
+          businessId,
+          businessName: owner.rows[0].business_name || "Business",
+          obligationId: persistedId,
+          obligationName: requirement.name,
+          dueDate: expiry,
+        });
+      }
+    }
+  }
+}
+
 async function captureSubmission(
   c: PoolClient,
   e: SubmissionEvent,
@@ -384,61 +473,19 @@ async function captureSubmission(
           WHERE id = $2 AND business_id = $3 AND user_id = $4`,
         [e.submission_id, e.matter_id, e.business_id, ctx.userId]
       );
-      const renewalMetadata = await renewalMetadataForDocuments(
-        c,
-        e.requirements.map((requirement) => requirement.document_id).filter((id): id is string => Boolean(id))
-      );
-      for (const requirement of e.requirements) {
-        const requirementId = requirement.document_id || requirement.document;
-        const renewal = renewalMetadata.get(requirementId);
-        // Intake-captured expiry date: only ever a date the user explicitly
-        // entered ("I don't know" arrives as absent). Never estimated here.
-        const intakeExpiry = validDateOnly(requirement.expiry_date);
-        const obligationId = randomUUID();
-        const upserted = await c.query<{ id: string }>(
-          `INSERT INTO obligations
-             (id, business_id, matter_id, requirement_id, graph_entity_id, name, agency,
-              status, mandatory, source, source_reference, renewal_frequency_months,
-              renewal_reference, next_action, due_date, due_date_source)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'MISSING',$8,'REGULATORY_GRAPH',$9,$10,$11,'Upload current evidence',
-              $12::date, CASE WHEN $12::date IS NOT NULL THEN 'USER_PROVIDED' END)
-           ON CONFLICT (matter_id, requirement_id, cycle_index) DO UPDATE SET
-             name = EXCLUDED.name, agency = EXCLUDED.agency, mandatory = EXCLUDED.mandatory,
-             source_reference = EXCLUDED.source_reference,
-             renewal_frequency_months = COALESCE(EXCLUDED.renewal_frequency_months, obligations.renewal_frequency_months),
-             renewal_reference = COALESCE(EXCLUDED.renewal_reference, obligations.renewal_reference),
-             due_date = COALESCE(EXCLUDED.due_date, obligations.due_date),
-             due_date_source = COALESCE(EXCLUDED.due_date_source, obligations.due_date_source),
-             updated_at = now()
-           RETURNING id`,
-          [obligationId, e.business_id, e.matter_id, requirementId, renewal?.graphEntityId ?? requirementId,
-            requirement.document, requirement.agency ?? null, requirement.mandatory ?? true,
-            requirement.source_rule ?? null, renewal?.frequencyMonths ?? null, renewal?.reference ?? null,
-            intakeExpiry]
-        );
-        // Schedule the 60/30/7-day email reminders for a user-provided date.
-        // scheduleObligationNotifications cancels stale PENDING rows first, so
-        // re-captures stay idempotent.
-        const persistedId = upserted.rows[0]?.id;
-        if (intakeExpiry && persistedId && ctx.userId && e.business_id) {
-          const owner = await c.query<{ workspace_id: string | null; business_name: string | null }>(
-            `SELECT workspace_id, COALESCE(legal_name, name) AS business_name
-               FROM businesses WHERE id = $1 LIMIT 1`,
-            [e.business_id]
-          );
-          if (owner.rows[0]) {
-            await scheduleObligationNotifications(c, {
-              userId: ctx.userId,
-              workspaceId: owner.rows[0].workspace_id,
-              businessId: e.business_id,
-              businessName: owner.rows[0].business_name || "Business",
-              obligationId: persistedId,
-              obligationName: requirement.document,
-              dueDate: intakeExpiry,
-            });
-          }
-        }
-      }
+      await projectRequirementsToObligations(c, {
+        businessId: e.business_id,
+        matterId: e.matter_id,
+        userId: ctx.userId,
+        requirements: e.requirements.map((requirement) => ({
+          document_id: requirement.document_id,
+          name: requirement.document,
+          agency: requirement.agency,
+          mandatory: requirement.mandatory,
+          source_rule: requirement.source_rule,
+          expiry_date: requirement.expiry_date,
+        })),
+      });
     }
   }
 

@@ -270,6 +270,29 @@ function makeFakeDb(mem: Mem) {
       }
       if (s.includes("FROM evidence e")) return { rows: [] };
       if (s.includes("FROM notifications")) return { rows: [] };
+      // -- obligations projection (voice fact-confirm reuses the intake
+      //    projection; params mirror the VALUES order) --
+      if (s.includes("INSERT INTO obligations")) {
+        const row: Record<string, unknown> = {
+          id: String(params[0]),
+          business_id: String(params[1]),
+          matter_id: params[2] ? String(params[2]) : null,
+          requirement_id: String(params[3]),
+          graph_entity_id: params[4] ? String(params[4]) : null,
+          name: String(params[5]),
+          agency: params[6] ? String(params[6]) : null,
+          status: "MISSING",
+          mandatory: params[7] !== false,
+          source: "REGULATORY_GRAPH",
+          source_reference: params[8] ? String(params[8]) : null,
+        };
+        const existing = mem.obligations.find(
+          (o) => o.matter_id === row.matter_id && o.requirement_id === row.requirement_id
+        );
+        if (existing) Object.assign(existing, row);
+        else mem.obligations.push(row);
+        return { rows: [{ id: row.id }] };
+      }
       // -- notes / provenance / links / deliverables --
       if (s.includes("INSERT INTO business_notes")) {
         const row = { id: `note-${mem.notes.length + 1}`, business_id: params[0], note_text: params[4], source: "voice" };
@@ -703,6 +726,21 @@ describe("propose_project_fact_update", () => {
     );
     assert.equal(confirmed.fact_key, "renovation");
     assert.equal((mem.matters[0].facts_json as Record<string, unknown>).renovation, true);
+    // Parity regression: confirming a requirement-affecting fact must project
+    // the engine's requirements into the authoritative obligation store
+    // (same projection the intake flow uses), anchored to the open matter.
+    assert.ok(mem.obligations.length > 0, "confirmed fact projects obligations");
+    assert.ok(
+      mem.obligations.every((o) => o.matter_id === "matter-1"),
+      "obligations are anchored to the resolved matter"
+    );
+    // Duplicate confirmation stays idempotent: no duplicate obligations.
+    const obligationCount = mem.obligations.length;
+    const retry = okData(
+      await call(db, "confirm_pending_action", { pendingActionId: proposed.pending_action_id })
+    );
+    assert.equal(retry.status, "already_confirmed");
+    assert.equal(mem.obligations.length, obligationCount, "no duplicate obligations");
   });
 });
 
