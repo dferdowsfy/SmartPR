@@ -45,6 +45,10 @@ export const PR_GUIDANCE_SOURCES = {
   // were rendering the unvalidated-description placeholder; the document
   // itself cites Law 22-2000 Art. 23.01 at statute confidence.
   dtop: source("SRC_GUIDANCE_DTOP", "Departamento de Transportación y Obras Públicas (DTOP)", "Ley 22-2000, Art. 23.01 — vehicle registration and annual marbete", "https://dtop.pr.gov", "DTOP registers vehicles and issues the annual marbete; vehicle registrations, renewals, and forms are handled through CESCO (cesco.pr.gov)."),
+  // REG-GUIDE-WITHHOLDING-001 (2026-09-17 QA): the
+  // DOC_HACIENDA_EMPLOYER_WITHHOLDING card rendered the
+  // unvalidated-description placeholder on a Bayamón contractor filing.
+  withholding: source("SRC_GUIDANCE_WITHHOLDING", "Departamento de Hacienda", "SURI — employer tax transactions", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI is Hacienda's portal for employer tax transactions, including employer withholding registration, withholding deposits, and payroll filings."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -64,6 +68,11 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_PATENTE_MUNICIPAL: { en: ["patent", "municipal tax"], es: ["patente", "contributivo municipal"] },
   DOC_LEASE_AGREEMENT: { en: ["lease", "landlord"], es: ["contrato", "arrendador"] },
   DOC_ARTICLES_ORGANIZATION: { en: ["llc", "limited liability company", "organization"], es: ["llc", "compañía de responsabilidad limitada", "organización"] },
+  // REG-GUIDE-FORMATION-001 (2026-09-17 QA): validated subject terms for the
+  // formation-certificate cards that were rendering placeholder copy.
+  DOC_CERT_INCORPORATION: { en: ["incorporation", "certificate of incorporation", "corporation"], es: ["incorporación", "certificado de incorporación", "corporación"] },
+  DOC_CERT_ORGANIZATION: { en: ["organization", "llc", "certificate of organization"], es: ["organización", "llc", "certificado de organización"] },
+  DOC_HACIENDA_EMPLOYER_WITHHOLDING: { en: ["withholding", "suri", "employer withholding"], es: ["retención", "suri", "agente retenedor"] },
   DOC_WORKERS_COMP: { en: ["cfse", "coverage"], es: ["cfse", "cobertura"] },
   DOC_DTRH_EMPLOYER_REG: { en: ["dtrh", "unemployment", "disability", "employer registration"], es: ["dtrh", "desempleo", "incapacidad", "patrono"] },
 
@@ -182,6 +191,23 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Complete the Certificate of Organization with the company, address and resident-agent details. If already formed, provide the existing formation evidence.", "Completa el Certificado de Organización con los datos de compañía, dirección y agente residente. Si ya está constituida, aporta la evidencia existente."),
     text("After formation is accepted, use the LLC's legal identity for EIN, tax and licensing applications; a completed draft is not formation.", "Tras aceptarse la constitución, usa la identidad legal de la LLC en solicitudes de EIN, contribuciones y licencias; un borrador no constituye la entidad."),
   ]),
+  // REG-GUIDE-FORMATION-001 (2026-09-17 QA): the Certificate of Incorporation
+  // and LLC Certificate of Organization cards rendered placeholder copy on a
+  // Bayamón contractor filing where the entity type was still unknown.
+  // Content is deliberately form-conditional — it explains what each filing
+  // does if that legal form is chosen, without presuming the choice.
+  DOC_CERT_INCORPORATION: concept("DOC_CERT_INCORPORATION", [[business]], [PR_GUIDANCE_SOURCES.entity], [
+    text("A Puerto Rico corporation comes into existence when the Department of State accepts its Certificate of Incorporation; choosing a corporate structure in a plan does not create the entity.", "Una corporación en Puerto Rico nace cuando el Departamento de Estado acepta su Certificado de Incorporación; elegir la estructura corporativa en un plan no crea la entidad."),
+    text("The Certificate of Incorporation is the formation document that creates the corporation as a legal person before the Department of State.", "El Certificado de Incorporación es el documento de constitución que crea la corporación como persona jurídica ante el Departamento de Estado."),
+    text("If forming a corporation, prepare the Certificate of Incorporation with the corporate name, purpose, shares, and resident agent, then file it with the Department of State. If the entity is already formed, provide the existing certificate.", "Si vas a formar una corporación, prepara el Certificado de Incorporación con el nombre corporativo, propósito, acciones y agente residente, y radícalo en el Departamento de Estado. Si la entidad ya está formada, aporta el certificado existente."),
+    text("An accepted Certificate of Incorporation gives the corporation its legal identity for EIN, tax, and licensing steps; an unfiled draft is not a formed entity.", "Un Certificado de Incorporación aceptado le da a la corporación su identidad legal para los trámites de EIN, contribuciones y licencias; un borrador sin radicar no es una entidad formada."),
+  ]),
+  DOC_CERT_ORGANIZATION: concept("DOC_CERT_ORGANIZATION", [[business]], [PR_GUIDANCE_SOURCES.entity], [
+    text("The LLC becomes a separate legal person only after the Department of State records its Certificate of Organization — operating under an LLC name before that changes nothing legally.", "La LLC existe como persona jurídica aparte solo después de que el Departamento de Estado registre su Certificado de Organización — operar bajo el nombre de la LLC antes de eso no cambia nada legalmente."),
+    text("The Certificate of Organization is the filing that brings the limited liability company into legal existence in Puerto Rico, recorded with the Department of State.", "El Certificado de Organización es la radicación que le da existencia legal a la compañía de responsabilidad limitada en Puerto Rico, registrada ante el Departamento de Estado."),
+    text("Draft the certificate with the LLC's name, registered office, and resident agent, then file it with the Department of State; keep the stamped acceptance as the formation proof.", "Prepara el certificado con el nombre de la LLC, la oficina registrada y el agente residente, y radícalo en el Departamento de Estado; conserva la aceptación ponchada como prueba de constitución."),
+    text("Once recorded, the LLC can obtain its EIN and enter contracts in its own name; until then the owners act in their personal capacity.", "Una vez registrado, la LLC puede sacar su EIN y contratar en su propio nombre; hasta entonces los dueños actúan a título personal."),
+  ]),
   DOC_WORKERS_COMP: concept("DOC_WORKERS_COMP", [[employee]], [PR_GUIDANCE_SOURCES.cfse], [
     text("Hiring workers creates employer responsibilities for workplace-injury coverage through CFSE, subject to the applicable coverage rules.", "Contratar trabajadores conlleva responsabilidades patronales de cobertura por lesiones ocupacionales mediante la CFSE, según las reglas aplicables."),
     text("The CFSE policy documents workers' compensation coverage for the reported workforce, risks and locations.", "La póliza de la CFSE documenta cobertura por accidentes del trabajo para la plantilla, riesgos y localidades informados."),
@@ -193,6 +219,15 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The DTRH employer registration is the business's record as an employer for unemployment and disability insurance — separate from CFSE workers' compensation coverage.", "El registro patronal del DTRH es el expediente del negocio como patrono para el seguro por desempleo e incapacidad — aparte de la póliza de la CFSE por accidentes del trabajo."),
     text("Register as an employer through the DTRH employer portal and keep the assigned employer number for payroll filings.", "Regístrate como patrono en el portal de patronos del DTRH y conserva el número patronal asignado para las radicaciones de nómina."),
     text("An active DTRH employer registration lets the business report and pay unemployment and disability contributions; hiring without registering risks penalties.", "Un registro patronal activo del DTRH permite informar y pagar las aportaciones por desempleo e incapacidad; contratar sin registrarse expone a penalidades."),
+  ]),
+  // REG-GUIDE-WITHHOLDING-001 (2026-09-17 QA): the REQUIRED
+  // DOC_HACIENDA_EMPLOYER_WITHHOLDING card rendered the
+  // unvalidated-description placeholder on a Bayamón contractor filing.
+  DOC_HACIENDA_EMPLOYER_WITHHOLDING: concept("DOC_HACIENDA_EMPLOYER_WITHHOLDING", [[employee]], [PR_GUIDANCE_SOURCES.withholding], [
+    text("Employers in Puerto Rico must withhold income tax from employee wages and remit it to Hacienda; the withholding obligation is registered and managed through SURI.", "Los patronos en Puerto Rico deben retener la contribución sobre ingresos de los salarios de sus empleados y remitirla a Hacienda; la obligación de retención se registra y maneja en SURI."),
+    text("The employer withholding registration identifies the business as a withholding agent for Puerto Rico payroll taxes inside SURI.", "El registro de retención patronal identifica al negocio como agente retenedor para las contribuciones sobre nómina dentro de SURI."),
+    text("Register as an employer withholding agent in SURI and use the assigned account for wage-withholding deposits and filings.", "Regístrate como agente retenedor patronal en SURI y usa la cuenta asignada para los depósitos y radicaciones de retención de salarios."),
+    text("Withholding deposits and filings keep payroll tax compliance current; failing to withhold exposes the employer to penalties and interest.", "Los depósitos y radicaciones de retención mantienen la nómina al día con Hacienda; no retener expone al patrono a penalidades e intereses."),
   ]),
 
 

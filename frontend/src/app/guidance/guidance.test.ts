@@ -37,11 +37,19 @@ const NMI_GATED = new Set(["DOC_NOISE_VARIANCE"]);
 // vehicle concept (REG-GUIDE-VEHICLE-001, 2026-09-17).
 const VEHICLE_GATED = new Set(["DOC_VEHICLE_REGISTRATION"]);
 
-test("same Bayamón bar: all twenty-two source-backed explanations are distinct and actionable in EN/ES", () => {
+// Entity-gated: the Certificate of Incorporation concept applies only when a
+// corporation is (or may be) the chosen legal form; the bar profile is a
+// known LLC, so RULE_0001 excludes it and the validated concept stays
+// provisional for it (correct — MATCH_TRACE_MISSING, not a placeholder).
+// Added with the validated formation-certificate concepts
+// (REG-GUIDE-FORMATION-001, 2026-09-17).
+const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
+
+test("same Bayamón bar: all twenty-five source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId)) {
+      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -57,7 +65,7 @@ test("same Bayamón bar: all twenty-two source-backed explanations are distinct 
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 22);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 25);
   }
 });
 

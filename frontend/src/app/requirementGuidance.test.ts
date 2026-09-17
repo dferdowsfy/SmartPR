@@ -33,10 +33,41 @@ test("each reviewed concept passes validation and produces guidance for matching
 });
 test("unreviewed documents are flagged, even if a previous builder asserted an explanation", () => {
   // The old fixture incorrectly declared these valid for a bar without relevant facts or source URLs.
-  for (const id of ["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN", "DOC_HOA_AUTHORIZATION", "DOC_CERT_INCORPORATION"]) {
+  // (DOC_CERT_INCORPORATION graduated to validated guidance in the
+  // 2026-09-17 18:00 cycle — see REG-GUIDE-FORMATION-001 below.)
+  for (const id of ["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN", "DOC_HOA_AUTHORIZATION"]) {
     const g = buildRequirementGuidance(req(id), context);
     assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", id);
     assert.match(g.whyThisApplies, /hasn't validated the exact regulatory basis yet/);
+  }
+});
+test("REG-GUIDE-WITHHOLDING-001 / REG-GUIDE-FORMATION-001: validated guidance for withholding + formation certificates, never placeholders", () => {
+  // Live QA 2026-09-17 18:00 cycle: a Bayamón general contractor filing
+  // rendered the unvalidated-description placeholder on the REQUIRED
+  // Hacienda/SURI Employer Withholding Registration card, and on both
+  // formation-certificate cards while the entity type was still unknown.
+  // All three now carry validated, source-grounded concepts.
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      ...context, language,
+      businessTypeName: "General Contractor",
+      discoveryAnswers: { employees_hired: true, existing_lease: true },
+      entityType: undefined,
+      engineInput: { municipalityName: "Bayamón", businessTypeName: "General Contractor",
+        answers: { Q_EMPLOYEES_HIRED: true, Q_EXISTING_LEASE: true, Q_PHYSICAL_LOCATION: true } },
+    };
+    const w = buildRequirementGuidance(req("DOC_HACIENDA_EMPLOYER_WITHHOLDING"), ctx);
+    assert.equal(w.status, "VALIDATED", `withholding (${language})`);
+    assert.doesNotMatch(w.whyThisApplies, /hasn't validated the exact regulatory basis yet/i, `no placeholder why (${language})`);
+    assert.doesNotMatch(w.whatThisIs, /still pending|unavailable/i, `no placeholder what (${language})`);
+    assert.match(w.regulatoryReason, /SURI/i, `SURI named (${language})`);
+    for (const id of ["DOC_CERT_INCORPORATION", "DOC_CERT_ORGANIZATION"]) {
+      const g = buildRequirementGuidance(req(id), ctx);
+      assert.equal(g.status, "VALIDATED", `${id} (${language})`);
+      assert.doesNotMatch(g.whyThisApplies, /hasn't validated the exact regulatory basis yet/i, `no placeholder why (${id}, ${language})`);
+      assert.doesNotMatch(g.whatThisIs, /still pending|unavailable/i, `no placeholder what (${id}, ${language})`);
+      assert.match(g.whatThisIs, /Departamento de Estado|Department of State/i, `Dept of State named (${id}, ${language})`);
+    }
   }
 });
 test("DOC_CFPM is a reviewed concept: without a confirmed food fact it teaches the document instead of the generic fallback", () => {
