@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TopNav } from "../history/ui";
 import { createSupabaseBrowser } from "../../lib/supabase/client";
 import { passwordResetRedirectUrl } from "../../lib/siteUrl";
+import PhoneAccessSection from "./phone-access";
 
 interface AccountUser {
   email: string | null;
@@ -288,6 +289,10 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div className="border-t border-slate-200 pt-6">
+                <PhoneAccessSection />
               </div>
 
               <div className="border-t border-slate-200 pt-6">
