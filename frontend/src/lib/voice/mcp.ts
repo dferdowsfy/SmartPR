@@ -237,7 +237,8 @@ export const MCP_TOOLS: McpToolDef[] = [
       "and pass the digits exactly as received in 'pin'. " +
       "On success the result contains a session_token: include it as the 'session_token' argument " +
       "in every subsequent account tool call (it expires after 30 minutes). " +
-      "Until this tool returns ok:true, the only tool you may use is get_general_requirements.",
+      "Never claim the caller is verified from merely collecting the email and PIN — " +
+      "only this tool's ok:true verifies them, and until then use only get_general_requirements.",
     args: ["email", "pin"],
     needsBusiness: false,
     anonymous: true,
@@ -935,6 +936,21 @@ export async function executeMcpTool(
     return finish(true, { success: true, data }, null, tool.name === "email_my_summary");
   } catch (err) {
     const { failure, denialKind } = mapMcpError(err);
+    if (
+      err instanceof VoiceAuthError &&
+      err.code === "missing_token" &&
+      isConsoleMcpRequest(authorizationHeader) &&
+      failure.code === "AUTH_REQUIRED"
+    ) {
+      // In console-agent mode the model holds no header session: an account
+      // tool call without a session_token means verification never happened.
+      // Say so explicitly so the agent calls verify_voice_pin instead of
+      // role-playing an already-verified caller.
+      failure.message =
+        "The caller is not verified: no session token was provided. " +
+        "Call verify_voice_pin with the caller's SmartPR account email and " +
+        "keypad-entered 6-digit PIN, and only proceed to account tools when it returns ok:true.";
+    }
     return finish(false, failure, denialKind, false);
   }
 }

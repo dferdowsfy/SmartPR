@@ -1006,4 +1006,21 @@ describe("console-agent MCP mode", () => {
     const res = await executeMcpTool(db, `Bearer ${CONSOLE_KEY}`, "get_account_context", {});
     assert.equal((res.payload as McpFailure).code, "AUTH_REQUIRED");
   });
+
+  it("tells the console agent to call verify_voice_pin when no session token is provided", async () => {
+    const db = makeFakeDb({ session: null, email: null }) as never;
+    const res = await executeMcpTool(db, `Bearer ${CONSOLE_KEY}`, "get_account_context", {});
+    const failure = res.payload as McpFailure;
+    assert.equal(failure.code, "AUTH_REQUIRED");
+    assert.ok(failure.message.includes("verify_voice_pin"));
+    assert.ok(failure.message.includes("not verified"));
+  });
+
+  it("keeps the generic auth message outside console mode", async () => {
+    const db = makeFakeDb({ session: null, email: null }) as never;
+    const res = await executeMcpTool(db, null, "get_account_context", {});
+    const failure = res.payload as McpFailure;
+    assert.equal(failure.code, "AUTH_REQUIRED");
+    assert.ok(!failure.message.includes("verify_voice_pin"));
+  });
 });
