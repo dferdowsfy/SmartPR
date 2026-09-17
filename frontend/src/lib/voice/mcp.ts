@@ -1028,8 +1028,15 @@ async function toolVerifyVoicePin(
     error: "invalid_credentials",
     message: "That email or PIN was not recognized. Please try again.",
   };
-  // Fail fast on malformed input without touching the DB or attempt counters.
-  if (!emailOk || !isValidPinFormat(pin)) return invalid;
+  // Fail fast on malformed input without touching the account row or attempt
+  // counters. Still audited so silent client-side failures stay visible.
+  if (!emailOk || !isValidPinFormat(pin)) {
+    await logVoiceAudit(db, {
+      action: "pin_failed",
+      details: { reason: "malformed_input", via: "mcp_verify_voice_pin" },
+    });
+    return invalid;
+  }
 
   const { rows } = await db.query<VoiceAccessRow>(
     `SELECT user_id, phone_e164, pin_hash, enabled, failed_attempts, locked_until

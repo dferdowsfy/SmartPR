@@ -894,6 +894,22 @@ describe("verify_voice_pin", () => {
     assert.ok(!db.queries.some((q) => q.sql.includes("voice_access")));
   });
 
+  it("audits malformed verify_voice_pin calls without touching attempt counters", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    const payload = await verify(db, { email: "not-an-email", pin: PIN });
+    assert.equal(payload.data.error, "invalid_credentials");
+    const audits = insertsOf(db, "voice_audit_log");
+    assert.ok(
+      audits.some((q) => JSON.stringify(q.params).includes("malformed_input")),
+      "expected a malformed_input audit row"
+    );
+    assert.ok(!db.queries.some((q) => q.sql.includes("voice_access")));
+  });
+
   it("is case-insensitive on email", async () => {
     const db = makeFakeDb({
       session: null,
