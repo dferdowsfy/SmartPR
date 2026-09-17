@@ -49,6 +49,9 @@ deliverables/
 # Marketing collateral served from the site (technology one-pagers).
 !frontend/public/docs/*.pdf
 
+# Public Trust Center security package
+!frontend/public/trust/*.pdf
+
 # Populated working copies produced by `npm run forms:demo` / `npm run forms:verify`
 generated-filings-demo/
 generated-filings-verified/
