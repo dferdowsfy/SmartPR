@@ -621,6 +621,83 @@ export async function getActiveSupportGrant(
   }
 }
 
+
+/**
+ * Best-effort: stamp last_used_at / use_count and emit support_access.used
+ * once per grant per process window is acceptable; callers may invoke on
+ * successful requireOrgAccess support path. Failures are swallowed.
+ */
+export async function recordSupportAccessUse(
+  pool: Queryable | null,
+  grant: SupportGrant,
+  actorUserId: string | null
+): Promise<void> {
+  if (!pool) return;
+  try {
+    await pool.query(
+      `UPDATE support_access_grants
+          SET last_used_at = now(),
+              use_count = COALESCE(use_count, 0) + 1,
+              updated_at = now()
+        WHERE id = $1 AND revoked_at IS NULL AND expires_at > now()`,
+      [grant.id]
+    );
+  } catch {
+    // Column may not exist yet — ignore
+  }
+  try {
+    await writeAuditEvent(pool, {
+      actorUserId,
+      workspaceId: grant.workspaceId,
+      action: "support_access.used",
+      targetType: "support_access_grant",
+      targetId: grant.id,
+      after: { scope: grant.scope, reason: grant.reason },
+      source: "superadmin",
+      reason: `[support:${grant.id}] ${grant.reason}`,
+    });
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Mark expired (non-revoked) grants with a one-shot support_access.expired
+ * audit event. Safe to call periodically from admin banner/active endpoint.
+ */
+export async function auditExpiredSupportGrants(pool: Queryable | null): Promise<number> {
+  if (!pool) return 0;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE support_access_grants
+          SET expiry_audited_at = now(), updated_at = now()
+        WHERE revoked_at IS NULL
+          AND expires_at <= now()
+          AND expiry_audited_at IS NULL
+        RETURNING id::text AS id, workspace_id::text AS workspace_id, reason, scope, granted_to_email`
+    );
+    for (const r of rows) {
+      await writeAuditEvent(pool, {
+        actorUserId: null,
+        workspaceId: String(r.workspace_id),
+        action: "support_access.expired",
+        targetType: "support_access_grant",
+        targetId: String(r.id),
+        after: {
+          granted_to_email: r.granted_to_email,
+          scope: r.scope,
+          reason: r.reason,
+        },
+        source: "automation",
+        reason: "grant expired",
+      });
+    }
+    return rows.length;
+  } catch {
+    return 0;
+  }
+}
+
 async function emailForUserId(
   pool: Queryable | null,
   userId: string
@@ -704,6 +781,8 @@ export async function requireOrgAccess(
         const readOk =
           !permission || SUPPORT_READ_ONLY_PERMISSIONS.includes(permission);
         if (grant.scope !== "read_only" || readOk) {
+          // Best-effort use audit (does not block access)
+          void recordSupportAccessUse(pool, grant, user.id);
           return { user, workspaceId, supportGrant: grant };
         }
       }

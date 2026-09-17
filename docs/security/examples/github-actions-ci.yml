@@ -1,0 +1,59 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typecheck:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+
+  security-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Enterprise + SOC2 readiness security tests
+        run: npx tsx --test src/lib/__tests__/enterprise-security.test.ts src/lib/__tests__/soc2-security.test.ts
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pattern-based secret scan (heuristic)
+        run: |
+          set -euo pipefail
+          # Fail on high-confidence patterns in tracked files (exclude locks, images, known examples)
+          if git grep -nE 'sk_live_[0-9a-zA-Z]{20,}|ghp_[0-9a-zA-Z]{36}|AKIA[0-9A-Z]{16}' \
+            -- ':!**/package-lock.json' ':!**/*.png' ':!**/*.jpg' ':!frontend/.env.example' \
+            ':!docs/**' ':!data/security_controls.json' ':!frontend/src/lib/security/secrets.ts' \
+            ':!frontend/src/lib/__tests__/**'; then
+            echo "Potential live secrets found in repository"
+            exit 1
+          fi
+          echo "Heuristic secret scan passed"
