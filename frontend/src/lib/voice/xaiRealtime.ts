@@ -44,8 +44,9 @@ Action tools (create_draft_project, propose_project_fact_update, add_note) only 
 
 Secure links and emails always go to the verified account email. Never ask for or accept a recipient address, phone number, user ID, workspace ID, or plan name. Never collect passwords, PINs, or verification codes.`;
 
-/** The exact 18 curated SmartPR MCP tools attachable to an xAI realtime session. */
+/** The curated SmartPR MCP tools attachable to an xAI realtime session: 18 account tools plus the anonymous knowledge-graph lookup. */
 export const MCP_ALLOWED_TOOLS = [
+  "get_general_requirements",
   "get_account_context",
   "list_my_businesses",
   "get_business_summary",
@@ -130,24 +131,48 @@ export interface SessionUpdatePayload {
 }
 
 /**
- * Pre-authentication session: NO account tools attached (tools explicitly
- * cleared). The caller has not entered a PIN: they get general regulatory
- * help, and may enter the 6-digit PIN on the keypad at any time to unlock
- * premium account access. Account tools attach only after successful
- * PIN verification (second session.update).
- *
- * `tools: []` is sent explicitly (not omitted): when the session loads a
- * saved xAI agent via `?agent_id=`, the agent may bring console-configured
- * tools with it, and those must be cleared before the caller authenticates.
+ * Authorization marker the pre-auth session configures on the MCP tool.
+ * Not a session token (no `vs_` prefix): the MCP server's tools/list sees a
+ * present-but-invalid value and exposes only the anonymous
+ * get_general_requirements tool.
  */
-export function buildPreAuthSessionUpdate(voice: string): SessionUpdatePayload {
+export const MCP_ANONYMOUS_AUTHORIZATION = "anonymous";
+
+/** Default MCP server URL when VOICE_MCP_SERVER_URL is not configured. */
+export const DEFAULT_MCP_SERVER_URL = "https://www.getsmartpr.com/api/mcp/voice";
+
+/**
+ * Pre-authentication session: the anonymous knowledge-graph tool is
+ * attached (no account tools). The caller gets general regulatory help
+ * grounded in SmartPR's deterministic engine, and may enter the 6-digit
+ * PIN on the keypad at any time to unlock premium account access. Account
+ * tools attach only after successful PIN verification (second
+ * session.update).
+ *
+ * The MCP server filters tools/list by the authorization value, so the
+ * model can never see account tool names before authentication — but the
+ * pre-auth session ALSO passes allowed_tools explicitly as defense in
+ * depth. (A saved xAI agent loaded via `?agent_id=` may bring
+ * console-configured tools; the explicit tools array replaces them.)
+ */
+export function buildPreAuthSessionUpdate(
+  voice: string,
+  mcpServerUrl: string = DEFAULT_MCP_SERVER_URL
+): SessionUpdatePayload {
   return {
     type: "session.update",
     session: {
-      instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not entered a PIN. Help them with general questions about Puerto Rico business requirements, permits, licenses, and compliance: give accurate, established answers, name the agency when you can, and say explicitly when a question turns on specifics you cannot verify — exact fees, current forms, eligibility edge cases — pointing them to the agency or inviting premium voice access for a full requirements workup. If the caller enters their 6-digit PIN on the keypad and authentication succeeds, you will be told and given account tools. Never ask the caller to say the PIN aloud. Never offer account-specific information until authentication succeeds.`,
+      instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not entered a PIN. For Puerto Rico permit, license, and compliance questions, use the get_general_requirements tool — it runs SmartPR's deterministic regulatory engine over the knowledge graph. Ask the caller for their business type and municipality if you don't know them; report each requirement with its posture (required / likely_required / conditional / verify_existing) and never present likely_required or conditional items as certain. If the caller enters their 6-digit PIN on the keypad and authentication succeeds, you will be told and given account tools. Never ask the caller to say the PIN aloud. Never offer account-specific information until authentication succeeds.`,
       voice,
       turn_detection: { type: "server_vad" },
-      tools: [],
+      tools: [
+        {
+          ...buildMcpToolEntry(mcpServerUrl, MCP_ANONYMOUS_AUTHORIZATION),
+          server_description:
+            "SmartPR regulatory knowledge graph (anonymous, no login): Puerto Rico permits, licenses, and registrations for described business scenarios.",
+          allowed_tools: ["get_general_requirements"],
+        },
+      ],
     },
   };
 }
@@ -168,7 +193,7 @@ export function buildCallGreeting(enrolled: boolean): string {
   return `${base}${premium} Never ask the caller to say the PIN aloud.`;
 }
 
-/** Authenticated session: attaches the 18 SmartPR MCP tools with the fresh session token. */
+/** Authenticated session: attaches the 19 SmartPR MCP tools with the fresh session token. */
 export function buildAuthedSessionUpdate(
   voice: string,
   mcpServerUrl: string,

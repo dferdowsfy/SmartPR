@@ -9,13 +9,15 @@
  * `notifications/initialized`, `ping`, `tools/list`, and `tools/call`
  * are supported.
  *
- * Authentication: every `tools/call` must carry the Phase 1 voice session
- * token. xAI sets the configured `authorization` value in the HTTP
- * Authorization header; we accept both `Bearer <token>` and the raw token
- * because xAI's docs do not specify a scheme. `initialize` and `tools/list`
- * require no auth — they expose no account data, which also keeps anonymous
- * callers working (account tools then return AUTH_REQUIRED, never a
- * transport failure).
+ * Authentication: `tools/call` must carry the Phase 1 voice session token,
+ * except tools flagged `anonymous` (currently only get_general_requirements,
+ * which touches zero account data). xAI sets the configured `authorization`
+ * value in the HTTP Authorization header; we accept both `Bearer <token>`
+ * and the raw token because xAI's docs do not specify a scheme.
+ * `initialize` requires no auth. `tools/list` filters by auth: a
+ * present-but-invalid authorization value (the pre-auth "anonymous" marker,
+ * an expired token) sees only the anonymous tool; a missing header keeps
+ * the historical full list because `tools/call` still enforces auth.
  *
  * The model supplies only resource identifiers (businessId). userId,
  * workspaceId, role, plan, email, and authorization scope are always derived
@@ -44,6 +46,7 @@ import {
   toolGetBusinessSummary,
   toolGetDeadlines,
   toolGetEvidenceStatus,
+  toolGetGeneralRequirements,
   toolGetMissingItems,
   toolGetReadiness,
   toolGetRequirements,
@@ -86,6 +89,11 @@ export interface McpToolDef {
   args: Array<string>;
   inputSchema: Record<string, unknown>;
   needsBusiness: boolean;
+  /**
+   * Anonymous tools run without a voice session token (no account, no
+   * persisted state). Only tools that touch zero account data may set this.
+   */
+  anonymous?: boolean;
 }
 
 const BUSINESS_ID_PROP = {
@@ -120,6 +128,42 @@ const NO_ARGS_SCHEMA = {
 };
 
 export const MCP_TOOLS: McpToolDef[] = [
+  {
+    name: "get_general_requirements",
+    description:
+      "Deterministic Puerto Rico regulatory engine — no login needed. Returns permits, licenses, and registrations for a business type + municipality, labeled required / likely_required / conditional.",
+    args: ["business_type", "municipality", "business_status", "answers"],
+    needsBusiness: false,
+    anonymous: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        business_type: {
+          type: "string",
+          description:
+            "Business type, e.g. Restaurant, Bar, Food Truck, Retail Store. Matched against SmartPR's catalog; unknown types return candidates to clarify.",
+        },
+        municipality: {
+          type: "string",
+          description: "Puerto Rico municipality, e.g. San Juan, Ponce. Optional.",
+        },
+        business_status: {
+          type: "string",
+          enum: ["new", "existing"],
+          description:
+            "Use 'new' when the caller is opening a business (default), 'existing' for an already-operating business.",
+        },
+        answers: {
+          type: "object",
+          description:
+            "Optional refinement: question_id -> answer (yes/no or option text) for follow-up questions from a previous call.",
+          additionalProperties: true,
+        },
+      },
+      required: ["business_type"],
+      additionalProperties: false,
+    },
+  },
   {
     name: "get_account_context",
     description:
@@ -368,6 +412,10 @@ export function sanitizeArgs(
     else if (typeof value === "boolean" || typeof value === "number") {
       // Declared scalar arguments (e.g. factValue) survive sanitization;
       // identity is never a declared argument, so nothing is overridable.
+      out[name] = value;
+    } else if (value && typeof value === "object" && !Array.isArray(value)) {
+      // Declared map arguments (e.g. get_general_requirements' answers)
+      // survive as objects; the tool validates/coerces each entry.
       out[name] = value;
     }
   }
@@ -706,6 +754,9 @@ async function runTool(
         businessId as string,
         strArg("actionType") ?? ""
       );
+    case "get_general_requirements":
+      // Stateless knowledge-graph lookup: valid with or without a session.
+      return toolGetGeneralRequirements(db, args);
     default:
       throw new VoiceAuthError("unknown_tool", `Unknown tool: ${tool.name}`, 400);
   }
@@ -758,7 +809,13 @@ export async function executeMcpTool(
   try {
     const token = extractMcpToken(authorizationHeader);
     if (!token) {
-      throw new VoiceAuthError("missing_token", "A voice session token is required.", 401);
+      if (!tool.anonymous) {
+        throw new VoiceAuthError("missing_token", "A voice session token is required.", 401);
+      }
+      // Anonymous knowledge-graph tool: no voice context exists. Account-
+      // derived observability fields stay null; raw args are never logged.
+      const data = await runAnonymousTool(db, tool, sanitizeArgs(tool, rawArgs));
+      return finish(true, { success: true, data }, null, false);
     }
     ctx = await resolveVoiceContext(`Bearer ${token}`, db);
     const args = sanitizeArgs(tool, rawArgs);
@@ -768,6 +825,48 @@ export async function executeMcpTool(
   } catch (err) {
     const { failure, denialKind } = mapMcpError(err);
     return finish(false, failure, denialKind, false);
+  }
+}
+
+/**
+ * Dispatch for tools that run without a voice session. Only tools flagged
+ * `anonymous` (zero account data) may reach here — enforced by
+ * executeMcpTool before this is called.
+ */
+async function runAnonymousTool(
+  db: Db,
+  tool: McpToolDef,
+  args: Record<string, unknown>
+): Promise<unknown> {
+  switch (tool.name) {
+    case "get_general_requirements":
+      return toolGetGeneralRequirements(db, args);
+    default:
+      throw new VoiceAuthError("forbidden", "This tool requires authentication.", 403);
+  }
+}
+
+/**
+ * Tools visible to this MCP client. A present-but-invalid authorization
+ * value (e.g. the pre-auth "anonymous" marker, or an expired token) sees
+ * only the anonymous knowledge-graph tool — the model can never even learn
+ * account tool names before authentication. A missing header keeps today's
+ * behavior (full list; tools/call still enforces auth) so clients that do
+ * not forward the header on tools/list never break.
+ */
+async function visibleMcpTools(
+  db: Db,
+  authorizationHeader: string | null | undefined
+): Promise<McpToolDef[]> {
+  const anonymousOnly = MCP_TOOLS.filter((t) => t.anonymous);
+  if (!authorizationHeader || !authorizationHeader.trim()) return MCP_TOOLS;
+  const token = extractMcpToken(authorizationHeader);
+  if (!token) return anonymousOnly;
+  try {
+    await resolveVoiceContext(`Bearer ${token}`, db);
+    return MCP_TOOLS;
+  } catch {
+    return anonymousOnly;
   }
 }
 
@@ -846,14 +945,15 @@ export async function handleMcpRequest(
       return { status: 202, body: null };
     case "ping":
       return { status: 200, body: { jsonrpc: "2.0", id: req.id ?? null, result: {} } };
-    case "tools/list":
+    case "tools/list": {
+      const visible = await visibleMcpTools(db, authorizationHeader);
       return {
         status: 200,
         body: {
           jsonrpc: "2.0",
           id: req.id ?? null,
           result: {
-            tools: MCP_TOOLS.map((t) => ({
+            tools: visible.map((t) => ({
               name: t.name,
               description: t.description,
               inputSchema: t.inputSchema,
@@ -861,6 +961,7 @@ export async function handleMcpRequest(
           },
         },
       };
+    }
     case "tools/call": {
       const name = params.name;
       if (typeof name !== "string" || !name) {

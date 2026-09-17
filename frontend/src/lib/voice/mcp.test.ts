@@ -188,7 +188,7 @@ describe("sanitizeArgs", () => {
 });
 
 describe("tool registry", () => {
-  it("exposes exactly the eighteen Phase 1–3 tools", () => {
+  it("exposes exactly the nineteen Phase 1–3 tools", () => {
     assert.deepEqual(
       MCP_TOOLS.map((t) => t.name).sort(),
       [
@@ -203,6 +203,7 @@ describe("tool registry", () => {
         "get_business_summary",
         "get_deadlines",
         "get_evidence_status",
+        "get_general_requirements",
         "get_missing_items",
         "get_readiness",
         "get_requirements",
@@ -212,6 +213,10 @@ describe("tool registry", () => {
         "send_secure_upload_link",
       ].sort()
     );
+  });
+  it("flags exactly one tool as anonymous (zero account data)", () => {
+    const anonymous = MCP_TOOLS.filter((t) => t.anonymous);
+    assert.deepEqual(anonymous.map((t) => t.name), ["get_general_requirements"]);
   });
   it("declares no identity fields in any input schema", () => {
     const banned = ["userId", "workspaceId", "role", "plan", "email", "to", "recipient", "user_id"];
@@ -300,11 +305,40 @@ describe("handleMcpRequest", () => {
     const body = res.body as { result: { protocolVersion: string } };
     assert.equal(body.result.protocolVersion, "2025-06-18");
   });
-  it("lists the eighteen tools with schemas, unauthenticated", async () => {
+  it("lists all nineteen tools with schemas, unauthenticated (missing header keeps historical behavior)", async () => {
     const res = await handleMcpRequest(db, { jsonrpc: "2.0", id: 2, method: "tools/list" }, null);
     const body = res.body as { result: { tools: Array<{ name: string; inputSchema: unknown }> } };
-    assert.equal(body.result.tools.length, 18);
+    assert.equal(body.result.tools.length, 19);
     assert.ok(body.result.tools.every((t) => t.inputSchema));
+  });
+  it("lists only the anonymous tool for the pre-auth marker", async () => {
+    const res = await handleMcpRequest(
+      db,
+      { jsonrpc: "2.0", id: 3, method: "tools/list" },
+      "anonymous"
+    );
+    const body = res.body as { result: { tools: Array<{ name: string }> } };
+    assert.deepEqual(body.result.tools.map((t) => t.name), ["get_general_requirements"]);
+  });
+  it("lists only the anonymous tool for an invalid token", async () => {
+    const res = await handleMcpRequest(
+      db,
+      { jsonrpc: "2.0", id: 4, method: "tools/list" },
+      "Bearer vs_bogus_token"
+    );
+    const body = res.body as { result: { tools: Array<{ name: string }> } };
+    assert.deepEqual(body.result.tools.map((t) => t.name), ["get_general_requirements"]);
+  });
+  it("lists all tools for a valid token", async () => {
+    const authedDb = makeFakeDb({ session: validSession(), email: "a@b.co" }) as never;
+    const res = await handleMcpRequest(
+      authedDb,
+      { jsonrpc: "2.0", id: 5, method: "tools/list" },
+      "Bearer vs_test_session_token"
+    );
+    const body = res.body as { result: { tools: Array<{ name: string }> } };
+    assert.equal(body.result.tools.length, 19);
+    assert.ok(body.result.tools.some((t) => t.name === "get_account_context"));
   });
   it("answers ping and rejects unknown methods", async () => {
     const ping = await handleMcpRequest(db, { jsonrpc: "2.0", id: 3, method: "ping" }, null);
@@ -381,6 +415,96 @@ describe("executeMcpTool authentication", () => {
     assert.equal(params[6], "auth"); // denial_kind
     assert.equal(params[2], null); // user_id unknown
     assert.ok(typeof params[7] === "number"); // latency_ms
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Anonymous knowledge-graph tool                                    */
+/* ------------------------------------------------------------------ */
+
+describe("get_general_requirements (anonymous)", () => {
+  it("runs the deterministic engine without a token", async () => {
+    const db = makeFakeDb({ session: null, email: null });
+    const res = await executeMcpTool(db as never, null, "get_general_requirements", {
+      business_type: "restaurant",
+      municipality: "San Juan",
+    });
+    assert.equal(res.ok, true);
+    const data = (res.payload as { success: true; data: Record<string, unknown> }).data;
+    assert.equal(data.matched, true);
+    assert.equal(data.matched_business_type, "Restaurant");
+    assert.equal(data.matched_municipality, "San Juan");
+    assert.ok((data.engine as { rules_evaluated: number }).rules_evaluated > 300);
+    const reqs = data.requirements as Array<{ name: string; agency: string; posture: string }>;
+    assert.ok(reqs.length > 0, "engine should produce requirements for a restaurant");
+    for (const r of reqs) {
+      assert.ok(r.name && r.agency, "each requirement names the document and agency");
+      assert.ok(
+        ["required", "likely_required", "conditional", "verify_existing", "needs_more_information", "supporting_evidence", "recommended"].includes(r.posture),
+        `unexpected posture ${r.posture}`
+      );
+    }
+    // No account identity touched the database.
+    assert.ok(!db.queries.some((q) => q.sql.includes("voice_sessions")));
+  });
+  it("fuzzy-matches a close business type and reports the match", async () => {
+    const db = makeFakeDb({ session: null, email: null });
+    const res = await executeMcpTool(db as never, "anonymous", "get_general_requirements", {
+      business_type: "food truck",
+    });
+    assert.equal(res.ok, true);
+    const data = (res.payload as { success: true; data: Record<string, unknown> }).data;
+    assert.equal(data.matched, true);
+    assert.equal(data.matched_business_type, "Food Truck");
+    assert.equal(data.business_type_match, "exact");
+  });
+  it("returns candidates instead of guessing an unknown business type", async () => {
+    const db = makeFakeDb({ session: null, email: null });
+    const res = await executeMcpTool(db as never, null, "get_general_requirements", {
+      business_type: "quantum teleportation",
+    });
+    assert.equal(res.ok, true);
+    const data = (res.payload as { success: true; data: Record<string, unknown> }).data;
+    assert.equal(data.matched, false);
+    assert.ok(Array.isArray(data.candidates));
+  });
+  it("accepts refinement answers and surfaces follow-up questions", async () => {
+    const db = makeFakeDb({ session: null, email: null });
+    const res = await executeMcpTool(db as never, null, "get_general_requirements", {
+      business_type: "bar",
+      municipality: "Ponce",
+      answers: { Q_FAKE_QUESTION: "yes" },
+    });
+    assert.equal(res.ok, true);
+    const data = (res.payload as { success: true; data: Record<string, unknown> }).data;
+    assert.equal(data.matched, true);
+    assert.deepEqual(data.dropped_answers, ["Q_FAKE_QUESTION"]);
+    const followUps = data.follow_up_questions as Array<{ id: string; question: string }>;
+    assert.ok(followUps.length > 0 && followUps.length <= 5);
+    assert.ok(followUps.every((q) => q.id && q.question));
+  });
+  it("works with a valid token too (authed path)", async () => {
+    const db = makeFakeDb({ session: validSession(), email: "a@b.co" });
+    const res = await executeMcpTool(db as never, "Bearer vs_test_session_token", "get_general_requirements", {
+      business_type: "bakery",
+    });
+    assert.equal(res.ok, true);
+    const data = (res.payload as { success: true; data: Record<string, unknown> }).data;
+    assert.equal(data.matched_business_type, "Bakery");
+  });
+  it("still denies account tools without a token", async () => {
+    const db = makeFakeDb({ session: null, email: null });
+    for (const name of ["get_requirements", "get_account_context", "list_my_businesses"]) {
+      const res = await executeMcpTool(db as never, null, name, {});
+      assert.equal(res.ok, false);
+      assert.equal((res.payload as McpFailure).code, "AUTH_REQUIRED", name);
+    }
+  });
+  it("rejects a missing business_type as a validation error", async () => {
+    const db = makeFakeDb({ session: null, email: null });
+    const res = await executeMcpTool(db as never, null, "get_general_requirements", {});
+    assert.equal(res.ok, false);
+    assert.equal((res.payload as McpFailure).code, "VALIDATION_ERROR");
   });
 });
 

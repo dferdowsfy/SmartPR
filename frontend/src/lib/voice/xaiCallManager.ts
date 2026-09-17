@@ -5,14 +5,17 @@
 //  2. This manager opens wss://api.x.ai/v1/realtime?call_id=…&agent_id=…
 //     with XAI_API_KEY (agent_id loads the saved console agent's config,
 //     per the xAI console "Code integration" pattern).
-//  3. Pre-auth session.update with tools EXPLICITLY CLEARED: the caller is
-//     in the free tier (general questions, no PIN needed). The greeting
-//     invites premium PIN entry on the keypad; DTMF digits are collected
-//     here, server-side, for anyone who enters them.
+//  3. Pre-auth session.update attaches ONLY the anonymous knowledge-graph
+//     tool (get_general_requirements) with authorization "anonymous": the
+//     MCP server's tools/list exposes just that tool, so the model can never
+//     see account tool names before authentication. The greeting offers
+//     general regulatory help; DTMF digits are collected here, server-side,
+//     for anyone who enters them.
 //  4. On 6 digits: clear xAI's input buffer (best-effort, keeps the PIN out
 //     of model context), then POST /api/voice/phone/verify-pin.
-//  5. On success: second session.update WITH the 18 MCP tools, authorization
-//     = the fresh voice session token. Grok proceeds with account tools.
+//  5. On success: second session.update WITH the 19 MCP tools (18 account
+//     tools + the knowledge-graph lookup), authorization = the fresh voice
+//     session token. Grok proceeds with account tools.
 //     On not_enrolled: the caller stays in free mode, no hangup.
 //  6. On call end: revoke the voice session (if one was issued).
 //
@@ -33,6 +36,7 @@ import {
   buildCallGreeting,
   buildPreAuthSessionUpdate,
   buildRealtimeCallUrl,
+  DEFAULT_MCP_SERVER_URL,
   DEFAULT_XAI_AGENT_ID,
   DtmfPinCollector,
   parseDtmfEvent,
@@ -204,7 +208,7 @@ async function handlePinComplete(call: ActiveCall, pin: string, callerE164: stri
     call.authed = true;
     call.sessionToken = body.session_token;
     const voice = env("XAI_VOICE") || "eve";
-    const mcpUrl = env("VOICE_MCP_SERVER_URL") || "https://www.getsmartpr.com/api/mcp/voice";
+    const mcpUrl = env("VOICE_MCP_SERVER_URL") || DEFAULT_MCP_SERVER_URL;
     send(call.ws, buildAuthedSessionUpdate(voice, mcpUrl, body.session_token));
     send(
       call.ws,
@@ -309,9 +313,10 @@ async function runCall(callId: string, callerE164: string | null): Promise<void>
 
   const voice = env("XAI_VOICE") || "eve";
 
-  // Pre-auth session: no account tools. The greeting offers the free tier
-  // and invites premium PIN entry on the keypad; nobody is hung up on.
-  send(ws, buildPreAuthSessionUpdate(voice));
+  // Pre-auth session: anonymous knowledge-graph tool only. The greeting
+  // offers general regulatory help and invites premium PIN entry on the
+  // keypad; nobody is hung up on.
+  send(ws, buildPreAuthSessionUpdate(voice, env("VOICE_MCP_SERVER_URL") || DEFAULT_MCP_SERVER_URL));
   send(ws, systemMessage(buildCallGreeting(enrolled)));
   send(ws, { type: "response.create" });
 

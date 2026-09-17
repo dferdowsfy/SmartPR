@@ -4,8 +4,9 @@
  * Proves:
  * - webhook signatures verify per Standard Webhooks semantics and reject
  *   tampering, stale timestamps, and missing headers
- * - the pre-auth session.update carries NO tools and no token material
- * - the authed session.update carries exactly the 18 curated tools with the
+ * - the pre-auth session.update attaches ONLY the anonymous knowledge-graph
+ *   tool (no account tools, no token material)
+ * - the authed session.update carries exactly the 19 curated tools with the
  *   session token in `authorization`
  * - DTMF PIN collection completes at exactly 6 digits and never buffers more
  * - caller phone extraction handles plain E.164 and sip: URI From headers
@@ -223,17 +224,23 @@ describe("buildRealtimeCallUrl", () => {
 });
 
 describe("session.update payloads", () => {
-  it("pre-auth update explicitly clears tools and carries no token material", () => {
+  it("pre-auth update attaches only the anonymous knowledge-graph tool", () => {
     const update = buildPreAuthSessionUpdate("eve");
     assert.equal(update.type, "session.update");
     assert.equal(update.session.voice, "eve");
-    // Explicit empty array: clears any console-configured tools a saved
-    // agent (?agent_id=) might otherwise bring into the pre-auth session.
-    assert.deepEqual(update.session.tools, []);
+    // Exactly one MCP tool entry, exposing only get_general_requirements:
+    // the model can never see account tool names before authentication.
+    // (The MCP server ALSO filters tools/list by the anonymous marker, as
+    // defense in depth.)
+    const tools = update.session.tools;
+    assert.ok(tools && tools.length === 1);
+    const entry = tools[0];
+    assert.equal(entry.type, "mcp");
+    assert.deepEqual([...entry.allowed_tools], ["get_general_requirements"]);
+    assert.equal(entry.authorization, "anonymous");
     const serialized = JSON.stringify(update);
     assert.ok(!serialized.includes("vs_"));
-    assert.ok(!serialized.includes("mcp"));
-    assert.ok(update.session.instructions.includes("PIN"));
+    assert.ok(update.session.instructions.includes("get_general_requirements"));
   });
 
   it("pre-auth instructions frame the general tier and invite (never demand) the PIN", () => {
@@ -256,7 +263,7 @@ describe("session.update payloads", () => {
     assert.ok(!strangerGreeting.includes("keypad now"));
   });
 
-  it("authed update carries exactly the 18 curated tools with the token", () => {
+  it("authed update carries exactly the 19 curated tools with the token", () => {
     const token = "vs_test_token_value";
     const update = buildAuthedSessionUpdate("eve", "https://www.getsmartpr.com/api/mcp/voice", token);
     const tools = update.session.tools;
@@ -266,7 +273,7 @@ describe("session.update payloads", () => {
     assert.equal(entry.server_url, "https://www.getsmartpr.com/api/mcp/voice");
     assert.equal(entry.server_label, "smartpr");
     assert.deepEqual([...entry.allowed_tools], [...MCP_ALLOWED_TOOLS]);
-    assert.equal(entry.allowed_tools.length, 18);
+    assert.equal(entry.allowed_tools.length, 19);
     assert.equal(entry.authorization, token);
   });
 

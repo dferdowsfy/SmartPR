@@ -75,6 +75,7 @@ are stripped and can never override identity.
 
 | Tool | Args | Description |
 |---|---|---|
+| `get_general_requirements` ⚡ | `business_type, municipality?, business_status?, answers?` | **Anonymous** — deterministic regulatory engine over the Puerto Rico knowledge graph. No login or PIN needed; stateless. Returns permits/licenses/registrations labeled required / likely_required / conditional / verify_existing. The only tool visible before PIN authentication. |
 | `get_account_context` | — | Authenticated caller's account context (verified email, workspace role, plan). |
 | `list_my_businesses` | — | Businesses the authenticated caller may access. |
 | `get_business_summary` | `businessId?` | Compact profile + compliance counts for an authorized business. |
@@ -145,6 +146,7 @@ all), `authorization` (token placed in the `Authorization` header), `headers`.
         "server_label": "smartpr",
         "server_description": "Authenticated SmartPR account tools: requirements, readiness, evidence, deadlines, draft projects, fact updates, notes, secure links, deliverables, and summary email.",
         "allowed_tools": [
+          "get_general_requirements",
           "get_account_context",
           "list_my_businesses",
           "get_business_summary",
@@ -250,12 +252,19 @@ Keep the system prompt small — behavioral rules only:
 
 ## 9. Anonymous vs authenticated calls
 
-Anonymous calling is preserved. Without a token, `initialize`/`tools/list`
-still work; any account tool call returns `AUTH_REQUIRED` (a tool-level
-error, not a transport failure), so the call continues. The agent moves
-between **anonymous regulatory mode** (general regulatory questions through
-the existing anonymous SmartPR regulatory path) and **authenticated SmartPR
-mode** based on whether a valid voice session exists.
+Anonymous calling is preserved and productive. The MCP server filters
+`tools/list` by the authorization value: a present-but-invalid marker
+(e.g. the pre-auth session's `authorization: "anonymous"`) exposes only
+`get_general_requirements`; a missing header keeps the historical full list
+while account calls still require authentication; a valid voice session
+token sees all 19 tools. Anonymous callers get real regulatory answers from
+the deterministic engine — business type + municipality in, labeled
+requirements out — never model memory. Any account tool called without a
+token returns `AUTH_REQUIRED` (a tool-level error, not a transport
+failure), so the call continues. The agent moves between **anonymous
+regulatory mode** (general regulatory questions through the
+knowledge-graph tool) and **authenticated SmartPR mode** based on whether a
+valid voice session exists.
 
 ## 10. Observability
 
@@ -338,12 +347,13 @@ The xAI-side wiring is implemented in the Next.js app (no separate service):
   (`agent_id` loads the saved console agent's config, per the xAI console
   "Code integration" pattern; env `XAI_AGENT_ID` overrides the default
   `agent_MDinRE52EURHvKZV`, empty string disables it), runs the pre-auth
-  session (tools explicitly cleared so no console-configured tools leak in
-  before authentication). Every caller gets a general-help greeting that
+  session (exactly one MCP tool — `get_general_requirements` with
+  `authorization: "anonymous"` — so no account tool names are visible before
+  authentication). Every caller gets a general-help greeting that
   mentions the PIN only as the premium path; entering 6 DTMF digits triggers
   `/api/voice/phone/verify-pin` server-side, the raw PIN never reaches the
   model (input buffer cleared + history scrubbed). On success the authed
-  `session.update` attaches the 18 MCP tools (`authorization` = fresh `vs_…`
+  `session.update` attaches all 19 MCP tools (`authorization` = fresh `vs_…`
   token); a PIN from a non-enrolled number stays in the free tier with no
   hangup. There is no authentication timeout — free-tier callers
   legitimately never enter a PIN. Revokes the session on hangup.

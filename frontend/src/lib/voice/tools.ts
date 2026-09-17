@@ -28,8 +28,184 @@ import {
 import { sendComplianceEmail } from "../compliance-reminders";
 import { incrementVoiceUsage } from "./usage";
 import { logVoiceAudit } from "./audit";
+import { puertoRicoPack } from "../../app/jurisdictions/pr/index";
+import { runRulesEngine, type BusinessStatus } from "../../app/rulesEngine";
+import { classifyEngineRequirements } from "../../app/requirementApplicability";
 
 const MISSING_STATES = new Set(["NONE", "FAILED", "NEEDS_REVIEW"]);
+
+/* ------------------------------------------------------------------ */
+/* Anonymous knowledge-graph tool (no voice session)                   */
+/* ------------------------------------------------------------------ */
+
+const MAX_GENERAL_REQUIREMENTS = 30;
+const MAX_FOLLOW_UP_QUESTIONS = 5;
+const MAX_MATCH_CANDIDATES = 5;
+
+function normalizeName(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+/**
+ * Match free text against a KB name list: exact (case-insensitive) first,
+ * then a single unambiguous substring match. Returns candidates when the
+ * match is ambiguous or absent so the agent can ask the caller to clarify —
+ * never guess a jurisdiction or business type.
+ */
+function matchKbName<T extends { name: string }>(
+  names: T[],
+  raw: string
+): { kind: "exact" | "fuzzy"; value: T } | { kind: "candidates"; candidates: string[] } {
+  const norm = normalizeName(raw);
+  const exact = names.find((n) => normalizeName(n.name) === norm);
+  if (exact) return { kind: "exact", value: exact };
+  const partials = names.filter(
+    (n) => normalizeName(n.name).includes(norm) || norm.includes(normalizeName(n.name))
+  );
+  if (partials.length === 1) return { kind: "fuzzy", value: partials[0] };
+  const starts = names
+    .filter((n) => normalizeName(n.name).startsWith(norm))
+    .map((n) => n.name);
+  const includes = names
+    .filter((n) => normalizeName(n.name).includes(norm) && !starts.includes(n.name))
+    .map((n) => n.name);
+  return { kind: "candidates", candidates: [...starts, ...includes].slice(0, MAX_MATCH_CANDIDATES) };
+}
+
+function coerceAnswer(value: unknown): boolean | string | undefined {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const norm = value.trim().toLowerCase();
+    if (["yes", "y", "true", "sí", "si"].includes(norm)) return true;
+    if (["no", "n", "false"].includes(norm)) return false;
+    return value.trim() === "" ? undefined : value.trim();
+  }
+  return undefined;
+}
+
+/**
+ * get_general_requirements — anonymous Puerto Rico regulatory lookup.
+ *
+ * Runs SmartPR's deterministic rules engine over the Puerto Rico knowledge
+ * graph for a described business scenario. No voice session, no account, no
+ * persisted state: the caller describes a business type (+ municipality),
+ * the engine evaluates every rule, and the classifier labels each
+ * requirement required / likely_required / conditional / verify_existing.
+ *
+ * Deliberately stateless: nothing is saved, so there is nothing to leak
+ * across callers. Unknown business types return candidates for the agent
+ * to clarify — the engine never runs on a guessed type.
+ */
+export async function toolGetGeneralRequirements(db: Db, args: Record<string, unknown>) {
+  void db; // stateless: the engine reads only the bundled knowledge graph
+  const kb = puertoRicoPack.kb;
+
+  const businessTypeRaw = typeof args.business_type === "string" ? args.business_type : "";
+  if (!businessTypeRaw.trim()) {
+    throw new VoiceAuthError("bad_request", "business_type is required.", 400);
+  }
+  const statusRaw = typeof args.business_status === "string" ? args.business_status : "new";
+  const businessStatus: BusinessStatus = statusRaw === "existing" ? "existing" : "new";
+
+  const btMatch = matchKbName(kb.businessTypes, businessTypeRaw);
+  if (btMatch.kind === "candidates") {
+    return {
+      matched: false,
+      candidates: btMatch.candidates,
+      message:
+        "Could not match that business type. Ask the caller which of these is closest, then call again.",
+    };
+  }
+
+  let municipalityName: string | null = null;
+  let municipalityNote: string | null = null;
+  const municipalityRaw = typeof args.municipality === "string" ? args.municipality : "";
+  if (municipalityRaw.trim()) {
+    const mMatch = matchKbName(kb.municipalities, municipalityRaw);
+    if (mMatch.kind === "candidates") {
+      municipalityNote = `Municipality "${municipalityRaw.trim()}" did not match; proceeding without municipality-specific rules. Closest matches: ${mMatch.candidates.join(", ") || "none"}. Ask the caller to confirm their municipality and call again to sharpen the result.`;
+    } else {
+      municipalityName = mMatch.value.name;
+      if (mMatch.kind === "fuzzy") {
+        municipalityNote = `Municipality understood as "${mMatch.value.name}".`;
+      }
+    }
+  }
+
+  // Optional refinement answers: question_id -> answer. Unknown question
+  // ids are dropped (reported) so a model hallucination can never feed the
+  // engine.
+  const rawAnswers =
+    args.answers && typeof args.answers === "object" && !Array.isArray(args.answers)
+      ? (args.answers as Record<string, unknown>)
+      : {};
+  const answers: Record<string, boolean | string | undefined> = {};
+  const droppedAnswers: string[] = [];
+  for (const [qid, val] of Object.entries(rawAnswers)) {
+    if (!kb.questions.some((q) => q.id === qid)) {
+      droppedAnswers.push(qid);
+      continue;
+    }
+    answers[qid] = coerceAnswer(val);
+  }
+
+  const { requirements } = runRulesEngine(kb, {
+    municipalityName,
+    businessTypeName: btMatch.value.name,
+    answers,
+    businessStatus,
+    // No sessionId: the historical admissibility behavior applies — every
+    // supplied fact is usable because there is no cross-session state to
+    // protect. Nothing persists, so provenance has nothing to guard.
+  });
+  const classified = classifyEngineRequirements(requirements, { kb, businessStatus });
+
+  const rows = classified
+    .filter((r) => r.applicability !== "not_applicable")
+    .slice(0, MAX_GENERAL_REQUIREMENTS)
+    .map((r) => ({
+      name: r.document_name,
+      agency: r.agency,
+      posture: r.applicability,
+      reason: r.reason,
+      missing_facts: r.missingFacts,
+    }));
+
+  // Follow-up questions: question_trigger rules for this business type (or
+  // universal) whose question the caller hasn't answered yet.
+  const answeredIds = new Set(Object.keys(answers));
+  const seen = new Set<string>();
+  const followUpQuestions: Array<{ id: string; question: string; options: string[] | null }> = [];
+  for (const rule of kb.rules) {
+    if (followUpQuestions.length >= MAX_FOLLOW_UP_QUESTIONS) break;
+    if (rule.rule_type !== "question_trigger" || !rule.question_id) continue;
+    if (answeredIds.has(rule.question_id) || seen.has(rule.question_id)) continue;
+    if (rule.business_type_id && rule.business_type_id !== btMatch.value.id) continue;
+    seen.add(rule.question_id);
+    const q = kb.questions.find((qq) => qq.id === rule.question_id);
+    if (q) followUpQuestions.push({ id: q.id, question: q.question, options: q.options ?? null });
+  }
+
+  return {
+    matched: true,
+    jurisdiction: "Puerto Rico",
+    matched_business_type: btMatch.value.name,
+    business_type_match: btMatch.kind,
+    matched_municipality: municipalityName,
+    municipality_note: municipalityNote,
+    business_status: businessStatus,
+    engine: {
+      rules_evaluated: kb.rules.length,
+      requirements_generated: requirements.length,
+    },
+    total_requirements: classified.filter((r) => r.applicability !== "not_applicable").length,
+    requirements: rows,
+    follow_up_questions: followUpQuestions,
+    dropped_answers: droppedAnswers,
+    note: "Produced by SmartPR's deterministic regulatory engine over the Puerto Rico knowledge graph — not model knowledge. Postures: required = verified rule fires; likely_required = heuristic (unverified) rule — confirm with the agency; conditional = depends on an unanswered fact; verify_existing = an operating business should verify it already holds this. Ask 1-2 follow-up questions and call again with answers to sharpen conditional items.",
+  };
+}
 
 /** get_account_context — minimal authenticated account context for conversation. */
 export async function toolGetAccountContext(db: Db, ctx: VoiceContext) {
