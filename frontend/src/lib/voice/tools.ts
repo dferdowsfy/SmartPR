@@ -701,9 +701,8 @@ export async function toolSendSecureUploadLink(
       let obligation: { id: string; name: string } | null = null;
       if (obligationId) {
         const { rows } = await db.query<{ id: string; name: string }>(
-          `SELECT o.id, d.name
+          `SELECT o.id, o.name
              FROM obligations o
-             JOIN documents d ON d.id = o.document_id
             WHERE o.id = $1 AND o.business_id = $2 LIMIT 1`,
           [obligationId, business.id]
         );

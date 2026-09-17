@@ -261,7 +261,7 @@ function makeFakeDb(mem: Mem) {
         return { rows: [] };
       }
       // -- obligations / evidence (for links + deliverables) --
-      if (s.includes("FROM obligations o") && s.includes("JOIN documents d")) {
+      if (s.includes("FROM obligations o") && s.includes("WHERE o.id = $1")) {
         const o = mem.obligations.find((o) => o.id === params[0] && o.business_id === params[1]);
         return { rows: o ? [{ id: o.id, name: o.name }] : [] };
       }
@@ -859,6 +859,17 @@ describe("secure links", () => {
       sanitizeArgs(tool, { businessId: "b", to: "evil@x.com", recipient: "evil@x.com", email: "e@x.com" }),
       { businessId: "b" }
     );
+  });
+
+  it("upload link for an unknown obligation id fails NOT_FOUND, not a crash", async () => {
+    const mem = baseMem();
+    const db = makeFakeDb(mem);
+    const r = await call(db, "send_secure_upload_link", {
+      businessId: "biz-allowed",
+      obligationId: "obl-does-not-exist",
+    });
+    assert.equal(failCode(r), "NOT_FOUND");
+    assert.equal(mem.links.size, 0, "no link issued");
   });
 });
 
