@@ -131,9 +131,9 @@ export interface SessionUpdatePayload {
 
 /**
  * Pre-authentication session: NO account tools attached (tools explicitly
- * cleared). The caller is in the free tier: they may ask general questions
- * with no PIN, and may enter the 6-digit PIN on the keypad at any time to
- * unlock premium account access. Account tools attach only after successful
+ * cleared). The caller has not entered a PIN: they get general regulatory
+ * help, and may enter the 6-digit PIN on the keypad at any time to unlock
+ * premium account access. Account tools attach only after successful
  * PIN verification (second session.update).
  *
  * `tools: []` is sent explicitly (not omitted): when the session loads a
@@ -144,7 +144,7 @@ export function buildPreAuthSessionUpdate(voice: string): SessionUpdatePayload {
   return {
     type: "session.update",
     session: {
-      instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not authenticated yet — they are in the free tier. Answer general questions about Puerto Rico business requirements, permits, licenses, and compliance from your own knowledge of Puerto Rico business regulation. Be precise about what you know, name the agency when you can, and say explicitly when an answer needs verification with the agency or a professional instead of guessing. If the caller enters their 6-digit PIN on the keypad and authentication succeeds, you will be told and given account tools. Never ask the caller to say the PIN aloud. Never offer account-specific information until authentication succeeds.`,
+      instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not entered a PIN. Help them with general questions about Puerto Rico business requirements, permits, licenses, and compliance: give accurate, established answers, name the agency when you can, and say explicitly when a question turns on specifics you cannot verify — exact fees, current forms, eligibility edge cases — pointing them to the agency or inviting premium voice access for a full requirements workup. If the caller enters their 6-digit PIN on the keypad and authentication succeeds, you will be told and given account tools. Never ask the caller to say the PIN aloud. Never offer account-specific information until authentication succeeds.`,
       voice,
       turn_detection: { type: "server_vad" },
       tools: [],
@@ -153,16 +153,18 @@ export function buildPreAuthSessionUpdate(voice: string): SessionUpdatePayload {
 }
 
 /**
- * Spoken greeting for an inbound call: free tier first, premium PIN as an
- * invitation. Sent as a system instruction right after the pre-auth session
- * update so the exact framing is spoken verbatim.
+ * Spoken greeting for an inbound call: lead with what the caller can do,
+ * mention the PIN only as the premium path. Never front-load PIN jargon —
+ * callers who don't know what a PIN is get confused by "no PIN needed".
+ * Sent as a system instruction right after the pre-auth session update so
+ * the exact framing is spoken verbatim.
  */
 export function buildCallGreeting(enrolled: boolean): string {
   const base =
-    "You've reached SmartPR. Ask me general questions about Puerto Rico business requirements, permits, licenses, and compliance — no PIN needed.";
+    "You've reached SmartPR. Ask me anything about Puerto Rico business requirements, permits, licenses, and compliance.";
   const premium = enrolled
-    ? " If you have a PIN for premium access to your account, enter the 6-digit PIN on the phone keypad now."
-    : " For premium access to your own SmartPR account, set a PIN under Phone access in your SmartPR settings, then call back and enter it on the keypad.";
+    ? " If you have a SmartPR account with premium voice access, enter your 6-digit PIN on the phone keypad now."
+    : " To link your SmartPR account for premium voice access, set a PIN under Phone access in your SmartPR settings.";
   return `${base}${premium} Never ask the caller to say the PIN aloud.`;
 }
 

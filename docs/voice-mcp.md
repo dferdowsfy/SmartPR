@@ -181,9 +181,10 @@ required after expiry.
 Preferred flow:
 
 1. Inbound call → caller identification (phone lookup). Nobody is hung up
-   on: every caller gets the free tier (general regulatory questions, no PIN
-   needed). The greeting invites premium PIN entry on the keypad — "if you
-   have a PIN for premium access, enter it now" — but never demands it.
+   on: every caller gets general regulatory help. The greeting invites
+   premium PIN entry on the keypad — "if you have a SmartPR account with
+   premium voice access, enter it now" — but never demands it, and never
+   front-loads PIN jargon at callers who don't know what a PIN is.
 2. PIN authentication via the Phase 1 gateway (`/api/voice/phone/verify-pin`)
    only when the caller actually enters 6 DTMF digits. The raw PIN is never
    exposed to Grok and never stored in conversation history. A PIN from a
@@ -338,8 +339,8 @@ The xAI-side wiring is implemented in the Next.js app (no separate service):
   "Code integration" pattern; env `XAI_AGENT_ID` overrides the default
   `agent_MDinRE52EURHvKZV`, empty string disables it), runs the pre-auth
   session (tools explicitly cleared so no console-configured tools leak in
-  before authentication). Every caller gets the free tier greeting —
-  general questions need no PIN; entering 6 DTMF digits triggers
+  before authentication). Every caller gets a general-help greeting that
+  mentions the PIN only as the premium path; entering 6 DTMF digits triggers
   `/api/voice/phone/verify-pin` server-side, the raw PIN never reaches the
   model (input buffer cleared + history scrubbed). On success the authed
   `session.update` attaches the 18 MCP tools (`authorization` = fresh `vs_…`
