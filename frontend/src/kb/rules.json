@@ -5134,7 +5134,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing municipal ambulant-business license rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0654",
@@ -5147,7 +5155,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing DACO fuel-retailer registration rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0655",
@@ -5160,7 +5176,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing fuel-dispenser weights-and-measures certification rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0656",
@@ -5173,7 +5197,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing FDA food-facility registration rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0657",
@@ -5186,7 +5218,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing waste-tire storage permit rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0658",
@@ -5199,7 +5239,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing waste-tire processor permit rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0659",
@@ -5212,7 +5260,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing SCHIDE staff clearance rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0660",
@@ -5225,7 +5281,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing employee health certificates rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0661",
@@ -5238,7 +5302,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing CPR/first-aid certification rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0662",
@@ -5251,7 +5323,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing childcare training certification rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0663",
@@ -5264,7 +5344,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 00:00 cycle (RULE_0650-0695 twin sweep): an operating business verifies its existing Hacienda tax-compliance certification (alcohol path) rather than applying as if new. Same defect class as RULE_0650 (fixed 2026-09-16): the audit/surgery set verify_existing on sibling obligations but left this rule without a compliance posture, so existing businesses were presented a create-new filing. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0664",
@@ -5280,6 +5368,13 @@
     "verification": "heuristic",
     "missing_fact_keys": [
       "alcohol_sold"
+    ],
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode NOT set (reverted during QA)",
+        "reason": "QA 2026-09-17 00:00 cycle: setting verify_existing on this heuristic rule promoted needs_more_information to required for new businesses (classifier maps verify_existing+NMI to required for businessStatus=new), breaking validated golden G07. The heuristic alcohol-served path must keep asking about alcohol_sold. Only the verified RULE_0663 carries verify_existing."
+      }
     ]
   },
   {

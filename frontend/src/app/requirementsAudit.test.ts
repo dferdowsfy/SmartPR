@@ -477,3 +477,70 @@ test("CASE H: Hacienda employer withholding is verify_existing for an operating 
     "a new employer still registers for the first time"
   );
 });
+
+test("CASE I: swept operating obligations (RULE_0653-0664) are verify_existing for existing businesses, required for new ones", () => {
+  // 2026-09-17 00:00 QA cycle — RULE_0650–0695 twin sweep. The 12 verified
+  // operating-obligation rules (0653–0664) are each the sole rule for their
+  // document, so setting verify_existing creates no sibling inconsistency.
+  // An operating business verifies its existing license/registration/
+  // certification; a new business applies for the first time.
+  const DOC_AMBULANT = docByName("ambulant");
+  const DOC_TAX_COMPLIANCE = docByName("hacienda", "tax filing");
+  const DOC_CPR = docByName("cpr");
+
+  const existing = classify(
+    {
+      municipalityName: "Arecibo",
+      businessTypeName: "Food Truck",
+      businessStatus: "existing",
+      answers: { Q_FOOD_TRUCK_MOBILE: true, Q_ALCOHOL_SOLD: true, Q_EMPLOYEES_HIRED: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(existing, DOC_AMBULANT)?.applicability,
+    "verify_existing",
+    "an existing mobile vendor verifies its ambulant-business license (RULE_0653)"
+  );
+  assert.equal(
+    byId(existing, DOC_TAX_COMPLIANCE)?.applicability,
+    "verify_existing",
+    "an existing bar verifies its Hacienda tax-compliance evidence (RULE_0663)"
+  );
+
+  const daycare = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Daycare",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(daycare, DOC_CPR)?.applicability,
+    "verify_existing",
+    "an existing daycare verifies current CPR/first-aid certification (RULE_0661)"
+  );
+
+  const fresh = classify(
+    {
+      municipalityName: "Arecibo",
+      businessTypeName: "Food Truck",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_FOOD_TRUCK_MOBILE: true, Q_ALCOHOL_SOLD: true, Q_EMPLOYEES_HIRED: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_AMBULANT)?.applicability,
+    "required",
+    "a new mobile vendor still applies for the ambulant-business license"
+  );
+  assert.equal(
+    byId(fresh, DOC_TAX_COMPLIANCE)?.applicability,
+    "required",
+    "a new bar still files for Hacienda tax-compliance evidence"
+  );
+});
