@@ -172,7 +172,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0011",
@@ -186,7 +194,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0012",
@@ -386,7 +402,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0028",
@@ -690,7 +714,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0048",
@@ -704,7 +736,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0049",
@@ -768,7 +808,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0052",
@@ -782,7 +830,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0053",
@@ -846,7 +902,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0056",
@@ -860,7 +924,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0057",
@@ -924,7 +996,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0060",
@@ -938,7 +1018,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0061",
@@ -1002,7 +1090,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0064",
@@ -1105,7 +1201,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0069",
@@ -1119,7 +1223,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0070",
@@ -1183,7 +1295,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0073",
@@ -1197,7 +1317,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0074",
@@ -1261,7 +1389,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0077",
@@ -1275,7 +1411,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0078",
@@ -1339,7 +1483,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0081",
@@ -1353,7 +1505,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0082",
@@ -1431,7 +1591,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0086",
@@ -1445,7 +1613,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_CFPM",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0087",
@@ -2253,7 +2429,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0141",
@@ -2303,7 +2487,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0144",
@@ -2353,7 +2545,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0147",
@@ -2557,7 +2757,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0166",
@@ -2571,7 +2779,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0168",
@@ -2585,7 +2801,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0170",
@@ -2599,7 +2823,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0172",
@@ -2613,7 +2845,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0174",
@@ -2627,7 +2867,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0176",
@@ -2641,7 +2889,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0177",
@@ -2917,7 +3173,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0194",
@@ -2959,7 +3223,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0197",
@@ -3001,7 +3273,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0200",
@@ -3043,7 +3323,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0203",
@@ -3085,7 +3373,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0206",
@@ -3127,7 +3423,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0209",
@@ -4814,7 +5118,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0617",
@@ -4828,7 +5140,15 @@
     "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_FIRE_CERT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0618",

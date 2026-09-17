@@ -238,3 +238,22 @@ test("legalBasisFor never claims validation for unvalidated concepts", () => {
   const legacy = legalBasisFor("RULE_0652", "DOC_DOMICILIARY_USE_PERMIT", kb as any);
   assert.ok(legacy, "omitted status keeps legacy behavior");
 });
+test("EIN guidance never frames employers-only or new-entity-only instructions as universal", () => {
+  // 2026-09-17 09:00 QA cycle: the EIN card told a 0-employee nonprofit
+  // (S11, Guaynabo) "Employers need a federal tax identifier for
+  // employment-tax reporting", and told an 8-year existing restaurant
+  // (S10, Carolina) to "Form a new legal entity before applying". Both
+  // sentences are status-specific instructions presented as universal
+  // guidance. The concept copy is now status-neutral: it explains what the
+  // EIN is for without assuming employer status, and scopes entity
+  // formation to new entities.
+  const g = buildRequirementGuidance(req("DOC_EIN"), context);
+  assert.ok(!/^Employers need/.test(g.regulatoryReason),
+    `regulatoryReason must not assume employer status: ${g.regulatoryReason.slice(0, 80)}`);
+  assert.ok(!/Form a new legal entity before applying/.test(g.nextAction),
+    `nextAction must not instruct existing businesses to form: ${g.nextAction.slice(0, 80)}`);
+  assert.match(g.nextAction, /already assigned/);
+  const es = buildRequirementGuidance(req("DOC_EIN"), { ...context, language: "es" });
+  assert.ok(!/^Los patronos necesitan/.test(es.regulatoryReason),
+    "the Puerto Rican Spanish copy carries the same neutral framing");
+});

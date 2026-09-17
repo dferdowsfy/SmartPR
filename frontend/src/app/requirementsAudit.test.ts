@@ -715,3 +715,72 @@ test("CASE L: DOC_HEALTH_PERMIT is verify_existing for existing businesses, requ
     "the heuristic gym health rule (RULE_0244, missing health_license_trigger) must not be REQUIRED for a new business"
   );
 });
+
+test("CASE M: DOC_FIRE_CERT and DOC_CFPM are verify_existing for existing businesses, required for new ones", () => {
+  // 2026-09-17 09:00 QA cycle (S10, Carolina): an 8-year operating
+  // restaurant was shown the Fire Safety Certification and the Certified
+  // Food Protection Manager as REQUIRED — as if applying for the first
+  // time. None of the DOC_FIRE_CERT / DOC_CFPM rules carried
+  // compliance_mode, so existing businesses were told to apply as new.
+  // Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6, CASE L):
+  // fire-safety certification and certified food protection are recurring
+  // operating obligations; an operating business verifies what it holds,
+  // a new business applies. Deliberately excluded: the heuristic CFPM
+  // rule with missing_fact_keys (RULE_0064) — its posture is
+  // needs_more_information by design (the RULE_0664 lesson).
+  const DOC_FIRE = docByName("fire safety");
+  const DOC_CFPM = docByName("food protection manager");
+
+  const existing = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Restaurant",
+      businessStatus: "existing",
+      answers: { Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true, Q_EMPLOYEES_HIRED: true },
+    },
+    "existing"
+  ).classified;
+  const fire = byId(existing, DOC_FIRE);
+  assert.ok(fire, "fire safety certification must fire for an operating restaurant");
+  assert.equal(
+    fire.applicability,
+    "verify_existing",
+    "an existing restaurant verifies its existing fire certification (not REQUIRED-as-new)"
+  );
+  const cfpm = byId(existing, DOC_CFPM);
+  assert.ok(cfpm, "CFPM must fire for an operating restaurant");
+  assert.equal(
+    cfpm.applicability,
+    "verify_existing",
+    "an existing restaurant verifies its existing food-protection coverage (not REQUIRED-as-new)"
+  );
+
+  // New businesses still apply for the first time.
+  const fresh = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Restaurant",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_FIRE)?.applicability,
+    "required",
+    "a new restaurant still applies for the fire safety certification"
+  );
+  assert.equal(
+    byId(fresh, DOC_CFPM)?.applicability,
+    "required",
+    "a new restaurant still obtains CFPM coverage"
+  );
+
+  // The heuristic NMI CFPM rule keeps its honest posture — the sweep must
+  // not promote needs_more_information to required.
+  assert.ok(
+    !cfpm || cfpm.source_rule_id !== "RULE_0064",
+    `the presented CFPM basis must not be the heuristic RULE_0064, got ${cfpm?.source_rule_id}`
+  );
+});

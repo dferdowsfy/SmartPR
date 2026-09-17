@@ -118,9 +118,9 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("With the criminal record certificate on file, the background prerequisite is satisfied; Hacienda reviews the remaining license requirements.", "Con el certificado de antecedentes penales en el expediente, el prerrequisito de antecedentes queda satisfecho; Hacienda revisa los demás requisitos de la licencia."),
   ], ["DOC_ALCOHOL_LICENSE"]),
   DOC_EIN: concept("DOC_EIN", [[employee]], [PR_GUIDANCE_SOURCES.ein], [
-    text("Employers need a federal tax identifier for employment-tax reporting. The EIN identifies the business to the IRS.", "Los patronos necesitan un identificador contributivo federal para informar contribuciones sobre el empleo. El EIN identifica al negocio ante el IRS."),
+    text("The IRS identifies a business by its Employer Identification Number (EIN). Employers need one for employment-tax reporting, and most registered entities need one as well.", "El IRS identifica a un negocio por su Número de Identificación Patronal (EIN). Los patronos lo necesitan para informar contribuciones sobre el empleo, y la mayoría de las entidades registradas también."),
     text("IRS confirmation is official evidence of the EIN assigned to the business, not the application for that number.", "La confirmación del IRS es evidencia oficial del EIN asignado al negocio, no la solicitud de ese número."),
-    text("Prepare the EIN application, or upload IRS confirmation if already assigned. Form a new legal entity before applying.", "Prepara la solicitud del EIN o sube la confirmación del IRS si ya fue asignado. Constituye la entidad antes de solicitarlo."),
+    text("Prepare the EIN application, or upload IRS confirmation if already assigned. A new entity must be formed before it can apply for an EIN.", "Prepara la solicitud del EIN o sube la confirmación del IRS si ya fue asignado. Una entidad nueva tiene que estar constituida antes de solicitar el EIN."),
     text("The assigned EIN can identify the business on tax returns and later licensing applications. Do not substitute a draft for IRS confirmation.", "El EIN asignado identifica al negocio en planillas y solicitudes de licencias. Un borrador no sustituye la confirmación del IRS."),
   ]),
   DOC_SAM_REGISTRATION: concept("DOC_SAM_REGISTRATION", [
