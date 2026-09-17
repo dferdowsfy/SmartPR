@@ -627,3 +627,91 @@ test("CASE K: RULE_0642 (DACO contractor license) never fires for vehicle-repair
     "a new general contractor still receives the DACO contractor license"
   );
 });
+
+test("CASE L: DOC_HEALTH_PERMIT is verify_existing for existing businesses, required for new ones", () => {
+  // 2026-09-17 09:00 QA cycle (S10, Carolina): an 8-year operating
+  // restaurant was shown the Health / Sanitary Permit as REQUIRED — as if
+  // applying for the first time. None of the 35 DOC_HEALTH_PERMIT rules
+  // carried compliance_mode, so existing businesses were told to apply as
+  // new. Health permits are recurring operating obligations: an operating
+  // business verifies its existing permit; a new business applies.
+  // Same defect class as the RULE_0650-0663 sweep (commit e676174).
+  // Deliberately excluded: the 3 heuristic rules with missing_fact_keys
+  // (RULE_0017/RULE_0089/RULE_0244) — their posture is
+  // needs_more_information by design (the RULE_0664 lesson: setting
+  // verify_existing on heuristic+missing-facts rules promotes NMI to
+  // REQUIRED for new businesses).
+  const DOC_HEALTH = docByName("health", "sanitary");
+
+  const existing = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Restaurant",
+      businessStatus: "existing",
+      answers: { Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true, Q_EMPLOYEES_HIRED: true },
+    },
+    "existing"
+  ).classified;
+  const health = byId(existing, DOC_HEALTH);
+  assert.ok(health, "health permit must fire for an operating restaurant");
+  assert.equal(
+    health.applicability,
+    "verify_existing",
+    "an existing restaurant verifies its existing health permit (not REQUIRED-as-new)"
+  );
+  assert.ok(
+    ["RULE_0009", "RULE_0012", "RULE_0046"].includes(health.source_rule_id),
+    `the presented basis should be a canonical food-service rule, got ${health.source_rule_id}`
+  );
+
+  // A second business type on the swept document: an existing bakery.
+  const bakery = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Bakery",
+      businessStatus: "existing",
+      answers: { Q_FOOD_PREPARED: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(bakery, DOC_HEALTH)?.applicability,
+    "verify_existing",
+    "an existing bakery verifies its existing health permit"
+  );
+
+  // New businesses still apply for the first time.
+  const fresh = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Restaurant",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_HEALTH)?.applicability,
+    "required",
+    "a new restaurant still applies for the health permit"
+  );
+
+  // The heuristic NMI rules keep their honest posture for new businesses —
+  // the sweep must not promote needs_more_information to required.
+  const gym = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Gym / Fitness Studio",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: {},
+    },
+    "new"
+  ).classified;
+  const gymHealth = byId(gym, DOC_HEALTH);
+  assert.ok(
+    !gymHealth || gymHealth.applicability !== "required",
+    "the heuristic gym health rule (RULE_0244, missing health_license_trigger) must not be REQUIRED for a new business"
+  );
+});

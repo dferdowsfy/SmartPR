@@ -150,7 +150,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0010",
@@ -192,7 +200,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0013",
@@ -652,7 +668,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0047",
@@ -722,7 +746,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0051",
@@ -792,7 +824,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0055",
@@ -862,7 +902,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0059",
@@ -932,7 +980,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0063",
@@ -1027,7 +1083,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0068",
@@ -1097,7 +1161,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0072",
@@ -1167,7 +1239,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0076",
@@ -1237,7 +1317,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0080",
@@ -1321,7 +1409,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0085",
@@ -1444,7 +1540,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0094",
@@ -1472,7 +1576,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0096",
@@ -1500,7 +1612,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0099",
@@ -1542,7 +1662,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0103",
@@ -1570,7 +1698,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0106",
@@ -1598,7 +1734,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0109",
@@ -1626,7 +1770,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0112",
@@ -1654,7 +1806,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0114",
@@ -2107,7 +2267,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0142",
@@ -2149,7 +2317,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0145",
@@ -2191,7 +2367,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0148",
@@ -2219,7 +2403,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0156",
@@ -2233,7 +2425,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0157",
@@ -2247,7 +2447,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0158",
@@ -2261,7 +2469,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0159",
@@ -2275,7 +2491,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0160",
@@ -2289,7 +2513,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0162",
@@ -2303,7 +2535,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0164",
@@ -3454,7 +3694,15 @@
     "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0249",
@@ -5824,7 +6072,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0693",
