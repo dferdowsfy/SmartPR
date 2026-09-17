@@ -930,3 +930,95 @@ test("CASE O: DOC_VEHICLE_REGISTRATION is verify_existing for existing vehicle-o
     "a new food truck still registers its commercial vehicle"
   );
 });
+
+test("CASE P: non-food healthcare business types no longer get the food-establishment health permit as REQUIRED", () => {
+  // 2026-09-17 18:00 QA cycle (S20, Ponce): a new dental office was shown
+  // DOC_HEALTH_PERMIT (Health / Sanitary Permit — cited to Ley 81-1912,
+  // "reglamentación sanitaria de establecimientos de alimentos", the FOOD
+  // establishment sanitary permit) as REQUIRED. A dentist's office is not
+  // a food establishment; its Salud instrument is facility licensure, not
+  // this permit. The 2026-09-16 validated review demoted the sibling
+  // BT_MEDICAL_OFFICE (RULE_0089) to heuristic with
+  // missing_fact_keys=['facility_license_category'] but missed these 8
+  // siblings; they now carry the same honest needs_more_information
+  // posture. RULE_0664 lesson applied: heuristic+NMI rules carry no
+  // compliance_mode (verify_existing would promote NMI to REQUIRED for new
+  // businesses via the classifier's businessStatus mapping).
+  const DOC_HEALTH = docByName("health", "sanitary");
+  const healthcareBTs: Array<[string, string]> = [
+    ["Dental Office", "RULE_0092"],
+    ["Pharmacy", "RULE_0095"],
+    ["Clinical Laboratory", "RULE_0097"],
+    ["Physical Therapy Clinic", "RULE_0101"],
+    ["Veterinary Clinic", "RULE_0104"],
+    ["Urgent Care Center", "RULE_0107"],
+    ["Medical Spa", "RULE_0110"],
+    ["Home Health Agency", "RULE_0113"],
+  ];
+  for (const [bt, rule] of healthcareBTs) {
+    const { classified } = classify(
+      {
+        municipalityName: "Ponce",
+        businessTypeName: bt,
+        businessStatus: "new",
+        entityNotFormed: true,
+        answers: { Q_PHYSICAL_LOCATION: true, Q_ALCOHOL_SOLD: false },
+      },
+      "new"
+    );
+    const health = byId(classified, DOC_HEALTH);
+    assert.ok(health, `${bt}: health permit row must exist (heuristic, not silently dropped)`);
+    assert.equal(
+      health.applicability,
+      "needs_more_information",
+      `${bt} (${rule}): food-establishment health permit must not be REQUIRED`
+    );
+    assert.ok(
+      (health.missingFacts ?? []).includes("facility_license_category"),
+      `${bt}: the controlling unanswered fact must be named`
+    );
+  }
+
+  // The food path is untouched: a new restaurant still gets the sanitary
+  // permit as REQUIRED (verified rules), an existing one as verify_existing.
+  const fresh = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Restaurant",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true, Q_ALCOHOL_SOLD: false, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  );
+  assert.equal(
+    byId(fresh.classified, DOC_HEALTH)?.applicability,
+    "required",
+    "a new restaurant still gets the food-sanitary permit as REQUIRED"
+  );
+
+  // Positive control (S19, Bayamón): a genuine contractor still gets the
+  // DACO contractor license as REQUIRED — the demotion above must not
+  // suppress legitimate verified bases.
+  const contractor = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "General Contractor",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: {
+        Q_OFFERS_CONSTRUCTION_SERVICES: true,
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_ALCOHOL_SOLD: false,
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  );
+  assert.equal(
+    byId(contractor.classified, DOC_CONTRACTOR)?.applicability,
+    "required",
+    "a genuine general contractor still gets the DACO contractor license as REQUIRED (verified RULE_0642 basis)"
+  );
+});

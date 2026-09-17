@@ -1725,13 +1725,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1761,13 +1774,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1797,13 +1823,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1847,13 +1886,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1883,13 +1935,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1919,13 +1984,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1955,13 +2033,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
@@ -1991,13 +2082,26 @@
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_HEALTH_PERMIT",
     "citation_source": "document",
-    "compliance_mode": "verify_existing",
     "change_log": [
       {
         "date": "2026-09-17",
         "change": "compliance_mode set to verify_existing",
         "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
+        "reason": "QA 2026-09-17 18:00 cycle (S20): DOC_HEALTH_PERMIT is the food-establishment sanitary permit (Ley 81-1912, establecimientos de alimentos) — it cannot be REQUIRED for non-food healthcare business types. Mirrors the validated-review pattern of RULE_0089 (BT_MEDICAL_OFFICE), which the 2026-09-16 audit demoted the same way but missed these 8 siblings. Controlling fact (facility license category) unknown → needs_more_information instead of required."
+      },
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode=verify_existing removed",
+        "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
       }
+    ],
+    "verification": "heuristic",
+    "missing_fact_keys": [
+      "facility_license_category"
     ]
   },
   {
