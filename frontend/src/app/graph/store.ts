@@ -358,14 +358,14 @@ export async function projectRequirementsToObligations(
           status, mandatory, source, source_reference, renewal_frequency_months,
           renewal_reference, next_action, due_date, due_date_source)
        VALUES ($1,$2,$3,$4,$5,$6,$7,'MISSING',$8,'REGULATORY_GRAPH',$9,$10,$11,'Upload current evidence',
-          $12::date, CASE WHEN $12::date IS NOT NULL THEN 'USER_PROVIDED' END)
+          $12::date, CASE WHEN $12::date IS NOT NULL THEN 'USER_PROVIDED' ELSE 'UNKNOWN' END)
        ON CONFLICT (matter_id, requirement_id, cycle_index) DO UPDATE SET
          name = EXCLUDED.name, agency = EXCLUDED.agency, mandatory = EXCLUDED.mandatory,
          source_reference = EXCLUDED.source_reference,
          renewal_frequency_months = COALESCE(EXCLUDED.renewal_frequency_months, obligations.renewal_frequency_months),
          renewal_reference = COALESCE(EXCLUDED.renewal_reference, obligations.renewal_reference),
          due_date = COALESCE(EXCLUDED.due_date, obligations.due_date),
-         due_date_source = COALESCE(EXCLUDED.due_date_source, obligations.due_date_source),
+         due_date_source = CASE WHEN EXCLUDED.due_date IS NOT NULL THEN EXCLUDED.due_date_source ELSE obligations.due_date_source END,
          updated_at = now()
        RETURNING id`,
       [obligationId, businessId, matterId, requirementId, renewal?.graphEntityId ?? requirementId,
