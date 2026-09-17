@@ -177,10 +177,7 @@ export const puertoRicoPack: JurisdictionPack = {
     },
     recommended: [
       "DOC_INSURANCE",
-      "DOC_CRIM_CLEARANCE",
-      "DOC_SIGN_PERMIT",
       "DOC_OUTDOOR_SEATING_AUTH",
-      "DOC_ENTERTAINMENT_PERMIT",
       "DOC_FLOOR_PLANS",
       "DOC_DBA_REGISTRATION",
     ],

@@ -112,31 +112,23 @@ test("F01 project_only and existing_business intents suppress server formation a
 
 for (const municipalityName of ["Adjuntas", "San Juan"]) {
   for (const coastal of [undefined, "not_sure", "not_applies", "applies"] as const) {
-    test(`F05 independent hazard survives coastal=${coastal} in ${municipalityName}, regardless of rule order`, () => {
+    test(`F05 generic env permit deleted: hazardous materials do NOT trigger DOC_ENVIRONMENTAL_PERMIT in ${municipalityName} (coastal=${coastal})`, () => {
       for (const rules of [bundle.rules, [...bundle.rules].reverse()]) {
         const kb = { ...bundle, rules };
         const generated = runRulesEngine(kb, { municipalityName, businessTypeName: "Hotel", answers: { Q_HAZARDOUS_MATERIALS: true } });
+        // Validated review 2026-09-16: generic environmental permit rejected;
+        // use program-specific obligations instead. The generic doc must not fire.
         const row = classifyEngineRequirements(generated.requirements, { kb, potentialDecisions: coastal ? { coastal } : {} }).find(r => r.document_id === "DOC_ENVIRONMENTAL_PERMIT");
-        assert.equal(row?.applicability, "required");
-        assert.equal(row?.mandatory, true);
-        assert.equal(row?.source_rule_id, "RULE_0023");
-        assert.match(row?.reason ?? "", /hazardous/i);
-        assert.ok(row?.triggerFacts.some(f => f.startsWith("rule:")));
+        assert.equal(row, undefined, "deleted DOC_ENVIRONMENTAL_PERMIT should not fire");
       }
     });
   }
 }
-test("F05 flag-only environmental basis needs info when undecided, likely required when confirmed", () => {
+test("F05 generic env permit deleted: coastal flag alone does NOT trigger it", () => {
   const generated = runRulesEngine(bundle, { municipalityName: "San Juan", businessTypeName: "Hotel", answers: { Q_HAZARDOUS_MATERIALS: false } }).requirements;
-  // The coastal basis is a heuristic planning association: undecided → ask
-  // for the missing facts; confirmed → likely required, never confirmed.
-  for (const [coastal, expected] of [["not_sure", "needs_more_information"], ["applies", "likely_required"], ["not_applies", "not_applicable"]] as const) {
+  for (const coastal of ["not_sure", "applies", "not_applies"] as const) {
     const row = classifyEngineRequirements(generated, { kb: bundle, potentialDecisions: { coastal } }).find(r => r.document_id === "DOC_ENVIRONMENTAL_PERMIT");
-    assert.equal(row?.applicability, expected);
-    assert.equal(row?.mandatory, false);
-    if (expected !== "not_applicable") {
-      assert.ok(row?.triggerFacts.includes("heuristic:requires_regulatory_review"));
-    }
+    assert.equal(row, undefined, "deleted DOC_ENVIRONMENTAL_PERMIT should not fire");
   }
   assert.ok(!runRulesEngine(bundle, { municipalityName: "Adjuntas", businessTypeName: "Hotel", answers: { Q_HAZARDOUS_MATERIALS: false } }).requirements.some(r => r.document_id === "DOC_ENVIRONMENTAL_PERMIT"));
 });

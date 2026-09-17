@@ -66,6 +66,24 @@ export interface KBRule {
    */
   excluded_entity_types?: string[] | string | null;
   /**
+   * Optional business-type scoping: the rule never fires for these business
+   * type ids (e.g. the universal municipal-patente rule for farms and
+   * nonprofits, which have exemption questions handled by heuristic rules).
+   * Data-driven — the engine interprets it, never hardcodes per-document law.
+   */
+  excluded_business_types?: string[] | string | null;
+  /**
+   * When true, the requirement is conditional — it applies only if the
+   * applicant seeks the status/program (e.g. agricultural qualification
+   * programs). Data-driven; the classifier maps it to conditional.
+   */
+  is_conditional?: boolean | null;
+  /**
+   * When true, the rule only fires for existing businesses (e.g. annual
+   * reports). New businesses have no filing history yet.
+   */
+  requires_existing_business?: boolean | null;
+  /**
    * Compliance posture for this rule's document — what the applicant must do
    * about an obligation that may already exist:
    * - "new_application" (default): a new filing the applicant must complete.
@@ -382,6 +400,14 @@ function excludedEntityTypes(rule: KBRule): string[] {
   return String(v).split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+/** Normalize a rule's excluded_business_types to a list. */
+function excludedBusinessTypes(rule: KBRule): string[] {
+  const v = rule.excluded_business_types;
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(String).map((s) => s.trim()).filter(Boolean);
+  return String(v).split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 // Compare an answer against a rule's expected_answer. For boolean triggers the
 // expected_answer is "true"; otherwise an exact (case-insensitive) match.
 function answerMatches(answer: boolean | string | undefined, expected: string | null): boolean {
@@ -570,6 +596,11 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     if (input.entityType && excludedEntityTypes(rule).includes(input.entityType)) {
       continue;
     }
+    // Business-type-scoped rules never fire for an excluded business type
+    // (e.g. universal patente for farms/nonprofits with exemption questions).
+    if (businessType && excludedBusinessTypes(rule).includes(businessType.id)) {
+      continue;
+    }
     // Project-first gates (data-driven; the KB decides which rules carry them):
     // - requires_new_unformed_business: "form the entity" requirements fire
     //   confirmed only for a new business whose entity is not yet formed.
@@ -592,6 +623,11 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       formationGateUnresolved = !(
         input.businessStatus === "new" && input.entityNotFormed === true
       );
+    }
+    // Existing-business-only rules (e.g. annual reports) never fire for
+    // new businesses, projects, or unknown status.
+    if (rule.requires_existing_business && input.businessStatus !== "existing") {
+      continue;
     }
     if (
       rule.requires_business &&

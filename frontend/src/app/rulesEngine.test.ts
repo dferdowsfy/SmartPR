@@ -23,7 +23,9 @@ const run = (businessTypeName: string, answers: Record<string, boolean> = {}, mu
   return runRulesEngine(KB, input).debug.documentsGenerated;
 };
 
-const UNIVERSAL = ["DOC_CERT_INCORPORATION", "DOC_EIN", "DOC_MERCHANT_REGISTRATION", "DOC_PATENTE_MUNICIPAL", "DOC_MUNICIPAL_REGISTRATION", "DOC_MUNICIPAL_TAX_COMPLIANCE"];
+// Validated review 2026-09-16: municipal registration and municipal tax
+// compliance are NOT universal requirements — deleted from KB.
+const UNIVERSAL = ["DOC_CERT_INCORPORATION", "DOC_EIN", "DOC_MERCHANT_REGISTRATION", "DOC_PATENTE_MUNICIPAL"];
 const has = (docs: string[], ...ids: string[]) => ids.every((id) => docs.includes(id));
 const lacks = (docs: string[], ...ids: string[]) => ids.every((id) => !docs.includes(id));
 
@@ -54,9 +56,11 @@ test("Software Company has baseline but NO health/fire/alcohol", () => {
   assert.ok(lacks(docs, "DOC_HEALTH_PERMIT", "DOC_FIRE_CERT", "DOC_ALCOHOL_LICENSE", "DOC_CFPM"));
 });
 
-test("Medical Office requires professional license + health + medical waste", () => {
-  const docs = run("Medical Office");
-  assert.ok(has(docs, "DOC_PROFESSIONAL_LICENSE", "DOC_HEALTH_PERMIT", "DOC_MEDICAL_WASTE_PERMIT"));
+test("Medical Office requires professional license + health + biomedical waste (via question)", () => {
+  const docs = run("Medical Office", { Q_MEDICAL_WASTE: true });
+  // Validated review 2026-09-16: generic medical waste permit deleted;
+  // program-specific biomedical waste generator ID via Q_MEDICAL_WASTE.
+  assert.ok(has(docs, "DOC_PROFESSIONAL_LICENSE", "DOC_HEALTH_PERMIT", "DOC_BIOMEDICAL_WASTE_GENERATOR_ID"));
 });
 
 test("Airbnb requires tourism registration and patente municipal", () => {
@@ -143,67 +147,74 @@ test("no municipality selected yields no universal municipality docs", () => {
 // rules so future KB edits can't silently drop a town's requirements.
 // ============================================================================
 
-test("Restaurant in Bayamón (metro) gets metro baseline + restaurant traffic study", () => {
+test("Restaurant in Bayamón (metro) does NOT get deleted universal triad/traffic docs", () => {
   const docs = run("Restaurant", {}, "Bayamón");
-  assert.ok(has(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT", "DOC_PARKING_COMPLIANCE"),
-    "metro universal triad missing: " + docs.join(","));
-  assert.ok(has(docs, "DOC_TRAFFIC_IMPACT_STUDY"), "metro+restaurant composite missing");
+  // Validated review 2026-09-16: stormwater, waste contract, parking,
+  // and traffic study are NOT universal requirements — deleted.
+  assert.ok(lacks(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT", "DOC_PARKING_COMPLIANCE",
+    "metro universal triad deleted: " + docs.join(",")));
+  assert.ok(lacks(docs, "DOC_TRAFFIC_IMPACT_STUDY"), "metro+restaurant traffic study deleted");
 });
 
 test("Software Company in San Juan stays at universal baseline (no traffic/loading/noise)", () => {
   const docs = run("Software Company");
-  assert.ok(has(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT", "DOC_PARKING_COMPLIANCE"),
-    "metro universal triad should still apply to office uses");
+  // Validated review 2026-09-16: the "metro universal triad" was deleted —
+  // office uses do not get stormwater/waste/parking.
+  assert.ok(lacks(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT", "DOC_PARKING_COMPLIANCE"),
+    "deleted metro triad should not fire for office uses");
   assert.ok(lacks(docs, "DOC_TRAFFIC_IMPACT_STUDY", "DOC_LOADING_ZONE_PERMIT", "DOC_NOISE_VARIANCE"),
     "office-only BT must not pick up per-BT metro composites");
 });
 
-test("Hotel in San Juan picks up historic + capital + tourism composites", () => {
+test("Hotel in San Juan does NOT get deleted historic/capital composites", () => {
   const docs = run("Hotel");
-  assert.ok(has(docs, "DOC_FACADE_PRESERVATION"), "historic universal facade preservation missing");
-  assert.ok(has(docs, "DOC_HISTORIC_DISTRICT_REVIEW", "DOC_SIGN_VARIANCE_HISTORIC"),
-    "historic+hotel composites missing");
-  assert.ok(has(docs, "DOC_SAN_JUAN_USE_PERMIT"), "capital universal use permit missing");
+  // Validated review 2026-09-16: facade preservation, historic district
+  // review, historic sign variance, and SJ use permit were deleted.
+  assert.ok(lacks(docs, "DOC_FACADE_PRESERVATION"), "deleted historic facade preservation should not fire");
+  assert.ok(lacks(docs, "DOC_HISTORIC_DISTRICT_REVIEW", "DOC_SIGN_VARIANCE_HISTORIC"),
+    "deleted historic composites should not fire");
+  assert.ok(lacks(docs, "DOC_SAN_JUAN_USE_PERMIT"), "deleted capital use permit should not fire");
 });
 
-test("Restaurant in Ponce gets historic composites + metro baseline", () => {
+test("Restaurant in Ponce does NOT get deleted historic/metro composites", () => {
   const docs = run("Restaurant", {}, "Ponce");
-  assert.ok(has(docs, "DOC_HISTORIC_DISTRICT_REVIEW", "DOC_SIGN_VARIANCE_HISTORIC"),
-    "historic+restaurant composites missing in Ponce");
-  assert.ok(has(docs, "DOC_PARKING_COMPLIANCE", "DOC_STORMWATER_PLAN"), "metro baseline missing in Ponce");
+  assert.ok(lacks(docs, "DOC_HISTORIC_DISTRICT_REVIEW", "DOC_SIGN_VARIANCE_HISTORIC"),
+    "deleted historic composites should not fire in Ponce");
+  assert.ok(lacks(docs, "DOC_PARKING_COMPLIANCE", "DOC_STORMWATER_PLAN"), "deleted metro baseline should not fire in Ponce");
 });
 
-test("Art Gallery in San Germán picks up historic sign variance", () => {
+test("Art Gallery in San Germán does NOT get deleted historic sign variance", () => {
   const docs = run("Art Gallery", {}, "San Germán");
-  assert.ok(has(docs, "DOC_SIGN_VARIANCE_HISTORIC", "DOC_FACADE_PRESERVATION"));
+  assert.ok(lacks(docs, "DOC_SIGN_VARIANCE_HISTORIC", "DOC_FACADE_PRESERVATION"));
   // San Germán is historic but not metro — metro triad should NOT fire.
   assert.ok(lacks(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT"),
     "non-metro historic town shouldn't pick up metro baseline");
 });
 
-test("Hotel in Vieques gets island ferry manifest + waste contract + tourism", () => {
+test("Hotel in Vieques gets island ferry manifest + tourism (no deleted waste contract)", () => {
   const docs = run("Hotel", {}, "Vieques");
   assert.ok(has(docs, "DOC_ISLAND_FERRY_MANIFEST"), "island+hotel ferry manifest missing");
-  assert.ok(has(docs, "DOC_WASTE_COLLECTION_CONTRACT"), "island universal waste contract missing");
+  // Validated review 2026-09-16: waste collection contract deleted.
+  assert.ok(lacks(docs, "DOC_WASTE_COLLECTION_CONTRACT"), "deleted waste contract should not fire");
   assert.ok(has(docs, "DOC_TOURISM_REGISTRATION"), "tourism+hotel registration missing");
 });
 
-test("Restaurant in Culebra picks up island ferry logistics", () => {
+test("Restaurant in Culebra picks up island ferry logistics (no deleted waste contract)", () => {
   const docs = run("Restaurant", {}, "Culebra");
   assert.ok(has(docs, "DOC_ISLAND_FERRY_MANIFEST"), "island+restaurant ferry manifest missing");
-  assert.ok(has(docs, "DOC_WASTE_COLLECTION_CONTRACT"));
+  assert.ok(lacks(docs, "DOC_WASTE_COLLECTION_CONTRACT"));
 });
 
-test("Architecture Firm in San Juan gets metro fill-in traffic + loading", () => {
+test("Architecture Firm in San Juan does NOT get deleted traffic/loading docs", () => {
   const docs = run("Architecture Firm");
-  assert.ok(has(docs, "DOC_TRAFFIC_IMPACT_STUDY", "DOC_LOADING_ZONE_PERMIT"),
-    "architecture firm metro fill-in missing");
+  assert.ok(lacks(docs, "DOC_TRAFFIC_IMPACT_STUDY", "DOC_LOADING_ZONE_PERMIT"),
+    "deleted architecture firm metro docs should not fire");
 });
 
-test("Tutoring Center in metro town gets traffic study (parent drop-off)", () => {
+test("Tutoring Center in metro town does NOT get deleted traffic study", () => {
   const docs = run("Tutoring Center", {}, "Caguas");
-  assert.ok(has(docs, "DOC_TRAFFIC_IMPACT_STUDY"),
-    "tutoring center metro fill-in for parent drop-off missing");
+  assert.ok(lacks(docs, "DOC_TRAFFIC_IMPACT_STUDY"),
+    "deleted tutoring center traffic study should not fire");
 });
 
 test("Restaurant in Adjuntas (no flags) gets none of the flag-driven docs", () => {
@@ -217,23 +228,31 @@ test("Restaurant in Adjuntas (no flags) gets none of the flag-driven docs", () =
 
 // ----- Phase 4: popular non-metro beach + north-coast + SJ-corridor coverage -----
 
-test("Hotel in Fajardo (tourism+coastal) gets DRNA env permit + tourism reg", () => {
+test("Hotel in Fajardo (tourism+coastal) does NOT get deleted generic env permit", () => {
   const docs = run("Hotel", {}, "Fajardo");
-  assert.ok(has(docs, "DOC_ENVIRONMENTAL_PERMIT"), "coastal+hotel DRNA permit missing");
+  // Validated review 2026-09-16: generic environmental permit rejected;
+  // use program-specific obligations instead.
+  assert.ok(lacks(docs, "DOC_ENVIRONMENTAL_PERMIT"), "deleted generic env permit should not fire");
   assert.ok(has(docs, "DOC_TOURISM_REGISTRATION"), "tourism+hotel registration missing");
 });
 
-test("Gift Shop in Fajardo (tourism+coastal) picks up tourism reg + sign permit + coastal env", () => {
+test("Gift Shop in Fajardo (tourism+coastal) does NOT get deleted docs", () => {
   const docs = run("Gift Shop", {}, "Fajardo");
-  assert.ok(has(docs, "DOC_TOURISM_REGISTRATION", "DOC_SIGN_PERMIT"),
-    "tourism retail composites missing");
-  assert.ok(has(docs, "DOC_ENVIRONMENTAL_PERMIT"),
-    "coastal small-retail env permit missing");
+  // Validated review 2026-09-16: non-lodging businesses do not get tourism
+  // registration; generic env permit deleted.
+  assert.ok(lacks(docs, "DOC_TOURISM_REGISTRATION"),
+    "non-lodging tourism registration should not fire");
+  assert.ok(lacks(docs, "DOC_ENVIRONMENTAL_PERMIT"),
+    "deleted generic env permit should not fire");
+  // DOC_SIGN_PERMIT via tourism flag (RULE_0535) is a separate scoped rule;
+  // not asserting here.
 });
 
-test("Food Truck in Aguadilla (tourism+coastal) gets tourism reg", () => {
+test("Food Truck in Aguadilla (tourism+coastal) does NOT get tourism reg (lodging-only)", () => {
   const docs = run("Food Truck", {}, "Aguadilla");
-  assert.ok(has(docs, "DOC_TOURISM_REGISTRATION"));
+  // Validated review 2026-09-16: Tourism Registration is lodging-only;
+  // non-lodging businesses (food trucks) do not register.
+  assert.ok(lacks(docs, "DOC_TOURISM_REGISTRATION"));
 });
 
 test("Arecibo gains tourism flag → Hotel gets tourism registration", () => {
@@ -242,16 +261,17 @@ test("Arecibo gains tourism flag → Hotel gets tourism registration", () => {
     "Arecibo Observatory / karst eco-tourism: hotel should register with Compañía de Turismo");
 });
 
-test("Toa Alta gains metro flag → Restaurant picks up full metro baseline", () => {
+test("Toa Alta gains metro flag → Restaurant does NOT get deleted metro baseline", () => {
   const docs = run("Restaurant", {}, "Toa Alta");
-  assert.ok(has(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT",
+  // Validated review 2026-09-16: metro baseline docs deleted.
+  assert.ok(lacks(docs, "DOC_STORMWATER_PLAN", "DOC_WASTE_COLLECTION_CONTRACT",
     "DOC_PARKING_COMPLIANCE", "DOC_TRAFFIC_IMPACT_STUDY"),
-    "Toa Alta is now metro — restaurant metro composites should fire");
+    "deleted metro composites should not fire even though Toa Alta is metro");
 });
 
-test("Trujillo Alto (metro) — Dental Office gets metro baseline + dental traffic/env", () => {
+test("Trujillo Alto (metro) — Dental Office does NOT get deleted metro/env docs", () => {
   const docs = run("Dental Office", {}, "Trujillo Alto");
-  assert.ok(has(docs, "DOC_STORMWATER_PLAN", "DOC_TRAFFIC_IMPACT_STUDY",
+  assert.ok(lacks(docs, "DOC_STORMWATER_PLAN", "DOC_TRAFFIC_IMPACT_STUDY",
     "DOC_ENVIRONMENTAL_PERMIT"));
 });
 

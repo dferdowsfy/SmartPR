@@ -357,6 +357,10 @@ export function classifyEngineRequirements(
     const basisStates: Array<"required" | "likely_required" | "conditional" | "not_applicable"> = flags.map((flag, index) => {
       triggerFacts.push(flag ? `municipality_flag:${flag}` : `rule:${basisIds[index]}`);
       const confirmed = !basisHeuristic[index];
+      // A rule marked is_conditional (e.g. a qualification/status program
+      // rather than a blanket operating permit) is always conditional —
+      // it applies only if the applicant seeks the status.
+      if (basisRules[index]?.is_conditional) return "conditional";
       if (!flag) return confirmed ? "required" : "likely_required";
       const decision = decisionForFlag(options.potentialDecisions, flag);
       if (decision === "not_applies") return "not_applicable";
@@ -364,7 +368,16 @@ export function classifyEngineRequirements(
       return "conditional";
     });
     if (anyHeuristic) triggerFacts.push("heuristic:requires_regulatory_review");
+    // Ground-truth principle (2026-09-16 validated review): a heuristic basis
+    // that names the facts blocking the decision becomes "needs more
+    // information" so the UI asks for them instead of guessing — for every
+    // rule type, not just municipality-flag rules. A verified required basis
+    // still wins over every heuristic basis.
+    const basisNeedsInfo = basisRules.map(
+      (r, i) => basisHeuristic[i] && (r?.missing_fact_keys?.length ?? 0) > 0
+    );
     if (basisStates.includes("required")) applicability = recommended ? "recommended" : "required";
+    else if (basisNeedsInfo.some(Boolean)) applicability = "needs_more_information";
     else if (basisStates.includes("likely_required")) applicability = recommended ? "recommended" : "likely_required";
     else if (basisStates.includes("conditional")) {
       // An undecided heuristic basis that names its missing facts becomes
@@ -430,6 +443,18 @@ export function classifyEngineRequirements(
       triggerFacts.push(
         unknownEntity ? "entityType:unknown" : "entityType:sole_proprietorship+no_employees"
       );
+    }
+    // Validated review 2026-09-16 (G09): a single-member LLC with no
+    // employees can in some cases use the owner's SSN rather than a separate
+    // EIN — the EIN is needs_more_information, not required.
+    if (
+      row.document_id === EIN_DOC &&
+      !truthyAnswer(options.answers?.["Q_EMPLOYEES_HIRED"]) &&
+      !einEmployeeBasis &&
+      options.entityType === "limited_liability_company"
+    ) {
+      applicability = "needs_more_information";
+      triggerFacts.push("entityType:llc+no_employees");
     }
 
     const selectedState = basisStates.includes("required") ? "required"

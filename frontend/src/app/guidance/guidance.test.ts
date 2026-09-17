@@ -27,12 +27,15 @@ const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREE
 // Federal-contractor-gated: SAM.gov registration applies only to businesses
 // pursuing federal contracts, so it stays provisional for the bar profile.
 const CONTRACTOR_GATED = new Set(["DOC_SAM_REGISTRATION", "DOC_CONTRACTOR_LICENSE"]);
+// NMI-gated: noise variance applies only to live-entertainment venues with
+// amplified sound, so it stays provisional for the bar profile.
+const NMI_GATED = new Set(["DOC_NOISE_VARIANCE"]);
 
-test("same Bayamón bar: all twenty-seven source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all twenty-one source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId)) {
+      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -48,7 +51,7 @@ test("same Bayamón bar: all twenty-seven source-backed explanations are distinc
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 27);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 21);
   }
 });
 
@@ -95,7 +98,9 @@ test("physical premises do not imply a signed lease; ownership contradicts lease
 });
 
 test("municipal guidance is municipality-generic: no other municipality's name leaks", () => {
-  for (const id of ["DOC_PATENTE_MUNICIPAL", "DOC_MUNICIPAL_REGISTRATION", "DOC_MUNICIPAL_TAX_COMPLIANCE", "DOC_LEASE_AGREEMENT"]) {
+  // Validated review 2026-09-16: DOC_MUNICIPAL_REGISTRATION and
+  // DOC_MUNICIPAL_TAX_COMPLIANCE deleted — not universal requirements.
+  for (const id of ["DOC_PATENTE_MUNICIPAL", "DOC_LEASE_AGREEMENT"]) {
     for (const municipality of ["Guaynabo", "San Juan", "Ponce"]) {
       const muniCtx = { ...ctx, municipality, engineInput: buildEngineInput({ ...profile, municipality }, answers) };
       const g = buildRequirementGuidance(req(id), muniCtx);

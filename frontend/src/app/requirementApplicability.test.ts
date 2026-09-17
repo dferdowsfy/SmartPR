@@ -67,40 +67,25 @@ test("LLC does not receive Certificate of Incorporation", () => {
   assert.equal(final.some((r) => r.document_id === "DOC_CERT_INCORPORATION"), false);
 });
 
-test("negative historic decision suppresses historic-basis requirements only", () => {
+test("deleted historic docs do NOT fire (validated review)", () => {
   const classified = classify("limited_liability_company", {
     historic: "not_applies",
     coastal: "not_applies",
     metro: "applies",
   });
+  // Validated review 2026-09-16: historic district review, facade
+  // preservation, and sign variance were deleted. No historic docs should fire.
   const historic = classified.filter((r) =>
     /historic|facade/i.test(r.document_id + r.document_name)
   );
-  assert.ok(historic.length > 0, "engine still emits historic rows so they can be labeled");
-  // Rows whose basis is the declined historic flag are suppressed...
-  const historicBasis = historic.filter((r) =>
-    (r.triggerFacts ?? []).some((f) => f === "municipality_flag:historic")
-  );
-  assert.ok(historicBasis.length > 0);
-  assert.ok(historicBasis.every((r) => r.applicability === "not_applicable"));
-  assert.ok(historicBasis.every((r) => r.mandatory === false));
-  // ...but a historic decline must not smear across flags: the metro-basis
-  // traffic study still applies — as likely_required, since the underlying
-  // rule is heuristic (unverified against the municipal ordinance).
-  const metroRows = classified.filter((r) =>
-    (r.triggerFacts ?? []).some((f) => f === "municipality_flag:metro")
-  );
-  assert.ok(metroRows.length > 0);
-  assert.ok(metroRows.every((r) => r.applicability === "likely_required"));
-  assert.ok(metroRows.every((r) => r.mandatory === false));
+  assert.ok(historic.length === 0, "deleted historic docs should not fire: " + historic.map(r => r.document_id).join(","));
 });
 
-test("unanswered historic stays conditional, not required", () => {
+test("deleted historic review does NOT appear as conditional", () => {
   const classified = classify("limited_liability_company", {});
   const historic = classified.filter((r) => r.document_id === "DOC_HISTORIC_DISTRICT_REVIEW");
-  assert.ok(historic.length === 1);
-  assert.equal(historic[0].applicability, "conditional");
-  assert.equal(historic[0].mandatory, false);
+  // Validated review 2026-09-16: DOC_HISTORIC_DISTRICT_REVIEW deleted.
+  assert.ok(historic.length === 0);
 });
 
 test("alcohol no does not create an alcohol license", () => {
@@ -114,20 +99,15 @@ test("review conditions do not accept official upload", () => {
   assert.ok(reviews.every((r) => r.acceptsOfficialUpload === false || r.kind === "review_condition"));
 });
 
-test("metro traffic study needs more information until evaluated, never confirmed required", () => {
+test("deleted metro traffic study does NOT fire (validated review)", () => {
   const unanswered = classify("limited_liability_company", {});
   const traffic = unanswered.find((r) => r.document_id === "DOC_TRAFFIC_IMPACT_STUDY");
-  assert.ok(traffic);
-  // Heuristic rule with missing facts: the UI must ask, not guess.
-  assert.equal(traffic?.applicability, "needs_more_information");
-  assert.ok((traffic?.missingFacts ?? []).length > 0);
-  assert.ok((traffic?.triggerFacts ?? []).includes("heuristic:requires_regulatory_review"));
+  // Validated review 2026-09-16: traffic impact study deleted — not a
+  // universal requirement. The document must not appear.
+  assert.equal(traffic, undefined, "deleted DOC_TRAFFIC_IMPACT_STUDY should not fire");
   const confirmed = classify("limited_liability_company", { metro: "applies" });
   const trafficOn = confirmed.find((r) => r.document_id === "DOC_TRAFFIC_IMPACT_STUDY");
-  // Even with the flag confirmed, a heuristic rule is only likely required —
-  // unverified rules are never treated as authoritative.
-  assert.equal(trafficOn?.applicability, "likely_required");
-  assert.equal(trafficOn?.mandatory, false);
+  assert.equal(trafficOn, undefined, "deleted DOC_TRAFFIC_IMPACT_STUDY should not fire even when metro applies");
 });
 
 test("applyEntityFormationExclusivity is a pure swap", () => {

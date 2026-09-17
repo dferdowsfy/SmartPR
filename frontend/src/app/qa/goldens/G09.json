@@ -1,7 +1,7 @@
 {
   "id": "G09",
   "title": "E-commerce business, online only, solo — Arecibo",
-  "status": "draft",
+  "status": "validated",
   "profile": {
     "business_type": "E-commerce Business",
     "municipality": "Arecibo",
@@ -22,42 +22,31 @@
   "expected": [
     {
       "document_id": "DOC_EIN",
-      "name": "IRS EIN Confirmation Letter",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0002"
+      "name": "EIN is conditional for a zero-employee LLC: require if multi-member, taxed as corporation, has excise/employment tax obligations, etc.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_MERCHANT_REGISTRATION",
       "name": "Merchant Registration Certificate (Registro de Comerciante)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0003"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PATENTE_MUNICIPAL",
       "name": "Patente Municipal",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0004"
+      "applicability": "required"
     },
     {
-      "document_id": "DOC_MUNICIPAL_REGISTRATION",
-      "name": "Municipal Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0005"
+      "document_id": "DOC_PERMISO_UNICO",
+      "name": "Ask where the Puerto Rico operating/admin/inventory location is. If home-based, route to domiciliary-use permitting; if a nonresidential location exists, route to Permiso Único.",
+      "applicability": "needs_more_information"
     },
     {
-      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
-      "name": "Municipal Tax Compliance Certificate",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0006"
+      "document_id": "DOC_CERT_ORGANIZATION",
+      "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+      "applicability": "required"
     }
   ],
   "expectedAbsent": [
-    "DOC_PERMISO_UNICO",
     "DOC_ZONING"
   ]
 }

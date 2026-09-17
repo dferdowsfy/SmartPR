@@ -789,6 +789,23 @@ function appendUnansweredTriggerConditionals(
     if (input.answers[rule.question_id] !== undefined) continue;
     // A lease is impossible without a physical location — don't ask.
     if (rule.question_id === "Q_EXISTING_LEASE" && input.answers["Q_PHYSICAL_LOCATION"] === false) continue;
+    // Validated review 2026-09-16: when tenure is entirely unknown (no
+    // ownership answer, not mobile/home/online), the lease question is not
+    // merely conditional — the intake must ask ownership/tenure first, so
+    // the requirement is needs_more_information. When tenure is known
+    // (owns answered) or the business is mobile, it stays conditional.
+    let applicability: "conditional" | "needs_more_information" = "conditional";
+    if (rule.question_id === "Q_EXISTING_LEASE") {
+      // Tenure is "known" only if the user explicitly said they own; a
+      // defaulted or negative ownership answer leaves tenure unknown.
+      const ownsAnswered = input.answers["Q_OWNS_PROPERTY"] === true;
+      const isMobile = input.answers["Q_FOOD_TRUCK_MOBILE"] === true;
+      const isHome = input.answers["Q_HOME_BASED"] === true;
+      const isOnline = input.answers["Q_ONLINE_ONLY"] === true;
+      if (!ownsAnswered && !isMobile && !isHome && !isOnline) {
+        applicability = "needs_more_information";
+      }
+    }
     const d = docById.get(rule.requires_document_id) as
       | (KBDocument & {
           agency_url?: string | null;
@@ -815,7 +832,7 @@ function appendUnansweredTriggerConditionals(
       document_id: rule.requires_document_id,
       category,
       source_rule: rule.id,
-      applicability: "conditional",
+      applicability,
       kind: kindForDocument(rule.requires_document_id, name, category),
       stage: stageForDocument(rule.requires_document_id, name, category),
       triggerFacts: [`rule:${rule.id}`, `unanswered:${rule.question_id}`],
@@ -874,6 +891,10 @@ export function computeRequirementsFromSnapshot(
   // premise and fire RULE_0007/RULE_0008. The correction is idempotent, so
   // re-apply it last — the permit meaning always wins.
   applyPermitModelCorrections(input.answers);
+  // Entity type from explicit caller options must reach the engine so
+  // entity-scoped rules (excluded_entity_types) filter correctly; the
+  // profile-derived value is only a fallback.
+  if (options.entityType) input.entityType = options.entityType as never;
   const { requirements } = runRulesEngine(snapshot, input);
   const classified = classifyEngineRequirements(requirements, {
     kb: snapshot,

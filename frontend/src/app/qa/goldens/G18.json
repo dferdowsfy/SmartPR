@@ -1,7 +1,7 @@
 {
   "id": "G18",
   "title": "Farm, agricultural production, 2 employees — Arecibo",
-  "status": "draft",
+  "status": "validated",
   "profile": {
     "business_type": "Farm",
     "municipality": "Arecibo",
@@ -23,93 +23,57 @@
     {
       "document_id": "DOC_EIN",
       "name": "IRS EIN Confirmation Letter",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0002"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_MERCHANT_REGISTRATION",
       "name": "Merchant Registration Certificate (Registro de Comerciante)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0003"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PERMISO_UNICO",
       "name": "Permiso Único",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0007"
-    },
-    {
-      "document_id": "DOC_ZONING",
-      "name": "Zoning / Use Certification",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0008"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PATENTE_MUNICIPAL",
-      "name": "Patente Municipal",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0004"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_REGISTRATION",
-      "name": "Municipal Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0005"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
-      "name": "Municipal Tax Compliance Certificate",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0006"
+      "name": "Determine whether the farm's income is within the statutory agricultural/direct-sale exemption; require patent/registration only for non-exempt activity.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_WORKERS_COMP",
       "name": "Workers Compensation Insurance (CFSE)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0020"
-    },
-    {
-      "document_id": "DOC_PROPERTY_DEED",
-      "name": "Property Deed (Escritura)",
-      "applicability": "supporting_evidence",
-      "mandatory": false,
-      "source_rule": "RULE_0036"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PESTICIDE_LICENSE",
-      "name": "Pesticide Applicator License",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0040"
+      "name": "Require applicator certification only if restricted-use pesticides are applied/supervised.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_AGRICULTURE_REGISTRATION",
-      "name": "Bona Fide Farmer Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0041"
+      "name": "Bona Fide Farmer certification is conditional on seeking the associated tax/incentive/benefit status, not a universal license to farm.",
+      "applicability": "conditional"
     },
     {
       "document_id": "DOC_DTRH_EMPLOYER_REG",
       "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0619"
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_PROPERTY_DEED",
+      "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_LEASE_AGREEMENT",
-      "name": "Lease Agreement",
-      "applicability": "conditional",
-      "mandatory": false,
-      "source_rule": "RULE_0037"
+      "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+      "applicability": "conditional"
+    },
+    {
+      "document_id": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+      "name": "Hacienda/SURI Employer Withholding Registration",
+      "applicability": "required"
     }
   ],
   "expectedAbsent": []

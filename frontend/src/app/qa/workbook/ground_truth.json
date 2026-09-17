@@ -1,0 +1,3004 @@
+{
+ "G01": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CFPM",
+   "name": "Certified Food Protection Manager (CFPM)",
+   "status": "required",
+   "reason": "Current output is substantively supported by the scenario facts.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Alcohol Beverage License",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "ASUME Child Support Clearance Certification",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Background Check Documentation (Certificado de Antecedentes Penales)",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep; the scenario explicitly says the premises are leased.",
+   "status": "supporting_evidence",
+   "reason": "Proof of right to occupy is relevant to permitting and the lease fact is explicit.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "CRIM no-debt/compliance evidence is required for the alcohol-license path, not merely recommended.",
+   "status": "required",
+   "reason": "Hacienda's alcohol-license requirements include CRIM compliance/no-debt evidence.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_TAX_COMPLIANCE",
+   "name": "Hacienda filing/debt compliance for alcohol license",
+   "status": "required",
+   "reason": "Hacienda alcohol-license requirements include tax-return filing/compliance and no-debt status.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ALCOHOL_SALES_PROJECTION",
+   "name": "Alcohol sales projection / volume information",
+   "status": "needs_more_information",
+   "reason": "Hacienda may require projected/actual alcohol sales volume depending on the specific retail license class.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "Medium"
+  }
+ ],
+ "G02": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CFPM",
+   "name": "Certified Food Protection Manager (CFPM)",
+   "status": "required",
+   "reason": "Current output is substantively supported by the scenario facts.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "These are alcohol-license prerequisites here; the scenario does not sell alcohol.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G03": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CFPM",
+   "name": "Require a certified food-protection manager only if the bar prepares/serves food in a way subject to the food-establishment rules.",
+   "status": "needs_more_information",
+   "reason": "The scenario establishes alcohol service, not food preparation.",
+   "source": "https://www.salud.pr.gov/CMS/497",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Alcohol Beverage License",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "ASUME Child Support Clearance Certification",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Background Check Documentation (Certificado de Antecedentes Penales)",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ENTERTAINMENT_PERMIT",
+   "name": "Ask whether live/amplified entertainment is offered; require only if the actual entertainment activity triggers a permit.",
+   "status": "needs_more_information",
+   "reason": "A bar does not inherently provide regulated entertainment.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_NOISE_VARIANCE",
+   "name": "Keep as NMI, tied to amplified/live entertainment or operations that cannot meet ordinary noise limits.",
+   "status": "needs_more_information",
+   "reason": "A bar can plausibly trigger this, but only with additional operating facts.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "CRIM no-debt/compliance evidence is required for the alcohol-license path, not merely recommended.",
+   "status": "required",
+   "reason": "Hacienda's alcohol-license requirements include CRIM compliance/no-debt evidence.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_TAX_COMPLIANCE",
+   "name": "Hacienda filing/debt compliance for alcohol license",
+   "status": "required",
+   "reason": "Hacienda alcohol-license requirements include tax-return filing/compliance and no-debt status.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ALCOHOL_SALES_PROJECTION",
+   "name": "Alcohol sales projection / volume information",
+   "status": "needs_more_information",
+   "reason": "Hacienda may require projected/actual alcohol sales volume depending on the specific retail license class.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "Medium"
+  }
+ ],
+ "G04": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROFESSIONAL_LICENSE",
+   "name": "Bookkeeping alone is not the same as regulated CPA/public-accountancy practice. Require CPA/professional credential only if the services/holding-out cross that line.",
+   "status": "needs_more_information",
+   "reason": "The scenario says bookkeeping/accounting practice but does not establish licensed CPA activity.",
+   "source": "https://www.estado.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "conditional",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ZONING",
+   "name": "Do not create a separate universal zoning certificate; use/location conformity is handled inside the applicable permitting path.",
+   "status": "absent",
+   "reason": "Zoning/use conformity is part of the operating-permit evaluation, not a separate universal document.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DOMICILIARY_USE_PERMIT",
+   "name": "Domiciliary Use Permit / home-business use authorization",
+   "status": "required",
+   "reason": "The business operates from a residence; home-based activity needs the applicable domiciliary-use permitting path rather than a blanket no-permit assumption.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  }
+ ],
+ "G05": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "conditional",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Ask where the Puerto Rico operating/admin/inventory location is. If home-based, route to domiciliary-use permitting; if a nonresidential location exists, route to Permiso Único.",
+   "status": "needs_more_information",
+   "reason": "“Online only” describes sales/service channel, not whether there is a regulated physical operating location.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ZONING",
+   "name": "Do not create a separate universal zoning certificate; use/location conformity is handled inside the applicable permitting path.",
+   "status": "absent",
+   "reason": "Zoning/use conformity is part of the operating-permit evaluation, not a separate universal document.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G06": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_TOURISM_REGISTRATION",
+   "name": "Rename to PRTC Innkeeper/Hotelier Registration + Innkeeper/Hotelier ID.",
+   "status": "required",
+   "reason": "Room-tax law requires lodging operators subject to the tax to register and obtain the PRTC hotelier/innkeeper ID.",
+   "source": "https://tourism.pr.gov/room-tax/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ROOM_TAX_RETURN",
+   "name": "Room Tax Monthly Return",
+   "status": "required",
+   "reason": "Short-term lodging operators subject to room tax must file monthly declarations.",
+   "source": "https://tourism.pr.gov/room-tax/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "conditional",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROPERTY_DEED",
+   "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+   "status": "needs_more_information",
+   "reason": "Property/site description does not prove ownership.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+   "status": "conditional",
+   "reason": "The scenario does not establish lease tenure, but a lease is a valid conditional occupancy document.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  }
+ ],
+ "G07": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Ask whether the hotel sells/serves alcoholic beverages. Only then require the applicable alcohol license.",
+   "status": "needs_more_information",
+   "reason": "A hotel does not inherently sell alcohol.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_TOURISM_REGISTRATION",
+   "name": "Rename to PRTC Innkeeper/Hotelier Registration + Innkeeper/Hotelier ID.",
+   "status": "required",
+   "reason": "Room-tax law requires lodging operators subject to the tax to register and obtain the PRTC hotelier/innkeeper ID.",
+   "source": "https://tourism.pr.gov/room-tax/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "Tie this prerequisite to an alcohol-license (or another specifically regulated license) trigger; hotel status alone is insufficient.",
+   "status": "needs_more_information",
+   "reason": "These rows are currently firing because of an assumed alcohol-license path not stated in the scenario.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Tie this prerequisite to an alcohol-license (or another specifically regulated license) trigger; hotel status alone is insufficient.",
+   "status": "needs_more_information",
+   "reason": "These rows are currently firing because of an assumed alcohol-license path not stated in the scenario.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROPERTY_DEED",
+   "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+   "status": "needs_more_information",
+   "reason": "Property/site description does not prove ownership.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "Require CRIM clearance only if the hotel triggers the alcohol-license path (or another license that asks for it).",
+   "status": "needs_more_information",
+   "reason": "Hotel status alone does not establish the alcohol prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+   "status": "conditional",
+   "reason": "The scenario does not establish lease tenure, but a lease is a valid conditional occupancy document.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_TAX_COMPLIANCE",
+   "name": "Hacienda filing/debt compliance for alcohol license",
+   "status": "needs_more_information",
+   "reason": "Only needed if the hotel will sell/serve alcohol and therefore enters the alcohol-license path.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_ROOM_TAX_RETURN",
+   "name": "Monthly Room Occupancy Tax Declaration",
+   "status": "required",
+   "reason": "Hotels are lodging facilities subject to the PRTC room-tax filing regime; monthly declarations are required.",
+   "source": "https://tourism.pr.gov/room-tax/",
+   "confidence": "High"
+  }
+ ],
+ "G08": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep; the scenario explicitly says the premises are leased.",
+   "status": "supporting_evidence",
+   "reason": "Proof of right to occupy is relevant to permitting and the lease fact is explicit.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G09": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "EIN is conditional for a zero-employee LLC: require if multi-member, taxed as corporation, has excise/employment tax obligations, etc.",
+   "status": "needs_more_information",
+   "reason": "A single-member LLC with no employees can in some cases use the owner's SSN rather than a separate EIN.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Ask where the Puerto Rico operating/admin/inventory location is. If home-based, route to domiciliary-use permitting; if a nonresidential location exists, route to Permiso Único.",
+   "status": "needs_more_information",
+   "reason": "“Online only” describes sales/service channel, not whether there is a regulated physical operating location.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ZONING",
+   "name": "Do not create a separate universal zoning certificate; use/location conformity is handled inside the applicable permitting path.",
+   "status": "absent",
+   "reason": "Zoning/use conformity is part of the operating-permit evaluation, not a separate universal document.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  }
+ ],
+ "G10": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CFPM",
+   "name": "Certified Food Protection Manager (CFPM)",
+   "status": "required",
+   "reason": "Current output is substantively supported by the scenario facts.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_VEHICLE_REGISTRATION",
+   "name": "Keep for the road-going food-truck unit.",
+   "status": "required",
+   "reason": "The mobile business is itself a vehicle.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_TRANSPORT_PERMIT",
+   "name": "Only require a transport/franchise permit if the business transports passengers or cargo for compensation or otherwise falls within a regulated carrier class.",
+   "status": "needs_more_information",
+   "reason": "Moving the business's own goods is not automatically contract/public carriage.",
+   "source": "https://agencias.pr.gov/agencias/Documents/Borrador%20C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+   "status": "conditional",
+   "reason": "The scenario does not establish lease tenure, but a lease is a valid conditional occupancy document.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "These are alcohol-license prerequisites here; the scenario does not sell alcohol.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_AMBULANT_BUSINESS_LICENSE",
+   "name": "Municipal ambulant-business license for each mobile unit / municipality of operation",
+   "status": "required",
+   "reason": "Puerto Rico's Municipal Code requires an ambulant-business license for each unit from the municipality or municipalities where it operates.",
+   "source": "https://jp.pr.gov/wp-content/uploads/2021/09/Codigo-Municipal-de-Puerto-Rico-Ley-107-2020.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G11": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
+   "name": "Wastewater discharge / sewer pretreatment authorization",
+   "status": "needs_more_information",
+   "reason": "Car-wash wastewater is regulated based on where/how it is discharged; determine sanitary-sewer pretreatment vs direct-discharge requirements.",
+   "source": "https://www.epa.gov/npdes",
+   "confidence": "Medium"
+  }
+ ],
+ "G12": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CONTRACTOR_LICENSE",
+   "name": "Change to DACO contractor registration if the contractor performs residential construction/improvements/essential repairs; do not assume from 'general contractor' alone.",
+   "status": "needs_more_information",
+   "reason": "DACO's contractor registration is tied to covered residential work.",
+   "source": "https://www.daco.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_VEHICLE_REGISTRATION",
+   "name": "Only require commercial vehicle registration if this business actually owns/operates regulated road vehicles.",
+   "status": "needs_more_information",
+   "reason": "The business type does not prove vehicle ownership.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_TRANSPORT_PERMIT",
+   "name": "Only require a transport/franchise permit if the business transports passengers or cargo for compensation or otherwise falls within a regulated carrier class.",
+   "status": "needs_more_information",
+   "reason": "Moving the business's own goods is not automatically contract/public carriage.",
+   "source": "https://agencias.pr.gov/agencias/Documents/Borrador%20C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G13": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROFESSIONAL_LICENSE",
+   "name": "Keep, but treat it as individual barber/stylist practitioner licensing rather than a single entity credential.",
+   "status": "required",
+   "reason": "Barbering/styling is an individually licensed occupation.",
+   "source": "https://www.estado.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep; the scenario explicitly says the premises are leased.",
+   "status": "supporting_evidence",
+   "reason": "Proof of right to occupy is relevant to permitting and the lease fact is explicit.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G14": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "For a simple medical office, do not hard-require a standalone health/sanitary permit beyond the applicable PU. Escalate if it is a separately licensed health facility or performs regulated activities.",
+   "status": "needs_more_information",
+   "reason": "A physician office is not automatically a separately licensed healthcare facility category.",
+   "source": "https://www.salud.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROFESSIONAL_LICENSE",
+   "name": "Keep as active professional license(s) for the clinicians providing medical services.",
+   "status": "required",
+   "reason": "Medical practice requires licensed practitioners.",
+   "source": "https://orcps.salud.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
+   "name": "Regulated biomedical-waste generator registration / ID",
+   "status": "needs_more_information",
+   "reason": "Trigger only if the office generates regulated biomedical waste; patients on site alone is not enough.",
+   "source": "https://www.drna.pr.gov/",
+   "confidence": "Medium"
+  }
+ ],
+ "G15": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Background Check Documentation (Certificado de Antecedentes Penales)",
+   "status": "required",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CHILDCARE_LICENSE",
+   "name": "Childcare / Education License",
+   "status": "required",
+   "reason": "Operating a child-care center requires the applicable licensing path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/173-2016.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SCHIDE_CLEARANCE",
+   "name": "SCHIDe / child-care background eligibility clearance",
+   "status": "required",
+   "reason": "Child-care personnel are subject to the applicable child-protection/background screening regime.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/173-2016.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EMPLOYEE_HEALTH_CERTIFICATES",
+   "name": "Required health certificates for child-care personnel",
+   "status": "required",
+   "reason": "Child-care licensing law/regulations require personnel health documentation.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/173-2016.pdf",
+   "confidence": "Medium-High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CPR_FIRST_AID_CERT",
+   "name": "CPR and First Aid certifications for required child-care staff",
+   "status": "required",
+   "reason": "Child-care facilities must maintain the required trained/certified personnel.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/173-2016.pdf",
+   "confidence": "Medium-High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CHILDCARE_TRAINING_CERT",
+   "name": "Required child-care staff training / professional preparation evidence",
+   "status": "required",
+   "reason": "Licensing includes personnel qualification and training requirements.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/173-2016.pdf",
+   "confidence": "Medium-High"
+  }
+ ],
+ "G16": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_USED_OIL_GENERATOR_ID",
+   "name": "DRNA Used-Oil Generator Identification",
+   "status": "needs_more_information",
+   "reason": "Auto-repair operations commonly generate used oil; require if the shop performs oil changes or otherwise generates used oil.",
+   "source": "https://www.drna.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EPA_HAZARDOUS_WASTE_ID",
+   "name": "EPA/DRNA hazardous-waste generator ID",
+   "status": "needs_more_information",
+   "reason": "Trigger depends on whether hazardous wastes are generated and the applicable generator category/quantity.",
+   "source": "https://www.epa.gov/hwgenerators",
+   "confidence": "Medium-High"
+  }
+ ],
+ "G17": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_IMPORT_EXPORT_REG",
+   "name": "Only require import/export registration/filing if the business actually imports or exports regulated/taxable goods.",
+   "status": "needs_more_information",
+   "reason": "Manufacturing alone does not establish import/export activity.",
+   "source": "https://hacienda.pr.gov/publicaciones/carta-circular-de-rentas-internas-num-14-06",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROPERTY_DEED",
+   "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+   "status": "needs_more_information",
+   "reason": "Property/site description does not prove ownership.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+   "status": "conditional",
+   "reason": "The scenario does not establish lease tenure, but a lease is a valid conditional occupancy document.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FDA_FOOD_FACILITY_REGISTRATION",
+   "name": "FDA Food Facility Registration",
+   "status": "required",
+   "reason": "A beverage manufacturing/processing facility that manufactures/processes/packs/holds food for U.S. consumption generally must register with FDA unless exempt.",
+   "source": "https://www.fda.gov/food/registration-food-facilities-and-other-submissions/food-facility-registration",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Puerto Rico sanitary/health operating certification (PU component)",
+   "status": "required",
+   "reason": "Food/beverage manufacturing is a regulated food activity requiring the applicable sanitary-health operating certification within the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "Medium-High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_NPDES_INDUSTRIAL_STORMWATER",
+   "name": "NPDES industrial-stormwater coverage or no-exposure determination",
+   "status": "needs_more_information",
+   "reason": "Industrial stormwater coverage depends on industrial category and exposure of materials/activities to stormwater.",
+   "source": "https://www.epa.gov/npdes/stormwater-discharges-industrial-activities",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
+   "name": "Process-wastewater discharge / pretreatment authorization",
+   "status": "needs_more_information",
+   "reason": "Beverage processing can generate process wastewater; requirements depend on discharge route and treatment.",
+   "source": "https://www.epa.gov/npdes",
+   "confidence": "Medium"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_AIR_PERMIT",
+   "name": "Air permit / minor-source determination",
+   "status": "needs_more_information",
+   "reason": "Trigger depends on boilers, combustion equipment, process emissions, generators, or other emission units.",
+   "source": "https://www.epa.gov/caa-permitting",
+   "confidence": "Medium"
+  }
+ ],
+ "G18": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Determine whether the farm's income is within the statutory agricultural/direct-sale exemption; require patent/registration only for non-exempt activity.",
+   "status": "needs_more_information",
+   "reason": "Direct retail/wholesale sales of agricultural products by the farmer are exempt from municipal patent tax.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PESTICIDE_LICENSE",
+   "name": "Require applicator certification only if restricted-use pesticides are applied/supervised.",
+   "status": "needs_more_information",
+   "reason": "Agricultural production alone does not establish restricted-use pesticide activity.",
+   "source": "https://www.agricultura.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_AGRICULTURE_REGISTRATION",
+   "name": "Bona Fide Farmer certification is conditional on seeking the associated tax/incentive/benefit status, not a universal license to farm.",
+   "status": "conditional",
+   "reason": "It is a qualification/status program rather than a blanket operating permit.",
+   "source": "https://www.agricultura.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROPERTY_DEED",
+   "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+   "status": "needs_more_information",
+   "reason": "Property/site description does not prove ownership.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+   "status": "conditional",
+   "reason": "The scenario does not establish lease tenure, but a lease is a valid conditional occupancy document.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G19": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROFESSIONAL_LICENSE",
+   "name": "Rename to Puerto Rico Supreme Court admission / active RUA status for each attorney, not a generic business professional license.",
+   "status": "required",
+   "reason": "The regulated credential is the attorney's admission/active registration.",
+   "source": "https://poderjudicial.pr/index.php/registro-unico-de-abogados-y-abogadas/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G20": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Determine whether the nonprofit falls within a statutory municipal-patent exemption; do not require patent payment universally.",
+   "status": "needs_more_information",
+   "reason": "The Municipal Code exempts multiple categories of qualifying nonprofit organizations.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
+   "name": "IRS tax-exempt determination (e.g., 501(c)(3), if sought)",
+   "status": "conditional",
+   "reason": "Nonprofit incorporation does not automatically confer federal tax-exempt status.",
+   "source": "https://www.irs.gov/charities-non-profits/applying-for-tax-exempt-status",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_PR_TAX_EXEMPTION",
+   "name": "Puerto Rico Hacienda tax-exemption determination (if sought)",
+   "status": "conditional",
+   "reason": "Puerto Rico tax-exempt status is a separate determination from state incorporation.",
+   "source": "https://hacienda.pr.gov/",
+   "confidence": "High"
+  }
+ ],
+ "G21": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DACO_FUEL_RETAILER_REGISTRATION",
+   "name": "DACO fuel retailer registration",
+   "status": "required",
+   "reason": "Retail gasoline/diesel sales have a specific DACO retailer registration path.",
+   "source": "https://www.daco.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FUEL_DISPENSER_WEIGHTS_MEASURES",
+   "name": "DACO weights-and-measures registration/inspection for fuel dispensers",
+   "status": "required",
+   "reason": "Retail fuel dispensers are regulated measuring devices and must be presented/approved for commercial use.",
+   "source": "https://www.daco.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_UST_OPERATING_PERMIT",
+   "name": "Underground storage tank operating permit/compliance",
+   "status": "needs_more_information",
+   "reason": "Require if the fuel facility uses regulated underground storage tanks; aboveground systems follow different requirements.",
+   "source": "https://www.drna.pr.gov/",
+   "confidence": "High"
+  }
+ ],
+ "G22": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CFPM",
+   "name": "Certified Food Protection Manager (CFPM)",
+   "status": "required",
+   "reason": "Current output is substantively supported by the scenario facts.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "These are alcohol-license prerequisites here; the scenario does not sell alcohol.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G23": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Make sanitary/health licensing conditional on regulated amenities/activities (e.g., pool/spa, food service, childcare, etc.), not the gym label alone.",
+   "status": "needs_more_information",
+   "reason": "A basic fitness studio does not by itself establish a separate health-license trigger.",
+   "source": "https://www.salud.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_SIGN_PERMIT",
+   "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+   "status": "needs_more_information",
+   "reason": "A sign permit is conditional, not merely 'recommended' and not universal.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ],
+ "G24": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_INCORPORATION",
+   "name": "Certificate of Incorporation",
+   "status": "required",
+   "reason": "The scenario is a corporation/professional/nonprofit corporation and needs its formation document.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_VEHICLE_REGISTRATION",
+   "name": "Only require commercial vehicle registration if this business actually owns/operates regulated road vehicles.",
+   "status": "needs_more_information",
+   "reason": "The business type does not prove vehicle ownership.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_TRANSPORT_PERMIT",
+   "name": "Only require a transport/franchise permit if the business transports passengers or cargo for compensation or otherwise falls within a regulated carrier class.",
+   "status": "needs_more_information",
+   "reason": "Moving the business's own goods is not automatically contract/public carriage.",
+   "source": "https://agencias.pr.gov/agencias/Documents/Borrador%20C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_IMPORT_EXPORT_REG",
+   "name": "Only require import/export registration/filing if the business actually imports or exports regulated/taxable goods.",
+   "status": "needs_more_information",
+   "reason": "Manufacturing alone does not establish import/export activity.",
+   "source": "https://hacienda.pr.gov/publicaciones/carta-circular-de-rentas-internas-num-14-06",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PROPERTY_DEED",
+   "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+   "status": "needs_more_information",
+   "reason": "Property/site description does not prove ownership.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+   "status": "conditional",
+   "reason": "The scenario does not establish lease tenure, but a lease is a valid conditional occupancy document.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WASTE_TIRE_STORAGE_PERMIT",
+   "name": "Waste-tire storage permit/authorization",
+   "status": "required",
+   "reason": "A tire-recycling/manufacturing operation storing waste tires is subject to Puerto Rico waste-tire storage regulation.",
+   "source": "https://www.drna.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WASTE_TIRE_PROCESSOR_PERMIT",
+   "name": "Waste-tire processor/recycler operating authorization",
+   "status": "required",
+   "reason": "Processing/recycling waste tires is a specifically regulated solid-waste activity.",
+   "source": "https://www.drna.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_NPDES_INDUSTRIAL_STORMWATER",
+   "name": "NPDES industrial-stormwater coverage or no-exposure determination",
+   "status": "needs_more_information",
+   "reason": "Industrial stormwater coverage depends on industrial activity and exposure.",
+   "source": "https://www.epa.gov/npdes/stormwater-discharges-industrial-activities",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_AIR_PERMIT",
+   "name": "Air permit / emissions determination for tire-processing/manufacturing equipment",
+   "status": "needs_more_information",
+   "reason": "Shredding, thermal processing, combustion, or other manufacturing equipment may trigger air-permitting requirements; process details are needed.",
+   "source": "https://www.epa.gov/caa-permitting",
+   "confidence": "Medium"
+  }
+ ],
+ "G25": [
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_EIN",
+   "name": "IRS EIN Confirmation Letter",
+   "status": "required",
+   "reason": "Entity/employer facts support EIN treatment for this scenario.",
+   "source": "https://www.irs.gov/businesses/small-businesses-self-employed/do-you-need-an-ein",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_MERCHANT_REGISTRATION",
+   "name": "Merchant Registration Certificate (Registro de Comerciante)",
+   "status": "required",
+   "reason": "A person carrying on business in Puerto Rico generally registers as a merchant.",
+   "source": "https://hacienda.pr.gov/ivu/registro-de-comerciante",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PERMISO_UNICO",
+   "name": "Permiso Único",
+   "status": "required",
+   "reason": "A new/existing business operating in Puerto Rico generally needs Permiso Único; special-location questions can refine the path.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_PATENTE_MUNICIPAL",
+   "name": "Patente Municipal",
+   "status": "required",
+   "reason": "Municipal patent/new-business notification applies unless a statutory exemption changes the result.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/107-2020.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HEALTH_PERMIT",
+   "name": "Health / Sanitary Permit",
+   "status": "required",
+   "reason": "Health/sanitary certification is a valid operational requirement for this regulated activity and is consolidated into the PU workflow.",
+   "source": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/161-2009.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_FIRE_CERT",
+   "name": "Fire Safety Certification (Certificado de Bomberos)",
+   "status": "required",
+   "reason": "Fire-prevention certification is an operational requirement and part of the PU workflow.",
+   "source": "https://www.bomberos.pr.gov/permisos",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CFPM",
+   "name": "Certified Food Protection Manager (CFPM)",
+   "status": "required",
+   "reason": "Current output is substantively supported by the scenario facts.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_WORKERS_COMP",
+   "name": "Workers Compensation Insurance (CFSE)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering Puerto Rico workers' compensation coverage.",
+   "source": "https://www.cfse.gov.pr/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_VEHICLE_REGISTRATION",
+   "name": "Only require commercial vehicle registration if this business actually owns/operates regulated road vehicles.",
+   "status": "needs_more_information",
+   "reason": "The business type does not prove vehicle ownership.",
+   "source": null,
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_TRANSPORT_PERMIT",
+   "name": "Only require a transport/franchise permit if the business transports passengers or cargo for compensation or otherwise falls within a regulated carrier class.",
+   "status": "needs_more_information",
+   "reason": "Moving the business's own goods is not automatically contract/public carriage.",
+   "source": "https://agencias.pr.gov/agencias/Documents/Borrador%20C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_DTRH_EMPLOYER_REG",
+   "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
+   "status": "required",
+   "reason": "The scenario has employees, triggering employer registration for unemployment/disability administration.",
+   "source": "https://www.trabajo.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_LEASE_AGREEMENT",
+   "name": "Do not assume a lease. Ask ownership/tenure and request lease only if leased; otherwise request deed/other occupancy evidence.",
+   "status": "needs_more_information",
+   "reason": "The scenario does not state that the premises are leased.",
+   "source": "https://www.permisos.pr.gov/",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ALCOHOL_LICENSE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_ASUME_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_CRIM_CLEARANCE",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "These are alcohol-license prerequisites here; the scenario does not sell alcohol.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "ABSENT",
+   "code": "DOC_BACKGROUND_CHECK",
+   "name": "Keep absent for this no-alcohol scenario.",
+   "status": "absent",
+   "reason": "Alcohol service is explicit, and the alcohol-license path requires this item/prerequisite.",
+   "source": "https://hacienda.pr.gov/publicaciones/licencias-de-rentas-internas",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_CERT_ORGANIZATION",
+   "name": "Certificate of Organization (Puerto Rico LLC formation document)",
+   "status": "required",
+   "reason": "The scenario is an LLC; Puerto Rico forms an LLC through a Certificate of Organization.",
+   "source": "https://www.estado.pr.gov/formularios-para-corporaciones",
+   "confidence": "High"
+  },
+  {
+   "expectation": "PRESENT",
+   "code": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+   "name": "Hacienda/SURI Employer Withholding Registration",
+   "status": "required",
+   "reason": "New employers must register in SURI and maintain the employer withholding account for Puerto Rico wages/W-2PR reporting.",
+   "source": "https://hacienda.pr.gov/sites/default/files/publicaciones/2024/10/publication_24-01.pdf",
+   "confidence": "High"
+  }
+ ]
+}

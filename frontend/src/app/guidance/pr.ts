@@ -62,16 +62,15 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_ARTICLES_ORGANIZATION: { en: ["llc", "limited liability company", "organization"], es: ["llc", "compañía de responsabilidad limitada", "organización"] },
   DOC_WORKERS_COMP: { en: ["cfse", "coverage"], es: ["cfse", "cobertura"] },
   DOC_DTRH_EMPLOYER_REG: { en: ["dtrh", "unemployment", "disability", "employer registration"], es: ["dtrh", "desempleo", "incapacidad", "patrono"] },
-  DOC_ZONING: { en: ["zoning", "use classification"], es: ["zonificación", "clasificación de uso"] },
-  DOC_MUNICIPAL_REGISTRATION: { en: ["municipal", "registration"], es: ["municipal", "registro"] },
-  DOC_MUNICIPAL_TAX_COMPLIANCE: { en: ["municipal", "tax compliance"], es: ["municipal", "cumplimiento contributivo"] },
+
+
+
   DOC_HEALTH_PERMIT: { en: ["sanitary", "health"], es: ["sanitario", "salud"] },
   DOC_FIRE_CERT: { en: ["fire", "inspection"], es: ["bomberos", "inspección"] },
   DOC_CFPM: { en: ["food protection manager", "food handler"], es: ["manejador de alimentos"] },
-  DOC_STORMWATER_PLAN: { en: ["stormwater", "runoff"], es: ["escorrentía", "pluvial"] },
+
   DOC_NOISE_VARIANCE: { en: ["noise"], es: ["ruido"] },
-  DOC_WASTE_COLLECTION_CONTRACT: { en: ["waste", "collection"], es: ["desperdicios", "recolección"] },
-  DOC_PARKING_COMPLIANCE: { en: ["parking"], es: ["estacionamiento"] },
+
   DOC_LUMA_INTERCONNECTION: { en: ["luma", "interconnection", "grid connection"], es: ["luma", "interconexión", "conexión"] },
   DOC_NET_METERING_AGREEMENT: { en: ["net metering", "export"], es: ["medición neta", "exportar"] },
   DOC_OGPE_CONSTRUCTION_PERMIT: { en: ["ogpe", "construction permit"], es: ["ogpe", "permiso de construcción"] },
@@ -190,24 +189,9 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Register as an employer through the DTRH employer portal and keep the assigned employer number for payroll filings.", "Regístrate como patrono en el portal de patronos del DTRH y conserva el número patronal asignado para las radicaciones de nómina."),
     text("An active DTRH employer registration lets the business report and pay unemployment and disability contributions; hiring without registering risks penalties.", "Un registro patronal activo del DTRH permite informar y pagar las aportaciones por desempleo e incapacidad; contratar sin registrarse expone a penalidades."),
   ]),
-  DOC_ZONING: concept("DOC_ZONING", [[condition("Q_PHYSICAL_LOCATION", "Nonresidential business location", "Local comercial no residencial", true)]], [PR_GUIDANCE_SOURCES.zoning], [
-    text("A physical commercial premises must be confirmed for the proposed activity's use classification before other permits build on it.", "Un local comercial físico requiere confirmar la clasificación de uso de la actividad propuesta antes de tramitar otros permisos sobre esa base."),
-    text("Zoning / use certification confirms the premises' permitted use classification for the proposed activity, not the activity's other licenses.", "La certificación de zonificación confirma la clasificación de uso permitido del local para la actividad propuesta; no cubre otras licencias de la actividad."),
-    text("Request the zoning / use classification consultation in SBP for the premises and confirm it matches the proposed activity.", "Solicita la consulta de zonificación y clasificación de uso en SBP para el local y confirma que coincide con la actividad propuesta."),
-    text("A confirmed use classification supports the Permiso Único application for that location; it does not by itself authorize operation.", "La clasificación de uso confirmada respalda la solicitud de Permiso Único para ese local; por sí sola no autoriza operar."),
-  ]),
-  DOC_MUNICIPAL_REGISTRATION: concept("DOC_MUNICIPAL_REGISTRATION", [[municipality, business]], [PR_GUIDANCE_SOURCES.codigoMunicipal], [
-    text("{municipality} registers the commercial businesses operating in its territory, separately from state-level merchant registration with Hacienda.", "{municipality} registra los negocios comerciales que operan en su territorio, de forma independiente al registro de comerciante estatal con Hacienda."),
-    text("Municipal registration identifies the business to the municipal Hacienda office for local tax and licensing purposes.", "El registro municipal identifica al negocio ante la Hacienda Municipal para fines contributivos y de licenciamiento locales."),
-    text("Complete the municipal business-registration application with the business and location details at the municipal Hacienda office.", "Completa la solicitud de registro municipal con los datos del negocio y del local en la oficina de la Hacienda Municipal."),
-    text("The municipal registration record is the basis for subsequent patente filings and the municipal tax-compliance certification.", "El registro municipal es la base para las declaraciones de patente y la certificación de cumplimiento contributivo municipal posteriores."),
-  ]),
-  DOC_MUNICIPAL_TAX_COMPLIANCE: concept("DOC_MUNICIPAL_TAX_COMPLIANCE", [[municipality, business]], [PR_GUIDANCE_SOURCES.ogpCarta], [
-    text("The Hacienda Municipal of {municipality} certifies that a business's patente and other municipal tax obligations are current before certain filings proceed.", "La Hacienda Municipal de {municipality} certifica que las obligaciones de patente y otras contribuciones municipales del negocio están al día antes de ciertos trámites."),
-    text("The tax-compliance certificate documents that municipal filings and payments are current; it does not itself set the patente rate.", "El certificado de cumplimiento acredita que las declaraciones y pagos municipales están al día; no establece la tasa de la patente."),
-    text("File any outstanding patente returns and settle balances, then request the municipal tax-compliance certificate from the Hacienda Municipal.", "Radica las declaraciones de patente pendientes y salda los balances; luego solicita el certificado de cumplimiento a la Hacienda Municipal."),
-    text("The issued certificate documents good standing with the municipality at the time it was issued; new filings can affect that status later.", "El certificado emitido acredita el cumplimiento contributivo municipal al momento de expedirse; nuevas declaraciones pueden afectar ese estatus después."),
-  ]),
+
+
+
   DOC_HEALTH_PERMIT: concept("DOC_HEALTH_PERMIT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [condition("Q_FOOD_SOLD", "Food sold on site", "Alimentos vendidos en el local", true)]], [PR_GUIDANCE_SOURCES.health], [
     text("Establishments that prepare or sell food are subject to sanitary inspection under environmental health regulation before they may operate.", "Los establecimientos que preparan o venden alimentos están sujetos a inspección sanitaria bajo la reglamentación de salud ambiental antes de operar."),
     text("The sanitary/health permit documents that the premises passed inspection for food-handling and public-health conditions.", "El permiso sanitario acredita que el local aprobó la inspección de manejo de alimentos y condiciones de salud pública."),
@@ -226,30 +210,14 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Enroll the designated staff member as a certified food protection manager / food handler in an accredited course and keep the certification on file.", "Inscribe al empleado designado como manejador de alimentos certificado en un curso acreditado y conserva la certificación en el expediente."),
     text("A completed food protection manager certification qualifies that food handler to oversee food handling; it must stay current under the program's renewal terms.", "La certificación de manejador de alimentos completada habilita a ese empleado para supervisar el manejo de alimentos; debe mantenerse vigente según los términos de renovación."),
   ]),
-  DOC_STORMWATER_PLAN: concept("DOC_STORMWATER_PLAN", [[municipality]], [PR_GUIDANCE_SOURCES.stormwater], [
-    text("{municipality} is covered by an NPDES MS4 stormwater permit, which requires regulated businesses there to control runoff from their site.", "{municipality} está cubierto por un permiso NPDES MS4 de agua pluvial, que exige a los negocios regulados controlar la escorrentía de su predio."),
-    text("The stormwater management plan documents how the site controls runoff and pollutants, not the business's other environmental permits.", "El plan de manejo de agua pluvial documenta cómo el predio controla la escorrentía y los contaminantes; no cubre otros permisos ambientales del negocio."),
-    text("Prepare a site stormwater control plan addressing runoff and pollutant sources, and submit it as part of the permit package for {municipality}.", "Prepara un plan de control de escorrentía del predio que atienda las fuentes de contaminantes y preséntalo como parte del expediente de permisos para {municipality}."),
-    text("An accepted plan documents the site's runoff controls for {municipality}'s MS4 program; conditions in the plan must still be maintained.", "Un plan aceptado documenta los controles de escorrentía del predio para el programa MS4 de {municipality}; las condiciones del plan deben mantenerse."),
-  ]),
+
   DOC_NOISE_VARIANCE: concept("DOC_NOISE_VARIANCE", [[municipality]], [PR_GUIDANCE_SOURCES.noise], [
     text("{municipality} designates zones where activities generating elevated noise need a noise-control endorsement before operating there.", "{municipality} designa zonas donde las actividades que generan niveles elevados de ruido necesitan un endoso de control de ruido antes de operar."),
     text("The noise endorsement documents that the activity's expected noise levels were reviewed for the zone, not the activity's other licenses.", "El endoso de ruido acredita que se revisaron los niveles de ruido esperados de la actividad para la zona; no cubre otras licencias de la actividad."),
     text("Describe the activity's noise sources and expected levels, and request the noise-control endorsement through {municipality}'s permits office.", "Describe las fuentes de ruido de la actividad y los niveles esperados, y solicita el endoso de control de ruido en la oficina de permisos de {municipality}."),
     text("An issued endorsement authorizes the reviewed noise levels for that activity and zone, subject to its conditions and any complaints.", "El endoso emitido autoriza los niveles de ruido revisados para esa actividad y zona, sujeto a sus condiciones y a las quejas que se reciban."),
   ]),
-  DOC_WASTE_COLLECTION_CONTRACT: concept("DOC_WASTE_COLLECTION_CONTRACT", [[municipality]], [PR_GUIDANCE_SOURCES.waste], [
-    text("Commercial generators of solid waste in {municipality} must contract collection and disposal service rather than rely on residential collection.", "Los generadores comerciales de desperdicios sólidos en {municipality} deben contratar servicio de recolección y disposición en vez de la recolección residencial."),
-    text("The waste-collection contract documents commercial disposal arrangements for the business, not the premises' other permits.", "El contrato de recolección de desperdicios documenta los arreglos de disposición comercial del negocio, no otros permisos del local."),
-    text("Contract a licensed commercial waste hauler for {municipality} and keep the service agreement on file for the permit package.", "Contrata un transportista comercial de desperdicios autorizado para {municipality} y conserva el contrato de servicio en el expediente de permisos."),
-    text("A signed contract documents commercial waste service is arranged; service must stay active for as long as the business generates waste.", "Un contrato firmado documenta que el servicio de desperdicios comerciales está arreglado; el servicio debe mantenerse activo mientras el negocio genere desperdicios."),
-  ]),
-  DOC_PARKING_COMPLIANCE: concept("DOC_PARKING_COMPLIANCE", [[municipality]], [PR_GUIDANCE_SOURCES.parking], [
-    text("{municipality}'s use-permit review confirms the premises provide the off-street parking required for the proposed commercial activity.", "La revisión del permiso de uso en {municipality} confirma que el local cuenta con el estacionamiento fuera de la vía requerido para la actividad comercial propuesta."),
-    text("Parking compliance documents that the site meets the off-street parking count for the activity, not the activity's use classification itself.", "El cumplimiento de estacionamiento acredita que el predio cumple con el número de espacios fuera de la vía requeridos para la actividad; no cubre la clasificación de uso."),
-    text("Provide the site's parking layout and space count as part of the Permiso Único package for {municipality}'s review.", "Aporta el plano de estacionamiento del predio y el número de espacios como parte del expediente del Permiso Único para la revisión de {municipality}."),
-    text("A confirmed parking count supports the use-permit application for {municipality}; changes to the site layout can affect that count later.", "Un conteo de estacionamiento confirmado respalda la solicitud del permiso de uso en {municipality}; cambios en el predio pueden afectar ese conteo después."),
-  ]),
+
   DOC_LUMA_INTERCONNECTION: concept("DOC_LUMA_INTERCONNECTION", [[condition("Q_RENEWABLE_INSTALL", "Renewable energy system to be installed", "Instalación de sistema de energía renovable", true)]], [PR_GUIDANCE_SOURCES.luma], [
     text("A grid-connected solar system must be registered with LUMA Energy before it can legally operate. LUMA's interconnection review covers the system's technical requirements for parallel operation with the grid.", "Un sistema solar conectado a la red tiene que estar registrado con LUMA Energy antes de poder operar legalmente. La revisión de interconexión de LUMA cubre los requisitos técnicos para operar en paralelo con la red."),
     text("The interconnection registration is LUMA's record of the distributed generation system and its approval to connect, not the OGPe construction permit and not permission to operate.", "El registro de interconexión es el expediente de LUMA del sistema de generación distribuida y su aprobación para conectarse; no es el permiso de construcción de OGPe ni el permiso para operar."),

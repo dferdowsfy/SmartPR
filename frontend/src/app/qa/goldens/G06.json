@@ -1,7 +1,7 @@
 {
   "id": "G06",
   "title": "Single-unit coastal short-term rental, owner-managed, 0 employees — Toa Baja",
-  "status": "draft",
+  "status": "validated",
   "profile": {
     "business_type": "Airbnb / Short-Term Rental",
     "municipality": "Toa Baja",
@@ -23,88 +23,44 @@
   },
   "expected": [
     {
-      "document_id": "DOC_EIN",
-      "name": "IRS EIN Confirmation Letter",
-      "applicability": "conditional",
-      "mandatory": false,
-      "source_rule": "RULE_0002"
-    },
-    {
       "document_id": "DOC_MERCHANT_REGISTRATION",
       "name": "Merchant Registration Certificate (Registro de Comerciante)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0003"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PERMISO_UNICO",
       "name": "Permiso Único",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0007"
-    },
-    {
-      "document_id": "DOC_ZONING",
-      "name": "Zoning / Use Certification",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0008"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PATENTE_MUNICIPAL",
       "name": "Patente Municipal",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0004"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_REGISTRATION",
-      "name": "Municipal Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0005"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
-      "name": "Municipal Tax Compliance Certificate",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0006"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_TOURISM_REGISTRATION",
-      "name": "Tourism Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0033"
+      "name": "Rename to PRTC Innkeeper/Hotelier Registration + Innkeeper/Hotelier ID.",
+      "applicability": "required"
     },
     {
       "document_id": "DOC_ROOM_TAX_RETURN",
       "name": "Room Tax Monthly Return",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0601"
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_EIN",
+      "name": "IRS EIN Confirmation Letter",
+      "applicability": "conditional"
     },
     {
       "document_id": "DOC_PROPERTY_DEED",
-      "name": "Property Deed (Escritura)",
-      "applicability": "supporting_evidence",
-      "mandatory": false,
-      "source_rule": "RULE_0036"
-    },
-    {
-      "document_id": "DOC_ENVIRONMENTAL_PERMIT",
-      "name": "Environmental Permit",
-      "applicability": "needs_more_information",
-      "mandatory": false,
-      "source_rule": "RULE_0554"
+      "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_LEASE_AGREEMENT",
-      "name": "Lease Agreement",
-      "applicability": "conditional",
-      "mandatory": false,
-      "source_rule": "RULE_0037"
+      "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+      "applicability": "conditional"
     }
   ],
   "expectedAbsent": []

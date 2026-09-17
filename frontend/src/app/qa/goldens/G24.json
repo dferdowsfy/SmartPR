@@ -1,7 +1,7 @@
 {
   "id": "G24",
   "title": "Tire recycling & manufacturing, 30 employees, industrial port zone — Yabucoa",
-  "status": "draft",
+  "status": "validated",
   "profile": {
     "business_type": "Tire Recycling & Manufacturing",
     "municipality": "Yabucoa",
@@ -28,121 +28,92 @@
     {
       "document_id": "DOC_CERT_INCORPORATION",
       "name": "Certificate of Incorporation",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0001"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_EIN",
       "name": "IRS EIN Confirmation Letter",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0002"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_MERCHANT_REGISTRATION",
       "name": "Merchant Registration Certificate (Registro de Comerciante)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0003"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PERMISO_UNICO",
       "name": "Permiso Único",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0007"
-    },
-    {
-      "document_id": "DOC_ZONING",
-      "name": "Zoning / Use Certification",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0008"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PATENTE_MUNICIPAL",
       "name": "Patente Municipal",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0004"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_REGISTRATION",
-      "name": "Municipal Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0005"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
-      "name": "Municipal Tax Compliance Certificate",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0006"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_FIRE_CERT",
       "name": "Fire Safety Certification (Certificado de Bomberos)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0027"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_WORKERS_COMP",
       "name": "Workers Compensation Insurance (CFSE)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0020"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_VEHICLE_REGISTRATION",
-      "name": "Commercial Vehicle Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0021"
+      "name": "Only require commercial vehicle registration if this business actually owns/operates regulated road vehicles.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_TRANSPORT_PERMIT",
-      "name": "Transportation / PUC Permit",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0022"
-    },
-    {
-      "document_id": "DOC_ENVIRONMENTAL_PERMIT",
-      "name": "Environmental Permit",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0023"
+      "name": "Only require a transport/franchise permit if the business transports passengers or cargo for compensation or otherwise falls within a regulated carrier class.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_IMPORT_EXPORT_REG",
-      "name": "Import / Export Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0028"
-    },
-    {
-      "document_id": "DOC_PROPERTY_DEED",
-      "name": "Property Deed (Escritura)",
-      "applicability": "supporting_evidence",
-      "mandatory": false,
-      "source_rule": "RULE_0036"
+      "name": "Only require import/export registration/filing if the business actually imports or exports regulated/taxable goods.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_DTRH_EMPLOYER_REG",
       "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0619"
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_PROPERTY_DEED",
+      "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_LEASE_AGREEMENT",
-      "name": "Lease Agreement",
-      "applicability": "conditional",
-      "mandatory": false,
-      "source_rule": "RULE_0037"
+      "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+      "applicability": "conditional"
+    },
+    {
+      "document_id": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+      "name": "Hacienda/SURI Employer Withholding Registration",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_WASTE_TIRE_STORAGE_PERMIT",
+      "name": "Waste-tire storage permit/authorization",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_WASTE_TIRE_PROCESSOR_PERMIT",
+      "name": "Waste-tire processor/recycler operating authorization",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_NPDES_INDUSTRIAL_STORMWATER",
+      "name": "NPDES industrial-stormwater coverage or no-exposure determination",
+      "applicability": "needs_more_information"
+    },
+    {
+      "document_id": "DOC_AIR_PERMIT",
+      "name": "Air permit / emissions determination for tire-processing/manufacturing equipment",
+      "applicability": "needs_more_information"
     }
   ],
   "expectedAbsent": []

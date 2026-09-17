@@ -1,7 +1,7 @@
 {
   "id": "G07",
   "title": "Hotel, 25 employees, coastal tourism zone — Dorado",
-  "status": "draft",
+  "status": "validated",
   "profile": {
     "business_type": "Hotel",
     "municipality": "Dorado",
@@ -26,149 +26,102 @@
     {
       "document_id": "DOC_CERT_INCORPORATION",
       "name": "Certificate of Incorporation",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0001"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_EIN",
       "name": "IRS EIN Confirmation Letter",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0002"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_MERCHANT_REGISTRATION",
       "name": "Merchant Registration Certificate (Registro de Comerciante)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0003"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PERMISO_UNICO",
       "name": "Permiso Único",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0007"
-    },
-    {
-      "document_id": "DOC_ZONING",
-      "name": "Zoning / Use Certification",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0008"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_PATENTE_MUNICIPAL",
       "name": "Patente Municipal",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0004"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_REGISTRATION",
-      "name": "Municipal Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0005"
-    },
-    {
-      "document_id": "DOC_MUNICIPAL_TAX_COMPLIANCE",
-      "name": "Municipal Tax Compliance Certificate",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0006"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_HEALTH_PERMIT",
       "name": "Health / Sanitary Permit",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0141"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_FIRE_CERT",
       "name": "Fire Safety Certification (Certificado de Bomberos)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0140"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_ALCOHOL_LICENSE",
-      "name": "Alcohol Beverage License",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0014"
+      "name": "Ask whether the hotel sells/serves alcoholic beverages. Only then require the applicable alcohol license.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_TOURISM_REGISTRATION",
-      "name": "Tourism Registration",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0034"
+      "name": "Rename to PRTC Innkeeper/Hotelier Registration + Innkeeper/Hotelier ID.",
+      "applicability": "required"
     },
     {
       "document_id": "DOC_WORKERS_COMP",
       "name": "Workers Compensation Insurance (CFSE)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0020"
-    },
-    {
-      "document_id": "DOC_SIGN_PERMIT",
-      "name": "Sign / Rótulo Permit",
-      "applicability": "recommended",
-      "mandatory": false,
-      "source_rule": "RULE_0030"
-    },
-    {
-      "document_id": "DOC_PROPERTY_DEED",
-      "name": "Property Deed (Escritura)",
-      "applicability": "supporting_evidence",
-      "mandatory": false,
-      "source_rule": "RULE_0036"
-    },
-    {
-      "document_id": "DOC_ENVIRONMENTAL_PERMIT",
-      "name": "Environmental Permit",
-      "applicability": "needs_more_information",
-      "mandatory": false,
-      "source_rule": "RULE_0551"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_DTRH_EMPLOYER_REG",
       "name": "DTRH Employer Registration (Unemployment & Disability Insurance)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0619"
-    },
-    {
-      "document_id": "DOC_CRIM_CLEARANCE",
-      "name": "CRIM Property Tax Clearance",
-      "applicability": "recommended",
-      "mandatory": false,
-      "source_rule": "RULE_0622"
+      "applicability": "required"
     },
     {
       "document_id": "DOC_ASUME_CLEARANCE",
-      "name": "ASUME Child Support Clearance Certification",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0625"
+      "name": "Tie this prerequisite to an alcohol-license (or another specifically regulated license) trigger; hotel status alone is insufficient.",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_BACKGROUND_CHECK",
-      "name": "Background Check Documentation (Certificado de Antecedentes Penales)",
-      "applicability": "required",
-      "mandatory": true,
-      "source_rule": "RULE_0628"
+      "name": "Tie this prerequisite to an alcohol-license (or another specifically regulated license) trigger; hotel status alone is insufficient.",
+      "applicability": "needs_more_information"
+    },
+    {
+      "document_id": "DOC_SIGN_PERMIT",
+      "name": "Ask whether a new/altered exterior sign is planned; require the applicable sign permit only if triggered.",
+      "applicability": "needs_more_information"
+    },
+    {
+      "document_id": "DOC_PROPERTY_DEED",
+      "name": "Treat deed as one possible proof of occupancy/ownership; ask tenure first rather than outputting it as automatic support.",
+      "applicability": "needs_more_information"
+    },
+    {
+      "document_id": "DOC_CRIM_CLEARANCE",
+      "name": "Require CRIM clearance only if the hotel triggers the alcohol-license path (or another license that asks for it).",
+      "applicability": "needs_more_information"
     },
     {
       "document_id": "DOC_LEASE_AGREEMENT",
-      "name": "Lease Agreement",
-      "applicability": "conditional",
-      "mandatory": false,
-      "source_rule": "RULE_0037"
+      "name": "Keep only as one possible occupancy-right document; deed/other proof may substitute depending on tenure.",
+      "applicability": "conditional"
+    },
+    {
+      "document_id": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+      "name": "Hacienda/SURI Employer Withholding Registration",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_HACIENDA_TAX_COMPLIANCE",
+      "name": "Hacienda filing/debt compliance for alcohol license",
+      "applicability": "needs_more_information"
+    },
+    {
+      "document_id": "DOC_ROOM_TAX_RETURN",
+      "name": "Monthly Room Occupancy Tax Declaration",
+      "applicability": "required"
     }
   ],
   "expectedAbsent": []
