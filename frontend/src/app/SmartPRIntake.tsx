@@ -1092,6 +1092,12 @@ function computeRequirements(
       confirmedKeys?: Iterable<string>;
       passportKeys?: Iterable<string>;
     };
+    /**
+     * KB-question ids the intake interpreter pre-answered from the user's
+     * description (unconfirmed). Forwarded so trigger labels render the
+     * honest "Derived answer:" label instead of "Answer:" for them.
+     */
+    aiPrefilledKeys?: Iterable<string>;
   } = {}
 ): Requirement[] {
   const entityType = entityTypeFromLegacyStructure(profile.business_structure);
@@ -1111,6 +1117,7 @@ function computeRequirements(
       businessId: project.provenance?.businessId ?? null,
       confirmedKeys: project.provenance?.confirmedKeys,
       passportKeys: project.provenance?.passportKeys,
+      aiPrefilledKeys: project.aiPrefilledKeys,
     }
   ) as Requirement[];
 
@@ -1732,7 +1739,7 @@ export default function SmartPRIntake() {
         location_type: su.location_type || '',
       };
       setProfile(prev => ({ ...prev, ...restored }));
-      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
+      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
       setRequirements(computed);
       if (su.business_id) {
         businessIdRef.current = su.business_id;
@@ -2744,7 +2751,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   setProfile(newProfile);
   const newAnswers = { ...getFollowUpQuestions(newProfile.industry) };
   setDiscoveryAnswers(newAnswers);
-  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
+  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
   setRequirements(computed);
   setReadinessScore(null);
   setFindings([]);
@@ -2788,7 +2795,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Discovery + requirements are computed entirely client-side.
     setBusinessId('local-' + Date.now());
     setDiscoveryAnswers(answers);
-    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
+    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
     const merged = mergeConfirmedPotentialRequirements(
       baseRequirements,
       potentialItemsForProfile(profile, baseRequirements),
@@ -2836,7 +2843,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       const submissionId = submissionIdRef.current || newSubmissionId();
       submissionIdRef.current = submissionId;
       const engineInput = buildEngineInput(p as any, answers, resolveFactsFor(p, answers).questionValues, {
-        projectIntent, projectContext, ...provenanceExtra(),
+        projectIntent, projectContext, ...provenanceExtra(), aiPrefilledKeys,
       });
       const qText = new Map(KB.questions.map((q) => [q.id, q.question]));
       // buildEngineInput expands the profile into EVERY canonical Q_* question,
@@ -3035,7 +3042,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Recomputing with the shown intent settles the branch.
     if (projectIntent) setProjectIntentConfirmed(true);
     setIsLoading(true);
-    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
+    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
     setRequirements(computed);
     setCurrentStep(3);
     setIsLoading(false);
@@ -3051,7 +3058,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const answerTriggerQuestion = (writeKey: string, value: boolean) => {
     const nextAnswers = { ...discoveryAnswers, [writeKey]: value };
     setDiscoveryAnswers(nextAnswers);
-    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() }));
+    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys }));
   };
 
   // When business_type changes, also ensure location is valid (already handled in onChange)
@@ -4247,7 +4254,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // document that is already required for the selected business profile.
   const potentialItems = potentialItemsForProfile(
     profile,
-    computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() })
+    computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys })
   );
 
   // Render one requirement row (shared by Mandatory + Recommended sections).
@@ -4281,7 +4288,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // intelligence panel and progress stats update as they answer.
   const liveReqs = React.useMemo(() => {
     try {
-      return computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra() });
+      return computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
     } catch {
       return [] as Requirement[];
     }
@@ -4661,7 +4668,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       { language, municipality: profile.municipality, businessTypeName: profile.business_type, discoveryAnswers,
         profile: profile as unknown as Record<string, unknown>, entityType: entityTypeFromLegacyStructure(profile.business_structure), occupancyType: canonicalApplication.property.occupancyType, kb: KB,
         engineInput: buildEngineInput({ ...profile, number_of_employees: profile.number_of_employees ?? undefined }, discoveryAnswers, resolveFactsFor(profile, discoveryAnswers).questionValues, {
-          projectIntent, projectContext, ...provenanceExtra(),
+          projectIntent, projectContext, ...provenanceExtra(), aiPrefilledKeys,
         }) }
     );
     const why = (

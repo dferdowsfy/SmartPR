@@ -4952,7 +4952,21 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "excluded_business_types": [
+      "BT_AUTO_REPAIR_SHOP",
+      "BT_MOTORCYCLE_REPAIR_SHOP",
+      "BT_BODY_SHOP",
+      "BT_TIRE_SHOP"
+    ],
+    "trigger_summary": "DACO contractor registration (Ley 146-1995 Registro de Contratistas) applies to construction contracting. Vehicle-repair businesses (auto/motorcycle/body/tire shops) are excluded: their \"repair services to others\" is automotive repair, not construction contracting, so an honest Yes to Q_OFFERS_CONSTRUCTION_SERVICES must not produce a construction-contractor license requirement.",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "excluded_business_types=[BT_AUTO_REPAIR_SHOP, BT_MOTORCYCLE_REPAIR_SHOP, BT_BODY_SHOP, BT_TIRE_SHOP]",
+        "reason": "QA 2026-09-17 06:00 cycle (S7, Trujillo Alto): an existing auto repair shop honestly answering Yes to Q_OFFERS_CONSTRUCTION_SERVICES (\"construction, installation, repair, or contracting services to others\") received DACO Contractor License as REQUIRED/Critical Path. Ley 146-1995 Registro de Contratistas covers construction contractors; vehicle repair is not construction contracting. Excluding the vehicle-repair business types fixes the false positive generally; genuine contractors still trigger."
+      }
+    ]
   },
   {
     "id": "RULE_0643",

@@ -583,3 +583,47 @@ test("CASE J: RULE_0652 (domiciliary-use Permiso Único) is verify_existing for 
     "a new home-based business still applies for the domiciliary-use authorization"
   );
 });
+
+test("CASE K: RULE_0642 (DACO contractor license) never fires for vehicle-repair businesses", () => {
+  // 2026-09-17 06:00 QA cycle (live S7, Trujillo Alto): an existing auto
+  // repair shop honestly answering Yes to Q_OFFERS_CONSTRUCTION_SERVICES
+  // ("construction, installation, repair, or contracting services to
+  // others") was shown the DACO Contractor License as a REQUIRED Critical
+  // Path card. Ley 146-1995 Registro de Contratistas covers construction
+  // contractors; vehicle repair is not construction contracting. RULE_0642
+  // now excludes the vehicle-repair business types.
+  for (const businessTypeName of ["Auto Repair Shop", "Motorcycle Repair Shop", "Body Shop", "Tire Shop"]) {
+    const rows = classify(
+      {
+        municipalityName: "Trujillo Alto",
+        businessTypeName,
+        businessStatus: "existing",
+        answers: { Q_OFFERS_CONSTRUCTION_SERVICES: true },
+      },
+      "existing"
+    ).classified;
+    assert.equal(
+      byId(rows, DOC_CONTRACTOR),
+      undefined,
+      `${businessTypeName} answering Yes to construction/repair services must not trigger the DACO contractor license`
+    );
+  }
+
+  // Positive control: a genuine construction contractor in the same
+  // municipality still receives the requirement.
+  const contractor = classify(
+    {
+      municipalityName: "Trujillo Alto",
+      businessTypeName: "General Contractor",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_OFFERS_CONSTRUCTION_SERVICES: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(contractor, DOC_CONTRACTOR)?.applicability,
+    "required",
+    "a new general contractor still receives the DACO contractor license"
+  );
+});

@@ -315,3 +315,32 @@ test("home-based: non-home business with Q_PHYSICAL_LOCATION=true still fires th
   const docs = reqs.map((r) => r.document_id);
   assert.ok(docs.includes("DOC_PERMISO_UNICO"), "commercial premises still trigger Permiso Único");
 });
+
+// --- 7. Interpreter pre-answers never render as the user's own answer -------
+ // 2026-09-17 06:00 QA cycle (live S7, Trujillo Alto): a vehicle-registration
+ // card cited "Question: Will commercial vehicles be used? | Answer: Yes"
+ // for a question the guided flow never asked — the intake interpreter had
+ // pre-answered it from the business description (aiPrefilledKeys). "Answer:"
+ // is reserved for answers the user actually provided; interpreter
+ // pre-answers must render as "Derived answer:".
+
+test("ai-prefill: interpreter-answered questions render 'Derived answer', never 'Answer: Yes'", () => {
+  const answers = { Q_COMMERCIAL_VEHICLES: true };
+  const prefilled = computeRequirementsFromKB(RESTAURANT, answers, {}, {
+    aiPrefilledKeys: ["Q_COMMERCIAL_VEHICLES"],
+  });
+  const vehicle = prefilled.filter((r) => r.document_id === "DOC_VEHICLE_REGISTRATION");
+  assert.ok(vehicle.length > 0, "vehicle registration still triggers from the prefilled answer");
+  for (const r of vehicle) {
+    assert.ok(!r.reason.includes("| Answer:"), `prefilled answer must not render as the user's answer: ${r.reason}`);
+    assert.ok(r.reason.includes("Derived answer:"), `prefilled answer renders honestly: ${r.reason}`);
+  }
+
+  // Control: the same answer with no aiPrefilledKeys keeps the user's label.
+  const manual = computeRequirementsFromKB(RESTAURANT, answers, {}, {});
+  const manualVehicle = manual.filter((r) => r.document_id === "DOC_VEHICLE_REGISTRATION");
+  assert.ok(manualVehicle.length > 0, "vehicle registration still triggers from a manual answer");
+  for (const r of manualVehicle) {
+    assert.ok(r.reason.includes("| Answer: Yes"), `manual answer keeps the user label: ${r.reason}`);
+  }
+});

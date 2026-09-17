@@ -476,6 +476,17 @@ export function buildEngineInput(
      */
     confirmedKeys?: Iterable<string>;
     /**
+     * KB-question ids the intake interpreter answered from the user's
+     * description without explicit confirmation (aiPrefilledKeys). These
+     * values participate in rules normally, but trigger labels must never
+     * present them as the user's own answer ("Answer:" is reserved for
+     * values the user actually provided). They are marked "derived" in
+     * answerProvenance so cards render the honest "Derived answer:" label.
+     * Presentation-only: never feeds gateFact, so firing, gating, and
+     * classification are untouched.
+     */
+    aiPrefilledKeys?: Iterable<string>;
+    /**
      * Fact keys that arrived via the business passport (linked existing
      * business), not via the current intake. Admissible for business rules
      * when the business matches; never for project rules.
@@ -590,9 +601,16 @@ export function buildEngineInput(
     "Q_HOME_BASED",
     "Q_ONLINE_ONLY",
   ]);
+  // 2026-09-17 QA: interpreter pre-answers (aiPrefilledKeys) are answers the
+  // user never gave — the "answered from your description" panel exists
+  // precisely so they can correct them. Labeling them "user" let cards
+  // present e.g. "Question: Will commercial vehicles be used? | Answer: Yes"
+  // for a question that was never asked. Marking them "derived" renders the
+  // honest "Derived answer:" label instead.
+  const aiPrefilled = new Set(extra?.aiPrefilledKeys ?? []);
   for (const k of Object.keys(a)) {
     if (a[k] === undefined) continue;
-    answerProvenance[k] = LOCATION_DERIVED_KEYS.has(k) ? "derived" : "user";
+    answerProvenance[k] = LOCATION_DERIVED_KEYS.has(k) || aiPrefilled.has(k) ? "derived" : "user";
   }
 
   // Relationship-resolved facts, applied additively (see the doc comment).
@@ -886,6 +904,12 @@ export function computeRequirementsFromSnapshot(
     businessId?: string | null;
     confirmedKeys?: Iterable<string>;
     passportKeys?: Iterable<string>;
+    /**
+     * KB-question ids the intake interpreter answered from the user's
+     * description without explicit confirmation. Forwarded to
+     * buildEngineInput for honest trigger labeling (presentation-only).
+     */
+    aiPrefilledKeys?: Iterable<string>;
   } = {}
 ): UIRequirement[] {
   const input = buildEngineInput(profile, answers, resolved, {
@@ -895,6 +919,7 @@ export function computeRequirementsFromSnapshot(
     businessId: options.businessId ?? null,
     confirmedKeys: options.confirmedKeys,
     passportKeys: options.passportKeys,
+    aiPrefilledKeys: options.aiPrefilledKeys,
   });
   for (const question of snapshot.questions as Array<{ id: string }>) {
     const direct = answers[question.id];
@@ -987,6 +1012,12 @@ export function computeRequirementsFromKB(
     businessId?: string | null;
     confirmedKeys?: Iterable<string>;
     passportKeys?: Iterable<string>;
+    /**
+     * KB-question ids the intake interpreter answered from the user's
+     * description without explicit confirmation. Forwarded to
+     * computeRequirementsFromSnapshot for honest trigger labeling.
+     */
+    aiPrefilledKeys?: Iterable<string>;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
@@ -998,5 +1029,6 @@ export function computeRequirementsFromKB(
     businessId: options.businessId,
     confirmedKeys: options.confirmedKeys,
     passportKeys: options.passportKeys,
+    aiPrefilledKeys: options.aiPrefilledKeys,
   });
 }
