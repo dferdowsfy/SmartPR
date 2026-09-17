@@ -74,6 +74,7 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     Q_CUSTOMERS_VISIT: ["customers_visit", "customers_on_site"],
     Q_FEDERAL_CONTRACTS_GRANTS: ["federal_contracts_grants"],
     Q_OFFERS_CONSTRUCTION_SERVICES: ["offers_construction_services"],
+    Q_COMMERCIAL_VEHICLES: ["commercial_vehicles"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;

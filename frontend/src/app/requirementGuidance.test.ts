@@ -257,3 +257,23 @@ test("EIN guidance never frames employers-only or new-entity-only instructions a
   assert.ok(!/^Los patronos necesitan/.test(es.regulatoryReason),
     "the Puerto Rican Spanish copy carries the same neutral framing");
 });
+
+test("commercial vehicle registration guidance is DTOP-validated, never a placeholder", () => {
+  // REG-GUIDE-VEHICLE-001 (live QA 2026-09-17 03:00 cycle): the Commercial
+  // Vehicle Registration card for a Cataño food truck rendered the
+  // unvalidated-description placeholder. The document cites Law 22-2000
+  // Art. 23.01 at statute confidence, so a validated concept now exists —
+  // grounded in that statute, with no invented procedure.
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_VEHICLE_REGISTRATION"), {
+      ...context, language,
+      discoveryAnswers: { commercial_vehicles: true },
+      engineInput: { municipalityName: "Cataño", businessTypeName: "Food Truck", answers: { Q_COMMERCIAL_VEHICLES: true } },
+    });
+    assert.equal(g.status, "VALIDATED", `vehicle registration (${language})`);
+    assert.doesNotMatch(g.whyThisApplies, /hasn't validated the exact regulatory basis yet/i, `no placeholder whyThisApplies (${language})`);
+    assert.doesNotMatch(g.whatThisIs, /still pending|unavailable/i, `no placeholder whatThisIs (${language})`);
+    assert.match(g.regulatoryReason, /Law 22-2000|Ley 22-2000/, `statute basis present (${language})`);
+    assert.match(g.regulatoryReason, /marbete/i, `marbete mentioned (${language})`);
+  }
+});

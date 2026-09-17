@@ -41,6 +41,10 @@ export const PR_GUIDANCE_SOURCES = {
   // Alcohólicas.
   alcoholReqs: source("SRC_GUIDANCE_ALCOHOL_REQS", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas", "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas", "Hacienda's internal-revenue license requirements list the ASUME certification, the CRIM debt certification, and the criminal-record certificate among the prerequisites for the retail alcoholic-beverage dealer license."),
   antecedentes: source("SRC_GUIDANCE_ANTECEDENTES", "Policía de Puerto Rico", "Ley 254-1974, Art. 1 (34 L.P.R.A. § 1725)", "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Polic%C3%ADa/254-1974/254-1974.pdf", "Authorizes the Puerto Rico Police to issue the Certificado de Antecedentes Penales."),
+  // REG-GUIDE-VEHICLE-001 (2026-09-17 QA): DOC_VEHICLE_REGISTRATION cards
+  // were rendering the unvalidated-description placeholder; the document
+  // itself cites Law 22-2000 Art. 23.01 at statute confidence.
+  dtop: source("SRC_GUIDANCE_DTOP", "Departamento de Transportación y Obras Públicas (DTOP)", "Ley 22-2000, Art. 23.01 — vehicle registration and annual marbete", "https://dtop.pr.gov", "DTOP registers vehicles and issues the annual marbete; vehicle registrations, renewals, and forms are handled through CESCO (cesco.pr.gov)."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -76,6 +80,7 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_OGPE_CONSTRUCTION_PERMIT: { en: ["ogpe", "construction permit"], es: ["ogpe", "permiso de construcción"] },
   DOC_OWNER_AFFIDAVIT: { en: ["affidavit", "owner authorization"], es: ["declaración jurada", "autorización del dueño"] },
   DOC_OPPE_INSTALLER_REG: { en: ["oppe", "installer registration"], es: ["oppe", "registro de instalador"] },
+  DOC_VEHICLE_REGISTRATION: { en: ["vehicle registration", "dtop", "marbete"], es: ["registro de vehículos", "vehículo comercial", "dtop", "marbete"] },
 };
 function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = []): GuidanceConcept {
   return { requirementId, version: "2026-09-03.1", validationStatus: "validated", subjectTerms: SUBJECTS[requirementId], conditions, sources, regulatoryReason: content[0], purpose: content[1], nextAction: content[2], consequenceOrNextStep: content[3], dependencies,
@@ -245,5 +250,16 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The OGPe construction permit authorizes the project's construction under the building and energy codes. It is separate from the use permit that follows, which is what authorizes the business to operate.", "El permiso de construcción de OGPe autoriza la construcción del proyecto bajo los códigos de construcción y energía. Es independiente del permiso de uso que viene después, que es lo que autoriza a operar el negocio."),
     text("File the construction permit application through OGPe's Single Business Portal with the project plans and structural documentation.", "Radica la solicitud del permiso de construcción en el Portal Único de OGPe con los planos del proyecto y la documentación estructural."),
     text("An issued construction permit lets the project build; keep it with the project file — the approved use permit that follows is what authorizes operation.", "Un permiso de construcción emitido permite construir el proyecto; guárdalo en el expediente — el permiso de uso aprobado que sigue es lo que autoriza la operación."),
+  ]),
+  // REG-GUIDE-VEHICLE-001 (2026-09-17 QA): commercial-vehicle registration
+  // cards rendered the unvalidated-description placeholder (flagged in the
+  // 2026-09-17 03:00 cycle). The document cites Law 22-2000 Art. 23.01 at
+  // statute confidence, so a validated concept is written here from that
+  // basis — no invented procedure.
+  DOC_VEHICLE_REGISTRATION: concept("DOC_VEHICLE_REGISTRATION", [[condition("Q_COMMERCIAL_VEHICLES", "Commercial vehicles used", "Se usan vehículos comerciales", true)]], [PR_GUIDANCE_SOURCES.dtop], [
+    text("Vehicles used in a commercial operation in Puerto Rico must be registered with DTOP and carry the current annual registration sticker (marbete) under Law 22-2000, Art. 23.01.", "Los vehículos que se usan en una operación comercial en Puerto Rico tienen que estar registrados en el DTOP y tener al día el marbete anual, según la Ley 22-2000, Art. 23.01."),
+    text("The vehicle registration documents that that specific vehicle is authorized for road use with its registration current — it does not license the business activity itself.", "El registro de un vehículo comercial acredita que ese vehículo en particular está autorizado para transitar con su registro y marbete al día — no licencia la actividad del negocio por sí solo."),
+    text("Verify each commercial vehicle the business runs is registered with DTOP and its marbete is current; handle registrations, renewals, and transfers through CESCO.", "Verifica que cada vehículo comercial que opere el negocio esté registrado en el DTOP y tenga el marbete al día; gestiona los registros, renovaciones y traspasos en CESCO."),
+    text("An unregistered commercial vehicle cannot legally operate on public roads; keep each vehicle the business runs current on registration and marbete.", "Un vehículo comercial sin registrar no puede operar legalmente en las vías públicas; mantén al día el registro y el marbete de cada vehículo que opere el negocio."),
   ]),
 };
