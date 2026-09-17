@@ -2965,7 +2965,15 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0179",
@@ -2993,7 +3001,15 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0181",
@@ -3021,7 +3037,15 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0183",
@@ -3049,7 +3073,15 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0185",
@@ -3185,7 +3217,15 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0192",
@@ -3555,7 +3595,15 @@
     "citation_url": "https://dtop.pr.gov",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0218",
@@ -6454,7 +6502,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+      }
+    ]
   },
   {
     "id": "RULE_0691",

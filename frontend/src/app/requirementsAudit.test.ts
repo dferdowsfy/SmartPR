@@ -858,3 +858,77 @@ test("CASE N: DOC_TOURISM_REGISTRATION and DOC_ROOM_TAX_RETURN are verify_existi
     "a new STR host still files the room-tax return going forward"
   );
 });
+
+test("CASE O: DOC_VEHICLE_REGISTRATION is verify_existing for existing vehicle-operating businesses, required for new ones", () => {
+  // 2026-09-17 15:00 QA cycle (S17, Cataño): an operating food truck was
+  // shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION)
+  // as REQUIRED — as if registering for the first time. None of the 10
+  // document rules carried compliance_mode, so existing operators were
+  // told to apply as new. Same defect class as the DOC_HEALTH_PERMIT
+  // (257f7b6), DOC_FIRE_CERT/DOC_CFPM (d23e9a4), operating-obligation
+  // (e676174), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle
+  // registration is an operating obligation; an existing operator verifies
+  // what it holds, a new one registers. Swept compliance_mode=
+  // verify_existing onto the 7 non-heuristic rules with no
+  // missing_fact_keys (RULE_0178 trucking, RULE_0180 courier, RULE_0182
+  // moving, RULE_0184 taxi, RULE_0190 freight forwarding, RULE_0216 car
+  // dealership, RULE_0690 food truck). Deliberately excluded per the
+  // RULE_0664 lesson: RULE_0021 (heuristic question-trigger with
+  // missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188
+  // (heuristic logistics/warehouse associations with
+  // missing_fact_keys=[commercial_vehicles]).
+  const DOC_VEHICLE = docByName("vehicle registration");
+
+  const existing = classify(
+    {
+      municipalityName: "Cataño",
+      businessTypeName: "Food Truck",
+      businessStatus: "existing",
+      answers: {
+        Q_FOOD_TRUCK_MOBILE: true,
+        Q_FOOD_PREPARED: true,
+        Q_FOOD_SOLD: true,
+        Q_EMPLOYEES_HIRED: true,
+        Q_ALCOHOL_SOLD: false,
+        Q_COMMERCIAL_VEHICLES: true,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "existing"
+  ).classified;
+  const vehicle = byId(existing, DOC_VEHICLE);
+  assert.ok(vehicle, "vehicle registration must fire for an operating food truck");
+  assert.equal(
+    vehicle.applicability,
+    "verify_existing",
+    "an operating food truck verifies its existing DTOP vehicle registration (not REQUIRED-as-new)"
+  );
+
+  // The heuristic question-trigger (RULE_0021) must stay below the verified
+  // business-type basis: it must never promote the document above
+  // verify_existing for an existing operator. (It keeps its own
+  // missing_fact_keys=[vehicle_ownership] honesty; the classifier merge lets
+  // the stronger verify_existing basis win for the document posture.)
+
+  // A new food truck still registers its commercial vehicle for the first time.
+  const fresh = classify(
+    {
+      municipalityName: "Cataño",
+      businessTypeName: "Food Truck",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: {
+        Q_FOOD_TRUCK_MOBILE: true,
+        Q_FOOD_PREPARED: true,
+        Q_COMMERCIAL_VEHICLES: true,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_VEHICLE)?.applicability,
+    "required",
+    "a new food truck still registers its commercial vehicle"
+  );
+});
