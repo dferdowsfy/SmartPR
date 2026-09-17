@@ -852,7 +852,7 @@
   },
   {
     "id": "DOC_DOMICILIARY_USE_PERMIT",
-    "name": "Domiciliary Use Permit (home-business use authorization)",
+    "name": "Permiso Único — Domiciliary Use (home-business use authorization)",
     "agency": "OGPe / Municipality",
     "category": "Municipal",
     "agency_url": "https://www.permisos.pr.gov/",
@@ -862,7 +862,8 @@
     "download_note": null,
     "citation": "Home-based activity needs the applicable domiciliary-use permitting path",
     "citation_url": "https://www.permisos.pr.gov/",
-    "citation_confidence": "page"
+    "citation_confidence": "page",
+    "citation_note": "Modeled as the home-business pathway of the OGPe Permiso Único process (validated permit model REG-HOME-PHYSICAL-001 / G04), not an independent permit alongside the standard commercial Permiso Único."
   },
   {
     "id": "DOC_AMBULANT_BUSINESS_LICENSE",

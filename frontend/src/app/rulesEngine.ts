@@ -73,6 +73,16 @@ export interface KBRule {
    */
   excluded_business_types?: string[] | string | null;
   /**
+   * When true, the rule never fires for a home-based business
+   * (Q_HOME_BASED=true). Used where the home-based permitting pathway is a
+   * different route than the commercial one (e.g. commercial Permiso Único
+   * rules yield to the domiciliary-use pathway for home-based businesses —
+   * validated via G04: a home business never gets the standard
+   * commercial-location Permiso Único). Data-driven — the KB decides which
+   * rules carry it.
+   */
+  excluded_when_home_based?: boolean | null;
+  /**
    * When true, the requirement is conditional — it applies only if the
    * applicant seeks the status/program (e.g. agricultural qualification
    * programs). Data-driven; the classifier maps it to conditional.
@@ -589,6 +599,19 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     }
     // Reset per rule: set by the formation gate below when the rule carries it.
     let formationGateUnresolved = false;
+    // Home-based exclusion (B-4, 2026-09-16 blind remediation): when the
+    // business is home-based, a rule carrying excluded_when_home_based never
+    // fires — the home pathway (e.g. the domiciliary-use Permiso Único route)
+    // replaces the commercial one. Recorded in debug like negative-fact
+    // suppression so the graph shows WHY the requirement did not apply.
+    if (rule.excluded_when_home_based && input.answers["Q_HOME_BASED"] === true) {
+      rulesSuppressed.push({
+        rule_id: rule.id,
+        document_id: rule.requires_document_id,
+        suppressed_by: "Q_HOME_BASED=true",
+      });
+      continue;
+    }
     // Entity-scoped rules never fire for an excluded legal form (F01/F02:
     // e.g. incorporation for sole proprietorships, universal EIN for sole
     // props). An unknown entity type falls through; the classifier marks the

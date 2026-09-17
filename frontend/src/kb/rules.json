@@ -495,20 +495,6 @@
     "citation_source": "document"
   },
   {
-    "id": "RULE_0034",
-    "rule_type": "question_trigger",
-    "business_type_id": null,
-    "question_id": "Q_TOURISM_ACTIVITY",
-    "expected_answer": "true",
-    "municipality_flag": null,
-    "requires_document_id": "DOC_TOURISM_REGISTRATION",
-    "citation": "Art. 26, Ley 272-2003 (13 L.P.R.A. § 2271q) — Número de Identificación Contributiva",
-    "citation_url": "https://tourism.pr.gov/room-tax/",
-    "citation_confidence": "statute",
-    "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
-  },
-  {
     "id": "RULE_0036",
     "rule_type": "question_trigger",
     "business_type_id": null,
@@ -715,8 +701,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0050",
@@ -779,8 +771,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0054",
@@ -843,8 +841,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0058",
@@ -907,8 +911,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0062",
@@ -982,8 +992,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0066",
@@ -1060,8 +1076,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0071",
@@ -1124,8 +1146,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0075",
@@ -1188,8 +1216,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0079",
@@ -1252,8 +1286,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0083",
@@ -1330,8 +1370,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0088",
@@ -1642,20 +1688,6 @@
     "id": "RULE_0116",
     "rule_type": "business_type",
     "business_type_id": "BT_CONSULTING_FIRM",
-    "question_id": null,
-    "expected_answer": null,
-    "municipality_flag": null,
-    "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-    "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-    "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-    "citation_confidence": "page",
-    "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
-    "citation_source": "document"
-  },
-  {
-    "id": "RULE_0117",
-    "rule_type": "business_type",
-    "business_type_id": "BT_MARKETING_AGENCY",
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
@@ -2620,20 +2652,6 @@
     "citation_source": "document"
   },
   {
-    "id": "RULE_0191",
-    "rule_type": "business_type",
-    "business_type_id": "BT_PRIVATE_SCHOOL",
-    "question_id": null,
-    "expected_answer": null,
-    "municipality_flag": null,
-    "requires_document_id": "DOC_CHILDCARE_LICENSE",
-    "citation": "Ley 173-2016 (Licenciamiento de Establecimientos de Cuidado, Desarrollo y Aprendizaje de los Niños)",
-    "citation_url": "https://childcare.familia.pr.gov/proveedores/licenciamientos.html",
-    "citation_confidence": "statute",
-    "citation_inherited_from": "DOC_CHILDCARE_LICENSE",
-    "citation_source": "document"
-  },
-  {
     "id": "RULE_0192",
     "rule_type": "business_type",
     "business_type_id": "BT_PRIVATE_SCHOOL",
@@ -3237,8 +3255,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0239",
@@ -3259,8 +3283,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0240",
@@ -3281,8 +3311,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0241",
@@ -3303,8 +3339,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0242",
@@ -3339,8 +3381,14 @@
         "date": "2026-09-16",
         "change": "compliance_mode set to verify_existing",
         "reason": "Existing-business nuance: an operating business that triggers this obligation (employees hired, physical location, trade business type) should verify/amend its existing registration rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      },
+      {
+        "date": "2026-09-16",
+        "change": "excluded_when_home_based set to true",
+        "reason": "B-4 blind remediation (human-validated): a home-based business follows the domiciliary-use Permiso Único pathway (RULE_0652), not the standard commercial-location Permiso Único. Without this exclusion the business_type rule bypassed the validated home-based permit model (REG-HOME-PHYSICAL-001) and produced a duplicate generic + domiciliary permit requirement."
       }
-    ]
+    ],
+    "excluded_when_home_based": true
   },
   {
     "id": "RULE_0244",

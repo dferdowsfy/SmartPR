@@ -1,6 +1,6 @@
 {
-  "covered": 119,
-  "total": 371,
+  "covered": 118,
+  "total": 368,
   "updated": "2026-09-17",
   "note": "Refresh only when scenarios/rules legitimately change coverage; the test fails on silent decrease."
 }
