@@ -532,7 +532,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0036",
@@ -2415,7 +2423,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0140",
@@ -2473,7 +2489,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0143",
@@ -2531,7 +2555,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0146",
@@ -2589,7 +2621,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0155",
@@ -4093,7 +4133,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0262",
@@ -4107,7 +4155,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0263",
@@ -4121,7 +4177,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0264",
@@ -4135,7 +4199,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TOURISM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0268",
@@ -4927,7 +4999,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_ROOM_TAX_RETURN",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0602",
@@ -4941,7 +5021,15 @@
     "citation_url": "https://tourism.pr.gov/room-tax/",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_ROOM_TAX_RETURN",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0603",
@@ -6379,7 +6467,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 12:00 cycle (S13, Bayamón existing STR host): operating short-term-rental hosts were shown the PR Tourism Company innkeeper registration and the monthly room-tax return as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT (257f7b6) and DOC_FIRE_CERT/CFPM (d23e9a4) sweeps: lodging operating obligations are verify-existing for operating businesses, required for new ones. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). NOTE: RULE_0691 was deliberately excluded from the 2026-09-17 00:00 sweep for recurring-filing semantics caution; this cycle re-evaluated it — a monthly recurring filing for an operating host is exactly verify_existing semantics (verify you are current), same as the Annual Report (RULE_0636)."
+      }
+    ]
   },
   {
     "id": "RULE_0692",

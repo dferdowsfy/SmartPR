@@ -784,3 +784,77 @@ test("CASE M: DOC_FIRE_CERT and DOC_CFPM are verify_existing for existing busine
     `the presented CFPM basis must not be the heuristic RULE_0064, got ${cfpm?.source_rule_id}`
   );
 });
+
+test("CASE N: DOC_TOURISM_REGISTRATION and DOC_ROOM_TAX_RETURN are verify_existing for existing STR hosts, required for new ones", () => {
+  // 2026-09-17 12:00 QA cycle (S13, Bayamón): an operating short-term-rental
+  // host was shown the PR Tourism Company innkeeper registration and the
+  // monthly room-tax return as REQUIRED — as if applying for the first
+  // time. None of the DOC_TOURISM_REGISTRATION (RULE_0033, 0139, 0142,
+  // 0145, 0148, 0261–0264) or DOC_ROOM_TAX_RETURN (RULE_0601, 0602, 0691)
+  // rules carried compliance_mode, so existing businesses were told to
+  // apply as new. Same defect class as the DOC_HEALTH_PERMIT (257f7b6),
+  // DOC_FIRE_CERT/DOC_CFPM (d23e9a4) and operating-obligation (e676174)
+  // sweeps: lodging operating obligations are recurring; an operating
+  // host verifies what it holds, a new host registers. Deliberately
+  // swept-in: RULE_0691, which the 2026-09-17 00:00 cycle excluded for
+  // recurring-filing semantics caution — re-evaluated this cycle: a
+  // monthly recurring filing for an operating host is exactly
+  // verify_existing semantics (verify you are current), same as the
+  // Annual Report (RULE_0636). All swept rules have no missing_fact_keys
+  // (the RULE_0664 lesson: never set compliance_mode on heuristic rules
+  // with unresolved missing facts).
+  const DOC_TOURISM = docByName("innkeeper");
+  const DOC_ROOMTAX = docByName("room tax");
+
+  const existing = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Airbnb / Short-Term Rental",
+      businessStatus: "existing",
+      answers: {
+        Q_SHORT_TERM_RENTAL: true,
+        Q_GUESTS_OVERNIGHT: true,
+        Q_EMPLOYEES_HIRED: false,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "existing"
+  ).classified;
+  const tourism = byId(existing, DOC_TOURISM);
+  assert.ok(tourism, "innkeeper registration must fire for an operating STR host");
+  assert.equal(
+    tourism.applicability,
+    "verify_existing",
+    "an operating STR host verifies its existing innkeeper registration (not REQUIRED-as-new)"
+  );
+  const roomTax = byId(existing, DOC_ROOMTAX);
+  assert.ok(roomTax, "room tax return must fire for an operating STR host");
+  assert.equal(
+    roomTax.applicability,
+    "verify_existing",
+    "an operating STR host verifies it is current on monthly room-tax returns (not REQUIRED-as-new)"
+  );
+
+  // New hosts still register and file for the first time.
+  const fresh = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Airbnb / Short-Term Rental",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_SHORT_TERM_RENTAL: true, Q_GUESTS_OVERNIGHT: true },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_TOURISM)?.applicability,
+    "required",
+    "a new STR host still applies for the innkeeper registration"
+  );
+  assert.equal(
+    byId(fresh, DOC_ROOMTAX)?.applicability,
+    "required",
+    "a new STR host still files the room-tax return going forward"
+  );
+});
