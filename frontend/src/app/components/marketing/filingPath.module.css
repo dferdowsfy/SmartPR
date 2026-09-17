@@ -334,7 +334,10 @@
 
   .heading {
     font-size: clamp(2.15rem, 2.7vw, 2.9rem);
-    white-space: nowrap;
+    /* The heading must be allowed to wrap: in Spanish it is too long to share
+       one line with the pill, and a nowrap heading + nowrap row pushes the
+       pill past the card edge where it gets clipped. */
+    white-space: normal;
   }
 
   .summary {
