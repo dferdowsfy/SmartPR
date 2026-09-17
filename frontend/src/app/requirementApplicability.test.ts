@@ -118,3 +118,47 @@ test("applyEntityFormationExclusivity is a pure swap", () => {
   const llc = applyEntityFormationExclusivity(rows, "limited_liability_company");
   assert.deepEqual(llc.map((r) => r.document_id), ["DOC_EIN"]);
 });
+
+test("unknown entity type: formation certificates are conditional, never required (S18)", () => {
+  // S18 (Trujillo Alto café, entity type "Other / not sure"): the LLC
+  // Certificate of Organization fired as REQUIRED while the mutually
+  // exclusive Certificate of Incorporation was correctly conditional.
+  // A specific formation certificate can never be required when the legal
+  // form is unknown — both stay conditional until the form is confirmed.
+  const generated = runRulesEngine(KB, {
+    municipalityName: "Trujillo Alto",
+    businessTypeName: "Cafe",
+    businessStatus: "new",
+    entityNotFormed: true,
+    entityType: "other",
+    answers: {
+      Q_PHYSICAL_LOCATION: true,
+      Q_FOOD_PREPARED: true,
+      Q_FOOD_SOLD: true,
+      Q_EMPLOYEES_HIRED: true,
+    },
+  }).requirements;
+  const classified = classifyEngineRequirements(generated, {
+    kb: KB,
+    entityType: "other",
+    businessStatus: "new",
+  });
+  const byDoc = new Map(classified.map((r) => [r.document_id, r]));
+  const llcCert = byDoc.get("DOC_CERT_ORGANIZATION");
+  assert.ok(llcCert, "DOC_CERT_ORGANIZATION should still surface for an unknown legal form");
+  assert.equal(llcCert.applicability, "conditional");
+  assert.ok(llcCert.triggerFacts.some((t) => t.includes("entityType:unknown")));
+  const corpCert = byDoc.get("DOC_CERT_INCORPORATION");
+  if (corpCert) {
+    assert.equal(corpCert.applicability, "conditional");
+  }
+  // A confirmed LLC still resolves the certificate to required.
+  const llcKnown = classifyEngineRequirements(generated, {
+    kb: KB,
+    entityType: "limited_liability_company",
+    businessStatus: "new",
+  });
+  const llcKnownCert = llcKnown.find((r) => r.document_id === "DOC_CERT_ORGANIZATION");
+  assert.ok(llcKnownCert, "DOC_CERT_ORGANIZATION should surface for a known LLC");
+  assert.equal(llcKnownCert.applicability, "required");
+});

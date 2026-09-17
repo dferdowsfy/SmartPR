@@ -892,7 +892,6 @@ test("CASE O: DOC_VEHICLE_REGISTRATION is verify_existing for existing vehicle-o
         Q_ALCOHOL_SOLD: false,
         Q_COMMERCIAL_VEHICLES: true,
       },
-      projectFacts: { property_tenure: "owned" },
     },
     "existing"
   ).classified;
@@ -922,7 +921,6 @@ test("CASE O: DOC_VEHICLE_REGISTRATION is verify_existing for existing vehicle-o
         Q_FOOD_PREPARED: true,
         Q_COMMERCIAL_VEHICLES: true,
       },
-      projectFacts: { property_tenure: "owned" },
     },
     "new"
   ).classified;

@@ -138,6 +138,12 @@ const CORPORATION_TYPES: EntityType[] = [
 const LLC_FORMATION = "DOC_ARTICLES_ORGANIZATION";
 const CORP_FORMATION = "DOC_CERT_INCORPORATION";
 const EIN_DOC = "DOC_EIN";
+// RULE_0651 (validated review 2026-09-16) fires DOC_CERT_ORGANIZATION, the
+// LLC certificate of organization — it belongs to the same unknown-entity
+// downgrade family as DOC_ARTICLES_ORGANIZATION. A formation certificate is
+// only required when the entity's legal form is known; an unknown ("other")
+// form can never confirm a specific certificate as required.
+const LLC_FORMATION_DOCS = new Set<string>([LLC_FORMATION, "DOC_CERT_ORGANIZATION"]);
 
 /**
  * Entity types that never file a Certificate of Incorporation (or Articles
@@ -420,7 +426,11 @@ export function classifyEngineRequirements(
       continue;
     }
     const unknownEntity = !options.entityType || options.entityType === "other";
-    if (unknownEntity && row.document_id === CORP_FORMATION) {
+    // Unknown legal form: neither the corporation nor the LLC formation
+    // certificate can be asserted as required. The F01 exclusion logic
+    // already drops both for non-incorporating forms; for unknown forms both
+    // stay conditional until the user confirms the legal form.
+    if (unknownEntity && (row.document_id === CORP_FORMATION || LLC_FORMATION_DOCS.has(row.document_id))) {
       applicability = "conditional";
       triggerFacts.push("entityType:unknown");
     }
