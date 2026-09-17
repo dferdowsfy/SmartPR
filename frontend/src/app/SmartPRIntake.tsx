@@ -4732,8 +4732,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           {(() => {
             // Provision-level legal basis straight from the regulatory
             // knowledge graph (triggering rule's citation, else the required
-            // document's). Never rendered when the graph has no citation.
-            const basis = legalBasisFor(req.source_rule, req.document_id, KB);
+            // document's). Never rendered when the graph has no citation —
+            // and never rendered as "Legal basis: Validated review …" when
+            // the concept itself is unvalidated (a review citation is
+            // provenance, not a legal basis; the card body already discloses
+            // the unvalidated basis honestly).
+            const basis = legalBasisFor(req.source_rule, req.document_id, KB, guidance.status);
             if (!basis) return null;
             return (
               <span>

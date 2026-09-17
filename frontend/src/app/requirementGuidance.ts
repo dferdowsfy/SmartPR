@@ -253,16 +253,32 @@ const INTERNAL_FILENAME = /\s*\([^)]*\.(xlsx|xls|csv|ts|tsx|js|json|md|pdf)\)/i;
 const displayCitation = (raw: string): string =>
   raw.replace(INTERNAL_FILENAME, "").replace(/\s{2,}/g, " ").trim();
 
+/**
+ * A "Validated review …" citation is provenance (the rule was reviewed), not a
+ * legal basis (a statute, regulation, or ordinance the user can verify). When
+ * the guidance concept itself is unvalidated — the card body honestly says
+ * "SmartPR hasn't validated the exact regulatory basis yet" — rendering that
+ * provenance as "Legal basis: Validated review 2026-09-16" contradicts the
+ * card's own disclosure. (2026-09-17 QA, live S12: the REQUIRED Domiciliary
+ * Use card carried both.) Suppress review-type citations for unvalidated
+ * concepts; genuine statutory citations still render.
+ */
+const REVIEW_CITATION = /^\s*validated review\b/i;
+const isReviewCitation = (raw: string): boolean => REVIEW_CITATION.test(displayCitation(raw));
+
 export function legalBasisFor(
   sourceRuleId: string | null | undefined,
   documentId: string | null | undefined,
   kb: KnowledgeBase,
+  guidanceStatus?: "VALIDATED" | "GUIDANCE_NEEDS_REVIEW",
 ): LegalBasis | null {
   const rules = kb.rules as (KnowledgeBase["rules"][number] & CitationCarrier & { requires_document_id?: unknown })[];
   const docs = kb.documents as (KnowledgeBase["documents"][number] & CitationCarrier)[];
+  const unvalidated = guidanceStatus === "GUIDANCE_NEEDS_REVIEW";
   const rule = rules.find((r) => r.id === sourceRuleId);
   const ruleCitation = citationText(rule);
   if (rule && ruleCitation.length > 10) {
+    if (unvalidated && isReviewCitation(ruleCitation)) return null;
     return {
       ruleId: rule.id,
       citation: displayCitation(ruleCitation),
@@ -277,6 +293,7 @@ export function legalBasisFor(
   const doc = docs.find((d) => d.id === docId);
   const docCitation = citationText(doc);
   if (doc && docCitation.length > 10) {
+    if (unvalidated && isReviewCitation(docCitation)) return null;
     return {
       ruleId: rule?.id ?? null,
       citation: displayCitation(docCitation),

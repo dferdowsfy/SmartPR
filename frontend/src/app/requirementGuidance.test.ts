@@ -213,3 +213,28 @@ test("legalBasisFor never renders internal filenames to users", () => {
   assert.doesNotMatch(basis.citation, /SmartPR_25_Goldens/i);
   assert.match(basis.citation, /Validated review 2026-09-16/);
 });
+
+test("legalBasisFor never claims validation for unvalidated concepts", () => {
+  // Regression (live QA 2026-09-17, S12): the REQUIRED Domiciliary Use
+  // card's body honestly said "SmartPR hasn't validated the exact regulatory
+  // basis yet" while its footer read "Legal basis: Validated review
+  // 2026-09-16". A review citation is provenance, not a legal basis — it
+  // must not render as one when the concept is unvalidated.
+  assert.equal(
+    legalBasisFor("RULE_0652", "DOC_DOMICILIARY_USE_PERMIT", kb as any, "GUIDANCE_NEEDS_REVIEW"),
+    null,
+    "review citation suppressed for an unvalidated concept"
+  );
+  // The same citation still renders for validated concepts (provenance kept).
+  const validated = legalBasisFor("RULE_0652", "DOC_DOMICILIARY_USE_PERMIT", kb as any, "VALIDATED");
+  assert.ok(validated, "basis resolves for a validated concept");
+  assert.match(validated.citation, /Validated review 2026-09-16/);
+  // Genuine statutory citations still render even when the description text
+  // is pending — the statute is real, only the writeup is not.
+  const statute = legalBasisFor("RULE_0009", "DOC_HEALTH_PERMIT", kb as any, "GUIDANCE_NEEDS_REVIEW");
+  assert.ok(statute, "statutory citation still renders for an unvalidated concept");
+  assert.match(statute.citation, /Ley 81-1912/);
+  // Callers that do not pass a status keep the old behavior.
+  const legacy = legalBasisFor("RULE_0652", "DOC_DOMICILIARY_USE_PERMIT", kb as any);
+  assert.ok(legacy, "omitted status keeps legacy behavior");
+});
