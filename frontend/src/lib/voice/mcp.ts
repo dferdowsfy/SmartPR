@@ -1001,7 +1001,11 @@ async function toolVerifyVoicePin(
 ): Promise<unknown> {
   const email =
     typeof args.email === "string" ? args.email.trim().toLowerCase() : "";
-  const pin = typeof args.pin === "string" ? args.pin.trim() : "";
+  // The model may pass keypad/transcribed PINs with separators ("123 456",
+  // "123-456"). Normalize to digits before format validation; anything that
+  // is not 6 digits after normalization is still rejected as invalid.
+  const pin =
+    typeof args.pin === "string" ? args.pin.replace(/\D/g, "") : "";
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const invalid = {
     ok: false,

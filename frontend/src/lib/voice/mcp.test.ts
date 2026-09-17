@@ -761,6 +761,18 @@ describe("verify_voice_pin", () => {
     );
   });
 
+  it("accepts a PIN with keypad/transcription separators", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    for (const pin of ["123 456", "123-456", "1 2 3 4 5 6"]) {
+      const payload = await verify(db, { email: EMAIL, pin });
+      assert.equal(payload.data.ok, true, `pin variant: ${pin}`);
+    }
+  });
+
   it("unlocks account tools with the issued session_token argument", async () => {
     const scenario: Scenario = {
       session: null,
