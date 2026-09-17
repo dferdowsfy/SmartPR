@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS voice_access (
   phone_e164 TEXT NOT NULL,
   phone_display TEXT NOT NULL,
   pin_hash TEXT NOT NULL,
+  pin_uid TEXT,
   enabled BOOLEAN NOT NULL DEFAULT true,
   failed_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMPTZ,
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS voice_access (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_voice_access_phone ON voice_access(phone_e164);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_voice_access_pin_uid ON voice_access(pin_uid);
 
 -- ---------------------------------------------------------------------------
 -- voice_sessions: short-lived authenticated voice sessions.

@@ -8,7 +8,7 @@
 
 import { getPool, isEnabled } from "../../../../graph/db";
 import { getCurrentUser } from "../../../../../lib/supabase/server";
-import { hashPin, isValidPinFormat, verifyPin } from "../../../../../lib/voice/pin";
+import { hashPin, isValidPinFormat, pinIdentifier, verifyPin } from "../../../../../lib/voice/pin";
 import { logVoiceAudit } from "../../../../../lib/voice/audit";
 import { clientIp, readJson } from "../../_util";
 
@@ -66,12 +66,34 @@ export async function POST(request: Request) {
     action = "pin_reset";
   }
 
+  // A voice PIN identifies exactly one account: reject PINs already in use
+  // by another user so the PIN alone can always resolve the caller.
+  let pinUid: string;
+  try {
+    pinUid = pinIdentifier(newPin as string);
+  } catch {
+    return Response.json(
+      { error: "server_misconfigured", message: "Voice PIN setup is unavailable right now." },
+      { status: 500 }
+    );
+  }
+  const pinClash = await pool.query<{ user_id: string }>(
+    `SELECT user_id FROM voice_access WHERE pin_uid = $1 LIMIT 1`,
+    [pinUid]
+  );
+  if (pinClash.rows[0] && pinClash.rows[0].user_id !== user.id) {
+    return Response.json(
+      { error: "pin_in_use", message: "That PIN is already in use. Please choose a different 6-digit PIN." },
+      { status: 409 }
+    );
+  }
+
   const pinHash = await hashPin(newPin as string);
   await pool.query(
     `UPDATE voice_access
-        SET pin_hash = $2, failed_attempts = 0, locked_until = NULL, updated_at = now()
+        SET pin_hash = $2, pin_uid = $3, failed_attempts = 0, locked_until = NULL, updated_at = now()
       WHERE user_id = $1`,
-    [user.id, pinHash]
+    [user.id, pinHash, pinUid]
   );
   // A PIN change/reset invalidates outstanding voice sessions.
   await pool.query(

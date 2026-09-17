@@ -46,6 +46,7 @@ import {
   isValidPinFormat,
   lockoutSecondsRemaining,
   normalizePinInput,
+  pinIdentifier,
   verifyPin,
   hashPin,
 } from "./pin";
@@ -232,31 +233,28 @@ export const MCP_TOOLS: McpToolDef[] = [
     name: "verify_voice_pin",
     description:
       "Unlock the caller's SmartPR account tools with their 6-digit voice PIN. " +
-      "Ask for the caller's SmartPR account email aloud, then ask them to SAY the 6-digit PIN " +
-      "aloud, one digit at a time (keypad tones are not delivered on this number). " +
+      "The PIN alone identifies the account — NEVER ask for an email address. " +
+      "Ask the caller to SAY the 6-digit PIN aloud, one digit at a time " +
+      "(keypad tones are not delivered on this number). " +
       "Never repeat the digits back, and never read the returned session_token aloud. " +
       "Convert any spoken digit words to digits and pass the 6 digits in 'pin'. " +
       "On success the result contains a session_token: include it as the 'session_token' argument " +
       "in every subsequent account tool call (it expires after 30 minutes). " +
-      "Never claim the caller is verified from merely collecting the email and PIN — " +
+      "Never claim the caller is verified from merely collecting the PIN — " +
       "only this tool's ok:true verifies them, and until then use only get_general_requirements.",
-    args: ["email", "pin"],
+    args: ["pin"],
     needsBusiness: false,
     anonymous: true,
     inputSchema: {
       type: "object",
       properties: {
-        email: {
-          type: "string",
-          description: "The caller's SmartPR account email address.",
-        },
         pin: {
           type: "string",
           description:
             "The caller's 6-digit voice PIN, spoken aloud one digit at a time — convert any digit words to digits.",
         },
       },
-      required: ["email", "pin"],
+      required: ["pin"],
       additionalProperties: false,
     },
   },
@@ -949,8 +947,7 @@ export async function executeMcpTool(
       // role-playing an already-verified caller.
       failure.message =
         "The caller is not verified: no session token was provided. " +
-        "Call verify_voice_pin with the caller's SmartPR account email and " +
-        "spoken 6-digit PIN, and only proceed to account tools when it returns ok:true.";
+        "Call verify_voice_pin with the caller's spoken 6-digit PIN, and only proceed to account tools when it returns ok:true.";
     }
     return finish(false, failure, denialKind, false);
   }
@@ -990,7 +987,7 @@ interface VoiceAccessRow {
 }
 
 /**
- * Lazily-created dummy PIN envelope so unknown/disabled emails cost the
+ * Lazily-created dummy PIN envelope so unknown/disabled PINs cost the
  * same scrypt work as a real verification (no user-enumeration oracle).
  */
 let dummyPinEnvelope: string | null = null;
@@ -1002,36 +999,35 @@ async function dummyPinVerify(pin: string): Promise<void> {
 /**
  * Anonymous account-unlock tool for console-agent mode.
  *
- * Verifies the caller's 6-digit voice PIN against the enrolled PIN for the
- * given account email, then issues a short-lived voice session token that
- * the agent passes as `session_token` to subsequent account tools.
+ * PIN-only verification: the caller's 6-digit voice PIN is the account
+ * identifier. voice_access.pin_uid (HMAC of the PIN, UNIQUE per account)
+ * resolves the caller with one indexed lookup — the agent never asks for
+ * an email address on a call. A short-lived voice session token is issued;
+ * the agent passes it as `session_token` to subsequent account tools.
  *
  * Auth failures are returned as data (ok:false), not transport errors, so
- * the agent can respond conversationally. Brute-force protection mirrors
- * the gateway verify-pin route: 5 failed attempts lock the account's voice
- * access for 15 minutes. Unknown or disabled emails get a generic response
- * with timing equalized by a dummy scrypt verification.
+ * the agent can respond conversationally. Unknown or disabled PINs get a
+ * generic response with timing equalized by a dummy scrypt verification,
+ * so the response does not reveal whether a PIN is enrolled.
  */
 async function toolVerifyVoicePin(
   db: Db,
   args: Record<string, unknown>
 ): Promise<unknown> {
-  const email =
-    typeof args.email === "string" ? args.email.trim().toLowerCase() : "";
+  // PIN-only verification: the 6-digit PIN is the account identifier.
   // The model may pass spoken/transcribed PINs ("one two three four five
   // six"), or PINs with separators ("123 456", "123-456"). Normalize to
   // digits before format validation; anything that is not 6 digits after
   // normalization is still rejected as invalid.
   const pin = normalizePinInput(typeof args.pin === "string" ? args.pin : "");
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const invalid = {
     ok: false,
     error: "invalid_credentials",
-    message: "That email or PIN was not recognized. Please try again.",
+    message: "That PIN was not recognized. Please try again.",
   };
-  // Fail fast on malformed input without touching the account row or attempt
-  // counters. Still audited so silent client-side failures stay visible.
-  if (!emailOk || !isValidPinFormat(pin)) {
+  // Fail fast on malformed input without touching any account row. Still
+  // audited so silent client-side failures stay visible.
+  if (!isValidPinFormat(pin)) {
     await logVoiceAudit(db, {
       action: "pin_failed",
       details: { reason: "malformed_input", via: "mcp_verify_voice_pin" },
@@ -1039,10 +1035,28 @@ async function toolVerifyVoicePin(
     return invalid;
   }
 
+  // Resolve the account by the PIN's unique identifier. Fail closed when
+  // the server pepper is not configured: without it PINs cannot be
+  // matched to accounts.
+  let uid: string;
+  try {
+    uid = pinIdentifier(pin);
+  } catch {
+    await logVoiceAudit(db, {
+      action: "pin_failed",
+      details: { reason: "server_misconfigured", via: "mcp_verify_voice_pin" },
+    });
+    return {
+      ok: false,
+      error: "temporarily_unavailable",
+      message: "Verification is temporarily unavailable. Please try again later.",
+    };
+  }
+
   const { rows } = await db.query<VoiceAccessRow>(
     `SELECT user_id, phone_e164, pin_hash, enabled, failed_attempts, locked_until
-       FROM voice_access WHERE lower(email) = $1 LIMIT 1`,
-    [email]
+       FROM voice_access WHERE pin_uid = $1 LIMIT 1`,
+    [uid]
   );
   const access = rows[0];
   if (!access || !access.enabled) {
@@ -1071,6 +1085,10 @@ async function toolVerifyVoicePin(
     };
   }
 
+  // Defense in depth: the pin_uid match already identifies the account, but
+  // the scrypt envelope remains the authoritative PIN check. (A mismatch
+  // here is unexpected — it would mean the stored identifier and hash
+  // disagree — and is treated as a failed attempt.)
   const ok = await verifyPin(pin, access.pin_hash);
   if (!ok) {
     // Atomic increment: concurrent wrong PINs cannot lose updates or
@@ -1110,8 +1128,8 @@ async function toolVerifyVoicePin(
           "Too many wrong PIN attempts. Voice access is locked for 15 minutes.",
       };
     }
-    // Same generic shape as the unknown-email response below: the presence
-    // or absence of extra fields must not reveal whether an email is enrolled.
+    // Same generic shape as the unknown-PIN response below: the presence
+    // or absence of extra fields must not reveal whether a PIN is enrolled.
     return invalid;
   }
 

@@ -1,10 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  getPinPepper,
   hashPin,
   isValidPinFormat,
   lockoutSecondsRemaining,
   normalizePinInput,
+  pinIdentifier,
   verifyPin,
 } from "./pin";
 
@@ -110,5 +112,55 @@ describe("normalizePinInput", () => {
     assert.equal(normalizePinInput(""), "");
     assert.equal(normalizePinInput(null), "");
     assert.equal(normalizePinInput(undefined), "");
+  });
+});
+
+describe("pinIdentifier", () => {
+  const PEPPER = "test-pepper-0123456789abcdef";
+
+  it("is deterministic for the same PIN and pepper", () => {
+    assert.equal(pinIdentifier("123456", PEPPER), pinIdentifier("123456", PEPPER));
+  });
+
+  it("differs across PINs and across peppers", () => {
+    const a = pinIdentifier("123456", PEPPER);
+    assert.notEqual(pinIdentifier("123457", PEPPER), a);
+    assert.notEqual(pinIdentifier("123456", "another-test-pepper-0000"), a);
+  });
+
+  it("is a 64-char hex string that never contains the PIN", () => {
+    const id = pinIdentifier("123456", PEPPER);
+    assert.match(id, /^[0-9a-f]{64}$/);
+    assert.ok(!id.includes("123456"));
+  });
+
+  it("throws for a malformed PIN", () => {
+    assert.throws(() => pinIdentifier("12345", PEPPER), /6 digits/);
+    assert.throws(() => pinIdentifier("abcdef", PEPPER), /6 digits/);
+  });
+
+  it("reads the pepper from VOICE_PIN_PEPPER when not passed explicitly", () => {
+    const saved = process.env.VOICE_PIN_PEPPER;
+    try {
+      process.env.VOICE_PIN_PEPPER = PEPPER;
+      assert.equal(pinIdentifier("123456"), pinIdentifier("123456", PEPPER));
+    } finally {
+      if (saved === undefined) delete process.env.VOICE_PIN_PEPPER;
+      else process.env.VOICE_PIN_PEPPER = saved;
+    }
+  });
+
+  it("getPinPepper fails closed when the pepper is missing or too short", () => {
+    const saved = process.env.VOICE_PIN_PEPPER;
+    try {
+      delete process.env.VOICE_PIN_PEPPER;
+      assert.throws(() => getPinPepper(), /VOICE_PIN_PEPPER/);
+      process.env.VOICE_PIN_PEPPER = "short";
+      assert.throws(() => getPinPepper(), /VOICE_PIN_PEPPER/);
+      assert.throws(() => pinIdentifier("123456"), /VOICE_PIN_PEPPER/);
+    } finally {
+      if (saved === undefined) delete process.env.VOICE_PIN_PEPPER;
+      else process.env.VOICE_PIN_PEPPER = saved;
+    }
   });
 });

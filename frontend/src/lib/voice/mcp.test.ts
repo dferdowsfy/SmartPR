@@ -29,7 +29,7 @@ import {
   type McpFailure,
 } from "./mcp";
 import { VoiceAuthError } from "./context";
-import { hashPin } from "./pin";
+import { hashPin, pinIdentifier } from "./pin";
 import { hashSessionToken } from "./session";
 import {
   setComplianceMailerForTests,
@@ -48,7 +48,7 @@ interface FakeSession {
 }
 
 interface FakeVoiceAccess {
-  email: string;
+  pin_uid: string;
   user_id: string;
   phone_e164: string;
   pin_hash: string;
@@ -93,9 +93,9 @@ function makeFakeDb(scenario: Scenario) {
       if (s.includes("FROM voice_access WHERE user_id")) {
         return { rows: [{ email: scenario.email }] };
       }
-      if (s.includes("FROM voice_access WHERE lower(email)")) {
+      if (s.includes("FROM voice_access WHERE pin_uid")) {
         const row = scenario.voiceAccess ?? null;
-        return { rows: row && params?.[0] === row.email ? [row] : [] };
+        return { rows: row && params?.[0] === row.pin_uid ? [row] : [] };
       }
       if (s.includes("UPDATE voice_access") && s.includes("failed_attempts + 1")) {
         const row = scenario.voiceAccess;
@@ -260,15 +260,13 @@ describe("tool registry", () => {
     for (const tool of MCP_TOOLS) {
       const props = (tool.inputSchema.properties ?? {}) as Record<string, unknown>;
       for (const key of Object.keys(props)) {
-        // verify_voice_pin's email is the credential being verified (the PIN
-        // must match it) — not an identity override. Identity is always
-        // derived server-side from the issued session token.
-        if (tool.name === "verify_voice_pin" && key === "email") continue;
+        // Identity is always derived server-side from the issued session
+        // token — no tool may accept an identity override, and since the
+        // PIN-only change verify_voice_pin takes no email either.
         assert.ok(!banned.includes(key), `${tool.name} declares banned arg ${key}`);
       }
       const text = JSON.stringify(tool.inputSchema);
       for (const b of banned) {
-        if (tool.name === "verify_voice_pin" && b === "email") continue;
         assert.ok(!text.includes(`"${b}"`), `${tool.name} schema mentions ${b}`);
       }
     }
@@ -706,14 +704,27 @@ describe("email_my_summary", () => {
 /* ------------------------------------------------------------------ */
 
 describe("verify_voice_pin", () => {
-  const EMAIL = "caller@getsmartpr.com";
+  // PIN-only verification: the 6-digit PIN is the account identifier — no
+  // email is ever requested or required.
+  const PEPPER = "test-pepper-0123456789abcdef";
   const PIN = "123456";
+  const pinUid = (pin: string) => pinIdentifier(pin, PEPPER);
+
+  let savedPepper: string | undefined;
+  beforeEach(() => {
+    savedPepper = process.env.VOICE_PIN_PEPPER;
+    process.env.VOICE_PIN_PEPPER = PEPPER;
+  });
+  afterEach(() => {
+    if (savedPepper === undefined) delete process.env.VOICE_PIN_PEPPER;
+    else process.env.VOICE_PIN_PEPPER = savedPepper;
+  });
 
   async function accessRow(
     overrides: Partial<FakeVoiceAccess> = {}
   ): Promise<FakeVoiceAccess> {
     return {
-      email: EMAIL,
+      pin_uid: pinUid(PIN),
       user_id: "user-9",
       phone_e164: "+17870000009",
       pin_hash: await hashPin(PIN),
@@ -733,19 +744,30 @@ describe("verify_voice_pin", () => {
     return res.payload as { success: boolean; data: Record<string, unknown> };
   }
 
-  it("issues a session token for a correct PIN", async () => {
+  it("issues a session token for a correct PIN with no email", async () => {
     const db = makeFakeDb({
       session: null,
       email: null,
       voiceAccess: await accessRow(),
     });
-    const payload = await verify(db, { email: EMAIL, pin: PIN });
+    const payload = await verify(db, { pin: PIN });
     assert.equal(payload.data.ok, true);
     assert.ok(
       typeof payload.data.session_token === "string" &&
         (payload.data.session_token as string).startsWith("vs_")
     );
     assert.equal(payload.data.expires_in_minutes, 30);
+    // The account was resolved by the PIN's unique identifier.
+    assert.ok(
+      db.queries.some(
+        (q) =>
+          q.sql.includes("FROM voice_access WHERE pin_uid") &&
+          (q.params as unknown[])[0] === pinUid(PIN)
+      ),
+      "expected a pin_uid lookup"
+    );
+    // No email lookup happened at all.
+    assert.ok(!db.queries.some((q) => q.sql.includes("lower(email)")));
     // A fresh session row was persisted and the attempt counter reset.
     assert.equal(insertsOf(db, "voice_sessions").length, 1);
     assert.ok(
@@ -761,16 +783,26 @@ describe("verify_voice_pin", () => {
     );
   });
 
-  it("accepts a PIN with keypad/transcription separators", async () => {
+  it("accepts a PIN with separators or spoken digit words", async () => {
     const db = makeFakeDb({
       session: null,
       email: null,
       voiceAccess: await accessRow(),
     });
-    for (const pin of ["123 456", "123-456", "1 2 3 4 5 6"]) {
-      const payload = await verify(db, { email: EMAIL, pin });
+    for (const pin of ["123 456", "123-456", "1 2 3 4 5 6", "one two three four five six"]) {
+      const payload = await verify(db, { pin });
       assert.equal(payload.data.ok, true, `pin variant: ${pin}`);
     }
+  });
+
+  it("ignores a supplied email argument — the PIN alone identifies the account", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    const payload = await verify(db, { pin: PIN, email: "someone@else.example" });
+    assert.equal(payload.data.ok, true);
   });
 
   it("unlocks account tools with the issued session_token argument", async () => {
@@ -781,7 +813,7 @@ describe("verify_voice_pin", () => {
       businesses: [BIZ_A],
     };
     const db = makeFakeDb(scenario);
-    const payload = await verify(db, { email: EMAIL, pin: PIN });
+    const payload = await verify(db, { pin: PIN });
     const token = payload.data.session_token as string;
     // The session lookup now resolves for the issued token's hash.
     scenario.session = {
@@ -809,84 +841,84 @@ describe("verify_voice_pin", () => {
     );
   });
 
-  it("rejects a wrong PIN with the same shape as an unknown email", async () => {
+  it("rejects an unknown PIN with the generic response and no counter writes", async () => {
     const db = makeFakeDb({
       session: null,
       email: null,
       voiceAccess: await accessRow(),
     });
-    const payload = await verify(db, { email: EMAIL, pin: "000000" });
+    // A wrong PIN matches no account row, so it cannot be attributed to the
+    // enrolled user: generic response, no session, no attempt-counter write.
+    const payload = await verify(db, { pin: "000000" });
     assert.deepEqual(payload.data, {
       ok: false,
       error: "invalid_credentials",
-      message: "That email or PIN was not recognized. Please try again.",
+      message: "That PIN was not recognized. Please try again.",
     });
-    // The attempt counter was incremented; no session was issued.
     assert.equal(insertsOf(db, "voice_sessions").length, 0);
+    assert.ok(!db.queries.some((q) => q.sql.includes("UPDATE voice_access")));
+    const audits = insertsOf(db, "voice_audit_log");
     assert.ok(
-      db.queries.some(
-        (q) =>
-          q.sql.includes("UPDATE voice_access") && q.sql.includes("failed_attempts + 1")
-      )
+      audits.some((q) => JSON.stringify(q.params).includes("not_enrolled_or_disabled"))
     );
   });
 
-  it("locks after five wrong PINs and stays locked for the right one", async () => {
-    const db = makeFakeDb({
-      session: null,
-      email: null,
-      voiceAccess: await accessRow({ failed_attempts: 4 }),
-    });
-    const fifth = await verify(db, { email: EMAIL, pin: "000000" });
-    assert.equal(fifth.data.ok, false);
-    assert.equal(fifth.data.error, "locked");
-    assert.equal(fifth.data.retry_after_seconds, 900);
-    // Even the correct PIN is refused while locked.
-    const correct = await verify(db, { email: EMAIL, pin: PIN });
-    assert.equal(correct.data.ok, false);
-    assert.equal(correct.data.error, "locked");
-    assert.ok((correct.data.retry_after_seconds as number) > 0);
-    assert.equal(insertsOf(db, "voice_sessions").length, 0);
-  });
-
-  it("returns the generic response for unknown and disabled emails", async () => {
-    const unknownDb = makeFakeDb({ session: null, email: null, voiceAccess: null });
-    const unknown = await verify(unknownDb, { email: "nobody@example.com", pin: PIN });
-    assert.deepEqual(unknown.data, {
-      ok: false,
-      error: "invalid_credentials",
-      message: "That email or PIN was not recognized. Please try again.",
-    });
-
+  it("returns the generic response for a disabled PIN row", async () => {
     const disabledDb = makeFakeDb({
       session: null,
       email: null,
       voiceAccess: await accessRow({ enabled: false }),
     });
-    const disabled = await verify(disabledDb, { email: EMAIL, pin: PIN });
+    const disabled = await verify(disabledDb, { pin: PIN });
     assert.deepEqual(disabled.data, {
       ok: false,
       error: "invalid_credentials",
-      message: "That email or PIN was not recognized. Please try again.",
+      message: "That PIN was not recognized. Please try again.",
     });
-    // No session issued, no attempt-counter writes for either.
-    assert.equal(insertsOf(unknownDb, "voice_sessions").length, 0);
     assert.equal(insertsOf(disabledDb, "voice_sessions").length, 0);
-    assert.ok(!unknownDb.queries.some((q) => q.sql.includes("UPDATE voice_access")));
+    assert.ok(!disabledDb.queries.some((q) => q.sql.includes("UPDATE voice_access")));
   });
 
-  it("rejects malformed email and PIN without touching attempt counters", async () => {
+  it("refuses verification while the row is locked", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow({
+        locked_until: new Date(Date.now() + 15 * 60_1000).toISOString(),
+      }),
+    });
+    const locked = await verify(db, { pin: PIN });
+    assert.equal(locked.data.ok, false);
+    assert.equal(locked.data.error, "locked");
+    assert.ok((locked.data.retry_after_seconds as number) > 0);
+    assert.equal(insertsOf(db, "voice_sessions").length, 0);
+  });
+
+  it("fails closed when the PIN pepper is not configured", async () => {
+    delete process.env.VOICE_PIN_PEPPER;
     const db = makeFakeDb({
       session: null,
       email: null,
       voiceAccess: await accessRow(),
     });
-    for (const args of [
-      { email: "not-an-email", pin: PIN },
-      { email: EMAIL, pin: "12" },
-      { email: EMAIL, pin: "abcdef" },
-      { email: "", pin: "" },
-    ]) {
+    const payload = await verify(db, { pin: PIN });
+    assert.equal(payload.data.ok, false);
+    assert.equal(payload.data.error, "temporarily_unavailable");
+    assert.equal(insertsOf(db, "voice_sessions").length, 0);
+    const audits = insertsOf(db, "voice_audit_log");
+    assert.ok(
+      audits.some((q) => JSON.stringify(q.params).includes("server_misconfigured")),
+      "expected a server_misconfigured audit row"
+    );
+  });
+
+  it("rejects a malformed PIN without touching account rows", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    for (const args of [{ pin: "12" }, { pin: "abcdef" }, { pin: "" }, {}]) {
       const payload = await verify(db, args);
       assert.equal(payload.data.ok, false);
       assert.equal(payload.data.error, "invalid_credentials");
@@ -894,13 +926,13 @@ describe("verify_voice_pin", () => {
     assert.ok(!db.queries.some((q) => q.sql.includes("voice_access")));
   });
 
-  it("audits malformed verify_voice_pin calls without touching attempt counters", async () => {
+  it("audits malformed verify_voice_pin calls without touching account rows", async () => {
     const db = makeFakeDb({
       session: null,
       email: null,
       voiceAccess: await accessRow(),
     });
-    const payload = await verify(db, { email: "not-an-email", pin: PIN });
+    const payload = await verify(db, { pin: "12" });
     assert.equal(payload.data.error, "invalid_credentials");
     const audits = insertsOf(db, "voice_audit_log");
     assert.ok(
@@ -908,16 +940,6 @@ describe("verify_voice_pin", () => {
       "expected a malformed_input audit row"
     );
     assert.ok(!db.queries.some((q) => q.sql.includes("voice_access")));
-  });
-
-  it("is case-insensitive on email", async () => {
-    const db = makeFakeDb({
-      session: null,
-      email: null,
-      voiceAccess: await accessRow(),
-    });
-    const payload = await verify(db, { email: "CALLER@getsmartpr.com", pin: PIN });
-    assert.equal(payload.data.ok, true);
   });
 
   it("denies account tools for a revoked session token", async () => {
@@ -928,13 +950,12 @@ describe("verify_voice_pin", () => {
     };
     const db = makeFakeDb(scenario);
     const res = await executeMcpTool(db as never, null, "get_account_context", {
-      session_token: "vs_revoked_token_for_test",
+      session_token: "vs_revoked",
     });
     assert.equal((res.payload as McpFailure).code, "AUTH_REQUIRED");
   });
 });
 
-/* ------------------------------------------------------------------ */
 /* Console-agent MCP mode (static xAI Authorization + arg token)        */
 /* ------------------------------------------------------------------ */
 

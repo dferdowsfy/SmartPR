@@ -10,7 +10,7 @@
  * Zero dependencies, constant-time verification via crypto.timingSafeEqual.
  */
 
-import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { createHmac, randomBytes, scrypt, timingSafeEqual } from "crypto";
 
 /** Promise wrapper around callback-style scrypt with our fixed cost parameters. */
 function scryptKey(password: string, salt: Buffer, keylen: number): Promise<Buffer> {
@@ -141,4 +141,41 @@ export function lockoutSecondsRemaining(lockedUntil: Date | string | null): numb
   if (!lockedUntil) return 0;
   const ms = new Date(lockedUntil).getTime() - Date.now();
   return ms > 0 ? Math.ceil(ms / 1000) : 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* PIN as account identifier (PIN-only voice verification)              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Server pepper for the PIN identifier. Every PIN set/verify path needs it;
+ * without it PINs cannot be matched to accounts, so callers must fail
+ * closed when it is unset.
+ */
+export function getPinPepper(): string {
+  const pepper = process.env.VOICE_PIN_PEPPER;
+  if (!pepper || pepper.length < 16) {
+    throw new Error("VOICE_PIN_PEPPER is not configured (min 16 chars).");
+  }
+  return pepper;
+}
+
+/**
+ * Deterministic, non-reversible account identifier derived from the PIN:
+ * HMAC-SHA256(pepper, pin), hex-encoded. Stored in voice_access.pin_uid
+ * with a UNIQUE constraint so each 6-digit PIN identifies exactly one
+ * account — the PIN itself becomes the account selector for voice
+ * verification, and no email is ever needed on a call.
+ *
+ * Unlike the scrypt envelope (random salt per PIN), this is deterministic
+ * so a caller's spoken PIN can be matched to its account with one indexed
+ * lookup. The pepper keeps the identifier non-reversible: database read
+ * access alone does not reveal anyone's PIN.
+ */
+export function pinIdentifier(pin: string, pepper?: string): string {
+  if (!isValidPinFormat(pin)) {
+    throw new Error("PIN must be exactly 6 digits.");
+  }
+  const key = pepper ?? getPinPepper();
+  return createHmac("sha256", key).update(pin, "utf8").digest("hex");
 }

@@ -6,7 +6,7 @@
 import { getPool, isEnabled } from "../../../../graph/db";
 import { getCurrentUser } from "../../../../../lib/supabase/server";
 import { normalizePhone } from "../../../../../lib/voice/phone";
-import { hashPin, isValidPinFormat } from "../../../../../lib/voice/pin";
+import { hashPin, isValidPinFormat, pinIdentifier } from "../../../../../lib/voice/pin";
 import { logVoiceAudit } from "../../../../../lib/voice/audit";
 import { clientIp, readJson } from "../../_util";
 
@@ -47,6 +47,28 @@ export async function POST(request: Request) {
     );
   }
 
+  // A voice PIN identifies exactly one account: reject PINs already in use
+  // by another user so the PIN alone can always resolve the caller.
+  let pinUid: string;
+  try {
+    pinUid = pinIdentifier(body.pin as string);
+  } catch {
+    return Response.json(
+      { error: "server_misconfigured", message: "Voice PIN setup is unavailable right now." },
+      { status: 500 }
+    );
+  }
+  const pinClash = await pool.query<{ user_id: string }>(
+    `SELECT user_id FROM voice_access WHERE pin_uid = $1 LIMIT 1`,
+    [pinUid]
+  );
+  if (pinClash.rows[0] && pinClash.rows[0].user_id !== user.id) {
+    return Response.json(
+      { error: "pin_in_use", message: "That PIN is already in use. Please choose a different 6-digit PIN." },
+      { status: 409 }
+    );
+  }
+
   const existing = await pool.query<{ user_id: string }>(
     `SELECT user_id FROM voice_access WHERE user_id = $1 LIMIT 1`,
     [user.id]
@@ -54,19 +76,20 @@ export async function POST(request: Request) {
   const pinHash = await hashPin(body.pin as string);
   await pool.query(
     `INSERT INTO voice_access
-       (user_id, phone_e164, phone_display, pin_hash, enabled,
+       (user_id, phone_e164, phone_display, pin_hash, pin_uid, enabled,
         failed_attempts, locked_until, last_verified_at, email, updated_at)
-     VALUES ($1, $2, $3, $4, true, 0, NULL, NULL, $5, now())
+     VALUES ($1, $2, $3, $4, $5, true, 0, NULL, NULL, $6, now())
      ON CONFLICT (user_id) DO UPDATE SET
        phone_e164 = EXCLUDED.phone_e164,
        phone_display = EXCLUDED.phone_display,
        pin_hash = EXCLUDED.pin_hash,
+       pin_uid = EXCLUDED.pin_uid,
        enabled = true,
        failed_attempts = 0,
        locked_until = NULL,
        email = EXCLUDED.email,
        updated_at = now()`,
-    [user.id, normalized.e164, normalized.display, pinHash, user.email ?? null]
+    [user.id, normalized.e164, normalized.display, pinHash, pinUid, user.email ?? null]
   );
 
   // A (re-)enrollment invalidates any outstanding voice sessions.
