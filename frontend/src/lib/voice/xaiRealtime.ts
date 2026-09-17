@@ -68,6 +68,33 @@ export const MCP_ALLOWED_TOOLS = [
 
 export const MCP_SERVER_LABEL = "smartpr";
 
+// ---------------------------------------------------------------------------
+// Realtime WebSocket URL
+// ---------------------------------------------------------------------------
+
+/** Base URL for xAI's Speech-to-Speech realtime API. */
+export const XAI_REALTIME_WS_URL = "wss://api.x.ai/v1/realtime";
+
+/**
+ * Saved xAI agent loaded on the realtime session (xAI console → the agent's
+ * "Code integration" snippet connects with `?agent_id=`). Loading the agent
+ * applies its console configuration to the session; our session.update calls
+ * still replace instructions and tools per the auth state machine below.
+ */
+export const DEFAULT_XAI_AGENT_ID = "agent_MDinRE52EURHvKZV";
+
+/**
+ * Build the WebSocket URL used to join an incoming phone call. When
+ * `agentId` is set, the saved agent's config loads on the session (the xAI
+ * console "Code integration" pattern: `?agent_id=`). Omit it to join with a
+ * blank session configured purely by our session.update calls.
+ */
+export function buildRealtimeCallUrl(callId: string, agentId?: string | null): string {
+  const params = new URLSearchParams({ call_id: callId });
+  if (agentId) params.set("agent_id", agentId);
+  return `${XAI_REALTIME_WS_URL}?${params.toString()}`;
+}
+
 export interface McpToolEntry {
   type: "mcp";
   server_url: string;
@@ -106,6 +133,10 @@ export interface SessionUpdatePayload {
  * Pre-authentication session: NO tools attached. Grok greets the caller and
  * asks for the 6-digit PIN on the keypad. Account tools are attached only
  * after successful PIN verification (second session.update).
+ *
+ * `tools: []` is sent explicitly (not omitted): when the session loads a
+ * saved xAI agent via `?agent_id=`, the agent may bring console-configured
+ * tools with it, and those must be cleared before the caller authenticates.
  */
 export function buildPreAuthSessionUpdate(voice: string): SessionUpdatePayload {
   return {
@@ -114,6 +145,7 @@ export function buildPreAuthSessionUpdate(voice: string): SessionUpdatePayload {
       instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not authenticated yet. Greet them briefly as the SmartPR voice assistant and ask them to enter their 6-digit SmartPR voice PIN on the phone keypad. Never ask them to say the PIN aloud. Do not offer account information until authentication succeeds.`,
       voice,
       turn_detection: { type: "server_vad" },
+      tools: [],
     },
   };
 }

@@ -329,12 +329,16 @@ The xAI-side wiring is implemented in the Next.js app (no separate service):
   verifies the Standard Webhooks signature (`XAI_WEBHOOK_SECRET`), and hands
   the call to the manager detached so the webhook returns 200 immediately.
 - `src/lib/voice/xaiCallManager.ts` — per-call lifecycle: opens
-  `wss://api.x.ai/v1/realtime?call_id=…` with `XAI_API_KEY`, runs the pre-auth
-  session (no tools), collects the 6-digit PIN from DTMF events server-side,
-  clears xAI's input buffer + scrubs history so the raw PIN never reaches the
-  model, verifies via `/api/voice/phone/verify-pin`, then sends the authed
-  `session.update` with the 18 MCP tools (`authorization` = fresh `vs_…`
-  token). Revokes the session on hangup.
+  `wss://api.x.ai/v1/realtime?call_id=…&agent_id=…` with `XAI_API_KEY`
+  (`agent_id` loads the saved console agent's config, per the xAI console
+  "Code integration" pattern; env `XAI_AGENT_ID` overrides the default
+  `agent_MDinRE52EURHvKZV`, empty string disables it), runs the pre-auth
+  session (tools explicitly cleared so no console-configured tools leak in
+  before authentication), collects the 6-digit PIN from DTMF events
+  server-side, clears xAI's input buffer + scrubs history so the raw PIN
+  never reaches the model, verifies via `/api/voice/phone/verify-pin`, then
+  sends the authed `session.update` with the 18 MCP tools (`authorization` =
+  fresh `vs_…` token). Revokes the session on hangup.
 - `src/lib/voice/xaiRealtime.ts` — pure helpers (payload builders, signature
   verification, DTMF collector) with unit tests in `xaiRealtime.test.ts`.
 

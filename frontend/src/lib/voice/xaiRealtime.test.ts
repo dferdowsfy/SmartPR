@@ -20,11 +20,14 @@ import {
   buildAuthedSessionUpdate,
   buildMcpToolEntry,
   buildPreAuthSessionUpdate,
+  buildRealtimeCallUrl,
+  DEFAULT_XAI_AGENT_ID,
   DtmfPinCollector,
   MCP_ALLOWED_TOOLS,
   parseDtmfEvent,
   parseIncomingCall,
   verifyWebhookSignature,
+  XAI_REALTIME_WS_URL,
 } from "./xaiRealtime";
 
 const SECRET = "whsec_test_secret_value";
@@ -195,12 +198,37 @@ describe("parseDtmfEvent", () => {
   });
 });
 
+describe("buildRealtimeCallUrl", () => {
+  it("includes both call_id and agent_id when an agent is set", () => {
+    const url = buildRealtimeCallUrl("call_123", "agent_abc");
+    assert.equal(url, `${XAI_REALTIME_WS_URL}?call_id=call_123&agent_id=agent_abc`);
+  });
+
+  it("omits agent_id when disabled", () => {
+    assert.equal(buildRealtimeCallUrl("call_123"), `${XAI_REALTIME_WS_URL}?call_id=call_123`);
+    assert.equal(buildRealtimeCallUrl("call_123", null), `${XAI_REALTIME_WS_URL}?call_id=call_123`);
+    assert.equal(buildRealtimeCallUrl("call_123", ""), `${XAI_REALTIME_WS_URL}?call_id=call_123`);
+  });
+
+  it("encodes special characters in the call id", () => {
+    const url = buildRealtimeCallUrl("call a/b", "agent_abc");
+    assert.ok(url.includes("call_id=call+a%2Fb"));
+    assert.ok(url.includes("agent_id=agent_abc"));
+  });
+
+  it("defaults to the SmartPR console agent", () => {
+    assert.equal(DEFAULT_XAI_AGENT_ID, "agent_MDinRE52EURHvKZV");
+  });
+});
+
 describe("session.update payloads", () => {
-  it("pre-auth update carries no tools and no token material", () => {
+  it("pre-auth update explicitly clears tools and carries no token material", () => {
     const update = buildPreAuthSessionUpdate("eve");
     assert.equal(update.type, "session.update");
     assert.equal(update.session.voice, "eve");
-    assert.ok(!("tools" in update.session) || update.session.tools === undefined);
+    // Explicit empty array: clears any console-configured tools a saved
+    // agent (?agent_id=) might otherwise bring into the pre-auth session.
+    assert.deepEqual(update.session.tools, []);
     const serialized = JSON.stringify(update);
     assert.ok(!serialized.includes("vs_"));
     assert.ok(!serialized.includes("mcp"));

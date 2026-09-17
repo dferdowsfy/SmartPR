@@ -2,9 +2,12 @@
 //
 // Inbound call flow (docs/voice-mcp.md §7):
 //  1. xAI sends `realtime.call.incoming` to /api/voice/xai-webhook.
-//  2. This manager opens wss://api.x.ai/v1/realtime?call_id=… with XAI_API_KEY.
-//  3. Pre-auth session.update WITHOUT tools: Grok asks for the 6-digit PIN on
-//     the keypad. DTMF digits are collected here, server-side.
+//  2. This manager opens wss://api.x.ai/v1/realtime?call_id=…&agent_id=…
+//     with XAI_API_KEY (agent_id loads the saved console agent's config,
+//     per the xAI console "Code integration" pattern).
+//  3. Pre-auth session.update with tools EXPLICITLY CLEARED: Grok asks for
+//     the 6-digit PIN on the keypad. DTMF digits are collected here,
+//     server-side.
 //  4. On 6 digits: clear xAI's input buffer (best-effort, keeps the PIN out
 //     of model context), then POST /api/voice/phone/verify-pin.
 //  5. On success: second session.update WITH the 18 MCP tools, authorization
@@ -24,11 +27,12 @@ import {
   AGENT_INSTRUCTIONS,
   buildAuthedSessionUpdate,
   buildPreAuthSessionUpdate,
+  buildRealtimeCallUrl,
+  DEFAULT_XAI_AGENT_ID,
   DtmfPinCollector,
   parseDtmfEvent,
 } from "./xaiRealtime";
 
-const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const XAI_CALLS_URL = "https://api.x.ai/v1/realtime/calls";
 const AUTH_TIMEOUT_MS = 180_000;
 const GOODBYE_TIMEOUT_MS = 15_000;
@@ -53,6 +57,17 @@ function env(name: string): string | undefined {
 function selfBaseUrl(): string {
   const port = env("PORT") || "3000";
   return `http://127.0.0.1:${port}`;
+}
+
+/**
+ * Saved-agent id loaded on the realtime session via `?agent_id=` (the xAI
+ * console "Code integration" pattern). XAI_AGENT_ID unset → the SmartPR
+ * console agent; set to empty string → join with a blank session (no agent).
+ */
+function resolveAgentId(): string | undefined {
+  const raw = process.env.XAI_AGENT_ID;
+  if (raw === undefined) return DEFAULT_XAI_AGENT_ID;
+  return raw.length > 0 ? raw : undefined;
 }
 
 function log(callId: string, msg: string): void {
@@ -248,9 +263,10 @@ async function runCall(callId: string, callerE164: string | null): Promise<void>
       console.error("[xai-voice] phone lookup failed", err);
     }
   }
-  log(callId, `incoming caller_enrolled=${enrolled}`);
+  const agentId = resolveAgentId();
+  log(callId, `incoming caller_enrolled=${enrolled} agent_id=${agentId ?? "none"}`);
 
-  const ws = new WebSocket(`${XAI_REALTIME_URL}?call_id=${encodeURIComponent(callId)}`, {
+  const ws = new WebSocket(buildRealtimeCallUrl(callId, agentId), {
     headers: { authorization: `Bearer ${xaiKey}` },
   });
 
