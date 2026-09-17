@@ -8,7 +8,7 @@
  * intervention cards (secure inputs, values never rendered), and review card.
  * The live browser is secondary (AgencyBrowser) and never required.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Bot, Building2, CheckCircle2, ChevronDown, Eye, EyeOff,
   Hand, KeyRound, Landmark, Loader2, Play, Square, Stamp, Upload,
@@ -21,6 +21,11 @@ import type {
   AgencyRunPublic,
 } from "../../../../lib/agency-runs/types";
 import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
+import {
+  collectPortalValidationMessages,
+  fieldHasValidationIssue,
+  VALIDATION_HINT_RE,
+} from "../../../../lib/agency-runs/pendingFields";
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
 import {
   actionStatusChipLabel,
@@ -635,6 +640,13 @@ function InterventionCard(props: InterventionProps) {
   /** Text-field pause: the assistant card is the only place to type. */
   const fieldsPause =
     pendingFields.length > 0 || pauseReason === "USER_LOGIN";
+  const portalValidationMessages = useMemo(
+    () => collectPortalValidationMessages(pendingFields),
+    [pendingFields]
+  );
+  const showValidationBanner =
+    portalValidationMessages.length > 0 ||
+    pendingFields.some((f) => fieldHasValidationIssue(f));
   const isUpload = pauseReason === "USER_UPLOAD";
   const isGate = pauseReason === "CAPTCHA" || pauseReason === "PAYMENT";
 
@@ -690,6 +702,29 @@ function InterventionCard(props: InterventionProps) {
             </div>
           )}
 
+          {showValidationBanner && (
+            <div
+              role="alert"
+              className="mt-2 flex gap-2 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-[11px] leading-snug text-rose-950"
+            >
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+              <div>
+                <div className="font-bold text-rose-900">
+                  {L(
+                    "Portal rejected a value — fix below",
+                    "El portal rechazó un valor — corríjalo abajo",
+                    lang
+                  )}
+                </div>
+                {portalValidationMessages.length > 0 ? (
+                  <p className="mt-1 text-rose-900/90">
+                    {portalValidationMessages.join(" · ")}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
+
           {run.pause_streak >= 3 && (
             <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
               {L(
@@ -700,7 +735,7 @@ function InterventionCard(props: InterventionProps) {
             </div>
           )}
 
-          {askedAgain.length > 0 && (
+          {askedAgain.length > 0 && !showValidationBanner && (
             <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-900">
               {L(
                 "You already provided this — the assistant is asking again. Confirm it's correct or fix it, then continue.",
@@ -810,8 +845,19 @@ function InterventionCard(props: InterventionProps) {
                         </button>
                       )}
                     </div>
+                    {field.error ? (
+                      <p className="mt-1 text-[10px] font-medium leading-snug text-rose-700">
+                        {field.error}
+                      </p>
+                    ) : null}
                     {field.hint ? (
-                      <p className="mt-1 text-[10px] leading-snug text-amber-900/70">
+                      <p
+                        className={`mt-1 text-[10px] leading-snug ${
+                          !field.error && VALIDATION_HINT_RE.test(field.hint)
+                            ? "font-medium text-rose-700"
+                            : "text-slate-500"
+                        }`}
+                      >
                         {field.hint}
                       </p>
                     ) : null}

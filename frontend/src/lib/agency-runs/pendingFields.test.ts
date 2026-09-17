@@ -2,7 +2,9 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   DEFAULT_LOGIN_PENDING_FIELDS,
+  collectPortalValidationMessages,
   displayMessagesForAgentText,
+  fieldHasValidationIssue,
   humanizePauseEvent,
   parseRequiredFields,
   resolvePendingFields,
@@ -47,6 +49,28 @@ REQUIRED_FIELDS:
     assert.equal(fields[0].type, "text");
     assert.equal(fields[0].sensitive, true);
     assert.equal(fields[0].hint, "9 digits as shown on the portal (dashes OK)");
+  });
+
+  it("parses error= alongside hint= on re-pause lines", () => {
+    const text = `PAUSE_USER_LOGIN
+REQUIRED_FIELDS:
+- id=ssn; label=SSN; type=text; sensitive=true; hint=9 digits; error=Portal: el número de ID no es válido
+`;
+    const fields = parseRequiredFields(text);
+    assert.equal(fields.length, 1);
+    assert.equal(fields[0].id, "ssn");
+    assert.equal(fields[0].hint, "9 digits");
+    assert.equal(fields[0].error, "Portal: el número de ID no es válido");
+  });
+
+  it("parses error= alone without hint", () => {
+    const text = `REQUIRED_FIELDS:
+- id=ssn; label=SSN; type=text; sensitive=true; error=Invalid ID number
+`;
+    const fields = parseRequiredFields(text);
+    assert.equal(fields.length, 1);
+    assert.equal(fields[0].error, "Invalid ID number");
+    assert.equal(fields[0].hint, undefined);
   });
 
   it("returns empty when block has no field lines", () => {
@@ -109,11 +133,77 @@ describe("humanizePauseEvent", () => {
   it("displayMessagesForAgentText humanizes marker spam", () => {
     const raw = `PAUSE_USER_LOGIN
 REQUIRED_FIELDS:
-- id=ssn; label=SSN; type=text; sensitive=true; hint=wrong format
+- id=ssn; label=SSN; type=text; sensitive=true; hint=9 digits as shown
 `;
     const fields = parseRequiredFields(raw);
     const d = displayMessagesForAgentText(raw, "USER_LOGIN", fields);
     assert.doesNotMatch(d.message, /REQUIRED_FIELDS|id=ssn/);
     assert.match(d.message, /Assistant/i);
+  });
+
+  it("prefers rejection copy when fields carry error=", () => {
+    const fields = [
+      {
+        id: "ssn",
+        label: "SSN",
+        type: "text" as const,
+        sensitive: true,
+        hint: "9 digits",
+        error: "Portal: el número de ID no es válido",
+      },
+    ];
+    const h = humanizePauseEvent("USER_LOGIN", fields);
+    assert.match(h.message, /SURI rejected/i);
+    assert.match(h.message, /Assistant/i);
+    assert.match(h.message_es, /SURI rechazó/i);
+    assert.doesNotMatch(h.message, /REQUIRED_FIELDS/);
+  });
+
+  it("treats validation-looking hints as field errors for humanize", () => {
+    const fields = [
+      {
+        id: "ssn",
+        label: "SSN",
+        type: "text" as const,
+        sensitive: true,
+        hint: "Portal error: no es válido",
+      },
+    ];
+    assert.equal(fieldHasValidationIssue(fields[0]), true);
+    const h = humanizePauseEvent("USER_LOGIN", fields);
+    assert.match(h.message, /SURI rejected/i);
+  });
+});
+
+describe("collectPortalValidationMessages", () => {
+  it("concatenates unique error= messages and validation-looking hints", () => {
+    const msgs = collectPortalValidationMessages([
+      {
+        id: "ssn",
+        label: "SSN",
+        type: "text",
+        sensitive: true,
+        hint: "9 digits",
+        error: "Portal: el número de ID no es válido",
+      },
+      {
+        id: "itin",
+        label: "ITIN",
+        type: "text",
+        sensitive: true,
+        hint: "Invalid format",
+      },
+      {
+        id: "ssn2",
+        label: "SSN again",
+        type: "text",
+        sensitive: true,
+        error: "Portal: el número de ID no es válido",
+      },
+    ]);
+    assert.deepEqual(msgs, [
+      "Portal: el número de ID no es válido",
+      "Invalid format",
+    ]);
   });
 });
