@@ -180,10 +180,14 @@ required after expiry.
 
 Preferred flow:
 
-1. Inbound call → caller identification (phone lookup).
-2. PIN authentication via the Phase 1 gateway (`/api/voice/phone/verify-pin`).
-   The raw PIN is never exposed to Grok and never stored in conversation
-   history.
+1. Inbound call → caller identification (phone lookup). Nobody is hung up
+   on: every caller gets the free tier (general regulatory questions, no PIN
+   needed). The greeting invites premium PIN entry on the keypad — "if you
+   have a PIN for premium access, enter it now" — but never demands it.
+2. PIN authentication via the Phase 1 gateway (`/api/voice/phone/verify-pin`)
+   only when the caller actually enters 6 DTMF digits. The raw PIN is never
+   exposed to Grok and never stored in conversation history. A PIN from a
+   non-enrolled number keeps the caller in the free tier (no hangup).
 3. SmartPR issues the voice session token server-side.
 4. The telephony/gateway service opens the xAI realtime WebSocket and sends
    `session.update` with the MCP tool configuration above, embedding the
@@ -195,7 +199,7 @@ completes, send a second `session.update` adding the MCP tool entry after
 successful authentication — `session.update` may be sent at any time after
 session creation per the xAI docs. If authentication is absent or the token
 expires mid-call, account tools return `AUTH_REQUIRED` and the agent falls
-back to anonymous regulatory mode (§10) instead of failing the call.
+back to anonymous regulatory mode (§9) instead of failing the call.
 
 ## 8. Agent instructions
 
@@ -334,11 +338,14 @@ The xAI-side wiring is implemented in the Next.js app (no separate service):
   "Code integration" pattern; env `XAI_AGENT_ID` overrides the default
   `agent_MDinRE52EURHvKZV`, empty string disables it), runs the pre-auth
   session (tools explicitly cleared so no console-configured tools leak in
-  before authentication), collects the 6-digit PIN from DTMF events
-  server-side, clears xAI's input buffer + scrubs history so the raw PIN
-  never reaches the model, verifies via `/api/voice/phone/verify-pin`, then
-  sends the authed `session.update` with the 18 MCP tools (`authorization` =
-  fresh `vs_…` token). Revokes the session on hangup.
+  before authentication). Every caller gets the free tier greeting —
+  general questions need no PIN; entering 6 DTMF digits triggers
+  `/api/voice/phone/verify-pin` server-side, the raw PIN never reaches the
+  model (input buffer cleared + history scrubbed). On success the authed
+  `session.update` attaches the 18 MCP tools (`authorization` = fresh `vs_…`
+  token); a PIN from a non-enrolled number stays in the free tier with no
+  hangup. There is no authentication timeout — free-tier callers
+  legitimately never enter a PIN. Revokes the session on hangup.
 - `src/lib/voice/xaiRealtime.ts` — pure helpers (payload builders, signature
   verification, DTMF collector) with unit tests in `xaiRealtime.test.ts`.
 

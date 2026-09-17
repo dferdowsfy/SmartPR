@@ -18,6 +18,7 @@ import { createHmac } from "node:crypto";
 import {
   AGENT_INSTRUCTIONS,
   buildAuthedSessionUpdate,
+  buildCallGreeting,
   buildMcpToolEntry,
   buildPreAuthSessionUpdate,
   buildRealtimeCallUrl,
@@ -233,6 +234,24 @@ describe("session.update payloads", () => {
     assert.ok(!serialized.includes("vs_"));
     assert.ok(!serialized.includes("mcp"));
     assert.ok(update.session.instructions.includes("PIN"));
+  });
+
+  it("pre-auth instructions frame the free tier and invite (never demand) the PIN", () => {
+    const update = buildPreAuthSessionUpdate("eve");
+    assert.ok(update.session.instructions.includes("free tier"));
+    assert.ok(update.session.instructions.includes("Never ask the caller to say the PIN aloud"));
+    assert.ok(update.session.instructions.includes("until authentication succeeds"));
+  });
+
+  it("call greeting offers free questions first and invites the premium PIN", () => {
+    const enrolledGreeting = buildCallGreeting(true);
+    assert.ok(enrolledGreeting.includes("no PIN needed"));
+    assert.ok(enrolledGreeting.includes("premium access"));
+    assert.ok(enrolledGreeting.includes("keypad now"));
+    const strangerGreeting = buildCallGreeting(false);
+    assert.ok(strangerGreeting.includes("no PIN needed"));
+    assert.ok(strangerGreeting.includes("Phone access"));
+    assert.ok(!strangerGreeting.includes("keypad now"));
   });
 
   it("authed update carries exactly the 18 curated tools with the token", () => {

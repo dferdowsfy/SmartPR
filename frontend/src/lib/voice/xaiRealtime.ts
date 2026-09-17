@@ -130,9 +130,11 @@ export interface SessionUpdatePayload {
 }
 
 /**
- * Pre-authentication session: NO tools attached. Grok greets the caller and
- * asks for the 6-digit PIN on the keypad. Account tools are attached only
- * after successful PIN verification (second session.update).
+ * Pre-authentication session: NO account tools attached (tools explicitly
+ * cleared). The caller is in the free tier: they may ask general questions
+ * with no PIN, and may enter the 6-digit PIN on the keypad at any time to
+ * unlock premium account access. Account tools attach only after successful
+ * PIN verification (second session.update).
  *
  * `tools: []` is sent explicitly (not omitted): when the session loads a
  * saved xAI agent via `?agent_id=`, the agent may bring console-configured
@@ -142,12 +144,26 @@ export function buildPreAuthSessionUpdate(voice: string): SessionUpdatePayload {
   return {
     type: "session.update",
     session: {
-      instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not authenticated yet. Greet them briefly as the SmartPR voice assistant and ask them to enter their 6-digit SmartPR voice PIN on the phone keypad. Never ask them to say the PIN aloud. Do not offer account information until authentication succeeds.`,
+      instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller has not authenticated yet — they are in the free tier. Answer general questions about Puerto Rico business requirements, permits, licenses, and compliance from your own knowledge of Puerto Rico business regulation. Be precise about what you know, name the agency when you can, and say explicitly when an answer needs verification with the agency or a professional instead of guessing. If the caller enters their 6-digit PIN on the keypad and authentication succeeds, you will be told and given account tools. Never ask the caller to say the PIN aloud. Never offer account-specific information until authentication succeeds.`,
       voice,
       turn_detection: { type: "server_vad" },
       tools: [],
     },
   };
+}
+
+/**
+ * Spoken greeting for an inbound call: free tier first, premium PIN as an
+ * invitation. Sent as a system instruction right after the pre-auth session
+ * update so the exact framing is spoken verbatim.
+ */
+export function buildCallGreeting(enrolled: boolean): string {
+  const base =
+    "You've reached SmartPR. Ask me general questions about Puerto Rico business requirements, permits, licenses, and compliance — no PIN needed.";
+  const premium = enrolled
+    ? " If you have a PIN for premium access to your account, enter the 6-digit PIN on the phone keypad now."
+    : " For premium access to your own SmartPR account, set a PIN under Phone access in your SmartPR settings, then call back and enter it on the keypad.";
+  return `${base}${premium} Never ask the caller to say the PIN aloud.`;
 }
 
 /** Authenticated session: attaches the 18 SmartPR MCP tools with the fresh session token. */

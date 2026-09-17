@@ -5,14 +5,19 @@
 //  2. This manager opens wss://api.x.ai/v1/realtime?call_id=…&agent_id=…
 //     with XAI_API_KEY (agent_id loads the saved console agent's config,
 //     per the xAI console "Code integration" pattern).
-//  3. Pre-auth session.update with tools EXPLICITLY CLEARED: Grok asks for
-//     the 6-digit PIN on the keypad. DTMF digits are collected here,
-//     server-side.
+//  3. Pre-auth session.update with tools EXPLICITLY CLEARED: the caller is
+//     in the free tier (general questions, no PIN needed). The greeting
+//     invites premium PIN entry on the keypad; DTMF digits are collected
+//     here, server-side, for anyone who enters them.
 //  4. On 6 digits: clear xAI's input buffer (best-effort, keeps the PIN out
 //     of model context), then POST /api/voice/phone/verify-pin.
 //  5. On success: second session.update WITH the 18 MCP tools, authorization
 //     = the fresh voice session token. Grok proceeds with account tools.
-//  6. On call end: revoke the voice session.
+//     On not_enrolled: the caller stays in free mode, no hangup.
+//  6. On call end: revoke the voice session (if one was issued).
+//
+// There is no authentication timeout: free-tier callers legitimately never
+// enter a PIN, so the call lasts as long as the conversation does.
 //
 // Security invariants:
 // - The raw PIN and session token are never logged, never sent to xAI, and
@@ -24,8 +29,8 @@
 import WebSocket from "ws";
 
 import {
-  AGENT_INSTRUCTIONS,
   buildAuthedSessionUpdate,
+  buildCallGreeting,
   buildPreAuthSessionUpdate,
   buildRealtimeCallUrl,
   DEFAULT_XAI_AGENT_ID,
@@ -34,7 +39,6 @@ import {
 } from "./xaiRealtime";
 
 const XAI_CALLS_URL = "https://api.x.ai/v1/realtime/calls";
-const AUTH_TIMEOUT_MS = 180_000;
 const GOODBYE_TIMEOUT_MS = 15_000;
 
 interface ActiveCall {
@@ -44,7 +48,6 @@ interface ActiveCall {
   sessionToken: string | null;
   ended: boolean;
   pinCollector: DtmfPinCollector;
-  authTimer: NodeJS.Timeout | null;
 }
 
 const activeCalls = new Map<string, ActiveCall>();
@@ -126,7 +129,6 @@ async function hangupCall(callId: string): Promise<void> {
 function endCall(call: ActiveCall, reason: string): void {
   if (call.ended) return;
   call.ended = true;
-  if (call.authTimer) clearTimeout(call.authTimer);
   activeCalls.delete(call.callId);
   log(call.callId, `ended (${reason})`);
   const token = call.sessionToken;
@@ -201,7 +203,6 @@ async function handlePinComplete(call: ActiveCall, pin: string, callerE164: stri
   if (result.status === 200 && body.session_token) {
     call.authed = true;
     call.sessionToken = body.session_token;
-    if (call.authTimer) clearTimeout(call.authTimer);
     const voice = env("XAI_VOICE") || "eve";
     const mcpUrl = env("VOICE_MCP_SERVER_URL") || "https://www.getsmartpr.com/api/mcp/voice";
     send(call.ws, buildAuthedSessionUpdate(voice, mcpUrl, body.session_token));
@@ -223,6 +224,19 @@ async function handlePinComplete(call: ActiveCall, pin: string, callerE164: stri
       call,
       "Too many incorrect PIN attempts. This number is locked for 15 minutes. Goodbye.",
     );
+    return;
+  }
+  if (body.error === "not_enrolled") {
+    // The caller entered a PIN but this number has no voice access: stay in
+    // the free tier, no hangup.
+    send(
+      call.ws,
+      systemMessage(
+        "That phone number is not enrolled for premium SmartPR voice access. Tell the caller they can enroll under Phone access in their SmartPR settings, and continue helping with general questions in the free tier. Do not ask for the PIN again unless the caller brings it up.",
+      ),
+    );
+    send(call.ws, { type: "response.create" });
+    log(call.callId, "pin entered for non-enrolled number; continuing free tier");
     return;
   }
   const remaining =
@@ -277,7 +291,6 @@ async function runCall(callId: string, callerE164: string | null): Promise<void>
     sessionToken: null,
     ended: false,
     pinCollector: new DtmfPinCollector(),
-    authTimer: null,
   };
   activeCalls.set(callId, call);
 
@@ -296,30 +309,11 @@ async function runCall(callId: string, callerE164: string | null): Promise<void>
 
   const voice = env("XAI_VOICE") || "eve";
 
-  if (!enrolled) {
-    send(ws, {
-      type: "session.update",
-      session: {
-        instructions: `${AGENT_INSTRUCTIONS}\n\nThe caller is not enrolled in SmartPR voice access. Politely explain that this number is not enrolled for SmartPR voice service and that they can enroll from their SmartPR account settings, then say goodbye. Do not offer account information.`,
-        voice,
-        turn_detection: { type: "server_vad" },
-      },
-    });
-    send(ws, { type: "response.create" });
-    await waitForEvent(ws, "response.done", GOODBYE_TIMEOUT_MS);
-    endCall(call, "not_enrolled");
-    return;
-  }
-
-  // Pre-auth session: no tools. Grok prompts for the keypad PIN.
+  // Pre-auth session: no account tools. The greeting offers the free tier
+  // and invites premium PIN entry on the keypad; nobody is hung up on.
   send(ws, buildPreAuthSessionUpdate(voice));
+  send(ws, systemMessage(buildCallGreeting(enrolled)));
   send(ws, { type: "response.create" });
-
-  call.authTimer = setTimeout(() => {
-    if (!call.authed && !call.ended) {
-      void sayGoodbyeAndEnd(call, "We did not receive your PIN in time. Please call back when you are ready. Goodbye.");
-    }
-  }, AUTH_TIMEOUT_MS);
 
   ws.on("message", (data: WebSocket.RawData) => {
     if (call.ended) return;
