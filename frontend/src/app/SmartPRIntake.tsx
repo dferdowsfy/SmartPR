@@ -751,7 +751,12 @@ export function filterQuestionsByContext(
   return questions;
 }
 
-const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
+// Exported for regression testing: the intake's location-type combobox must
+// offer a home-based option for business types that can plausibly operate
+// from home, otherwise the AI-extracted "from my house" fact gets clobbered
+// by a forced commercial choice (QA 2026-09-17: home-based tutor forced into
+// "Educational Facility", losing Q_HOME_BASED).
+export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Restaurant": ["Restaurant Location", "Retail Storefront", "Mixed Use Property", "Tourism Facility", "Commercial Office"],
   "Fast Food Restaurant": ["Restaurant Location", "Retail Storefront", "Mixed Use Property"],
   "Bakery": ["Restaurant Location", "Retail Storefront", "Commercial Kitchen", "Industrial Facility"],
@@ -865,7 +870,7 @@ const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Freight Forwarding": ["Warehouse", "Commercial Office"],
   "Private School": ["Educational Facility"],
   "Daycare": ["Educational Facility", "Mixed Use Property"],
-  "Tutoring Center": ["Educational Facility", "Commercial Office"],
+  "Tutoring Center": ["Educational Facility", "Commercial Office", "Home-Based Business"],
   "Vocational School": ["Educational Facility"],
   "Training Company": ["Educational Facility", "Commercial Office", "Online Only"],
   "Educational Services Company": ["Commercial Office", "Online Only"],
