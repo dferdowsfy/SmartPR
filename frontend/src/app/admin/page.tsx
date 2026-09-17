@@ -29,8 +29,14 @@ export default async function AdminHome() {
         ) : (
           <>
             <h1 className="font-[family-name:var(--font-display)] text-4xl font-medium">Companies</h1>
-            <p className="mt-2 mb-8 text-[#5a5a5a]">
+            <p className="mt-2 mb-4 text-[#5a5a5a]">
               Every workspace on the platform. Select one to manage its team, branding, and plan.
+            </p>
+            <p className="mb-8 text-sm">
+              <Link href="/admin/security" className="font-medium text-brand underline-offset-4 hover:underline">
+                Security center
+              </Link>
+              <span className="text-[#5a5a5a]"> — SOC 2 readiness inventory (not certification)</span>
             </p>
             <AdminWorkspaceList />
           </>

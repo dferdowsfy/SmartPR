@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-17",
+  "disclaimer": "SOC 2 readiness inventory only. Not a certification or compliance claim. Status reflects repository evidence; production verification is separate.",
+  "controls": [
+    {
+      "id": "AC-AUTH-001",
+      "name": "User authentication",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.1"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["code_review", "config_screenshot"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/middleware.ts", "frontend/src/lib/supabase/server.ts"]
+    },
+    {
+      "id": "AC-ADMIN-001",
+      "name": "Platform superadmin gate",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.1", "CC6.2"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["code_review", "access_review"],
+      "owners": ["engineering", "security"],
+      "repo_refs": ["frontend/src/lib/admin.ts", "frontend/src/app/api/admin/_util.ts"],
+      "notes": "OPEN DEFAULT when no admins configured — Requires verification in production."
+    },
+    {
+      "id": "AC-RBAC-001",
+      "name": "Workspace RBAC and enterprise roles",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.1", "CC6.3"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["code_review", "automated_test"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/lib/enterprise-permissions.ts", "data/enterprise_schema.sql", "data/rbac_schema.sql"]
+    },
+    {
+      "id": "AC-SSO-001",
+      "name": "SSO configuration and enforcement",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.1"],
+      "status": "partial",
+      "enforcement": "server",
+      "evidence_types": ["config_screenshot", "test_result"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/app/api/enterprise/security/", "frontend/src/app/enterprise/admin/security/page.tsx"],
+      "notes": "Requires verification of production IdP wiring."
+    },
+    {
+      "id": "AC-SCIM-001",
+      "name": "SCIM user/group provisioning",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.2", "CC6.3"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["automated_test", "code_review"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/app/api/scim/", "frontend/src/lib/enterprise-security.ts"]
+    },
+    {
+      "id": "AC-SUPPORT-001",
+      "name": "Time-boxed support access",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.1", "CC6.2", "CC7.2"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["audit_log", "automated_test"],
+      "owners": ["engineering", "support"],
+      "repo_refs": ["frontend/src/app/api/admin/workspaces/[id]/support-access/", "data/enterprise_schema.sql"]
+    },
+    {
+      "id": "AC-SA-001",
+      "name": "Service account credential hygiene",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.1", "CC6.7"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["automated_test", "code_review"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/app/api/enterprise/integrations/service-accounts/"]
+    },
+    {
+      "id": "AC-REVIEW-001",
+      "name": "Privileged access review",
+      "category": "access_control",
+      "tsc_mapping": ["CC6.2", "CC6.3"],
+      "status": "partial",
+      "enforcement": "server",
+      "evidence_types": ["access_review", "audit_log"],
+      "owners": ["security"],
+      "repo_refs": ["frontend/src/app/admin/security/access-review/", "frontend/src/app/api/admin/security/access-review/"]
+    },
+    {
+      "id": "ISO-TENANT-001",
+      "name": "Workspace tenant isolation",
+      "category": "isolation",
+      "tsc_mapping": ["CC6.1", "CC6.6"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["automated_test", "code_review"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/lib/enterprise-permissions.ts", "data/enterprise_phase5_tenant_isolation.sql"],
+      "notes": "Full RLS in production Requires verification."
+    },
+    {
+      "id": "AU-LOG-001",
+      "name": "Append-only audit logging",
+      "category": "logging",
+      "tsc_mapping": ["CC7.2", "CC7.3"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["code_review", "db_schema"],
+      "owners": ["engineering"],
+      "repo_refs": ["data/enterprise_schema.sql", "frontend/src/lib/enterprise-permissions.ts"]
+    },
+    {
+      "id": "SEC-RED-001",
+      "name": "Secret redaction in logs and API responses",
+      "category": "secrets",
+      "tsc_mapping": ["CC6.1", "CC6.7"],
+      "status": "implemented",
+      "enforcement": "server",
+      "evidence_types": ["automated_test"],
+      "owners": ["engineering"],
+      "repo_refs": ["frontend/src/lib/enterprise-security.ts", "frontend/src/lib/security/secrets.ts"]
+    },
+    {
+      "id": "CM-CI-001",
+      "name": "CI checks and branch protection",
+      "category": "change_management",
+      "tsc_mapping": ["CC8.1"],
+      "status": "partial",
+      "enforcement": "process",
+      "evidence_types": ["ci_run", "config_screenshot"],
+      "owners": ["engineering"],
+      "repo_refs": ["docs/security/examples/github-actions-ci.yml (copy to .github/workflows/)", "docs/security/github-branch-protection-required.md"],
+      "notes": "Branch protection settings Require verification on GitHub."
+    },
+    {
+      "id": "VM-001",
+      "name": "Vulnerability management process",
+      "category": "vulnerability",
+      "tsc_mapping": ["CC7.1"],
+      "status": "documented_only",
+      "enforcement": "process",
+      "evidence_types": ["ticket", "scan_report"],
+      "owners": ["security", "engineering"],
+      "repo_refs": ["docs/security/vulnerability-management.md"]
+    },
+    {
+      "id": "DR-BACKUP-001",
+      "name": "Backup and recovery",
+      "category": "availability",
+      "tsc_mapping": ["A1.2", "A1.3"],
+      "status": "requires_verification",
+      "enforcement": "infra",
+      "evidence_types": ["vendor_report", "restore_test"],
+      "owners": ["engineering"],
+      "repo_refs": ["docs/security/backup-recovery.md"]
+    },
+    {
+      "id": "IR-001",
+      "name": "Incident response",
+      "category": "incident",
+      "tsc_mapping": ["CC7.3", "CC7.4", "CC7.5"],
+      "status": "partial",
+      "enforcement": "process",
+      "evidence_types": ["incident_record", "postmortem"],
+      "owners": ["security"],
+      "repo_refs": ["docs/security/incident-response-plan.md", "data/security_soc2_readiness.sql"]
+    },
+    {
+      "id": "AI-GOV-001",
+      "name": "AI data governance",
+      "category": "data_governance",
+      "tsc_mapping": ["CC6.1", "CC6.7"],
+      "status": "partial",
+      "enforcement": "server",
+      "evidence_types": ["code_review", "policy"],
+      "owners": ["engineering"],
+      "repo_refs": ["docs/security/ai-data-governance.md", "frontend/src/lib/security/ai-logging.ts"]
+    },
+    {
+      "id": "POL-REG-001",
+      "name": "Security policy register",
+      "category": "governance",
+      "tsc_mapping": ["CC1.2", "CC2.2"],
+      "status": "partial",
+      "enforcement": "process",
+      "evidence_types": ["policy"],
+      "owners": ["security"],
+      "repo_refs": ["frontend/src/app/api/admin/security/policies/", "docs/security/"],
+      "notes": "No fabricated approvals; approval metadata only when recorded."
+    },
+    {
+      "id": "RSK-001",
+      "name": "Security risk register",
+      "category": "risk",
+      "tsc_mapping": ["CC3.1", "CC3.2"],
+      "status": "partial",
+      "enforcement": "process",
+      "evidence_types": ["risk_record"],
+      "owners": ["security"],
+      "repo_refs": ["frontend/src/app/api/admin/security/risks/"]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 // Gate: requireSuperAdmin. Returns { grant } (active) or { grant: null }.
 import { getPool, isEnabled } from "../../../../graph/db";
 import { requireSuperAdmin } from "../../_util";
-import { getActiveSupportGrant } from "../../../../../lib/enterprise-permissions";
+import { getActiveSupportGrant, auditExpiredSupportGrants } from "../../../../../lib/enterprise-permissions";
 import { SUPPORT_COOKIE } from "../../workspaces/[id]/support-access/route";
 
 export const runtime = "nodejs";
@@ -15,6 +15,8 @@ export async function GET(request: Request) {
   const pool = getPool();
   if (!pool) return Response.json({ grant: null });
   const ctx = gate.ctx;
+  // One-shot expiry audits for any recently expired grants
+  void auditExpiredSupportGrants(pool);
 
   const cookieHeader = request.headers.get("cookie") || "";
   const match = cookieHeader.match(new RegExp(`${SUPPORT_COOKIE}=([^;]+)`));
