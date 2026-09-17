@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [prefs, setPrefs] = useState<PrefRow[]>([]);
   const [businesses, setBusinesses] = useState<BusinessRow[]>([]);
   const [prefsBusy, setPrefsBusy] = useState(false);
+  const [perBusinessOpen, setPerBusinessOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/me")
@@ -157,6 +158,32 @@ export default function SettingsPage() {
           {loading ? (
             <div className="text-sm text-[#161616]/50">Loading account…</div>
           ) : user ? (
+            <>
+            <section className="mb-6 overflow-hidden rounded-2xl bg-[#161616] text-white">
+              <div className="px-6 pt-6">
+                <p className="text-xs font-semibold uppercase tracking-widest text-white/50">
+                  Voice access
+                </p>
+                <h2 className="mt-1 text-xl font-bold leading-snug">
+                  Call SmartPR and get answers by voice
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-white/70">
+                  Call{" "}
+                  <a
+                    href="tel:+17405636900"
+                    className="font-semibold text-white underline decoration-white/40 underline-offset-2"
+                  >
+                    +1 (740) 563-6900
+                  </a>{" "}
+                  from your registered number and say your 6-digit voice PIN when asked.
+                </p>
+              </div>
+              <div className="p-6 pt-4">
+                <div className="rounded-xl bg-white p-5 text-[#161616]">
+                  <PhoneAccessSection hideHeader />
+                </div>
+              </div>
+            </section>
             <div className="space-y-8">
               <form onSubmit={saveProfile} className="space-y-5">
                 <div>
@@ -257,42 +284,61 @@ export default function SettingsPage() {
                   </button>
                 </label>
                 {businesses.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-xs font-semibold uppercase tracking-wide text-[#161616]/50">
-                      Per-business reminders
-                    </h3>
-                    <div className="mt-2 space-y-2">
-                      {businesses.map((b) => {
-                        const muted = isMuted("business", b.id);
-                        return (
-                          <label
-                            key={b.id}
-                            className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-2.5"
-                          >
-                            <span className="text-sm text-[#161616]">{b.legal_name}</span>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={!muted}
-                              aria-label={`Reminders for ${b.legal_name}`}
-                              disabled={prefsBusy || globalMuted}
-                              onClick={() => setPreference({ scope: "business", business_id: b.id, muted: !muted })}
-                              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${muted || globalMuted ? "bg-slate-300" : "bg-emerald-600"}`}
+                  <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setPerBusinessOpen((open) => !open)}
+                      aria-expanded={perBusinessOpen}
+                      className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left"
+                    >
+                      <span className="text-xs font-semibold uppercase tracking-wide text-[#161616]/50">
+                        Per-business reminders ({businesses.length})
+                      </span>
+                      <svg
+                        className={`h-4 w-4 shrink-0 text-[#161616]/50 transition-transform ${perBusinessOpen ? "rotate-180" : ""}`}
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M4 6l4 4 4-4"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                    {perBusinessOpen && (
+                      <div className="space-y-2 border-t border-slate-200 px-4 py-3">
+                        {businesses.map((b) => {
+                          const muted = isMuted("business", b.id);
+                          return (
+                            <label
+                              key={b.id}
+                              className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-2.5"
                             >
-                              <span
-                                className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${muted || globalMuted ? "left-0.5" : "left-[22px]"}`}
-                              />
-                            </button>
-                          </label>
-                        );
-                      })}
-                    </div>
+                              <span className="text-sm text-[#161616]">{b.legal_name}</span>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={!muted}
+                                aria-label={`Reminders for ${b.legal_name}`}
+                                disabled={prefsBusy || globalMuted}
+                                onClick={() => setPreference({ scope: "business", business_id: b.id, muted: !muted })}
+                                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${muted || globalMuted ? "bg-slate-300" : "bg-emerald-600"}`}
+                              >
+                                <span
+                                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${muted || globalMuted ? "left-0.5" : "left-[22px]"}`}
+                                />
+                              </button>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-
-              <div className="border-t border-slate-200 pt-6">
-                <PhoneAccessSection />
               </div>
 
               <div className="border-t border-slate-200 pt-6">
@@ -322,6 +368,7 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+            </>
           ) : (
             <div className="text-sm text-red-700">{error || "Redirecting to sign in…"}</div>
           )}

@@ -13,7 +13,7 @@ interface PhoneStatus {
 const inputClass =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#161616]";
 
-export default function PhoneAccessSection() {
+export default function PhoneAccessSection({ hideHeader = false }: { hideHeader?: boolean }) {
   const [status, setStatus] = useState<PhoneStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -106,12 +106,16 @@ export default function PhoneAccessSection() {
 
   return (
     <div>
-      <h2 className="text-sm font-semibold text-[#161616]">Phone access</h2>
-      <p className="mt-1 text-sm text-[#161616]/60">
-        Call SmartPR from your registered phone number and use your 6-digit voice PIN to
-        check requirements, deadlines, and readiness by voice. Your PIN is stored as a
-        secure hash — never as plain text.
-      </p>
+      {!hideHeader && (
+        <>
+          <h2 className="text-sm font-semibold text-[#161616]">Phone access</h2>
+          <p className="mt-1 text-sm text-[#161616]/60">
+            Call SmartPR from your registered phone number and use your 6-digit voice PIN to
+            check requirements, deadlines, and readiness by voice. Your PIN is stored as a
+            secure hash — never as plain text.
+          </p>
+        </>
+      )}
 
       {message && (
         <div role="status" className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
