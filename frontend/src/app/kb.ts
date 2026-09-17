@@ -608,9 +608,27 @@ export function buildEngineInput(
   // for a question that was never asked. Marking them "derived" renders the
   // honest "Derived answer:" label instead.
   const aiPrefilled = new Set(extra?.aiPrefilledKeys ?? []);
+  /**
+   * AI-prefill for a KB question: the Q_ id itself, or any answer key that
+   * establishes it (the QUESTION_KEY_MAP writeKey and aliases). The intake
+   * registers prefilled answers by writeKey (e.g. commercial_vehicles), while
+   * the answers record here is keyed by Q_ id — matching on the writeKey
+   * too keeps the honest "Derived answer:" label from slipping back to
+   * "Answer:" (2026-09-17 15:00 QA cycle, live Trujillo Alto auto-repair:
+   * the vehicle card cited "Answer: Yes" for a never-asked question).
+   */
+  const isQuestionAiPrefilled = (qid: string): boolean => {
+    if (aiPrefilled.has(qid)) return true;
+    const binding = QUESTION_KEY_MAP[qid];
+    if (binding) {
+      if (aiPrefilled.has(binding.writeKey)) return true;
+      if ((binding.aliases ?? []).some((al) => aiPrefilled.has(al))) return true;
+    }
+    return false;
+  };
   for (const k of Object.keys(a)) {
     if (a[k] === undefined) continue;
-    answerProvenance[k] = LOCATION_DERIVED_KEYS.has(k) || aiPrefilled.has(k) ? "derived" : "user";
+    answerProvenance[k] = LOCATION_DERIVED_KEYS.has(k) || isQuestionAiPrefilled(k) ? "derived" : "user";
   }
 
   // Relationship-resolved facts, applied additively (see the doc comment).

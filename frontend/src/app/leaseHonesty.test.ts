@@ -344,3 +344,33 @@ test("ai-prefill: interpreter-answered questions render 'Derived answer', never 
     assert.ok(r.reason.includes("| Answer: Yes"), `manual answer keeps the user label: ${r.reason}`);
   }
 });
+
+// 2026-09-17 15:00 QA cycle (live Trujillo Alto auto-repair retest): the
+// vehicle card still cited "Question: Will commercial vehicles be used? |
+// Answer: Yes" for a question never asked. Root cause: the intake registers
+// prefilled answers by writeKey (commercial_vehicles), but answerProvenance
+// only matched the Q_ id form — so the value slipped through as "user".
+// The engine must recognize the writeKey/alias forms too, not just Q_ ids.
+test("ai-prefill: writeKey-form prefill keys also render 'Derived answer'", () => {
+  const answers = { Q_COMMERCIAL_VEHICLES: true };
+  const prefilled = computeRequirementsFromKB(RESTAURANT, answers, {}, {
+    aiPrefilledKeys: ["commercial_vehicles"],
+  });
+  const vehicle = prefilled.filter((r) => r.document_id === "DOC_VEHICLE_REGISTRATION");
+  assert.ok(vehicle.length > 0, "vehicle registration still triggers from the prefilled answer");
+  for (const r of vehicle) {
+    assert.ok(!r.reason.includes("| Answer:"), `writeKey prefill must not render as the user's answer: ${r.reason}`);
+    assert.ok(r.reason.includes("Derived answer:"), `writeKey prefill renders honestly: ${r.reason}`);
+  }
+
+  // Alias form as well (vehicles_used is an alias of the same question).
+  const aliased = computeRequirementsFromKB(RESTAURANT, answers, {}, {
+    aiPrefilledKeys: ["vehicles_used"],
+  });
+  const aliasedVehicle = aliased.filter((r) => r.document_id === "DOC_VEHICLE_REGISTRATION");
+  assert.ok(aliasedVehicle.length > 0, "vehicle registration still triggers from the aliased prefill");
+  for (const r of aliasedVehicle) {
+    assert.ok(!r.reason.includes("| Answer:"), `alias prefill must not render as the user's answer: ${r.reason}`);
+    assert.ok(r.reason.includes("Derived answer:"), `alias prefill renders honestly: ${r.reason}`);
+  }
+});

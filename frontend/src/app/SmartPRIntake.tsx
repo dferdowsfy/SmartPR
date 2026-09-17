@@ -2594,7 +2594,18 @@ export default function SmartPRIntake() {
 
     if (Object.keys(fullAnswers).length > 0) {
       setDiscoveryAnswers((prev) => ({ ...prev, ...fullAnswers }));
-      setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...Object.keys(fullAnswers)])));
+      // Answer patches are keyed by writeKey, but the engine's answerProvenance
+      // (kb.ts) and the "answered from description" list look up the Q_ question
+      // id — flag both, the same way confirmKeys does above. Without the Q_ id
+      // here, prefilled values (e.g. commercial_vehicles=true) were labeled
+      // "user" by answerProvenance and cards rendered "Answer: Yes" for a
+      // question the user never answered. Presentation-only: answerProvenance
+      // never feeds gateFact, so firing/gating/classification are untouched.
+      const prefillKeys = Object.keys(fullAnswers).flatMap((k) => {
+        const qid = questionIdForAnswerKey(k);
+        return qid && qid !== k ? [k, qid] : [k];
+      });
+      setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...prefillKeys])));
     }
     if (confirmKeys.length > 0) {
       setConfirmationsNeeded((prev) => {
