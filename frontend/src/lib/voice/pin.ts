@@ -44,6 +44,53 @@ export function isValidPinFormat(pin: string | null | undefined): boolean {
   return typeof pin === "string" && /^\d{6}$/.test(pin);
 }
 
+const DIGIT_WORDS: Record<string, string> = {
+  // English
+  zero: "0",
+  oh: "0",
+  one: "1",
+  two: "2",
+  three: "3",
+  four: "4",
+  five: "5",
+  six: "6",
+  seven: "7",
+  eight: "8",
+  nine: "9",
+  // Spanish
+  cero: "0",
+  uno: "1",
+  una: "1",
+  un: "1",
+  dos: "2",
+  tres: "3",
+  cuatro: "4",
+  cinco: "5",
+  seis: "6",
+  siete: "7",
+  ocho: "8",
+  nueve: "9",
+};
+
+const DIGIT_WORD_RE =
+  /\b(zero|oh|one|two|three|four|five|six|seven|eight|nine|cero|un[oa]?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)\b/gi;
+
+/**
+ * Normalize caller-supplied PIN input to digits. Translates spoken digit
+ * words (English and Spanish) to digits, then strips every remaining
+ * non-digit, so "one two three four five six", "123 456", and "123-456"
+ * all become "123456". Returns "" when no digits can be recovered; the
+ * result must still pass isValidPinFormat before use.
+ */
+export function normalizePinInput(pin: string | null | undefined): string {
+  if (typeof pin !== "string") return "";
+  const wordsAsDigits = pin.replace(
+    DIGIT_WORD_RE,
+    (w) => DIGIT_WORDS[w.toLowerCase()] ?? w
+  );
+  return wordsAsDigits.replace(/\D/g, "");
+}
+
 /**
  * Hash a PIN for storage. Throws when the PIN format is invalid so a bad
  * value can never be persisted silently.

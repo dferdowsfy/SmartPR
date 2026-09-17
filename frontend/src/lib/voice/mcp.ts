@@ -45,6 +45,7 @@ import {
   LOCKOUT_MINUTES,
   isValidPinFormat,
   lockoutSecondsRemaining,
+  normalizePinInput,
   verifyPin,
   hashPin,
 } from "./pin";
@@ -231,10 +232,10 @@ export const MCP_TOOLS: McpToolDef[] = [
     name: "verify_voice_pin",
     description:
       "Unlock the caller's SmartPR account tools with their 6-digit voice PIN. " +
-      "The caller must ENTER the PIN on their phone keypad — never ask them to say it aloud, " +
-      "never repeat the digits back, and never read the returned session_token aloud. " +
-      "Ask for the caller's SmartPR account email aloud, then have them type the PIN on the keypad " +
-      "and pass the digits exactly as received in 'pin'. " +
+      "Ask for the caller's SmartPR account email aloud, then ask them to SAY the 6-digit PIN " +
+      "aloud, one digit at a time (keypad tones are not delivered on this number). " +
+      "Never repeat the digits back, and never read the returned session_token aloud. " +
+      "Convert any spoken digit words to digits and pass the 6 digits in 'pin'. " +
       "On success the result contains a session_token: include it as the 'session_token' argument " +
       "in every subsequent account tool call (it expires after 30 minutes). " +
       "Never claim the caller is verified from merely collecting the email and PIN — " +
@@ -252,7 +253,7 @@ export const MCP_TOOLS: McpToolDef[] = [
         pin: {
           type: "string",
           description:
-            "The 6-digit voice PIN exactly as entered by the caller on the phone keypad.",
+            "The caller's 6-digit voice PIN, spoken aloud one digit at a time — convert any digit words to digits.",
         },
       },
       required: ["email", "pin"],
@@ -949,7 +950,7 @@ export async function executeMcpTool(
       failure.message =
         "The caller is not verified: no session token was provided. " +
         "Call verify_voice_pin with the caller's SmartPR account email and " +
-        "keypad-entered 6-digit PIN, and only proceed to account tools when it returns ok:true.";
+        "spoken 6-digit PIN, and only proceed to account tools when it returns ok:true.";
     }
     return finish(false, failure, denialKind, false);
   }
@@ -1017,11 +1018,11 @@ async function toolVerifyVoicePin(
 ): Promise<unknown> {
   const email =
     typeof args.email === "string" ? args.email.trim().toLowerCase() : "";
-  // The model may pass keypad/transcribed PINs with separators ("123 456",
-  // "123-456"). Normalize to digits before format validation; anything that
-  // is not 6 digits after normalization is still rejected as invalid.
-  const pin =
-    typeof args.pin === "string" ? args.pin.replace(/\D/g, "") : "";
+  // The model may pass spoken/transcribed PINs ("one two three four five
+  // six"), or PINs with separators ("123 456", "123-456"). Normalize to
+  // digits before format validation; anything that is not 6 digits after
+  // normalization is still rejected as invalid.
+  const pin = normalizePinInput(typeof args.pin === "string" ? args.pin : "");
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const invalid = {
     ok: false,

@@ -4,6 +4,7 @@ import {
   hashPin,
   isValidPinFormat,
   lockoutSecondsRemaining,
+  normalizePinInput,
   verifyPin,
 } from "./pin";
 
@@ -69,5 +70,45 @@ describe("lockoutSecondsRemaining", () => {
   it("returns positive seconds for a future lockout", () => {
     const remaining = lockoutSecondsRemaining(new Date(Date.now() + 60_000));
     assert.ok(remaining > 0 && remaining <= 60);
+  });
+});
+
+describe("normalizePinInput", () => {
+  it("passes plain digits through", () => {
+    assert.equal(normalizePinInput("123456"), "123456");
+  });
+
+  it("strips separators", () => {
+    assert.equal(normalizePinInput("123 456"), "123456");
+    assert.equal(normalizePinInput("123-456"), "123456");
+    assert.equal(normalizePinInput("1 2 3 4 5 6"), "123456");
+  });
+
+  it("translates English digit words", () => {
+    assert.equal(
+      normalizePinInput("one two three four five six"),
+      "123456"
+    );
+    assert.equal(normalizePinInput("ONE TWO THREE FOUR FIVE SIX"), "123456");
+    assert.equal(normalizePinInput("zero nine eight"), "098");
+  });
+
+  it("translates Spanish digit words", () => {
+    assert.equal(
+      normalizePinInput("uno dos tres cuatro cinco seis"),
+      "123456"
+    );
+    assert.equal(normalizePinInput("cero nueve"), "09");
+  });
+
+  it("handles mixed words and digits", () => {
+    assert.equal(normalizePinInput("one 2 three 4 5 six"), "123456");
+  });
+
+  it("returns empty for non-digit input", () => {
+    assert.equal(normalizePinInput("hello world"), "");
+    assert.equal(normalizePinInput(""), "");
+    assert.equal(normalizePinInput(null), "");
+    assert.equal(normalizePinInput(undefined), "");
   });
 });
