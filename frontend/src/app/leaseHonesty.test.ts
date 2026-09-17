@@ -57,9 +57,12 @@ test("lease: unanswered lease is undefined, never invented as Yes", () => {
 test("lease: physical location alone no longer triggers the lease document", () => {
   const reqs = computeRequirementsFromKB(RESTAURANT, {}, {});
   const lease = reqs.filter((r) => r.document_id === "DOC_LEASE_AGREEMENT");
+  // Validated review 2026-09-16: with tenure entirely unknown the lease
+  // question is needs_more_information (intake must ask ownership/tenure
+  // first), not conditional.
   assert.ok(
-    lease.every((r) => r.applicability === "conditional"),
-    "lease may only appear as conditional while the answer is unknown"
+    lease.every((r) => r.applicability === "needs_more_information"),
+    "lease may only appear as needs_more_information while tenure is unknown"
   );
   for (const r of lease) {
     assert.ok(!r.reason.includes("Answer:"), `no invented answer in reason: ${r.reason}`);
@@ -91,11 +94,13 @@ test("lease: unanswered-trigger registry covers the lease question", () => {
 
 // --- 3. Unknown lease renders conditional "more information needed" --------
 
-test("lease: unknown lease + physical location → conditional with inline-answer marker", () => {
+test("lease: unknown lease + physical location → needs_more_information with inline-answer marker", () => {
   const reqs = computeRequirementsFromKB(RESTAURANT, {}, {});
   const lease = reqs.find((r) => r.document_id === "DOC_LEASE_AGREEMENT");
   assert.ok(lease, "lease requirement is surfaced while the answer is unknown");
-  assert.equal(lease!.applicability, "conditional");
+  // Validated review 2026-09-16: tenure unknown means the intake must ask
+  // ownership/tenure first — needs_more_information, not conditional.
+  assert.equal(lease!.applicability, "needs_more_information");
   assert.equal(lease!.mandatory, false);
   assert.equal(lease!.unansweredTriggerQuestionId, "Q_EXISTING_LEASE");
   assert.ok(!lease!.reason.includes("Answer:"), "no answer is claimed");

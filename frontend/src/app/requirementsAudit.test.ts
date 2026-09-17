@@ -53,10 +53,16 @@ const DOC_SAM = docByName("sam.gov");
 const DOC_CONTRACTOR = docByName("contractor license");
 const DOC_LEASE = docByName("lease agreement");
 const DOC_NOISE = docByName("noise variance");
-const DOC_STORMWATER = docByName("stormwater");
+// Validated review 2026-09-16: DOC_STORMWATER_PLAN was removed; industrial
+// stormwater is now DOC_NPDES_INDUSTRIAL_STORMWATER (NPDES industrial-stormwater
+// coverage / no-exposure determination).
+const DOC_STORMWATER = docByName("npdes", "stormwater");
 const DOC_OGPE = docByName("ogpe construction permit");
 const DOC_MERCHANT = docByName("merchant registration");
 const DOC_DEED = docByName("property deed");
+const DOC_WITHHOLDING = docByName("hacienda", "withholding");
+const DOC_WORKERS_COMP = docByName("workers compensation");
+const DOC_DTRH = docByName("dtrh employer");
 
 const byId = (rows: ClassifiedRequirement[], id: string) =>
   rows.find((r) => r.document_id === id);
@@ -74,7 +80,7 @@ test("premise: doc ids resolve from documents.json and Guaynabo has the metro fl
   assert.equal(DOC_CONTRACTOR, "DOC_CONTRACTOR_LICENSE");
   assert.equal(DOC_LEASE, "DOC_LEASE_AGREEMENT");
   assert.equal(DOC_NOISE, "DOC_NOISE_VARIANCE");
-  assert.equal(DOC_STORMWATER, "DOC_STORMWATER_PLAN");
+  assert.equal(DOC_STORMWATER, "DOC_NPDES_INDUSTRIAL_STORMWATER");
   assert.equal(DOC_OGPE, "DOC_OGPE_CONSTRUCTION_PERMIT");
   assert.equal(DOC_MERCHANT, "DOC_MERCHANT_REGISTRATION");
   assert.equal(DOC_DEED, "DOC_PROPERTY_DEED");
@@ -86,7 +92,7 @@ test("premise: doc ids resolve from documents.json and Guaynabo has the metro fl
 });
 
 test("CASE A: Guaynabo renovation for an existing business — verified triggers only", () => {
-  const { classified, debug } = classify(
+  const { classified } = classify(
     {
       municipalityName: "Guaynabo",
       businessTypeName: "Real Estate Developer",
@@ -126,21 +132,17 @@ test("CASE A: Guaynabo renovation for an existing business — verified triggers
     );
   }
 
-  // Stormwater: the heuristic metro rule (RULE_0269) is suppressed by the
-  // negative fact site_work=false, so the plan must be absent or undecided —
-  // never "required". Interior square footage is not land disturbance.
+  // Stormwater: the old heuristic metro rule (RULE_0269) and the verified
+  // land-disturbance trigger (RULE_0647) were both removed by the 2026-09-16
+  // validated review. Industrial stormwater (NPDES) now fires only for
+  // industrial business types with metro/coastal flags, pending the
+  // stormwater_exposure fact — so it must be absent for an interior-only
+  // real-estate renovation. Interior square footage is not land disturbance.
   const storm = byId(classified, DOC_STORMWATER);
-  assert.ok(!storm || storm.applicability !== "required", "stormwater must never be required here");
-  if (storm) {
-    assert.ok(
-      storm.applicability === "needs_more_information" ||
-        storm.applicability === "likely_required",
-      `unexpected stormwater applicability: ${storm.applicability}`
-    );
-  }
-  assert.ok(
-    debug.rulesSuppressed.some((s) => s.rule_id === "RULE_0269"),
-    "RULE_0269 should be recorded as suppressed by site_work=false"
+  assert.equal(
+    storm,
+    undefined,
+    "industrial stormwater must be absent for a non-industrial interior renovation"
   );
 
   // Structural integrity: every emitted requirement is explainable.
@@ -173,7 +175,7 @@ test("CASE A: Guaynabo renovation for an existing business — verified triggers
   }
 });
 
-test("CASE B: contractor opening a contracting business — license is required", () => {
+test("CASE B: contractor opening a contracting business — license is needs_more_information pending residential_work", () => {
   const { classified } = classify(
     {
       municipalityName: "San Juan",
@@ -186,11 +188,19 @@ test("CASE B: contractor opening a contracting business — license is required"
   );
   const lic = byId(classified, DOC_CONTRACTOR);
   assert.ok(lic, "Contractor License should be emitted for a General Contractor");
-  assert.equal(lic.applicability, "required");
+  // Validated review 2026-09-16: the DACO contractor license is heuristic
+  // pending the residential_work fact — a general contractor may do
+  // commercial-only work, which does not need the DACO license. Never
+  // required on business type alone.
+  assert.equal(lic.applicability, "needs_more_information");
   assert.equal(lic.source_rule_id, "RULE_0123");
+  assert.ok(
+    lic.missingFacts?.includes("residential_work"),
+    "contractor license must name residential_work as the missing fact"
+  );
 });
 
-test("CASE C: 1.5-acre site development — verified land-disturbance trigger requires stormwater", () => {
+test("CASE C: land disturbance alone does not trigger stormwater coverage (RULE_0647 removed)", () => {
   const { classified } = classify(
     {
       municipalityName: "Guaynabo",
@@ -204,13 +214,36 @@ test("CASE C: 1.5-acre site development — verified land-disturbance trigger re
     },
     "project_only"
   );
+  // Validated review 2026-09-16: RULE_0647 (land_disturbance_acres >= 1 ->
+  // stormwater) was removed. Industrial stormwater (NPDES) now requires an
+  // industrial business type plus a metro/coastal flag, pending the
+  // stormwater_exposure fact — land disturbance alone fires nothing.
   const storm = byId(classified, DOC_STORMWATER);
-  assert.ok(storm, "Stormwater plan should be emitted for 1.5 disturbed acres");
-  assert.equal(storm.applicability, "required");
   assert.equal(
-    storm.source_rule_id,
-    "RULE_0647",
-    "the verified land-disturbance rule should be the presented basis"
+    storm,
+    undefined,
+    "1.5 disturbed acres alone must not trigger industrial stormwater coverage"
+  );
+
+  // Positive control: an industrial business in a metro municipality surfaces
+  // the NPDES industrial-stormwater evaluation, capped at
+  // needs_more_information while stormwater_exposure is unknown.
+  const industrial = classify(
+    {
+      municipalityName: "Guaynabo",
+      businessTypeName: "Beverage Manufacturing",
+      businessStatus: "new",
+      answers: {},
+    },
+    "new"
+  ).classified;
+  const indStorm = byId(industrial, DOC_STORMWATER);
+  assert.ok(indStorm, "industrial stormwater should be emitted for a metro industrial business");
+  assert.equal(indStorm.applicability, "needs_more_information");
+  assert.equal(indStorm.source_rule_id, "RULE_0670");
+  assert.ok(
+    indStorm.missingFacts?.includes("stormwater_exposure"),
+    "industrial stormwater must name stormwater_exposure as the missing fact"
   );
 });
 
@@ -290,8 +323,10 @@ test("CASE G: merchant registration is verify_existing for an operating business
   assert.equal(byId(fresh, DOC_MERCHANT)?.applicability, "required");
 });
 
-test("numeric project_fact matcher: land_disturbance_acres >= 1 (RULE_0647)", () => {
-  // No municipality: the heuristic metro rule cannot fire, isolating RULE_0647.
+test("land_disturbance_acres no longer triggers stormwater coverage (RULE_0647 removed)", () => {
+  // Validated review 2026-09-16 removed the numeric land-disturbance trigger
+  // (RULE_0647). No numeric-match rule remains in the KB; land disturbance
+  // alone must be inert for stormwater at any acreage.
   const base: EngineInput = {
     businessStatus: "project_only",
     answers: {},
@@ -318,9 +353,11 @@ test("numeric project_fact matcher: land_disturbance_acres >= 1 (RULE_0647)", ()
     "project_only"
   ).classified;
   const storm = byId(above, DOC_STORMWATER);
-  assert.ok(storm, "1.5 acres must trigger stormwater coverage");
-  assert.equal(storm.applicability, "required");
-  assert.equal(storm.source_rule_id, "RULE_0647");
+  assert.equal(
+    storm,
+    undefined,
+    "1.5 acres must not trigger stormwater coverage after RULE_0647's removal"
+  );
 });
 
 test("bucketForApplicability maps statuses to review buckets", () => {
@@ -340,8 +377,10 @@ test("REG-TRANSPORT-001: logistics/warehouse business without vehicle facts — 
   // QA 2026-09-16: NTSP/CSP transport authorization applies to persons
   // transporting cargo/passengers for hire, not to every business whose
   // type says "logistics"/"warehouse". Business-type-only rules
-  // (RULE_0185–RULE_0188) are heuristics gated on commercial_vehicles;
-  // Q_COMMERCIAL_VEHICLES (RULE_0022) remains the authoritative trigger.
+  // (RULE_0185–RULE_0188) are heuristics gated on commercial_vehicles.
+  // Validated review 2026-09-16: Q_COMMERCIAL_VEHICLES (RULE_0022) is
+  // heuristic pending the transport_type fact — confirmed vehicle use
+  // surfaces the permit as needs_more_information, never required.
   const DOC_TRANSPORT = docByName("transportation / puc permit");
   const DOC_VEHICLE = docByName("commercial vehicle registration");
 
@@ -370,6 +409,71 @@ test("REG-TRANSPORT-001: logistics/warehouse business without vehicle facts — 
   ).classified;
   const transportReq = byId(withVehicles, DOC_TRANSPORT);
   assert.ok(transportReq, "transport permit must fire when commercial vehicles are confirmed");
-  assert.equal(transportReq.applicability, "required", "transport permit must be REQUIRED with confirmed vehicle use");
+  assert.equal(
+    transportReq.applicability,
+    "needs_more_information",
+    "transport permit must be needs_more_information with confirmed vehicle use until transport_type is known"
+  );
   assert.equal(transportReq.source_rule_id, "RULE_0022", "authoritative trigger must be the Q_COMMERCIAL_VEHICLES rule");
+  assert.ok(
+    transportReq.missingFacts?.includes("transport_type"),
+    "transport permit must name transport_type as the missing fact"
+  );
+});
+
+test("CASE H: Hacienda employer withholding is verify_existing for an operating employer, required for a new one", () => {
+  // RULE_0650 (Q_EMPLOYEES_HIRED -> DOC_HACIENDA_EMPLOYER_WITHHOLDING) must
+  // carry the same verify_existing compliance posture as its sibling
+  // employer obligations (RULE_0020 workers comp, RULE_0619 DTRH). An
+  // operating business with employees verifies its existing withholding
+  // registration; a new employer registers for the first time.
+  const existing = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Manufacturer",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true },
+    },
+    "existing"
+  ).classified;
+  const withholding = byId(existing, DOC_WITHHOLDING);
+  assert.ok(withholding, "Hacienda employer withholding must fire for an employer");
+  assert.equal(
+    withholding.applicability,
+    "verify_existing",
+    "an existing business verifies its existing withholding registration"
+  );
+  assert.equal(
+    withholding.source_rule_id,
+    "RULE_0650",
+    "the Q_EMPLOYEES_HIRED withholding rule should be the presented basis"
+  );
+  // Sibling employer obligations must agree on posture — never tell an
+  // existing employer to verify two registrations while "registering" a third.
+  assert.equal(
+    byId(existing, DOC_WORKERS_COMP)?.applicability,
+    "verify_existing",
+    "workers comp posture must match"
+  );
+  assert.equal(
+    byId(existing, DOC_DTRH)?.applicability,
+    "verify_existing",
+    "DTRH employer registration posture must match"
+  );
+
+  const fresh = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Manufacturer",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_EMPLOYEES_HIRED: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_WITHHOLDING)?.applicability,
+    "required",
+    "a new employer still registers for the first time"
+  );
 });

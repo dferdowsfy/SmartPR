@@ -5027,7 +5027,16 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "trigger_summary": "Employer withholding registration with Hacienda is an ongoing employer obligation; an existing business that hires employees verifies its existing registration rather than registering anew.",
+    "change_log": [
+      {
+        "date": "2026-09-16",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-16 21:00: symmetric with sibling employer obligations (RULE_0020 workers comp, RULE_0619 DTRH) — an existing employer verifies its existing Hacienda withholding registration; new businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0651",
