@@ -3,11 +3,8 @@
 // from the validated voice session; the agent supplies nothing but the token.
 
 import { getPool, isEnabled } from "../../../../graph/db";
-import {
-  auditedToolCall,
-  resolveVoiceContext,
-  voiceError,
-} from "../../_voice";
+import { resolveVoiceContext, voiceError } from "../../_voice";
+import { toolGetAccountContext } from "../../../../../lib/voice/tools";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,14 +15,7 @@ export async function GET(request: Request) {
     const pool = getPool();
     if (!pool) return Response.json({ error: "no_database" }, { status: 503 });
     const ctx = await resolveVoiceContext(request.headers.get("authorization"), pool);
-    const result = await auditedToolCall(pool, ctx, "get_account_context", {}, async () => ({
-      email: ctx.email,
-      workspace_id: ctx.workspaceId,
-      workspace_role: ctx.workspaceRole,
-      plan: ctx.plan.planId,
-      plan_status: ctx.plan.status,
-      entitlements: ctx.entitlements,
-    }));
+    const result = await toolGetAccountContext(pool, ctx);
     return Response.json(result);
   } catch (err) {
     return voiceError(err);

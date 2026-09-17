@@ -5,6 +5,11 @@ authenticated SmartPR callers. It is documentation only: **no Grok agent
 configuration was changed in Phase 1.** The agent integration (Twilio/xAI
 realtime wiring) is future work; this contract pins what it may call and how.
 
+> **Phase 2:** the same capabilities are now also exposed as a production
+> Remote MCP server for xAI Speech-to-Speech — see `docs/voice-mcp.md`.
+> The MCP server is an adapter over the Phase 1 services documented here;
+> this contract is unchanged.
+
 ## Architectural rule (non-negotiable)
 
 > Grok must never provide or choose `userId`, `workspaceId`, account role,
@@ -32,7 +37,7 @@ Base: `/api/voice` · Auth: `Authorization: Bearer <VOICE_GATEWAY_API_KEY>`
 1. `POST /api/voice/phone/lookup` `{ phone }` → `{ enrolled, enabled }`
    (does not reveal whether a number exists beyond the boolean; failures audited)
 2. `POST /api/voice/phone/verify-pin` `{ phone, pin }` →
-   `{ ok: true, session_token: "vst_…", expires_at }`
+   `{ ok: true, session_token: "vs_…", expires_at }`
    - 5 wrong PINs → 15-minute lockout (atomic counter, row-locked)
    - Success resets failures, supersedes prior active sessions, issues a
      30-minute opaque 256-bit token (only SHA-256 stored server-side)
@@ -47,7 +52,7 @@ live in **Settings → Phone access** and require an authenticated web session.
 
 ## Phase 1 voice tools
 
-Grok calls these with `Authorization: Bearer <session_token>` (the `vst_…`
+Grok calls these with `Authorization: Bearer <session_token>` (the `vs_…`
 token from step 2). All nine derive the user, workspace, role, and plan from
 the session server-side.
 
