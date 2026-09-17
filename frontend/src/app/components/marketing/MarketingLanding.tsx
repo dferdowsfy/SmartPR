@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 import styles from "./marketing.module.css";
 import { SmartPRLogo } from "../brand/SmartPRLogo";
 import FilingPathStory from "./FilingPathStory";
+import VoiceCapabilities from "./VoiceCapabilities";
 import { createSupabaseBrowser } from "../../../lib/supabase/client";
 
 type Language = "EN" | "ES";
@@ -328,6 +329,12 @@ export default function MarketingLanding() {
 
           <FilingPathStory language={language} />
         </div>
+
+        <section className={styles.section} aria-label={language === "ES" ? "Capacidades de voz" : "Voice capabilities"}>
+          <div className={styles.sectionInner}>
+            <VoiceCapabilities language={language} />
+          </div>
+        </section>
 
         <section id="filing-assistant" className={styles.section}>
           <div className={styles.sectionInner}>

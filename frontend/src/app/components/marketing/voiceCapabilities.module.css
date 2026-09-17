@@ -1,0 +1,708 @@
+/* Voice capabilities — homepage feature block.
+   Follows the marketing design system: cream surfaces, dark serif headlines,
+   teal accents, soft borders, rounded cards. */
+
+.voice {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+  padding: clamp(1.75rem, 4vw, 3.5rem);
+  border: 1px solid color-mix(in oklab, #161616 13%, transparent);
+  border-radius: 18px;
+  background: #fbf8f2;
+  overflow: hidden;
+}
+
+.eyebrow {
+  margin: 0;
+  color: #245c5c;
+  font-size: 0.675rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 1rem 0 0;
+  font-family: var(--font-display), Newsreader, Georgia, "Times New Roman", serif;
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #161616;
+}
+
+.lede {
+  max-width: 34rem;
+  margin: 1.1rem 0 0;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: #242424;
+}
+
+.cardCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+}
+
+/* ——— Feature pills ——— */
+
+.pills {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  justify-content: start;
+  gap: 0.65rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid color-mix(in oklab, #245c5c 32%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, #ffffff 55%, transparent);
+  color: #1b1b1b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.pill svg {
+  color: #245c5c;
+  flex-shrink: 0;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3.1rem;
+  margin-top: 1.9rem;
+  padding: 0 1.6rem;
+  border-radius: 10px;
+  background: #245c5c;
+  color: #f6f3ea;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.cta:hover {
+  background: #194d4d;
+}
+
+.cta:active {
+  transform: translateY(1px);
+}
+
+.hours {
+  margin: 1rem 0 0;
+  color: #6b6963;
+  font-size: 0.85rem;
+}
+
+/* ——— Phone mockup: active call screen ——— */
+
+.phoneWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.phone {
+  width: min(320px, 100%);
+  padding: 11px;
+  border-radius: 54px;
+  background: linear-gradient(160deg, #2b2b2b, #101010);
+  box-shadow:
+    0 30px 60px rgba(22, 22, 22, 0.28),
+    0 4px 14px rgba(22, 22, 22, 0.18),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.phoneScreen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.9rem 1.1rem 1.2rem;
+  border-radius: 44px;
+  background: #fbf8f2;
+  overflow: hidden;
+  text-align: center;
+}
+
+.notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 96px;
+  height: 24px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #101010;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #161616;
+}
+
+.statusTime {
+  font-variant-numeric: tabular-nums;
+}
+
+.statusIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sigBars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1.5px;
+}
+
+.sigBars i {
+  width: 3px;
+  border-radius: 1px;
+  background: #161616;
+}
+
+.wifi {
+  width: 14px;
+  height: 10px;
+  border: 2px solid transparent;
+  border-top: 2px solid #161616;
+  border-radius: 50%;
+  position: relative;
+}
+
+.wifi::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 4px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #161616;
+}
+
+.battery {
+  width: 22px;
+  height: 11px;
+  border: 1.5px solid #161616;
+  border-radius: 3px;
+  position: relative;
+  opacity: 0.85;
+}
+
+.battery i {
+  position: absolute;
+  inset: 1.5px 4px 1.5px 1.5px;
+  border-radius: 1.5px;
+  background: #161616;
+}
+
+.callName {
+  margin: 1.9rem 0 0;
+  font-family: var(--font-display), Newsreader, Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #161616;
+}
+
+.callSub {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #6b6963;
+}
+
+.callOrb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 148px;
+  height: 148px;
+  margin-top: 1.1rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 28%, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0) 42%),
+    radial-gradient(circle at 50% 55%, #8ff0e2 0%, #5eead4 34%, #2dd4bf 58%, #1f8a80 82%, #245c5c 100%);
+  box-shadow:
+    0 0 34px rgba(94, 234, 212, 0.55),
+    0 0 90px rgba(103, 232, 249, 0.28),
+    inset 0 0 26px rgba(255, 255, 255, 0.3);
+  animation: orbBreathe 4.5s ease-in-out infinite;
+}
+
+.callOrbHalo {
+  position: absolute;
+  inset: -22px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(94, 234, 212, 0.32) 0%, rgba(167, 243, 208, 0.14) 45%, transparent 70%);
+  filter: blur(6px);
+}
+
+.waveform {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 56%;
+}
+
+.waveBar {
+  width: 3.5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  animation: wavePulse 1.6s ease-in-out infinite;
+}
+
+.callWave .waveBar:nth-child(odd) {
+  animation-delay: 0.35s;
+}
+
+.callWave .waveBar:nth-child(3n) {
+  animation-delay: 0.7s;
+}
+
+.listeningPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.15rem 0 0;
+  padding: 0.42rem 0.95rem;
+  border-radius: 999px;
+  background: #dcebe7;
+  color: #245c5c;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.listeningDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2f9e44;
+  animation: dotPulse 1.8s ease-in-out infinite;
+}
+
+.callHint {
+  max-width: 15rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: #6b6963;
+}
+
+.callControls {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.6rem;
+  margin-top: 1.35rem;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.controlBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+
+.controlMuted {
+  background: #ece7da;
+  color: #4a4a44;
+}
+
+.controlEnd {
+  background: #e5484d;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(229, 72, 77, 0.35);
+}
+
+.endIcon {
+  transform: rotate(135deg);
+}
+
+.controlLabel {
+  font-size: 0.72rem;
+  color: #6b6963;
+}
+
+.callTimer {
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: #6b6963;
+}
+
+/* ——— Card 2: speak instead of type ——— */
+
+.speakHead {
+  max-width: 46rem;
+}
+
+.speakGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.5rem;
+  margin-top: 2.75rem;
+  align-items: center;
+}
+
+.orbZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+.orb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(190px, 24vw, 250px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.orbHalo {
+  position: absolute;
+  inset: -34px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(94, 234, 212, 0.4) 0%,
+    rgba(167, 243, 208, 0.22) 42%,
+    rgba(103, 232, 249, 0.1) 62%,
+    transparent 74%
+  );
+  filter: blur(10px);
+  animation: haloBreathe 4.5s ease-in-out infinite;
+}
+
+.orbCore {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 26%, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 44%),
+    radial-gradient(circle at 50% 58%, #99f6e4 0%, #5eead4 30%, #2dd4bf 55%, #14b8a6 76%, #245c5c 100%);
+  box-shadow:
+    0 0 44px rgba(94, 234, 212, 0.6),
+    0 0 120px rgba(103, 232, 249, 0.32),
+    inset 0 0 34px rgba(255, 255, 255, 0.28),
+    inset 0 -18px 44px rgba(36, 92, 92, 0.35);
+  animation: orbBreathe 4.5s ease-in-out infinite;
+}
+
+.orbCore::after {
+  /* faint inner texture — light refraction, keeps the orb from reading flat */
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 68% 62%, rgba(255, 255, 255, 0.22) 0%, transparent 46%),
+    radial-gradient(circle at 30% 70%, rgba(36, 92, 92, 0.18) 0%, transparent 52%);
+}
+
+.orbWave {
+  position: relative;
+  z-index: 1;
+  height: 34%;
+  gap: 5px;
+}
+
+.orbWave .waveBar {
+  width: 5px;
+  animation-duration: 1.9s;
+}
+
+.orbWave .waveBar:nth-child(even) {
+  animation-delay: 0.45s;
+}
+
+.orbListening {
+  margin: 1.4rem 0 0;
+  color: #245c5c;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.transcript {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  max-width: 26rem;
+  margin: 1.25rem 0 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid color-mix(in oklab, #245c5c 26%, transparent);
+  border-radius: 14px;
+  background: #fffdf8;
+}
+
+.transcript blockquote {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #242424;
+}
+
+.transcriptWave {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.transcriptWave i {
+  width: 3px;
+  border-radius: 999px;
+  background: #245c5c;
+}
+
+.transcriptDots {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.7rem;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.transcriptDots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2dd4bf;
+}
+
+.transcriptDots i:nth-child(2) {
+  background: #5eead4;
+}
+
+.transcriptDots i:nth-child(3) {
+  background: #99f6e4;
+}
+
+.mapZone {
+  min-width: 0;
+}
+
+.mapCard {
+  border: 1px solid color-mix(in oklab, #161616 14%, transparent);
+  border-radius: 16px;
+  background: #fffdf8;
+  padding: 1.5rem 1.5rem 1.25rem;
+  box-shadow: 0 14px 34px rgba(22, 22, 22, 0.06);
+}
+
+.mapTitle {
+  margin: 0;
+  color: #245c5c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.mapFields {
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.mapField {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in oklab, #161616 10%, transparent);
+  border-radius: 12px;
+  background: #fbf8f2;
+}
+
+.mapLabel {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6b6963;
+}
+
+.mapValue {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #161616;
+  line-height: 1.4;
+}
+
+.mapCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #dcebe7;
+  color: #245c5c;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1.4rem 0 0;
+  color: #6b6963;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.captionRule {
+  width: 2.2rem;
+  height: 2px;
+  border-radius: 2px;
+  background: #2dd4bf;
+  flex-shrink: 0;
+}
+
+/* ——— Motion (ready for future animation hooks) ——— */
+
+@keyframes orbBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes haloBreathe {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes wavePulse {
+  0%,
+  100% {
+    transform: scaleY(0.82);
+  }
+  50% {
+    transform: scaleY(1.12);
+  }
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .callOrb,
+  .orbCore,
+  .orbHalo,
+  .waveBar,
+  .listeningDot {
+    animation: none;
+  }
+}
+
+/* ——— Responsive ——— */
+
+@media (min-width: 700px) {
+  .pills {
+    grid-template-columns: repeat(4, minmax(0, auto));
+  }
+}
+
+@media (min-width: 960px) {
+  .card:first-child {
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: center;
+  }
+
+  .speakGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 519px) {
+  .pills {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pill {
+    white-space: normal;
+  }
+
+  .phone {
+    width: min(300px, 100%);
+  }
+
+  .callControls {
+    gap: 1.2rem;
+  }
+}
