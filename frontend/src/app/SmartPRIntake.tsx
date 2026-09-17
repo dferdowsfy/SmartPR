@@ -5369,7 +5369,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           isProjectOnly
             ? (projectPassport ? projectPassportTitle(projectPassport) : null) ??
               (language === 'es' ? 'Proyecto de propiedad' : 'Property project')
-            : (language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation')
+            : projectIntent === 'existing_business'
+              ? (language === 'es' ? 'Negocio existente' : 'Existing Business')
+              : (language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation')
         }
         matterStatus={matterStatus}
         stage={view}

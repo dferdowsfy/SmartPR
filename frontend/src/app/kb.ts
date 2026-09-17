@@ -574,9 +574,25 @@ export function buildEngineInput(
   // strengthen the engine's picture — when it determines a value the user
   // did not provide, that question is marked "derived" so requirement cards
   // never present it as the user's answer.
+  //
+  // Location-model derivations (2026-09-17 QA): Q_PHYSICAL_LOCATION,
+  // Q_HOME_BASED, and Q_ONLINE_ONLY are translations of the location-type
+  // dropdown choice, not answers to the cited questions. A user who picked
+  // "Mobile Business" never answered "Will the business operate from a
+  // physical location?" — and for a mobile vendor the translation is
+  // actively misleading (REG-HOME-PHYSICAL-001's permit meaning). Marking
+  // them "derived" renders the honest "Derived answer:" label. This is
+  // presentation-only: answerProvenance never feeds gateFact, so firing,
+  // gating, and classification are untouched.
   const answerProvenance: Record<string, "user" | "derived"> = {};
+  const LOCATION_DERIVED_KEYS = new Set([
+    "Q_PHYSICAL_LOCATION",
+    "Q_HOME_BASED",
+    "Q_ONLINE_ONLY",
+  ]);
   for (const k of Object.keys(a)) {
-    if (a[k] !== undefined) answerProvenance[k] = "user";
+    if (a[k] === undefined) continue;
+    answerProvenance[k] = LOCATION_DERIVED_KEYS.has(k) ? "derived" : "user";
   }
 
   // Relationship-resolved facts, applied additively (see the doc comment).

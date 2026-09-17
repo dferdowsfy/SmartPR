@@ -172,6 +172,41 @@ test("provenance: a real user answer still renders as Answer: Yes", () => {
   assert.ok(alcoholRule!.reason.includes("| Answer: Yes"), alcoholRule!.reason);
 });
 
+test("provenance: location-derived physical/home/online values render as Derived answer, never Answer", () => {
+  // 2026-09-17 QA (live S4/S5/S6): requirement cards cited "Question: Will
+  // the business operate from a physical location? | Answer: Yes" and
+  // "Question: Will the business be operated from a home? | Answer: Yes"
+  // for users who were never asked those questions — the values came from
+  // the location-type dropdown, not from answers. The location model is a
+  // translation of a dropdown choice, so its values are derived.
+  const mobile = engineInputFor({
+    business_type: "Food Truck",
+    municipality: "Arecibo",
+    location_type: "Mobile Business",
+  });
+  const mobileRule = runRulesEngine(KB, mobile).debug.rulesMatched.find(
+    (r) => r.rule_id === "RULE_0007"
+  );
+  assert.ok(mobileRule, "Permiso Único fires for the mobile vendor via the location-derived physical value");
+  assert.ok(
+    mobileRule!.reason.includes("Derived answer:"),
+    `location-derived value labeled honestly: ${mobileRule!.reason}`
+  );
+  assert.ok(!mobileRule!.reason.includes("| Answer:"), "never presented as the user's answer");
+
+  const home = engineInputFor({
+    business_type: "Bookkeeping Service",
+    municipality: "San Juan",
+    location_type: "Home-Based Business",
+  });
+  const homeRule = runRulesEngine(KB, home).debug.rulesMatched.find(
+    (r) => r.rule_id === "RULE_0652"
+  );
+  assert.ok(homeRule, "domiciliary-use pathway fires for the home-based business");
+  assert.ok(homeRule!.reason.includes("Derived answer:"), homeRule!.reason);
+  assert.ok(!homeRule!.reason.includes("| Answer:"), "never presented as the user's answer");
+});
+
 // --- 6. Guidance stays provisional while the lease is unknown --------------
 
 test("lease: guidance is provisional while the lease answer is unknown", () => {

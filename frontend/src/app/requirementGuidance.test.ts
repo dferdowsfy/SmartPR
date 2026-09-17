@@ -144,15 +144,72 @@ test("OGPe construction permit guidance is construction-first, never solar-only"
   }
 });
 
-test("off-street parking legal basis never names a specific municipality", () => {
-  // Regression (live QA 2026-09-16): a Caguas filing's parking card cited
-  // San Juan's municipal traffic code as its legal basis, because RULE_0271
-  // (metro flag, all metro municipalities) carried a San Juan citation.
-  const ruleBasis = legalBasisFor("RULE_0271", "DOC_PARKING_COMPLIANCE", kb as any);
-  assert.ok(ruleBasis, "rule citation resolves");
-  assert.doesNotMatch(ruleBasis.citation, /San Juan/i);
-  const docBasis = legalBasisFor("RULE_DOES_NOT_EXIST", "DOC_PARKING_COMPLIANCE", kb as any);
-  assert.ok(docBasis, "document citation fallback resolves");
-  assert.doesNotMatch(docBasis.citation, /San Juan/i);
-  assert.match(docBasis.citation, /Reglamento Conjunto/);
+test("legal-basis citations stay municipality-neutral (parking subject retired by validated review)", () => {
+  // Stale-test repair (2026-09-17 QA): the original subject — RULE_0271 /
+  // DOC_PARKING_COMPLIANCE — was deliberately deleted by the 2026-09-16
+  // validated review (9b04a1a) as a reviewer-rejected universal, so the old
+  // assertions referenced rules/documents that no longer exist (failing on
+  // clean HEAD). The invariant the test guarded — a filing in municipality
+  // X must never cite another municipality's ordinance as its legal basis —
+  // is re-pinned as a KB-wide sweep so any new leakage fails loudly.
+  const rules = (kb as any).rules as Array<{
+    id: string; citation?: string; municipality_flag?: string | null;
+    requires_document_id?: string;
+  }>;
+  const docs = (kb as any).documents as Array<{ id: string; citation?: string }>;
+  const MUNI = /San Juan|Bayamón|Carolina|Guaynabo|Cataño|Trujillo Alto|Toa Baja|Toa Alta|Dorado|Ponce|Mayagüez|Caguas|Arecibo/i;
+  // Known exception (REQUIRES_REGULATORY_REVIEW, 2026-09-17 QA): RULE_0031
+  // fires for outdoor seating in ANY municipality but cites San Juan's
+  // Código de Orden Público. Unverified rule — do not "fix" by inventing a
+  // neutral citation; the applicable municipal ordinance needs research.
+  const KNOWN_EXCEPTIONS = new Set(["RULE_0031", "DOC_OUTDOOR_SEATING_AUTH"]);
+  const offenders: string[] = [];
+  for (const r of rules) {
+    if (r.citation && MUNI.test(r.citation) && !r.municipality_flag && !KNOWN_EXCEPTIONS.has(r.id)) {
+      offenders.push(r.id);
+    }
+  }
+  for (const d of docs) {
+    if (d.citation && MUNI.test(d.citation) && !KNOWN_EXCEPTIONS.has(d.id)) {
+      offenders.push(d.id);
+    }
+  }
+  assert.deepEqual(offenders, [], `municipality-specific citations on unscoped rules/documents: ${offenders.join(", ")}`);
+  // The retired universal stays retired: no live rule may target the
+  // deleted parking-compliance document.
+  assert.ok(
+    !rules.some((r) => r.requires_document_id === "DOC_PARKING_COMPLIANCE"),
+    "DOC_PARKING_COMPLIANCE stays deleted per validated review"
+  );
+});
+
+test("fire safety guidance is industry-neutral, never food-service-only", () => {
+  // Regression (live QA 2026-09-17): a Mayagüez plastics plant's fire
+  // certification card said "Commercial premises with food preparation or
+  // public occupancy require a fire-safety inspection..." — the concept was
+  // written for the restaurant case only, though it fires for manufacturers,
+  // warehouses, and other premises too. Same defect class as the solar-only
+  // construction guidance (commit 10c5a75).
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_FIRE_CERT"), { ...context, language });
+    assert.doesNotMatch(
+      g.regulatoryReason,
+      /with food preparation or public occupancy require|con preparación de alimentos u ocupación pública requieren/i,
+      `old food-service-only phrasing is gone (${language})`
+    );
+    assert.match(g.regulatoryReason, /industrial/i, `regulatoryReason covers industrial premises (${language})`);
+  }
+});
+
+test("legalBasisFor never renders internal filenames to users", () => {
+  // Regression (live QA 2026-09-17): requirement cards cited
+  // "Legal basis: Validated review 2026-09-16
+  // (SmartPR_25_Goldens_Validated_Review.xlsx)" — an internal workbook
+  // filename. The KB keeps the full citation for the audit trail; the
+  // user-facing label strips the parenthesized internal filename.
+  const basis = legalBasisFor("RULE_0653", "DOC_AMBULANT_BUSINESS_LICENSE", kb as any);
+  assert.ok(basis, "rule citation resolves");
+  assert.doesNotMatch(basis.citation, /\.xlsx/i, "no workbook filename in the user-facing citation");
+  assert.doesNotMatch(basis.citation, /SmartPR_25_Goldens/i);
+  assert.match(basis.citation, /Validated review 2026-09-16/);
 });

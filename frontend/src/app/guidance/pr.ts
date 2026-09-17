@@ -199,7 +199,12 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("An issued sanitary permit authorizes the inspected food-handling activity at that location, subject to its conditions and renewal.", "El permiso sanitario emitido autoriza la actividad de manejo de alimentos inspeccionada en ese local, sujeto a sus condiciones y renovación."),
   ]),
   DOC_FIRE_CERT: concept("DOC_FIRE_CERT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)]], [PR_GUIDANCE_SOURCES.fire], [
-    text("Commercial premises with food preparation or public occupancy require a fire-safety inspection before Cuerpo de Bomberos certifies the space.", "Los locales comerciales con preparación de alimentos u ocupación pública requieren inspección de seguridad contra incendios antes de la certificación."),
+    // REG-GUIDE-FIRE-GENERAL-001 (2026-09-17 QA): this concept fires for
+    // restaurants, manufacturers, warehouses, and other commercial or
+    // industrial premises — the lead sentence must not define fire
+    // certification as a food-service thing. Food preparation and public
+    // occupancy are examples of what the inspection covers, not its scope.
+    text("Commercial and industrial premises require a fire-safety inspection before Cuerpo de Bomberos certifies the space. The inspection covers the occupancy, equipment, and stored materials — for example food-preparation areas or spaces with public occupancy.", "Los locales comerciales e industriales requieren inspección de seguridad contra incendios antes de la certificación del Cuerpo de Bomberos. La inspección cubre la ocupación, el equipo y los materiales almacenados — por ejemplo, áreas de preparación de alimentos o espacios con ocupación pública."),
     text("The fire certification documents that the premises passed fire-code inspection for its occupancy and equipment, not general business compliance.", "El certificado de bomberos acredita que el local aprobó la inspección del código contra incendios para su ocupación y equipo, no el cumplimiento general del negocio."),
     text("Schedule the Cuerpo de Bomberos inspection for the premises and correct any noted deficiencies before the certificate is issued.", "Coordina la inspección del Cuerpo de Bomberos para el local y corrige las deficiencias señaladas antes de que se emita el certificado."),
     text("The issued fire certificate is required supporting evidence for the Permiso Único package; an inspection request alone is not certification.", "El certificado de bomberos emitido es evidencia requerida para el expediente del Permiso Único; solicitar la inspección no equivale a estar certificado."),

@@ -544,3 +544,42 @@ test("CASE I: swept operating obligations (RULE_0653-0664) are verify_existing f
     "a new bar still files for Hacienda tax-compliance evidence"
   );
 });
+
+test("CASE J: RULE_0652 (domiciliary-use Permiso Único) is verify_existing for existing home-based businesses", () => {
+  // 2026-09-17 03:00 QA cycle (live S5): a 6-year home bookkeeping business
+  // was shown Permiso Único — Domiciliary Use as a brand-new filing with no
+  // verify path. RULE_0652 is verification=verified, has no
+  // missing_fact_keys, and is the sole rule for DOC_DOMICILIARY_USE_PERMIT
+  // — the same posture class as the RULE_0653–0663 sweep (commit e676174).
+  const DOC_DOMICILIARY = docByName("domiciliary");
+  const existing = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "Bookkeeping Service",
+      businessStatus: "existing",
+      answers: { Q_HOME_BASED: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(existing, DOC_DOMICILIARY)?.applicability,
+    "verify_existing",
+    "an existing home-based business verifies its domiciliary-use authorization (RULE_0652)"
+  );
+
+  const fresh = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "Bookkeeping Service",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_HOME_BASED: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_DOMICILIARY)?.applicability,
+    "required",
+    "a new home-based business still applies for the domiciliary-use authorization"
+  );
+});

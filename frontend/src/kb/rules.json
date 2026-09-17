@@ -5121,7 +5121,15 @@
     "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
     "citation_confidence": "review",
     "citation_source": "review",
-    "verification": "verified"
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-17",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-17 03:00 cycle: an existing home-based business verifies its existing domiciliary-use authorization rather than applying as if new (live S5: a 6-year bookkeeping business was shown the permit as a new filing with no verify path). Same defect class as the RULE_0653-0663 sweep (commit e676174); RULE_0652 is verified with no missing_fact_keys and is the sole rule for DOC_DOMICILIARY_USE_PERMIT, so the posture change is safe. New businesses still see REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0653",

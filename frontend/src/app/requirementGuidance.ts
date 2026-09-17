@@ -239,6 +239,20 @@ interface CitationCarrier {
 const citationText = (c: CitationCarrier | undefined): string =>
   typeof c?.citation === "string" ? c.citation : "";
 
+/**
+ * Internal filenames must never render to users as a "Legal basis".
+ * Validated-review citations carry the workbook filename for the audit
+ * trail (e.g. "Validated review 2026-09-16
+ * (SmartPR_25_Goldens_Validated_Review.xlsx)"); the KB keeps that text,
+ * but the user-facing label strips the parenthesized internal filename so
+ * the basis reads as a validated review, not a file on someone's disk.
+ * (2026-09-17 QA: the filename rendered verbatim on live requirement
+ * cards.)
+ */
+const INTERNAL_FILENAME = /\s*\([^)]*\.(xlsx|xls|csv|ts|tsx|js|json|md|pdf)\)/i;
+const displayCitation = (raw: string): string =>
+  raw.replace(INTERNAL_FILENAME, "").replace(/\s{2,}/g, " ").trim();
+
 export function legalBasisFor(
   sourceRuleId: string | null | undefined,
   documentId: string | null | undefined,
@@ -251,7 +265,7 @@ export function legalBasisFor(
   if (rule && ruleCitation.length > 10) {
     return {
       ruleId: rule.id,
-      citation: ruleCitation,
+      citation: displayCitation(ruleCitation),
       url: typeof rule.citation_url === "string" ? rule.citation_url : null,
       confidence: typeof rule.citation_confidence === "string" ? rule.citation_confidence : null,
       inheritedFromDocument:
@@ -265,7 +279,7 @@ export function legalBasisFor(
   if (doc && docCitation.length > 10) {
     return {
       ruleId: rule?.id ?? null,
-      citation: docCitation,
+      citation: displayCitation(docCitation),
       url: typeof doc.citation_url === "string" ? doc.citation_url : null,
       confidence: typeof doc.citation_confidence === "string" ? doc.citation_confidence : null,
       inheritedFromDocument: doc.id,
