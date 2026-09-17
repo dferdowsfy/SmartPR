@@ -273,16 +273,25 @@ interface SipHeader {
   value?: string;
 }
 
-/** Extract the call id and caller phone (SIP From header) from the webhook payload. */
+/** Extract the call id and caller phone (SIP From header) from the webhook payload.
+ *
+ * xAI's documented `realtime.call.incoming` shape carries `call_id` and
+ * `sip_headers` at the top level of the event object
+ * (docs.x.ai SIP guide, "Steps for SIP providers"). The nested `data`
+ * envelope is accepted as a fallback.
+ */
 export function parseIncomingCall(payload: unknown): IncomingCallInfo | null {
   if (!payload || typeof payload !== "object") return null;
-  const data = (payload as { data?: unknown }).data;
-  if (!data || typeof data !== "object") return null;
-  const callId = (data as { call_id?: unknown }).call_id;
+  const top = payload as { call_id?: unknown; sip_headers?: unknown; data?: unknown };
+  const nested =
+    top.data && typeof top.data === "object"
+      ? (top.data as { call_id?: unknown; sip_headers?: unknown })
+      : undefined;
+  const callId = top.call_id ?? nested?.call_id;
   if (typeof callId !== "string" || callId.length === 0) return null;
 
   let callerE164: string | null = null;
-  const headers = (data as { sip_headers?: unknown }).sip_headers;
+  const headers = top.sip_headers ?? nested?.sip_headers;
   if (Array.isArray(headers)) {
     for (const h of headers as SipHeader[]) {
       if (h && typeof h.name === "string" && h.name.toLowerCase() === "from" && typeof h.value === "string") {

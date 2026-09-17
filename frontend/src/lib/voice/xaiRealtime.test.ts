@@ -130,6 +130,25 @@ describe("parseIncomingCall", () => {
     assert.deepEqual(info, { callId: "call_123", callerE164: "+17875550100" });
   });
 
+  it("parses xAI's documented top-level event shape", () => {
+    const info = parseIncomingCall({
+      object: "event",
+      id: "evt_123",
+      type: "realtime.call.incoming",
+      created_at: 1750000000,
+      call_id: "00000000-0000-0000-0000-000000000000",
+      sip_headers: [
+        { name: "From", value: "+14155550100" },
+        { name: "To", value: "+18005550199" },
+      ],
+      metadata: {},
+    });
+    assert.deepEqual(info, {
+      callId: "00000000-0000-0000-0000-000000000000",
+      callerE164: "+14155550100",
+    });
+  });
+
   it("extracts caller from a sip: URI", () => {
     const info = parseIncomingCall({
       data: {
