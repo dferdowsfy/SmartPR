@@ -320,3 +320,25 @@ Still out of scope: government automation/automatic filing, payments,
 signatures, legal attestations, arbitrary profile changes, workspace
 security management, arbitrary recipients, unrestricted deletion,
 unconfirmed autonomous changes, binary uploads through the voice model.
+
+## 12. Production telephony gateway (implemented 2026-09-17)
+
+The xAI-side wiring is implemented in the Next.js app (no separate service):
+
+- `src/app/api/voice/xai-webhook/route.ts` — receives `realtime.call.incoming`,
+  verifies the Standard Webhooks signature (`XAI_WEBHOOK_SECRET`), and hands
+  the call to the manager detached so the webhook returns 200 immediately.
+- `src/lib/voice/xaiCallManager.ts` — per-call lifecycle: opens
+  `wss://api.x.ai/v1/realtime?call_id=…` with `XAI_API_KEY`, runs the pre-auth
+  session (no tools), collects the 6-digit PIN from DTMF events server-side,
+  clears xAI's input buffer + scrubs history so the raw PIN never reaches the
+  model, verifies via `/api/voice/phone/verify-pin`, then sends the authed
+  `session.update` with the 18 MCP tools (`authorization` = fresh `vs_…`
+  token). Revokes the session on hangup.
+- `src/lib/voice/xaiRealtime.ts` — pure helpers (payload builders, signature
+  verification, DTMF collector) with unit tests in `xaiRealtime.test.ts`.
+
+Railway env required: `XAI_API_KEY` (existing), `VOICE_GATEWAY_API_KEY`
+(existing), `XAI_WEBHOOK_SECRET` (dispatch signing secret from the xAI phone
+number registration). xAI console: point the number's webhook at
+`https://www.getsmartpr.com/api/voice/xai-webhook`.
