@@ -33,7 +33,22 @@ import {
   type Db,
   type VoiceContext,
 } from "./context";
-import { SESSION_TOKEN_PREFIX } from "./session";
+import {
+  SESSION_TOKEN_PREFIX,
+  SESSION_TTL_MINUTES,
+  generateSessionToken,
+  hashSessionToken,
+  sessionExpiresAt,
+} from "./session";
+import {
+  MAX_PIN_ATTEMPTS,
+  LOCKOUT_MINUTES,
+  isValidPinFormat,
+  lockoutSecondsRemaining,
+  verifyPin,
+  hashPin,
+} from "./pin";
+import { logVoiceAudit } from "./audit";
 import {
   toolAddNote,
   toolConfirmPendingAction,
@@ -74,6 +89,54 @@ export function extractMcpToken(
   if (!trimmed) return null;
   const bearer = /^(?:Bearer)\s+(.+)$/i.exec(trimmed);
   const token = (bearer?.[1] ?? trimmed).trim();
+  if (!token || !token.startsWith(SESSION_TOKEN_PREFIX)) return null;
+  return token;
+}
+
+/* ------------------------------------------------------------------ */
+/* Console-agent mode (xAI console Remote MCP)                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Optional shared secret for the xAI console agent's Remote MCP
+ * configuration. xAI's `authorization` field is a single static value that
+ * xAI sets in the HTTP Authorization header — it cannot carry a per-caller
+ * voice session token. When this env var is set and the request header
+ * matches it (raw or `Bearer <key>`), the request is treated as coming from
+ * our console agent: tools/list exposes the full catalog (tools/call still
+ * enforces per-call auth), and authenticated tools accept the voice session
+ * token via the `session_token` argument instead of the header.
+ *
+ * The session token itself remains the credential: presenting a valid,
+ * unexpired, unrevoked token authenticates the call regardless of channel.
+ */
+export function getConsoleMcpKey(): string | null {
+  const key = process.env.XAI_CONSOLE_MCP_KEY;
+  return key && key.trim() ? key.trim() : null;
+}
+
+export function isConsoleMcpRequest(
+  authorizationHeader: string | null | undefined
+): boolean {
+  const key = getConsoleMcpKey();
+  if (!key || !authorizationHeader) return false;
+  const trimmed = authorizationHeader.trim();
+  if (!trimmed) return false;
+  const bearer = /^(?:Bearer)\s+(.+)$/i.exec(trimmed);
+  return (bearer?.[1] ?? trimmed).trim() === key;
+}
+
+/**
+ * Voice session token supplied as a tool argument (`session_token`) for
+ * console-agent mode, where the Authorization header carries xAI's static
+ * configured value instead of a per-caller token. Returns null unless the
+ * value is a syntactically valid session token.
+ */
+export function extractArgToken(rawArgs: unknown): string | null {
+  if (!rawArgs || typeof rawArgs !== "object") return null;
+  const v = (rawArgs as Record<string, unknown>).session_token;
+  if (typeof v !== "string") return null;
+  const token = v.trim();
   if (!token || !token.startsWith(SESSION_TOKEN_PREFIX)) return null;
   return token;
 }
@@ -161,6 +224,37 @@ export const MCP_TOOLS: McpToolDef[] = [
         },
       },
       required: ["business_type"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "verify_voice_pin",
+    description:
+      "Unlock the caller's SmartPR account tools with their 6-digit voice PIN. " +
+      "The caller must ENTER the PIN on their phone keypad — never ask them to say it aloud, " +
+      "never repeat the digits back, and never read the returned session_token aloud. " +
+      "Ask for the caller's SmartPR account email aloud, then have them type the PIN on the keypad " +
+      "and pass the digits exactly as received in 'pin'. " +
+      "On success the result contains a session_token: include it as the 'session_token' argument " +
+      "in every subsequent account tool call (it expires after 30 minutes). " +
+      "Until this tool returns ok:true, the only tool you may use is get_general_requirements.",
+    args: ["email", "pin"],
+    needsBusiness: false,
+    anonymous: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        email: {
+          type: "string",
+          description: "The caller's SmartPR account email address.",
+        },
+        pin: {
+          type: "string",
+          description:
+            "The 6-digit voice PIN exactly as entered by the caller on the phone keypad.",
+        },
+      },
+      required: ["email", "pin"],
       additionalProperties: false,
     },
   },
@@ -807,18 +901,35 @@ export async function executeMcpTool(
   }
 
   try {
-    const token = extractMcpToken(authorizationHeader);
+    // Voice session token from the Authorization header (gateway / Phase 1)
+    // or from the `session_token` tool argument (console-agent mode, where
+    // xAI's Authorization header carries a static configured value instead
+    // of a per-caller token). The argument is stripped before dispatch so it
+    // can never reach a tool implementation or be logged with arguments.
+    const argsCopy =
+      rawArgs && typeof rawArgs === "object"
+        ? { ...(rawArgs as Record<string, unknown>) }
+        : rawArgs;
+    const token =
+      extractMcpToken(authorizationHeader) ?? extractArgToken(argsCopy);
+    if (
+      argsCopy &&
+      typeof argsCopy === "object" &&
+      "session_token" in (argsCopy as Record<string, unknown>)
+    ) {
+      delete (argsCopy as Record<string, unknown>).session_token;
+    }
     if (!token) {
       if (!tool.anonymous) {
         throw new VoiceAuthError("missing_token", "A voice session token is required.", 401);
       }
-      // Anonymous knowledge-graph tool: no voice context exists. Account-
-      // derived observability fields stay null; raw args are never logged.
-      const data = await runAnonymousTool(db, tool, sanitizeArgs(tool, rawArgs));
+      // Anonymous tools: no voice context exists. Account-derived
+      // observability fields stay null; raw args are never logged.
+      const data = await runAnonymousTool(db, tool, sanitizeArgs(tool, argsCopy));
       return finish(true, { success: true, data }, null, false);
     }
     ctx = await resolveVoiceContext(`Bearer ${token}`, db);
-    const args = sanitizeArgs(tool, rawArgs);
+    const args = sanitizeArgs(tool, argsCopy);
     if (typeof args.businessId === "string" && args.businessId) businessId = args.businessId;
     const data = await runTool(db, ctx, tool, args);
     return finish(true, { success: true, data }, null, tool.name === "email_my_summary");
@@ -841,9 +952,174 @@ async function runAnonymousTool(
   switch (tool.name) {
     case "get_general_requirements":
       return toolGetGeneralRequirements(db, args);
+    case "verify_voice_pin":
+      return toolVerifyVoicePin(db, args);
     default:
       throw new VoiceAuthError("forbidden", "This tool requires authentication.", 403);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* verify_voice_pin — console-agent account unlock                      */
+/* ------------------------------------------------------------------ */
+
+interface VoiceAccessRow {
+  user_id: string;
+  phone_e164: string;
+  pin_hash: string;
+  enabled: boolean;
+  failed_attempts: number;
+  locked_until: string | null;
+}
+
+/**
+ * Lazily-created dummy PIN envelope so unknown/disabled emails cost the
+ * same scrypt work as a real verification (no user-enumeration oracle).
+ */
+let dummyPinEnvelope: string | null = null;
+async function dummyPinVerify(pin: string): Promise<void> {
+  if (!dummyPinEnvelope) dummyPinEnvelope = await hashPin("000000");
+  await verifyPin(pin, dummyPinEnvelope);
+}
+
+/**
+ * Anonymous account-unlock tool for console-agent mode.
+ *
+ * Verifies the caller's 6-digit voice PIN against the enrolled PIN for the
+ * given account email, then issues a short-lived voice session token that
+ * the agent passes as `session_token` to subsequent account tools.
+ *
+ * Auth failures are returned as data (ok:false), not transport errors, so
+ * the agent can respond conversationally. Brute-force protection mirrors
+ * the gateway verify-pin route: 5 failed attempts lock the account's voice
+ * access for 15 minutes. Unknown or disabled emails get a generic response
+ * with timing equalized by a dummy scrypt verification.
+ */
+async function toolVerifyVoicePin(
+  db: Db,
+  args: Record<string, unknown>
+): Promise<unknown> {
+  const email =
+    typeof args.email === "string" ? args.email.trim().toLowerCase() : "";
+  const pin = typeof args.pin === "string" ? args.pin.trim() : "";
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const invalid = {
+    ok: false,
+    error: "invalid_credentials",
+    message: "That email or PIN was not recognized. Please try again.",
+  };
+  // Fail fast on malformed input without touching the DB or attempt counters.
+  if (!emailOk || !isValidPinFormat(pin)) return invalid;
+
+  const { rows } = await db.query<VoiceAccessRow>(
+    `SELECT user_id, phone_e164, pin_hash, enabled, failed_attempts, locked_until
+       FROM voice_access WHERE lower(email) = $1 LIMIT 1`,
+    [email]
+  );
+  const access = rows[0];
+  if (!access || !access.enabled) {
+    await dummyPinVerify(pin);
+    await logVoiceAudit(db, {
+      action: "pin_failed",
+      details: { reason: "not_enrolled_or_disabled", via: "mcp_verify_voice_pin" },
+    });
+    return invalid;
+  }
+
+  const retryAfter = lockoutSecondsRemaining(access.locked_until);
+  if (retryAfter > 0) {
+    await logVoiceAudit(db, {
+      userId: access.user_id,
+      phoneE164: access.phone_e164,
+      action: "pin_locked",
+      details: { retry_after_seconds: retryAfter, via: "mcp_verify_voice_pin" },
+    });
+    return {
+      ok: false,
+      error: "locked",
+      retry_after_seconds: retryAfter,
+      message:
+        "Too many wrong PIN attempts. Voice access is locked for a few minutes — please try again later.",
+    };
+  }
+
+  const ok = await verifyPin(pin, access.pin_hash);
+  if (!ok) {
+    // Atomic increment: concurrent wrong PINs cannot lose updates or
+    // bypass the lockout threshold.
+    const updated = await db.query<{
+      failed_attempts: number;
+      locked_until: string | null;
+    }>(
+      `UPDATE voice_access
+          SET failed_attempts = failed_attempts + 1,
+              locked_until = CASE
+                WHEN failed_attempts + 1 >= $2
+                THEN now() + ($3 || ' minutes')::interval
+                ELSE locked_until END,
+              updated_at = now()
+        WHERE user_id = $1
+        RETURNING failed_attempts, locked_until`,
+      [access.user_id, MAX_PIN_ATTEMPTS, String(LOCKOUT_MINUTES)]
+    );
+    const failedAttempts = updated.rows[0]?.failed_attempts ?? MAX_PIN_ATTEMPTS;
+    const nowLocked = failedAttempts >= MAX_PIN_ATTEMPTS;
+    await logVoiceAudit(db, {
+      userId: access.user_id,
+      phoneE164: access.phone_e164,
+      action: nowLocked ? "pin_locked" : "pin_failed",
+      details: {
+        attempts_remaining: nowLocked ? 0 : MAX_PIN_ATTEMPTS - failedAttempts,
+        via: "mcp_verify_voice_pin",
+      },
+    });
+    if (nowLocked) {
+      return {
+        ok: false,
+        error: "locked",
+        retry_after_seconds: LOCKOUT_MINUTES * 60,
+        message:
+          "Too many wrong PIN attempts. Voice access is locked for 15 minutes.",
+      };
+    }
+    // Same generic shape as the unknown-email response below: the presence
+    // or absence of extra fields must not reveal whether an email is enrolled.
+    return invalid;
+  }
+
+  // Success: reset the counter, revoke superseded sessions, issue a new one.
+  const token = generateSessionToken();
+  const expiresAt = sessionExpiresAt();
+  await db.query(
+    `UPDATE voice_access
+        SET failed_attempts = 0, locked_until = NULL,
+            last_verified_at = now(), updated_at = now()
+      WHERE user_id = $1`,
+    [access.user_id]
+  );
+  await db.query(
+    `UPDATE voice_sessions SET revoked_at = now(), revoke_reason = 'superseded'
+      WHERE user_id = $1 AND revoked_at IS NULL`,
+    [access.user_id]
+  );
+  const issued = await db.query<{ id: string }>(
+    `INSERT INTO voice_sessions (token_hash, user_id, phone_e164, expires_at)
+     VALUES ($1, $2, $3, $4) RETURNING id`,
+    [hashSessionToken(token), access.user_id, access.phone_e164, expiresAt.toISOString()]
+  );
+  await logVoiceAudit(db, {
+    userId: access.user_id,
+    phoneE164: access.phone_e164,
+    action: "session_issued",
+    details: { session_id: issued.rows[0]?.id, via: "mcp_verify_voice_pin" },
+  });
+  return {
+    ok: true,
+    session_token: token,
+    expires_in_minutes: SESSION_TTL_MINUTES,
+    message:
+      "Account verified. Pass session_token as an argument to every account tool call. Never read it aloud.",
+  };
 }
 
 /**
@@ -859,6 +1135,10 @@ async function visibleMcpTools(
   authorizationHeader: string | null | undefined
 ): Promise<McpToolDef[]> {
   const anonymousOnly = MCP_TOOLS.filter((t) => t.anonymous);
+  // Console-agent mode: the request provably comes from our xAI console agent
+  // (static configured secret). Expose the full catalog so the model has every
+  // tool schema; tools/call still enforces per-call authentication.
+  if (isConsoleMcpRequest(authorizationHeader)) return MCP_TOOLS;
   if (!authorizationHeader || !authorizationHeader.trim()) return MCP_TOOLS;
   const token = extractMcpToken(authorizationHeader);
   if (!token) return anonymousOnly;

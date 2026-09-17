@@ -17,8 +17,10 @@ import assert from "node:assert/strict";
 
 import {
   executeMcpTool,
+  extractArgToken,
   extractMcpToken,
   handleMcpRequest,
+  isConsoleMcpRequest,
   mapMcpError,
   sanitizeArgs,
   MCP_TOOLS,
@@ -27,6 +29,8 @@ import {
   type McpFailure,
 } from "./mcp";
 import { VoiceAuthError } from "./context";
+import { hashPin } from "./pin";
+import { hashSessionToken } from "./session";
 import {
   setComplianceMailerForTests,
 } from "../compliance-reminders";
@@ -43,11 +47,22 @@ interface FakeSession {
   revoked_at: string | null;
 }
 
+interface FakeVoiceAccess {
+  email: string;
+  user_id: string;
+  phone_e164: string;
+  pin_hash: string;
+  enabled: boolean;
+  failed_attempts: number;
+  locked_until: string | null;
+}
+
 interface Scenario {
   session: FakeSession | null;
   email: string | null;
   plan?: string;
   businesses?: Array<Record<string, unknown>>;
+  voiceAccess?: FakeVoiceAccess | null;
 }
 
 const FUTURE = new Date(Date.now() + 20 * 60_1000).toISOString();
@@ -78,6 +93,24 @@ function makeFakeDb(scenario: Scenario) {
       if (s.includes("FROM voice_access WHERE user_id")) {
         return { rows: [{ email: scenario.email }] };
       }
+      if (s.includes("FROM voice_access WHERE lower(email)")) {
+        const row = scenario.voiceAccess ?? null;
+        return { rows: row && params?.[0] === row.email ? [row] : [] };
+      }
+      if (s.includes("UPDATE voice_access") && s.includes("failed_attempts + 1")) {
+        const row = scenario.voiceAccess;
+        if (!row) throw new Error("voice_access increment with no access row");
+        row.failed_attempts += 1;
+        if (row.failed_attempts >= 5) {
+          row.locked_until = new Date(Date.now() + 15 * 60_1000).toISOString();
+        }
+        return {
+          rows: [{ failed_attempts: row.failed_attempts, locked_until: row.locked_until }],
+        };
+      }
+      if (s.includes("UPDATE voice_access")) return { rows: [] }; // reset branch
+      if (s.includes("UPDATE voice_sessions SET revoked_at")) return { rows: [] };
+      if (s.includes("INSERT INTO voice_sessions")) return { rows: [{ id: "sess-new" }] };
       if (s.includes("FROM workspaces w")) return { rows: [{ id: "ws-1" }] };
       if (s.includes("FROM workspace_subscriptions")) {
         return {
@@ -188,7 +221,7 @@ describe("sanitizeArgs", () => {
 });
 
 describe("tool registry", () => {
-  it("exposes exactly the nineteen Phase 1–3 tools", () => {
+  it("exposes exactly the twenty Phase 1–3 tools", () => {
     assert.deepEqual(
       MCP_TOOLS.map((t) => t.name).sort(),
       [
@@ -211,27 +244,41 @@ describe("tool registry", () => {
         "propose_project_fact_update",
         "send_secure_action_link",
         "send_secure_upload_link",
+        "verify_voice_pin",
       ].sort()
     );
   });
-  it("flags exactly one tool as anonymous (zero account data)", () => {
+  it("flags exactly the anonymous tools (zero account data)", () => {
     const anonymous = MCP_TOOLS.filter((t) => t.anonymous);
-    assert.deepEqual(anonymous.map((t) => t.name), ["get_general_requirements"]);
+    assert.deepEqual(
+      anonymous.map((t) => t.name).sort(),
+      ["get_general_requirements", "verify_voice_pin"].sort()
+    );
   });
   it("declares no identity fields in any input schema", () => {
     const banned = ["userId", "workspaceId", "role", "plan", "email", "to", "recipient", "user_id"];
     for (const tool of MCP_TOOLS) {
       const props = (tool.inputSchema.properties ?? {}) as Record<string, unknown>;
       for (const key of Object.keys(props)) {
+        // verify_voice_pin's email is the credential being verified (the PIN
+        // must match it) — not an identity override. Identity is always
+        // derived server-side from the issued session token.
+        if (tool.name === "verify_voice_pin" && key === "email") continue;
         assert.ok(!banned.includes(key), `${tool.name} declares banned arg ${key}`);
       }
       const text = JSON.stringify(tool.inputSchema);
-      for (const b of banned) assert.ok(!text.includes(`"${b}"`), `${tool.name} schema mentions ${b}`);
+      for (const b of banned) {
+        if (tool.name === "verify_voice_pin" && b === "email") continue;
+        assert.ok(!text.includes(`"${b}"`), `${tool.name} schema mentions ${b}`);
+      }
     }
   });
   it("keeps descriptions concise and free of RBAC internals", () => {
     for (const tool of MCP_TOOLS) {
-      assert.ok(tool.description.length < 200, tool.name);
+      // verify_voice_pin carries load-bearing PIN-handling safety rules
+      // (keypad entry, never read the token aloud); it gets a wider budget.
+      const limit = tool.name === "verify_voice_pin" ? 800 : 200;
+      assert.ok(tool.description.length < limit, tool.name);
       assert.ok(!/RBAC|policy matrix/i.test(tool.description), tool.name);
     }
   });
@@ -305,29 +352,29 @@ describe("handleMcpRequest", () => {
     const body = res.body as { result: { protocolVersion: string } };
     assert.equal(body.result.protocolVersion, "2025-06-18");
   });
-  it("lists all nineteen tools with schemas, unauthenticated (missing header keeps historical behavior)", async () => {
+  it("lists all twenty tools with schemas, unauthenticated (missing header keeps historical behavior)", async () => {
     const res = await handleMcpRequest(db, { jsonrpc: "2.0", id: 2, method: "tools/list" }, null);
     const body = res.body as { result: { tools: Array<{ name: string; inputSchema: unknown }> } };
-    assert.equal(body.result.tools.length, 19);
+    assert.equal(body.result.tools.length, 20);
     assert.ok(body.result.tools.every((t) => t.inputSchema));
   });
-  it("lists only the anonymous tool for the pre-auth marker", async () => {
+  it("lists only the anonymous tools for the pre-auth marker", async () => {
     const res = await handleMcpRequest(
       db,
       { jsonrpc: "2.0", id: 3, method: "tools/list" },
       "anonymous"
     );
     const body = res.body as { result: { tools: Array<{ name: string }> } };
-    assert.deepEqual(body.result.tools.map((t) => t.name), ["get_general_requirements"]);
+    assert.deepEqual(body.result.tools.map((t) => t.name).sort(), ["get_general_requirements", "verify_voice_pin"].sort());
   });
-  it("lists only the anonymous tool for an invalid token", async () => {
+  it("lists only the anonymous tools for an invalid token", async () => {
     const res = await handleMcpRequest(
       db,
       { jsonrpc: "2.0", id: 4, method: "tools/list" },
       "Bearer vs_bogus_token"
     );
     const body = res.body as { result: { tools: Array<{ name: string }> } };
-    assert.deepEqual(body.result.tools.map((t) => t.name), ["get_general_requirements"]);
+    assert.deepEqual(body.result.tools.map((t) => t.name).sort(), ["get_general_requirements", "verify_voice_pin"].sort());
   });
   it("lists all tools for a valid token", async () => {
     const authedDb = makeFakeDb({ session: validSession(), email: "a@b.co" }) as never;
@@ -337,7 +384,7 @@ describe("handleMcpRequest", () => {
       "Bearer vs_test_session_token"
     );
     const body = res.body as { result: { tools: Array<{ name: string }> } };
-    assert.equal(body.result.tools.length, 19);
+    assert.equal(body.result.tools.length, 20);
     assert.ok(body.result.tools.some((t) => t.name === "get_account_context"));
   });
   it("answers ping and rejects unknown methods", async () => {
@@ -651,5 +698,300 @@ describe("email_my_summary", () => {
     const res = await executeMcpTool(db as never, authz, "email_my_summary", {});
     assert.equal((res.payload as McpFailure).code, "NO_VERIFIED_EMAIL");
     assert.equal(sentTo, null);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* verify_voice_pin (console-agent account unlock)                     */
+/* ------------------------------------------------------------------ */
+
+describe("verify_voice_pin", () => {
+  const EMAIL = "caller@getsmartpr.com";
+  const PIN = "123456";
+
+  async function accessRow(
+    overrides: Partial<FakeVoiceAccess> = {}
+  ): Promise<FakeVoiceAccess> {
+    return {
+      email: EMAIL,
+      user_id: "user-9",
+      phone_e164: "+17870000009",
+      pin_hash: await hashPin(PIN),
+      enabled: true,
+      failed_attempts: 0,
+      locked_until: null,
+      ...overrides,
+    };
+  }
+
+  async function verify(
+    db: ReturnType<typeof makeFakeDb>,
+    args: Record<string, unknown>
+  ) {
+    const res = await executeMcpTool(db as never, null, "verify_voice_pin", args);
+    assert.equal(res.ok, true);
+    return res.payload as { success: boolean; data: Record<string, unknown> };
+  }
+
+  it("issues a session token for a correct PIN", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    const payload = await verify(db, { email: EMAIL, pin: PIN });
+    assert.equal(payload.data.ok, true);
+    assert.ok(
+      typeof payload.data.session_token === "string" &&
+        (payload.data.session_token as string).startsWith("vs_")
+    );
+    assert.equal(payload.data.expires_in_minutes, 30);
+    // A fresh session row was persisted and the attempt counter reset.
+    assert.equal(insertsOf(db, "voice_sessions").length, 1);
+    assert.ok(
+      db.queries.some(
+        (q) => q.sql.includes("UPDATE voice_access") && q.sql.includes("failed_attempts = 0")
+      )
+    );
+    // Audit recorded the issuance without the PIN or token.
+    const audits = insertsOf(db, "voice_audit_log");
+    assert.ok(audits.some((q) => JSON.stringify(q.params).includes("session_issued")));
+    assert.ok(
+      !db.queries.some((q) => JSON.stringify(q.params ?? []).includes(PIN))
+    );
+  });
+
+  it("unlocks account tools with the issued session_token argument", async () => {
+    const scenario: Scenario = {
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+      businesses: [BIZ_A],
+    };
+    const db = makeFakeDb(scenario);
+    const payload = await verify(db, { email: EMAIL, pin: PIN });
+    const token = payload.data.session_token as string;
+    // The session lookup now resolves for the issued token's hash.
+    scenario.session = {
+      id: "sess-new",
+      user_id: "user-9",
+      phone_e164: "+17870000009",
+      expires_at: FUTURE,
+      revoked_at: null,
+    };
+    const res = await executeMcpTool(db as never, null, "get_account_context", {
+      session_token: token,
+    });
+    assert.equal(res.ok, true);
+    // The raw token never appears in any query params — only its hash and,
+    // server-side, the resolved identity do.
+    assert.ok(
+      !db.queries.some((q) => JSON.stringify(q.params ?? []).includes(token))
+    );
+    assert.ok(
+      db.queries.some(
+        (q) =>
+          q.sql.includes("FROM voice_sessions WHERE token_hash") &&
+          (q.params as unknown[])[0] === hashSessionToken(token)
+      )
+    );
+  });
+
+  it("rejects a wrong PIN with the same shape as an unknown email", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    const payload = await verify(db, { email: EMAIL, pin: "000000" });
+    assert.deepEqual(payload.data, {
+      ok: false,
+      error: "invalid_credentials",
+      message: "That email or PIN was not recognized. Please try again.",
+    });
+    // The attempt counter was incremented; no session was issued.
+    assert.equal(insertsOf(db, "voice_sessions").length, 0);
+    assert.ok(
+      db.queries.some(
+        (q) =>
+          q.sql.includes("UPDATE voice_access") && q.sql.includes("failed_attempts + 1")
+      )
+    );
+  });
+
+  it("locks after five wrong PINs and stays locked for the right one", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow({ failed_attempts: 4 }),
+    });
+    const fifth = await verify(db, { email: EMAIL, pin: "000000" });
+    assert.equal(fifth.data.ok, false);
+    assert.equal(fifth.data.error, "locked");
+    assert.equal(fifth.data.retry_after_seconds, 900);
+    // Even the correct PIN is refused while locked.
+    const correct = await verify(db, { email: EMAIL, pin: PIN });
+    assert.equal(correct.data.ok, false);
+    assert.equal(correct.data.error, "locked");
+    assert.ok((correct.data.retry_after_seconds as number) > 0);
+    assert.equal(insertsOf(db, "voice_sessions").length, 0);
+  });
+
+  it("returns the generic response for unknown and disabled emails", async () => {
+    const unknownDb = makeFakeDb({ session: null, email: null, voiceAccess: null });
+    const unknown = await verify(unknownDb, { email: "nobody@example.com", pin: PIN });
+    assert.deepEqual(unknown.data, {
+      ok: false,
+      error: "invalid_credentials",
+      message: "That email or PIN was not recognized. Please try again.",
+    });
+
+    const disabledDb = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow({ enabled: false }),
+    });
+    const disabled = await verify(disabledDb, { email: EMAIL, pin: PIN });
+    assert.deepEqual(disabled.data, {
+      ok: false,
+      error: "invalid_credentials",
+      message: "That email or PIN was not recognized. Please try again.",
+    });
+    // No session issued, no attempt-counter writes for either.
+    assert.equal(insertsOf(unknownDb, "voice_sessions").length, 0);
+    assert.equal(insertsOf(disabledDb, "voice_sessions").length, 0);
+    assert.ok(!unknownDb.queries.some((q) => q.sql.includes("UPDATE voice_access")));
+  });
+
+  it("rejects malformed email and PIN without touching attempt counters", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    for (const args of [
+      { email: "not-an-email", pin: PIN },
+      { email: EMAIL, pin: "12" },
+      { email: EMAIL, pin: "abcdef" },
+      { email: "", pin: "" },
+    ]) {
+      const payload = await verify(db, args);
+      assert.equal(payload.data.ok, false);
+      assert.equal(payload.data.error, "invalid_credentials");
+    }
+    assert.ok(!db.queries.some((q) => q.sql.includes("voice_access")));
+  });
+
+  it("is case-insensitive on email", async () => {
+    const db = makeFakeDb({
+      session: null,
+      email: null,
+      voiceAccess: await accessRow(),
+    });
+    const payload = await verify(db, { email: "CALLER@getsmartpr.com", pin: PIN });
+    assert.equal(payload.data.ok, true);
+  });
+
+  it("denies account tools for a revoked session token", async () => {
+    const scenario: Scenario = {
+      session: validSession({ revoked_at: new Date().toISOString() }),
+      email: null,
+      businesses: [BIZ_A],
+    };
+    const db = makeFakeDb(scenario);
+    const res = await executeMcpTool(db as never, null, "get_account_context", {
+      session_token: "vs_revoked_token_for_test",
+    });
+    assert.equal((res.payload as McpFailure).code, "AUTH_REQUIRED");
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Console-agent MCP mode (static xAI Authorization + arg token)        */
+/* ------------------------------------------------------------------ */
+
+describe("console-agent MCP mode", () => {
+  const CONSOLE_KEY = "test-console-key-123";
+
+  beforeEach(() => {
+    process.env.XAI_CONSOLE_MCP_KEY = CONSOLE_KEY;
+  });
+  afterEach(() => {
+    delete process.env.XAI_CONSOLE_MCP_KEY;
+  });
+
+  it("recognizes the configured console key, raw or Bearer <redacted>", () => {
+    assert.equal(isConsoleMcpRequest(CONSOLE_KEY), true);
+    assert.equal(isConsoleMcpRequest(`Bearer ${CONSOLE_KEY}`), true);
+    assert.equal(isConsoleMcpRequest("wrong-key"), false);
+    assert.equal(isConsoleMcpRequest(null), false);
+    assert.equal(isConsoleMcpRequest(""), false);
+  });
+
+  it("ignores everything when no console key is configured", () => {
+    delete process.env.XAI_CONSOLE_MCP_KEY;
+    assert.equal(isConsoleMcpRequest(CONSOLE_KEY), false);
+  });
+
+  it("extracts a session_token argument only when well-formed", () => {
+    assert.equal(extractArgToken({ session_token: "vs_abc123" }), "vs_abc123");
+    assert.equal(extractArgToken({}), null);
+    assert.equal(extractArgToken(null), null);
+    assert.equal(extractArgToken({ session_token: 42 }), null);
+    assert.equal(extractArgToken({ session_token: "Bearer <redacted>" }), null);
+    assert.equal(extractArgToken({ session_token: "  vs_abc123  " }), "vs_abc123");
+  });
+
+  it("lists the full catalog for the console key", async () => {
+    const db = makeFakeDb({ session: null, email: null }) as never;
+    const res = await handleMcpRequest(
+      db,
+      { jsonrpc: "2.0", id: 1, method: "tools/list" },
+      `Bearer ${CONSOLE_KEY}`
+    );
+    const body = res.body as { result: { tools: Array<{ name: string }> } };
+    assert.equal(body.result.tools.length, 20);
+    assert.ok(body.result.tools.some((t) => t.name === "verify_voice_pin"));
+    assert.ok(body.result.tools.some((t) => t.name === "get_account_context"));
+  });
+
+  it("lists only anonymous tools for a wrong console key", async () => {
+    const db = makeFakeDb({ session: null, email: null }) as never;
+    const res = await handleMcpRequest(
+      db,
+      { jsonrpc: "2.0", id: 1, method: "tools/list" },
+      "wrong-key"
+    );
+    const body = res.body as { result: { tools: Array<{ name: string }> } };
+    assert.deepEqual(
+      body.result.tools.map((t) => t.name).sort(),
+      ["get_general_requirements", "verify_voice_pin"].sort()
+    );
+  });
+
+  it("authenticates account tools from the session_token argument under the console key", async () => {
+    const db = makeFakeDb({
+      session: validSession(),
+      email: "a@b.co",
+      businesses: [BIZ_A],
+    }) as never;
+    const res = await executeMcpTool(db, `Bearer ${CONSOLE_KEY}`, "get_account_context", {
+      session_token: "vs_abc123",
+    });
+    assert.equal(res.ok, true);
+  });
+
+  it("denies account tools with an invalid session_token argument", async () => {
+    const db = makeFakeDb({ session: null, email: null }) as never;
+    const res = await executeMcpTool(db, `Bearer ${CONSOLE_KEY}`, "get_account_context", {
+      session_token: "vs_bogus_token",
+    });
+    assert.equal((res.payload as McpFailure).code, "AUTH_REQUIRED");
+  });
+
+  it("denies account tools with no token at all, even with the console key", async () => {
+    const db = makeFakeDb({ session: null, email: null }) as never;
+    const res = await executeMcpTool(db, `Bearer ${CONSOLE_KEY}`, "get_account_context", {});
+    assert.equal((res.payload as McpFailure).code, "AUTH_REQUIRED");
   });
 });
