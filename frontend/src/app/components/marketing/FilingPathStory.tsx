@@ -147,6 +147,10 @@ export default function FilingPathStory({ language }: { language: Language }) {
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const anchorRef = useRef<HTMLDivElement | null>(null);
+  // Tracks whether the reveal animation has played at least once, and whether
+  // the current effect run is a language toggle (a settings change, not a visit).
+  const hasPlayedRef = useRef(false);
+  const prevLanguageRef = useRef<Language | null>(null);
 
   const [typedCount, setTypedCount] = useState(0);
   const [caretDone, setCaretDone] = useState(false);
@@ -192,7 +196,26 @@ export default function FilingPathStory({ language }: { language: Language }) {
     if (!section || !anchor) return;
     const compactLayout = window.matchMedia("(max-width: 959px)").matches;
 
-    let armed = true;
+    // A language toggle is a settings change, not a new visit: show the
+    // finished panel immediately instead of replaying the reveal from blank.
+    const languageSwitched =
+      prevLanguageRef.current !== null && prevLanguageRef.current !== language;
+    prevLanguageRef.current = language;
+
+    let armed = !languageSwitched;
+    if (languageSwitched) {
+      setTypedCount(c.sentence.length);
+      setCaretDone(true);
+      setParseOn(true);
+      setParseSettled(true);
+      setParseLabel(c.parseMapped);
+      setMarkedCount(markTokens.length);
+      setLiftedCount(markTokens.length);
+      setAgenciesShown(c.agencies.length);
+      setStepsShown(c.path.length);
+      setIncentivesShown(c.incentives.length);
+    }
+
     let runId = 0;
     const timers: ReturnType<typeof setTimeout>[] = [];
     const pause = (ms: number, id: number) =>
@@ -200,53 +223,56 @@ export default function FilingPathStory({ language }: { language: Language }) {
         timers.push(setTimeout(resolve, ms));
       }).then(() => id === runId);
 
-    async function run() {
+    // The first view plays at double speed so the hero panel fills in within a
+    // few seconds instead of sitting mostly empty; replays (scroll away and
+    // back) keep the full cinematic timing.
+    async function run(speed: number) {
       const id = ++runId;
       reset();
-      if (!(await pause(400, id))) return;
+      if (!(await pause(400 * speed, id))) return;
 
       for (const token of tokens) {
         for (let i = token.start + 1; i <= token.end; i++) {
           setTypedCount(i);
-          if (!(await pause(token.mark ? 34 : 22, id))) return;
+          if (!(await pause((token.mark ? 34 : 22) * speed, id))) return;
         }
       }
       setCaretDone(true);
-      if (!(await pause(420, id))) return;
+      if (!(await pause(420 * speed, id))) return;
 
       setParseOn(true);
       for (let i = 1; i <= markTokens.length; i++) {
         setMarkedCount(i);
-        if (!(await pause(230, id))) return;
+        if (!(await pause(230 * speed, id))) return;
       }
-      if (!(await pause(180, id))) return;
+      if (!(await pause(180 * speed, id))) return;
       setParseLabel(c.parseDetails(markTokens.length));
       setParseSettled(true);
-      if (!(await pause(320, id))) return;
+      if (!(await pause(320 * speed, id))) return;
 
       for (let i = 1; i <= markTokens.length; i++) {
         setLiftedCount(i);
-        if (!(await pause(150, id))) return;
+        if (!(await pause(150 * speed, id))) return;
       }
-      if (!(await pause(280, id))) return;
+      if (!(await pause(280 * speed, id))) return;
 
       setParseLabel(c.parseAgencies(c.agencies.length));
       for (let i = 1; i <= c.agencies.length; i++) {
         setAgenciesShown(i);
-        if (!(await pause(70, id))) return;
+        if (!(await pause(70 * speed, id))) return;
       }
-      if (!(await pause(360, id))) return;
+      if (!(await pause(360 * speed, id))) return;
 
       setParseLabel(c.parseMapped);
       for (let i = 1; i <= c.path.length; i++) {
         setStepsShown(i);
-        if (!(await pause(430, id))) return;
+        if (!(await pause(430 * speed, id))) return;
       }
-      if (!(await pause(300, id))) return;
+      if (!(await pause(300 * speed, id))) return;
 
       for (let i = 1; i <= c.incentives.length; i++) {
         setIncentivesShown(i);
-        if (!(await pause(150, id))) return;
+        if (!(await pause(150 * speed, id))) return;
       }
     }
 
@@ -254,7 +280,9 @@ export default function FilingPathStory({ language }: { language: Language }) {
       ([entry]) => {
         if (entry.isIntersecting && armed) {
           armed = false;
-          run();
+          const speed = hasPlayedRef.current ? 1 : 0.5;
+          hasPlayedRef.current = true;
+          run(speed);
         }
       },
       // Hold off until the section has actually scrolled up into view, rather

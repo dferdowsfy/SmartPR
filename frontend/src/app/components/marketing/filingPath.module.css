@@ -34,6 +34,10 @@
 .summary {
   display: inline-flex;
   align-items: center;
+  /* Never squeeze the pill to fit the row — when it doesn't fit next to the
+     heading it must wrap below it, not overflow and get clipped by the card. */
+  flex-shrink: 0;
+  max-width: 100%;
   min-height: 2rem;
   padding: 0.3rem 0.85rem;
   border: 1px solid #245c5c;
