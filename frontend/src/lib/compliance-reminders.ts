@@ -167,6 +167,13 @@ export async function sendComplianceEmail(
   html: string
 ): Promise<boolean> {
   if (!to || !to.includes("@")) return false;
+  // Prefer Resend's HTTPS API when configured: it does not depend on
+  // outbound SMTP, which the hosting network can throttle or blackhole.
+  // A hanging SMTP connect (nodemailer's 120s default) outlasts the voice
+  // tool-call window, so calls hear "connected services unavailable".
+  if (process.env.RESEND_API_KEY && !mailerOverride) {
+    return sendViaResend(to, subject, text, html);
+  }
   if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
     console.error("[compliance-reminders] email skipped: GMAIL_SMTP_APP_PASSWORD is not set");
     return false;
@@ -178,6 +185,12 @@ export async function sendComplianceEmail(
         host: "smtp.gmail.com",
         port: 465,
         secure: true,
+        // Fail fast: a hanging SMTP connect must never outlast the voice
+        // tool-call window. Errors become a clean delivery failure the
+        // agent can report honestly instead of a connector timeout.
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
+        socketTimeout: 20000,
         auth: {
           user: process.env.GMAIL_SMTP_USER || "alerts@getsmartpr.com",
           pass: process.env.GMAIL_SMTP_APP_PASSWORD || "",
@@ -188,6 +201,40 @@ export async function sendComplianceEmail(
   } catch (err) {
     console.error(`[compliance-reminders] email delivery failed: ${(err as Error)?.message || err}`);
     return false;
+  }
+}
+
+async function sendViaResend(
+  to: string,
+  subject: string,
+  text: string,
+  html: string
+): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ from: REMINDER_FROM, to, subject, text, html }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(
+        `[compliance-reminders] resend delivery failed: ${res.status} ${body.slice(0, 300)}`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(`[compliance-reminders] resend delivery failed: ${(err as Error)?.message || err}`);
+    return false;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
