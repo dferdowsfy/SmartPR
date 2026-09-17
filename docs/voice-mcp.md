@@ -1,4 +1,4 @@
-# SmartPR Remote MCP Server — Phase 2
+# SmartPR Remote MCP Server — Phases 2–3
 
 Production adapter exposing the Phase 1 authenticated voice capabilities to
 xAI Speech-to-Speech as Remote MCP tools.
@@ -84,6 +84,15 @@ are stripped and can never override identity.
 | `get_deadlines` | `businessId?` | Upcoming and overdue compliance deadlines. |
 | `get_evidence_status` | `businessId?` | Evidence coverage and document review status. |
 | `email_my_summary` | `businessId?` | Emails the summary to the verified account email. Never accepts a recipient. |
+| `create_draft_project` | `businessId, projectType, description?, matterId?` | **Proposes** a draft project. Nothing persists until confirmed. |
+| `propose_project_fact_update` | `businessId, factKey, factValue, matterId?` | **Proposes** a fact change (allowlisted keys only). Nothing persists until confirmed. |
+| `add_note` | `businessId, noteText` | **Proposes** a note. Nothing persists until confirmed. |
+| `confirm_pending_action` | `pendingActionId` | Confirms + executes a proposed action. Call only with the caller's explicit "yes". |
+| `cancel_pending_action` | `pendingActionId` | Cancels a proposed action without executing it. |
+| `send_secure_upload_link` | `businessId, obligationId?` | Emails a single-use evidence-upload link to the verified account email. |
+| `send_secure_action_link` | `businessId, actionType, ...` | Emails a scoped secure-action link for link-only actions (government submission, signatures, etc.) to the verified account email. |
+| `generate_deliverable` | `businessId, deliverableType` | Generates a readiness/requirements PDF (plan-gated). |
+| `email_deliverable` | `businessId, deliverableId` | Emails a secure download link for a generated deliverable to the verified account email. |
 
 `businessId` is optional: with exactly one accessible business it is
 auto-selected; with several, the server returns `BUSINESS_SELECTION_REQUIRED`
@@ -134,7 +143,7 @@ all), `authorization` (token placed in the `Authorization` header), `headers`.
         "type": "mcp",
         "server_url": "https://<smartpr-host>/api/mcp/voice",
         "server_label": "smartpr",
-        "server_description": "Authenticated SmartPR account tools: requirements, readiness, evidence, deadlines, and summary email.",
+        "server_description": "Authenticated SmartPR account tools: requirements, readiness, evidence, deadlines, draft projects, fact updates, notes, secure links, deliverables, and summary email.",
         "allowed_tools": [
           "get_account_context",
           "list_my_businesses",
@@ -144,7 +153,16 @@ all), `authorization` (token placed in the `Authorization` header), `headers`.
           "get_readiness",
           "get_deadlines",
           "get_evidence_status",
-          "email_my_summary"
+          "email_my_summary",
+          "create_draft_project",
+          "propose_project_fact_update",
+          "add_note",
+          "confirm_pending_action",
+          "cancel_pending_action",
+          "send_secure_upload_link",
+          "send_secure_action_link",
+          "generate_deliverable",
+          "email_deliverable"
         ],
         "authorization": "<VOICE_SESSION_TOKEN>"
       }
@@ -212,6 +230,18 @@ Keep the system prompt small — behavioral rules only:
 >
 > Never invent regulatory requirements outside SmartPR's authoritative
 > regulatory engine.
+>
+> Action tools (`create_draft_project`, `propose_project_fact_update`,
+> `add_note`) only PROPOSE. Read the confirmation summary back to the caller
+> in plain language and ask for explicit confirmation. Only call
+> `confirm_pending_action` with that pendingActionId when the caller gives an
+> unambiguous yes; anything vague ("maybe", "I guess") is not confirmation.
+> Never send a confirmation on the caller's behalf, never edit the proposal —
+> confirm executes exactly what was proposed.
+>
+> Secure links and emails always go to the verified account email. Never ask
+> for or accept a recipient address, phone number, user ID, workspace ID, or
+> plan name. Never collect passwords, PINs, or verification codes.
 
 ## 9. Anonymous vs authenticated calls
 
@@ -269,10 +299,24 @@ Phase 2 is complete only when this works against production-like infra:
 11. Audit and usage records are written.
 12. Caller never needed to log into the website.
 
-## 13. Explicitly out of scope (Phase 3+)
+## 13. Phase 3 — action tools (implemented, unapplied migration)
 
-Payments, government filing submission, electronic signature, arbitrary
-passport edits, workspace administration, billing modification, destructive
-actions, user invitations, document deletion, unrestricted uploads through
-voice. Phase 2 is read-heavy by design; `email_my_summary` is the only write,
-and it was already a Phase 1 capability.
+Phase 3 adds confirmation-gated writes. Every write tool (draft projects,
+fact updates, notes) only *proposes*: the server stores a frozen pending
+action with a 15-minute expiry, and the caller must give an unambiguous "yes"
+before `confirm_pending_action` executes the exact frozen payload. Sensitive
+actions (government submission, signatures, attestations, payments, security
+changes, destructive actions, workspace administration) are
+secure-link-only — never executed by voice. Emails and secure links always go
+to the verified account email; no arbitrary recipients.
+
+Tests: `frontend/src/lib/voice/phase3.test.ts` (27 tests) proves the
+confirmation architecture — frozen payloads, same-session binding, expiry,
+cancellation, double-confirm idempotency, fact provenance, engine reruns
+with before/after diffs, plan gating, verified-email-only delivery, scoped
+expiring single-use links, RBAC denials, and safe failure codes.
+
+Still out of scope: government automation/automatic filing, payments,
+signatures, legal attestations, arbitrary profile changes, workspace
+security management, arbitrary recipients, unrestricted deletion,
+unconfirmed autonomous changes, binary uploads through the voice model.

@@ -334,3 +334,566 @@ export async function toolEmailMySummary(
     }
   );
 }
+
+/* ==========================================================================
+ * Phase 3: authenticated action tools.
+ *
+ * Same rules as Phase 2, plus:
+ * - every write is classified server-side by lib/voice/policy.ts; the model
+ *   never supplies a classification
+ * - writes that mutate state require an explicit caller confirmation via a
+ *   server-stored pending action (opaque pendingActionId); the model only
+ *   ever reads the deterministic confirmation summary
+ * - confirmation executes the frozen server-stored payload — nothing from
+ *   the confirmation utterance is merged into it
+ * ========================================================================== */
+
+import { logVoiceAudit as logAudit3 } from "./audit";
+import { evaluateVoiceAction, classifySensitiveAction } from "./policy";
+import {
+  createPendingAction,
+  confirmPendingAction,
+  cancelPendingAction as cancelPending,
+  type PendingActionRow,
+} from "./pendingActions";
+import {
+  getVoiceEditableFact,
+  coerceFactValue,
+  summarizeFactUpdate,
+  resolveVoiceMatter,
+  evaluateVoiceRequirements,
+  diffRequirements,
+  persistVoiceFact,
+} from "./facts";
+import { createSecureLink } from "./secureLinks";
+import {
+  generateVoiceDeliverable,
+  VOICE_DELIVERABLE_TYPES,
+  type VoiceDeliverableType,
+} from "./deliverables";
+import { createMatterRecord } from "../matters";
+
+const MATTER_LABEL: Record<string, string> = {
+  NEW_BUSINESS_FORMATION: "new business formation",
+  ANNUAL_REPORT: "annual report",
+  ANNUAL_FEE: "annual fee",
+  PERMISO_UNICO_RENEWAL: "permiso único renewal",
+  HEALTH_LICENSE_RENEWAL: "health license renewal",
+  MUNICIPAL_LICENSE_RENEWAL: "municipal license renewal",
+  CHANGE_OF_ADDRESS: "change of address",
+  CHANGE_OF_OWNER: "change of owner",
+  SECOND_LOCATION: "second location",
+  PERMIT_MODIFICATION: "permit modification",
+  OTHER: "project",
+};
+
+/* ---------------- create_draft_project ---------------- */
+
+/** create_draft_project — propose only; nothing is persisted until confirmed. */
+export async function toolCreateDraftProject(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  projectType: string,
+  description?: string | null,
+  municipality?: string | null
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "create_draft_project",
+    { business_id: businessId },
+    async () => {
+      const decision = evaluateVoiceAction({ action: "create_draft_project", ctx });
+      if (!decision.allowed) {
+        throw new VoiceAuthError("forbidden", decision.message ?? "Not permitted by voice.", 403);
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      const label = MATTER_LABEL[projectType] ?? "project";
+      const desc = (description ?? "").trim().slice(0, 500);
+      const muni = (municipality ?? "").trim().slice(0, 120);
+      const summary =
+        `You want me to create a ${label} project for ${business.name}` +
+        (desc ? ` — "${desc}"` : "") +
+        (muni ? ` in ${muni}` : "") +
+        `. It will be saved as a draft. Is that correct?`;
+      const pending = await createPendingAction(db, {
+        voiceSessionId: ctx.sessionId,
+        ctx,
+        actionType: "create_draft_project",
+        businessId: business.id,
+        payload: { projectType, description: desc || null, municipality: muni || null },
+        confirmationSummary: summary,
+      });
+      return {
+        status: "pending_confirmation",
+        pending_action_id: pending.pendingActionId,
+        confirmation_summary: pending.confirmationSummary,
+        expires_at: pending.expiresAt,
+      };
+    }
+  );
+}
+
+/* ---------------- propose_project_fact_update ---------------- */
+
+/** propose_project_fact_update — validate the canonical key, then propose. */
+export async function toolProposeProjectFactUpdate(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  factKey: string,
+  factValue: unknown,
+  matterId?: string | null
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "propose_project_fact_update",
+    { business_id: businessId, fact_key: factKey },
+    async () => {
+      const decision = evaluateVoiceAction({ action: "update_project_fact", ctx });
+      if (!decision.allowed) {
+        throw new VoiceAuthError("forbidden", decision.message ?? "Not permitted by voice.", 403);
+      }
+      const def = getVoiceEditableFact(factKey);
+      if (!def) {
+        throw new VoiceAuthError(
+          "bad_request",
+          "That field cannot be changed by voice. Sensitive changes need a secure web link instead.",
+          400
+        );
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      const value = coerceFactValue(def, factValue);
+      let matter: { id: string; title: string } | null = null;
+      if (def.scope === "project") {
+        matter = await resolveVoiceMatter(db, business.id, matterId);
+      }
+      const summary = summarizeFactUpdate(def, value, business.name, matter?.title ?? null);
+      const pending = await createPendingAction(db, {
+        voiceSessionId: ctx.sessionId,
+        ctx,
+        actionType: "update_project_fact",
+        businessId: business.id,
+        matterId: matter?.id ?? null,
+        payload: { factKey: def.key, factValue: value, matterId: matter?.id ?? null },
+        confirmationSummary: summary,
+      });
+      return {
+        status: "pending_confirmation",
+        pending_action_id: pending.pendingActionId,
+        confirmation_summary: pending.confirmationSummary,
+        expires_at: pending.expiresAt,
+        may_change_requirements: true,
+      };
+    }
+  );
+}
+
+/* ---------------- confirm / cancel pending actions ---------------- */
+
+/**
+ * Execute the frozen server-stored payload for the pending action's type.
+ * Never receives model input — only the stored row.
+ */
+async function acquireMatterClient(db: Db): Promise<import("pg").PoolClient> {
+  const maybePool = db as unknown as { connect?: () => Promise<import("pg").PoolClient> };
+  if (typeof maybePool.connect === "function") {
+    return maybePool.connect();
+  }
+  // Already a client (or a test double): use it directly.
+  return db as import("pg").PoolClient;
+}
+
+function releaseMatterClient(db: Db, client: import("pg").PoolClient): void {
+  const maybePool = db as unknown as { connect?: () => Promise<import("pg").PoolClient> };
+  if (typeof maybePool.connect === "function" && typeof client.release === "function") {
+    client.release();
+  }
+}
+
+async function executePendingAction(
+  db: Db,
+  ctx: VoiceContext,
+  action: PendingActionRow
+): Promise<Record<string, unknown>> {
+  const p = action.payload_json;
+  switch (action.action_type) {
+    case "create_draft_project": {
+      // Use the caller's own database handle (Pool or PoolClient) — never a
+      // hidden global — so the write stays inside the request's transaction
+      // scope and stays testable.
+      const client = await acquireMatterClient(db);
+      try {
+        await client.query("BEGIN");
+        const created = await createMatterRecord(client, {
+          businessId: action.business_id as string,
+          workspaceId: action.workspace_id,
+          userId: action.user_id,
+          matterType: typeof p.projectType === "string" ? p.projectType : "OTHER",
+          title: typeof p.description === "string" && p.description ? (p.description as string).slice(0, 160) : null,
+          sourceReference: "voice",
+        });
+        await client.query("COMMIT");
+        await logAudit3(db, {
+          userId: ctx.userId,
+          action: "project_created",
+          details: {
+            business_id: action.business_id,
+            matter_id: created.matterId,
+            matter_type: created.matterType,
+            source: "voice",
+          },
+        });
+        return {
+          matter_id: created.matterId,
+          matter_type: created.matterType,
+          title: created.title,
+          matter_status: "DRAFT",
+        };
+      } catch (err) {
+        await client.query("ROLLBACK").catch(() => undefined);
+        throw err;
+      } finally {
+        releaseMatterClient(db, client);
+      }
+    }
+    case "update_project_fact": {
+      const def = getVoiceEditableFact(String(p.factKey));
+      if (!def) throw new VoiceAuthError("bad_request", "Stored fact proposal is invalid.", 400);
+      const businessId = action.business_id as string;
+      const mId = typeof p.matterId === "string" ? p.matterId : null;
+      const before = await evaluateVoiceRequirements(db, businessId, mId);
+      await persistVoiceFact(db, ctx, businessId, mId, def, p.factValue as boolean | string | number);
+      const after = await evaluateVoiceRequirements(db, businessId, mId);
+      const diff = diffRequirements(before, after);
+      await logAudit3(db, {
+        userId: ctx.userId,
+        action: "requirements_recalculated",
+        details: {
+          business_id: businessId,
+          matter_id: mId,
+          fact_key: def.key,
+          added: diff.added.length,
+          removed: diff.removed.length,
+          changed: diff.changed.length,
+        },
+      });
+      return {
+        fact_key: def.key,
+        new_value: p.factValue,
+        requirements_added: diff.added.map((r) => ({ name: r.document_name, agency: r.agency })),
+        requirements_removed: diff.removed.map((r) => ({ name: r.document_name, agency: r.agency })),
+        requirements_changed: diff.changed.map((r) => ({ name: r.document_name, agency: r.agency })),
+      };
+    }
+    case "add_note": {
+      const noteText = String(p.noteText ?? "").trim();
+      if (!noteText) throw new VoiceAuthError("bad_request", "Stored note is empty.", 400);
+      const { rows } = await db.query<{ id: string }>(
+        `INSERT INTO business_notes (id, business_id, workspace_id, user_id, matter_id, note_text, source)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, 'voice') RETURNING id`,
+        [action.business_id, action.workspace_id, action.user_id, action.matter_id, noteText]
+      );
+      await logAudit3(db, {
+        userId: ctx.userId,
+        action: "note_added",
+        details: { business_id: action.business_id, matter_id: action.matter_id, note_id: rows[0].id },
+      });
+      return { note_id: rows[0].id };
+    }
+    default:
+      throw new VoiceAuthError("bad_request", "Unknown pending action type.", 400);
+  }
+}
+
+/** confirm_pending_action — the ONLY write path; ambiguous "yes" never reaches here. */
+export async function toolConfirmPendingAction(
+  db: Db,
+  ctx: VoiceContext,
+  pendingActionId: string
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "confirm_pending_action",
+    {},
+    async () => {
+      const result = await confirmPendingAction(db, ctx, pendingActionId, executePendingAction);
+      if (result.alreadyExecuted) {
+        return { status: "already_confirmed", executed: true };
+      }
+      return { status: "confirmed", executed: true, ...(result.result ?? {}) };
+    }
+  );
+}
+
+/** cancel_pending_action — settle a pending proposal without executing it. */
+export async function toolCancelPendingAction(
+  db: Db,
+  ctx: VoiceContext,
+  pendingActionId: string
+) {
+  return auditedToolCall(db, ctx, "cancel_pending_action", {}, async () => {
+    const { cancelled } = await cancelPending(db, ctx, pendingActionId);
+    return { status: cancelled ? "cancelled" : "no_longer_pending" };
+  });
+}
+
+/* ---------------- send_secure_upload_link ---------------- */
+
+/** send_secure_upload_link — emailed ONLY to the verified account email. */
+export async function toolSendSecureUploadLink(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  obligationId?: string | null
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "send_secure_upload_link",
+    { business_id: businessId },
+    async () => {
+      const decision = evaluateVoiceAction({ action: "send_secure_upload_link", ctx });
+      if (!decision.allowed) {
+        throw new VoiceAuthError("forbidden", decision.message ?? "Not permitted by voice.", 403);
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      let obligation: { id: string; name: string } | null = null;
+      if (obligationId) {
+        const { rows } = await db.query<{ id: string; name: string }>(
+          `SELECT o.id, d.name
+             FROM obligations o
+             JOIN documents d ON d.id = o.document_id
+            WHERE o.id = $1 AND o.business_id = $2 LIMIT 1`,
+          [obligationId, business.id]
+        );
+        if (!rows[0]) {
+          throw new VoiceAuthError("not_found", "That requirement was not found for this business.", 404);
+        }
+        obligation = { id: rows[0].id, name: rows[0].name };
+      }
+      const label = obligation
+        ? `upload evidence for ${obligation.name}`
+        : `upload evidence for ${business.name}`;
+      const link = await createSecureLink(db, {
+        ctx,
+        purpose: "upload_evidence",
+        businessId: business.id,
+        obligationId: obligation?.id ?? null,
+        label,
+      });
+      return {
+        status: "link_sent",
+        emailed: link.emailed,
+        emailed_to: "your verified account email",
+        expires_at: link.expiresAt,
+        for: label,
+      };
+    }
+  );
+}
+
+/* ---------------- generate_deliverable ---------------- */
+
+/** generate_deliverable — plan-gated; structured missing-data instead of hallucinations. */
+export async function toolGenerateDeliverable(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  deliverableType: string
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "generate_deliverable",
+    { business_id: businessId },
+    async () => {
+      const type = (VOICE_DELIVERABLE_TYPES as readonly string[]).includes(deliverableType)
+        ? (deliverableType as VoiceDeliverableType)
+        : null;
+      if (!type) {
+        throw new VoiceAuthError(
+          "bad_request",
+          "Available deliverables are: readiness report and requirements summary.",
+          400
+        );
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      const created = await generateVoiceDeliverable(db, ctx, {
+        id: business.id,
+        name: business.name,
+        municipality: (business as { municipality?: string | null }).municipality ?? null,
+      }, type);
+      return {
+        status: created.deduped ? "already_generated" : "generated",
+        deliverable_id: created.deliverableId,
+        filename: created.filename,
+        kind: created.kind,
+        size_bytes: created.sizeBytes,
+        generated_at: created.generatedAt,
+      };
+    }
+  );
+}
+
+/* ---------------- email_deliverable ---------------- */
+
+/** email_deliverable — ONLY to the verified account email; never caller-supplied. */
+export async function toolEmailDeliverable(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  deliverableId: string
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "email_deliverable",
+    { business_id: businessId },
+    async () => {
+      const decision = evaluateVoiceAction({ action: "email_deliverable", ctx });
+      if (!decision.allowed) {
+        throw new VoiceAuthError("forbidden", decision.message ?? "Not permitted by voice.", 403);
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      const { rows } = await db.query<{ id: string; filename: string; kind: string }>(
+        `SELECT id, filename, kind FROM deliverables
+          WHERE id = $1 AND user_id = $2 AND business_id = $3 LIMIT 1`,
+        [deliverableId, ctx.userId, business.id]
+      );
+      const deliverable = rows[0];
+      if (!deliverable) {
+        throw new VoiceAuthError(
+          "not_found",
+          "That deliverable was not found for this business.",
+          404
+        );
+      }
+      const link = await createSecureLink(db, {
+        ctx,
+        purpose: "secure_action",
+        businessId: business.id,
+        actionType: "download_deliverable",
+        label: `download ${deliverable.filename}`,
+        payload: { deliverable_id: deliverable.id },
+        ttlMinutes: 7 * 24 * 60,
+        maxUses: 10,
+      });
+      return {
+        status: "link_sent",
+        emailed: link.emailed,
+        emailed_to: "your verified account email",
+        deliverable_id: deliverable.id,
+        filename: deliverable.filename,
+      };
+    }
+  );
+}
+
+/* ---------------- add_note ---------------- */
+
+/** add_note — informational only; requires confirmation; never alters regulatory facts. */
+export async function toolAddNote(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  noteText: string,
+  matterId?: string | null
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "add_note",
+    { business_id: businessId },
+    async () => {
+      const decision = evaluateVoiceAction({ action: "add_note", ctx });
+      if (!decision.allowed) {
+        throw new VoiceAuthError("forbidden", decision.message ?? "Not permitted by voice.", 403);
+      }
+      const text = (noteText ?? "").trim();
+      if (!text || text.length > 2000) {
+        throw new VoiceAuthError(
+          "bad_request",
+          "The note must be between 1 and 2000 characters.",
+          400
+        );
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      let matter: { id: string; title: string } | null = null;
+      if (matterId) {
+        matter = await resolveVoiceMatter(db, business.id, matterId);
+      }
+      const preview = text.length > 120 ? `${text.slice(0, 120)}…` : text;
+      const summary =
+        `You want me to save this note for ${business.name}` +
+        (matter ? `, project "${matter.title}"` : "") +
+        `: "${preview}"` +
+        `. Notes are informational only and will not change your permit requirements. Is that correct?`;
+      const pending = await createPendingAction(db, {
+        voiceSessionId: ctx.sessionId,
+        ctx,
+        actionType: "add_note",
+        businessId: business.id,
+        matterId: matter?.id ?? null,
+        payload: { noteText: text, matterId: matter?.id ?? null },
+        confirmationSummary: summary,
+      });
+      return {
+        status: "pending_confirmation",
+        pending_action_id: pending.pendingActionId,
+        confirmation_summary: pending.confirmationSummary,
+        expires_at: pending.expiresAt,
+      };
+    }
+  );
+}
+
+/* ---------------- send_secure_action_link ---------------- */
+
+/**
+ * send_secure_action_link — for prohibited voice actions (§8): prepare the
+ * action context server-side and email a secure authenticated link. Nothing
+ * sensitive executes over voice.
+ */
+export async function toolSendSecureActionLink(
+  db: Db,
+  ctx: VoiceContext,
+  businessId: string,
+  actionType: string
+) {
+  return auditedToolCall(
+    db,
+    ctx,
+    "send_secure_action_link",
+    { business_id: businessId },
+    async () => {
+      const { prohibited, linkable } = classifySensitiveAction(actionType);
+      if (!prohibited || !linkable) {
+        throw new VoiceAuthError(
+          "bad_request",
+          "That action cannot be prepared from a voice call.",
+          400
+        );
+      }
+      const business = await requireBusinessAccess(db, ctx, businessId);
+      const label = actionType.trim().toLowerCase().replace(/_/g, " ");
+      const link = await createSecureLink(db, {
+        ctx,
+        purpose: "secure_action",
+        businessId: business.id,
+        actionType: actionType.trim().toLowerCase(),
+        label: `${label} for ${business.name}`,
+      });
+      return {
+        status: "link_sent",
+        emailed: link.emailed,
+        emailed_to: "your verified account email",
+        expires_at: link.expiresAt,
+        action: label,
+      };
+    }
+  );
+}

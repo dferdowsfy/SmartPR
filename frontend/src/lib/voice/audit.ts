@@ -22,7 +22,21 @@ export type VoiceAuditAction =
   | "session_expired"
   | "tool_call"
   | "email_sent"
-  | "lookup";
+  | "lookup"
+  // Phase 3
+  | "pending_action_created"
+  | "pending_action_confirmed"
+  | "pending_action_executed"
+  | "pending_action_failed"
+  | "pending_action_cancelled"
+  | "project_created"
+  | "fact_changed"
+  | "requirements_recalculated"
+  | "secure_link_generated"
+  | "secure_link_redeemed"
+  | "secure_link_denied"
+  | "deliverable_generated"
+  | "note_added";
 
 interface DbLike {
   query: (text: string, params?: unknown[]) => Promise<unknown>;

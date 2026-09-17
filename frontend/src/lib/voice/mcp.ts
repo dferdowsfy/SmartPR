@@ -33,7 +33,13 @@ import {
 } from "./context";
 import { SESSION_TOKEN_PREFIX } from "./session";
 import {
+  toolAddNote,
+  toolConfirmPendingAction,
+  toolCancelPendingAction,
+  toolCreateDraftProject,
+  toolEmailDeliverable,
   toolEmailMySummary,
+  toolGenerateDeliverable,
   toolGetAccountContext,
   toolGetBusinessSummary,
   toolGetDeadlines,
@@ -42,6 +48,9 @@ import {
   toolGetReadiness,
   toolGetRequirements,
   toolListMyBusinesses,
+  toolProposeProjectFactUpdate,
+  toolSendSecureActionLink,
+  toolSendSecureUploadLink,
 } from "./tools";
 
 /* ------------------------------------------------------------------ */
@@ -74,7 +83,7 @@ export interface McpToolDef {
   name: string;
   description: string;
   /** Declared argument names — anything else in the call is stripped. */
-  args: Array<"businessId">;
+  args: Array<string>;
   inputSchema: Record<string, unknown>;
   needsBusiness: boolean;
 }
@@ -162,6 +171,181 @@ export const MCP_TOOLS: McpToolDef[] = [
       additionalProperties: false,
     },
   },
+  // ------------------------------------------------------------------
+  // Phase 3: authenticated action tools.
+  // Confirmation protocol (MANDATORY for create/propose/note tools): the
+  // tool returns a pending_action_id plus a deterministic
+  // confirmation_summary. Read the confirmation_summary to the caller
+  // verbatim, then wait for an explicit, unambiguous yes ("yes", "sí",
+  // "correct", "go ahead"). Only then call confirm_pending_action with the
+  // pendingActionId. Ambiguous answers ("maybe", "I think so", silence)
+  // NEVER count as confirmation — ask once more or call
+  // cancel_pending_action. You may not edit, improve, or extend the
+  // proposal during confirmation; you may only confirm or cancel it.
+  // ------------------------------------------------------------------
+  {
+    name: "create_draft_project",
+    description:
+      "Starts a draft SmartPR project for an authorized business. This only creates a PENDING proposal — nothing is saved until the caller explicitly confirms. Follow the confirmation protocol exactly.",
+    args: ["businessId", "projectType", "description", "municipality"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        projectType: {
+          type: "string",
+          description:
+            "Project type, e.g. NEW_BUSINESS_FORMATION, PERMISO_UNICO_RENEWAL, HEALTH_LICENSE_RENEWAL, ANNUAL_REPORT, PERMIT_MODIFICATION, OTHER.",
+        },
+        description: { type: "string", description: "Short project description." },
+        municipality: { type: "string", description: "Municipality the project is in, if known." },
+      },
+      required: ["projectType"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "propose_project_fact_update",
+    description:
+      "Proposes changing one voice-editable SmartPR fact (e.g. alcohol_sold, food_prepared_on_site, physical_address, renovation). Creates a PENDING proposal only — follow the confirmation protocol exactly.",
+    args: ["businessId", "factKey", "factValue", "matterId"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        factKey: { type: "string", description: "The canonical fact key to change." },
+        factValue: {
+          description: "The new value (boolean, number, or short text).",
+          type: ["boolean", "number", "string"],
+        },
+        matterId: { type: "string", description: "Project id; omit to use the business's latest open project." },
+      },
+      required: ["factKey", "factValue"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "confirm_pending_action",
+    description:
+      "Confirms a pending action after an explicit, unambiguous yes to its confirmation_summary. Call with ONLY the pendingActionId from a propose tool. Never invent or modify the proposal.",
+    args: ["pendingActionId"],
+    needsBusiness: false,
+    inputSchema: {
+      type: "object",
+      properties: {
+        pendingActionId: {
+          type: "string",
+          description: "Opaque id returned by a create/propose/note tool.",
+        },
+      },
+      required: ["pendingActionId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "cancel_pending_action",
+    description:
+      "Cancels a pending action without executing it. Use when the caller declines, changes their mind, or the confirmation was ambiguous.",
+    args: ["pendingActionId"],
+    needsBusiness: false,
+    inputSchema: {
+      type: "object",
+      properties: {
+        pendingActionId: {
+          type: "string",
+          description: "Opaque id returned by a create/propose/note tool.",
+        },
+      },
+      required: ["pendingActionId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "send_secure_upload_link",
+    description:
+      "Sends a secure, expiring document-upload link to the caller's verified account email. Never sends to any other address. Optional obligationId targets a specific missing requirement.",
+    args: ["businessId", "obligationId"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        obligationId: { type: "string", description: "Requirement id from get_missing_items, optional." },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "generate_deliverable",
+    description:
+      "Generates a readiness_report or requirements_summary PDF for an authorized business. Requires a paid plan. Never claim a filing package exists if the tool reports missing data.",
+    args: ["businessId", "deliverableType"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        deliverableType: {
+          type: "string",
+          enum: ["readiness_report", "requirements_summary"],
+          description: "Which deliverable to generate.",
+        },
+      },
+      required: ["deliverableType"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "email_deliverable",
+    description:
+      "Emails a secure download link for an existing deliverable to the caller's verified account email. Never accepts a recipient address; never invents a deliverable id.",
+    args: ["businessId", "deliverableId"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        deliverableId: { type: "string", description: "Deliverable id from generate_deliverable." },
+      },
+      required: ["deliverableId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "add_note",
+    description:
+      "Proposes saving an informational note (never changes requirements). Nothing is saved until the caller explicitly confirms — follow the confirmation protocol.",
+    args: ["businessId", "noteText", "matterId"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        noteText: { type: "string", description: "The note text (max 2000 characters)." },
+        matterId: { type: "string", description: "Project id to attach the note to, optional." },
+      },
+      required: ["noteText"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "send_secure_action_link",
+    description:
+      "For voice-prohibited actions: emails a secure authenticated link to the caller's verified account email. Use the exact action name, e.g. government_submission, electronic_signature, payment.",
+    args: ["businessId", "actionType"],
+    needsBusiness: true,
+    inputSchema: {
+      type: "object",
+      properties: {
+        ...BUSINESS_ID_PROP,
+        actionType: { type: "string", description: "The sensitive action name." },
+      },
+      required: ["actionType"],
+      additionalProperties: false,
+    },
+  },
 ];
 
 export const MCP_TOOL_MAP = new Map(MCP_TOOLS.map((t) => [t.name, t]));
@@ -174,13 +358,18 @@ export const MCP_TOOL_MAP = new Map(MCP_TOOLS.map((t) => [t.name, t]));
 export function sanitizeArgs(
   tool: McpToolDef,
   rawArgs: unknown
-): Record<string, string> {
-  const out: Record<string, string> = {};
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
   if (!rawArgs || typeof rawArgs !== "object") return out;
   const record = rawArgs as Record<string, unknown>;
   for (const name of tool.args) {
     const value = record[name];
     if (typeof value === "string" && value.trim()) out[name] = value.trim();
+    else if (typeof value === "boolean" || typeof value === "number") {
+      // Declared scalar arguments (e.g. factValue) survive sanitization;
+      // identity is never a declared argument, so nothing is overridable.
+      out[name] = value;
+    }
   }
   return out;
 }
@@ -427,11 +616,16 @@ async function runTool(
   db: Db,
   ctx: VoiceContext,
   tool: McpToolDef,
-  args: Record<string, string>
+  args: Record<string, unknown>
 ): Promise<unknown> {
   const businessId = tool.needsBusiness
-    ? await resolveMcpBusiness(db, ctx, args.businessId)
+    ? await resolveMcpBusiness(db, ctx, typeof args.businessId === "string" ? args.businessId : undefined)
     : undefined;
+  /** Read a declared string argument safely from sanitized args. */
+  const strArg = (name: string): string | null => {
+    const v = args[name];
+    return typeof v === "string" && v.trim() ? v.trim() : null;
+  };
   switch (tool.name) {
     case "get_account_context":
       return toolGetAccountContext(db, ctx);
@@ -453,11 +647,65 @@ async function runTool(
       // Optional businessId: an explicit id is access-checked; omitted
       // means the whole account (Phase 1 behavior). Unlike needsBusiness
       // tools, ambiguity across businesses is allowed here.
-      const target = args.businessId
-        ? (await requireBusinessAccess(db, ctx, args.businessId)).id
+      const target = strArg("businessId")
+        ? (await requireBusinessAccess(db, ctx, strArg("businessId") as string)).id
         : null;
       return toolEmailMySummary(db, ctx, target);
     }
+    // ---- Phase 3: authenticated action tools ----
+    case "create_draft_project":
+      return toolCreateDraftProject(
+        db,
+        ctx,
+        businessId as string,
+        strArg("projectType") ?? "OTHER",
+        strArg("description"),
+        strArg("municipality")
+      );
+    case "propose_project_fact_update":
+      return toolProposeProjectFactUpdate(
+        db,
+        ctx,
+        businessId as string,
+        strArg("factKey") ?? "",
+        "factValue" in args ? args.factValue : null,
+        strArg("matterId")
+      );
+    case "confirm_pending_action":
+      return toolConfirmPendingAction(db, ctx, strArg("pendingActionId") ?? "");
+    case "cancel_pending_action":
+      return toolCancelPendingAction(db, ctx, strArg("pendingActionId") ?? "");
+    case "send_secure_upload_link":
+      return toolSendSecureUploadLink(db, ctx, businessId as string, strArg("obligationId"));
+    case "generate_deliverable":
+      return toolGenerateDeliverable(
+        db,
+        ctx,
+        businessId as string,
+        strArg("deliverableType") ?? ""
+      );
+    case "email_deliverable":
+      return toolEmailDeliverable(
+        db,
+        ctx,
+        businessId as string,
+        strArg("deliverableId") ?? ""
+      );
+    case "add_note":
+      return toolAddNote(
+        db,
+        ctx,
+        businessId as string,
+        strArg("noteText") ?? "",
+        strArg("matterId")
+      );
+    case "send_secure_action_link":
+      return toolSendSecureActionLink(
+        db,
+        ctx,
+        businessId as string,
+        strArg("actionType") ?? ""
+      );
     default:
       throw new VoiceAuthError("unknown_tool", `Unknown tool: ${tool.name}`, 400);
   }
@@ -514,7 +762,7 @@ export async function executeMcpTool(
     }
     ctx = await resolveVoiceContext(`Bearer ${token}`, db);
     const args = sanitizeArgs(tool, rawArgs);
-    if (args.businessId) businessId = args.businessId;
+    if (typeof args.businessId === "string" && args.businessId) businessId = args.businessId;
     const data = await runTool(db, ctx, tool, args);
     return finish(true, { success: true, data }, null, tool.name === "email_my_summary");
   } catch (err) {

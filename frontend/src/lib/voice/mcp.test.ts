@@ -188,11 +188,17 @@ describe("sanitizeArgs", () => {
 });
 
 describe("tool registry", () => {
-  it("exposes exactly the nine Phase 1 tools", () => {
+  it("exposes exactly the eighteen Phase 1–3 tools", () => {
     assert.deepEqual(
       MCP_TOOLS.map((t) => t.name).sort(),
       [
+        "add_note",
+        "cancel_pending_action",
+        "confirm_pending_action",
+        "create_draft_project",
+        "email_deliverable",
         "email_my_summary",
+        "generate_deliverable",
         "get_account_context",
         "get_business_summary",
         "get_deadlines",
@@ -201,6 +207,9 @@ describe("tool registry", () => {
         "get_readiness",
         "get_requirements",
         "list_my_businesses",
+        "propose_project_fact_update",
+        "send_secure_action_link",
+        "send_secure_upload_link",
       ].sort()
     );
   });
@@ -291,10 +300,10 @@ describe("handleMcpRequest", () => {
     const body = res.body as { result: { protocolVersion: string } };
     assert.equal(body.result.protocolVersion, "2025-06-18");
   });
-  it("lists the nine tools with schemas, unauthenticated", async () => {
+  it("lists the eighteen tools with schemas, unauthenticated", async () => {
     const res = await handleMcpRequest(db, { jsonrpc: "2.0", id: 2, method: "tools/list" }, null);
     const body = res.body as { result: { tools: Array<{ name: string; inputSchema: unknown }> } };
-    assert.equal(body.result.tools.length, 9);
+    assert.equal(body.result.tools.length, 18);
     assert.ok(body.result.tools.every((t) => t.inputSchema));
   });
   it("answers ping and rejects unknown methods", async () => {

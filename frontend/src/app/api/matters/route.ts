@@ -5,6 +5,7 @@ import { getCurrentUser } from "../../../lib/supabase/server";
 import { notifyNewBusiness } from "../../../lib/leads";
 import { ensureUserWorkspace, userCanAccessBusiness } from "../../compliance/server";
 import { DUE_DATE_SOURCES, MATTER_TYPES, type DueDateSource, type MatterType } from "../../compliance/types";
+import { createMatterRecord } from "../../../lib/matters";
 import { validDateOnly } from "../../compliance/dates";
 
 export const runtime = "nodejs";
@@ -20,10 +21,6 @@ interface CreateMatterBody {
   due_date_source?: DueDateSource;
   source_reference?: string | null;
 }
-
-const defaultTitle = (type: MatterType) => type.split("_").map((word) =>
-  word.charAt(0) + word.slice(1).toLowerCase()
-).join(" ");
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -81,17 +78,16 @@ export async function POST(request: Request) {
       businessName = row.rows[0]?.name || "Business";
       businessPublicId = row.rows[0]?.public_id ?? businessPublicId;
     }
-    const matterId = randomUUID();
-    await client.query(
-      `INSERT INTO matters
-         (id, business_id, workspace_id, user_id, matter_type, title, status, due_date,
-          due_date_source, source_reference, verified_at)
-       VALUES ($1,$2,$3,$4,$5,$6,'DRAFT',$7,$8,$9,
-               CASE WHEN $8 <> 'UNKNOWN' THEN now() ELSE NULL END)`,
-      [matterId, businessId, workspaceId, user.id, matterType,
-        (body.title || "").trim() || defaultTitle(matterType), dueDate, dueSource,
-        body.source_reference ?? null]
-    );
+    const { matterId } = await createMatterRecord(client, {
+      businessId,
+      workspaceId,
+      userId: user.id,
+      matterType,
+      title: body.title,
+      dueDate,
+      dueDateSource: dueSource,
+      sourceReference: body.source_reference,
+    });
     await client.query("COMMIT");
     if (body.create_business) {
       // Founder alert is fire-and-forget: never block the response on email.
