@@ -16,7 +16,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, Bot, Building2, CheckCircle2, ChevronDown, Eye, EyeOff,
+  AlertTriangle, Bot, Building2, CheckCircle2, ChevronDown, ClipboardList, Eye, EyeOff,
   Hand, KeyRound, Landmark, Loader2, Play, Square, Stamp, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
@@ -39,6 +39,7 @@ import {
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
 import {
   filingGateCopy,
+  filingPassportCtaCopy,
   filingPickerIntro,
   filingStatusChipLabel,
   filingUnsupportedCopy,
@@ -207,6 +208,8 @@ const FILING_CHIP_STYLES: Record<FilingStatus, string> = {
  * One filing option card. SmartPR decided this filing needs to happen;
  * the card only lets the human start it when SmartPR has everything it
  * needs. Unsupported options render disabled — never a launch button.
+ * Missing-information options link to the Business Passport where the
+ * missing facts get filled in — a card with no action is a dead end.
  */
 function FilingCard({
   filing,
@@ -214,12 +217,14 @@ function FilingCard({
   onStart,
   busy,
   disabled,
+  passportHref,
 }: {
   filing: FilingOption;
   lang: Lang;
   onStart: () => void;
   busy: boolean;
   disabled: boolean;
+  passportHref: string | null;
 }) {
   const action = filing.action;
   // Gate: SmartPR information still missing — the browser never launches
@@ -277,6 +282,15 @@ function FilingCard({
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
         </button>
+      )}
+      {!canStart && filing.filing_status === "missing_information" && gate > 0 && passportHref && (
+        <a
+          href={passportHref}
+          className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/[0.06] px-4 py-2 text-xs font-semibold text-brand hover:bg-brand/[0.12]"
+        >
+          <ClipboardList className="h-3.5 w-3.5" />
+          {filingPassportCtaCopy(lang)}
+        </a>
       )}
     </div>
   );
@@ -1052,6 +1066,8 @@ function ReviewCard({
 
 export interface AgencyChatProps {
   lang: Lang;
+  /** Short public business id — used to link missing-information cards to the Business Passport. */
+  businessId: string;
   msgs: SessionMsg[];
   milestones: ChatMilestone[];
   run: AgencyRunPublic | null;
@@ -1139,6 +1155,7 @@ export function AgencyChat(props: AgencyChatProps) {
                               busy={props.filingBusyId === filingBusyKey(filing)}
                               disabled={props.runActive || props.filingBusyId !== null}
                               onStart={() => props.onStartFiling(filing)}
+                              passportHref={`/businesses/${props.businessId}#business-passport`}
                             />
                           ))}
                         </div>

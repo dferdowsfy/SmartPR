@@ -819,6 +819,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
             <AgencyChat
               lang={lang}
+              businessId={businessId}
               msgs={msgs}
               milestones={milestones}
               run={run}

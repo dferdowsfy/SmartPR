@@ -143,6 +143,19 @@ export function filingUnsupportedCopy(lang: Lang): string {
   );
 }
 
+/**
+ * Call-to-action on a missing-information filing card — the missing items
+ * are Business Passport facts, so the card links to the passport section
+ * where the human fills them in. Without this the card is a dead end.
+ */
+export function filingPassportCtaCopy(lang: Lang): string {
+  return L(
+    "Complete in Business Passport",
+    "Completar en el Pasaporte del Negocio",
+    lang
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Adapters: lib bilingual shapes -> the string shapes route call sites */
 /* ------------------------------------------------------------------ */

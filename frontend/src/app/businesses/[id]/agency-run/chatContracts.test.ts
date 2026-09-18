@@ -6,6 +6,7 @@ import {
   chatScrollKey,
   failureReason,
   filingGateCopy,
+  filingPassportCtaCopy,
   filingPickerIntro,
   filingStatusChipLabel,
   filingUnsupportedCopy,
@@ -345,5 +346,10 @@ describe("filing picker copy", () => {
   it("unsupported copy never promises a browser launch", () => {
     assert.ok(filingUnsupportedCopy("en").includes("isn't available for it yet"));
     assert.ok(filingUnsupportedCopy("es").includes("aún no hay un trámite de navegador disponible"));
+  });
+
+  it("missing-information cards link to the Business Passport (never a dead end)", () => {
+    assert.equal(filingPassportCtaCopy("en"), "Complete in Business Passport");
+    assert.equal(filingPassportCtaCopy("es"), "Completar en el Pasaporte del Negocio");
   });
 });
