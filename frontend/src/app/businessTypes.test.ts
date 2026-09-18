@@ -41,4 +41,22 @@ describe("businessTypeNamesForIndustry", () => {
     const qs = discoveryQuestionsForBusinessType("Tire Recycling & Manufacturing");
     assert.ok(qs && qs.length >= 8, `expected 8+ questions, got ${qs?.length}`);
   });
+
+  it("the renewable-energy question reaches large-roof commercial BTs (warehouse use case)", () => {
+    // 2026-09-18 18:00 QA cycle (S40/R1 retest): a Dorado warehouse
+    // distributor with a 5-year-old LUMA net-metered rooftop array never
+    // got asked the renewable question, so RULE_0610/0611 could never fire
+    // and the LUMA/net-metering cards were invisible in production. The
+    // question was gated to the 5 energy-industry BTs only. It now also
+    // covers warehouse/distribution/logistics, manufacturing, and
+    // hospitality BTs — the realistic rooftop-solar owners. The question
+    // id in the flow is the questionKeyMap writeKey ("renewable_install").
+    const { discoveryQuestionsForBusinessType } = require("./kb") as typeof import("./kb");
+    const ids = (name: string) =>
+      (discoveryQuestionsForBusinessType(name) ?? []).map((q) => q.id);
+    for (const name of ["Warehouse Distributor", "Logistics Company", "Furniture Manufacturing", "Hotel", "Solar Installer"]) {
+      assert.ok(ids(name).includes("renewable_install"),
+        `renewable question missing for ${name}: ${JSON.stringify(ids(name))}`);
+    }
+  });
 });

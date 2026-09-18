@@ -8274,5 +8274,73 @@
   {
     "business_type_id": "BT_TEXTILE_RECYCLING",
     "question_id": "Q_EXISTING_LEASE"
+  },
+  {
+    "business_type_id": "BT_WAREHOUSE_DISTRIBUTOR",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_WAREHOUSE_OPERATOR",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_LOGISTICS_COMPANY",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_FREIGHT_FORWARDING_COMPANY",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_WHOLESALE_GOODS_DISTRIBUTOR",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_WHOLESALE_FOOD_DISTRIBUTOR",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_DISTRIBUTOR",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_FOOD_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_PHARMACEUTICAL_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_DEVICE_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_TEXTILE_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_FURNITURE_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_CHEMICAL_MANUFACTURING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_TIRE_RECYCLING",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_HOTEL",
+    "question_id": "Q_RENEWABLE_INSTALL"
+  },
+  {
+    "business_type_id": "BT_RESORT",
+    "question_id": "Q_RENEWABLE_INSTALL"
   }
 ]
