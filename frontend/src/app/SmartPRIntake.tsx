@@ -2125,11 +2125,14 @@ export default function SmartPRIntake() {
       if (businessTypeMatch) return `Tipo de Negocio = ${businessTypeMatch[1]}`;
 
       const questionMatch = req.reason.match(/^Question: (.+) \| Answer: Yes$/);
-      if (questionMatch) return `Pregunta: ${questionMatch[1]} | Respuesta: Sí`;
+      // 2026-09-18 QA (live S41): the embedded question text was English
+      // inside a Spanish filing. Localize it through the i18n dictionary —
+      // every KB/f flow question text now carries an ES entry there.
+      if (questionMatch) return `Pregunta: ${L(questionMatch[1], 'es')} | Respuesta: Sí`;
 
       // Derived values are labeled honestly, never as the user's own answer.
       const derivedMatch = req.reason.match(/^Question: (.+) \| Derived answer: (.+)$/);
-      if (derivedMatch) return `Pregunta: ${derivedMatch[1]} | Respuesta derivada: ${derivedMatch[2]}`;
+      if (derivedMatch) return `Pregunta: ${L(derivedMatch[1], 'es')} | Respuesta derivada: ${derivedMatch[2]}`;
     }
     return L(req.reason, language);
   };

@@ -23,6 +23,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { runRulesEngine, type KnowledgeBase, type EngineInput } from "./rulesEngine.ts";
+import { buildEngineInput } from "./kb.ts";
 import {
   classifyEngineRequirements,
   bucketForApplicability,
@@ -1730,4 +1731,29 @@ test("CASE V: LUMA interconnection + net metering posture — existing customer-
     "verify_existing",
     "an existing solar installer verifies its interconnection standing (whole-family sweep)"
   );
+});
+
+test("CASE W: bundled-flow writeKey answers reach the engine (REG-WIRE-001)", () => {
+  // 2026-09-18 15:00 QA cycle: three KB questions had a questionKeyMap
+  // writeKey — so the bundled flow records answers under it — but no
+  // buildEngineInput mapping, so the answers never reached the engine and
+  // their question_trigger rules could never fire:
+  //  - Q_GUESTS_OVERNIGHT (guests_stay_overnight) -> RULE_0691 room tax
+  //  - Q_HAZMAT_TRANSPORT (hazardous_materials_transported) -> RULE_0618 transport permit
+  //  - Q_FOOD_TRUCK_MOBILE (food_truck_or_mobile) -> RULE_0653 ambulant license
+  // The mappings now follow the same on(writeKey) pattern as every other
+  // question in the answers map.
+  const input = buildEngineInput(
+    { municipality: "Trujillo Alto", business_type: "Guest House" } as any,
+    { guests_stay_overnight: true, hazardous_materials_transported: true, food_truck_or_mobile: true },
+    {}
+  );
+  assert.equal(input.answers["Q_GUESTS_OVERNIGHT"], true, "guests_stay_overnight reaches Q_GUESTS_OVERNIGHT");
+  assert.equal(input.answers["Q_HAZMAT_TRANSPORT"], true, "hazardous_materials_transported reaches Q_HAZMAT_TRANSPORT");
+  assert.equal(input.answers["Q_FOOD_TRUCK_MOBILE"], true, "food_truck_or_mobile reaches Q_FOOD_TRUCK_MOBILE");
+  const { requirements } = runRulesEngine(KB, input);
+  const ids = new Set(requirements.map((r) => r.document_id));
+  assert.ok(ids.has(docByName("room tax", "return")), "RULE_0691 fires the room-tax return from a guests-overnight answer");
+  assert.ok(ids.has(docByName("transportation", "permit")), "RULE_0618 fires the transport permit from a hazmat-transport answer");
+  assert.ok(ids.has(docByName("ambulant-business")), "RULE_0653 fires the ambulant license from a food-truck answer");
 });

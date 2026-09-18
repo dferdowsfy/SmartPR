@@ -18,11 +18,12 @@ function req(id: string): GuidanceRequirement {
   return { document_id: id, code: id.toLowerCase(), name: doc?.name ?? id, agency: doc?.agency ?? "", reason: "Old generic text must not leak", applicability: "required", triggerFacts: id === "DOC_ARTICLES_ORGANIZATION" ? ["entityType:limited_liability_company"] : [] };
 }
 
-// Food-triggered concepts (Health Permit, Fire Cert, CFPM) stay provisional for this
-// profile because it never answers a food question — that is correct, not a bug.
-// Solar-triggered concepts stay provisional for the same reason: a bar answers no
-// solar questions.
-const FOOD_GATED = new Set(["DOC_HEALTH_PERMIT", "DOC_FIRE_CERT", "DOC_CFPM"]);
+// Food/business-type concepts: the bar profile fires verified business-type
+// rules for the health permit (RULE_0062), fire certificate (RULE_0063) and
+// CFPM (RULE_0064), so the businessType fallback explains those matches
+// honestly instead of hedging (2026-09-18 QA, d4940f4 class). They are no
+// longer gated sets — see the twenty-nine test below, which expects them
+// VALIDATED for the bar.
 const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREEMENT", "DOC_OGPE_CONSTRUCTION_PERMIT"]);
 // Federal-contractor-gated: SAM.gov registration applies only to businesses
 // pursuing federal contracts, so it stays provisional for the bar profile.
@@ -44,6 +45,13 @@ const VEHICLE_GATED = new Set(["DOC_VEHICLE_REGISTRATION"]);
 // (REG-GUIDE-TRANSPORT-001, REG-GUIDE-AGRI-001, 2026-09-18).
 const TRANSPORT_AGRI_GATED = new Set(["DOC_TRANSPORT_PERMIT", "DOC_AGRICULTURE_REGISTRATION"]);
 
+// Tourism-gated: the PRTC innkeeper registration and the monthly room-tax
+// return apply only to lodging businesses; the bar profile matches none of
+// their firing rules, so the validated concepts stay provisional for it
+// (correct — MATCH_TRACE_MISSING, not a placeholder). Added with the
+// tourism-validated concepts (REG-GUIDE-TOURISM-001, 2026-09-18).
+const TOURISM_GATED = new Set(["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN"]);
+
 // Entity-gated: the Certificate of Incorporation concept applies only when a
 // corporation is (or may be) the chosen legal form; the bar profile is a
 // known LLC, so RULE_0001 excludes it and the validated concept stays
@@ -52,11 +60,11 @@ const TRANSPORT_AGRI_GATED = new Set(["DOC_TRANSPORT_PERMIT", "DOC_AGRICULTURE_R
 // (REG-GUIDE-FORMATION-001, 2026-09-17).
 const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
 
-test("same Bayamón bar: all twenty-seven source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all twenty-nine source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -72,7 +80,7 @@ test("same Bayamón bar: all twenty-seven source-backed explanations are distinc
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 27);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 29);
   }
 });
 
@@ -106,6 +114,44 @@ test("unknown, false and contradictory sales never become affirmative explanatio
     assert.deepEqual(g.triggerFacts, []);
     assert.match(g.whyThisApplies, /not confirmed yet/);
     assert.ok(g.whyThisApplies.includes(g.regulatoryReason));
+  }
+});
+
+// REG-GUIDE-TOURISM-001 (2026-09-18 QA): the PRTC innkeeper registration
+// and room-tax return cards rendered the unvalidated-description placeholder
+// on a live Trujillo Alto guest-house filing. Both concepts now validate,
+// and every firing path explains the match: lodging business types via the
+// businessType fallback (BT_GUEST_HOUSE here), the short-term-rental
+// question, and the overnight-guests question.
+test("tourism concepts validate for every lodging firing path in EN/ES", () => {
+  const mkCtx = (businessTypeName: string, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+    const p = { municipality: "Trujillo Alto", business_type: businessTypeName, business_structure: "LLC", location_type: "Guest House", number_of_employees: 2 };
+    return { ...ctx, businessTypeName, profile: p, discoveryAnswers, engineInput: buildEngineInput(p, discoveryAnswers) };
+  };
+  for (const language of ["en", "es"] as const) {
+    // Business-type paths: Guest House matches RULE_0145/0263 (innkeeper
+    // registration); Airbnb / Short-Term Rental matches RULE_0601
+    // (room-tax return). The room-tax document has no guest-house BT rule —
+    // its BT path is the STR business type.
+    const gh = buildRequirementGuidance(req("DOC_TOURISM_REGISTRATION"), { ...mkCtx("Guest House", {}), language });
+    assert.equal(gh.status, "VALIDATED", `DOC_TOURISM_REGISTRATION: ${gh.reviewReasons}`);
+    assert.deepEqual(gh.triggerFacts.map(f => f.key), ["businessType"]);
+    assert.ok(gh.whyThisApplies.includes(gh.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(gh), /validated description pending|not confirmed yet/);
+    const str = buildRequirementGuidance(req("DOC_ROOM_TAX_RETURN"), { ...mkCtx("Airbnb / Short-Term Rental", {}), language });
+    assert.equal(str.status, "VALIDATED", `DOC_ROOM_TAX_RETURN: ${str.reviewReasons}`);
+    assert.deepEqual(str.triggerFacts.map(f => f.key), ["businessType"]);
+    assert.doesNotMatch(JSON.stringify(str), /validated description pending|not confirmed yet/);
+    // Q&A paths: the writeKey answers the bundled flow records
+    // (short_term_rental, guests_stay_overnight) explain the match with
+    // their own labels. REG-WIRE-001 (2026-09-18 QA): Q_GUESTS_OVERNIGHT
+    // had a writeKey but no engine mapping, so the bundled flow's answer
+    // never reached the engine — the mapping is now in buildEngineInput.
+    for (const [writeKey, qkey, id] of [["short_term_rental", "Q_SHORT_TERM_RENTAL", "DOC_TOURISM_REGISTRATION"], ["guests_stay_overnight", "Q_GUESTS_OVERNIGHT", "DOC_ROOM_TAX_RETURN"]] as const) {
+      const g = buildRequirementGuidance(req(id), { ...mkCtx("Guest House", { [writeKey]: true }), language });
+      assert.equal(g.status, "VALIDATED", `${id}: ${g.reviewReasons}`);
+      assert.deepEqual(g.triggerFacts.map(f => f.key), [qkey]);
+    }
   }
 });
 
@@ -156,7 +202,9 @@ test("missing source, rationale, purpose, validation or genuine match fails clos
     assert.equal(buildRequirementGuidance(req(concept.requirementId), { ...ctx, kb }).status, "GUIDANCE_NEEDS_REVIEW");
   }
   assert.equal(buildRequirementGuidance(req(concept.requirementId), { ...ctx, engineInput: undefined }).status, "GUIDANCE_NEEDS_REVIEW");
-  assert.equal(buildRequirementGuidance(req("DOC_FIRE_CERT"), ctx).status, "GUIDANCE_NEEDS_REVIEW");
+  // The bar fires no room-tax rules, so the validated room-tax concept stays
+  // provisional for it (correct — MATCH_TRACE_MISSING, not a placeholder).
+  assert.equal(buildRequirementGuidance(req("DOC_ROOM_TAX_RETURN"), ctx).status, "GUIDANCE_NEEDS_REVIEW");
   assert.equal(buildRequirementGuidance(req("DOC_TOURISM_REGISTRATION"), ctx).status, "GUIDANCE_NEEDS_REVIEW");
 });
 

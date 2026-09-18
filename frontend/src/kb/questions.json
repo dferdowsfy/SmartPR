@@ -433,7 +433,7 @@
   },
   {
     "id": "Q_RENEWABLE_INSTALL",
-    "question": "Will renewable energy systems be installed?",
+    "question": "Does the business have, or will it install, renewable energy systems such as solar panels?",
     "type": "boolean"
   },
   {

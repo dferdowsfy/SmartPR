@@ -566,6 +566,9 @@ export function buildEngineInput(
     Q_OUTDOOR_SEATING: on("outdoor_seating"),
     Q_LIVE_ENTERTAINMENT: on("live_entertainment"),
     Q_SHORT_TERM_RENTAL: on("short_term_rental", "guests_stay_overnight"),
+    Q_GUESTS_OVERNIGHT: on("guests_stay_overnight"),
+    Q_HAZMAT_TRANSPORT: on("hazardous_materials_transported"),
+    Q_FOOD_TRUCK_MOBILE: on("food_truck_or_mobile"),
     Q_HOA_CONDO: on("hoa_condo"),
     Q_TOURISM_ACTIVITY:
       on("tourism_activity", "water_activities", "excursions") || p.industry === "Accommodation & Tourism",

@@ -62,6 +62,15 @@ export const PR_GUIDANCE_SOURCES = {
   // were rendering the unvalidated-description placeholder; the document
   // cites Ley 60-2019 (Código de Incentivos) at statute confidence.
   agricultura: source("SRC_GUIDANCE_AGRICULTURA", "Departamento de Agricultura", "Ley 60-2019 (Código de Incentivos) — Certificación de Agricultor Bona Fide", "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud%20agricultor%20bonafide%20para%20individuo.pdf", "The Incentives Code provides for the Secretary of Agriculture's Certificación de Agricultor Bona Fide, valid 4 years, issued through the Department of Agriculture's regional offices."),
+  // REG-GUIDE-TOURISM-001 (2026-09-18 QA): the PRTC innkeeper registration
+  // and room-tax return cards rendered the unvalidated-description
+  // placeholder (flagged live 2026-09-18, S42). The documents cite Ley
+  // 272-2003 at statute confidence; the concept content below is grounded in
+  // that basis plus the founder-settled §29.4 facts (register as innkeeper /
+  // hostelero, obtain the Innkeeper ID, collect the room-occupancy tax,
+  // file the monthly return by the 10th). No invented procedure.
+  tourism: source("SRC_GUIDANCE_TOURISM", "Compañía de Turismo de Puerto Rico", "Ley 272-2003 — Registro de hosteleros (Art. 26, 13 L.P.R.A. § 2271q)", "https://tourism.pr.gov/", "Short-term lodging (stays of fewer than 90 days) registers with the Compañía de Turismo as an innkeeper (hostelero) and obtains an Innkeeper Identification Number; registration applies island-wide."),
+  roomTax: source("SRC_GUIDANCE_ROOM_TAX", "Compañía de Turismo de Puerto Rico", "Ley 272-2003, Art. 28(A)-(B) (13 L.P.R.A. § 2271s) — declaración del impuesto sobre el canon por ocupación de habitación", "https://tourism.pr.gov/", "Article 28(A)-(B) governs the room-occupancy tax declaration: operators file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -105,6 +114,11 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_VEHICLE_REGISTRATION: { en: ["vehicle registration", "dtop", "marbete"], es: ["registro de vehículos", "vehículo comercial", "dtop", "marbete"] },
   DOC_TRANSPORT_PERMIT: { en: ["transport", "ntsp", "franchise", "porteador"], es: ["transporte", "ntsp", "franquicia", "porteador", "acarreo"] },
   DOC_AGRICULTURE_REGISTRATION: { en: ["bona fide", "farmer", "agriculture"], es: ["bona fide", "agricultor", "agricultura", "finca"] },
+  // REG-GUIDE-TOURISM-001 (2026-09-18 QA): validated subject terms for the
+  // PRTC innkeeper registration and room-tax return cards that were
+  // rendering placeholder copy.
+  DOC_TOURISM_REGISTRATION: { en: ["innkeeper", "tourism", "lodging", "hostelero"], es: ["hostelero", "turismo", "hospedería", "alojamiento"] },
+  DOC_ROOM_TAX_RETURN: { en: ["room tax", "room-occupancy", "monthly return"], es: ["impuesto de habitación", "declaración mensual", "canon por ocupación"] },
 };
 function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = []): GuidanceConcept {
   return { requirementId, version: "2026-09-03.1", validationStatus: "validated", subjectTerms: SUBJECTS[requirementId], conditions, sources, regulatoryReason: content[0], purpose: content[1], nextAction: content[2], consequenceOrNextStep: content[3], dependencies,
@@ -247,7 +261,7 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
 
 
 
-  DOC_HEALTH_PERMIT: concept("DOC_HEALTH_PERMIT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [condition("Q_FOOD_SOLD", "Food sold on site", "Alimentos vendidos en el local", true)]], [PR_GUIDANCE_SOURCES.health], [
+  DOC_HEALTH_PERMIT: concept("DOC_HEALTH_PERMIT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [condition("Q_FOOD_SOLD", "Food sold on site", "Alimentos vendidos en el local", true)], [business]], [PR_GUIDANCE_SOURCES.health], [
     // REG-GUIDE-HEALTH-001 (2026-09-17 21:00 QA, S23 Bayamón barbershop):
     // this concept fires for restaurants AND personal-care premises
     // (barbershops, salons, spas, tattoo shops) and lodging — the lead
@@ -260,7 +274,7 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Prepare the premises for a Departamento de Salud sanitary inspection and submit the permit application for the activity category the business will operate.", "Prepara el local para la inspección sanitaria del Departamento de Salud y presenta la solicitud del permiso para la categoría de actividad que operará el negocio."),
     text("An issued sanitary permit authorizes the inspected activity at that location, subject to its conditions and renewal.", "El permiso sanitario emitido autoriza la actividad inspeccionada en ese local, sujeto a sus condiciones y renovación."),
   ]),
-  DOC_FIRE_CERT: concept("DOC_FIRE_CERT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)]], [PR_GUIDANCE_SOURCES.fire], [
+  DOC_FIRE_CERT: concept("DOC_FIRE_CERT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [business]], [PR_GUIDANCE_SOURCES.fire], [
     // REG-GUIDE-FIRE-GENERAL-001 (2026-09-17 QA): this concept fires for
     // restaurants, manufacturers, warehouses, and other commercial or
     // industrial premises — the lead sentence must not define fire
@@ -271,7 +285,7 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Schedule the Cuerpo de Bomberos inspection for the premises and correct any noted deficiencies before the certificate is issued.", "Coordina la inspección del Cuerpo de Bomberos para el local y corrige las deficiencias señaladas antes de que se emita el certificado."),
     text("The issued fire certificate is required supporting evidence for the Permiso Único package; an inspection request alone is not certification.", "El certificado de bomberos emitido es evidencia requerida para el expediente del Permiso Único; solicitar la inspección no equivale a estar certificado."),
   ]),
-  DOC_CFPM: concept("DOC_CFPM", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)]], [PR_GUIDANCE_SOURCES.cfpm], [
+  DOC_CFPM: concept("DOC_CFPM", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [business]], [PR_GUIDANCE_SOURCES.cfpm], [
     text("Establishments that prepare food must have a certified food protection manager on staff under Departamento de Salud regulation.", "Los establecimientos que preparan alimentos deben contar con un manejador de alimentos certificado según la reglamentación del Departamento de Salud."),
     text("The certified food protection manager documents that a specific staff member completed food-safety training as a food handler, not that the premises itself passed inspection.", "El manejador de alimentos certificado acredita que un miembro específico del personal completó adiestramiento de seguridad alimentaria, no que el local aprobó inspección."),
     text("Enroll the designated staff member as a certified food protection manager / food handler in an accredited course and keep the certification on file.", "Inscribe al empleado designado como manejador de alimentos certificado en un curso acreditado y conserva la certificación en el expediente."),
@@ -285,13 +299,13 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("An issued endorsement authorizes the reviewed noise levels for that activity and zone, subject to its conditions and any complaints.", "El endoso emitido autoriza los niveles de ruido revisados para esa actividad y zona, sujeto a sus condiciones y a las quejas que se reciban."),
   ]),
 
-  DOC_LUMA_INTERCONNECTION: concept("DOC_LUMA_INTERCONNECTION", [[condition("Q_RENEWABLE_INSTALL", "Renewable energy system to be installed", "Instalación de sistema de energía renovable", true)]], [PR_GUIDANCE_SOURCES.luma], [
+  DOC_LUMA_INTERCONNECTION: concept("DOC_LUMA_INTERCONNECTION", [[condition("Q_RENEWABLE_INSTALL", "Has or will install a renewable energy system", "Tiene o instalará un sistema de energía renovable", true)], [business]], [PR_GUIDANCE_SOURCES.luma], [
     text("A grid-connected solar system must be registered with LUMA Energy before it can legally operate. LUMA's interconnection review covers the system's technical requirements for parallel operation with the grid.", "Un sistema solar conectado a la red tiene que estar registrado con LUMA Energy antes de poder operar legalmente. La revisión de interconexión de LUMA cubre los requisitos técnicos para operar en paralelo con la red."),
     text("The interconnection registration is LUMA's record of the distributed generation system and its approval to connect, not the OGPe construction permit and not permission to operate.", "El registro de interconexión es el expediente de LUMA del sistema de generación distribuida y su aprobación para conectarse; no es el permiso de construcción de OGPe ni el permiso para operar."),
     text("Complete LUMA's interconnection registration with the system specifications and installer information. If the project needs an OGPe construction permit, finish OGPe first — LUMA requires the approved OGPe use permit before it processes the interconnection.", "Completa el registro de interconexión de LUMA con las especificaciones del sistema y la información del instalador. Si el proyecto necesita permiso de construcción de OGPe, termina OGPe primero — LUMA exige el permiso de uso aprobado de OGPe antes de tramitar la interconexión."),
     text("LUMA's interconnection approval authorizes the system to connect; the system still needs LUMA's Permission to Operate before it is switched on.", "La aprobación de interconexión de LUMA autoriza conectar el sistema; el sistema todavía necesita el Permiso para Operar de LUMA antes de encenderse."),
   ]),
-  DOC_NET_METERING_AGREEMENT: concept("DOC_NET_METERING_AGREEMENT", [[condition("Q_RENEWABLE_INSTALL", "Renewable energy system to be installed", "Instalación de sistema de energía renovable", true)]], [PR_GUIDANCE_SOURCES.netMetering], [
+  DOC_NET_METERING_AGREEMENT: concept("DOC_NET_METERING_AGREEMENT", [[condition("Q_RENEWABLE_INSTALL", "Has or will install a renewable energy system", "Tiene o instalará un sistema de energía renovable", true)], [business]], [PR_GUIDANCE_SOURCES.netMetering], [
     text("Commercial solar systems that export surplus energy to the grid operate under LUMA's interconnection and net metering agreement, which sets the metering and compensation terms.", "Los sistemas solares comerciales que exportan el excedente de energía a la red operan bajo el acuerdo de interconexión y medición neta de LUMA, que establece los términos de medición y compensación."),
     text("The net metering agreement documents the terms for parallel operation and exported-energy metering; it is not the interconnection registration itself and not permission to operate.", "El acuerdo de medición neta documenta los términos de operación en paralelo y medición de la energía exportada; no es el registro de interconexión ni el permiso para operar."),
     text("Execute LUMA's interconnection / net metering agreement for the commercial customer account tied to the installation address.", "Firma el acuerdo de interconexión y medición neta de LUMA para la cuenta comercial del cliente atada a la dirección de la instalación."),
@@ -368,5 +382,31 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The bona fide farmer certification documents the farm's agricultural status for incentive programs and dealings with the Department of Agriculture.", "La certificación de agricultor bona fide documenta el estatus agrícola de la finca para los programas de incentivos y los trámites ante el Departamento de Agricultura."),
     text("Request the Certificación de Agricultor Bona Fide from the Department of Agriculture — issuance is handled through its regional offices. Renew the certification every 4 years before it expires.", "Solicita la Certificación de Agricultor Bona Fide en el Departamento de Agricultura — la expedición se tramita en sus oficinas regionales. Renueva la certificación cada 4 años antes de que se venza."),
     text("Without a current bona fide certification, the farm cannot access the incentive benefits reserved for certified bona fide farmers.", "Sin una certificación bona fide vigente, la finca no puede acceder a los beneficios de incentivos reservados a los agricultores bona fide certificados."),
+  ]),
+  // REG-GUIDE-TOURISM-001 (2026-09-18 QA): the PRTC innkeeper registration
+  // and room-tax return cards rendered the unvalidated-description
+  // placeholder (flagged live 2026-09-18, S42). Conditions cover every
+  // firing path: the lodging business-type rules (RULE_0139/0142/0145/0148,
+  // 0261–0264, 0601) via the businessType fallback, and the Q&A paths
+  // (RULE_0033/0602 Q_SHORT_TERM_RENTAL, RULE_0691 Q_GUESTS_OVERNIGHT).
+  DOC_TOURISM_REGISTRATION: concept("DOC_TOURISM_REGISTRATION", [
+    [condition("Q_SHORT_TERM_RENTAL", "Short-term rental", "Alquiler a corto plazo", true)],
+    [condition("Q_GUESTS_OVERNIGHT", "Guests stay overnight", "Huéspedes se hospedan", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.tourism], [
+    text("Short-term lodging in Puerto Rico — stays of fewer than 90 days — must register with the Compañía de Turismo as an innkeeper (hostelero) and obtain an Innkeeper Identification Number. Registration applies island-wide, in every municipality.", "Los alojamientos de corta duración en Puerto Rico — estadías de menos de 90 días — tienen que registrarse en la Compañía de Turismo como hosteleros y obtener un Número de Identificación de Hostelero. El registro aplica en toda la isla, en cada municipio."),
+    text("The innkeeper registration is the Tourism Company's record that the property is authorized to operate as short-term lodging and to collect the room-occupancy tax. It is not the municipal patente and not the merchant registration.", "El registro de hostelero es el expediente de la Compañía de Turismo que autoriza la propiedad a operar como alojamiento de corta duración y a cobrar el impuesto sobre el canon por ocupación de habitación. No es la patente municipal ni el registro de comerciante."),
+    text("Register the property as an innkeeper with the Compañía de Turismo and obtain the Innkeeper ID before hosting guests; keep the registration current for the life of the operation.", "Registra la propiedad como hostelero en la Compañía de Turismo y obtén el Número de Identificación de Hostelero antes de recibir huéspedes; mantén el registro al día durante toda la operación."),
+    text("An issued innkeeper registration authorizes the property to operate and to collect the room-occupancy tax from guests; the tax collected is reported on the monthly room-tax return.", "Un registro de hostelero emitido autoriza la propiedad a operar y a cobrar el impuesto sobre el canon por ocupación de habitación a los huéspedes; el impuesto cobrado se informa en la declaración mensual del impuesto de habitación."),
+  ]),
+  DOC_ROOM_TAX_RETURN: concept("DOC_ROOM_TAX_RETURN", [
+    [condition("Q_SHORT_TERM_RENTAL", "Short-term rental", "Alquiler a corto plazo", true)],
+    [condition("Q_GUESTS_OVERNIGHT", "Guests stay overnight", "Huéspedes se hospedan", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.roomTax], [
+    text("Short-term lodging operators collect the room-occupancy tax from guests and file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month.", "Los operadores de alojamiento de corta duración cobran el impuesto sobre el canon por ocupación de habitación a los huéspedes y radican la declaración mensual del impuesto de habitación en la Compañía de Turismo el día 10 del mes siguiente."),
+    text("The monthly return reports the room-occupancy tax collected on guest stays. It is separate from the innkeeper registration itself — the registration authorizes the operation; the return accounts for the tax.", "La declaración mensual informa el impuesto sobre el canon por ocupación de habitación cobrado en las estadías de huéspedes. Es independiente del registro de hostelero — el registro autoriza la operación; la declaración rinde cuentas del impuesto."),
+    text("File the monthly room-tax declaration with the Compañía de Turismo by the 10th of each month and pay the room-occupancy tax collected during the prior month.", "Radica la declaración mensual del impuesto de habitación en la Compañía de Turismo el día 10 de cada mes y paga el impuesto sobre el canon por ocupación cobrado durante el mes anterior."),
+    text("A filed return keeps the innkeeper account current; operating short-term lodging without filing the monthly return exposes the operator to penalties.", "Una declaración radicada mantiene la cuenta de hostelero al día; operar alojamiento de corta duración sin radicar la declaración mensual expone al operador a penalidades."),
   ]),
 };
