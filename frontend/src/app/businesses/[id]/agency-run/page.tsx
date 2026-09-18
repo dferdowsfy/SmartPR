@@ -620,6 +620,22 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       ? workflowStatusLine(wfState, lang, portalName, waitingDetail)
       : null;
 
+  // Keep the last few agent status updates visible instead of replacing a
+  // single in-place line — fast status changes can actually be read.
+  const [transientHistory, setTransientHistory] = useState<string[]>([]);
+  const lastTransientRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (transientLabel && transientLabel !== lastTransientRef.current) {
+      lastTransientRef.current = transientLabel;
+      setTransientHistory((h) => [...h.slice(-3), transientLabel]);
+    }
+  }, [transientLabel]);
+  // A new run starts with a fresh status history.
+  useEffect(() => {
+    lastTransientRef.current = null;
+    setTransientHistory([]);
+  }, [run?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const terminalNote =
     run?.status === "stopped"
       ? {
@@ -801,7 +817,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   <button
                     type="button"
                     onClick={() => setBrowserOpen((o) => !o)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                   >
                     {browserOpen ? (
                       <EyeOff className="h-3 w-3" />
@@ -824,7 +840,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               milestones={milestones}
               run={run}
               runActive={Boolean(run)}
-              transientLabel={transientLabel}
+              transientHistory={transientHistory}
               scrollKey={scrollKey}
               onStartFiling={(filing) => void startFiling(filing)}
               filingBusyId={filingBusyId}

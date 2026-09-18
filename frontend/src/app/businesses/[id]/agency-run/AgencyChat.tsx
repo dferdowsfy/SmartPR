@@ -152,7 +152,7 @@ function MilestoneBubble({ milestone, lang }: { milestone: ChatMilestone; lang: 
               <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand"
+                className="inline-flex items-center gap-1 text-sm font-semibold text-brand"
                 aria-expanded={open}
               >
                 {L("View details", "Ver detalles", lang)}
@@ -161,7 +161,7 @@ function MilestoneBubble({ milestone, lang }: { milestone: ChatMilestone; lang: 
               {open && (
                 <ul className="mt-2 space-y-1.5 rounded-xl bg-slate-50 p-3">
                   {milestone.details!.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-slate-700">
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
                       <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
                       <span>{L(d.label_en, d.label_es, lang)}</span>
                     </li>
@@ -176,15 +176,33 @@ function MilestoneBubble({ milestone, lang }: { milestone: ChatMilestone; lang: 
   );
 }
 
-/** The SINGLE transient status indicator — one node that updates in place. */
-function TransientStatus({ label }: { label: string }) {
+/**
+ * Recent agent status updates — the last few stay visible (older ones
+ * dimmed) so fast status changes can actually be read instead of flashing
+ * by in a single in-place line. Only the newest pulses.
+ */
+function TransientHistory({ labels }: { labels: string[] }) {
+  if (labels.length === 0) return null;
   return (
-    <div className="flex items-center gap-2.5 pl-11">
-      <span className="relative flex h-2.5 w-2.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
-        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand" />
-      </span>
-      <p className="text-sm text-slate-500">{label}</p>
+    <div className="space-y-1.5 pl-11" aria-live="polite">
+      {labels.map((label, i) => {
+        const latest = i === labels.length - 1;
+        return (
+          <div key={`${i}-${label}`} className="flex items-center gap-2.5">
+            {latest ? (
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand" />
+              </span>
+            ) : (
+              <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-slate-300" />
+            )}
+            <p className={latest ? "text-sm text-slate-500" : "text-xs text-slate-400"}>
+              {label}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -243,22 +261,22 @@ function FilingCard({
           {L(filing.title_en, filing.title_es, lang)}
         </p>
         <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
         >
           {filingStatusChipLabel(filing, lang)}
         </span>
       </div>
       {filing.supported && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-sm text-slate-500">
           <span className="font-semibold">{L("SmartPR requirement: ", "Requisito de SmartPR: ", lang)}</span>
           {filing.obligation_name}
         </p>
       )}
       {!filing.supported && (
-        <p className="mt-1 text-xs text-slate-500">{filingUnsupportedCopy(lang)}</p>
+        <p className="mt-1 text-sm text-slate-500">{filingUnsupportedCopy(lang)}</p>
       )}
       {action && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-sm text-slate-500">
           {L(
             `${action.known} of ${action.total} ready from your Passport`,
             `${action.known} de ${action.total} listas en tu Pasaporte`,
@@ -267,12 +285,12 @@ function FilingCard({
         </p>
       )}
       {filing.filing_status === "missing_information" && gate > 0 && (
-        <p className="mt-1.5 text-xs font-semibold text-amber-800">
+        <p className="mt-1.5 text-sm font-semibold text-amber-800">
           {filingGateCopy(gate, lang)}
         </p>
       )}
       {action && action.blocked_by.length > 0 && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-sm text-slate-500">
           {L("Waiting on: ", "Esperando: ", lang)}
           {action.blocked_by.join(", ")}
         </p>
@@ -282,7 +300,7 @@ function FilingCard({
           type="button"
           disabled={busy || disabled}
           onClick={onStart}
-          className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
@@ -293,7 +311,7 @@ function FilingCard({
       {filing.filing_status === "missing_information" && gate > 0 && passportHref && (
         <a
           href={passportHref}
-          className="ml-2 mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/[0.06] px-4 py-2 text-xs font-semibold text-brand hover:bg-brand/[0.12]"
+          className="ml-2 mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/[0.06] px-4 py-2 text-sm font-semibold text-brand hover:bg-brand/[0.12]"
         >
           <ClipboardList className="h-3.5 w-3.5" />
           {filingPassportCtaCopy(lang)}
@@ -382,7 +400,7 @@ function PreflightCard({
       <p className="text-sm font-bold text-[#161616]">
         {L("Before we start — quick check", "Antes de arrancar — chequeo rápido", lang)}
       </p>
-      <p className="mt-1 text-xs text-slate-600">
+      <p className="mt-1 text-sm text-slate-600">
         {L(
           `Here's my plan for your ${filingLabelEn}.`,
           `Este es mi plan para tu ${filingLabelEs}.`,
@@ -392,28 +410,28 @@ function PreflightCard({
 
       {/* Passport first — labels only, nothing to fill in */}
       <div className="mt-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2.5">
-        <p className="text-xs font-semibold text-emerald-900">
+        <p className="text-sm font-semibold text-emerald-900">
           {L(
             `Using from your Business Passport (${items.length} items):`,
             `Estoy usando de tu Pasaporte de Negocio (${items.length}):`,
             lang
           )}
         </p>
-        <p className="mt-1 text-xs leading-snug text-emerald-900/80">
+        <p className="mt-1 text-sm leading-snug text-emerald-900/80">
           {inlineItems.map((f) => L(f.label_en, f.label_es, lang)).join(", ")}
           {items.length > inlineItems.length ? ` +${items.length - inlineItems.length}` : ""}
         </p>
-        <p className="mt-1 text-[11px] font-medium text-emerald-900/70">
+        <p className="mt-1 text-sm font-medium text-emerald-900/70">
           {L("You won't need to re-enter any of this.", "No tienes que volver a escribir nada de esto.", lang)}
         </p>
         {items.length > inlineItems.length && (
           <details className="mt-1">
-            <summary className="cursor-pointer text-[11px] font-semibold text-emerald-800">
+            <summary className="cursor-pointer text-sm font-semibold text-emerald-800">
               {L("See all", "Ver todo", lang)}
             </summary>
             <ul className="mt-1 space-y-0.5">
               {items.map((f, i) => (
-                <li key={i} className="flex items-center gap-1.5 text-[11px] text-emerald-900/80">
+                <li key={i} className="flex items-center gap-1.5 text-sm text-emerald-900/80">
                   <CheckCircle2 className="h-3 w-3 shrink-0" />
                   {L(f.label_en, f.label_es, lang)}
                 </li>
@@ -426,7 +444,7 @@ function PreflightCard({
       {/* Questions second — at most 3, all skippable */}
       {preflight.questions.length > 0 && !submitted && (
         <div className="mt-2.5">
-          <p className="text-xs font-semibold text-slate-700">
+          <p className="text-sm font-semibold text-slate-700">
             {L("Still need from you:", "Todavía necesito de ti:", lang)}
           </p>
           <div className="mt-1.5 space-y-2.5">
@@ -435,7 +453,7 @@ function PreflightCard({
                 const portal = L(preflight.portal_name_en, preflight.portal_name_es, lang);
                 return (
                   <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-xs font-medium text-slate-800">
+                    <p className="text-sm font-medium text-slate-800">
                       {L(
                         `Do you already have an account on ${portal}?`,
                         `¿Ya tienes cuenta en ${portal}?`,
@@ -453,7 +471,7 @@ function PreflightCard({
                           key={value}
                           type="button"
                           onClick={() => setAccountChoice(value)}
-                          className={`rounded-lg border px-2.5 py-2 text-xs font-semibold transition ${
+                          className={`rounded-lg border px-2.5 py-2 text-sm font-semibold transition ${
                             accountChoice === value
                               ? "border-brand bg-brand/[0.06] text-brand"
                               : "border-slate-200 bg-white text-slate-700 hover:border-brand/40"
@@ -463,7 +481,7 @@ function PreflightCard({
                         </button>
                       ))}
                     </div>
-                    <p className="mt-1.5 text-[11px] leading-snug text-slate-500">
+                    <p className="mt-1.5 text-sm leading-snug text-slate-500">
                       {L(
                         "If you don't have one, I'll create it first and pause where a password must be created — I never invent it.",
                         "Si no tienes, la creo primero y me detengo donde haya que crear la contraseña — nunca la invento.",
@@ -478,11 +496,11 @@ function PreflightCard({
                 const isRevealed = Boolean(revealed[q.id]);
                 return (
                   <div key={q.id} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-xs font-medium text-slate-800">
+                    <p className="text-sm font-medium text-slate-800">
                       {L(q.label_en, q.label_es, lang)}
                     </p>
                     {skipped ? (
-                      <p className="mt-1 text-[11px] text-slate-500">
+                      <p className="mt-1 text-sm text-slate-500">
                         {L("I'll ask during the run.", "Te lo pregunto durante la ejecución.", lang)}{" "}
                         <button
                           type="button"
@@ -504,7 +522,7 @@ function PreflightCard({
                               setFieldValues((v) => ({ ...v, [q.id]: e.target.value }))
                             }
                             placeholder={L("Type here (optional)", "Escribe aquí (opcional)", lang)}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 pr-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                           />
                           <button
                             type="button"
@@ -520,7 +538,7 @@ function PreflightCard({
                           </button>
                         </div>
                         <div className="mt-1 flex items-center justify-between gap-2">
-                          <p className="text-[11px] leading-snug text-slate-500">
+                          <p className="text-sm leading-snug text-slate-500">
                             {L(
                               "Used once for this run and never stored.",
                               "Se usa una sola vez para esta ejecución y no se guarda.",
@@ -533,7 +551,7 @@ function PreflightCard({
                               setSkippedFields((s) => ({ ...s, [q.id]: true }));
                               setFieldValues((v) => ({ ...v, [q.id]: "" }));
                             }}
-                            className="shrink-0 text-[11px] font-semibold text-brand underline"
+                            className="shrink-0 text-sm font-semibold text-brand underline"
                           >
                             {L("Ask me later", "Pregúntame después", lang)}
                           </button>
@@ -547,7 +565,7 @@ function PreflightCard({
               if (evidenceSkipped) {
                 return (
                   <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-sm text-slate-500">
                       {L("I'll ask for documents during the run.", "Te pido los documentos durante la ejecución.", lang)}{" "}
                       <button
                         type="button"
@@ -562,7 +580,7 @@ function PreflightCard({
               }
               return (
                 <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                  <p className="text-xs font-medium text-slate-800">
+                  <p className="text-sm font-medium text-slate-800">
                     {L(uploadsEn, uploadsEs, lang)}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -581,7 +599,7 @@ function PreflightCard({
                       type="button"
                       disabled={uploadBusy}
                       onClick={() => evidenceFileRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-brand/40 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-brand/40 disabled:opacity-50"
                     >
                       {uploadBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                       {L("Attach documents", "Adjuntar documentos", lang)}
@@ -589,7 +607,7 @@ function PreflightCard({
                     <button
                       type="button"
                       onClick={() => setEvidenceSkipped(true)}
-                      className="text-[11px] font-semibold text-brand underline"
+                      className="text-sm font-semibold text-brand underline"
                     >
                       {L("I'll provide them during the run", "Los subo durante la ejecución", lang)}
                     </button>
@@ -603,17 +621,17 @@ function PreflightCard({
 
       {/* Start — always visible */}
       {submitted ? (
-        <p className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+        <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
           <CheckCircle2 className="h-4 w-4" />
           {L("Started — launching your filing…", "Empezado — lanzando tu radicación…", lang)}
         </p>
       ) : (
         <>
           {confirmError && (
-            <p className="mt-2.5 text-xs font-medium text-rose-700">{confirmError}</p>
+            <p className="mt-2.5 text-sm font-medium text-rose-700">{confirmError}</p>
           )}
           {gate > 0 && (
-            <p className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+            <p className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {filingGateCopy(gate, lang)}
             </p>
@@ -622,7 +640,7 @@ function PreflightCard({
             type="button"
             disabled={confirmBusy}
             onClick={() => void handleConfirm()}
-            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {confirmBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
             {L("Start filing", "Empezar la radicación", lang)}
@@ -740,7 +758,7 @@ function InterventionCard(props: InterventionProps) {
           </p>
 
           {props.validationError && (
-            <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-800">
+            <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800">
               {props.validationError}
             </div>
           )}
@@ -748,7 +766,7 @@ function InterventionCard(props: InterventionProps) {
           {showValidationBanner && (
             <div
               role="alert"
-              className="mt-2 flex gap-2 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-[11px] leading-snug text-rose-950"
+              className="mt-2 flex gap-2 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-sm leading-snug text-rose-950"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
               <div>
@@ -769,7 +787,7 @@ function InterventionCard(props: InterventionProps) {
           )}
 
           {run.pause_streak >= 3 && (
-            <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
+            <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800">
               {L(
                 `Still stuck on this step after ${run.pause_streak} tries. If fields are listed, fill them and continue — otherwise take over only for captcha or odd UI, then press “I'm done”.`,
                 `Sigo atascado en este paso después de ${run.pause_streak} intentos. Si hay campos, llénalos y continúa — si no, toma el control solo para captcha o pantallas raras, luego pulsa “Terminé”.`,
@@ -779,7 +797,7 @@ function InterventionCard(props: InterventionProps) {
           )}
 
           {askedAgain.length > 0 && !showValidationBanner && (
-            <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-900">
+            <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-900">
               {L(
                 "You already provided this — the assistant is asking again. Confirm it's correct or fix it, then continue.",
                 "Ya me habías dado esto — el asistente lo está pidiendo de nuevo. Confirma que está correcto o corrígelo, y continúa.",
@@ -804,7 +822,7 @@ function InterventionCard(props: InterventionProps) {
 
           {fieldsPause && (
             <div className="mt-2.5 space-y-2">
-              <p className="text-[11px] leading-snug text-amber-900/80">
+              <p className="text-sm leading-snug text-amber-900/80">
                 {L(
                   "Type only here — the live browser is view-only while I wait. Non-sensitive values are prefilled from your passport when possible. Your entries are never stored.",
                   "Escribe solo aquí — el navegador en vivo es solo lectura mientras espero. Los valores no sensibles se rellenan desde tu pasaporte cuando es posible. Tus entradas nunca se almacenan.",
@@ -865,7 +883,7 @@ function InterventionCard(props: InterventionProps) {
                             ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
                             : field.label
                         }
-                        className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand ${
+                        className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand ${
                           isSensitive ? "pr-9" : ""
                         }`}
                       />
@@ -911,7 +929,7 @@ function InterventionCard(props: InterventionProps) {
                 type="button"
                 disabled={props.busy || !props.canFillFields}
                 onClick={props.onFillContinue}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
                 {L("Fill & continue", "Llenar y continuar", lang)}
@@ -936,14 +954,14 @@ function InterventionCard(props: InterventionProps) {
                 type="button"
                 disabled={props.uploadBusy}
                 onClick={() => fileRef.current?.click()}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800 disabled:opacity-50"
               >
                 <Upload className="h-3.5 w-3.5" />
                 {props.uploadBusy
                   ? L("Uploading…", "Subiendo…", lang)
                   : L("Upload to Evidence Locker", "Subir al Casillero de evidencia", lang)}
               </button>
-              {props.uploadMsg && <p className="text-xs text-slate-600">{props.uploadMsg}</p>}
+              {props.uploadMsg && <p className="text-sm text-slate-600">{props.uploadMsg}</p>}
             </div>
           )}
 
@@ -951,7 +969,7 @@ function InterventionCard(props: InterventionProps) {
             <button
               type="button"
               onClick={props.onTakeover}
-              className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white"
+              className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white"
             >
               <KeyRound className="h-3.5 w-3.5" />
               {L("Take over the browser", "Tomar el control del navegador", lang)}
@@ -962,7 +980,7 @@ function InterventionCard(props: InterventionProps) {
             <button
               type="button"
               onClick={props.onTakeover}
-              className="mt-2 w-full text-center text-[11px] font-medium text-slate-500 underline-offset-2 hover:text-brand hover:underline"
+              className="mt-2 w-full text-center text-sm font-medium text-slate-500 underline-offset-2 hover:text-brand hover:underline"
             >
               {L(
                 "Need to solve a captcha or weird UI? Take over instead",
@@ -978,7 +996,7 @@ function InterventionCard(props: InterventionProps) {
                 type="button"
                 disabled={props.busy}
                 onClick={props.onResume}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
                 {L("Resume", "Reanudar", lang)}
@@ -988,7 +1006,7 @@ function InterventionCard(props: InterventionProps) {
               type="button"
               disabled={props.busy}
               onClick={props.onStop}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
             >
               <Square className="h-3.5 w-3.5" />
               {L("Stop", "Detener", lang)}
@@ -1042,12 +1060,12 @@ function ReviewCard({
                   lang
                 )}
           </p>
-          <p className="mt-1.5 text-xs font-medium text-slate-500">{gateCopy(lang)}</p>
+          <p className="mt-1.5 text-sm font-medium text-slate-500">{gateCopy(lang)}</p>
           <button
             type="button"
             disabled={busy}
             onClick={onReviewInBrowser}
-            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             <Eye className="h-3.5 w-3.5" />
             {L("Review in browser", "Revisar en el navegador", lang)}
@@ -1056,7 +1074,7 @@ function ReviewCard({
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
           >
             <Square className="h-3.5 w-3.5" />
             {L("Close run", "Cerrar ejecución", lang)}
@@ -1079,7 +1097,8 @@ export interface AgencyChatProps {
   milestones: ChatMilestone[];
   run: AgencyRunPublic | null;
   runActive: boolean;
-  transientLabel: string | null;
+  /** Last few agent status updates — rendered as a persistent recent-activity list. */
+  transientHistory: string[];
   scrollKey: string;
   /** Start pre-flight for a specific SmartPR filing (obligation-joined option). */
   onStartFiling: (filing: FilingOption) => void;
@@ -1116,14 +1135,20 @@ function filingBusyKey(filing: FilingOption): string {
 export function AgencyChat(props: AgencyChatProps) {
   const { lang } = props;
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const scrollBoxRef = useRef<HTMLDivElement>(null);
 
+  // Only auto-scroll when the human is already near the bottom — never
+  // yank the view away while they're reading earlier messages.
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const box = scrollBoxRef.current;
+    if (!box) return;
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 160;
+    if (nearBottom) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [props.scrollKey]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 md:px-5">
+      <div ref={scrollBoxRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 md:px-5">
         {props.msgs.map((msg) => {
           if (msg.type === "filing-picker") {
             return (
@@ -1144,7 +1169,7 @@ export function AgencyChat(props: AgencyChatProps) {
                       <div key={group.agency_id}>
                         <div className="flex items-center gap-2">
                           {agencyIcon(group.agency_id)}
-                          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                          <p className="text-sm font-extrabold uppercase tracking-wider text-slate-500">
                             {L(group.agency_name_en, group.agency_name_es, lang)}
                           </p>
                           {group.demo && (
@@ -1197,13 +1222,13 @@ export function AgencyChat(props: AgencyChatProps) {
                   )}
                 </p>
                 {expected.length > 0 && (
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className="mt-1.5 text-sm text-slate-500">
                     <span className="font-semibold">{L("I'll ask you for: ", "Te voy a pedir: ", lang)}</span>
                     {expected.map((f) => L(f.label_en, f.label_es, lang)).join(", ")}
                   </p>
                 )}
                 {b.expected_outcome_en && (
-                  <p className="mt-1.5 text-xs text-slate-500">
+                  <p className="mt-1.5 text-sm text-slate-500">
                     <span className="font-semibold">{L("Expected outcome: ", "Resultado esperado: ", lang)}</span>
                     {L(b.expected_outcome_en, b.expected_outcome_es, lang)}
                   </p>
@@ -1270,7 +1295,9 @@ export function AgencyChat(props: AgencyChatProps) {
           </AssistantBubble>
         )}
 
-        {props.transientLabel && <TransientStatus label={props.transientLabel} />}
+        {props.transientHistory.length > 0 && (
+          <TransientHistory labels={props.transientHistory} />
+        )}
 
         <div ref={chatEndRef} />
       </div>
@@ -1281,7 +1308,7 @@ export function AgencyChat(props: AgencyChatProps) {
             type="button"
             disabled={props.busy}
             onClick={props.onNewRun}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {props.runFailed
               ? L("Try again", "Intentar de nuevo", lang)
@@ -1293,7 +1320,7 @@ export function AgencyChat(props: AgencyChatProps) {
               type="button"
               disabled={props.busy}
               onClick={props.onStop}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
             >
               <Square className="h-3.5 w-3.5" />
               {L("Stop", "Detener", lang)}
