@@ -20,6 +20,7 @@ import {
 import { loadPassportForBusiness } from "../../../../lib/agency-runs/passportLoader";
 import { getBusinessObligations } from "../../voice/_business";
 import { getPool, isEnabled } from "../../../graph/db";
+import { resolveBusinessUuid } from "../../../graph/store";
 import { getCurrentUser } from "../../../../lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -39,8 +40,13 @@ export async function filingsFor(
 ): Promise<FilingGroup[]> {
   const pool = getPool();
   if (!pool) return [];
+  // Business ids in URLs are short public ids (e.g. /businesses/udjpeyxd),
+  // but obligations.business_id is UUID-typed — resolve before querying or
+  // Postgres throws 22P02 and the endpoint 500s.
+  const businessUuid = await resolveBusinessUuid(pool, businessId);
+  if (!businessUuid) return [];
   const [obligations, passport, priorRuns] = await Promise.all([
-    getBusinessObligations(pool, businessId),
+    getBusinessObligations(pool, businessUuid),
     loadPassportForBusiness(businessId, userId),
     Promise.resolve(listRunsForBusiness(businessId)),
   ]);
