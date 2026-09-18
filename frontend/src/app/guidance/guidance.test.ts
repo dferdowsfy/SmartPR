@@ -276,3 +276,18 @@ test("DTRH employer registration renders a validated description, never the plac
     assert.match(JSON.stringify(g.sources), /trabajo\.pr\.gov/);
   }
 });
+
+test("REG-GUIDE-ENTITY-001: incorporation and LLC formation cite their own source", () => {
+  // Regression: live QA 2026-09-17 showed the Certificate of Incorporation
+  // card's legal-basis header reading "LLC formation by Certificate of
+  // Organization" — both legal forms shared one guidance source.
+  const corpCtx = { ...ctx, entityType: "stock_corporation" };
+  const incorp = buildRequirementGuidance(req("DOC_CERT_INCORPORATION"), corpCtx);
+  const incorpSources = JSON.stringify(incorp.sources);
+  assert.match(incorpSources, /Certificate of Incorporation/);
+  assert.doesNotMatch(incorpSources, /LLC formation by Certificate of Organization/);
+  const llc = buildRequirementGuidance(req("DOC_CERT_ORGANIZATION"), ctx);
+  const llcSources = JSON.stringify(llc.sources);
+  assert.match(llcSources, /Certificate of Organization/);
+  assert.doesNotMatch(llcSources, /incorporation by Certificate of Incorporation/);
+});
