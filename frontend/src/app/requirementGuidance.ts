@@ -85,6 +85,8 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     Q_FEDERAL_CONTRACTS_GRANTS: ["federal_contracts_grants"],
     Q_OFFERS_CONSTRUCTION_SERVICES: ["offers_construction_services"],
     Q_COMMERCIAL_VEHICLES: ["commercial_vehicles"],
+    Q_HAZMAT_TRANSPORT: ["hazmat_transport"],
+    Q_AGRICULTURE_PRODUCTION: ["agriculture_production"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;

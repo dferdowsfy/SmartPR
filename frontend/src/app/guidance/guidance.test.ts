@@ -36,6 +36,13 @@ const NMI_GATED = new Set(["DOC_NOISE_VARIANCE"]);
 // MATCH_TRACE_MISSING, not a placeholder). Added with the DTOP-validated
 // vehicle concept (REG-GUIDE-VEHICLE-001, 2026-09-17).
 const VEHICLE_GATED = new Set(["DOC_VEHICLE_REGISTRATION"]);
+// Transport-gated / agriculture-gated: the NTSP franchise and the bona fide
+// farmer registration apply only to transport businesses / farms; the bar
+// profile matches none of their firing rules, so the validated concepts stay
+// provisional for it (correct — MATCH_TRACE_MISSING, not a placeholder).
+// Added with the NTSP- and Agricultura-validated concepts
+// (REG-GUIDE-TRANSPORT-001, REG-GUIDE-AGRI-001, 2026-09-18).
+const TRANSPORT_AGRI_GATED = new Set(["DOC_TRANSPORT_PERMIT", "DOC_AGRICULTURE_REGISTRATION"]);
 
 // Entity-gated: the Certificate of Incorporation concept applies only when a
 // corporation is (or may be) the chosen legal form; the bar profile is a
@@ -45,11 +52,11 @@ const VEHICLE_GATED = new Set(["DOC_VEHICLE_REGISTRATION"]);
 // (REG-GUIDE-FORMATION-001, 2026-09-17).
 const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
 
-test("same Bayamón bar: all twenty-five source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all twenty-seven source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId)) {
+      if (FOOD_GATED.has(g.requirementId) || SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -65,7 +72,7 @@ test("same Bayamón bar: all twenty-five source-backed explanations are distinct
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 25);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 27);
   }
 });
 

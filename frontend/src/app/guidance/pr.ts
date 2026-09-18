@@ -54,6 +54,14 @@ export const PR_GUIDANCE_SOURCES = {
   // DOC_HACIENDA_EMPLOYER_WITHHOLDING card rendered the
   // unvalidated-description placeholder on a Bayamón contractor filing.
   withholding: source("SRC_GUIDANCE_WITHHOLDING", "Departamento de Hacienda", "SURI — employer tax transactions", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI is Hacienda's portal for employer tax transactions, including employer withholding registration, withholding deposits, and payroll filings."),
+  // REG-GUIDE-TRANSPORT-001 (2026-09-18 QA): DOC_TRANSPORT_PERMIT cards were
+  // rendering the unvalidated-description placeholder; the document itself
+  // cites Law 109-1962 / NTSP Regulation 9156 §10.02 at statute confidence.
+  ntsp: source("SRC_GUIDANCE_NTSP", "Negociado de Transporte y Otros Servicios Públicos (NTSP)", "Ley 109-1962; Reglamento 9156 §10.02 — franquicia de Porteador por Contrato", "https://ntsp.pr.gov/", "The NTSP franchises for-hire carriers (Porteador por Contrato) under Law 109-1962; Regulation 9156 §10.02 sets the franchise requirements. Many filings are processed via renovacionesonline.com."),
+  // REG-GUIDE-AGRI-001 (2026-09-18 QA): DOC_AGRICULTURE_REGISTRATION cards
+  // were rendering the unvalidated-description placeholder; the document
+  // cites Ley 60-2019 (Código de Incentivos) at statute confidence.
+  agricultura: source("SRC_GUIDANCE_AGRICULTURA", "Departamento de Agricultura", "Ley 60-2019 (Código de Incentivos) — Certificación de Agricultor Bona Fide", "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud%20agricultor%20bonafide%20para%20individuo.pdf", "The Incentives Code provides for the Secretary of Agriculture's Certificación de Agricultor Bona Fide, valid 4 years, issued through the Department of Agriculture's regional offices."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -95,6 +103,8 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_OWNER_AFFIDAVIT: { en: ["affidavit", "owner authorization"], es: ["declaración jurada", "autorización del dueño"] },
   DOC_OPPE_INSTALLER_REG: { en: ["oppe", "installer registration"], es: ["oppe", "registro de instalador"] },
   DOC_VEHICLE_REGISTRATION: { en: ["vehicle registration", "dtop", "marbete"], es: ["registro de vehículos", "vehículo comercial", "dtop", "marbete"] },
+  DOC_TRANSPORT_PERMIT: { en: ["transport", "ntsp", "franchise", "porteador"], es: ["transporte", "ntsp", "franquicia", "porteador", "acarreo"] },
+  DOC_AGRICULTURE_REGISTRATION: { en: ["bona fide", "farmer", "agriculture"], es: ["bona fide", "agricultor", "agricultura", "finca"] },
 };
 function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = []): GuidanceConcept {
   return { requirementId, version: "2026-09-03.1", validationStatus: "validated", subjectTerms: SUBJECTS[requirementId], conditions, sources, regulatoryReason: content[0], purpose: content[1], nextAction: content[2], consequenceOrNextStep: content[3], dependencies,
@@ -313,5 +323,50 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The vehicle registration documents that that specific vehicle is authorized for road use with its registration current — it does not license the business activity itself.", "El registro de un vehículo comercial acredita que ese vehículo en particular está autorizado para transitar con su registro y marbete al día — no licencia la actividad del negocio por sí solo."),
     text("Verify each commercial vehicle the business runs is registered with DTOP and its marbete is current; handle registrations, renewals, and transfers through CESCO.", "Verifica que cada vehículo comercial que opere el negocio esté registrado en el DTOP y tenga el marbete al día; gestiona los registros, renovaciones y traspasos en CESCO."),
     text("An unregistered commercial vehicle cannot legally operate on public roads; keep each vehicle the business runs current on registration and marbete.", "Un vehículo comercial sin registrar no puede operar legalmente en las vías públicas; mantén al día el registro y el marbete de cada vehículo que opere el negocio."),
+  ]),
+  // REG-GUIDE-TRANSPORT-001 (2026-09-18 QA): the Transportation / PUC Permit
+  // card rendered the unvalidated-description placeholder on a Bayamón
+  // trucking-company filing. Conditions cover every firing path: the
+  // business-type rules (RULE_0177/0179/0181/0183/0185/0187/0189/0268/0518),
+  // the commercial-vehicles question (RULE_0022), and the hazmat-transport
+  // question (RULE_0618). The generic businessType group is the honest
+  // fallback when the intake stores the display name rather than the BT id.
+  DOC_TRANSPORT_PERMIT: concept("DOC_TRANSPORT_PERMIT", [
+    [condition("businessType", "Trucking company", "Compañía de acarreo", "BT_TRUCKING_COMPANY")],
+    [condition("businessType", "Courier service", "Servicio de mensajería", "BT_COURIER_SERVICE")],
+    [condition("businessType", "Moving company", "Compañía de mudanzas", "BT_MOVING_COMPANY")],
+    [condition("businessType", "Taxi service", "Servicio de taxi", "BT_TAXI_SERVICE")],
+    [condition("businessType", "Freight forwarding company", "Compañía de reexpedición de carga", "BT_FREIGHT_FORWARDING_COMPANY")],
+    [condition("businessType", "Logistics company", "Compañía de logística", "BT_LOGISTICS_COMPANY")],
+    [condition("businessType", "Car rental business", "Negocio de alquiler de carros", "BT_CAR_RENTAL_BUSINESS")],
+    [condition("businessType", "Warehouse operator", "Operador de almacén", "BT_WAREHOUSE_OPERATOR")],
+    [condition("Q_COMMERCIAL_VEHICLES", "Commercial vehicles: Yes", "Vehículos comerciales: Sí", true)],
+    [condition("Q_HAZMAT_TRANSPORT", "Hazardous materials transport: Yes", "Transporte de materiales peligrosos: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.ntsp], [
+    text("For-hire transportation in Puerto Rico operates under an NTSP franchise: carriers moving goods or passengers for compensation need the Porteador por Contrato franchise under Law 109-1962 and NTSP Regulation 9156 §10.02. Ordinary vehicle registration does not authorize commercial carriage.", "El transporte por paga en Puerto Rico opera bajo franquicia del NTSP: los porteadores que mueven carga o pasajeros por compensación necesitan la franquicia de Porteador por Contrato bajo la Ley 109-1962 y el Reglamento 9156 §10.02 del NTSP. El registro ordinario del vehículo no autoriza el acarreo comercial."),
+    text("The NTSP franchise is the operating authority for the transport service: it identifies the carrier, the authorized service, and the terms under which the franchise was granted.", "La franquicia del NTSP es la autorización de operación del servicio de transporte: identifica al porteador, el servicio autorizado y los términos bajo los cuales se otorgó la franquicia."),
+    text("Apply for the Porteador por Contrato franchise through the NTSP at ntsp.pr.gov — many filings are processed through renovacionesonline.com. Keep the franchise current and carry proof of the franchise in each commercial vehicle.", "Solicita la franquicia de Porteador por Contrato en el NTSP (ntsp.pr.gov) — muchos trámites se procesan por renovacionesonline.com. Mantén la franquicia al día y lleva la evidencia de la franquicia en cada vehículo comercial."),
+    text("Operating a for-hire transport service without the NTSP franchise risks fines and enforcement action; an expired franchise leaves the service operating without authority.", "Operar un servicio de transporte por paga sin la franquicia del NTSP arriesga multas y acción de fiscalización; una franquicia vencida deja el servicio operando sin autorización."),
+  ]),
+  // REG-GUIDE-AGRI-001 (2026-09-18 QA): the Bona Fide Farmer Registration
+  // card rendered the unvalidated-description placeholder on an Arecibo
+  // coffee-farm filing. Conditions cover every firing path: the
+  // business-type rules (RULE_0218–0223) and the agriculture-production
+  // question (RULE_0041), plus the generic businessType fallback.
+  DOC_AGRICULTURE_REGISTRATION: concept("DOC_AGRICULTURE_REGISTRATION", [
+    [condition("businessType", "Farm", "Finca", "BT_FARM")],
+    [condition("businessType", "Livestock operation", "Operación ganadera", "BT_LIVESTOCK_OPERATION")],
+    [condition("businessType", "Aquaculture operation", "Operación de acuacultura", "BT_AQUACULTURE_OPERATION")],
+    [condition("businessType", "Plant nursery", "Vivero de plantas", "BT_PLANT_NURSERY")],
+    [condition("businessType", "Agricultural services company", "Compañía de servicios agrícolas", "BT_AGRICULTURAL_SERVICES_COMPANY")],
+    [condition("businessType", "Coffee plantation", "Hacienda de café", "BT_COFFEE_PLANTATION")],
+    [condition("Q_AGRICULTURE_PRODUCTION", "Agricultural production: Yes", "Producción agrícola: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.agricultura], [
+    text("Puerto Rico certifies genuine agricultural producers under the Incentives Code: the Certificación de Agricultor Bona Fide, issued by the Secretary of Agriculture under Law 60-2019, identifies the holder as a bona fide farmer. The certification is valid for 4 years.", "Puerto Rico certifica a los productores agrícolas genuinos bajo el Código de Incentivos: la Certificación de Agricultor Bona Fide, expedida por el Secretario de Agricultura bajo la Ley 60-2019, identifica al titular como agricultor bona fide. La certificación tiene una vigencia de 4 años."),
+    text("The bona fide farmer certification documents the farm's agricultural status for incentive programs and dealings with the Department of Agriculture.", "La certificación de agricultor bona fide documenta el estatus agrícola de la finca para los programas de incentivos y los trámites ante el Departamento de Agricultura."),
+    text("Request the Certificación de Agricultor Bona Fide from the Department of Agriculture — issuance is handled through its regional offices. Renew the certification every 4 years before it expires.", "Solicita la Certificación de Agricultor Bona Fide en el Departamento de Agricultura — la expedición se tramita en sus oficinas regionales. Renueva la certificación cada 4 años antes de que se venza."),
+    text("Without a current bona fide certification, the farm cannot access the incentive benefits reserved for certified bona fide farmers.", "Sin una certificación bona fide vigente, la finca no puede acceder a los beneficios de incentivos reservados a los agricultores bona fide certificados."),
   ]),
 };

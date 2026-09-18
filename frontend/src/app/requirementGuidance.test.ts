@@ -391,3 +391,65 @@ test("REG-GUIDE-VEHICLE-002: vehicle-registration guidance validates on the busi
     );
   }
 });
+
+test("REG-GUIDE-TRANSPORT-001: transport-permit guidance validates on the trucking-company trigger, never a placeholder", () => {
+  // Live QA 2026-09-18 12:00 cycle (S37, Bayamón trucking company): the
+  // Transportation / PUC Permit card rendered the unvalidated-description
+  // placeholder. The document cites Law 109-1962 / NTSP Regulation 9156
+  // §10.02 at statute confidence, so the concept is now validated and
+  // source-grounded. Conditions cover every firing path: the business-type
+  // rules, the commercial-vehicles question, and the hazmat-transport
+  // question (new GuidanceFactKeys), plus the generic businessType fallback.
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      ...context, language,
+      businessTypeName: "Trucking Company",
+      discoveryAnswers: { commercial_vehicles: true },
+      engineInput: {
+        municipalityName: "Bayamón", businessTypeName: "Trucking Company",
+        answers: { Q_PHYSICAL_LOCATION: true, Q_COMMERCIAL_VEHICLES: true },
+      },
+    };
+    const r = { ...req("DOC_TRANSPORT_PERMIT"), applicability: "verify_existing" };
+    const g = buildRequirementGuidance(r, ctx);
+    assert.equal(g.status, "VALIDATED", `transport permit (${language})`);
+    assert.doesNotMatch(g.whatThisIs, /validated description.*pending/i, `no placeholder (${language})`);
+    assert.doesNotMatch(g.whyThisApplies, /not confirmed yet/i, `no hedge (${language})`);
+    assert.ok(
+      g.triggerFacts.some(f => ["businessType", "Q_COMMERCIAL_VEHICLES", "Q_HAZMAT_TRANSPORT"].includes(f.key)),
+      `an actual trigger explained (${language}): ${JSON.stringify(g.triggerFacts.map(f => f.key))}`
+    );
+    assert.match(g.whyThisApplies, /NTSP/i, `cites the NTSP franchise basis (${language})`);
+  }
+});
+
+test("REG-GUIDE-AGRI-001: bona-fide-farmer guidance validates on the coffee-plantation trigger, never a placeholder", () => {
+  // Live QA 2026-09-18 12:00 cycle (S38, Arecibo coffee farm): the Bona Fide
+  // Farmer Registration card rendered the unvalidated-description
+  // placeholder. The document cites Ley 60-2019 (Código de Incentivos) at
+  // statute confidence, so the concept is now validated and source-grounded.
+  // Conditions cover every firing path: the farm business-type rules
+  // (RULE_0218–0223) and the agriculture-production question (RULE_0041),
+  // plus the generic businessType fallback.
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      ...context, language,
+      businessTypeName: "Coffee Plantation",
+      discoveryAnswers: {},
+      engineInput: {
+        municipalityName: "Arecibo", businessTypeName: "Coffee Plantation",
+        answers: { Q_PHYSICAL_LOCATION: true },
+      },
+    };
+    const r = { ...req("DOC_AGRICULTURE_REGISTRATION"), applicability: "verify_existing" };
+    const g = buildRequirementGuidance(r, ctx);
+    assert.equal(g.status, "VALIDATED", `bona fide registration (${language})`);
+    assert.doesNotMatch(g.whatThisIs, /validated description.*pending/i, `no placeholder (${language})`);
+    assert.doesNotMatch(g.whyThisApplies, /not confirmed yet/i, `no hedge (${language})`);
+    assert.ok(
+      g.triggerFacts.some(f => f.key === "businessType"),
+      `businessType trigger explained (${language}): ${JSON.stringify(g.triggerFacts.map(f => f.key))}`
+    );
+    assert.match(g.whyThisApplies, /bona fide/i, `names the bona fide certification (${language})`);
+  }
+});
