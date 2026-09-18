@@ -399,6 +399,14 @@ export function classifyEngineRequirements(
     // businesses verify; new businesses file; unknown status keeps the
     // obligation required (it is certain) while the reason text covers
     // both postures.
+    //
+    // Posture mapping applies only to an ASSERTED basis (required /
+    // likely_required). When the winning basis is merely conditional — an
+    // unconfirmed municipality flag — the engine has not established that
+    // the obligation applies, so mapping it to verify_existing (existing)
+    // or required (new) would assert applicability the engine deliberately
+    // left undecided. Conditional stays conditional until the flag is
+    // confirmed; needs_more_information likewise stays undecided.
     const winIdx = (() => {
       for (const s of ["required", "likely_required", "conditional"] as const) {
         const i = basisStates.indexOf(s);
@@ -406,8 +414,10 @@ export function classifyEngineRequirements(
       }
       return 0;
     })();
+    const winAsserted =
+      basisStates[winIdx] === "required" || basisStates[winIdx] === "likely_required";
     const winCompliance = basisRules[winIdx]?.compliance_mode ?? row.compliance_mode ?? null;
-    if (winCompliance === "verify_existing" && applicability !== "not_applicable") {
+    if (winCompliance === "verify_existing" && winAsserted && applicability !== "not_applicable") {
       if (options.businessStatus === "existing") applicability = "verify_existing";
       else if (options.businessStatus === "new") applicability = recommended ? "recommended" : "required";
     } else if (winCompliance === "supporting_evidence" && applicability !== "not_applicable") {

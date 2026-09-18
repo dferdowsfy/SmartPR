@@ -75,6 +75,20 @@ function classify(input: EngineInput, businessStatus: "new" | "existing" | "proj
   };
 }
 
+/** classify() variant that forwards confirmed municipality-flag decisions,
+ *  simulating the UI's potential-requirement confirmation step. */
+function classifyWithDecisions(
+  input: EngineInput,
+  businessStatus: "new" | "existing" | "project_only" | null,
+  potentialDecisions: Record<string, "applies" | "not_applies" | "not_sure">
+) {
+  const { requirements, debug } = runRulesEngine(KB, input);
+  return {
+    classified: classifyEngineRequirements(requirements, { kb: KB, businessStatus, potentialDecisions }),
+    debug,
+  };
+}
+
 test("premise: doc ids resolve from documents.json and Guaynabo has the metro flag", () => {
   assert.equal(DOC_SAM, "DOC_SAM_REGISTRATION");
   assert.equal(DOC_CONTRACTOR, "DOC_CONTRACTOR_LICENSE");
@@ -1255,9 +1269,11 @@ test("CASE S: DOC_CHILDCARE_LICENSE + DOC_CONTRACTOR_LICENSE are verify_existing
   // (BT_GENERAL_CONTRACTOR, heuristic, missing_fact_keys=
   // [residential_work]) — verify_existing on it would promote
   // needs_more_information to REQUIRED for new general contractors.
-  // Deliberately NOT swept: DOC_HAZMAT_HANDLER — its rules render
-  // conditional (undecided municipality-flag honesty posture), never
-  // REQUIRED-as-new, so there is no posture defect to fix.
+  // (An earlier draft of this test also excluded DOC_HAZMAT_HANDLER as
+  // "conditional by design"; the 2026-09-18 live production audit proved the
+  // environmental families fire REQUIRED-as-new for existing plants once the
+  // industrial_port flag is confirmed, so they are swept in CASE T instead —
+  // with the asserted-basis gate keeping unconfirmed flags conditional.)
   const DOC_CHILDCARE = docByName("childcare", "education license");
   const DOC_CONTRACTOR = docByName("contractor license");
 
@@ -1381,5 +1397,95 @@ test("CASE S: DOC_CHILDCARE_LICENSE + DOC_CONTRACTOR_LICENSE are verify_existing
     byId(freshContractor, DOC_CONTRACTOR)?.applicability,
     "required",
     "a new electrical contractor still gets the DACO contractor license as REQUIRED"
+  );
+});
+
+test("CASE T: industrial-port environmental posture — confirmed flag verifies for existing plants; unconfirmed flags stay conditional", () => {
+  // 2026-09-18 09:00 QA cycle, live production audit: a 12-year Ponce
+  // chemical manufacturer (S36) was shown the NPDES industrial-discharge
+  // permit, the RCRA hazardous-waste handler ID, and the Title V air-emission
+  // permit as REQUIRED once the industrial_port municipality flag was
+  // confirmed — as if the operating plant were applying for the first time.
+  // Local evaluation had rendered them conditional only because the flag was
+  // unconfirmed in the harness; production is the tiebreaker. Same defect
+  // class as the earlier sweeps: these are operating obligations — an
+  // operating plant verifies what it holds. Swept
+  // compliance_mode=verify_existing onto the 21 non-heuristic
+  // municipality_flag rules with no missing_fact_keys:
+  // DOC_NPDES_INDUSTRIAL (RULE_0559 chemical, 0562 pharmaceutical, 0565
+  // food, 0568 beverage, 0571 textile, 0574 furniture, 0576 medical-device
+  // manufacturing), DOC_HAZMAT_HANDLER (RULE_0560, 0563, 0566, 0569, 0572,
+  // 0575, 0577, plus 0585 wholesale distributor and 0586 body shop),
+  // DOC_AIR_EMISSION_PERMIT (RULE_0561, 0564, 0567, 0570, 0573).
+  //
+  // Paired with the sweep, requirementApplicability.ts now applies posture
+  // mapping only to an ASSERTED basis (required / likely_required). A
+  // conditional winning basis — an unconfirmed municipality flag — stays
+  // conditional for both existing and new businesses, so the sweep cannot
+  // assert applicability the engine deliberately left undecided (and cannot
+  // flip needs_more_information either).
+  const DOC_NPDES = "DOC_NPDES_INDUSTRIAL";
+  const DOC_HAZMAT = "DOC_HAZMAT_HANDLER";
+  const DOC_AIR = "DOC_AIR_EMISSION_PERMIT";
+  const input = {
+    municipalityName: "Ponce",
+    businessTypeName: "Chemical Manufacturing",
+    businessStatus: "existing" as const,
+    answers: { Q_PHYSICAL_LOCATION: true, Q_EMPLOYEES_HIRED: true },
+  };
+
+  // Flag confirmed (the live S36 state): an operating plant verifies.
+  const confirmed = classifyWithDecisions(input, "existing", {
+    industrial_port: "applies",
+  }).classified;
+  for (const [id, label] of [
+    [DOC_NPDES, "NPDES industrial-discharge permit"],
+    [DOC_HAZMAT, "RCRA hazardous-waste handler ID"],
+    [DOC_AIR, "Title V air-emission permit"],
+  ] as const) {
+    assert.equal(
+      byId(confirmed, id)?.applicability,
+      "verify_existing",
+      `an operating Ponce chemical plant verifies its ${label} (not REQUIRED-as-new)`
+    );
+  }
+
+  // Flag unconfirmed (the local S36 harness state): honesty preserved —
+  // the engine does not assert applicability it has not established.
+  const unconfirmed = classify(input, "existing").classified;
+  for (const [id, label] of [
+    [DOC_NPDES, "NPDES industrial-discharge permit"],
+    [DOC_HAZMAT, "RCRA hazardous-waste handler ID"],
+    [DOC_AIR, "Title V air-emission permit"],
+  ] as const) {
+    assert.equal(
+      byId(unconfirmed, id)?.applicability,
+      "conditional",
+      `an unconfirmed industrial_port flag keeps the ${label} conditional`
+    );
+  }
+
+  // New plant, flag confirmed: still applies for the first time.
+  const freshConfirmed = classifyWithDecisions(
+    { ...input, businessStatus: "new" },
+    "new",
+    { industrial_port: "applies" }
+  ).classified;
+  assert.equal(
+    byId(freshConfirmed, DOC_HAZMAT)?.applicability,
+    "required",
+    "a new chemical plant with a confirmed flag still gets the handler ID as REQUIRED"
+  );
+
+  // New plant, flag unconfirmed: stays conditional (the sweep must not turn
+  // an undecided flag into a REQUIRED filing obligation).
+  const freshUnconfirmed = classify(
+    { ...input, businessStatus: "new" },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(freshUnconfirmed, DOC_HAZMAT)?.applicability,
+    "conditional",
+    "an unconfirmed flag stays conditional for new businesses too"
   );
 });
