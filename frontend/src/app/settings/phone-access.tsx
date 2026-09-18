@@ -8,6 +8,7 @@ interface PhoneStatus {
   phone_display?: string;
   last_verified_at?: string | null;
   locked?: boolean;
+  auto_recap_enabled?: boolean;
 }
 
 const inputClass =
@@ -24,6 +25,8 @@ export default function PhoneAccessSection({ hideHeader = false }: { hideHeader?
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<"view" | "enroll" | "change">("view");
+  const [autoRecap, setAutoRecap] = useState<boolean | null>(null);
+  const [recapBusy, setRecapBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -32,6 +35,7 @@ export default function PhoneAccessSection({ hideHeader = false }: { hideHeader?
       const response = await fetch("/api/voice/settings");
       const data = (await response.json()) as PhoneStatus;
       setStatus(data);
+      setAutoRecap(data.auto_recap_enabled ?? true);
       if (data.enrolled) setMode("view");
       else setMode("enroll");
     } catch {
@@ -100,6 +104,35 @@ export default function PhoneAccessSection({ hideHeader = false }: { hideHeader?
     if (data) setMessage("Phone access is turned off.");
   };
 
+  const setRecapPreference = async (enabled: boolean) => {
+    if (recapBusy || autoRecap === enabled) return;
+    setRecapBusy(true);
+    setMessage(null);
+    setError(null);
+    try {
+      const response = await fetch("/api/voice/settings/auto-recap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.message || data.error || "Could not save your recap preference.");
+        return;
+      }
+      setAutoRecap(data.auto_recap_enabled);
+      setMessage(
+        enabled
+          ? "Automatic call recaps are on — you'll get an email recap after every voice call."
+          : "Automatic call recaps are off. You can still ask for a recap during a call."
+      );
+    } catch {
+      setError("Could not save your recap preference. Please try again.");
+    } finally {
+      setRecapBusy(false);
+    }
+  };
+
   if (loading) {
     return <p className="text-sm text-[#161616]/50">Loading phone access…</p>;
   }
@@ -157,6 +190,33 @@ export default function PhoneAccessSection({ hideHeader = false }: { hideHeader?
             >
               Turn off
             </button>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 px-3 py-3">
+            <p className="text-sm font-medium text-[#161616]">Automatic call recaps</p>
+            <p className="mt-0.5 text-sm text-[#161616]/60">
+              Email me a recap after every voice call. You can still ask for one during a call.
+            </p>
+            <div className="mt-2 inline-flex rounded-lg border border-slate-300 p-0.5" role="group" aria-label="Automatic call recaps">
+              {(["yes", "no"] as const).map((choice) => {
+                const value = choice === "yes";
+                const active = autoRecap === value;
+                return (
+                  <button
+                    key={choice}
+                    type="button"
+                    onClick={() => void setRecapPreference(value)}
+                    disabled={recapBusy || autoRecap === null}
+                    aria-pressed={active}
+                    className={`rounded-md px-4 py-1.5 text-sm font-medium disabled:opacity-50 ${
+                      active ? "bg-[#161616] text-white" : "text-[#161616]/70"
+                    }`}
+                  >
+                    {choice === "yes" ? "Yes" : "No"}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
