@@ -313,11 +313,30 @@ export interface DiscoveryQuestionDef {
  * Returns null when the industry isn't found — callers fall back to the
  * hardcoded lists.
  */
+/**
+ * Intake industry labels that don't exactly match their KB industry names.
+ * Maps normalized intake label -> KB industry name. Without these aliases the
+ * exact-match lookup below misses and every business type under the industry
+ * silently disappears from the intake dropdown (their rules can then never
+ * fire for any user): "Government Contractor" vs KB "Government Contractors",
+ * "Accommodation & Tourism" vs KB "Tourism & Hospitality", and
+ * "Nonprofit / Religious Organization" vs KB "Nonprofit & Religious
+ * Organizations".
+ */
+const INTAKE_INDUSTRY_ALIASES: Record<string, string> = {
+  "government contractor": "Government Contractors",
+  "accommodation & tourism": "Tourism & Hospitality",
+  "nonprofit / religious organization": "Nonprofit & Religious Organizations",
+};
+
 export function businessTypeNamesForIndustry(industryName?: string): string[] | null {
   if (!industryName) return null;
   const norm = industryName.trim().toLowerCase();
   const industries = industriesJson as Array<{ id: string; name: string }>;
-  const industry = industries.find((i) => i.name.trim().toLowerCase() === norm);
+  const industry = industries.find((i) => i.name.trim().toLowerCase() === norm)
+    ?? (INTAKE_INDUSTRY_ALIASES[norm]
+      ? industries.find((i) => i.name.trim().toLowerCase() === INTAKE_INDUSTRY_ALIASES[norm].trim().toLowerCase())
+      : undefined);
   if (!industry) return null;
   const types = (KB.businessTypes as Array<{ industry_id?: string; name: string }>).filter(
     (b) => b.industry_id === industry.id

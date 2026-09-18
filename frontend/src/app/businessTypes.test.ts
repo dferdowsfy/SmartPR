@@ -12,8 +12,28 @@ describe("businessTypeNamesForIndustry", () => {
   });
 
   it("returns null for industries the KB doesn't know (hardcoded fallback)", () => {
-    assert.equal(businessTypeNamesForIndustry("Nonprofit / Religious Organization"), null);
+    assert.equal(businessTypeNamesForIndustry("Some Unknown Industry"), null);
     assert.equal(businessTypeNamesForIndustry(undefined), null);
+  });
+
+  it("resolves intake labels that differ from KB industry names (alias map)", () => {
+    // Regression: "Government Contractor" (intake) vs "Government Contractors"
+    // (KB) — every IND_GOVCON business type was silently missing from the
+    // intake dropdown, so BT-keyed rules (e.g. GL Insurance for government
+    // contractors) could never fire for any user.
+    const govcon = businessTypeNamesForIndustry("Government Contractor");
+    assert.ok(govcon && govcon.includes("IT Government Contractor"),
+      `IT gov-con type missing: ${JSON.stringify(govcon)}`);
+    assert.ok(govcon && govcon.includes("Construction Government Contractor"),
+      `construction gov-con type missing: ${JSON.stringify(govcon)}`);
+
+    const tourism = businessTypeNamesForIndustry("Accommodation & Tourism");
+    assert.ok(tourism && tourism.includes("Guest House"),
+      `Guest House missing: ${JSON.stringify(tourism)}`);
+
+    const nonprofit = businessTypeNamesForIndustry("Nonprofit / Religious Organization");
+    assert.ok(nonprofit && nonprofit.includes("Nonprofit Organization"),
+      `Nonprofit Organization missing: ${JSON.stringify(nonprofit)}`);
   });
 
   it("KB type names resolve in the business-type resolver", () => {
