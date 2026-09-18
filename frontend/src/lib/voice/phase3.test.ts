@@ -102,13 +102,16 @@ function makeFakeDb(mem: Mem) {
               id: mem.sessionId,
               user_id: mem.userId,
               phone_e164: "+17870000001",
+              issued_at: new Date(Date.now() - 10 * 60_000).toISOString(),
               expires_at: FUTURE,
               revoked_at: null,
             },
           ],
         };
       }
-      if (s.includes("UPDATE voice_sessions SET last_used_at")) return { rows: [] };
+      if (s.includes("UPDATE voice_sessions") && (s.includes("last_used_at") || s.includes("expires_at"))) {
+        return { rows: [] };
+      }
       if (s.includes("FROM voice_access WHERE user_id")) {
         return { rows: [{ email: mem.email }] };
       }
@@ -350,7 +353,7 @@ function makeFakeDb(mem: Mem) {
             d.user_id === params[0] &&
             d.business_id === params[1] &&
             d.kind === params[2] &&
-            new Date(String(d.generated_at)).getTime() > Date.now() - 10 * 60_1000
+            new Date(String(d.generated_at)).getTime() > Date.now() - 10 * 60_000
         );
         return { rows };
       }

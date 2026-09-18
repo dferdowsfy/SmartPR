@@ -41,7 +41,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_voice_access_phone ON voice_access(phone_e
 CREATE UNIQUE INDEX IF NOT EXISTS idx_voice_access_pin_uid ON voice_access(pin_uid);
 
 -- ---------------------------------------------------------------------------
--- voice_sessions: short-lived authenticated voice sessions.
+-- voice_sessions: authenticated voice sessions (30m sliding idle, 120m absolute from issued_at).
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS voice_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -5,7 +5,9 @@ import {
   generateSessionToken,
   hashSessionToken,
   isGatewayAuthorized,
+  renewedSessionExpiresAt,
   sessionExpiresAt,
+  MAX_SESSION_ABSOLUTE_MINUTES,
   SESSION_TOKEN_PREFIX,
   SESSION_TTL_MINUTES,
 } from "./session";
@@ -38,6 +40,34 @@ describe("session tokens", () => {
     assert.equal(extractSessionToken("Bearer not-a-voice-token"), null);
     assert.equal(extractSessionToken(null), null);
     assert.equal(extractSessionToken("Token abc"), null);
+  });
+});
+
+describe("renewedSessionExpiresAt", () => {
+  it("extends by idle TTL early in the session", () => {
+    const issuedAt = new Date("2026-01-01T00:00:00.000Z");
+    const now = new Date("2026-01-01T00:10:00.000Z");
+    const renewed = renewedSessionExpiresAt(issuedAt, now);
+    assert.equal(
+      renewed.toISOString(),
+      new Date(now.getTime() + SESSION_TTL_MINUTES * 60_000).toISOString()
+    );
+  });
+
+  it("caps renew at issued_at + absolute max near end of call", () => {
+    const issuedAt = new Date("2026-01-01T00:00:00.000Z");
+    // 100 minutes after issue: sliding would be +30 (=130) but absolute is 120
+    const now = new Date("2026-01-01T01:40:00.000Z");
+    const renewed = renewedSessionExpiresAt(issuedAt, now);
+    const absolute =
+      issuedAt.getTime() + MAX_SESSION_ABSOLUTE_MINUTES * 60_000;
+    assert.equal(renewed.getTime(), absolute);
+    assert.ok(renewed.getTime() < now.getTime() + SESSION_TTL_MINUTES * 60_000);
+  });
+
+  it("keeps SESSION_TTL as idle window and absolute at 120", () => {
+    assert.equal(SESSION_TTL_MINUTES, 30);
+    assert.equal(MAX_SESSION_ABSOLUTE_MINUTES, 120);
   });
 });
 
