@@ -802,20 +802,20 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Business Consulting Firm": ["Professional Office", "Commercial Office", "Shared Workspace", "Home-Based Business", "Online Only"],
   "Notary Services": ["Professional Office", "Commercial Office", "Home-Based Business"],
   "Translation Services": ["Home-Based Business", "Shared Workspace", "Online Only", "Professional Office"],
-  "Clothing Store": ["Retail Storefront"],
-  "Jewelry Store": ["Retail Storefront"],
-  "Electronics Store": ["Retail Storefront"],
+  "Clothing Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
+  "Jewelry Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
+  "Electronics Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
   "Furniture Store": ["Retail Storefront", "Warehouse"],
   "Hardware Store": ["Retail Storefront", "Warehouse"],
-  "Sporting Goods Store": ["Retail Storefront"],
-  "Pet Store": ["Retail Storefront"],
-  "Gift Shop": ["Retail Storefront"],
+  "Sporting Goods Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
+  "Pet Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
+  "Gift Shop": ["Retail Storefront", "Home-Based Business", "Online Only"],
   "Convenience Store": ["Retail Storefront"],
   "E-Commerce Business": ["Online Only", "Home-Based Business", "Warehouse", "Commercial Office"],
   "Cannabis Dispensary": ["Retail Storefront", "Healthcare Facility"],
-  "Cosmetics Store": ["Retail Storefront"],
+  "Cosmetics Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
   "Pharmacy Retail": ["Retail Storefront"],
-  "Home Goods Store": ["Retail Storefront"],
+  "Home Goods Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
   "General Contractor": ["Commercial Office", "Warehouse", "Industrial Facility", "Home-Based Business"],
   "Electrical Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
   "Plumbing Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
@@ -839,14 +839,14 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Water Sports Company": ["Tourism Facility"],
   "Marina": ["Tourism Facility"],
   "Travel Agency": ["Commercial Office", "Home-Based Business", "Online Only"],
-  "Beauty Salon": ["Retail Storefront", "Commercial Office", "Mixed Use Property"],
-  "Barbershop": ["Retail Storefront", "Commercial Office", "Mixed Use Property"],
-  "Nail Salon": ["Retail Storefront", "Commercial Office"],
-  "Spa": ["Commercial Office", "Retail Storefront"],
-  "Massage Therapy": ["Professional Office", "Commercial Office"],
-  "Tattoo Shop": ["Retail Storefront", "Commercial Office"],
+  "Beauty Salon": ["Retail Storefront", "Commercial Office", "Mixed Use Property", "Home-Based Business"],
+  "Barbershop": ["Retail Storefront", "Commercial Office", "Mixed Use Property", "Home-Based Business"],
+  "Nail Salon": ["Retail Storefront", "Commercial Office", "Home-Based Business"],
+  "Spa": ["Commercial Office", "Retail Storefront", "Home-Based Business"],
+  "Massage Therapy": ["Professional Office", "Commercial Office", "Home-Based Business"],
+  "Tattoo Shop": ["Retail Storefront", "Commercial Office", "Home-Based Business"],
   "Cosmetic Clinic": ["Healthcare Facility", "Commercial Office"],
-  "Esthetics Studio": ["Commercial Office", "Retail Storefront"],
+  "Esthetics Studio": ["Commercial Office", "Retail Storefront", "Home-Based Business"],
   "Makeup Studio": ["Commercial Office", "Retail Storefront", "Home-Based Business"],
   "Hair Removal Studio": ["Commercial Office", "Healthcare Facility"],
   "Food Manufacturing": ["Industrial Facility"],
@@ -4797,7 +4797,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Renewable documents (per the knowledge graph's extensions.renewals) get
     // an optional expiry-date capture. "I don't know" = empty = no reminders,
     // never estimated. The date flows into obligations.due_date on capture.
-    const isRenewable = !!req.document_id && renewableDocumentIds.has(req.document_id);
+    // The capture only applies when the user can already hold the document:
+    // an existing business verifying current obligations. For a new business
+    // the document doesn't exist yet, so "When does your current one expire?"
+    // is wrong-status copy (QA 2026-09-18: S25/S26/S27 showed the expiry
+    // prompt on new-business Merchant Registration, Patente, Health, Fire,
+    // CFPM cards). Unknown intent defaults to hidden — never presume a
+    // current document.
+    const isRenewable =
+      !!req.document_id &&
+      renewableDocumentIds.has(req.document_id) &&
+      projectIntent === "existing_business";
     const expiryValue = expiryDates[req.code] || "";
     const expiryBlock = isRenewable ? (
       <div style={{ marginTop: 8, padding: 10, background: 'var(--surface-2)', borderRadius: 8, fontSize: 13 }}>

@@ -30,3 +30,36 @@ test("Tutoring Center offers a home-based location option", () => {
       (LOCATION_TYPES_BY_BUSINESS_TYPE["Tutoring Center"] ?? []).join(", ")
   );
 });
+
+// Generalized 2026-09-18 (live, Cataño home-based jeweler): the same defect
+// recurred for "Jewelry Store", whose options were ["Retail Storefront"]
+// only. Retail and personal-care business types that can plausibly operate
+// from home must all offer a home-based label, so the AI-extracted
+// home-based fact survives the location combobox.
+const HOME_PLAUSIBLE_BUSINESS_TYPES = [
+  "Clothing Store",
+  "Jewelry Store",
+  "Electronics Store",
+  "Sporting Goods Store",
+  "Pet Store",
+  "Gift Shop",
+  "Cosmetics Store",
+  "Home Goods Store",
+  "Beauty Salon",
+  "Barbershop",
+  "Nail Salon",
+  "Spa",
+  "Massage Therapy",
+  "Tattoo Shop",
+  "Esthetics Studio",
+  "Makeup Studio",
+];
+
+test("home-plausible retail/personal-care types offer a home-based location option", () => {
+  const missing = HOME_PLAUSIBLE_BUSINESS_TYPES.filter((bt) => !hasHomeBasedOption(bt));
+  assert.deepEqual(
+    missing,
+    [],
+    `business types missing a home-based location option: ${missing.join(", ")}`
+  );
+});
