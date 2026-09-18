@@ -1130,3 +1130,107 @@ test("CASE Q: DOC_PROFESSIONAL_LICENSE is verify_existing for existing licensed 
     "the controlling unanswered fact must be named"
   );
 });
+
+test("CASE R: DOC_ALCOHOL_LICENSE family + outdoor seating + background check are verify_existing for existing businesses, required for new ones", () => {
+  // 2026-09-18 06:00 QA cycle (S32, Carolina): an operating restaurant/bar
+  // serving alcohol for 2+ years (with an existing sidewalk seating area)
+  // was shown the retail alcohol license, CRIM clearance, ASUME clearance,
+  // alcohol-path background check, and outdoor seating authorization all as
+  // REQUIRED — as if applying for the first time. None of the document
+  // rules carried compliance_mode, so existing operators were told to apply
+  // as new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4),
+  // tourism (3348c4d), vehicle (6818ff1), and professional-license sweeps:
+  // these are operating obligations — an operating business verifies what
+  // it holds. Swept compliance_mode=verify_existing onto the verified rules
+  // with no missing_fact_keys: DOC_ALCOHOL_LICENSE (RULE_0013, 0015, 0066,
+  // 0083), DOC_CRIM_CLEARANCE (RULE_0621, 0623, 0630, 0633),
+  // DOC_ASUME_CLEARANCE (RULE_0624, 0626, 0631, 0634),
+  // DOC_BACKGROUND_CHECK (RULE_0039, 0192, 0195, 0198, 0201, 0204, 0207,
+  // 0255, 0627, 0629, 0632, 0635), DOC_OUTDOOR_SEATING_AUTH (RULE_0031).
+  // Deliberately excluded per the RULE_0664 lesson: RULE_0014, 0622, 0625,
+  // 0628 (heuristic alcohol-path rules with missing_fact_keys=
+  // [alcohol_sold]) and RULE_0665 (heuristic sales projection with
+  // missing_fact_keys=[alcohol_sales_volume]) — verify_existing on those
+  // would promote needs_more_information to REQUIRED for new businesses.
+  const DOC_ALCOHOL = docByName("alcohol beverage license");
+  const DOC_CRIM = docByName("crim", "clearance");
+  const DOC_ASUME = docByName("asume", "clearance");
+  const DOC_BGCHECK = docByName("background check");
+  const DOC_SEATING = docByName("outdoor seating");
+  const DOC_PROJ = docByName("alcohol sales projection");
+
+  const existing = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Bar",
+      businessStatus: "existing",
+      answers: {
+        Q_ALCOHOL_SOLD: true,
+        Q_OUTDOOR_SEATING: true,
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  for (const [id, label] of [
+    [DOC_ALCOHOL, "alcohol license"],
+    [DOC_CRIM, "CRIM clearance"],
+    [DOC_ASUME, "ASUME clearance"],
+    [DOC_BGCHECK, "alcohol-path background check"],
+    [DOC_SEATING, "outdoor seating authorization"],
+  ] as const) {
+    assert.equal(
+      byId(existing, id)?.applicability,
+      "verify_existing",
+      `an operating bar verifies its existing ${label} (not REQUIRED-as-new)`
+    );
+  }
+  // The heuristic sales-projection rule keeps its NMI honesty — never
+  // promoted to verify_existing or required by this sweep.
+  assert.equal(
+    byId(existing, DOC_PROJ)?.applicability,
+    "needs_more_information",
+    "RULE_0665 stays needs_more_information (heuristic, excluded from sweep)"
+  );
+
+  // The background-check sweep generalizes beyond alcohol: an operating
+  // daycare verifies its existing background-check posture too.
+  const daycare = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Daycare",
+      businessStatus: "existing",
+      answers: { Q_CHILDREN_PRESENT: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(daycare, DOC_BGCHECK)?.applicability,
+    "verify_existing",
+    "an operating daycare verifies its existing background-check posture"
+  );
+
+  // New businesses still apply for the first time.
+  const fresh = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Bar",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: { Q_ALCOHOL_SOLD: true, Q_OUTDOOR_SEATING: true },
+    },
+    "new"
+  ).classified;
+  for (const [id, label] of [
+    [DOC_ALCOHOL, "alcohol license"],
+    [DOC_SEATING, "outdoor seating authorization"],
+  ] as const) {
+    assert.equal(
+      byId(fresh, id)?.applicability,
+      "required",
+      `a new bar still gets the ${label} as REQUIRED`
+    );
+  }
+});
