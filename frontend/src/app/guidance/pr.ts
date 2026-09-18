@@ -71,6 +71,12 @@ export const PR_GUIDANCE_SOURCES = {
   // file the monthly return by the 10th). No invented procedure.
   tourism: source("SRC_GUIDANCE_TOURISM", "Compañía de Turismo de Puerto Rico", "Ley 272-2003 — Registro de hosteleros (Art. 26, 13 L.P.R.A. § 2271q)", "https://tourism.pr.gov/", "Short-term lodging (stays of fewer than 90 days) registers with the Compañía de Turismo as an innkeeper (hostelero) and obtains an Innkeeper Identification Number; registration applies island-wide."),
   roomTax: source("SRC_GUIDANCE_ROOM_TAX", "Compañía de Turismo de Puerto Rico", "Ley 272-2003, Art. 28(A)-(B) (13 L.P.R.A. § 2271s) — declaración del impuesto sobre el canon por ocupación de habitación", "https://tourism.pr.gov/", "Article 28(A)-(B) governs the room-occupancy tax declaration: operators file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month."),
+  // REG-GUIDE-OPPE-001 (2026-09-18 QA): the OPPE installer registration card
+  // rendered the unvalidated-description placeholder on a live Toa Alta
+  // solar-installer filing. The official Solicitud de Certificación form
+  // (rev. Feb 2025) was verified on docs.pr.gov — the concept below is
+  // grounded in that form and Ley 17-2019. No invented procedure.
+  oppe: source("SRC_GUIDANCE_OPPE", "Programa de Política Pública Energética (PPPE), DDEC", "Ley 17-2019 (Política Pública Energética) — Certificación de Instalador de Sistemas Eléctricos Renovables", "https://docs.pr.gov/files/DDEC/PPPE/Solicitud%20de%20Certificaci%C3%B3n%20de%20Instalador%20de%20Sistemas%20El%C3%A9ctricos%20Renovables.pdf", "The PPPE certifies installers of renewable electric systems (photovoltaic or wind); new and renewal applications use the official Solicitud de Certificación (rev. Feb 2025), submitted by email to energia@ddec.pr.gov or in person."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -408,5 +414,19 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The monthly return reports the room-occupancy tax collected on guest stays. It is separate from the innkeeper registration itself — the registration authorizes the operation; the return accounts for the tax.", "La declaración mensual informa el impuesto sobre el canon por ocupación de habitación cobrado en las estadías de huéspedes. Es independiente del registro de hostelero — el registro autoriza la operación; la declaración rinde cuentas del impuesto."),
     text("File the monthly room-tax declaration with the Compañía de Turismo by the 10th of each month and pay the room-occupancy tax collected during the prior month.", "Radica la declaración mensual del impuesto de habitación en la Compañía de Turismo el día 10 de cada mes y paga el impuesto sobre el canon por ocupación cobrado durante el mes anterior."),
     text("A filed return keeps the innkeeper account current; operating short-term lodging without filing the monthly return exposes the operator to penalties.", "Una declaración radicada mantiene la cuenta de hostelero al día; operar alojamiento de corta duración sin radicar la declaración mensual expone al operador a penalidades."),
+  ]),
+  // REG-GUIDE-OPPE-001 (2026-09-18 QA): the OPPE installer registration card
+  // rendered the unvalidated-description placeholder on a live Toa Alta
+  // solar-installer filing. Conditions cover the BT firing path
+  // (RULE_0605, BT_SOLAR_INSTALLER) plus the generic businessType fallback
+  // (d4940f4 class).
+  DOC_OPPE_INSTALLER_REG: concept("DOC_OPPE_INSTALLER_REG", [
+    [condition("businessType", "Solar Installer", "Instalador solar", "BT_SOLAR_INSTALLER")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.oppe], [
+    text("Puerto Rico's energy public policy (Ley 17-2019) requires installers of renewable electric systems to hold the PPPE/OPPE installer registration — the Certificación de Instalador de Sistemas Eléctricos Renovables. The registration identifies the system types the installer is qualified for — photovoltaic (PV) or wind (AE) — and must be renewed.", "La política pública energética de Puerto Rico (Ley 17-2019) exige que los instaladores de sistemas eléctricos renovables tengan el registro de instalador de OPPE — la Certificación de Instalador de Sistemas Eléctricos Renovables del PPPE. El registro identifica los tipos de sistema para los que el instalador está cualificado — fotovoltaico (PV) o aerogenerador (AE) — y hay que renovarlo."),
+    text("The OPPE installer registration is the installer's credential with the energy program: it documents that the installer completed the required installer course (or NABCEP/US course plus the 4-hour PR norms course), holds a professional license as an engineer or electrician, and passed the exam.", "El registro de instalador de OPPE es la credencial del instalador ante el programa de energía: documenta que completó el curso de instalador requerido (o el curso NABCEP/EE. UU. más el curso de 4 horas de normas de PR), que tiene licencia profesional de ingeniero o electricista, y que aprobó el examen."),
+    text("Apply for a new OPPE installer registration or renew with the PPPE (Programa de Política Pública Energética, DDEC): complete the official application, attach the course certificate, the exam score (new applications), the professional license, and evidence of collegiation for engineers, and submit by email to energia@ddec.pr.gov or in person at the PPPE offices.", "Solicita el registro de instalador de OPPE nuevo o la renovación en el PPPE (Programa de Política Pública Energética, DDEC): completa la solicitud oficial, adjunta el certificado del curso, la puntuación del examen (solicitudes nuevas), la licencia profesional y la evidencia de colegiación para ingenieros, y envíala por correo electrónico a energia@ddec.pr.gov o entrégala en persona en las oficinas del PPPE."),
+    text("Working as a renewable-systems installer without the OPPE installer registration leaves the work outside the energy program's authorization framework; false statements on the application are grounds for cancellation of the certification and fines.", "Trabajar como instalador de sistemas renovables sin el registro de instalador de OPPE deja el trabajo fuera del marco de autorización del programa de energía; la información falsa en la solicitud es motivo de cancelación de la certificación y multas."),
   ]),
 };

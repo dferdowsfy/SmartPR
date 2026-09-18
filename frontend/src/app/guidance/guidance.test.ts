@@ -22,9 +22,9 @@ function req(id: string): GuidanceRequirement {
 // rules for the health permit (RULE_0062), fire certificate (RULE_0063) and
 // CFPM (RULE_0064), so the businessType fallback explains those matches
 // honestly instead of hedging (2026-09-18 QA, d4940f4 class). They are no
-// longer gated sets — see the twenty-nine test below, which expects them
+// longer gated sets — see the thirty test below, which expects them
 // VALIDATED for the bar.
-const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREEMENT", "DOC_OGPE_CONSTRUCTION_PERMIT"]);
+const SOLAR_GATED = new Set(["DOC_LUMA_INTERCONNECTION", "DOC_NET_METERING_AGREEMENT", "DOC_OGPE_CONSTRUCTION_PERMIT", "DOC_OPPE_INSTALLER_REG"]);
 // Federal-contractor-gated: SAM.gov registration applies only to businesses
 // pursuing federal contracts, so it stays provisional for the bar profile.
 const CONTRACTOR_GATED = new Set(["DOC_SAM_REGISTRATION", "DOC_CONTRACTOR_LICENSE"]);
@@ -60,7 +60,7 @@ const TOURISM_GATED = new Set(["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN"
 // (REG-GUIDE-FORMATION-001, 2026-09-17).
 const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
 
-test("same Bayamón bar: all twenty-nine source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all thirty source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
@@ -80,7 +80,7 @@ test("same Bayamón bar: all twenty-nine source-backed explanations are distinct
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 29);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 30);
   }
 });
 
@@ -151,6 +151,31 @@ test("tourism concepts validate for every lodging firing path in EN/ES", () => {
       const g = buildRequirementGuidance(req(id), { ...mkCtx("Guest House", { [writeKey]: true }), language });
       assert.equal(g.status, "VALIDATED", `${id}: ${g.reviewReasons}`);
       assert.deepEqual(g.triggerFacts.map(f => f.key), [qkey]);
+    }
+  }
+});
+
+// REG-GUIDE-OPPE-001 (2026-09-18 QA): the OPPE installer registration card
+// rendered the unvalidated-description placeholder on a live Toa Alta
+// solar-installer filing. The concept now validates for the BT firing path
+// (RULE_0605, BT_SOLAR_INSTALLER) and the generic businessType fallback,
+// in EN and PR-ES, with the PPPE source grounded in the verified official
+// form (docs.pr.gov, rev. Feb 2025) and Ley 17-2019.
+test("OPPE installer concept validates for the solar-installer firing path in EN/ES", () => {
+  const mkCtx = (businessTypeName: string): GuidanceContext => {
+    const p = { municipality: "Toa Alta", business_type: businessTypeName, business_structure: "LLC", location_type: "Office / Commercial", number_of_employees: 12 };
+    return { ...ctx, businessTypeName, profile: p, discoveryAnswers: {}, engineInput: buildEngineInput(p, {}) };
+  };
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_OPPE_INSTALLER_REG"), { ...mkCtx("Solar Installer"), language });
+    assert.equal(g.status, "VALIDATED", `DOC_OPPE_INSTALLER_REG: ${g.reviewReasons}`);
+    assert.deepEqual(g.triggerFacts.map(f => f.key), ["businessType"]);
+    assert.ok(g.whyThisApplies.includes(g.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(g), /validated description pending|not confirmed yet/);
+    assert.match(JSON.stringify(g.sources), /Ley 17-2019|docs\.pr\.gov/);
+    if (language === "es") {
+      assert.doesNotMatch(g.regulatoryReason, /installer certification is the installer's credential/);
+      assert.match(g.regulatoryReason, /Ley 17-2019/);
     }
   }
 });
