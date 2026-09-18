@@ -159,13 +159,45 @@ function contextualLead(triggerFacts: TriggerFact[], ctx: GuidanceContext): stri
   return es ? `Tu situación: ${facts}.` : `Your situation: ${facts}.`;
 }
 
+/** Puerto Rican Spanish renderings of the jurisdiction pack's municipality
+ *  flag-advisory texts (flagAdvisories[].why), keyed by potential_* requirement
+ *  code. The pack authors these advisories in English only; the L() dictionary
+ *  has no entries for them, so without this map a Spanish filing would show
+ *  English advisory sentences inside the disclosure — a standing
+ *  PR-Spanish-only violation. Keep each entry paired with its pack `why`
+ *  source; if the pack text changes, update the translation to match.
+ *  (2026-09-18 QA: REG-GUIDE-ADVISORY-001's advisory() path rendered the
+ *  English req.reason verbatim under language === "es".) */
+export const POTENTIAL_ADVISORY_REASON_ES: Record<string, string> = {
+  potential_island:
+    "Vieques y Culebra dependen de la lancha de la Autoridad de Transporte Marítimo (ATM) para mover inventario, empleados y clientes, y tienen capacidad limitada en el vertedero. Los negocios de hospitalidad, comida, comercio y excursiones típicamente necesitan un manifiesto de logística de la ATM y un contrato de recogido de desperdicios comerciales.",
+  potential_coastal:
+    "Este municipio está en zona costera. Los negocios que operen cerca de la zona marítimo-terrestre pueden requerir una revisión ambiental o costera según la ubicación y las actividades.",
+  potential_tourism:
+    "Este municipio es una zona designada de turismo. Los negocios que atienden visitantes (hospedaje, excursiones, experiencias, transporte) pueden tener que registrarse en la Compañía de Turismo de Puerto Rico.",
+  potential_historic:
+    "Este municipio tiene una zona histórica designada. Los negocios de hospitalidad, comida y bebida, comercio y cuidado personal que operen en la zona histórica enfrentan revisión adicional: preservación de fachada, aprobación para alteraciones estructurales o interiores, y reglas más estrictas para los letreros, distintas al permiso de letrero regular.",
+  potential_metro:
+    "Este municipio es un área metropolitana grande con ordenanzas municipales adicionales. Según el tamaño y la ubicación del negocio, puede aplicar revisión suplementaria de zonificación, tránsito o revisión municipal.",
+  potential_capital:
+    "San Juan aplica ordenanzas propias además de los requisitos metro regulares (preservación de fachadas en el Viejo San Juan, ordenanza de ruido más estricta, zonas de carga designadas y el Permiso de Uso municipal de San Juan).",
+  potential_industrial_port:
+    "Ponce, Cataño, Guayanilla, Salinas y Yabucoa están en el corredor industrial y portuario de Puerto Rico. Los negocios de manufactura, logística y manejo de desperdicios aquí enfrentan descarga de punto fijo bajo EPA/JCA (NPDES industrial), registro como manejador de desperdicios peligrosos bajo RCRA, emisiones al aire bajo Título V y autorización de atraque de la Autoridad de los Puertos — obligaciones que no aplican a los pueblos costeros ordinarios.",
+  potential_airport_host:
+    "Carolina (LMM/SJU), Aguadilla (BQN) y Ponce (Mercedita) tienen aeropuertos con aduana activa. La logística de carga aérea, los consolidadores, los importadores y los alquileres de carros cerca del aeropuerto enfrentan fianzas de corretaje de aduana de CBP, certificación de TSA como Known Shipper / Indirect Air Carrier y acuerdos de concesión aeroportuaria que no aplican en otros lugares.",
+};
+
 /** A user-confirmed municipality advisory (potential_* requirement): not a KB
  *  document, so no validated concept exists — and none is pending. The
  *  jurisdiction pack's authored advisory text IS the honest explanation;
  *  rendering the unvalidated-document placeholder for it is wrong. */
 function advisory(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGuidance {
   const lang = ctx.language, es = lang === "es";
-  const reason = (req.reason ?? "").trim();
+  const rawReason = (req.reason ?? "").trim();
+  // The pack authors advisory text in English only: under "es" resolve the
+  // PR-Spanish rendering by requirement code so no English sentence leaks
+  // into a Spanish disclosure. Unknown codes fall back to the passed reason.
+  const reason = es ? (POTENTIAL_ADVISORY_REASON_ES[req.code ?? ""] ?? rawReason) : rawReason;
   const agency = (req.agency ?? "").trim();
   const confirmed = es
     ? "Confirmaste durante la evaluación que esto aplica a tu caso."

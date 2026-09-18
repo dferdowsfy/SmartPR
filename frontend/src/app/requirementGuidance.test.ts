@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ACTIVE_JURISDICTION } from "./jurisdictions/index.ts";
-import { buildRequirementGuidance, legalBasisFor, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
+import { buildRequirementGuidance, legalBasisFor, POTENTIAL_ADVISORY_REASON_ES, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
 import { validateGuidanceConcept } from "./guidance/model.ts";
 
 const kb = ACTIVE_JURISDICTION.kb;
@@ -461,6 +461,11 @@ test("REG-GUIDE-ADVISORY-001: user-confirmed municipality advisories never rende
   // validated description of this document is still pending." Nothing is
   // pending validation for advisories: the jurisdiction pack's authored
   // advisory text is the honest explanation.
+  //
+  // Follow-up regression (same cycle): the advisory() path rendered the
+  // pack's English-authored reason verbatim under language === "es", leaking
+  // English into Spanish disclosures. Spanish output must be Puerto Rican
+  // Spanish and must reject the English advisory sentence.
   for (const language of ["en", "es"] as const) {
     const ctx: GuidanceContext = { ...context, language };
     const req: GuidanceRequirement = {
@@ -473,7 +478,37 @@ test("REG-GUIDE-ADVISORY-001: user-confirmed municipality advisories never rende
     assert.equal(g.status, "VALIDATED", `advisory (${language})`);
     assert.doesNotMatch(g.whatThisIs, /validated description.*pending/i, `no placeholder (${language})`);
     assert.doesNotMatch(g.whyThisApplies, /hasn't validated the exact regulatory basis/i, `no unvalidated framing (${language})`);
-    assert.match(g.whatThisIs, /additional municipal ordinances/i, `advisory text shown (${language})`);
+    if (language === "es") {
+      assert.match(g.whatThisIs, /ordenanzas municipales/i, `PR-Spanish advisory text shown (${language})`);
+      assert.doesNotMatch(g.whatThisIs, /additional municipal ordinances/i, `no English advisory sentence (${language})`);
+      assert.doesNotMatch(g.whyThisApplies, /additional municipal ordinances/i, `no English in whyThisApplies (${language})`);
+      assert.doesNotMatch(g.summary, /additional municipal ordinances/i, `no English in summary (${language})`);
+    } else {
+      assert.match(g.whatThisIs, /additional municipal ordinances/i, `advisory text shown (${language})`);
+    }
     assert.ok(g.whatYouNeedToDo.length > 0 && g.whatHappensNext.length > 0, `all disclosure fields populated (${language})`);
+  }
+});
+
+test("REG-GUIDE-ADVISORY-002: every pack municipality-flag advisory has a PR-Spanish rendering", () => {
+  // The advisory() path keys Spanish output by potential_* code; a flag
+  // added to the pack without a POTENTIAL_ADVISORY_REASON_ES entry would
+  // leak English into Spanish filings. Pin the pack's flag order against
+  // the map so the two cannot drift apart silently.
+  const flags: string[] = (ACTIVE_JURISDICTION as unknown as {
+    flagAdvisories: { order: string[] };
+  }).flagAdvisories.order;
+  assert.ok(flags.length > 0, "pack defines municipality flags");
+  for (const flag of flags) {
+    const code = `potential_${flag}`;
+    assert.ok(
+      POTENTIAL_ADVISORY_REASON_ES[code]?.length > 40,
+      `PR-Spanish advisory rendering exists for ${code}`
+    );
+    assert.doesNotMatch(
+      POTENTIAL_ADVISORY_REASON_ES[code],
+      /validated description.*pending/i,
+      `no placeholder text in ${code} rendering`
+    );
   }
 });

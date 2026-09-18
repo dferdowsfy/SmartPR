@@ -6,7 +6,7 @@ import { L } from './i18n';
 import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
-import { buildRequirementGuidance, legalBasisFor } from './requirementGuidance';
+import { buildRequirementGuidance, legalBasisFor, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
@@ -2093,6 +2093,15 @@ export default function SmartPRIntake() {
         : 'We don’t know yet whether this applies to your business — answer the question right here to confirm.';
     }
     if (language === 'es') {
+      // Municipality flag advisories (potential_*): the pack authors the
+      // advisory text in English only and the L() dictionary has no entries
+      // for it — serve the PR-Spanish rendering so the card face never shows
+      // English inside a Spanish filing. (2026-09-18 QA: without this, the
+      // "Additional Municipal Review" card description rendered English.)
+      if (req.code.startsWith('potential_')) {
+        const esAdvisory = POTENTIAL_ADVISORY_REASON_ES[req.code];
+        if (esAdvisory) return esAdvisory;
+      }
       if (req.code === 'patente_municipal')
         return `Impuesto/licencia municipal requerido en el municipio de ${profile.municipality}. Usualmente requiere primero el Permiso Único.`;
       if (req.code === 'municipal_registration')
