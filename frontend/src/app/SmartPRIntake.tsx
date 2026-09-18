@@ -4854,7 +4854,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </div>
         )}
         {expiryBlock}
-        {req.code === 'sam_registration' && (
+        {req.code === 'sam_registration' && req.applicability !== 'verify_existing' && (
           <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 12.5 }}>
             <div style={{ fontWeight: 600, marginBottom: 2 }}>
               {language === 'es' ? 'Documento de apoyo requerido por GSA' : 'Supporting document required by GSA'}

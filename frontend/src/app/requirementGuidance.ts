@@ -159,6 +159,35 @@ function contextualLead(triggerFacts: TriggerFact[], ctx: GuidanceContext): stri
   return es ? `Tu situación: ${facts}.` : `Your situation: ${facts}.`;
 }
 
+/** A user-confirmed municipality advisory (potential_* requirement): not a KB
+ *  document, so no validated concept exists — and none is pending. The
+ *  jurisdiction pack's authored advisory text IS the honest explanation;
+ *  rendering the unvalidated-document placeholder for it is wrong. */
+function advisory(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGuidance {
+  const lang = ctx.language, es = lang === "es";
+  const reason = (req.reason ?? "").trim();
+  const agency = (req.agency ?? "").trim();
+  const confirmed = es
+    ? "Confirmaste durante la evaluación que esto aplica a tu caso."
+    : "You confirmed during the assessment that this applies to your case.";
+  const doNext = agency
+    ? (es ? `Verifica con ${agency} qué revisión municipal aplica a tu operación antes de actuar.` : `Check with ${agency} which municipal review applies to your operation before acting.`)
+    : (es ? "Verifica con el municipio qué revisión aplica a tu operación antes de actuar." : "Check with the municipality which review applies to your operation before acting.");
+  const thenWhat = es
+    ? "Esto queda en tu lista como una condición municipal por aclarar; no es un permiso que se solicita por separado."
+    : "This stays on your checklist as a municipal condition to clear; it is not a separate permit application.";
+  const why = `${confirmed} ${reason}`;
+  return {
+    requirementId: req.code, status: "VALIDATED", reviewReasons: [],
+    triggerFacts: [], regulatoryReason: reason, purpose: reason, nextAction: doNext,
+    consequenceOrNextStep: thenWhat,
+    dependencies: [], sources: [], sourceVersion: null,
+    summary: why, whyThisApplies: why, whatThisIs: reason,
+    whatYouNeedToDo: doNext, whatHappensNext: thenWhat,
+    triggeredBy: [], satisfiesOrUnlocks: [thenWhat], sourceReferences: [], lastVerified: null,
+  };
+}
+
 function review(req: GuidanceRequirement, ctx: GuidanceContext, reasons: string[]): RequirementGuidance {
   const es = ctx.language === "es";
   const desc = caseDescriptor(ctx);
@@ -191,6 +220,14 @@ function review(req: GuidanceRequirement, ctx: GuidanceContext, reasons: string[
 
 export function buildRequirementGuidance(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGuidance {
   const kb = ctx.kb ?? ACTIVE_JURISDICTION.kb;
+  // User-confirmed municipality advisories (potential_* items) are not KB
+  // documents: their authored flagAdvisory text is the explanation, so they
+  // never take the unvalidated-document placeholder path below.
+  // (2026-09-18 QA, live S37: the "Additional Municipal Review" card showed
+  // "A validated description of this document is still pending.")
+  if (!req.document_id && (req.code ?? "").startsWith("potential_") && (req.reason ?? "").trim()) {
+    return advisory(req, ctx);
+  }
   const raw = kb.documents.find(d => d.id === req.document_id)?.requirement_guidance;
   const problems = validateGuidanceConcept(raw, req.document_id);
   if (problems.length) return review(req, ctx, problems);

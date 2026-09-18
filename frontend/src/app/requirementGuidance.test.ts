@@ -453,3 +453,27 @@ test("REG-GUIDE-AGRI-001: bona-fide-farmer guidance validates on the coffee-plan
     assert.match(g.whyThisApplies, /bona fide/i, `names the bona fide certification (${language})`);
   }
 });
+
+test("REG-GUIDE-ADVISORY-001: user-confirmed municipality advisories never render the unvalidated-document placeholder", () => {
+  // Live QA 2026-09-18 12:00 cycle (S37, Bayamón trucking company): the
+  // "Additional Municipal Review" card (a user-confirmed metro-flag
+  // advisory, code potential_metro — not a KB document) rendered "A
+  // validated description of this document is still pending." Nothing is
+  // pending validation for advisories: the jurisdiction pack's authored
+  // advisory text is the honest explanation.
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = { ...context, language };
+    const req: GuidanceRequirement = {
+      document_id: undefined as unknown as string, code: "potential_metro",
+      name: "Additional Municipal Review", agency: "Municipal Permits Office",
+      reason: "This municipality is a major metropolitan area with additional municipal ordinances.",
+      applicability: "conditional", triggerFacts: [],
+    };
+    const g = buildRequirementGuidance(req, ctx);
+    assert.equal(g.status, "VALIDATED", `advisory (${language})`);
+    assert.doesNotMatch(g.whatThisIs, /validated description.*pending/i, `no placeholder (${language})`);
+    assert.doesNotMatch(g.whyThisApplies, /hasn't validated the exact regulatory basis/i, `no unvalidated framing (${language})`);
+    assert.match(g.whatThisIs, /additional municipal ordinances/i, `advisory text shown (${language})`);
+    assert.ok(g.whatYouNeedToDo.length > 0 && g.whatHappensNext.length > 0, `all disclosure fields populated (${language})`);
+  }
+});
