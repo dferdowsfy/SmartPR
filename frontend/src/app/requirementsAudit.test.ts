@@ -1234,3 +1234,152 @@ test("CASE R: DOC_ALCOHOL_LICENSE family + outdoor seating + background check ar
     );
   }
 });
+
+test("CASE S: DOC_CHILDCARE_LICENSE + DOC_CONTRACTOR_LICENSE are verify_existing for existing businesses, required for new ones", () => {
+  // 2026-09-18 09:00 QA cycle (S34 Mayagüez / S35 Caguas): an 8-year daycare
+  // was shown its childcare license (Ley 173-2016) as REQUIRED, and a
+  // 15-year electrical contractor was shown the DACO contractor license
+  // (Ley 146-1995) as REQUIRED — both as if applying for the first time.
+  // No rule on either document carried compliance_mode. Same defect class
+  // as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d),
+  // vehicle (6818ff1), professional-license (e6b3af3), and alcohol-family
+  // (ad5f516) sweeps: these are operating obligations — an operating
+  // business verifies what it holds. Swept compliance_mode=verify_existing
+  // onto the non-heuristic rules with no missing_fact_keys:
+  // DOC_CHILDCARE_LICENSE (RULE_0194 daycare, 0197 tutoring center, 0200
+  // vocational school, 0203 training company, 0206 after-school program),
+  // DOC_CONTRACTOR_LICENSE (RULE_0125–0137 trade contractors, 0230–0250
+  // specialty/energy/government contractors, 0642 the
+  // Q_OFFERS_CONSTRUCTION_SERVICES question trigger).
+  // Deliberately excluded per the RULE_0664 lesson: RULE_0123
+  // (BT_GENERAL_CONTRACTOR, heuristic, missing_fact_keys=
+  // [residential_work]) — verify_existing on it would promote
+  // needs_more_information to REQUIRED for new general contractors.
+  // Deliberately NOT swept: DOC_HAZMAT_HANDLER — its rules render
+  // conditional (undecided municipality-flag honesty posture), never
+  // REQUIRED-as-new, so there is no posture defect to fix.
+  const DOC_CHILDCARE = docByName("childcare", "education license");
+  const DOC_CONTRACTOR = docByName("contractor license");
+
+  // Existing daycare verifies its childcare license.
+  const daycare = classify(
+    {
+      municipalityName: "Mayagüez",
+      businessTypeName: "Daycare",
+      businessStatus: "existing",
+      answers: { Q_PHYSICAL_LOCATION: true, Q_EMPLOYEES_HIRED: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(daycare, DOC_CHILDCARE)?.applicability,
+    "verify_existing",
+    "an operating daycare verifies its existing childcare license (not REQUIRED-as-new)"
+  );
+
+  // The sweep generalizes across the whole document family (the 332b659
+  // twin-pattern lesson): an operating tutoring center verifies too. This
+  // changes posture only — RULE_0197's firing for tutoring centers (open
+  // F11 Ley 173-2016 applicability review) is untouched.
+  const tutoring = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Tutoring Center",
+      businessStatus: "existing",
+      answers: { Q_PHYSICAL_LOCATION: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(tutoring, DOC_CHILDCARE)?.applicability,
+    "verify_existing",
+    "an operating tutoring center verifies its existing childcare-license posture"
+  );
+
+  // Existing electrical contractor verifies its DACO contractor license.
+  const contractor = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Electrical Contractor",
+      businessStatus: "existing",
+      answers: {
+        Q_PHYSICAL_LOCATION: true,
+        Q_EMPLOYEES_HIRED: true,
+        Q_OFFERS_CONSTRUCTION_SERVICES: true,
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(contractor, DOC_CONTRACTOR)?.applicability,
+    "verify_existing",
+    "an operating electrical contractor verifies its existing DACO contractor license (not REQUIRED-as-new)"
+  );
+
+  // The RULE_0642 question-trigger path is covered too: an operating
+  // non-contractor business honestly answering that it offers construction
+  // services verifies rather than applies as new.
+  const handyman = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "IT Consulting",
+      businessStatus: "existing",
+      answers: { Q_PHYSICAL_LOCATION: true, Q_OFFERS_CONSTRUCTION_SERVICES: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(handyman, DOC_CONTRACTOR)?.applicability,
+    "verify_existing",
+    "RULE_0642 verify_existing posture holds for the question-trigger path"
+  );
+
+  // The heuristic general-contractor rule keeps its NMI honesty — never
+  // promoted by this sweep.
+  const gc = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "General Contractor",
+      businessStatus: "existing",
+      answers: { Q_PHYSICAL_LOCATION: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(gc, DOC_CONTRACTOR)?.applicability,
+    "needs_more_information",
+    "RULE_0123 stays needs_more_information (heuristic, excluded from sweep)"
+  );
+
+  // New businesses still apply for the first time.
+  const freshDaycare = classify(
+    {
+      municipalityName: "Mayagüez",
+      businessTypeName: "Daycare",
+      businessStatus: "new",
+      answers: { Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(freshDaycare, DOC_CHILDCARE)?.applicability,
+    "required",
+    "a new daycare still gets the childcare license as REQUIRED"
+  );
+  const freshContractor = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Electrical Contractor",
+      businessStatus: "new",
+      answers: { Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(freshContractor, DOC_CONTRACTOR)?.applicability,
+    "required",
+    "a new electrical contractor still gets the DACO contractor license as REQUIRED"
+  );
+});

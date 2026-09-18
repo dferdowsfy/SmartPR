@@ -2483,7 +2483,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0126",
@@ -2519,7 +2527,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0128",
@@ -2555,7 +2571,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0130",
@@ -2591,7 +2615,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0132",
@@ -2627,7 +2659,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0134",
@@ -2663,7 +2703,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0136",
@@ -2699,7 +2747,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0138",
@@ -3595,7 +3651,15 @@
     "citation_url": "https://childcare.familia.pr.gov/proveedores/licenciamientos.html",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CHILDCARE_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (childcare license (Ley 173-2016)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0195",
@@ -3653,7 +3717,15 @@
     "citation_url": "https://childcare.familia.pr.gov/proveedores/licenciamientos.html",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CHILDCARE_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (childcare license (Ley 173-2016)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0198",
@@ -3711,7 +3783,15 @@
     "citation_url": "https://childcare.familia.pr.gov/proveedores/licenciamientos.html",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CHILDCARE_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (childcare license (Ley 173-2016)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0201",
@@ -3769,7 +3849,15 @@
     "citation_url": "https://childcare.familia.pr.gov/proveedores/licenciamientos.html",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CHILDCARE_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (childcare license (Ley 173-2016)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0204",
@@ -3827,7 +3915,15 @@
     "citation_url": "https://childcare.familia.pr.gov/proveedores/licenciamientos.html",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CHILDCARE_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (childcare license (Ley 173-2016)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0207",
@@ -4250,7 +4346,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0232",
@@ -4264,7 +4368,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0233",
@@ -4278,7 +4390,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0235",
@@ -4292,7 +4412,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0237",
@@ -4306,7 +4434,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0238",
@@ -4557,7 +4693,15 @@
     "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0251",
@@ -6213,8 +6357,14 @@
         "date": "2026-09-17",
         "change": "excluded_business_types=[BT_AUTO_REPAIR_SHOP, BT_MOTORCYCLE_REPAIR_SHOP, BT_BODY_SHOP, BT_TIRE_SHOP]",
         "reason": "QA 2026-09-17 06:00 cycle (S7, Trujillo Alto): an existing auto repair shop honestly answering Yes to Q_OFFERS_CONSTRUCTION_SERVICES (\"construction, installation, repair, or contracting services to others\") received DACO Contractor License as REQUIRED/Critical Path. Ley 146-1995 Registro de Contratistas covers construction contractors; vehicle repair is not construction contracting. Excluding the vehicle-repair business types fixes the false positive generally; genuine contractors still trigger."
+      },
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
       }
-    ]
+    ],
+    "compliance_mode": "verify_existing"
   },
   {
     "id": "RULE_0643",
