@@ -43,6 +43,7 @@ interface FakeSession {
   id: string;
   user_id: string;
   phone_e164: string;
+  issued_at: string;
   expires_at: string;
   revoked_at: string | null;
 }
@@ -73,6 +74,7 @@ function validSession(overrides: Partial<FakeSession> = {}): FakeSession {
     id: "sess-1",
     user_id: "user-1",
     phone_e164: "+17870000001",
+    issued_at: new Date(Date.now() - 10 * 60_000).toISOString(),
     expires_at: FUTURE,
     revoked_at: null,
     ...overrides,
@@ -89,7 +91,12 @@ function makeFakeDb(scenario: Scenario) {
       if (s.includes("FROM voice_sessions WHERE token_hash")) {
         return { rows: scenario.session ? [scenario.session] : [] };
       }
-      if (s.includes("UPDATE voice_sessions SET last_used_at")) return { rows: [] };
+      if (s.includes("UPDATE voice_sessions") && (s.includes("last_used_at") || s.includes("expires_at"))) {
+        if (scenario.session && s.includes("expires_at") && params?.[1]) {
+          scenario.session.expires_at = String(params[1]);
+        }
+        return { rows: [] };
+      }
       if (s.includes("FROM voice_access WHERE user_id")) {
         return { rows: [{ email: scenario.email }] };
       }
@@ -275,10 +282,17 @@ describe("tool registry", () => {
     for (const tool of MCP_TOOLS) {
       // verify_voice_pin carries load-bearing PIN-handling safety rules
       // (keypad entry, never read the token aloud); it gets a wider budget.
-      const limit = tool.name === "verify_voice_pin" ? 800 : 200;
+      const limit = tool.name === "verify_voice_pin" ? 900 : 200;
       assert.ok(tool.description.length < limit, tool.name);
       assert.ok(!/RBAC|policy matrix/i.test(tool.description), tool.name);
     }
+  });
+  it("documents sliding renew and re-PIN on verify_voice_pin", () => {
+    const tool = MCP_TOOL_MAP.get("verify_voice_pin");
+    assert.ok(tool);
+    assert.ok(/sliding|renew|idle/i.test(tool.description) || /hard-capped|re-PIN/i.test(tool.description));
+    assert.ok(/120|re-PIN|expired/i.test(tool.description));
+    assert.ok(!/expires after 30 minutes/i.test(tool.description));
   });
 });
 
@@ -590,6 +604,26 @@ describe("executeMcpTool authenticated calls", () => {
     assert.equal(data.email, "caller@getsmartpr.com");
     assert.equal(data.plan, "free"); // derived from session, not the "enterprise" override
     assert.ok(!("userId" in data) && !("workspaceId" in data));
+  });
+
+  it("renews session expires_at on successful account tool use", async () => {
+    const session = validSession({
+      issued_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+      expires_at: new Date(Date.now() + 5 * 60_000).toISOString(), // would die soon without renew
+    });
+    const db = authedDb({ session });
+    const before = Date.now();
+    const priorExpires = session.expires_at;
+    const res = await executeMcpTool(db as never, authz, "get_account_context", {});
+    assert.equal(res.ok, true);
+    const renewQueries = db.queries.filter(
+      (q) => /UPDATE voice_sessions/i.test(q.sql) && /expires_at/i.test(q.sql)
+    );
+    assert.ok(renewQueries.length >= 1, "expected renew UPDATE on voice_sessions");
+    assert.notEqual(session.expires_at, priorExpires);
+    const renewed = new Date(session.expires_at).getTime();
+    assert.ok(renewed > before + 20 * 60_000, `idle window should extend; got ${session.expires_at}`);
+    assert.ok(renewed <= before + 31 * 60_000);
   });
 
   it("writes audit, usage, and observability rows on success — never secrets", async () => {

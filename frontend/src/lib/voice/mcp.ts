@@ -239,7 +239,8 @@ export const MCP_TOOLS: McpToolDef[] = [
       "Never repeat the digits back, and never read the returned session_token aloud. " +
       "Convert any spoken digit words to digits and pass the 6 digits in 'pin'. " +
       "On success the result contains a session_token: include it as the 'session_token' argument " +
-      "in every subsequent account tool call (it expires after 30 minutes). " +
+      "in every subsequent account tool call (idle TTL renews on each tool use, " +
+      "hard-capped at 120 minutes from PIN; re-PIN if expired). " +
       "Never claim the caller is verified from merely collecting the PIN — " +
       "only this tool's ok:true verifies them, and until then use only get_general_requirements.",
     args: ["pin"],

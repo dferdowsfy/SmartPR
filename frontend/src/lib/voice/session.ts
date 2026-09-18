@@ -9,13 +9,21 @@
  * phone lookup / PIN verification / session management endpoints with a
  * shared secret (VOICE_GATEWAY_API_KEY) presented as a Bearer token.
  * Comparison is timing-safe.
+ *
+ * TTL model:
+ * - SESSION_TTL_MINUTES is a sliding idle window: each successful
+ *   resolveVoiceContext renews expires_at to now + TTL (capped below).
+ * - MAX_SESSION_ABSOLUTE_MINUTES is a hard cap from issued_at (aligned
+ *   with xAI's ~2h max call). After the absolute cap the caller must re-PIN.
  */
 
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 
 export const SESSION_TOKEN_PREFIX = "vs_";
-/** Short-lived sessions: 30 minutes from issuance. */
+/** Sliding idle window: renewed on each successful context resolve. */
 export const SESSION_TTL_MINUTES = 30;
+/** Hard cap from issuance (aligns with xAI max call length). */
+export const MAX_SESSION_ABSOLUTE_MINUTES = 120;
 
 /** Generate a fresh opaque session token (returned to the gateway once). */
 export function generateSessionToken(): string {
@@ -27,9 +35,23 @@ export function hashSessionToken(token: string): string {
   return createHash("sha256").update(token, "utf8").digest("hex");
 }
 
-/** Expiry timestamp for a session issued now. */
+/** Initial expiry timestamp for a session issued at `from` (idle TTL only). */
 export function sessionExpiresAt(from: Date = new Date()): Date {
   return new Date(from.getTime() + SESSION_TTL_MINUTES * 60_000);
+}
+
+/**
+ * Sliding renew expiry: min(issued_at + absolute cap, now + idle TTL).
+ * Used by resolveVoiceContext so long calls stay authenticated without
+ * extending past the absolute session lifetime.
+ */
+export function renewedSessionExpiresAt(
+  issuedAt: Date,
+  now: Date = new Date()
+): Date {
+  const absolute = issuedAt.getTime() + MAX_SESSION_ABSOLUTE_MINUTES * 60_000;
+  const sliding = now.getTime() + SESSION_TTL_MINUTES * 60_000;
+  return new Date(Math.min(absolute, sliding));
 }
 
 /**

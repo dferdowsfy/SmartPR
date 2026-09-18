@@ -175,8 +175,9 @@ all), `authorization` (token placed in the `Authorization` header), `headers`.
 
 Note: `authorization` is the raw Phase 1 voice session token (`vs_…`). The
 MCP server accepts it with or without the `Bearer ` prefix. The token is
-short-lived (30 minutes); a fresh `session.update` with a new token is
-required after expiry.
+short-lived with a 30-minute sliding idle window (renewed on each
+successful account tool use) and a 120-minute absolute cap from PIN
+issuance; re-PIN (and a fresh `session.update`) is required after expiry.
 
 ## 7. Session handoff (getting the token into xAI)
 

@@ -26,7 +26,7 @@ import { getWorkspaceRole } from "../admin";
 import { entitlementsFor, type WorkspacePlanState } from "../billing/entitlements";
 import { getWorkspacePlanState } from "../billing/access";
 import { isUserAdmin } from "../admin";
-import { extractSessionToken, hashSessionToken } from "./session";
+import { extractSessionToken, hashSessionToken, renewedSessionExpiresAt } from "./session";
 import { logVoiceAudit } from "./audit";
 import { incrementVoiceUsage } from "./usage";
 
@@ -64,6 +64,7 @@ interface SessionRow {
   id: string;
   user_id: string;
   phone_e164: string;
+  issued_at: string;
   expires_at: string;
   revoked_at: string | null;
 }
@@ -89,7 +90,7 @@ export async function resolveVoiceContext(
     throw new VoiceAuthError("missing_token", "A voice session token is required.", 401);
   }
   const { rows } = await pool.query<SessionRow>(
-    `SELECT id, user_id, phone_e164, expires_at, revoked_at
+    `SELECT id, user_id, phone_e164, issued_at, expires_at, revoked_at
        FROM voice_sessions WHERE token_hash = $1 LIMIT 1`,
     [hashSessionToken(token)]
   );
@@ -110,10 +111,20 @@ export async function resolveVoiceContext(
     throw new VoiceAuthError("session_expired", "Voice session has expired.", 401);
   }
 
-  // Touch last_used_at (best effort, non-blocking for the caller).
-  pool
-    .query(`UPDATE voice_sessions SET last_used_at = now() WHERE id = $1`, [session.id])
-    .catch(() => undefined);
+  // Sliding renew: extend idle TTL, capped by absolute lifetime from issued_at.
+  // Awaited so the extension is durable before the tool proceeds; DB errors
+  // are swallowed so a touch failure never fails an otherwise-valid call.
+  const renewedExpires = renewedSessionExpiresAt(new Date(session.issued_at));
+  try {
+    await pool.query(
+      `UPDATE voice_sessions
+          SET last_used_at = now(), expires_at = $2
+        WHERE id = $1`,
+      [session.id, renewedExpires.toISOString()]
+    );
+  } catch {
+    // best-effort renew
+  }
 
   const access = (
     await pool.query<{ email: string | null }>(
