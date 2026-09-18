@@ -690,8 +690,8 @@ describe("email_my_summary", () => {
     });
     assert.equal(res.ok, true);
     assert.equal(sentTo, "caller@getsmartpr.com");
-    assert.match(String(sentFrom), /summaries@getsmartpr\.com/);
-    assert.match(String(sentFrom), /SmartPR Summaries/);
+    assert.match(String(sentFrom), /recap@getsmartpr\.com/);
+    assert.match(String(sentFrom), /SmartPR Recap/);
     const calls = insertsOf(db, "voice_tool_calls");
     assert.equal((calls[0].params as unknown[])[8], true); // email_sent
   });

@@ -619,7 +619,7 @@ test("sendComplianceEmail accepts a From override for voice summaries", async ()
     },
   });
   try {
-    const voiceFrom = "SmartPR Summaries <summaries@getsmartpr.com>";
+    const voiceFrom = "SmartPR Recap <recap@getsmartpr.com>";
     const ok = await sendComplianceEmail(
       "user@example.com",
       "Your SmartPR account summary",
@@ -630,7 +630,7 @@ test("sendComplianceEmail accepts a From override for voice summaries", async ()
     assert.equal(ok, true);
     assert.equal(sent.length, 1);
     assert.equal(sent[0].from, voiceFrom);
-    assert.match(String(sent[0].from), /summaries@getsmartpr\.com/);
+    assert.match(String(sent[0].from), /recap@getsmartpr\.com/);
   } finally {
     setComplianceMailerForTests(null);
   }

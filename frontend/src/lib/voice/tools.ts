@@ -33,7 +33,7 @@ import { runRulesEngine, type BusinessStatus } from "../../app/rulesEngine";
 import { classifyEngineRequirements } from "../../app/requirementApplicability";
 
 /** Voice email_my_summary only — compliance reminders keep alerts@. */
-export const VOICE_SUMMARY_FROM = "SmartPR Summaries <summaries@getsmartpr.com>";
+export const VOICE_SUMMARY_FROM = "SmartPR Recap <recap@getsmartpr.com>";
 
 const MISSING_STATES = new Set(["NONE", "FAILED", "NEEDS_REVIEW"]);
 
