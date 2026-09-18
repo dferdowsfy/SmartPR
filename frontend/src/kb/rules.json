@@ -3319,7 +3319,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0178",
@@ -3355,7 +3363,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0180",
@@ -3391,7 +3407,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0182",
@@ -3427,7 +3451,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0184",
@@ -3571,7 +3603,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0190",
@@ -4125,9 +4165,15 @@
         "date": "2026-09-16",
         "change": "is_conditional=true (reverted heuristic)",
         "reason": "Validated review: qualification/status program, not a blanket operating permit."
+      },
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (Bona Fide Farmer Registration (Certificación de Agricultor Bona Fide, Ley 60-2019 — valid 4 years)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
       }
     ],
-    "is_conditional": true
+    "is_conditional": true,
+    "compliance_mode": "verify_existing"
   },
   {
     "id": "RULE_0219",
@@ -4141,7 +4187,15 @@
     "citation_url": "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud agricultor bonafide para individuo.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_AGRICULTURE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (Bona Fide Farmer Registration (Certificación de Agricultor Bona Fide, Ley 60-2019 — valid 4 years)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0220",
@@ -4155,7 +4209,15 @@
     "citation_url": "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud agricultor bonafide para individuo.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_AGRICULTURE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (Bona Fide Farmer Registration (Certificación de Agricultor Bona Fide, Ley 60-2019 — valid 4 years)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0221",
@@ -4169,7 +4231,15 @@
     "citation_url": "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud agricultor bonafide para individuo.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_AGRICULTURE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (Bona Fide Farmer Registration (Certificación de Agricultor Bona Fide, Ley 60-2019 — valid 4 years)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0222",
@@ -4183,7 +4253,15 @@
     "citation_url": "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud agricultor bonafide para individuo.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_AGRICULTURE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (Bona Fide Farmer Registration (Certificación de Agricultor Bona Fide, Ley 60-2019 — valid 4 years)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0223",
@@ -4197,7 +4275,15 @@
     "citation_url": "https://docs.pr.gov/files/Agricultura/Bonafide/Solicitud agricultor bonafide para individuo.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_AGRICULTURE_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (Bona Fide Farmer Registration (Certificación de Agricultor Bona Fide, Ley 60-2019 — valid 4 years)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0224",
@@ -4679,7 +4765,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_INSURANCE"
+    "requires_document_id": "DOC_INSURANCE",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (General Liability Insurance Certificate (evidence of coverage held by federal contractors; private instrument, not government-issued)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the recommended posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0250",
@@ -4710,7 +4804,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_INSURANCE"
+    "requires_document_id": "DOC_INSURANCE",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (General Liability Insurance Certificate (evidence of coverage held by federal contractors; private instrument, not government-issued)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the recommended posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0252",
@@ -4719,7 +4821,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_INSURANCE"
+    "requires_document_id": "DOC_INSURANCE",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (General Liability Insurance Certificate (evidence of coverage held by federal contractors; private instrument, not government-issued)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the recommended posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0253",
@@ -4728,7 +4838,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_INSURANCE"
+    "requires_document_id": "DOC_INSURANCE",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (General Liability Insurance Certificate (evidence of coverage held by federal contractors; private instrument, not government-issued)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the recommended posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0254",
@@ -4737,7 +4855,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_INSURANCE"
+    "requires_document_id": "DOC_INSURANCE",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (General Liability Insurance Certificate (evidence of coverage held by federal contractors; private instrument, not government-issued)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the recommended posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0255",
@@ -4861,7 +4987,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0508",
@@ -4965,7 +5099,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0535",
@@ -5911,7 +6053,15 @@
     "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (NTSP transportation permit (Porteador por Contrato franchise, Law 109-1962; Reg. 9156 §10.02)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0619",
@@ -6295,7 +6445,15 @@
     "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
     "citation_confidence": "official",
     "citation_inherited_from": "DOC_SAM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (SAM.gov entity registration (federal contractor registry; must be renewed every 365 days)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0638",
@@ -6309,7 +6467,15 @@
     "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
     "citation_confidence": "official",
     "citation_inherited_from": "DOC_SAM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (SAM.gov entity registration (federal contractor registry; must be renewed every 365 days)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0639",
@@ -6323,7 +6489,15 @@
     "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
     "citation_confidence": "official",
     "citation_inherited_from": "DOC_SAM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (SAM.gov entity registration (federal contractor registry; must be renewed every 365 days)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0640",
@@ -6337,7 +6511,15 @@
     "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
     "citation_confidence": "official",
     "citation_inherited_from": "DOC_SAM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (SAM.gov entity registration (federal contractor registry; must be renewed every 365 days)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0641",
@@ -6351,7 +6533,15 @@
     "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
     "citation_confidence": "official",
     "citation_inherited_from": "DOC_SAM_REGISTRATION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "change": "compliance_mode set to verify_existing",
+        "date": "2026-09-18",
+        "reason": "Existing-business nuance: an operating business that triggers this obligation (SAM.gov entity registration (federal contractor registry; must be renewed every 365 days)) should verify its existing registration/coverage is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0642",

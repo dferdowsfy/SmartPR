@@ -50,6 +50,9 @@ function docByName(...needles: string[]): string {
 }
 
 const DOC_SAM = docByName("sam.gov");
+const DOC_TRANSPORT = docByName("transportation", "permit");
+const DOC_BONAFIDE = docByName("bona fide");
+const DOC_GLI = docByName("general liability");
 const DOC_CONTRACTOR = docByName("contractor license");
 const DOC_LEASE = docByName("lease agreement");
 const DOC_NOISE = docByName("noise variance");
@@ -91,6 +94,9 @@ function classifyWithDecisions(
 
 test("premise: doc ids resolve from documents.json and Guaynabo has the metro flag", () => {
   assert.equal(DOC_SAM, "DOC_SAM_REGISTRATION");
+  assert.equal(DOC_TRANSPORT, "DOC_TRANSPORT_PERMIT");
+  assert.equal(DOC_BONAFIDE, "DOC_AGRICULTURE_REGISTRATION");
+  assert.equal(DOC_GLI, "DOC_INSURANCE");
   assert.equal(DOC_CONTRACTOR, "DOC_CONTRACTOR_LICENSE");
   assert.equal(DOC_LEASE, "DOC_LEASE_AGREEMENT");
   assert.equal(DOC_NOISE, "DOC_NOISE_VARIANCE");
@@ -1487,5 +1493,164 @@ test("CASE T: industrial-port environmental posture — confirmed flag verifies 
     byId(freshUnconfirmed, DOC_HAZMAT)?.applicability,
     "conditional",
     "an unconfirmed flag stays conditional for new businesses too"
+  );
+});
+
+test("CASE U: transport / bona-fide-farmer / insurance / SAM.gov posture — existing businesses verify, new businesses file", () => {
+  // 2026-09-18 12:00 QA cycle (S37/S38/S39): the last unswept
+  // operating-obligation families rendered REQUIRED-as-new (or a vague
+  // "recommended") for long-operating businesses — the same defect class as
+  // the health/fire/CFPM/tourism/vehicle/contractor/childcare/alcohol sweeps.
+  // Swept compliance_mode=verify_existing onto the non-heuristic rules with
+  // no missing_fact_keys:
+  //  - DOC_TRANSPORT_PERMIT: RULE_0177 (trucking), 0179 (courier), 0181
+  //    (moving), 0183 (taxi), 0189 (freight forwarding), 0268 (logistics +
+  //    island flag), 0518 (car rental + island flag), 0618 (Q_HAZMAT_TRANSPORT).
+  //    Deliberately excluded the heuristic rules with missing_fact_keys
+  //    (RULE_0022 transport_type, RULE_0185/0187 commercial_vehicles) per the
+  //    RULE_0664 lesson.
+  //  - DOC_AGRICULTURE_REGISTRATION: RULE_0218 (farm), 0219 (livestock), 0220
+  //    (aquaculture), 0221 (nursery), 0222 (ag services), 0223 (coffee).
+  //    Deliberately excluded RULE_0041 (verified + is_conditional=true by
+  //    validated-review design — a qualification program, not a blanket permit).
+  //  - DOC_INSURANCE: RULE_0249/0251/0252/0253/0254 (government-contractor
+  //    business types; private instrument, evidence of coverage).
+  //  - DOC_SAM_REGISTRATION: RULE_0637/0638/0639/0640 (gov-contractor BTs),
+  //    0641 (Q_FEDERAL_CONTRACTS_GRANTS). SAM.gov registration renews every
+  //    365 days — an existing contractor verifies, never re-registers as new.
+
+  // S37: 10-year Bayamón trucking company — transport permit verifies.
+  const trucking = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Trucking Company",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_COMMERCIAL_VEHICLES: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(trucking, DOC_TRANSPORT)?.applicability,
+    "verify_existing",
+    "a 10-year trucking company verifies its NTSP transport permit (not REQUIRED-as-new)"
+  );
+  // A new trucking company still applies for the first time.
+  const truckingNew = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Trucking Company",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_COMMERCIAL_VEHICLES: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(truckingNew, DOC_TRANSPORT)?.applicability,
+    "required",
+    "a new trucking company still gets the transport permit as REQUIRED"
+  );
+  // The heuristic RULE_0022 (Q_COMMERCIAL_VEHICLES, missing transport_type)
+  // also fires but must not drag the asserted business-type basis down to
+  // needs_more_information — the verify_existing assertion above pins that
+  // the asserted RULE_0177 basis wins. Hazmat: RULE_0618 needs an explicit
+  // Q_HAZMAT_TRANSPORT=true and must stay silent on unstated facts.
+
+  // S38: 20-year Arecibo coffee farm — bona fide farmer registration verifies.
+  // The Bona Fide certification is valid 4 years: verify-existing is exactly
+  // the right semantics for an operating farm.
+  const farm = classify(
+    {
+      municipalityName: "Arecibo",
+      businessTypeName: "Coffee Plantation",
+      businessStatus: "existing",
+      answers: {},
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(farm, DOC_BONAFIDE)?.applicability,
+    "verify_existing",
+    "a 20-year coffee farm verifies its Bona Fide Farmer Registration (not REQUIRED-as-new)"
+  );
+  assert.equal(
+    byId(farm, DOC_BONAFIDE)?.source_rule_id,
+    "RULE_0223",
+    "the bona fide registration fires via the coffee-plantation rule, not the unanswered agriculture-production question (RULE_0041 stays conditional by design)"
+  );
+  const farmNew = classify(
+    {
+      municipalityName: "Arecibo",
+      businessTypeName: "Coffee Plantation",
+      businessStatus: "new",
+      answers: {},
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(farmNew, DOC_BONAFIDE)?.applicability,
+    "required",
+    "a new coffee farm still gets the bona fide registration as REQUIRED"
+  );
+
+  // S39: 8-year Trujillo Alto IT government contractor with active federal
+  // contracts — SAM.gov and insurance verify; nothing re-registers as new.
+  // NOTE: the production path marks DOC_INSURANCE "recommended" via the
+  // jurisdiction docMappings; the raw harness KB lacks that mapping, so this
+  // case forwards it explicitly to mirror production.
+  const classifyRec = (
+    input: EngineInput,
+    businessStatus: "new" | "existing"
+  ) => {
+    const { requirements } = runRulesEngine(KB, input);
+    return classifyEngineRequirements(requirements, {
+      kb: KB,
+      businessStatus,
+      recommendedIds: new Set([DOC_GLI]),
+    });
+  };
+  const contractor = classifyRec(
+    {
+      municipalityName: "Trujillo Alto",
+      businessTypeName: "IT Government Contractor",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_FEDERAL_CONTRACTS_GRANTS: true },
+    },
+    "existing"
+  );
+  assert.equal(
+    byId(contractor, DOC_SAM)?.applicability,
+    "verify_existing",
+    "an 8-year federal contractor verifies its SAM.gov registration (annual renewal — not REQUIRED-as-new)"
+  );
+  assert.equal(
+    byId(contractor, DOC_GLI)?.applicability,
+    "verify_existing",
+    "an operating federal contractor verifies its liability coverage is current (not a vague 'recommended' to obtain insurance)"
+  );
+  const contractorNew = classifyRec(
+    {
+      municipalityName: "Trujillo Alto",
+      businessTypeName: "IT Government Contractor",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_FEDERAL_CONTRACTS_GRANTS: true },
+    },
+    "new"
+  );
+  assert.equal(
+    byId(contractorNew, DOC_SAM)?.applicability,
+    "required",
+    "a new federal contractor still gets SAM.gov registration as REQUIRED"
+  );
+  assert.equal(
+    byId(contractorNew, DOC_GLI)?.applicability,
+    "recommended",
+    "a new federal contractor keeps the insurance posture the KB assigns (recommended — unchanged by the sweep)"
+  );
+  // Contractor must not be confused with construction: no DACO license without
+  // the construction-services fact.
+  assert.equal(
+    byId(contractor, DOC_CONTRACTOR),
+    undefined,
+    "an IT government contractor gets no DACO contractor license (contractor != construction)"
   );
 });
