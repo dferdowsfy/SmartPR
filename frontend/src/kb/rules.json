@@ -5846,7 +5846,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_LUMA_INTERCONNECTION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0604",
@@ -5860,7 +5868,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_NET_METERING_AGREEMENT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0605",
@@ -5888,7 +5904,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_LUMA_INTERCONNECTION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0607",
@@ -5902,7 +5926,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_NET_METERING_AGREEMENT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0608",
@@ -5916,7 +5948,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_LUMA_INTERCONNECTION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0609",
@@ -5930,7 +5970,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_NET_METERING_AGREEMENT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0610",
@@ -5944,7 +5992,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_LUMA_INTERCONNECTION",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0611",
@@ -5958,7 +6014,15 @@
     "citation_url": "https://energia.pr.gov/wp-content/uploads/sites/7/2015/09/CEPR-MI-2014-0001-20141218.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_NET_METERING_AGREEMENT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
+        "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+      }
+    ]
   },
   {
     "id": "RULE_0612",

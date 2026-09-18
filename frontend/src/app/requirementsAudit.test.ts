@@ -56,6 +56,8 @@ const DOC_GLI = docByName("general liability");
 const DOC_CONTRACTOR = docByName("contractor license");
 const DOC_LEASE = docByName("lease agreement");
 const DOC_NOISE = docByName("noise variance");
+const DOC_LUMA = docByName("luma", "interconnection");
+const DOC_NETMETER = docByName("net metering");
 // Validated review 2026-09-16: DOC_STORMWATER_PLAN was removed; industrial
 // stormwater is now DOC_NPDES_INDUSTRIAL_STORMWATER (NPDES industrial-stormwater
 // coverage / no-exposure determination).
@@ -1652,5 +1654,80 @@ test("CASE U: transport / bona-fide-farmer / insurance / SAM.gov posture — exi
     byId(contractor, DOC_CONTRACTOR),
     undefined,
     "an IT government contractor gets no DACO contractor license (contractor != construction)"
+  );
+});
+
+test("CASE V: LUMA interconnection + net metering posture — existing customer-generators verify, new projects file", () => {
+  // 2026-09-18 15:00 QA cycle (S40): a 7-year Dorado warehouse with a
+  // 5-year-old rooftop solar array (self-consumption + net metering) got
+  // LUMA interconnection and the net metering agreement as REQUIRED-as-new —
+  // the same defect class as the health/fire/CFPM/tourism/vehicle/
+  // contractor/childcare/alcohol/transport/agriculture/insurance sweeps.
+  // Swept compliance_mode=verify_existing onto the whole document families:
+  //  - DOC_LUMA_INTERCONNECTION: RULE_0603/0606/0608 (installer BTs),
+  //    RULE_0610 (Q_RENEWABLE_INSTALL).
+  //  - DOC_NET_METERING_AGREEMENT: RULE_0604/0607/0609 (installer BTs),
+  //    RULE_0611 (Q_RENEWABLE_INSTALL).
+  // All swept rules have no missing_fact_keys (RULE_0664 lesson) and statute
+  // -confidence citations. Installer-BT rules are included per the 332b659
+  // whole-family lesson — installer interconnection obligations are
+  // per-project/recurring, not first-time filings.
+
+  // S40: existing Dorado warehouse distributor, 5-year-old solar array.
+  const warehouse = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Warehouse Distributor",
+      businessStatus: "existing",
+      answers: { Q_RENEWABLE_INSTALL: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(warehouse, DOC_LUMA)?.applicability,
+    "verify_existing",
+    "an existing warehouse with a 5-year-old solar array verifies its LUMA interconnection (not REQUIRED-as-new)"
+  );
+  assert.equal(
+    byId(warehouse, DOC_NETMETER)?.applicability,
+    "verify_existing",
+    "an existing warehouse with a 5-year-old solar array verifies its net metering agreement (not REQUIRED-as-new)"
+  );
+
+  // A new warehouse with a NEW solar project still files for the first time.
+  const warehouseNew = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Warehouse Distributor",
+      businessStatus: "new",
+      answers: { Q_RENEWABLE_INSTALL: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(warehouseNew, DOC_LUMA)?.applicability,
+    "required",
+    "a new warehouse with a new solar project still gets LUMA interconnection as REQUIRED"
+  );
+  assert.equal(
+    byId(warehouseNew, DOC_NETMETER)?.applicability,
+    "required",
+    "a new warehouse with a new solar project still gets the net metering agreement as REQUIRED"
+  );
+
+  // Existing installer business type: verify_existing, not REQUIRED-as-new.
+  const installer = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "Solar Installer",
+      businessStatus: "existing",
+      answers: {},
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(installer, DOC_LUMA)?.applicability,
+    "verify_existing",
+    "an existing solar installer verifies its interconnection standing (whole-family sweep)"
   );
 });
