@@ -1,24 +1,26 @@
 /**
- * Pre-flight API — the chat step between an action card's Start and the run.
+ * Pre-flight API — the chat step between a filing card's Start and the run.
  *
- * GET /api/agency-actions/preflight?business_id=...&action_id=...[&objective_en=...]
+ * GET /api/agency-actions/preflight?business_id=...&action_id=...&obligation_id=...[&objective_en=...]
  *   → 200 { preflight: Preflight, brief: GoalBrief, filing_label_en/es,
- *           agency_id, portal_account }
+ *           agency_id, portal_account, obligation_id }
  *
  * Returns the pre-flight model: passport items SmartPR will reuse (labels
  * only) plus at most 3 questions (portal account status, sensitive fields,
  * evidence). The client renders it in chat; the actual run starts through
- * POST /api/agency-actions with the answers.
+ * POST /api/agency-actions with the answers. The obligation is resolved
+ * server-side — the browser never launches without a specific SmartPR
+ * filing requirement behind the pre-flight.
  */
 import { isFilingType } from "../../../../lib/agency-runs/store";
-import { isAgencyId } from "../../../../lib/agency-runs/agencyActions";
+import { isAgencyId, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../../lib/agency-runs/goalBrief";
 import { buildPreflight } from "../../../../lib/agency-runs/preflight";
 import { getPortalAccountStatus } from "../../../../lib/agency-runs/portalAccounts";
 import { loadProjectContextForBusiness, loadProjectIntentForBusiness } from "../../../../lib/agency-runs/projectContextLoader";
 import { getCurrentUser } from "../../../../lib/supabase/server";
-import { actionsFor } from "../route";
+import { filingsFor } from "../filings/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,12 +29,16 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const businessId = String(url.searchParams.get("business_id") || "").trim();
   const actionId = String(url.searchParams.get("action_id") || "").trim();
+  const obligationId = String(url.searchParams.get("obligation_id") || "").trim();
 
   if (!businessId) {
     return Response.json({ error: "business_id is required." }, { status: 400 });
   }
   if (!actionId || !isFilingType(actionId)) {
     return Response.json({ error: "action_id must be a known filing type." }, { status: 400 });
+  }
+  if (!obligationId) {
+    return Response.json({ error: "obligation_id is required." }, { status: 400 });
   }
 
   const user = await getCurrentUser();
@@ -42,18 +48,47 @@ export async function GET(request: Request) {
     return Response.json({ error: "action_id is not assigned to an agency." }, { status: 400 });
   }
 
-  const actions = await actionsFor(businessId, agencyId, user?.id ?? null);
-  const candidates = actions.filter((a) => a.id === actionId);
-  const action = candidates[0];
-  if (!action) {
-    return Response.json({ error: "action not found for this business." }, { status: 404 });
+  // Resolve the obligation server-side — same validation as run creation.
+  const groups = await filingsFor(businessId, user?.id ?? null);
+  const candidates: FilingOption[] = [];
+  for (const group of groups) {
+    for (const filing of group.filings) {
+      if (
+        filing.supported &&
+        filing.action &&
+        filing.action.filing_type === actionId &&
+        filing.obligation_id === obligationId
+      ) {
+        candidates.push(filing);
+      }
+    }
   }
+  if (candidates.length === 0) {
+    return Response.json(
+      { error: "obligation not found for this filing." },
+      { status: 404 }
+    );
+  }
+  const option = candidates[0];
 
   // Same objective-variant pick as POST: honor only server-resolved objectives.
   const requestedObjective = String(url.searchParams.get("objective_en") || "").trim();
   const picked =
-    candidates.find((a) => a.objective_en === requestedObjective) ?? action;
+    candidates.find((f) => f.action?.objective_en === requestedObjective) ?? option;
+  const action = picked.action;
+  if (!action) {
+    return Response.json({ error: "action not found for this business." }, { status: 404 });
+  }
 
+  // Never pre-flight a filing that's already submitted or blocked. Missing
+  // information still returns the model so the chat card can render the
+  // "still needed" gate with the exact missing items.
+  if (picked.filing_status === "submitted") {
+    return Response.json(
+      { error: "This filing was already submitted." },
+      { status: 409 }
+    );
+  }
   if (action.status === "blocked") {
     return Response.json(
       { error: `This action is blocked until ${action.blocked_by.join(", ")} is completed.` },
@@ -67,9 +102,9 @@ export async function GET(request: Request) {
   const portalAccount = await getPortalAccountStatus(businessId, agencyId);
   const brief = buildGoalBrief({
     config,
-    action: picked,
-    objective_en: picked.objective_en,
-    objective_es: picked.objective_es,
+    action,
+    objective_en: action.objective_en,
+    objective_es: action.objective_es,
     portal_account: portalAccount,
     // Same project-context source as the run-creation route: background
     // only, never a requirement decision.
@@ -79,14 +114,15 @@ export async function GET(request: Request) {
     project_intent:
       (await loadProjectIntentForBusiness(businessId, user?.id ?? null)) ?? undefined,
   });
-  const preflight = buildPreflight({ config, action: picked, brief, portalAccount });
+  const preflight = buildPreflight({ config, action, brief, portalAccount });
 
   return Response.json({
     preflight,
     brief,
-    filing_label_en: picked.title_en,
-    filing_label_es: picked.title_es,
+    filing_label_en: action.title_en,
+    filing_label_es: action.title_es,
     agency_id: agencyId,
     portal_account: portalAccount,
+    obligation_id: picked.obligation_id,
   });
 }

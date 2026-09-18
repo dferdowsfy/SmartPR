@@ -1,14 +1,22 @@
 /**
- * Agency actions API — the action-first agency assistant flow.
+ * Agency actions API — the filing-first agency assistant flow.
+ *
+ * GET /api/agency-actions/filings?business_id=...[&demo=1]
+ *   → { groups: FilingGroup[] } — obligation-joined filing options (see
+ *     ./filings/route.ts).
  *
  * GET /api/agency-actions?business_id=...&agency=HACIENDA_SURI
- *   → { actions: AgencyAction[] } — readiness per filing (labels only, no values).
+ *   → { actions: AgencyAction[] } — legacy registry-only readiness (kept for
+ *     compatibility; the chat UI no longer calls it).
  *
- * POST /api/agency-actions { business_id, action_id }
- *   → resolves the action, builds the labels-only goal brief, and starts an
- *   agency run through the existing createRun path with the brief attached.
- *   Responds 201 { run: AgencyRunPublic, brief: GoalBrief }.
+ * POST /api/agency-actions { business_id, action_id, obligation_id }
+ *   → resolves the SmartPR obligation, validates it maps to the requested
+ *     filing (server-side — the client can never invent an objective), builds
+ *     the labels-only goal brief + structured submission objective, and
+ *     starts an agency run. Responds 201 { run: AgencyRunPublic, brief }.
+ *     No browser session starts without a specific filing objective.
  */
+import { randomUUID } from "crypto";
 import {
   createRun,
   isFilingType,
@@ -19,6 +27,7 @@ import {
   isAgencyId,
   resolveAgencyActions,
   type AgencyAction,
+  type FilingOption,
 } from "../../../lib/agency-runs/agencyActions";
 import { getFilingConfig } from "../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../lib/agency-runs/goalBrief";
@@ -29,7 +38,9 @@ import {
   getPortalAccountStatus,
   setPortalAccountStatus,
 } from "../../../lib/agency-runs/portalAccounts";
+import type { SubmissionObjective } from "../../../lib/agency-runs/types";
 import { getCurrentUser } from "../../../lib/supabase/server";
+import { filingsFor } from "./filings/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,6 +87,12 @@ export async function POST(request: Request) {
   let body: {
     business_id?: string;
     action_id?: string;
+    /**
+     * SmartPR obligation this filing fulfills (required). Server-resolved
+     * from the business's obligations — the client can never invent an
+     * objective, only pick one SmartPR already identified.
+     */
+    obligation_id?: string;
     objective_en?: string;
     objective_es?: string;
     /**
@@ -96,12 +113,17 @@ export async function POST(request: Request) {
 
   const businessId = String(body.business_id || "").trim();
   const actionId = String(body.action_id || "").trim();
+  const obligationId = String(body.obligation_id || "").trim();
 
   if (!businessId) {
     return Response.json({ error: "business_id is required." }, { status: 400 });
   }
   if (!actionId || !isFilingType(actionId)) {
     return Response.json({ error: "action_id must be a known filing type." }, { status: 400 });
+  }
+  // No browser session without a specific SmartPR filing requirement.
+  if (!obligationId) {
+    return Response.json({ error: "obligation_id is required." }, { status: 400 });
   }
 
   const user = await getCurrentUser();
@@ -125,12 +147,29 @@ export async function POST(request: Request) {
     );
   }
 
-  const actions = await actionsFor(businessId, agencyId, user?.id ?? null);
-  const candidates = actions.filter((a) => a.id === actionId);
-  const action = candidates[0];
-  if (!action) {
-    return Response.json({ error: "action not found for this business." }, { status: 404 });
+  // Resolve the obligation server-side and verify it actually maps to the
+  // requested filing (same anti-injection pattern as objective_en below).
+  const groups = await filingsFor(businessId, user?.id ?? null);
+  const candidates: FilingOption[] = [];
+  for (const group of groups) {
+    for (const filing of group.filings) {
+      if (
+        filing.supported &&
+        filing.action &&
+        filing.action.filing_type === actionId &&
+        filing.obligation_id === obligationId
+      ) {
+        candidates.push(filing);
+      }
+    }
   }
+  if (candidates.length === 0) {
+    return Response.json(
+      { error: "obligation not found for this filing." },
+      { status: 404 }
+    );
+  }
+  const option = candidates[0];
 
   // When one filing type resolves to multiple objective variants (e.g. Dept.
   // of State new-entity vs annual report), honor the variant the human picked
@@ -138,8 +177,26 @@ export async function POST(request: Request) {
   // free-form objective text from the client into the agent prompt.
   const requestedObjective = String(body.objective_en || "").trim();
   const picked =
-    candidates.find((a) => a.objective_en === requestedObjective) ?? action;
+    candidates.find((f) => f.action?.objective_en === requestedObjective) ?? option;
+  const action = picked.action;
+  if (!action) {
+    return Response.json({ error: "action not found for this business." }, { status: 404 });
+  }
 
+  // Never launch for a filing that's already submitted, still blocked, or
+  // missing SmartPR information — the user goes back to SmartPR fields.
+  if (picked.filing_status === "submitted") {
+    return Response.json(
+      { error: "This filing was already submitted — a new browser run cannot start for it." },
+      { status: 409 }
+    );
+  }
+  if (picked.filing_status === "missing_information") {
+    return Response.json(
+      { error: "SmartPR is still missing information for this filing — complete it before starting." },
+      { status: 409 }
+    );
+  }
   if (action.status === "blocked") {
     return Response.json(
       {
@@ -157,9 +214,9 @@ export async function POST(request: Request) {
 
   const brief = buildGoalBrief({
     config,
-    action: picked,
-    objective_en: picked.objective_en,
-    objective_es: picked.objective_es,
+    action,
+    objective_en: action.objective_en,
+    objective_es: action.objective_es,
     portal_account: await resolvePortalAccount(businessId, agencyId, body.preflight_answers),
     // Project-context facts from the latest intake snapshot (background
     // only — the brief marks them as never driving requirement decisions).
@@ -169,6 +226,25 @@ export async function POST(request: Request) {
     project_intent:
       (await loadProjectIntentForBusiness(businessId, user?.id ?? null)) ?? undefined,
   });
+
+  // Structured submission objective — the browser agent executes ONLY this.
+  // Labels/ids only; the run (and its task prompt) carry it, and createRun
+  // refuses to create the run when ready_to_start is false.
+  const objective: SubmissionObjective = {
+    submission_objective_id: randomUUID(),
+    business_id: businessId,
+    requirement_id: picked.requirement_id,
+    requirement_name: picked.obligation_name,
+    obligation_id: picked.obligation_id,
+    obligation_status: picked.obligation_status,
+    agency: config.agencyEn,
+    transaction_type: action.filing_type,
+    target_portal: `${config.portalEn} (${config.startUrl})`,
+    approved_fields: config.passportCoverageKeys ?? [],
+    approved_documents: config.evidenceTags ?? [],
+    ready_to_start: true,
+  };
+
   const passport = await loadPassportForBusiness(businessId, user?.id ?? null);
   const run = await createRun({
     business_id: businessId,
@@ -176,7 +252,8 @@ export async function POST(request: Request) {
     owner_user_id: user?.id ?? null,
     passport,
     goalBrief: brief,
-    fields: sanitizePreflightFields(picked, body.preflight_answers?.fields),
+    submissionObjective: objective,
+    fields: sanitizePreflightFields(action, body.preflight_answers?.fields),
   });
   return Response.json({ run, brief }, { status: 201 });
 }

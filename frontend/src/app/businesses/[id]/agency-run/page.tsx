@@ -4,14 +4,19 @@
  * Agency assistant — CHAT-PRIMARY run page.
  *
  * The chat thread (AgencyChat) is the primary surface for the whole run:
- * agency picker → action cards → goal brief → milestone messages → one
+ * filing picker → pre-flight card → goal brief → milestone messages → one
  * transient status indicator → intervention cards → review card. The live
  * browser (AgencyBrowser) is secondary: hidden by default on desktop, a
  * full-screen sheet on mobile, and the run completes without ever opening it.
  *
+ * Filing-first: the picker lists the specific filings SmartPR identified
+ * for this business (GET /api/agency-actions/filings). SmartPR decides what
+ * needs to be filed — the browser agent only executes the selected filing,
+ * via pre-flight (GET /api/agency-actions/preflight) and run creation
+ * (POST /api/agency-actions, requires obligation_id).
+ *
  * Preserved behaviors and API contracts from the previous browser-centric page:
- * - POST /api/agency-runs to start (legacy fallback path), GET
- *   /api/agency-runs/[id] polled every 900ms while queued/running/paused.
+ * - GET /api/agency-runs/[id] polled every 900ms while queued/running/paused.
  * - Pending-field values live in local state only and are POSTed to
  *   /api/agency-runs/[id]/resume as `{ fields }` — never rendered into chat
  *   text, events, or logs.
@@ -28,7 +33,6 @@ import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
 import type { Lang } from "../../../forms/engine/types";
 import type {
-  AgencyFilingType,
   AgencyPendingField,
   AgencyRunPublic,
   AgencyRunStatus,
@@ -40,7 +44,8 @@ import {
 } from "../../../../lib/agency-runs/pendingFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
-import { AgencyChat, type AgencyOption, type SessionMsg } from "./AgencyChat";
+import { AgencyChat, type SessionMsg } from "./AgencyChat";
+import type { FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import {
   buildChatMilestones,
   chatScrollKey,
@@ -54,20 +59,6 @@ import {
 } from "./chatContracts";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
-
-const AGENCIES: AgencyOption[] = [
-  { id: "HACIENDA_SURI", nameEn: "Hacienda / SURI", nameEs: "Hacienda / SURI" },
-  { id: "DEPT_STATE", nameEn: "Department of State", nameEs: "Departamento de Estado" },
-  { id: "OGPE", nameEn: "OGPe", nameEs: "OGPe" },
-];
-
-/** Fictional rehearsal portal — visible only to admins or with ?demo=1. Never shown to real users. */
-const DEMO_AGENCY: AgencyOption = {
-  id: "DEMO_REHEARSAL",
-  nameEn: "Demo rehearsal portal",
-  nameEs: "Portal de ensayo (demo)",
-  demo: true,
-};
 
 const STATUS_STYLES: Record<AgencyRunStatus, string> = {
   queued: "border-slate-300 bg-slate-100 text-slate-700",
@@ -141,24 +132,69 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       })
       .catch(() => {});
   }, []);
-  const agencies = useMemo(
-    () => (demoVisible ? [...AGENCIES, DEMO_AGENCY] : AGENCIES),
-    [demoVisible]
-  );
 
   /* Chat-first session state */
-  const [msgs, setMsgs] = useState<SessionMsg[]>([{ id: "agency-picker", type: "agency-picker" }]);
-  const [actionsLoading, setActionsLoading] = useState(false);
-  const [actionsLoadingAgency, setActionsLoadingAgency] = useState<string | null>(null);
-  const [actionBusyId, setActionBusyId] = useState<string | null>(null);
-  const [legacyBusy, setLegacyBusy] = useState(false);
-  const [filingType, setFilingType] = useState<AgencyFilingType>("SURI_REGISTER_TAXPAYER");
+  const [msgs, setMsgs] = useState<SessionMsg[]>([
+    { id: "filing-picker", type: "filing-picker", groups: [], loading: true, error: null },
+  ]);
+  const [filingBusyId, setFilingBusyId] = useState<string | null>(null);
   const [goalBrief, setGoalBrief] = useState<GoalBrief | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const pushMsg = useCallback((msg: SessionMsg) => {
     setMsgs((prev) => [...prev, msg]);
   }, []);
+
+  /**
+   * Load the filing picker: every SmartPR obligation for this business
+   * joined to its browser filing (when one exists). The picker's
+   * obligation_ids are the only run-start capability — no generic fallback.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setMsgs((prev) =>
+        prev.map((m) =>
+          m.type === "filing-picker" ? { ...m, loading: true, error: null } : m
+        )
+      );
+      try {
+        const response = await fetch(
+          `/api/agency-actions/filings?business_id=${encodeURIComponent(businessId)}${demoVisible ? "&demo=1" : ""}`
+        );
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "filings failed");
+        if (cancelled) return;
+        setMsgs((prev) =>
+          prev.map((m) =>
+            m.type === "filing-picker"
+              ? { ...m, loading: false, groups: result.groups ?? [] }
+              : m
+          )
+        );
+      } catch (e) {
+        if (cancelled) return;
+        setMsgs((prev) =>
+          prev.map((m) =>
+            m.type === "filing-picker"
+              ? {
+                  ...m,
+                  loading: false,
+                  error:
+                    e instanceof Error
+                      ? e.message
+                      : L("Could not load your filings.", "No se pudieron cargar tus trámites.", lang),
+                }
+              : m
+          )
+        );
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [businessId, demoVisible, lang]);
 
   const poll = useCallback(async (runId: string) => {
     const response = await fetch(`/api/agency-runs/${runId}`);
@@ -199,71 +235,27 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setPreviewLoaded(false);
   }
 
-  /* ---------------- agency picker → actions → start ---------------- */
-
-  const fetchActions = async (agencyId: string) => {
-    const agency = agencies.find((a) => a.id === agencyId);
-    if (!agency) return;
-    setActionsLoading(true);
-    setActionsLoadingAgency(agencyId);
-    setError(null);
-    try {
-      const response = await fetch(
-        `/api/agency-actions?business_id=${encodeURIComponent(businessId)}&agency=${encodeURIComponent(agencyId)}`
-      );
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "actions failed");
-      const actions = (result.actions ?? []) as AgencyAction[];
-      const outstanding = actions.filter(
-        (a) => a.status === "ready" || a.status === "blocked"
-      );
-      const agencyName = L(agency.nameEn, agency.nameEs, lang);
-      const first = outstanding[0];
-      const introEn =
-        outstanding.length === 1 && first
-          ? `${agencyName} has one outstanding action for this project: ${first.title_en}. I already have ${first.known} of the ${first.total} required pieces of information from your Business Passport.`
-          : outstanding.length > 1
-            ? `${agencyName} has ${outstanding.length} outstanding actions for this project.`
-            : `Everything at ${agencyName} looks up to date — no outstanding actions for this business.`;
-      const introEs =
-        outstanding.length === 1 && first
-          ? `${agencyName} tiene una acción pendiente para este proyecto: ${first.title_es}. Ya tengo ${first.known} de las ${first.total} piezas de información requeridas en tu Pasaporte de Negocio.`
-          : outstanding.length > 1
-            ? `${agencyName} tiene ${outstanding.length} acciones pendientes para este proyecto.`
-            : `Todo en ${agencyName} está al día — no hay acciones pendientes para este negocio.`;
-      pushMsg({
-        id: `actions-${agencyId}-${Date.now()}`,
-        type: "action-list",
-        agencyId,
-        agencyNameEn: agency.nameEn,
-        agencyNameEs: agency.nameEs,
-        introEn,
-        introEs,
-        actions,
-      });
-    } catch {
-      // The agency catalog endpoint isn't live yet — fall back to the direct
-      // filing-type picker so the run page stays fully usable.
-      pushMsg({ id: `legacy-${Date.now()}`, type: "legacy-picker" });
-    } finally {
-      setActionsLoading(false);
-      setActionsLoadingAgency(null);
-    }
-  };
+  /* ---------------- filing picker → pre-flight → start ---------------- */
 
   /**
    * Step 1 of start: fetch the pre-flight model (passport items + at most 3
-   * questions) and show it in chat. The run launches only after the human
-   * confirms in the pre-flight card (Start filing) — possibly answering
-   * nothing.
+   * questions) for the SPECIFIC SmartPR filing the human picked, and show
+   * it in chat. The run launches only after the human confirms in the
+   * pre-flight card (Start filing) — possibly answering nothing. The
+   * obligation_id threads through so the run is always tied to the
+   * SmartPR requirement that identified it.
    */
-  const startAction = async (action: AgencyAction) => {
-    setActionBusyId(action.id);
+  const startFiling = async (filing: FilingOption) => {
+    const action = filing.action;
+    if (!action) return;
+    const busyKey = `${filing.id}:${filing.obligation_id}:${action.objective_en ?? ""}`;
+    setFilingBusyId(busyKey);
     setError(null);
     try {
       const params = new URLSearchParams({
         business_id: businessId,
-        action_id: action.id,
+        action_id: action.filing_type,
+        obligation_id: filing.obligation_id,
       });
       if (action.objective_en) params.set("objective_en", action.objective_en);
       const response = await fetch(`/api/agency-actions/preflight?${params.toString()}`);
@@ -290,7 +282,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         uploadsEs,
       });
     } finally {
-      setActionBusyId(null);
+      setFilingBusyId(null);
     }
   };
 
@@ -307,12 +299,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     const response = await fetch("/api/agency-actions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // objective_en selects the server-resolved variant the human picked
-      // (e.g. Dept. of State new-entity vs annual report); the server only
-      // honors objectives it resolved itself.
+      // obligation_id ties the run to the specific SmartPR filing
+      // requirement the human picked (server-validated — the client can
+      // never invent an objective). objective_en selects the
+      // server-resolved variant the human picked (e.g. Dept. of State
+      // new-entity vs annual report); the server only honors objectives
+      // it resolved itself.
       body: JSON.stringify({
         business_id: businessId,
         action_id: action.id,
+        obligation_id: action.obligation_id ?? null,
         objective_en: action.objective_en ?? null,
         objective_es: action.objective_es ?? null,
         preflight_answers: {
@@ -350,28 +346,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         filingLabelEn: action.title_en,
         filingLabelEs: action.title_es,
       });
-    }
-  };
-
-  /** Legacy fallback: start a run directly by filing type (pre-catalog path). */
-  const legacyStart = async () => {
-    setLegacyBusy(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/agency-runs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ business_id: businessId, filing_type: filingType }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setError(result.error || L("Could not start run.", "No se pudo iniciar la ejecución.", lang));
-        return;
-      }
-      setRun(result.run as AgencyRunPublic);
-      setGoalBrief(null);
-    } finally {
-      setLegacyBusy(false);
     }
   };
 
@@ -519,7 +493,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
   /* ---------------- derived chat state ---------------- */
 
-  const activeConfig = getFilingConfig(run ? run.filing_type : filingType);
+  const activeConfig = getFilingConfig(
+    run ? run.filing_type : "SURI_REGISTER_TAXPAYER"
+  );
   const portalName = L(activeConfig.portalEn, activeConfig.portalEs, lang);
 
   const milestones = useMemo(() => {
@@ -531,7 +507,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     });
     // The goal-brief message already announces the start ("I'm starting your
     // …") — skip the generic "I'm starting your … filing" milestone so the
-    // run doesn't open with two start bubbles. Legacy direct starts keep it.
+    // run doesn't open with two start bubbles.
     const hasGoalBriefMsg = msgs.some((m) => m.type === "goal-brief");
     if (hasGoalBriefMsg && built.length > 0) {
       const firstIdx = run.events[0]?.index;
@@ -723,7 +699,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setError(null);
     setUploadMsg(null);
     setBrowserOpen(false);
-    setMsgs([{ id: `agency-picker-${Date.now()}`, type: "agency-picker" }]);
+    // Keep the filing picker (already loaded) and drop everything after it.
+    setMsgs((prev) => prev.filter((m) => m.type === "filing-picker"));
   };
 
   return (
@@ -848,19 +825,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               runActive={Boolean(run)}
               transientLabel={transientLabel}
               scrollKey={scrollKey}
-              agencies={agencies}
-              actionsLoading={actionsLoading}
-              actionsLoadingAgency={actionsLoadingAgency}
-              onSelectAgency={(id) => void fetchActions(id)}
-              onStartAction={(action) => void startAction(action)}
-              actionBusyId={actionBusyId}
+              onStartFiling={(filing) => void startFiling(filing)}
+              filingBusyId={filingBusyId}
               onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}
               onUploadEvidence={(file, tags) => void uploadToLocker(file, tags)}
               uploadBusy={uploadBusy}
-              filingType={filingType}
-              onFilingTypeChange={setFilingType}
-              onLegacyStart={() => void legacyStart()}
-              legacyBusy={legacyBusy}
               intervention={intervention}
               review={review}
               terminalNote={terminalNote}

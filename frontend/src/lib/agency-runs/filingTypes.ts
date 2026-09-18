@@ -69,6 +69,14 @@ export interface AgencyFilingConfig {
    * Surfaced as missing items with sensitive=true.
    */
   sensitiveNeeds?: { id: string; label_en: string; label_es: string }[];
+  /**
+   * Engine document_ids (obligations.requirement_id) this filing satisfies.
+   * Keyed ONLY on engine document_ids — never on requirement names
+   * (obligations.requirement_id falls back to the requirement name when
+   * document_id is null, and name-matching rots). Used to join a business's
+   * SmartPR-generated obligations to the browser filing that fulfills them.
+   */
+  requirementIds?: string[];
 }
 
 export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
@@ -137,6 +145,10 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
         label_es: "Número de Seguro Social",
       },
     ],
+    // DOC_SURI_REGISTRATION exists in the document catalog but no engine
+    // rule currently emits it (verified 2026-09-18 in data/rules.json) — this
+    // join only fires when an obligation actually carries the id.
+    requirementIds: ["DOC_SURI_REGISTRATION"],
   },
   {
     id: "SURI_MERCHANT_REGISTRATION",
@@ -191,6 +203,7 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: ["SURI_REGISTER_TAXPAYER"],
     sensitiveNeeds: [],
+    requirementIds: ["DOC_MERCHANT_REGISTRATION"],
   },
   {
     id: "DEPT_STATE_CORPORATE_FILING",
@@ -251,6 +264,11 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: [],
     sensitiveNeeds: [],
+    // DOC_CERT_INCORPORATION is emitted by engine rules; DOC_ARTICLES_ORGANIZATION
+    // exists in the document catalog (no rule emits it yet — future-proof).
+    // DOC_ANNUAL_REPORT has no document entry and no rule: the annual-report
+    // variant cannot be obligation-driven until the engine models it.
+    requirementIds: ["DOC_CERT_INCORPORATION", "DOC_ARTICLES_ORGANIZATION"],
   },
   {
     id: "OGPE_PERMISO_UNICO",
@@ -307,6 +325,7 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: [],
     sensitiveNeeds: [],
+    requirementIds: ["DOC_PERMISO_UNICO"],
   },
   {
     id: "DEMO_REHEARSAL_PORTAL",
@@ -387,6 +406,10 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
         label_es: "Número de Seguro Social",
       },
     ],
+    // Synthetic requirement id — the demo portal has no real obligation, so
+    // the server synthesizes a demo obligation carrying this id and routes it
+    // through the identical structured-objective code path as real agencies.
+    requirementIds: ["demo:rehearsal-filing"],
   },
 ];
 

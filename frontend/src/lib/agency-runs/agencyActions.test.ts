@@ -1,6 +1,15 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { isAgencyId, resolveAgencyActions } from "./agencyActions";
+import {
+  DEMO_OBLIGATION_ID,
+  DEMO_REQUIREMENT_ID,
+  isAgencyId,
+  resolveAgencyActions,
+  resolveFilingOptions,
+  type FilingGroup,
+  type ObligationLike,
+} from "./agencyActions";
+import type { AgencyFilingType } from "./types";
 import { getFilingConfig } from "./filingTypes";
 
 const fullPassport = {
@@ -240,5 +249,139 @@ describe("Dept. of State objective resolution", () => {
     });
     assert.equal(actions.length, 1);
     assert.ok(actions[0].objective_en?.includes("ANNUAL REPORT"));
+  });
+});
+
+describe("resolveFilingOptions", () => {
+  const obligations: ObligationLike[] = [
+    { id: "obl-suri", name: "Register with SURI", requirement_id: "DOC_SURI_REGISTRATION", agency: "Hacienda / SURI", status: "MISSING" },
+    { id: "obl-permiso", name: "Permiso Único", requirement_id: "DOC_PERMISO_UNICO", agency: "OGPe", status: "MISSING" },
+    { id: "obl-ds", name: "Certificate of incorporation", requirement_id: "DOC_CERT_INCORPORATION", agency: "Department of State", status: "MISSING" },
+    { id: "obl-merchant", name: "Merchant registration", requirement_id: "DOC_MERCHANT_REGISTRATION", agency: "Hacienda / SURI", status: "MISSING" },
+    { id: "obl-unknown", name: "Mystery requirement", requirement_id: "DOC_DOES_NOT_EXIST", agency: "Hacienda / SURI", status: "MISSING" },
+    { id: "obl-noname", name: "Name-only requirement", requirement_id: null, agency: "Hacienda / SURI", status: "MISSING" },
+  ];
+  const base = {
+    business_id: "biz-1",
+    passport: fullPassport,
+    priorRuns: [] as { filing_type: AgencyFilingType; status: string }[],
+  };
+  const all = (groups: FilingGroup[]) => groups.flatMap((g) => g.filings);
+
+  it("joins obligations to the filing registry by requirement_id", () => {
+    const filings = all(resolveFilingOptions({ ...base, obligations }));
+    const suri = filings.find((f) => f.obligation_id === "obl-suri");
+    assert.ok(suri);
+    assert.equal(suri.supported, true);
+    assert.equal(suri.action?.filing_type, "SURI_REGISTER_TAXPAYER");
+    assert.equal(suri.requirement_id, "DOC_SURI_REGISTRATION");
+    assert.equal(suri.obligation_name, "Register with SURI");
+    assert.equal(suri.filing_status, "ready_to_start");
+    assert.equal(suri.action?.obligation_id, "obl-suri");
+    assert.equal(suri.action?.requirement_id, "DOC_SURI_REGISTRATION");
+
+    const permiso = filings.find((f) => f.obligation_id === "obl-permiso");
+    assert.ok(permiso);
+    assert.equal(permiso.action?.filing_type, "OGPE_PERMISO_UNICO");
+    assert.equal(permiso.agency_id, "OGPE");
+  });
+
+  it("lets the SmartPR requirement decide the Dept. of State variant over passport signals", () => {
+    // fullPassport carries a registry number → passport signals alone say
+    // annual_report; the DOC_CERT_INCORPORATION requirement forces new_entity.
+    const filings = all(resolveFilingOptions({ ...base, obligations }));
+    const ds = filings.find((f) => f.obligation_id === "obl-ds");
+    assert.ok(ds);
+    assert.equal(ds.action?.filing_type, "DEPT_STATE_CORPORATE_FILING");
+    assert.equal(ds.title_en, "Dept. of State — Create a new entity");
+    assert.ok(ds.action?.objective_en?.includes("NEW juridical entity"));
+  });
+
+  it("never matches by requirement name — unmapped ids surface as disabled", () => {
+    const groups = resolveFilingOptions({ ...base, obligations });
+    const filings = all(groups);
+    for (const id of ["obl-unknown", "obl-noname"]) {
+      const f = filings.find((x) => x.obligation_id === id);
+      assert.ok(f, id);
+      assert.equal(f.supported, false);
+      assert.equal(f.action, null);
+      assert.equal(f.filing_status, "unsupported");
+    }
+    // Disabled registry entries (merchant registration) also surface as
+    // unsupported rather than launching a filing that isn't actually built.
+    const merchant = filings.find((x) => x.obligation_id === "obl-merchant");
+    assert.ok(merchant);
+    assert.equal(merchant.supported, false);
+    assert.equal(merchant.filing_status, "unsupported");
+    // Unsupported options trail in their own group — never mixed into an
+    // agency's filings as a launchable card.
+    const other = groups[groups.length - 1];
+    assert.equal(other.agency_id, "OTHER");
+    assert.ok(other.filings.every((f) => !f.supported));
+  });
+
+  it("marks submitted when the obligation completed or a run finished review", () => {
+    const filings = all(
+      resolveFilingOptions({
+        ...base,
+        priorRuns: [{ filing_type: "SURI_REGISTER_TAXPAYER", status: "review" }],
+        obligations: [
+          { id: "obl-done", name: "Register with SURI", requirement_id: "DOC_SURI_REGISTRATION", agency: "Hacienda / SURI", status: "COMPLETED" },
+        ],
+      })
+    );
+    assert.equal(filings.length, 1);
+    assert.equal(filings[0].filing_status, "submitted");
+  });
+
+  it("marks in_progress for active runs and IN_PROGRESS obligations", () => {
+    const filings = all(
+      resolveFilingOptions({
+        ...base,
+        priorRuns: [{ filing_type: "OGPE_PERMISO_UNICO", status: "running" }],
+        obligations: [
+          { id: "obl-p", name: "Permiso Único", requirement_id: "DOC_PERMISO_UNICO", agency: "OGPe", status: "IN_PROGRESS" },
+        ],
+      })
+    );
+    assert.equal(filings.length, 1);
+    assert.equal(filings[0].filing_status, "in_progress");
+  });
+
+  it("flags missing SmartPR information instead of ready", () => {
+    const filings = all(
+      resolveFilingOptions({
+        business_id: "biz-1",
+        passport: thinPassport,
+        priorRuns: [],
+        obligations: [
+          { id: "obl-suri", name: "Register with SURI", requirement_id: "DOC_SURI_REGISTRATION", agency: "Hacienda / SURI", status: "MISSING" },
+        ],
+      })
+    );
+    assert.equal(filings.length, 1);
+    assert.equal(filings[0].filing_status, "missing_information");
+  });
+
+  it("routes the demo rehearsal portal through the same objective code path", () => {
+    const groups = resolveFilingOptions({ ...base, obligations: [], includeDemo: true });
+    const demo = groups.find((g) => g.agency_id === "DEMO_REHEARSAL");
+    assert.ok(demo);
+    assert.equal(demo.demo, true);
+    assert.equal(demo.filings.length, 1);
+    const filing = demo.filings[0];
+    assert.equal(filing.obligation_id, DEMO_OBLIGATION_ID);
+    assert.equal(filing.requirement_id, DEMO_REQUIREMENT_ID);
+    assert.equal(filing.action?.filing_type, "DEMO_REHEARSAL_PORTAL");
+    assert.equal(filing.supported, true);
+  });
+
+  it("never leaks passport values into filing options", () => {
+    const groups = resolveFilingOptions({ ...base, obligations, includeDemo: true });
+    const dumped = JSON.stringify(groups);
+    assert.ok(!dumped.includes("66-1234567"), "EIN value leaked");
+    assert.ok(!dumped.includes("787-555-0100"), "phone value leaked");
+    assert.ok(!dumped.includes("Café Plaza"), "name value leaked");
+    assert.ok(!dumped.includes("123 Calle Principal"), "address value leaked");
   });
 });

@@ -42,6 +42,12 @@ export interface GoalBrief {
   user_input_expected: { id: string; label_en: string; label_es: string; sensitive: boolean }[];
   evidence_available: string[];
   /**
+   * SmartPR requirement / obligation this filing fulfills (ids only — the
+   * browser agent executes exactly this filing objective).
+   */
+  requirement_id?: string | null;
+  obligation_id?: string | null;
+  /**
    * Remembered/answered portal-account status (labels only). Drives the
    * PORTAL ACCOUNT line in the prompt block: HAS account → expect a login
    * gate; NO account → begin with new-account registration.
@@ -134,6 +140,9 @@ export function buildGoalBrief(input: {
     })),
     evidence_available: action.evidence_available ?? [],
     portal_account: input.portal_account,
+    // The exact SmartPR requirement this filing fulfills (ids only).
+    requirement_id: action.requirement_id ?? null,
+    obligation_id: action.obligation_id ?? null,
     // Safe by default: the prompt block marks every entry as background only,
     // never a requirement decision.
     project_context: input.project_context ?? {},
@@ -150,6 +159,11 @@ export function goalBriefToPromptBlock(brief: GoalBrief): string {
   const lines: string[] = [];
   lines.push("=== AGENCY / GOAL BRIEF ===");
   lines.push(`AGENCY: ${brief.agency_en} / ${brief.agency_es}`);
+  if (brief.requirement_id || brief.obligation_id) {
+    lines.push(
+      `SMARTPR REQUIREMENT: ${brief.requirement_id ?? "(none)"} (obligation ${brief.obligation_id ?? "(none)"}) — this is the ONE filing to complete; do not choose a different transaction.`
+    );
+  }
   lines.push(`GOAL: ${brief.goal_en}`);
   lines.push(`EXPECTED OUTCOME: ${brief.expected_outcome_en}`);
   // Only when the pre-flight step (or memory) resolved a portal-account

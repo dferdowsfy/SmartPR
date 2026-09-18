@@ -3,10 +3,16 @@
 /**
  * AgencyChat — chat-primary thread for the agency assistant.
  *
- * The chat is the primary surface for the whole run: agency picker, action
- * cards, goal brief, milestone messages, one in-place transient status,
- * intervention cards (secure inputs, values never rendered), and review card.
- * The live browser is secondary (AgencyBrowser) and never required.
+ * The chat is the primary surface for the whole run: filing picker,
+ * pre-flight card, goal brief, milestone messages, one in-place transient
+ * status, intervention cards (secure inputs, values never rendered), and
+ * review card. The live browser is secondary (AgencyBrowser) and never
+ * required.
+ *
+ * Filing-first: the picker lists the specific filings SmartPR identified
+ * for this business (obligations joined to the filing registry, grouped by
+ * agency). SmartPR decides what needs to be filed — the human only picks
+ * which filing to prepare, and the browser agent executes only that one.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -15,12 +21,16 @@ import {
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import type {
-  AgencyFilingType,
   AgencyPauseReason,
   AgencyPendingField,
   AgencyRunPublic,
 } from "../../../../lib/agency-runs/types";
-import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
+import {
+  nonSensitiveMissingItems,
+  type FilingGroup,
+  type FilingOption,
+  type FilingStatus,
+} from "../../../../lib/agency-runs/agencyActions";
 import {
   collectPortalValidationMessages,
   fieldHasValidationIssue,
@@ -28,7 +38,10 @@ import {
 } from "../../../../lib/agency-runs/pendingFields";
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
 import {
-  actionStatusChipLabel,
+  filingGateCopy,
+  filingPickerIntro,
+  filingStatusChipLabel,
+  filingUnsupportedCopy,
   gateCopy,
   interventionHeading,
   type AgencyAction,
@@ -44,19 +57,18 @@ const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 /* Session messages — ephemeral chat content around the run lifecycle   */
 /* ------------------------------------------------------------------ */
 
-export interface AgencyPickerMsg {
+/**
+ * Filing picker — the first message. Lists the specific filings SmartPR
+ * identified for this business (obligations joined to the filing registry),
+ * grouped by agency. Agency is a visual heading only; the execution
+ * objective is always the picked filing.
+ */
+export interface FilingPickerMsg {
   id: string;
-  type: "agency-picker";
-}
-export interface ActionListMsg {
-  id: string;
-  type: "action-list";
-  agencyId: string;
-  agencyNameEn: string;
-  agencyNameEs: string;
-  introEn: string;
-  introEs: string;
-  actions: AgencyAction[];
+  type: "filing-picker";
+  groups: FilingGroup[];
+  loading: boolean;
+  error: string | null;
 }
 export interface GoalBriefMsg {
   id: string;
@@ -81,10 +93,6 @@ export interface PreflightMsg {
   uploadsEn: string;
   uploadsEs: string;
 }
-export interface LegacyPickerMsg {
-  id: string;
-  type: "legacy-picker";
-}
 export interface TextMsg {
   id: string;
   type: "text";
@@ -93,20 +101,10 @@ export interface TextMsg {
   tone: "info" | "warn" | "success";
 }
 export type SessionMsg =
-  | AgencyPickerMsg
-  | ActionListMsg
+  | FilingPickerMsg
   | GoalBriefMsg
   | PreflightMsg
-  | LegacyPickerMsg
   | TextMsg;
-
-export interface AgencyOption {
-  id: string;
-  nameEn: string;
-  nameEs: string;
-  /** Fictional rehearsal portal — rendered with a DEMO badge. */
-  demo?: boolean;
-}
 
 /* ------------------------------------------------------------------ */
 /* Small pieces                                                         */
@@ -196,68 +194,80 @@ function agencyIcon(id: string) {
   return <Stamp className="h-5 w-5 text-brand" />;
 }
 
-const ACTION_CHIP_STYLES: Record<AgencyAction["status"], string> = {
-  ready: "border-emerald-200 bg-emerald-50 text-emerald-800",
+const FILING_CHIP_STYLES: Record<FilingStatus, string> = {
+  ready_to_start: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  missing_information: "border-amber-200 bg-amber-50 text-amber-900",
+  in_progress: "border-sky-200 bg-sky-50 text-sky-800",
+  submitted: "border-slate-200 bg-slate-100 text-slate-600",
   blocked: "border-amber-200 bg-amber-50 text-amber-900",
-  not_required: "border-slate-200 bg-slate-100 text-slate-500",
-  completed: "border-sky-200 bg-sky-50 text-sky-800",
+  unsupported: "border-slate-200 bg-slate-100 text-slate-500",
 };
 
-function ActionCard({
-  action,
+/**
+ * One filing option card. SmartPR decided this filing needs to happen;
+ * the card only lets the human start it when SmartPR has everything it
+ * needs. Unsupported options render disabled — never a launch button.
+ */
+function FilingCard({
+  filing,
   lang,
   onStart,
   busy,
   disabled,
 }: {
-  action: AgencyAction;
+  filing: FilingOption;
   lang: Lang;
   onStart: () => void;
   busy: boolean;
   disabled: boolean;
 }) {
-  const missing = action.missing_items ?? [];
+  const action = filing.action;
+  // Gate: SmartPR information still missing — the browser never launches
+  // until these are complete.
+  const gate = action ? nonSensitiveMissingItems(action).length : 0;
+  const canStart = filing.supported && filing.filing_status === "ready_to_start";
   return (
     <div className="rounded-xl border border-slate-200 bg-[#fbf8f2] p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-bold text-[#161616]">
-          {L(action.title_en, action.title_es, lang)}
+          {L(filing.title_en, filing.title_es, lang)}
         </p>
         <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${ACTION_CHIP_STYLES[action.status]}`}
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
         >
-          {actionStatusChipLabel(action, lang)}
+          {filingStatusChipLabel(filing, lang)}
         </span>
       </div>
-      <p className="mt-1 text-xs text-slate-500">
-        {L(
-          `${action.known} of ${action.total} ready from your Passport`,
-          `${action.known} de ${action.total} listas en tu Pasaporte`,
-          lang
-        )}
-      </p>
-      {action.objective_en && (
-        <p className="mt-1 text-xs text-slate-600">
-          {L(action.objective_en, action.objective_es ?? action.objective_en, lang)}
+      {filing.supported && (
+        <p className="mt-1 text-xs text-slate-500">
+          <span className="font-semibold">{L("SmartPR requirement: ", "Requisito de SmartPR: ", lang)}</span>
+          {filing.obligation_name}
         </p>
       )}
-      {missing.length > 0 && action.status === "blocked" && (
-        <p className="mt-1.5 text-xs text-slate-600">
-          <span className="font-semibold">{L("Still needed:", "Falta:", lang)} </span>
-          {missing
-            .slice(0, 3)
-            .map((m) => L(m.label_en, m.label_es, lang))
-            .join(", ")}
-          {missing.length > 3 ? ` +${missing.length - 3}` : ""}
+      {!filing.supported && (
+        <p className="mt-1 text-xs text-slate-500">{filingUnsupportedCopy(lang)}</p>
+      )}
+      {action && (
+        <p className="mt-1 text-xs text-slate-500">
+          {L(
+            `${action.known} of ${action.total} ready from your Passport`,
+            `${action.known} de ${action.total} listas en tu Pasaporte`,
+            lang
+          )}
         </p>
       )}
-      {action.blocked_by.length > 0 && (
+      {filing.filing_status === "missing_information" && gate > 0 && (
+        <p className="mt-1.5 text-xs font-semibold text-amber-800">
+          {filingGateCopy(gate, lang)}
+        </p>
+      )}
+      {action && action.blocked_by.length > 0 && (
         <p className="mt-1 text-xs text-slate-500">
           {L("Waiting on: ", "Esperando: ", lang)}
           {action.blocked_by.join(", ")}
         </p>
       )}
-      {action.status === "ready" && (
+      {canStart && (
         <button
           type="button"
           disabled={busy || disabled}
@@ -283,6 +293,7 @@ export interface PreflightAnswers {
 
 function PreflightCard({
   preflight,
+  action,
   filingLabelEn,
   filingLabelEs,
   uploadsEn,
@@ -293,6 +304,7 @@ function PreflightCard({
   onConfirm,
 }: {
   preflight: Preflight;
+  action: AgencyAction;
   filingLabelEn: string;
   filingLabelEs: string;
   uploadsEn: string;
@@ -314,6 +326,10 @@ function PreflightCard({
 
   const items = preflight.passport_items ?? [];
   const inlineItems = items.slice(0, 5);
+
+  // Gate: SmartPR information still missing — the browser never launches
+  // until these are complete (the human goes back to SmartPR fields).
+  const gate = nonSensitiveMissingItems(action).length;
 
   const handleConfirm = async () => {
     setConfirmBusy(true);
@@ -575,9 +591,15 @@ function PreflightCard({
           {confirmError && (
             <p className="mt-2.5 text-xs font-medium text-rose-700">{confirmError}</p>
           )}
+          {gate > 0 && (
+            <p className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {filingGateCopy(gate, lang)}
+            </p>
+          )}
           <button
             type="button"
-            disabled={confirmBusy}
+            disabled={confirmBusy || gate > 0}
             onClick={() => void handleConfirm()}
             className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >
@@ -1036,21 +1058,14 @@ export interface AgencyChatProps {
   runActive: boolean;
   transientLabel: string | null;
   scrollKey: string;
-  agencies: AgencyOption[];
-  actionsLoading: boolean;
-  actionsLoadingAgency: string | null;
-  onSelectAgency: (agencyId: string) => void;
-  onStartAction: (action: AgencyAction) => void;
-  actionBusyId: string | null;
+  /** Start pre-flight for a specific SmartPR filing (obligation-joined option). */
+  onStartFiling: (filing: FilingOption) => void;
+  filingBusyId: string | null;
   /** Pre-flight confirm → POST /api/agency-actions with the answers. */
   onConfirmPreflight: (msg: PreflightMsg, answers: PreflightAnswers) => Promise<void>;
   /** Pre-flight evidence attach — uploads straight to the Evidence Locker. */
   onUploadEvidence: (file: File, tags: string[]) => void;
   uploadBusy: boolean;
-  filingType: AgencyFilingType;
-  onFilingTypeChange: (t: AgencyFilingType) => void;
-  onLegacyStart: () => void;
-  legacyBusy: boolean;
   intervention: InterventionProps | null;
   review: {
     knownCount: number | null;
@@ -1066,6 +1081,15 @@ export interface AgencyChatProps {
   runFailed: boolean;
 }
 
+/**
+ * Stable busy key for a filing card. Dept. of State can surface two
+ * objective variants for the same obligation — the objective distinguishes
+ * them so the spinner lands on the right card.
+ */
+function filingBusyKey(filing: FilingOption): string {
+  return `${filing.id}:${filing.obligation_id}:${filing.action?.objective_en ?? ""}`;
+}
+
 export function AgencyChat(props: AgencyChatProps) {
   const { lang } = props;
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -1078,61 +1102,50 @@ export function AgencyChat(props: AgencyChatProps) {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 md:px-5">
         {props.msgs.map((msg) => {
-          if (msg.type === "agency-picker") {
+          if (msg.type === "filing-picker") {
             return (
               <AssistantBubble key={msg.id}>
                 <p className="text-sm leading-snug text-slate-700">
-                  {L(
-                    "Which agency should I work with? I'll check what's outstanding for this business.",
-                    "¿Con qué agencia bregamos? Voy a chequear qué está pendiente para este negocio.",
-                    lang
-                  )}
+                  {filingPickerIntro(lang)}
                 </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  {props.agencies.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      disabled={props.runActive}
-                      onClick={() => props.onSelectAgency(a.id)}
-                      className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-[#fbf8f2] px-3 py-3 text-left transition hover:border-brand/50 hover:bg-brand/[0.04] disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-[#fbf8f2]"
-                    >
-                      {agencyIcon(a.id)}
-                      <span className="text-sm font-bold text-[#161616]">
-                        {L(a.nameEn, a.nameEs, lang)}
-                      </span>
-                      {a.demo && (
-                        <span className="ml-auto rounded-md bg-amber-300 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
-                          Demo
-                        </span>
-                      )}
-                      {props.actionsLoading && props.actionsLoadingAgency === a.id && (
-                        <Loader2 className="ml-auto h-4 w-4 animate-spin text-brand" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </AssistantBubble>
-            );
-          }
-          if (msg.type === "action-list") {
-            return (
-              <AssistantBubble key={msg.id}>
-                <p className="text-sm leading-snug text-slate-700">
-                  {L(msg.introEn, msg.introEs, lang)}
-                </p>
-                <div className="mt-3 space-y-2">
-                  {msg.actions.map((action) => (
-                    <ActionCard
-                      key={action.id}
-                      action={action}
-                      lang={lang}
-                      busy={props.actionBusyId === action.id}
-                      disabled={props.runActive || props.actionBusyId !== null}
-                      onStart={() => props.onStartAction(action)}
-                    />
-                  ))}
-                </div>
+                {msg.loading ? (
+                  <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin text-brand" />
+                    {L("Finding your filings…", "Buscando tus trámites…", lang)}
+                  </p>
+                ) : msg.error ? (
+                  <p className="mt-3 text-sm font-medium text-rose-700">{msg.error}</p>
+                ) : (
+                  <div className="mt-3 space-y-4">
+                    {msg.groups.map((group) => (
+                      <div key={group.agency_id}>
+                        <div className="flex items-center gap-2">
+                          {agencyIcon(group.agency_id)}
+                          <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                            {L(group.agency_name_en, group.agency_name_es, lang)}
+                          </p>
+                          {group.demo && (
+                            <span className="rounded-md bg-amber-300 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
+                              Demo
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-2 space-y-2">
+                          {group.filings.map((filing) => (
+                            <FilingCard
+                              key={`${filing.id}:${filing.obligation_id}`}
+                              filing={filing}
+                              lang={lang}
+                              busy={props.filingBusyId === filingBusyKey(filing)}
+                              disabled={props.runActive || props.filingBusyId !== null}
+                              onStart={() => props.onStartFiling(filing)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </AssistantBubble>
             );
           }
@@ -1179,6 +1192,7 @@ export function AgencyChat(props: AgencyChatProps) {
               <AssistantBubble key={msg.id}>
                 <PreflightCard
                   preflight={msg.preflight}
+                  action={msg.action}
                   filingLabelEn={msg.filingLabelEn}
                   filingLabelEs={msg.filingLabelEs}
                   uploadsEn={msg.uploadsEn}
@@ -1188,54 +1202,6 @@ export function AgencyChat(props: AgencyChatProps) {
                   uploadBusy={props.uploadBusy}
                   onConfirm={(answers) => props.onConfirmPreflight(msg, answers)}
                 />
-              </AssistantBubble>
-            );
-          }
-          if (msg.type === "legacy-picker") {
-            return (
-              <AssistantBubble key={msg.id}>
-                <p className="text-sm leading-snug text-slate-700">
-                  {L(
-                    "The agency catalog isn't available right now — pick the filing directly:",
-                    "El catálogo de agencias no está disponible ahora — elige el trámite directamente:",
-                    lang
-                  )}
-                </p>
-                <label className="mt-3 block">
-                  <span className="mb-1 block text-xs font-bold text-slate-600">
-                    {L("Filing type", "Tipo de trámite", lang)}
-                  </span>
-                  <select
-                    value={props.filingType}
-                    onChange={(e) => props.onFilingTypeChange(e.target.value as AgencyFilingType)}
-                    disabled={props.runActive}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#161616] disabled:opacity-50"
-                  >
-                    {AGENCY_FILING_CONFIGS.filter((c) => c.enabled).map((c) => (
-                      <option key={c.id} value={c.id} disabled={c.requiresExistingAccount}>
-                        {L(c.labelEn, c.labelEs, lang)}
-                        {c.requiresExistingAccount
-                          ? L(" — requires an existing portal account", " — requiere una cuenta existente en el portal", lang)
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <button
-                  type="button"
-                  disabled={props.legacyBusy || props.runActive}
-                  onClick={props.onLegacyStart}
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea] disabled:opacity-50"
-                >
-                  {props.legacyBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                  {props.legacyBusy
-                    ? L("Starting…", "Iniciando…", lang)
-                    : L("Start agency run", "Iniciar ejecución con agencia", lang)}
-                </button>
               </AssistantBubble>
             );
           }

@@ -29,6 +29,36 @@ export type AgencyWorkerKind = "mock" | "browser_use";
 export type AgencyPendingFieldType = "text" | "email" | "password" | "tel" | "number";
 
 /**
+ * Structured submission objective — the browser agent must not start unless
+ * it receives one of these. SmartPR decides what needs to be filed (from its
+ * own requirements engine output); the browser agent only executes the
+ * selected filing. Labels/ids only — never field values, never secrets.
+ */
+export interface SubmissionObjective {
+  submission_objective_id: string;
+  business_id: string;
+  /** Engine document_id (obligations.requirement_id); synthetic for demo. */
+  requirement_id: string | null;
+  requirement_name: string;
+  obligation_id: string;
+  obligation_status: string;
+  agency: string;
+  transaction_type: AgencyFilingType;
+  target_portal: string;
+  /** Canonical passport dotted paths approved for prefill (labels only). */
+  approved_fields: string[];
+  /** Evidence-locker tags approved for upload (labels only). */
+  approved_documents: string[];
+  /**
+   * False when the filing is not actually startable (already submitted, or
+   * blocking information still missing). createRun refuses to create a run
+   * with ready_to_start === false — no browser session without a ready,
+   * specific filing objective.
+   */
+  ready_to_start: boolean;
+}
+
+/**
  * A field the human must provide in the Assistant panel while the agent is paused.
  * Values are never stored on the run — only id/label/type/sensitivity metadata.
  */
@@ -103,6 +133,12 @@ export interface AgencyRun {
    * was started via POST /api/agency-actions. Drives the agent brief block.
    */
   goal_brief?: GoalBrief | null;
+  /**
+   * Structured submission objective (labels/ids only — never values).
+   * Present when the run was started from a specific SmartPR filing
+   * requirement; the browser agent executes only this objective.
+   */
+  submission_objective?: SubmissionObjective | null;
 }
 
 export interface AgencyRunPublic {
@@ -136,6 +172,11 @@ export interface AgencyRunPublic {
    * started directly via POST /api/agency-runs.
    */
   goal_brief: GoalBrief | null;
+  /**
+   * Structured submission objective (labels/ids only — never values, never
+   * secrets). Null for runs started without one (legacy path, now retired).
+   */
+  submission_objective: SubmissionObjective | null;
   /**
    * Owner-only passport snapshot for Assistant-panel prefill (non-sensitive mapping
    * happens client-side). Never contains field values the user typed in Assistant.

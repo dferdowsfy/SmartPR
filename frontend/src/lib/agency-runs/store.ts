@@ -6,6 +6,7 @@
  * browser-agent worker when AGENT_PROVIDER=self_hosted); otherwise mock timeline.
  */
 import { randomUUID } from "crypto";
+import type { SubmissionObjective } from "./types";
 import {
   agentProvider,
   agentProviderLabel,
@@ -85,6 +86,8 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     supplied_field_ids: [...(run.supplied_field_ids ?? [])],
     // GoalBrief is labels-only by construction — safe for public payloads.
     goal_brief: run.goal_brief ?? null,
+    // SubmissionObjective is ids/labels only — safe for public payloads.
+    submission_objective: run.submission_objective ?? null,
     // Owner-gated API already; used for Assistant non-sensitive prefill only.
     passport_snapshot: run.passport_snapshot ?? null,
   };
@@ -510,12 +513,25 @@ export async function createRun(input: {
   /** Labels-only goal brief from POST /api/agency-actions — drives the agent brief block. */
   goalBrief?: GoalBrief | null;
   /**
+   * Structured submission objective for this run. No browser session starts
+   * without a ready, specific filing objective: SmartPR decides what needs
+   * to be filed; the browser agent only executes the selected filing.
+   */
+  submissionObjective?: SubmissionObjective | null;
+  /**
    * Up-front sensitive field values from the pre-flight step (ephemeral).
    * Passed ONLY into the task prompt's FIELDS FILL block — never persisted
    * on the run, never written into events or chat.
    */
   fields?: ResumeFields | null;
 }): Promise<AgencyRunPublic> {
+  // Hard gate: never create a run for an objective that isn't ready to
+  // start (already submitted, or blocking SmartPR information missing).
+  if (input.submissionObjective && !input.submissionObjective.ready_to_start) {
+    throw new Error(
+      "Submission objective is not ready to start — resolve the missing information first."
+    );
+  }
   const created = nowIso();
   const useBu = isBrowserUseConfigured();
 
@@ -545,6 +561,7 @@ export async function createRun(input: {
     // for values the human already provided at start. Ids only — never values.
     supplied_field_ids: mergeSuppliedFieldIds([], input.fields),
     goal_brief: input.goalBrief ?? null,
+    submission_objective: input.submissionObjective ?? null,
   };
 
   if (useBu) {
@@ -561,6 +578,7 @@ export async function createRun(input: {
         passport: input.passport || null,
         goalBrief: input.goalBrief ?? null,
         fields: input.fields ?? null,
+        submissionObjective: input.submissionObjective ?? null,
       });
       const buRun = await createAgentRun({
         task,

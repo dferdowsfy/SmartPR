@@ -25,6 +25,11 @@ import type {
 
 export type { AgencyFilingType, AgencyPauseReason, AgencyRunEvent, AgencyRunStatus };
 export type { AgencyAction } from "../../../../lib/agency-runs/agencyActions";
+export type {
+  FilingGroup,
+  FilingOption,
+  FilingStatus,
+} from "../../../../lib/agency-runs/agencyActions";
 export type { GoalBrief } from "../../../../lib/agency-runs/goalBrief";
 export type {
   Preflight,
@@ -75,6 +80,67 @@ export function actionStatusChipLabel(
     case "completed":
       return L("Completed", "Completada", lang);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Filing picker — obligation-driven (filing-first) copy helpers       */
+/* ------------------------------------------------------------------ */
+
+/** Compact status-chip label for a filing option card. Testable pure helper. */
+export function filingStatusChipLabel(
+  option: import("../../../../lib/agency-runs/agencyActions").FilingOption,
+  lang: Lang
+): string {
+  switch (option.filing_status) {
+    case "ready_to_start":
+      return L("Ready to start", "Lista para empezar", lang);
+    case "missing_information":
+      return L("Missing information", "Falta información", lang);
+    case "in_progress":
+      return L("In progress", "En curso", lang);
+    case "submitted":
+      return L("Submitted", "Enviada", lang);
+    case "blocked":
+      return L("Blocked", "Bloqueada", lang);
+    case "unsupported":
+      return L("Not yet supported", "Aún no soportado", lang);
+  }
+}
+
+/**
+ * Intro line for the filing picker — states plainly that SmartPR decided
+ * what needs to be filed; the human only picks which filing to prepare.
+ */
+export function filingPickerIntro(lang: Lang): string {
+  return L(
+    "I found the filings SmartPR has identified for this business. Which one would you like me to prepare?",
+    "Encontré los trámites que SmartPR identificó para este negocio. ¿Cuál quieres que prepare?",
+    lang
+  );
+}
+
+/**
+ * Gate copy shown when SmartPR information is still missing before a
+ * filing can begin — the browser never launches until this is complete.
+ */
+export function filingGateCopy(count: number, lang: Lang): string {
+  if (lang === "es") {
+    return count === 1
+      ? "Aún falta 1 pieza antes de que SmartPR pueda empezar este trámite."
+      : `Aún faltan ${count} piezas antes de que SmartPR pueda empezar este trámite.`;
+  }
+  return count === 1
+    ? "1 item is still needed before SmartPR can begin this filing."
+    : `${count} items are still needed before SmartPR can begin this filing.`;
+}
+
+/** Copy for an obligation SmartPR identified but no browser filing covers yet. */
+export function filingUnsupportedCopy(lang: Lang): string {
+  return L(
+    "SmartPR identified this requirement, but a browser filing isn't available for it yet.",
+    "SmartPR identificó este requisito, pero aún no hay un trámite de navegador disponible para él.",
+    lang
+  );
 }
 
 /* ------------------------------------------------------------------ */

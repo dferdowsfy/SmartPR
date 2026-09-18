@@ -4,8 +4,12 @@ import {
   actionStatusChipLabel,
   buildChatMilestones,
   chatScrollKey,
-  gateCopy,
   failureReason,
+  filingGateCopy,
+  filingPickerIntro,
+  filingStatusChipLabel,
+  filingUnsupportedCopy,
+  gateCopy,
   humanizeValidationError,
   interventionHeading,
   isTerminalWorkflowState,
@@ -13,6 +17,8 @@ import {
   workflowStatusLine,
   type AgencyAction,
   type AgencyRunEvent,
+  type FilingOption,
+  type FilingStatus,
 } from "./chatContracts";
 
 function event(index: number, message: string, kind?: "info" | "pause" | "review"): AgencyRunEvent {
@@ -269,5 +275,75 @@ describe("failureReason", () => {
     const reason = failureReason(events, "en");
     assert.ok(reason);
     assert.ok(!reason.includes("123-45-6789"));
+  });
+});
+
+describe("filingStatusChipLabel", () => {
+  function filingOption(filing_status: FilingStatus): FilingOption {
+    return {
+      id: "SURI_REGISTER_TAXPAYER",
+      action: null,
+      obligation_id: "obl-1",
+      requirement_id: "DOC_SURI_REGISTRATION",
+      obligation_name: "Register with SURI",
+      obligation_status: "MISSING",
+      filing_status,
+      supported: filing_status !== "unsupported",
+      title_en: "Register with SURI",
+      title_es: "Registrarse en SURI",
+      agency_id: "HACIENDA_SURI",
+      agency_en: "Hacienda / SURI",
+      agency_es: "Hacienda / SURI",
+    };
+  }
+
+  it("labels all filing statuses in EN and PR Spanish", () => {
+    assert.equal(filingStatusChipLabel(filingOption("ready_to_start"), "en"), "Ready to start");
+    assert.equal(filingStatusChipLabel(filingOption("ready_to_start"), "es"), "Lista para empezar");
+    assert.equal(filingStatusChipLabel(filingOption("missing_information"), "en"), "Missing information");
+    assert.equal(filingStatusChipLabel(filingOption("missing_information"), "es"), "Falta información");
+    assert.equal(filingStatusChipLabel(filingOption("in_progress"), "en"), "In progress");
+    assert.equal(filingStatusChipLabel(filingOption("in_progress"), "es"), "En curso");
+    assert.equal(filingStatusChipLabel(filingOption("submitted"), "en"), "Submitted");
+    assert.equal(filingStatusChipLabel(filingOption("submitted"), "es"), "Enviada");
+    assert.equal(filingStatusChipLabel(filingOption("blocked"), "en"), "Blocked");
+    assert.equal(filingStatusChipLabel(filingOption("blocked"), "es"), "Bloqueada");
+    assert.equal(filingStatusChipLabel(filingOption("unsupported"), "en"), "Not yet supported");
+    assert.equal(filingStatusChipLabel(filingOption("unsupported"), "es"), "Aún no soportado");
+  });
+});
+
+describe("filing picker copy", () => {
+  it("states SmartPR identified the filings — the human only picks which to prepare", () => {
+    assert.ok(
+      filingPickerIntro("en").includes("the filings SmartPR has identified for this business")
+    );
+    assert.ok(
+      filingPickerIntro("es").includes("los trámites que SmartPR identificó para este negocio")
+    );
+  });
+
+  it("gate copy counts the missing items before launch", () => {
+    assert.equal(
+      filingGateCopy(2, "en"),
+      "2 items are still needed before SmartPR can begin this filing."
+    );
+    assert.equal(
+      filingGateCopy(1, "en"),
+      "1 item is still needed before SmartPR can begin this filing."
+    );
+    assert.equal(
+      filingGateCopy(2, "es"),
+      "Aún faltan 2 piezas antes de que SmartPR pueda empezar este trámite."
+    );
+    assert.equal(
+      filingGateCopy(1, "es"),
+      "Aún falta 1 pieza antes de que SmartPR pueda empezar este trámite."
+    );
+  });
+
+  it("unsupported copy never promises a browser launch", () => {
+    assert.ok(filingUnsupportedCopy("en").includes("isn't available for it yet"));
+    assert.ok(filingUnsupportedCopy("es").includes("aún no hay un trámite de navegador disponible"));
   });
 });

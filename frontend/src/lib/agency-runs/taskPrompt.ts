@@ -4,6 +4,42 @@ import {
   stripSensitivePassport,
   type GoalBrief,
 } from "./goalBrief";
+import type { SubmissionObjective } from "./types";
+
+/**
+ * Render the structured submission objective as the first block of the
+ * agent task prompt. No browser session starts without one of these:
+ * SmartPR decided what must be filed, and the agent executes ONLY it.
+ * Ids/labels only — never field values, never secrets.
+ */
+export function submissionObjectivePromptBlock(
+  objective: SubmissionObjective
+): string {
+  const lines = [
+    "=== SUBMISSION OBJECTIVE ===",
+    `submission_objective_id: ${objective.submission_objective_id}`,
+    `business_id: ${objective.business_id}`,
+    `requirement_id: ${objective.requirement_id ?? "(none)"}`,
+    `requirement_name: ${objective.requirement_name}`,
+    `obligation_id: ${objective.obligation_id}`,
+    `obligation_status: ${objective.obligation_status}`,
+    `agency: ${objective.agency}`,
+    `transaction_type: ${objective.transaction_type}`,
+    `target_portal: ${objective.target_portal}`,
+    `approved_fields: ${(objective.approved_fields ?? []).join(", ") || "(none)"}`,
+    `approved_documents: ${(objective.approved_documents ?? []).join(", ") || "(none)"}`,
+    `ready_to_start: ${objective.ready_to_start}`,
+    "",
+    "You are executing ONE SmartPR filing objective. Complete only this filing.",
+    "Use only the structured SmartPR fields and approved documents provided with this task.",
+    "Do not choose a different transaction.",
+    "Do not infer missing facts.",
+    "Do not add new requirements.",
+    "Stop and report a blocker if the portal requests information SmartPR has not supplied.",
+    "=== END SUBMISSION OBJECTIVE ===",
+  ];
+  return lines.join("\n");
+}
 
 /** Ephemeral login fields for USER_LOGIN resume — never persisted on the run. */
 export type ResumeCredentials = {
@@ -67,6 +103,12 @@ export function buildAgencyTaskPrompt(input: {
   fields?: ResumeFields | null;
   /** Labels-only goal brief from the agency-action flow (never values). */
   goalBrief?: GoalBrief | null;
+  /**
+   * Structured submission objective — required for browser launches.
+   * Rendered as the first block of the prompt so the agent's execution
+   * scope is exactly one SmartPR filing requirement.
+   */
+  submissionObjective?: SubmissionObjective | null;
 }): string {
   const { config } = input;
   // SECURITY: strip sensitive leaves (SSN, passwords, MFA, …) before the
@@ -116,7 +158,7 @@ export function buildAgencyTaskPrompt(input: {
     ? `\n\n${goalBriefToPromptBlock(input.goalBrief)}\n`
     : "";
 
-  return `You are SmartPR's agency filing assistant controlling a real browser for ${config.agencyEn} (${config.portalEn}).
+  return `${input.submissionObjective ? `${submissionObjectivePromptBlock(input.submissionObjective)}\n\n` : ""}You are SmartPR's agency filing assistant controlling a real browser for ${config.agencyEn} (${config.portalEn}).
 ${goalBriefBlock}
 GOAL
 - Filing: ${config.labelEn}
