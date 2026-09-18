@@ -15,7 +15,7 @@ const copy = {
       "Call for general guidance, or verify with a PIN to securely access permits, requirements, evidence, and project status by voice.",
     pills: ["General guidance", "PIN verified", "Project status", "Requirements"],
     callCta: "Call SmartPR",
-    callHours: "Mon–Fri, 8am–6pm AST · Spanish and English",
+    callAvailability: "Available 24/7 · Spanish and English",
     voiceAssistant: "Voice Assistant",
     listening: "Listening…",
     callHint:
@@ -45,7 +45,7 @@ const copy = {
       "Llama para orientación general, o verifícate con un PIN para acceder por voz y de forma segura a permisos, requisitos, evidencia y el estatus de tu proyecto.",
     pills: ["Orientación general", "PIN verificado", "Estatus del proyecto", "Requisitos"],
     callCta: "Llamar a SmartPR",
-    callHours: "Lun–Vie, 8am–6pm AST · Español e inglés",
+    callAvailability: "Disponible 24/7 · Español e inglés",
     voiceAssistant: "Asistente de voz",
     listening: "Escuchando…",
     callHint:
@@ -172,7 +172,7 @@ export default function VoiceCapabilities({ language }: { language: Language }) 
             <Phone size={17} strokeWidth={2} aria-hidden="true" />
             {c.callCta}
           </a>
-          <p className={styles.hours}>{c.callHours}</p>
+          <p className={styles.availability}>{c.callAvailability}</p>
         </div>
         <PhoneMockup c={c} />
       </article>
