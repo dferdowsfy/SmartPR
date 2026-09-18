@@ -308,3 +308,31 @@ test("commercial vehicle registration guidance is DTOP-validated, never a placeh
     assert.match(g.regulatoryReason, /marbete/i, `marbete mentioned (${language})`);
   }
 });
+
+test("sanitary permit guidance is industry-neutral, never food-handling-only", () => {
+  // REG-GUIDE-HEALTH-001 (live QA 2026-09-17 21:00, S23 Bayamón barbershop):
+  // the health card for a barbershop said "submit the permit application
+  // for the food-handling activity" and "documents that the premises passed
+  // inspection for food-handling" — the concept was written for the
+  // restaurant case only, though DOC_HEALTH_PERMIT fires for barbershops,
+  // salons, spas, tattoo shops, lodging and other public-facing premises
+  // too (RULE_0141/0144/0147/0155–0162/0248/0692). Same defect class as the
+  // solar-only construction guidance (10c5a75) and the food-only fire
+  // certification (7761507). The concept lead now covers establishments
+  // that handle food OR serve the public, with food as one example.
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req("DOC_HEALTH_PERMIT"), { ...context, language });
+    assert.doesNotMatch(
+      g.regulatoryReason,
+      /permit application for the food-handling activity|solicitud del permiso para la actividad de manejo de alimentos/i,
+      `old food-handling-only next-action phrasing is gone (${language})`
+    );
+    assert.doesNotMatch(
+      g.regulatoryReason,
+      /passed inspection for food-handling|aprobó la inspección de manejo de alimentos/i,
+      `old food-handling-only document-purpose phrasing is gone (${language})`
+    );
+    assert.match(g.regulatoryReason, /serve the public|atienden al p[uú]blico/i, `covers public-facing premises (${language})`);
+    assert.match(g.regulatoryReason, /barbershop|barber[ií]a/i, `names personal-care premises as an example (${language})`);
+  }
+});

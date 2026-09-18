@@ -233,10 +233,17 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
 
 
   DOC_HEALTH_PERMIT: concept("DOC_HEALTH_PERMIT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [condition("Q_FOOD_SOLD", "Food sold on site", "Alimentos vendidos en el local", true)]], [PR_GUIDANCE_SOURCES.health], [
-    text("Establishments that prepare or sell food are subject to sanitary inspection under environmental health regulation before they may operate.", "Los establecimientos que preparan o venden alimentos están sujetos a inspección sanitaria bajo la reglamentación de salud ambiental antes de operar."),
-    text("The sanitary/health permit documents that the premises passed inspection for food-handling and public-health conditions.", "El permiso sanitario acredita que el local aprobó la inspección de manejo de alimentos y condiciones de salud pública."),
-    text("Prepare the premises for a Departamento de Salud sanitary inspection and submit the permit application for the food-handling activity.", "Prepara el local para la inspección sanitaria del Departamento de Salud y presenta la solicitud del permiso para la actividad de manejo de alimentos."),
-    text("An issued sanitary permit authorizes the inspected food-handling activity at that location, subject to its conditions and renewal.", "El permiso sanitario emitido autoriza la actividad de manejo de alimentos inspeccionada en ese local, sujeto a sus condiciones y renovación."),
+    // REG-GUIDE-HEALTH-001 (2026-09-17 21:00 QA, S23 Bayamón barbershop):
+    // this concept fires for restaurants AND personal-care premises
+    // (barbershops, salons, spas, tattoo shops) and lodging — the lead
+    // sentence must not define the sanitary permit as a food-handling
+    // thing. Food preparation is one example of the inspected activity,
+    // not its scope. Same defect class as the solar-only construction
+    // guidance (10c5a75) and the food-only fire certification (7761507).
+    text("Establishments that handle food or serve the public in person are subject to sanitary inspection under Departamento de Salud environmental-health regulation before they may operate — for example restaurants and other food establishments, and personal-care premises such as barbershops, salons, and spas.", "Los establecimientos que manejan alimentos o atienden al público en persona están sujetos a inspección sanitaria bajo la reglamentación de salud ambiental del Departamento de Salud antes de operar — por ejemplo restaurantes y otros establecimientos de alimentos, y locales de cuidado personal como barberías, salones y spas."),
+    text("The sanitary/health permit documents that the premises passed inspection for its activity category — food handling, personal-care services, or other public-facing use.", "El permiso sanitario acredita que el local aprobó la inspección para su categoría de actividad — manejo de alimentos, servicios de cuidado personal u otro uso de atención al público."),
+    text("Prepare the premises for a Departamento de Salud sanitary inspection and submit the permit application for the activity category the business will operate.", "Prepara el local para la inspección sanitaria del Departamento de Salud y presenta la solicitud del permiso para la categoría de actividad que operará el negocio."),
+    text("An issued sanitary permit authorizes the inspected activity at that location, subject to its conditions and renewal.", "El permiso sanitario emitido autoriza la actividad inspeccionada en ese local, sujeto a sus condiciones y renovación."),
   ]),
   DOC_FIRE_CERT: concept("DOC_FIRE_CERT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)]], [PR_GUIDANCE_SOURCES.fire], [
     // REG-GUIDE-FIRE-GENERAL-001 (2026-09-17 QA): this concept fires for
