@@ -273,3 +273,47 @@ export function questionIdForAnswerKey(key: string): string | null {
   if (key.startsWith("Q_")) return key;
   return WIZARD_KEY_TO_QUESTION[key] ?? null;
 }
+
+/**
+ * Provenance flags for an interpreted intake patch (2026-09-17 QA).
+ *
+ * The interpreter fills BOTH profile values (e.g. vehicles_used) and
+ * discovery answers (e.g. commercial_vehicles) from the user's description,
+ * and buildEngineInput() reads both namespaces (on()/boolOf() consult the
+ * profile too). Flagging only the answer keys let a profile-sourced prefill
+ * slip through: answerProvenance marked it "user" and requirement cards
+ * rendered "Answer: Yes" for a question that was never asked (live Cataño
+ * auto-repair, 2026-09-17: the vehicle cards cited
+ * "Will commercial vehicles be used? | Answer: Yes" from a profile-sourced
+ * vehicles_used=true the interpreter inferred).
+ *
+ * Every answer key is flagged alongside its KB question id so the engine's
+ * answerProvenance (kb.ts), the "answered from description" list, and the
+ * guided-flow skip logic all resolve it (established behavior).
+ *
+ * Profile keys are flagged by their raw key ONLY — deliberately NOT their
+ * Q_ id. kb.ts's isQuestionAiPrefilled already resolves a raw key through
+ * the question's writeKey/aliases, which is all provenance needs; adding the
+ * Q_ id would additionally suppress the guided question, and a
+ * profile-sourced prefill has no "answered from description" entry the user
+ * could correct it from. The question stays askable so the user can still
+ * confirm or correct the inference; if it is never asked, the card honestly
+ * reads "Derived answer:".
+ *
+ * Presentation-only: answerProvenance never feeds gateFact, so firing,
+ * gating, and classification are untouched.
+ */
+export function prefillKeysForPatch(answerKeys: Iterable<string>, profileKeys: Iterable<string> = []): string[] {
+  const out = new Set<string>();
+  for (const k of answerKeys) {
+    if (!k) continue;
+    out.add(k);
+    const qid = questionIdForAnswerKey(k);
+    if (qid && qid !== k) out.add(qid);
+  }
+  for (const k of profileKeys) {
+    if (!k) continue;
+    out.add(k);
+  }
+  return [...out];
+}

@@ -34,7 +34,7 @@ import { CoreApplicationDetails } from './forms/engine/CoreApplicationDetails';
 // Optional AI-assisted natural-language intake shortcut. The interpreter only
 // fills EXISTING intake fields — the rules engine still decides requirements.
 import { NaturalLanguageIntake } from './components/NaturalLanguageIntake';
-import { mirrorAnswersToProfile, questionIdForAnswerKey, QUESTION_KEY_MAP, WIZARD_KEY_TO_QUESTION } from './ai/intake/questionKeyMap';
+import { mirrorAnswersToProfile, prefillKeysForPatch, questionIdForAnswerKey, QUESTION_KEY_MAP, WIZARD_KEY_TO_QUESTION } from './ai/intake/questionKeyMap';
 // Intake is a connected fact model: the resolver derives every fact that is
 // logically certain from what the user already told us, so SmartPR never asks a
 // question it can answer. It produces facts only — requirements still come
@@ -2592,19 +2592,20 @@ export default function SmartPRIntake() {
       return next;
     });
 
+    // 2026-09-17 QA: the interpreter also fills PROFILE values (e.g.
+    // vehicles_used=true) and buildEngineInput reads the profile too, so a
+    // profile-sourced prefill slipped through with no flag at all — the live
+    // Cataño auto-repair's vehicle cards cited "Answer: Yes" for a never-
+    // asked question. Flag both namespaces through the shared helper: answer
+    // keys with their Q_ ids (established), profile keys by raw key only so
+    // the guided question stays askable (see the helper's docstring). The
+    // guard covers either namespace: a patch with only profile values and
+    // no answers still needs its flags.
+    const prefillKeys = prefillKeysForPatch(Object.keys(fullAnswers), Object.keys(fullProfile));
     if (Object.keys(fullAnswers).length > 0) {
       setDiscoveryAnswers((prev) => ({ ...prev, ...fullAnswers }));
-      // Answer patches are keyed by writeKey, but the engine's answerProvenance
-      // (kb.ts) and the "answered from description" list look up the Q_ question
-      // id — flag both, the same way confirmKeys does above. Without the Q_ id
-      // here, prefilled values (e.g. commercial_vehicles=true) were labeled
-      // "user" by answerProvenance and cards rendered "Answer: Yes" for a
-      // question the user never answered. Presentation-only: answerProvenance
-      // never feeds gateFact, so firing/gating/classification are untouched.
-      const prefillKeys = Object.keys(fullAnswers).flatMap((k) => {
-        const qid = questionIdForAnswerKey(k);
-        return qid && qid !== k ? [k, qid] : [k];
-      });
+    }
+    if (prefillKeys.length > 0) {
       setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...prefillKeys])));
     }
     if (confirmKeys.length > 0) {
