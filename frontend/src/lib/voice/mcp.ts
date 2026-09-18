@@ -301,12 +301,19 @@ export const MCP_TOOLS: McpToolDef[] = [
   {
     name: "email_my_summary",
     description:
-      "Emails the caller's SmartPR summary to the verified account email on file. Never accepts a recipient address.",
-    args: ["businessId"],
+      "Emails a recap of THIS CALL to the verified account email. Pass call_summary: your 3-6 sentence recap of what the call was about (topics, actions, next steps). Never accepts a recipient address.",
+    args: ["businessId", "call_summary"],
     needsBusiness: false,
     inputSchema: {
       type: "object",
-      properties: BUSINESS_ID_PROP,
+      properties: {
+        ...BUSINESS_ID_PROP,
+        call_summary: {
+          type: "string",
+          description:
+            "Your recap of this call: what was discussed, what you did, and any next steps. 3-6 sentences, written directly to the caller.",
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -793,7 +800,10 @@ async function runTool(
       const target = strArg("businessId")
         ? (await requireBusinessAccess(db, ctx, strArg("businessId") as string)).id
         : null;
-      return toolEmailMySummary(db, ctx, target);
+      // Agent-written recap of what this call was about — the email body is
+      // built from it. When omitted, the server falls back to a deterministic
+      // recap of the session's tool-call activity (never an account dump).
+      return toolEmailMySummary(db, ctx, target, strArg("call_summary"));
     }
     // ---- Phase 3: authenticated action tools ----
     case "create_draft_project":

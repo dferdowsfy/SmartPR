@@ -1,8 +1,8 @@
 // email_my_summary — authenticated voice API.
-// POST /api/voice/v1/email-summary { business_id? }
+// POST /api/voice/v1/email-summary { business_id?, call_summary? }
 //
-// Emails an account summary to the caller's VERIFIED SmartPR email on file.
-// The request MUST NOT include an email address argument — the recipient is
+// Emails a recap of the voice call to the caller's VERIFIED SmartPR email on
+// file. The request MUST NOT include an email address argument — the recipient is
 // always derived server-side from the validated voice session, never chosen
 // by the agent. Available on all plans (including free); recurring
 // compliance reminders remain governed by the existing paid-plan rules.
@@ -26,7 +26,13 @@ export async function POST(request: Request) {
     // ignored. The recipient always comes from the voice session.
     const businessId =
       typeof body.business_id === "string" && body.business_id ? body.business_id : null;
-    const result = await toolEmailMySummary(pool, ctx, businessId);
+    // Optional agent-written recap of what the call was about; the email
+    // body is built from it. Omitted => deterministic session-activity recap.
+    const callSummary =
+      typeof body.call_summary === "string" && body.call_summary.trim()
+        ? body.call_summary
+        : null;
+    const result = await toolEmailMySummary(pool, ctx, businessId, callSummary);
     return Response.json(result);
   } catch (err) {
     return voiceError(err);

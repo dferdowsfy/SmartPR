@@ -64,6 +64,8 @@ interface Scenario {
   plan?: string;
   businesses?: Array<Record<string, unknown>>;
   voiceAccess?: FakeVoiceAccess | null;
+  /** Session tool-call history for the call-activity recap fallback. */
+  activity?: Array<{ tool_name: string; business_id: string | null }>;
 }
 
 const FUTURE = new Date(Date.now() + 20 * 60_1000).toISOString();
@@ -138,9 +140,18 @@ function makeFakeDb(scenario: Scenario) {
       if (s.includes("FROM businesses b") && s.includes("LEFT JOIN workspace_members")) {
         return { rows: scenario.businesses ?? [] };
       }
+      if (s.includes("FROM businesses WHERE id::text = ANY")) {
+        const ids = (params?.[0] as string[]) ?? [];
+        return {
+          rows: (scenario.businesses ?? []).filter((b) => ids.includes(String(b.id))),
+        };
+      }
       if (s.includes("FROM businesses WHERE id")) {
         const row = (scenario.businesses ?? []).find((b) => b.id === params?.[0]);
         return { rows: row ? [row] : [] };
+      }
+      if (s.includes("FROM voice_tool_calls WHERE session_id")) {
+        return { rows: scenario.activity ?? [] };
       }
       if (s.includes("FROM obligations o")) return { rows: [] };
       if (s.includes("FROM evidence e")) return { rows: [] };
@@ -698,13 +709,19 @@ describe("email_my_summary", () => {
   const authz = "Bearer vs_validtoken";
   let sentTo: string | null;
   let sentFrom: string | null;
+  let sentSubject: string | null;
+  let sentText: string | null;
   beforeEach(() => {
     sentTo = null;
     sentFrom = null;
+    sentSubject = null;
+    sentText = null;
     setComplianceMailerForTests({
       sendMail: async (opts: Record<string, unknown>) => {
         sentTo = opts.to as string;
         sentFrom = opts.from as string;
+        sentSubject = opts.subject as string;
+        sentText = opts.text as string;
       },
     });
   });
@@ -735,6 +752,57 @@ describe("email_my_summary", () => {
     const res = await executeMcpTool(db as never, authz, "email_my_summary", {});
     assert.equal((res.payload as McpFailure).code, "NO_VERIFIED_EMAIL");
     assert.equal(sentTo, null);
+  });
+
+  it("sends the agent's call summary as the email body", async () => {
+    const db = makeFakeDb({
+      session: validSession(),
+      email: "caller@getsmartpr.com",
+      businesses: [BIZ_A],
+    });
+    const res = await executeMcpTool(db as never, authz, "email_my_summary", {
+      call_summary:
+        "We reviewed your bakery requirements and confirmed the health permit steps. Next: upload the floor plan.",
+    });
+    assert.equal(res.ok, true);
+    assert.equal(sentTo, "caller@getsmartpr.com");
+    assert.match(String(sentSubject), /call recap/i);
+    assert.match(String(sentText), /bakery requirements/);
+    assert.match(String(sentText), /Next: upload the floor plan/);
+    // No account dump in a call recap.
+    assert.doesNotMatch(String(sentText), /Missing evidence/);
+  });
+
+  it("falls back to a session-activity recap when the agent sends no summary", async () => {
+    const db = makeFakeDb({
+      session: validSession(),
+      email: "caller@getsmartpr.com",
+      businesses: [BIZ_A],
+      activity: [
+        { tool_name: "get_requirements", business_id: "biz-allowed" },
+        { tool_name: "get_requirements", business_id: "biz-allowed" }, // deduped
+        { tool_name: "get_deadlines", business_id: null },
+      ],
+    });
+    const res = await executeMcpTool(db as never, authz, "email_my_summary", {});
+    assert.equal(res.ok, true);
+    assert.match(String(sentText), /Checked requirements for Caf\u00e9 Luna/);
+    assert.match(String(sentText), /Checked compliance deadlines/);
+    assert.equal((String(sentText).match(/Checked requirements/g) ?? []).length, 1);
+    // Still no account dump.
+    assert.doesNotMatch(String(sentText), /Missing evidence/);
+  });
+
+  it("says no account actions when the session had no activity", async () => {
+    const db = makeFakeDb({
+      session: validSession(),
+      email: "caller@getsmartpr.com",
+      businesses: [BIZ_A],
+      activity: [],
+    });
+    const res = await executeMcpTool(db as never, authz, "email_my_summary", {});
+    assert.equal(res.ok, true);
+    assert.match(String(sentText), /didn't get to any account actions/);
   });
 });
 
@@ -859,6 +927,7 @@ describe("verify_voice_pin", () => {
       id: "sess-new",
       user_id: "user-9",
       phone_e164: "+17870000009",
+      issued_at: new Date(Date.now() - 60_000).toISOString(),
       expires_at: FUTURE,
       revoked_at: null,
     };

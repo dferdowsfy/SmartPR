@@ -438,10 +438,98 @@ function esc(value: string | null | undefined): string {
  * validated voice session; no email argument is accepted. Available on all
  * plans (including free).
  */
+/** Max length for the agent-written call recap (keeps the email tight). */
+export const MAX_CALL_SUMMARY_CHARS = 4000;
+
+/** Human-readable labels for the session-activity fallback recap. */
+const CALL_ACTIVITY_LABELS: Record<string, string> = {
+  get_account_context: "Reviewed account context",
+  list_my_businesses: "Listed your businesses",
+  get_business_summary: "Reviewed business summary",
+  get_requirements: "Checked requirements",
+  get_missing_items: "Checked missing items",
+  get_readiness: "Checked filing readiness",
+  get_deadlines: "Checked compliance deadlines",
+  get_evidence_status: "Checked evidence locker",
+  get_general_requirements: "Looked up general requirements",
+  generate_deliverable: "Generated a deliverable",
+  email_deliverable: "Emailed a deliverable",
+  add_note: "Added a note",
+  create_draft_project: "Started a draft project",
+  propose_project_fact_update: "Proposed a project update",
+  confirm_pending_action: "Confirmed a pending action",
+  cancel_pending_action: "Cancelled a pending action",
+  send_secure_upload_link: "Sent a secure upload link",
+  send_secure_action_link: "Sent a secure action link",
+};
+
+function prettyToolName(tool: string): string {
+  return CALL_ACTIVITY_LABELS[tool] ?? tool.replace(/_/g, " ");
+}
+
+interface SessionActivityRow {
+  tool_name: string;
+  business_id: string | null;
+}
+
+/**
+ * Deterministic fallback recap: what actually happened during this call,
+ * derived from the session's successful tool-call history. This is the
+ * fallback when the agent does not supply its own call summary — it never
+ * dumps the account.
+ */
+export async function buildCallActivityRecap(
+  db: Db,
+  sessionId: string,
+  businessId: string | null
+): Promise<string[]> {
+  let rows: SessionActivityRow[] = [];
+  try {
+    const res = await db.query<SessionActivityRow>(
+      `SELECT tool_name, business_id FROM voice_tool_calls
+        WHERE session_id = $1 AND success = true
+          AND tool_name NOT IN ('email_my_summary', 'verify_voice_pin')
+        ORDER BY created_at ASC`,
+      [sessionId]
+    );
+    rows = res.rows;
+  } catch {
+    rows = [];
+  }
+  // Resolve business names best-effort (text comparison: ids may be UUIDs
+  // or opaque test ids; never let a cast failure break the recap).
+  const ids = [...new Set(rows.map((r) => r.business_id).filter((v): v is string => !!v))];
+  const names = new Map<string, string>();
+  if (ids.length) {
+    try {
+      const biz = await db.query<{ id: string; name: string }>(
+        `SELECT id::text AS id, name FROM businesses WHERE id::text = ANY($1)`,
+        [ids]
+      );
+      for (const b of biz.rows) names.set(b.id, b.name);
+    } catch {
+      // fall through with no names
+    }
+  }
+  const seen = new Set<string>();
+  const lines: string[] = [];
+  for (const r of rows) {
+    if (businessId && r.business_id && r.business_id !== businessId) continue;
+    const key = `${r.tool_name}|${r.business_id ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const bizName = r.business_id ? names.get(r.business_id) : undefined;
+    lines.push(`- ${prettyToolName(r.tool_name)}${bizName ? ` for ${bizName}` : ""}`);
+  }
+  return lines;
+}
+
 export async function toolEmailMySummary(
   db: Db,
   ctx: VoiceContext,
-  businessId: string | null
+  businessId: string | null,
+  /** Agent-written recap of what THIS CALL was about (preferred). */
+  callSummary: string | null
 ) {
   const recipient = ctx.email;
   if (!recipient || !recipient.includes("@")) {
@@ -451,53 +539,41 @@ export async function toolEmailMySummary(
       422
     );
   }
+  const summary = callSummary?.trim().slice(0, MAX_CALL_SUMMARY_CHARS) || null;
   return auditedToolCall(
     db,
     ctx,
     "email_my_summary",
-    { business_id: businessId },
+    { business_id: businessId, has_call_summary: !!summary },
     async () => {
-      const businesses = businessId
-        ? [await requireBusinessAccess(db, ctx, businessId)]
-        : await listAccessibleBusinesses(db, ctx);
-
-      const lines: string[] = [];
-      const htmlParts: string[] = [];
-      for (const business of businesses) {
-        const [obligations, readiness] = await Promise.all([
-          getBusinessObligations(db, business.id),
-          getBusinessReadiness(db, business.id),
-        ]);
-        const overdue = obligations.filter((o) => o.status === "OVERDUE");
-        const missing = obligations.filter((o) => MISSING_STATES.has(o.evidence_state));
-        lines.push(
-          `${business.name} (${business.municipality || "Puerto Rico"})`,
-          `  Requirements: ${obligations.length} | Missing evidence: ${missing.length} | Overdue: ${overdue.length} | Readiness: ${readiness.overall ?? "n/a"}`
-        );
-        for (const o of overdue.slice(0, 5)) {
-          lines.push(`  OVERDUE: ${o.name}${o.due_date ? ` (due ${o.due_date})` : ""}`);
-        }
-        htmlParts.push(
-          `<h3>${esc(business.name)}</h3>`,
-          `<p>Requirements: ${obligations.length} &middot; Missing evidence: ${missing.length} ` +
-            `&middot; Overdue: ${overdue.length} &middot; Readiness: ${readiness.overall ?? "n/a"}</p>`,
-          overdue.length
-            ? `<ul>${overdue.slice(0, 5).map((o) => `<li><strong>Overdue:</strong> ${esc(o.name)}${o.due_date ? ` (due ${esc(o.due_date)})` : ""}</li>`).join("")}</ul>`
-            : ""
-        );
+      let subject: string;
+      let text: string;
+      let html: string;
+      if (summary) {
+        // Primary path: the agent recaps what this call was about. The
+        // agent held the conversation, so it is the only party that can
+        // truthfully summarize it.
+        subject = "Your SmartPR call recap";
+        text = `${summary}\n\nSent from your SmartPR voice call.`;
+        html =
+          summary
+            .split(/\n{2,}/)
+            .map((p) => `<p>${esc(p).replace(/\n/g, "<br/>")}</p>`)
+            .join("") +
+          `<p style="color:#666;font-size:12px">Sent from your SmartPR voice call.</p>`;
+      } else {
+        // Fallback: deterministic recap of what actually happened on this
+        // call, from the session's tool-call history. Never the account dump.
+        const lines = await buildCallActivityRecap(db, ctx.sessionId, businessId);
+        const body = lines.length
+          ? `Here's what happened on your SmartPR call:\n\n${lines.join("\n")}`
+          : "We didn't get to any account actions on this SmartPR call.";
+        subject = "Your SmartPR call recap";
+        text = `${body}\n\nSent from your SmartPR voice call.`;
+        html =
+          `<p>${esc(body).replace(/\n/g, "<br/>")}</p>` +
+          `<p style="color:#666;font-size:12px">Sent from your SmartPR voice call.</p>`;
       }
-
-      const scope = businessId ? "business" : "account";
-      const subject = `Your SmartPR ${scope} summary`;
-      const text =
-        `SmartPR ${scope} summary for ${recipient}\n` +
-        `Plan: ${ctx.plan.planId} (${ctx.plan.status})\n\n` +
-        (lines.length ? lines.join("\n") : "No businesses found on this account.") +
-        `\n\nSent from your SmartPR voice call.`;
-      const html =
-        `<p>SmartPR ${esc(scope)} summary for ${esc(recipient)}<br/>Plan: ${esc(ctx.plan.planId)} (${esc(ctx.plan.status)})</p>` +
-        (htmlParts.length ? htmlParts.join("") : "<p>No businesses found on this account.</p>") +
-        `<p style="color:#666;font-size:12px">Sent from your SmartPR voice call.</p>`;
 
       const delivered = await sendComplianceEmail(recipient, subject, text, html, VOICE_SUMMARY_FROM);
       if (!delivered) {
@@ -507,9 +583,9 @@ export async function toolEmailMySummary(
       await logVoiceAudit(db, {
         userId: ctx.userId,
         action: "email_sent",
-        details: { scope, business_count: businesses.length, to_domain: recipient.split("@")[1] },
+        details: { scope: "call_recap", business_id: businessId, to_domain: recipient.split("@")[1] },
       });
-      return { sent: true, business_count: businesses.length };
+      return { sent: true };
     }
   );
 }
