@@ -663,11 +663,14 @@ describe("executeMcpTool authenticated calls", () => {
 describe("email_my_summary", () => {
   const authz = "Bearer vs_validtoken";
   let sentTo: string | null;
+  let sentFrom: string | null;
   beforeEach(() => {
     sentTo = null;
+    sentFrom = null;
     setComplianceMailerForTests({
       sendMail: async (opts: Record<string, unknown>) => {
         sentTo = opts.to as string;
+        sentFrom = opts.from as string;
       },
     });
   });
@@ -687,6 +690,8 @@ describe("email_my_summary", () => {
     });
     assert.equal(res.ok, true);
     assert.equal(sentTo, "caller@getsmartpr.com");
+    assert.match(String(sentFrom), /summaries@getsmartpr\.com/);
+    assert.match(String(sentFrom), /SmartPR Summaries/);
     const calls = insertsOf(db, "voice_tool_calls");
     assert.equal((calls[0].params as unknown[])[8], true); // email_sent
   });

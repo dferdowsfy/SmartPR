@@ -32,6 +32,9 @@ import { puertoRicoPack } from "../../app/jurisdictions/pr/index";
 import { runRulesEngine, type BusinessStatus } from "../../app/rulesEngine";
 import { classifyEngineRequirements } from "../../app/requirementApplicability";
 
+/** Voice email_my_summary only — compliance reminders keep alerts@. */
+export const VOICE_SUMMARY_FROM = "SmartPR Summaries <summaries@getsmartpr.com>";
+
 const MISSING_STATES = new Set(["NONE", "FAILED", "NEEDS_REVIEW"]);
 
 /* ------------------------------------------------------------------ */
@@ -496,7 +499,7 @@ export async function toolEmailMySummary(
         (htmlParts.length ? htmlParts.join("") : "<p>No businesses found on this account.</p>") +
         `<p style="color:#666;font-size:12px">Sent from your SmartPR voice call.</p>`;
 
-      const delivered = await sendComplianceEmail(recipient, subject, text, html);
+      const delivered = await sendComplianceEmail(recipient, subject, text, html, VOICE_SUMMARY_FROM);
       if (!delivered) {
         throw new VoiceAuthError("delivery_failed", "The summary email could not be delivered.", 502);
       }
