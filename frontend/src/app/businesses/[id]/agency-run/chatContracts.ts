@@ -120,18 +120,20 @@ export function filingPickerIntro(lang: Lang): string {
 }
 
 /**
- * Gate copy shown when SmartPR information is still missing before a
- * filing can begin — the browser never launches until this is complete.
+ * Gate copy shown when SmartPR information is still missing for a filing.
+ * Informational only — the human can start anyway and the assistant asks
+ * for the missing items during the run (mid-run pauses). Never validated
+ * as portal-required fields, so this never blocks the launch.
  */
 export function filingGateCopy(count: number, lang: Lang): string {
   if (lang === "es") {
     return count === 1
-      ? "Aún falta 1 pieza antes de que SmartPR pueda empezar este trámite."
-      : `Aún faltan ${count} piezas antes de que SmartPR pueda empezar este trámite.`;
+      ? "Aún falta 1 pieza en tu Pasaporte de Negocio — el asistente te la pedirá durante el trámite."
+      : `Aún faltan ${count} piezas en tu Pasaporte de Negocio — el asistente te las pedirá durante el trámite.`;
   }
   return count === 1
-    ? "1 item is still needed before SmartPR can begin this filing."
-    : `${count} items are still needed before SmartPR can begin this filing.`;
+    ? "1 item is still missing from your Business Passport — the assistant will ask for it during the filing."
+    : `${count} items are still missing from your Business Passport — the assistant will ask for them during the filing.`;
 }
 
 /** Copy for an obligation SmartPR identified but no browser filing covers yet. */

@@ -227,10 +227,15 @@ function FilingCard({
   passportHref: string | null;
 }) {
   const action = filing.action;
-  // Gate: SmartPR information still missing — the browser never launches
-  // until these are complete.
+  // Informational count: passport fields still missing. The human can
+  // start anyway — the assistant asks for these during the run.
   const gate = action ? nonSensitiveMissingItems(action).length : 0;
-  const canStart = filing.supported && filing.filing_status === "ready_to_start";
+  // Supported + ready or missing-information filings get the Start button.
+  // Unsupported, blocked, submitted, and in-progress filings never do.
+  const canStart =
+    filing.supported &&
+    (filing.filing_status === "ready_to_start" ||
+      filing.filing_status === "missing_information");
   return (
     <div className="rounded-xl border border-slate-200 bg-[#fbf8f2] p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -283,10 +288,12 @@ function FilingCard({
           {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
         </button>
       )}
-      {!canStart && filing.filing_status === "missing_information" && gate > 0 && passportHref && (
+      {/* Passport completion stays available as a secondary action —
+          filling the passport up front means fewer interruptions mid-run. */}
+      {filing.filing_status === "missing_information" && gate > 0 && passportHref && (
         <a
           href={passportHref}
-          className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/[0.06] px-4 py-2 text-xs font-semibold text-brand hover:bg-brand/[0.12]"
+          className="ml-2 mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/[0.06] px-4 py-2 text-xs font-semibold text-brand hover:bg-brand/[0.12]"
         >
           <ClipboardList className="h-3.5 w-3.5" />
           {filingPassportCtaCopy(lang)}
@@ -613,7 +620,7 @@ function PreflightCard({
           )}
           <button
             type="button"
-            disabled={confirmBusy || gate > 0}
+            disabled={confirmBusy}
             onClick={() => void handleConfirm()}
             className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >

@@ -324,22 +324,22 @@ describe("filing picker copy", () => {
     );
   });
 
-  it("gate copy counts the missing items before launch", () => {
+  it("gate copy counts the missing items the assistant will ask for mid-run", () => {
     assert.equal(
       filingGateCopy(2, "en"),
-      "2 items are still needed before SmartPR can begin this filing."
+      "2 items are still missing from your Business Passport — the assistant will ask for them during the filing."
     );
     assert.equal(
       filingGateCopy(1, "en"),
-      "1 item is still needed before SmartPR can begin this filing."
+      "1 item is still missing from your Business Passport — the assistant will ask for it during the filing."
     );
     assert.equal(
       filingGateCopy(2, "es"),
-      "Aún faltan 2 piezas antes de que SmartPR pueda empezar este trámite."
+      "Aún faltan 2 piezas en tu Pasaporte de Negocio — el asistente te las pedirá durante el trámite."
     );
     assert.equal(
       filingGateCopy(1, "es"),
-      "Aún falta 1 pieza antes de que SmartPR pueda empezar este trámite."
+      "Aún falta 1 pieza en tu Pasaporte de Negocio — el asistente te la pedirá durante el trámite."
     );
   });
 

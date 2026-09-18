@@ -391,7 +391,8 @@ export const DEMO_REQUIREMENT_ID = "demo:rehearsal-filing";
 
 const ACTIVE_RUN_STATUSES = new Set(["queued", "running", "paused"]);
 
-/** Missing items the pre-flight step cannot collect — the gate that blocks launch. */
+/** Missing non-sensitive passport items — informational only. The human can
+ * start the filing anyway and the assistant asks for these during the run. */
 export function nonSensitiveMissingItems(
   action: AgencyAction
 ): AgencyAction["missing_items"] {

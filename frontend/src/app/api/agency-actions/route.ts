@@ -184,16 +184,11 @@ export async function POST(request: Request) {
   }
 
   // Never launch for a filing that's already submitted, still blocked, or
-  // missing SmartPR information — the user goes back to SmartPR fields.
+  // not required. Missing SmartPR information does NOT block — the
+  // assistant asks for the missing items during the run.
   if (picked.filing_status === "submitted") {
     return Response.json(
       { error: "This filing was already submitted — a new browser run cannot start for it." },
-      { status: 409 }
-    );
-  }
-  if (picked.filing_status === "missing_information") {
-    return Response.json(
-      { error: "SmartPR is still missing information for this filing — complete it before starting." },
       { status: 409 }
     );
   }
