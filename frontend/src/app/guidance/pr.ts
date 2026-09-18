@@ -287,7 +287,7 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Execute LUMA's interconnection / net metering agreement for the commercial customer account tied to the installation address.", "Firma el acuerdo de interconexión y medición neta de LUMA para la cuenta comercial del cliente atada a la dirección de la instalación."),
     text("A countersigned agreement locks in the net metering terms for the system; keep it with the interconnection file until LUMA grants Permission to Operate.", "Un acuerdo firmado por ambas partes fija los términos de medición neta del sistema; consérvalo con el expediente de interconexión hasta que LUMA otorgue el Permiso para Operar."),
   ]),
-  DOC_OGPE_CONSTRUCTION_PERMIT: concept("DOC_OGPE_CONSTRUCTION_PERMIT", [[condition("Q_SOLAR_MOUNTING", "Ground-mounted solar system", "Sistema solar instalado en el suelo", "Ground-mounted")], [condition("Q_SOLAR_SIZE", "System over 1 MW", "Sistema de más de 1 MW", "Over 1 MW")]], [PR_GUIDANCE_SOURCES.ogpeConstruction], [
+  DOC_OGPE_CONSTRUCTION_PERMIT: concept("DOC_OGPE_CONSTRUCTION_PERMIT", [[condition("project_type", "Construction or renovation project", "Proyecto de construcción o remodelación")], [condition("Q_SOLAR_MOUNTING", "Ground-mounted solar system", "Sistema solar instalado en el suelo", "Ground-mounted")], [condition("Q_SOLAR_SIZE", "System over 1 MW", "Sistema de más de 1 MW", "Over 1 MW")]], [PR_GUIDANCE_SOURCES.ogpeConstruction], [
     // REG-GUIDE-SOLAR-CONSTRUCTION-001 (2026-09-16): this document is the
     // general OGPe construction permit — it fires for new construction,
     // expansions, and structural work, not only solar. The text stays
@@ -303,7 +303,12 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
   // 2026-09-17 03:00 cycle). The document cites Law 22-2000 Art. 23.01 at
   // statute confidence, so a validated concept is written here from that
   // basis — no invented procedure.
-  DOC_VEHICLE_REGISTRATION: concept("DOC_VEHICLE_REGISTRATION", [[condition("Q_COMMERCIAL_VEHICLES", "Commercial vehicles used", "Se usan vehículos comerciales", true)]], [PR_GUIDANCE_SOURCES.dtop], [
+  // REG-GUIDE-VEHICLE-002 (2026-09-18 QA, live S29): the business_type
+  // rules (RULE_0178–RULE_0216, RULE_0690) fire the document without any
+  // Q_COMMERCIAL_VEHICLES answer, so the card hedged "not confirmed yet"
+  // under a VERIFY EXISTING badge. The business type is the honest trigger
+  // for those rules — it now explains the match alongside the Q&A path.
+  DOC_VEHICLE_REGISTRATION: concept("DOC_VEHICLE_REGISTRATION", [[condition("Q_COMMERCIAL_VEHICLES", "Commercial vehicles used", "Se usan vehículos comerciales", true)], [business]], [PR_GUIDANCE_SOURCES.dtop], [
     text("Vehicles used in a commercial operation in Puerto Rico must be registered with DTOP and carry the current annual registration sticker (marbete) under Law 22-2000, Art. 23.01.", "Los vehículos que se usan en una operación comercial en Puerto Rico tienen que estar registrados en el DTOP y tener al día el marbete anual, según la Ley 22-2000, Art. 23.01."),
     text("The vehicle registration documents that that specific vehicle is authorized for road use with its registration current — it does not license the business activity itself.", "El registro de un vehículo comercial acredita que ese vehículo en particular está autorizado para transitar con su registro y marbete al día — no licencia la actividad del negocio por sí solo."),
     text("Verify each commercial vehicle the business runs is registered with DTOP and its marbete is current; handle registrations, renewals, and transfers through CESCO.", "Verifica que cada vehículo comercial que opere el negocio esté registrado en el DTOP y tenga el marbete al día; gestiona los registros, renovaciones y traspasos en CESCO."),

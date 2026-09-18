@@ -66,6 +66,16 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
   if (key === "entityType") return ctx.entityType;
   if (key === "municipality") return ctx.municipality || undefined;
   if (key === "businessType") return ctx.businessTypeName || undefined;
+  if (key === "project_type") {
+    // Project facts ride on the engine input, not the Q&A answers — the
+    // construction-permit concept explains project_fact rule firings
+    // (RULE_0643–RULE_0646), which no discovery question covers. Without
+    // this the card hedges "not confirmed yet" under a REQUIRED badge.
+    // (2026-09-18 QA, live S30: REQUIRED OGPe construction permit with a
+    // "whether this applies ... is not confirmed yet" disclosure.)
+    const v = ctx.engineInput?.projectFacts?.["project_type"];
+    return typeof v === "string" && v.length > 0 ? v : undefined;
+  }
   const aliases: Partial<Record<GuidanceFactKey, string[]>> = {
     Q_ALCOHOL_SOLD: ["alcohol_sold"], Q_EMPLOYEES_HIRED: ["employees_hired", "employees_work_on_site"],
     Q_EXISTING_LEASE: ["existing_lease"], Q_PHYSICAL_LOCATION: ["physical_location"],

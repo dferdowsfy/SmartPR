@@ -336,3 +336,58 @@ test("sanitary permit guidance is industry-neutral, never food-handling-only", (
     assert.match(g.regulatoryReason, /barbershop|barber[ií]a/i, `names personal-care premises as an example (${language})`);
   }
 });
+test("REG-GUIDE-CONSTRUCTION-001: construction-permit guidance validates for project_fact rule firings, not only solar", () => {
+  // Live QA 2026-09-18 03:00 cycle (S30, Cataño warehouse renovation):
+  // the REQUIRED OGPe Construction Permit card hedged "whether this
+  // requirement applies to your specific case is not confirmed yet"
+  // because the concept conditions only modeled the solar path while
+  // RULE_0644 fires on project_type=renovation. The project fact now
+  // explains the match — same defect class as the solar-only text fix
+  // (10c5a75), this time in the conditions.
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      ...context, language,
+      municipality: "Cataño", businessTypeName: "Warehouse",
+      discoveryAnswers: {},
+      engineInput: {
+        municipalityName: "Cataño", businessTypeName: "Warehouse",
+        answers: {},
+        projectFacts: { project_type: "renovation" },
+      },
+    };
+    const g = buildRequirementGuidance(req("DOC_OGPE_CONSTRUCTION_PERMIT"), ctx);
+    assert.equal(g.status, "VALIDATED", `construction permit (${language})`);
+    assert.doesNotMatch(g.whyThisApplies, /not confirmed yet/i, `no hedge (${language})`);
+    assert.ok(
+      g.triggerFacts.some(f => f.key === "project_type" && f.value === "renovation"),
+      `project_type trigger explained (${language}): ${JSON.stringify(g.triggerFacts.map(f => f.key))}`
+    );
+  }
+});
+test("REG-GUIDE-VEHICLE-002: vehicle-registration guidance validates on the business-type trigger", () => {
+  // Live QA 2026-09-18 03:00 cycle (S29, Bayamón food truck): the
+  // VERIFY EXISTING Commercial Vehicle Registration card hedged
+  // "not confirmed yet" because RULE_0690 fires on BT_FOOD_TRUCK with no
+  // Q_COMMERCIAL_VEHICLES answer. The business type is the honest trigger
+  // for the business_type rules — it now explains the match alongside the
+  // Q&A path.
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      ...context, language,
+      businessTypeName: "Food Truck",
+      discoveryAnswers: {},
+      engineInput: {
+        municipalityName: "Bayamón", businessTypeName: "Food Truck",
+        answers: { Q_PHYSICAL_LOCATION: true },
+      },
+    };
+    const r = { ...req("DOC_VEHICLE_REGISTRATION"), applicability: "verify_existing" };
+    const g = buildRequirementGuidance(r, ctx);
+    assert.equal(g.status, "VALIDATED", `vehicle registration (${language})`);
+    assert.doesNotMatch(g.whyThisApplies, /not confirmed yet/i, `no hedge (${language})`);
+    assert.ok(
+      g.triggerFacts.some(f => f.key === "businessType" && f.value === "Food Truck"),
+      `businessType trigger explained (${language}): ${JSON.stringify(g.triggerFacts.map(f => f.key))}`
+    );
+  }
+});
