@@ -24,7 +24,7 @@ function signOutNow() {
 export function TopNav({ active, extraActions }: { active: "start" | "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings" | "enterprise"; extraActions?: ReactNode }) {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [lang, setLangState] = useState<"en" | "es">("en");
+  const [lang, setLangState] = useState<"en" | "es">(() => readLang());
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
@@ -125,26 +125,30 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   // Harden Start highlight: prop from FilingWorkflowShell + URL fallback so
   // intake paths never leave My Businesses selected by accident.
   const pathname = usePathname();
-  const [intakeRoute, setIntakeRoute] = useState(false);
+  // Compute synchronously on first render (lazy useState initializer) so the
+  // active tab pill never flashes from the wrong tab after mount/navigation.
+  const readIntakeRoute = useCallback(() => {
+    try {
+      if (typeof window === "undefined") return false;
+      const u = new URL(window.location.href);
+      const onHome = u.pathname === "/" || pathname === "/";
+      return (
+        onHome &&
+        (u.searchParams.get("entry") === "new-business" ||
+          u.searchParams.has("resume") ||
+          u.searchParams.has("debug"))
+      );
+    } catch {
+      return false;
+    }
+  }, [pathname]);
+  const [intakeRoute, setIntakeRoute] = useState(readIntakeRoute);
   useEffect(() => {
-    const sync = () => {
-      try {
-        const u = new URL(window.location.href);
-        const onHome = u.pathname === "/" || pathname === "/";
-        setIntakeRoute(
-          onHome &&
-            (u.searchParams.get("entry") === "new-business" ||
-              u.searchParams.has("resume") ||
-              u.searchParams.has("debug"))
-        );
-      } catch {
-        setIntakeRoute(false);
-      }
-    };
+    const sync = () => setIntakeRoute(readIntakeRoute());
     sync();
     window.addEventListener("popstate", sync);
     return () => window.removeEventListener("popstate", sync);
-  }, [pathname, active]);
+  }, [pathname, active, readIntakeRoute]);
   const startActive = active === "start" || intakeRoute;
   const businessesActive =
     !startActive &&
