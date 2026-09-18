@@ -5890,7 +5890,15 @@
     "citation_url": "https://docs.pr.gov/files/DDEC/PPPE/Solicitud%20de%20Certificaci%C3%B3n%20de%20Instalador%20de%20Sistemas%20El%C3%A9ctricos%20Renovables.pdf",
     "citation_confidence": "page",
     "citation_inherited_from": "DOC_OPPE_INSTALLER_REG",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-18",
+        "change": "compliance_mode=verify_existing (QA 18:00 sweep)",
+        "reason": "Existing solar installers verify their standing PPPE renewable-installer certification rather than applying as new. New installers keep REQUIRED via the classifier businessStatus mapping. Same defect class as the LUMA/net-metering sweeps: RULE_0605 was the one sibling the 15:00 sweep missed (it points at DOC_OPPE_INSTALLER_REG, not DOC_LUMA_INTERCONNECTION/DOC_NET_METERING_AGREEMENT). Sole rule for the document; no missing_fact_keys (RULE_0664 lesson); citation is statute-confidence (PPPE-DDEC, Ley 17-2019, official docs.pr.gov form)."
+      }
+    ]
   },
   {
     "id": "RULE_0606",

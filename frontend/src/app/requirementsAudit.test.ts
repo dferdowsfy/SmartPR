@@ -1757,3 +1757,50 @@ test("CASE W: bundled-flow writeKey answers reach the engine (REG-WIRE-001)", ()
   assert.ok(ids.has(docByName("transportation", "permit")), "RULE_0618 fires the transport permit from a hazmat-transport answer");
   assert.ok(ids.has(docByName("ambulant-business")), "RULE_0653 fires the ambulant license from a food-truck answer");
 });
+
+test("CASE X: OPPE installer registration posture — existing installers verify, new installers file", () => {
+  // 2026-09-18 18:00 QA cycle (S43): an existing 6-year Toa Alta solar
+  // installer got DOC_OPPE_INSTALLER_REG (PPPE-DDEC renewable-installer
+  // certification, Ley 17-2019) as REQUIRED-as-new — the same defect class
+  // as the health/fire/CFPM/tourism/vehicle/contractor/childcare/alcohol/
+  // transport/agriculture/insurance/LUMA/net-metering sweeps. RULE_0605 was
+  // the one sibling the 15:00 sweep missed: it points at
+  // DOC_OPPE_INSTALLER_REG rather than DOC_LUMA_INTERCONNECTION /
+  // DOC_NET_METERING_AGREEMENT, so the family sweep skipped it. It is the
+  // sole rule for the document, carries no missing_fact_keys (RULE_0664
+  // lesson), and its citation is statute-confidence (official PPPE
+  // docs.pr.gov certification form).
+  const DOC_OPPE = docByName("installer registration");
+
+  // Existing installer verifies its standing certification.
+  const installer = classify(
+    {
+      municipalityName: "Toa Alta",
+      businessTypeName: "Solar Installer",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(installer, DOC_OPPE)?.applicability,
+    "verify_existing",
+    "an existing solar installer verifies its PPPE installer certification (not REQUIRED-as-new)"
+  );
+
+  // A new installer still applies for the first time.
+  const installerNew = classify(
+    {
+      municipalityName: "Toa Alta",
+      businessTypeName: "Solar Installer",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(installerNew, DOC_OPPE)?.applicability,
+    "required",
+    "a new solar installer still gets the PPPE installer certification as REQUIRED"
+  );
+});
