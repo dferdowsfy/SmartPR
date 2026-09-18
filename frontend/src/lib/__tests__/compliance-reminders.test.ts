@@ -14,6 +14,8 @@ import {
   runComplianceReminderCron,
   type DueNotificationRow,
   type PreferenceRow,
+  sendComplianceEmail,
+  REMINDER_FROM,
 } from "../compliance-reminders";
 import {
   buildReminderEmail,
@@ -587,3 +589,50 @@ test("cron uses the stored reminder template and archives the send", async () =>
     setComplianceMailerForTests(null);
   }
 });
+
+
+test("sendComplianceEmail defaults From to REMINDER_FROM (alerts@)", async () => {
+  const sent: Record<string, unknown>[] = [];
+  setComplianceMailerForTests({
+    sendMail: async (opts) => {
+      sent.push(opts);
+      return {};
+    },
+  });
+  try {
+    const ok = await sendComplianceEmail("user@example.com", "subj", "text", "<p>html</p>");
+    assert.equal(ok, true);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].from, REMINDER_FROM);
+    assert.match(String(sent[0].from), /alerts@getsmartpr\.com/);
+  } finally {
+    setComplianceMailerForTests(null);
+  }
+});
+
+test("sendComplianceEmail accepts a From override for voice summaries", async () => {
+  const sent: Record<string, unknown>[] = [];
+  setComplianceMailerForTests({
+    sendMail: async (opts) => {
+      sent.push(opts);
+      return {};
+    },
+  });
+  try {
+    const voiceFrom = "SmartPR Summaries <summaries@getsmartpr.com>";
+    const ok = await sendComplianceEmail(
+      "user@example.com",
+      "Your SmartPR account summary",
+      "text",
+      "<p>html</p>",
+      voiceFrom
+    );
+    assert.equal(ok, true);
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].from, voiceFrom);
+    assert.match(String(sent[0].from), /summaries@getsmartpr\.com/);
+  } finally {
+    setComplianceMailerForTests(null);
+  }
+});
+

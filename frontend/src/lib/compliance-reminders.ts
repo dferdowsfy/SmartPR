@@ -164,7 +164,9 @@ export async function sendComplianceEmail(
   to: string,
   subject: string,
   text: string,
-  html: string
+  html: string,
+  /** Optional From override (e.g. voice summaries). Defaults to REMINDER_FROM. */
+  from: string = REMINDER_FROM
 ): Promise<boolean> {
   if (!to || !to.includes("@")) return false;
   // Prefer Resend's HTTPS API when configured: it does not depend on
@@ -172,7 +174,7 @@ export async function sendComplianceEmail(
   // A hanging SMTP connect (nodemailer's 120s default) outlasts the voice
   // tool-call window, so calls hear "connected services unavailable".
   if (process.env.RESEND_API_KEY && !mailerOverride) {
-    return sendViaResend(to, subject, text, html);
+    return sendViaResend(to, subject, text, html, from);
   }
   if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
     console.error("[compliance-reminders] email skipped: GMAIL_SMTP_APP_PASSWORD is not set");
@@ -192,11 +194,12 @@ export async function sendComplianceEmail(
         greetingTimeout: 10000,
         socketTimeout: 20000,
         auth: {
-          user: process.env.GMAIL_SMTP_USER || "alerts@getsmartpr.com",
+          // Align with leads.ts / invites.ts / enterprise-reminders.ts defaults.
+          user: process.env.GMAIL_SMTP_USER || "darius@getsmartpr.com",
           pass: process.env.GMAIL_SMTP_APP_PASSWORD || "",
         },
       });
-    await mailer.sendMail({ from: REMINDER_FROM, to, subject, text, html });
+    await mailer.sendMail({ from, to, subject, text, html });
     return true;
   } catch (err) {
     console.error(`[compliance-reminders] email delivery failed: ${(err as Error)?.message || err}`);
@@ -208,7 +211,8 @@ async function sendViaResend(
   to: string,
   subject: string,
   text: string,
-  html: string
+  html: string,
+  from: string = REMINDER_FROM
 ): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
@@ -219,7 +223,7 @@ async function sendViaResend(
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: REMINDER_FROM, to, subject, text, html }),
+      body: JSON.stringify({ from, to, subject, text, html }),
       signal: controller.signal,
     });
     if (!res.ok) {
