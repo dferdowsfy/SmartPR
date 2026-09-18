@@ -1022,3 +1022,111 @@ test("CASE P: non-food healthcare business types no longer get the food-establis
     "a genuine general contractor still gets the DACO contractor license as REQUIRED (verified RULE_0642 basis)"
   );
 });
+
+test("CASE Q: DOC_PROFESSIONAL_LICENSE is verify_existing for existing licensed businesses, required for new ones", () => {
+  // 2026-09-17 21:00 QA cycle (S23, Bayamón): an existing barbershop was
+  // shown Professional License as REQUIRED — as if applying for the first
+  // time. None of the 31 DOC_PROFESSIONAL_LICENSE question/BT rules
+  // (RULE_0016, 0045, 0088, 0091, 0094, 0096, 0099, 0100, 0103, 0106, 0109,
+  // 0112, 0114, 0115, 0116, 0118, 0119, 0120, 0121, 0122, 0209, 0210, 0211,
+  // 0212, 0213, 0224, 0225, 0226, 0228, 0229, 0695) carried compliance_mode,
+  // so existing businesses were told to apply as new. Same defect class as
+  // the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle
+  // (6818ff1) and operating-obligation (e676174) sweeps: a professional
+  // license is an operating obligation — an operating business verifies
+  // what it holds. Deliberately excluded: RULE_0029 and RULE_0227
+  // (heuristic + missing_fact_keys — the RULE_0664 lesson: never set
+  // compliance_mode on heuristic rules with unresolved missing facts).
+  const DOC_PROFLIC = docByName("professional license");
+
+  const existing = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Barbershop",
+      businessStatus: "existing",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_ALCOHOL_SOLD: false,
+        Q_FOOD_PREPARED: false,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(existing, DOC_PROFLIC)?.applicability,
+    "verify_existing",
+    "an operating barbershop verifies its existing professional license (not REQUIRED-as-new; RULE_0695)"
+  );
+
+  const lawFirm = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "Law Firm",
+      businessStatus: "existing",
+      answers: { Q_PHYSICAL_LOCATION: true, Q_EMPLOYEES_HIRED: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(lawFirm, DOC_PROFLIC)?.applicability,
+    "verify_existing",
+    "an operating law firm verifies its existing professional license (RULE_0114)"
+  );
+
+  // New businesses still apply for the first time.
+  const fresh = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Barbershop",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+      projectFacts: { property_tenure: "unknown" },
+    },
+    "new"
+  );
+  assert.equal(
+    byId(fresh.classified, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new barbershop still gets the professional license as REQUIRED"
+  );
+
+  // The heuristic+NMI exclusion still holds: an unlicensed-activity
+  // bookkeeper (RULE_0227, heuristic, licensed_profession_type unknown)
+  // stays needs_more_information — never promoted to REQUIRED.
+  const bookkeeper = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Accounting Firm",
+      businessStatus: "new",
+      entityNotFormed: true,
+      answers: {
+        Q_HOME_BASED: true,
+        Q_PHYSICAL_LOCATION: false,
+        Q_EMPLOYEES_HIRED: false,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  );
+  const bkLic = byId(bookkeeper.classified, DOC_PROFLIC);
+  assert.ok(bkLic, "professional license row must exist for the accounting firm (RULE_0227 heuristic)");
+  assert.equal(
+    bkLic.applicability,
+    "needs_more_information",
+    "the bookkeeper's professional license stays needs_more_information (RULE_0227 excluded from the sweep)"
+  );
+  assert.ok(
+    (bkLic.missingFacts ?? []).includes("licensed_profession_type"),
+    "the controlling unanswered fact must be named"
+  );
+});
