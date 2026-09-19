@@ -404,6 +404,25 @@ test("LLC formation replaces Certificate of Incorporation", () => {
   assert.ok(added.some((r) => r.document_id === "DOC_ARTICLES_ORGANIZATION"));
 });
 
+test("LLC augment does not duplicate an engine-emitted DOC_CERT_ORGANIZATION", () => {
+  // Live QA 2026-09-18 21:00 (S48) and 2026-09-19 00:00 (S49): a new LLC's
+  // checklist rendered TWO formation cards — DOC_CERT_ORGANIZATION from the
+  // engine (RULE_0651) plus DOC_ARTICLES_ORGANIZATION from this augment.
+  // The two ids are the same PR filing (CORPLLC02); one present suppresses
+  // the other.
+  const llc = canonical({ entityType: "limited_liability_company" });
+  const engineEmitted = [
+    { document_id: "DOC_CERT_ORGANIZATION", code: "certificate_of_organization" },
+    { document_id: "DOC_MERCHANT_REGISTRATION" },
+  ];
+  const added = entityTypeRequirements(llc, engineEmitted, (d) => d);
+  assert.equal(
+    added.filter((r) => r.document_id === "DOC_ARTICLES_ORGANIZATION").length,
+    0,
+    "DOC_CERT_ORGANIZATION from the engine must suppress the DOC_ARTICLES_ORGANIZATION augment"
+  );
+});
+
 test("CORPREG03 fee estimate switches on for-profit/nonprofit", () => {
   assert.equal(feeEstimateFor(CORPREG03, canonical({ forProfitStatus: "for_profit" })), 150);
   assert.equal(feeEstimateFor(CORPREG03, canonical({ forProfitStatus: "nonprofit" })), 5);

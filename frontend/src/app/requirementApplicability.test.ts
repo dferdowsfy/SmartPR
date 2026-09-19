@@ -63,7 +63,15 @@ test("LLC does not receive Certificate of Incorporation", () => {
     reason: d.reason,
   }));
   const final = exclusiveFormationRequirements(canonical, [...exclusive, ...added]);
-  assert.ok(final.some((r) => r.document_id === "DOC_ARTICLES_ORGANIZATION"));
+  // RULE_0651 (validated review 2026-09-16) fires DOC_CERT_ORGANIZATION —
+  // the same LLC certificate as DOC_ARTICLES_ORGANIZATION. The augment is
+  // suppressed when the engine already emitted the alias (live QA 2026-09-19
+  // 00:00: duplicate formation cards) — so exactly one LLC formation
+  // document must survive, never the corporation certificate.
+  const llcFormation = final.filter(
+    (r) => r.document_id === "DOC_ARTICLES_ORGANIZATION" || r.document_id === "DOC_CERT_ORGANIZATION"
+  );
+  assert.equal(llcFormation.length, 1, "exactly one LLC formation certificate: " + llcFormation.map((r) => r.document_id).join(","));
   assert.equal(final.some((r) => r.document_id === "DOC_CERT_INCORPORATION"), false);
 });
 

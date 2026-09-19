@@ -26,6 +26,9 @@ interface AugmentDef {
   code: string;
   name: string;
   reason: string;
+  /** Other document ids that refer to the same filing — their presence
+   *  suppresses this augment (the engine may emit the alias instead). */
+  aliases?: string[];
   applies: (c: CanonicalApplicationData) => boolean;
 }
 
@@ -59,6 +62,10 @@ const AUGMENTS: AugmentDef[] = [
     name: "Certificate of Organization (Limited Liability Company)",
     reason:
       "Entity type is a Limited Liability Company, which files a Certificate of Organization (CORPLLC02) rather than a Certificate of Incorporation.",
+    // RULE_0651 (validated review 2026-09-16) fires DOC_CERT_ORGANIZATION,
+    // the same LLC certificate — one present means no augment (live QA
+    // 2026-09-18 21:00 / 2026-09-19 00:00: duplicate formation cards).
+    aliases: ["DOC_CERT_ORGANIZATION"],
     applies: (c) => c.business.entityType === "limited_liability_company",
   },
 ];
@@ -85,6 +92,9 @@ export function entityTypeRequirements<T extends MinimalRequirement>(
   const out: T[] = [];
   for (const aug of AUGMENTS) {
     if (presentDocs.has(aug.document_id)) continue;
+    // An alias present in the engine output suppresses the augment — the
+    // same filing must never render as two cards.
+    if (aug.aliases?.some((alias) => presentDocs.has(alias))) continue;
     if (!aug.applies(canonical)) continue;
     out.push(make(aug));
   }
