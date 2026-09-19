@@ -2401,13 +2401,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): translation services were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — the traductor-jurado credential is a Tribunal Supremo court credential for sworn translators, not a Dept of State professional license for translation businesses. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -2423,13 +2431,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): staffing agencies were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — private employment agencies are licensed by the Secretario del Trabajo y Recursos Humanos under Ley 417-1947, not by the Dept of State professional-license boards. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -4328,13 +4344,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): mortgage brokers were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — licensed by the Oficina del Comisionado de Instituciones Financieras (OCIF/OCS) under the Mortgage Institutions Act (Act 24-2010), NMLS registration. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -4350,13 +4374,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): financial advisory firms were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — investment advisers register with the OCS/OCIF under the Uniform Securities Law of PR (Form ADV, Series 65/66). Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -4397,13 +4429,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): investment firms were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — investment companies register with the OCS/OCIF under the PR Investment Company Act (10 L.P.R.A. 671). Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -4419,13 +4459,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): credit services companies were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — licensed under the Ley de Agencias Rectificadoras de Credito (PR Laws Tit. 7, Cap. 64A) through DACO, not the Juntas Examinadoras. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {

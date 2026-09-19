@@ -2018,3 +2018,105 @@ test("CASE AA: DOC_PROFESSIONAL_LICENSE is needs_more_information for generic co
     "a new engineering firm still gets the professional license as REQUIRED (RULE_0118 verified)"
   );
 });
+
+test("CASE AB: DOC_PROFESSIONAL_LICENSE is needs_more_information for translation, staffing, and financial-sector BTs, not REQUIRED", () => {
+  // 2026-09-19 09:00 QA cycle (S58/S59/S60, Cataño/Trujillo Alto/Ponce):
+  // authoritative-source review closed the 06:00 cycle's open review items.
+  // RULE_0121 (translation) — the traductor-jurado credential is a Tribunal
+  // Supremo court credential for sworn translators, not a Dept of State
+  // professional license for translation businesses. RULE_0122 (staffing) —
+  // private employment agencies are licensed by the Secretario del Trabajo y
+  // Recursos Humanos under Ley 417-1947, not the professional-license
+  // boards. RULE_0225 (mortgage broker) — licensed by OCS/OCIF under the
+  // Mortgage Institutions Act (Act 24-2010), NMLS registration. RULE_0226
+  // (financial advisory) — investment advisers register with the OCS/OCIF
+  // under the Uniform Securities Law of PR (Form ADV, Series 65/66).
+  // RULE_0228 (investment firm) — investment companies register with the
+  // OCS/OCIF under the PR Investment Company Act (10 L.P.R.A. 671).
+  // RULE_0229 (credit services) — licensed under the Ley de Agencias
+  // Rectificadoras de Crédito (PR Laws Tit. 7, Cap. 64A) through DACO.
+  // All 6 rules are heuristic + missing_fact_keys=[licensed_profession_type]
+  // (the RULE_0116/RULE_0227 demotion precedent; golden G04) with no
+  // compliance_mode (RULE_0664 lesson). DOC_PROFESSIONAL_LICENSE is not the
+  // right document class for these BTs and no OCS/DTRH/DACO document exists
+  // in the KB yet (follow-up). No golden pins any of these rules.
+  // Deliberately unchanged: law (RULE_0114), CPA (RULE_0115), engineering
+  // (RULE_0118), architecture (RULE_0119), notary (RULE_0120) — genuinely
+  // board-licensed professions.
+  const DOC_PROFLIC = docByName("professional license");
+
+  const btCases: Array<[string, string]> = [
+    ["Translation Services", "Cataño"],
+    ["Staffing Agency", "Trujillo Alto"],
+    ["Mortgage Broker", "San Juan"],
+    ["Financial Advisory Firm", "Ponce"],
+    ["Investment Firm", "Guaynabo"],
+    ["Credit Services Company", "Bayamón"],
+  ];
+
+  for (const [businessTypeName, municipalityName] of btCases) {
+    for (const businessStatus of ["new", "existing"] as const) {
+      const rows = classify(
+        {
+          municipalityName,
+          businessTypeName,
+          businessStatus,
+          answers: {
+            Q_EMPLOYEES_HIRED: businessTypeName !== "Financial Advisory Firm",
+            Q_HOME_BASED: businessTypeName === "Financial Advisory Firm",
+            Q_PHYSICAL_LOCATION: businessTypeName !== "Financial Advisory Firm",
+          },
+          projectFacts: { property_tenure: "leased" },
+        },
+        businessStatus
+      ).classified;
+      const lic = byId(rows, DOC_PROFLIC);
+      assert.ok(
+        lic,
+        `professional license row must exist for ${businessTypeName} (${businessStatus})`
+      );
+      assert.equal(
+        lic.applicability,
+        "needs_more_information",
+        `a ${businessStatus} ${businessTypeName} firm's professional license stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+      );
+      assert.ok(
+        (lic.missingFacts ?? []).includes("licensed_profession_type"),
+        "the controlling unanswered fact must be named"
+      );
+    }
+  }
+
+  // Controls: genuinely licensed professions still hold.
+  const lawFirm = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Law Firm",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(lawFirm, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new law firm still gets the professional license as REQUIRED (RULE_0114 verified, golden G19)"
+  );
+
+  const architect = classify(
+    {
+      municipalityName: "Mayagüez",
+      businessTypeName: "Architecture Firm",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(architect, DOC_PROFLIC)?.applicability,
+    "verify_existing",
+    "an existing architecture firm verifies its professional license (RULE_0119 verified)"
+  );
+});
