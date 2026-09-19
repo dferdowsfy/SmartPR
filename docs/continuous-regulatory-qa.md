@@ -218,6 +218,21 @@ environmental_discharge
 
 Use this record later to detect unsupported SmartPR assumptions.
 
+COMPLETE-INTAKE RULE (2026-09-19, per founder directive): every scenario must
+fill ALL intake/passport fields — legal entity name, trade name/DBA, entity or
+filing type, jurisdiction of formation, business purpose/activity description,
+main telephone number, planned operations start date, formation/incorporation
+date, Department of State registry number, EIN, Hacienda merchant registration
+number, number of employees, NAICS code, for-profit/nonprofit, contact details,
+and every scenario-specific question (existing business, building, fuel sales,
+contracting activity, etc.). No field may be left as "+ Add" or `unknown`
+unless the business reality genuinely makes it inapplicable (e.g. no EIN yet
+because the entity is not yet formed — record the reason). Generate plausible,
+internally consistent values for every field and record them all in KNOWN
+FACTS. The point is to test the complete-application path, not the sparse
+intake: sparse-intake suppression behavior is covered by separate dedicated
+intake-completeness tests, not by the standard scenario cycles.
+
 ---
 
 # 5. RUN THE LIVE SMARTPR WORKFLOW
