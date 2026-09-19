@@ -2120,3 +2120,174 @@ test("CASE AB: DOC_PROFESSIONAL_LICENSE is needs_more_information for translatio
     "an existing architecture firm verifies its professional license (RULE_0119 verified)"
   );
 });
+
+test("CASE AC: DOC_PROFESSIONAL_LICENSE is needs_more_information for real-estate developer and investment firms, REQUIRED for brokerages", () => {
+  // 2026-09-19 12:00 QA cycle (S63, Toa Baja): authoritative-source review of
+  // the real-estate professional-license family. Ley 10-1994 Art 2(g)
+  // (20 L.P.R.A. 3025) expressly excludes from the corredor profession any
+  // transaction where the person is the property owner acting for their own
+  // benefit rather than as intermediary between two clients. So:
+  // - RULE_0211 (developer) and RULE_0213 (investment firm): heuristic +
+  //   missing_fact_keys=[licensed_profession_type], no compliance_mode
+  //   (the 594af48 demotion precedent; golden G04; RULE_0664 lesson).
+  // - RULE_0209 (brokerage): STAYS verified — brokers act as intermediaries
+  //   for others and genuinely need the Junta de Corredores license
+  //   (Ley 10-1994 Art 10/11/12; Junta adscrita al Departamento de Estado).
+  // No golden pins any of these rules (checked before editing).
+  const DOC_PROFLIC = docByName("professional license");
+
+  const nmiCases: Array<[string, string]> = [
+    ["Real Estate Developer", "Toa Baja"],
+    ["Real Estate Investment Firm", "Toa Baja"],
+  ];
+
+  for (const [businessTypeName, municipalityName] of nmiCases) {
+    for (const businessStatus of ["new", "existing"] as const) {
+      const rows = classify(
+        {
+          municipalityName,
+          businessTypeName,
+          businessStatus,
+          answers: {
+            Q_EMPLOYEES_HIRED: false,
+            Q_PHYSICAL_LOCATION: true,
+          },
+          projectFacts: { property_tenure: "leased" },
+        },
+        businessStatus
+      ).classified;
+      const lic = byId(rows, DOC_PROFLIC);
+      assert.ok(
+        lic,
+        `professional license row must exist for ${businessTypeName} (${businessStatus})`
+      );
+      assert.equal(
+        lic.applicability,
+        "needs_more_information",
+        `a ${businessStatus} ${businessTypeName} stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+      );
+      assert.ok(
+        (lic.missingFacts ?? []).includes("licensed_profession_type"),
+        "the controlling unanswered fact must be named"
+      );
+    }
+  }
+
+  // Controls: a brokerage (intermediary for others) genuinely needs the license.
+  const brokerageNew = classify(
+    {
+      municipalityName: "Toa Baja",
+      businessTypeName: "Real Estate Brokerage",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: false, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(brokerageNew, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new real-estate brokerage still gets the professional license as REQUIRED (RULE_0209 verified, Ley 10-1994)"
+  );
+
+  const brokerageExisting = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "Real Estate Brokerage",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(brokerageExisting, DOC_PROFLIC)?.applicability,
+    "verify_existing",
+    "an existing brokerage verifies its professional license (RULE_0209 verified)"
+  );
+});
+
+test("CASE AD: DOC_CONTRACTOR_LICENSE is needs_more_information for landscaping and energy-consulting BTs, not REQUIRED", () => {
+  // 2026-09-19 12:00 QA cycle (S62, Bayamón): a home-based tree-care franchise
+  // got the DACO contractor license (Ley 146-1995) as REQUIRED on business
+  // type alone via RULE_0135. Primary-source review: Ley 146-1995 covers the
+  // residential construction business (Ley 48-2017 exposicion: construccion
+  // de viviendas, modificaciones, alteraciones, instalaciones y reparaciones
+  // esenciales en edificaciones de vivienda). Validated golden G12 pins even
+  // BT_GENERAL_CONTRACTOR at needs_more_information ("do not assume from
+  // general contractor alone") — a landscaping company or energy consulting
+  // firm is a weaker construction signal than a general contractor.
+  // RULE_0135 (landscaping) and RULE_0232 (energy consulting) are heuristic +
+  // missing_fact_keys=[residential_work], no compliance_mode — mirroring
+  // RULE_0123's treatment. Whole-family sibling audit (332b659 lesson):
+  // genuine construction trades (electrical 0125, plumbing 0127, HVAC 0129,
+  // roofing 0131, concrete 0133, specialty trade 0137, solar installer 0230,
+  // utility 0233, battery storage 0235, construction govcon 0250) and the
+  // Q_OFFERS_CONSTRUCTION_SERVICES question path (0642) are unchanged.
+  const DOC_CONTRACTOR = docByName("contractor license");
+
+  for (const businessTypeName of ["Landscaping Company", "Energy Consulting Firm"]) {
+    for (const businessStatus of ["new", "existing"] as const) {
+      const rows = classify(
+        {
+          municipalityName: "Bayamón",
+          businessTypeName,
+          businessStatus,
+          answers: {
+            Q_EMPLOYEES_HIRED: true,
+            Q_PHYSICAL_LOCATION: true,
+          },
+          projectFacts: { property_tenure: "leased" },
+        },
+        businessStatus
+      ).classified;
+      const lic = byId(rows, DOC_CONTRACTOR);
+      assert.ok(
+        lic,
+        `contractor license row must exist for ${businessTypeName} (${businessStatus})`
+      );
+      assert.equal(
+        lic.applicability,
+        "needs_more_information",
+        `a ${businessStatus} ${businessTypeName} stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+      );
+      assert.ok(
+        (lic.missingFacts ?? []).includes("residential_work"),
+        "the controlling unanswered fact must be named"
+      );
+    }
+  }
+
+  // Controls: genuine construction trades still hold.
+  const electrician = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Electrical Contractor",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(electrician, DOC_CONTRACTOR)?.applicability,
+    "required",
+    "a new electrical contractor still gets the DACO contractor license as REQUIRED (RULE_0125 verified)"
+  );
+
+  const generalContractor = classify(
+    {
+      municipalityName: "Toa Alta",
+      businessTypeName: "General Contractor",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(generalContractor, DOC_CONTRACTOR)?.applicability,
+    "needs_more_information",
+    "a new general contractor stays needs_more_information (RULE_0123 heuristic, validated golden G12)"
+  );
+});

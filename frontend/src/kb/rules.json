@@ -2728,13 +2728,21 @@
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "change": "compliance_mode set to verify_existing",
     "date": "2026-09-18",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[residential_work]; compliance_mode removed",
+    "reason": "QA 2026-09-19 12:00 cycle (S62, Bayamón): a landscaping company got the DACO contractor license (Ley 146-1995) as REQUIRED on business type alone. Ley 146-1995 covers the residential construction business (Ley 48-2017 exposicion: construccion de viviendas, modificaciones, alteraciones, instalaciones y reparaciones esenciales en edificaciones de vivienda); validated golden G12 pins even BT_GENERAL_CONTRACTOR at needs_more_information ('do not assume from general contractor alone'). Mirrors RULE_0123's heuristic+missing_fact_keys=[residential_work] treatment; no golden pins this rule; RULE_0664 lesson."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "residential_work"
   ]
  },
  {
@@ -4090,13 +4098,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 12:00 cycle (S63, Toa Baja): a real estate developer buying/holding/developing its own properties got Professional License as REQUIRED/verify_existing on a Juntas Examinadoras citation, but Ley 10-1994 Art 2(g) (20 L.P.R.A. 3025) expressly excludes from the corredor profession any transaction where the person is the property owner acting for their own benefit rather than as intermediary between two clients. Only intermediaries for others (RULE_0209 brokerage) need the Junta license. Mirrors the 594af48 demotion precedent (RULE_0116/0227, golden G04); no golden pins this rule; RULE_0664 lesson (heuristic+NMI carries no compliance_mode)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -4134,13 +4150,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 12:00 cycle (S63, Toa Baja): a real estate investment firm buying/holding/developing its own properties got Professional License as REQUIRED/verify_existing on a Juntas Examinadoras citation, but Ley 10-1994 Art 2(g) (20 L.P.R.A. 3025) expressly excludes from the corredor profession any transaction where the person is the property owner acting for their own benefit rather than as intermediary between two clients. Only intermediaries for others (RULE_0209 brokerage) need the Junta license. Mirrors the 594af48 demotion precedent (RULE_0116/0227, golden G04); no golden pins this rule; RULE_0664 lesson (heuristic+NMI carries no compliance_mode)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
@@ -4511,13 +4535,21 @@
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "change": "compliance_mode set to verify_existing",
     "date": "2026-09-18",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[residential_work]; compliance_mode removed",
+    "reason": "QA 2026-09-19 12:00 cycle (S62, Bayamón): a energy consulting firm got the DACO contractor license (Ley 146-1995) as REQUIRED on business type alone. Ley 146-1995 covers the residential construction business (Ley 48-2017 exposicion: construccion de viviendas, modificaciones, alteraciones, instalaciones y reparaciones esenciales en edificaciones de vivienda); validated golden G12 pins even BT_GENERAL_CONTRACTOR at needs_more_information ('do not assume from general contractor alone'). Mirrors RULE_0123's heuristic+missing_fact_keys=[residential_work] treatment; no golden pins this rule; RULE_0664 lesson."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "residential_work"
   ]
  },
  {
