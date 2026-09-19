@@ -277,7 +277,13 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     // guidance (10c5a75) and the food-only fire certification (7761507).
     text("Establishments that handle food or serve the public in person are subject to sanitary inspection under Departamento de Salud environmental-health regulation before they may operate — for example restaurants and other food establishments, and personal-care premises such as barbershops, salons, and spas.", "Los establecimientos que manejan alimentos o atienden al público en persona están sujetos a inspección sanitaria bajo la reglamentación de salud ambiental del Departamento de Salud antes de operar — por ejemplo restaurantes y otros establecimientos de alimentos, y locales de cuidado personal como barberías, salones y spas."),
     text("The sanitary/health permit documents that the premises passed inspection for its activity category — food handling, personal-care services, or other public-facing use.", "El permiso sanitario acredita que el local aprobó la inspección para su categoría de actividad — manejo de alimentos, servicios de cuidado personal u otro uso de atención al público."),
-    text("Prepare the premises for a Departamento de Salud sanitary inspection and submit the permit application for the activity category the business will operate.", "Prepara el local para la inspección sanitaria del Departamento de Salud y presenta la solicitud del permiso para la categoría de actividad que operará el negocio."),
+    // Live QA 2026-09-19 03:00 (S54, Trujillo Alto gas station): "submit the
+    // permit application" told a 15-year existing operator to file a new
+    // application on a VERIFY EXISTING card. Same status-blind-copy class
+    // as the EIN fix (2026-09-17) and the transport-permit fix (this
+    // cycle): concepts are shared across business statuses, so the next
+    // action must read correctly for both applicants and existing holders.
+    text("Prepare the premises for a Departamento de Salud sanitary inspection and submit the permit application for the activity category the business will operate — or confirm the existing sanitary permit is current.", "Prepara el local para la inspección sanitaria del Departamento de Salud y presenta la solicitud del permiso para la categoría de actividad que operará el negocio — o confirma que el permiso sanitario vigente está al día."),
     text("An issued sanitary permit authorizes the inspected activity at that location, subject to its conditions and renewal.", "El permiso sanitario emitido autoriza la actividad inspeccionada en ese local, sujeto a sus condiciones y renovación."),
   ]),
   DOC_FIRE_CERT: concept("DOC_FIRE_CERT", [[condition("Q_FOOD_PREPARED", "Food prepared on site", "Alimentos preparados en el local", true)], [business]], [PR_GUIDANCE_SOURCES.fire], [
@@ -366,7 +372,13 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
   ], [PR_GUIDANCE_SOURCES.ntsp], [
     text("For-hire transportation in Puerto Rico operates under an NTSP franchise: carriers moving goods or passengers for compensation need the Porteador por Contrato franchise under Law 109-1962 and NTSP Regulation 9156 §10.02. Ordinary vehicle registration does not authorize commercial carriage.", "El transporte por paga en Puerto Rico opera bajo franquicia del NTSP: los porteadores que mueven carga o pasajeros por compensación necesitan la franquicia de Porteador por Contrato bajo la Ley 109-1962 y el Reglamento 9156 §10.02 del NTSP. El registro ordinario del vehículo no autoriza el acarreo comercial."),
     text("The NTSP franchise is the operating authority for the transport service: it identifies the carrier, the authorized service, and the terms under which the franchise was granted.", "La franquicia del NTSP es la autorización de operación del servicio de transporte: identifica al porteador, el servicio autorizado y los términos bajo los cuales se otorgó la franquicia."),
-    text("Apply for the Porteador por Contrato franchise through the NTSP at ntsp.pr.gov — many filings are processed through renovacionesonline.com. Keep the franchise current and carry proof of the franchise in each commercial vehicle.", "Solicita la franquicia de Porteador por Contrato en el NTSP (ntsp.pr.gov) — muchos trámites se procesan por renovacionesonline.com. Mantén la franquicia al día y lleva la evidencia de la franquicia en cada vehículo comercial."),
+    // Live QA 2026-09-19 03:00 (S53, Ponce trucking): "Apply for …" told a
+    // 12-year existing operator to apply for a new franchise on a
+    // VERIFY EXISTING card. Same status-blind-copy class as the EIN fix
+    // (2026-09-17): concepts are shared across business statuses, so the
+    // next action must read correctly for both applicants and existing
+    // holders ("obtain … or confirm …" rather than "apply for …").
+    text("Obtain the Porteador por Contrato franchise through the NTSP at ntsp.pr.gov (many filings are processed through renovacionesonline.com), or confirm the existing franchise is current. Carry proof of the franchise in each commercial vehicle.", "Obtén la franquicia de Porteador por Contrato en el NTSP (ntsp.pr.gov — muchos trámites se procesan por renovacionesonline.com), o confirma que la franquicia vigente está al día. Lleva la evidencia de la franquicia en cada vehículo comercial."),
     text("Operating a for-hire transport service without the NTSP franchise risks fines and enforcement action; an expired franchise leaves the service operating without authority.", "Operar un servicio de transporte por paga sin la franquicia del NTSP arriesga multas y acción de fiscalización; una franquicia vencida deja el servicio operando sin autorización."),
   ]),
   // REG-GUIDE-AGRI-001 (2026-09-18 QA): the Bona Fide Farmer Registration

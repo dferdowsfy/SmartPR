@@ -436,6 +436,35 @@ test("REG-GUIDE-TRANSPORT-001: transport-permit guidance validates on the trucki
       `an actual trigger explained (${language}): ${JSON.stringify(g.triggerFacts.map(f => f.key))}`
     );
     assert.match(g.whyThisApplies, /NTSP/i, `cites the NTSP franchise basis (${language})`);
+    // Live QA 2026-09-19 03:00 (S53, Ponce trucking): on a VERIFY EXISTING
+    // card the next action said "Apply for …" to a 12-year existing
+    // operator. The concept is shared across business statuses, so the
+    // next action must read correctly for existing holders too.
+    assert.doesNotMatch(g.whatYouNeedToDo, /^(Apply|Solicita) /i, `no bare apply-first directive on verify_existing (${language})`);
+    assert.match(g.whatYouNeedToDo, /or confirm the existing franchise|o confirma que la franquicia vigente/i, `status-neutral next action covers existing holders (${language})`);
+  }
+});
+
+test("REG-GUIDE-HEALTH-STATUSNEUTRAL: health-permit next action reads correctly on a VERIFY EXISTING card", () => {
+  // Live QA 2026-09-19 03:00 (S54, Trujillo Alto gas station): "submit the
+  // permit application" told a 15-year existing operator to file a new
+  // application on a VERIFY EXISTING card. Same status-blind-copy class as
+  // the EIN fix (2026-09-17) and the transport fix (this cycle).
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      ...context, language,
+      businessTypeName: "Convenience Store",
+      discoveryAnswers: { food_sold: true },
+      engineInput: {
+        municipalityName: "Trujillo Alto", businessTypeName: "Convenience Store",
+        answers: { Q_FOOD_SOLD: true },
+      },
+    };
+    const r = { ...req("DOC_HEALTH_PERMIT"), applicability: "verify_existing" };
+    const g = buildRequirementGuidance(r, ctx);
+    assert.equal(g.status, "VALIDATED", `health permit (${language})`);
+    assert.doesNotMatch(g.whatYouNeedToDo, /^(submit the permit application|presenta la solicitud) /i, `no bare apply-first directive on verify_existing (${language})`);
+    assert.match(g.whatYouNeedToDo, /or confirm the existing sanitary permit|o confirma que el permiso sanitario vigente/i, `status-neutral next action covers existing holders (${language})`);
   }
 });
 
