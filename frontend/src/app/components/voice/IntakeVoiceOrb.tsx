@@ -2,7 +2,8 @@
 
 // Floating SmartPR voice orb for intake Start — STT then existing interpret path.
 // No businessId required. CSS/Tailwind only (respects prefers-reduced-motion).
-// Visual: ChatGPT-like breathing glow (teal #245c5c + mint/cyan halo + sparkles).
+// Visual: a single globe orb — green cosmos smoke swirls continuously inside
+// the globe, white waveform signal bars on top. No border rings or halos.
 // Anchored lower-right (safe-area); hints/pills stack upward above the orb.
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -491,18 +492,10 @@ export function IntakeVoiceOrb({
     <>
       {/* Scoped orb motion — disabled under prefers-reduced-motion via media query */}
       <style>{`
-        @keyframes spr-orb-breathe {
-          0%, 100% { transform: scale(1); opacity: 0.5; }
-          50% { transform: scale(1.14); opacity: 0.9; }
-        }
         @keyframes spr-orb-ring {
           0% { transform: scale(0.92); opacity: 0.45; }
           70% { transform: scale(1.45); opacity: 0; }
           100% { transform: scale(1.45); opacity: 0; }
-        }
-        @keyframes spr-orb-shimmer {
-          0%, 100% { opacity: 0.35; }
-          50% { opacity: 0.7; }
         }
         @keyframes spr-smoke-swirl {
           from { transform: rotate(0deg); }
@@ -531,17 +524,11 @@ export function IntakeVoiceOrb({
           0%, 100% { transform: scale(1); filter: brightness(1); }
           50% { transform: scale(1.045); filter: brightness(1.18); }
         }
-        .spr-intake-orb-breathe {
-          animation: spr-orb-breathe 3.2s ease-in-out infinite;
-        }
         .spr-intake-orb-ring {
           animation: spr-orb-ring 3.6s ease-out infinite;
         }
         .spr-intake-orb-ring-delay {
           animation: spr-orb-ring 3.6s ease-out infinite 1.2s;
-        }
-        .spr-intake-orb-shimmer {
-          animation: spr-orb-shimmer 2.8s ease-in-out infinite;
         }
         .spr-smoke-swirl {
           animation: spr-smoke-swirl 9s linear infinite;
@@ -575,10 +562,8 @@ export function IntakeVoiceOrb({
           mask-image: radial-gradient(circle closest-side, rgba(0,0,0,1) 98%, rgba(0,0,0,0) 100%);
         }
         @media (prefers-reduced-motion: reduce) {
-          .spr-intake-orb-breathe,
           .spr-intake-orb-ring,
           .spr-intake-orb-ring-delay,
-          .spr-intake-orb-shimmer,
           .spr-smoke-swirl,
           .spr-smoke-swirl-rev,
           .spr-orb-alive,
@@ -744,7 +729,7 @@ export function IntakeVoiceOrb({
           </div>
         )}
 
-        {/* Orb + layered ChatGPT-style glow (SmartPR teal / mint) */}
+        {/* Single globe orb — cosmos smoke swirls continuously inside */}
         <button
           type="button"
           disabled={blocked && state !== "listening"}
@@ -764,20 +749,9 @@ export function IntakeVoiceOrb({
           aria-label={state === "listening" ? L("Stop recording and use speech", "Terminar grabación y usar voz", lang) : L("Start voice input — microphone off", "Activar voz — micrófono apagado", lang)}
           aria-pressed={state === "listening"}
           aria-busy={state === "processing"}
-          className={`pointer-events-auto group relative order-4 flex items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 ${state === "listening" ? "h-24 w-24 ring-4 ring-teal-600 ring-offset-4" : "h-[3.75rem] w-[3.75rem] md:h-16 md:w-16"}`}
+          className={`pointer-events-auto group relative order-4 flex items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 ${state === "listening" ? "h-24 w-24 ring-4 ring-teal-600 ring-offset-4 md:h-28 md:w-28" : "h-[5.5rem] w-[5.5rem] md:h-24 md:w-24"}`}
         >
-          {/* Soft ambient bloom */}
-          <span
-            aria-hidden
-            className={`absolute inset-[-18px] rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(94,234,212,0.45)_0%,rgba(167,243,208,0.28)_38%,rgba(36,92,92,0.08)_62%,transparent_75%)] ${
-              state === "listening" && !reducedMotion ? "spr-intake-orb-breathe" : ""
-            }`}
-            style={{
-              opacity: state === "listening" ? 0.95 + level * 0.2 : 0.85,
-              filter: "blur(1px)",
-            }}
-          />
-          {/* Gentle ambient rings */}
+          {/* Gentle ambient rings — listening indicator only */}
           {state === "listening" && !reducedMotion && (
             <>
               <span
@@ -790,18 +764,6 @@ export function IntakeVoiceOrb({
               />
             </>
           )}
-          {/* Cyan/mint glass halo */}
-          <span
-            aria-hidden
-            className={`absolute inset-[-10px] rounded-full bg-[radial-gradient(circle_at_50%_40%,rgba(204,251,241,0.7)_0%,rgba(103,232,249,0.32)_45%,rgba(36,92,92,0.05)_72%,transparent_80%)] ${
-              state === "listening" && !reducedMotion ? "animate-pulse" : !reducedMotion ? "spr-intake-orb-shimmer" : ""
-            }`}
-            style={{
-              filter: "blur(0.5px)",
-              opacity: 0.9 + (reducedMotion ? 0 : level * 0.15),
-              transform: `scale(${1 + (reducedMotion ? 0 : level * 0.1)})`,
-            }}
-          />
           {state === "listening" || state === "processing" ? (
             /* Mic ON: dark signal disc with a pulsating white waveform —
                no globe in the active state. */
@@ -816,10 +778,11 @@ export function IntakeVoiceOrb({
               }}
             />
           ) : (
-            /* Motion globe — green smoke, kept visibly alive. */
+            /* Motion globe — green smoke, kept visibly alive. The globe fills
+               the button edge-to-edge: no border gap, no halo rings. */
             <span
               aria-hidden
-              className={`absolute inset-[5px] overflow-hidden rounded-full bg-[#0b3532] ${
+              className={`absolute inset-0 overflow-hidden rounded-full bg-[#0b3532] ${
                 !reducedMotion ? "spr-orb-alive" : ""
               }`}
               style={{
