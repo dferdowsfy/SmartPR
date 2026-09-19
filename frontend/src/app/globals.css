@@ -23,6 +23,10 @@ body {
      scrolling or dragging; this keeps it from being read as browser back
      navigation and silently discarding in-progress filing data. */
   overscroll-behavior-x: none;
+  /* No page may ever pan horizontally on mobile: clip (not hidden) so
+     position: sticky descendants keep working, and inner carousels with
+     their own overflow-x: auto still scroll internally. */
+  overflow-x: clip;
 }
 
 body {

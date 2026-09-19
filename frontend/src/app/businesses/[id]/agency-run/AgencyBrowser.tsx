@@ -1,15 +1,16 @@
 "use client";
 
 /**
- * AgencyBrowser — the SECONDARY live-browser panel.
+ * AgencyBrowser — the live-browser panel, always visible while a run is active.
  *
- * The iframe stays mounted for the whole run (view switches only hide it with
- * CSS, never unmount it) so the session survives toggling. Desktop: right-side
- * collapsible panel. Mobile: full-screen sheet with a persistent back button.
+ * Static in-flow layout at every breakpoint (beside the chat on desktop,
+ * stacked above it on mobile) — never a modal sheet. The iframe stays
+ * mounted for the whole run (view switches only hide it with CSS, never
+ * unmount it) so the session survives toggling.
  */
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, FileUp, KeyRound,
+  AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, EyeOff, FileUp, KeyRound,
   Loader2, Maximize2, Minimize2, PauseCircle, Play, RefreshCw, Square, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
@@ -78,28 +79,11 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       ref={sectionRef}
       className={
         props.open
-          ? "fixed inset-0 z-50 flex min-h-0 flex-col bg-[#f4f1ea] lg:static lg:z-auto lg:min-h-0"
+          ? "order-first flex min-h-0 shrink-0 flex-col bg-[#f4f1ea] h-[clamp(240px,32dvh,380px)] lg:order-none lg:h-auto"
           : "hidden"
       }
       aria-label={L("Live browser", "Navegador en vivo", lang)}
     >
-      {/* Mobile sheet header with persistent back button */}
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
-        <button
-          type="button"
-          onClick={props.onClose}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          {L("Back to chat", "Volver al chat", lang)}
-        </button>
-        <span className="ml-auto text-xs font-medium text-slate-400">
-          {run.live_url
-            ? L("Live session", "Sesión en vivo", lang)
-            : L("Screenshots", "Capturas", lang)}
-        </span>
-      </div>
-
       <div className="flex min-h-0 flex-1 flex-col rounded-none border-0 bg-white lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm lg:shadow-slate-950/[0.02]">
         <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-bold text-[#161616]">
@@ -110,6 +94,16 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 : L("Assisted browser", "Navegador asistido", lang)}
           </h2>
           <div className="flex items-center gap-2">
+            {/* Mobile: the panel is static in-flow, so the hide control
+                lives in its own header (the chat header toggle sits below). */}
+            <button
+              type="button"
+              onClick={props.onClose}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 lg:hidden"
+            >
+              <EyeOff className="h-3 w-3" />
+              {L("Hide", "Ocultar", lang)}
+            </button>
             <span className="hidden text-[11px] font-medium text-slate-400 xl:inline">
               {run.live_url
                 ? L(`Live preview — ${props.domainsLabel}`, `Vista previa en vivo — ${props.domainsLabel}`, lang)
@@ -125,7 +119,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                   void document.exitFullscreen().catch(() => {});
                   props.onClose();
                 }}
-                className="hidden items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 lg:inline-flex"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
               >
                 <ArrowLeft className="h-3 w-3" />
                 {L("Back to chat", "Volver al chat", lang)}

@@ -6,8 +6,10 @@
  * The chat thread (AgencyChat) is the primary surface for the whole run:
  * filing picker → pre-flight card → goal brief → milestone messages → one
  * transient status indicator → intervention cards → review card. The live
- * browser (AgencyBrowser) is secondary: hidden by default on desktop, a
- * full-screen sheet on mobile, and the run completes without ever opening it.
+ * browser (AgencyBrowser) is a static, always-visible panel while a run is
+ * active: beside the chat on desktop, stacked above it on mobile. It is
+ * never a modal sheet and never starts hidden — the user can hide it, but
+ * it reopens with every new run.
  *
  * Filing-first: the picker lists the specific filings SmartPR identified
  * for this business (GET /api/agency-actions/filings). SmartPR decides what
@@ -114,7 +116,13 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     values: {},
   });
   const [previewLoaded, setPreviewLoaded] = useState(false);
-  const [browserOpen, setBrowserOpen] = useState(false);
+  /**
+   * The live browser is a static, always-visible panel while a run is
+   * active — never a modal sheet, never starting hidden. The user can
+   * hide it; starting a new run (or taking over) reopens it.
+   */
+  const [browserHidden, setBrowserHidden] = useState(false);
+  const browserOpen = Boolean(run) && !browserHidden;
   /** Fictional rehearsal portal — admin-only or ?demo=1. Never for real users. */
   const [demoVisible, setDemoVisible] = useState(false);
   useEffect(() => {
@@ -324,6 +332,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     const started = result.run as AgencyRunPublic;
     const brief = (result.brief ?? null) as GoalBrief | null;
     setRun(started);
+    setBrowserHidden(false);
     setGoalBrief(brief);
     // Retain pre-flight field values in-memory (never persisted) so that a
     // later re-ask of the same fields pre-fills from this session and the
@@ -436,7 +445,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
   const enterTakeover = async () => {
     setTakeover(true);
-    setBrowserOpen(true);
+    setBrowserHidden(false);
     if (!run) return;
     try {
       const response = await fetch(`/api/agency-runs/${run.id}/takeover`, { method: "POST" });
@@ -693,7 +702,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       ? {
           knownCount: goalBrief ? goalBrief.known_fields.length : null,
           onReviewInBrowser: () => {
-            setBrowserOpen(true);
+            setBrowserHidden(false);
             if (run.live_url) void enterTakeover();
           },
           onClose: () => void stop(),
@@ -714,7 +723,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setGoalBrief(null);
     setError(null);
     setUploadMsg(null);
-    setBrowserOpen(false);
+    setBrowserHidden(false);
     // Keep the filing picker (already loaded) and drop everything after it.
     setMsgs((prev) => prev.filter((m) => m.type === "filing-picker"));
   };
@@ -739,7 +748,13 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           {run && <StatusPill status={run.status} lang={lang} />}
         </div>
 
-        <header className="mt-3 rounded-2xl border border-[#161616]/15 bg-[#fbf8f2] p-6 text-[#161616]">
+        <header
+          className={`mt-3 rounded-2xl border border-[#161616]/15 bg-[#fbf8f2] p-6 text-[#161616] ${
+            /* Mid-run on mobile the header is redundant — the workspace is
+               browser + chat, and the status pill stays in the row above. */
+            run ? "hidden md:block" : ""
+          }`}
+        >
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand">
               <Bot className="h-5 w-5 text-white" />
@@ -816,7 +831,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 {run && (
                   <button
                     type="button"
-                    onClick={() => setBrowserOpen((o) => !o)}
+                    onClick={() => setBrowserHidden((h) => !h)}
                     className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                   >
                     {browserOpen ? (
@@ -858,13 +873,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             />
           </section>
 
-          {/* Browser — secondary, stays mounted (hidden via CSS) so the session survives view switches */}
+          {/* Browser — static in-flow panel, always visible while a run is
+              active (above the chat on mobile, beside it on desktop).
+              Stays mounted (hidden via CSS) so the session survives
+              view switches */}
           {run && (
             <AgencyBrowser
               lang={lang}
               run={run}
               open={browserOpen}
-              onClose={() => setBrowserOpen(false)}
+              onClose={() => setBrowserHidden(true)}
               portalName={portalName}
               uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
               domainsLabel={activeConfig.domains[0] ?? ""}
