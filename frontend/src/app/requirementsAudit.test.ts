@@ -2291,3 +2291,71 @@ test("CASE AD: DOC_CONTRACTOR_LICENSE is needs_more_information for landscaping 
     "a new general contractor stays needs_more_information (RULE_0123 heuristic, validated golden G12)"
   );
 });
+
+test("CASE AE: DOC_PROFESSIONAL_LICENSE is needs_more_information for property management, not REQUIRED", () => {
+  // 2026-09-19 15:00 QA cycle (S66, Carolina): a new facility-management
+  // franchise (janitorial/maintenance coordination via crews and
+  // subcontractors, explicitly NOT offering construction or brokerage
+  // services) got Professional License as REQUIRED via RULE_0210
+  // (BT_PROPERTY_MANAGEMENT_COMPANY) on the generic Juntas Examinadoras
+  // citation. Primary-source review: Ley 10-1994 (20 L.P.R.A. 3035, Art. 12)
+  // licenses Empresas de Bienes Raices whose personnel perform brokerage
+  // functions; pure facility/janitorial management is not brokerage, and
+  // Art. 2(g) exempts owner-acting transactions. Whether this BT engages in
+  // licensed brokerage is an activity fact, not a BT-alone fact. RULE_0210
+  // is heuristic + missing_fact_keys=[licensed_profession_type], no
+  // compliance_mode (RULE_0664 lesson) — mirroring the 594af48 demotions
+  // (translation/staffing/mortgage/financial-advisory/investment/credit)
+  // and the 51805ec demotions (developer/investment firm).
+  // Genuinely licensed paths (brokerage RULE_0209, appraisal RULE_0212,
+  // insurance RULE_0224) are unchanged.
+  const DOC_LICENSE = docByName("professional license");
+
+  for (const businessStatus of ["new", "existing"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Carolina",
+        businessTypeName: "Property Management Company",
+        businessStatus,
+        answers: {
+          Q_EMPLOYEES_HIRED: true,
+          Q_PHYSICAL_LOCATION: true,
+          Q_OFFERS_CONSTRUCTION_SERVICES: false,
+        },
+        projectFacts: { property_tenure: "leased" },
+      },
+      businessStatus
+    ).classified;
+    const lic = byId(rows, DOC_LICENSE);
+    assert.ok(
+      lic,
+      `professional license row must exist for Property Management Company (${businessStatus})`
+    );
+    assert.equal(
+      lic.applicability,
+      "needs_more_information",
+      `a ${businessStatus} property management company stays needs_more_information (heuristic RULE_0210) — never REQUIRED/verify_existing on BT alone`
+    );
+    assert.ok(
+      (lic.missingFacts ?? []).includes("licensed_profession_type"),
+      "the controlling unanswered fact must be named"
+    );
+  }
+
+  // Control: genuine brokerage still holds the licensed path.
+  const brokerage = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Real Estate Brokerage",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(brokerage, DOC_LICENSE)?.applicability,
+    "required",
+    "a new real estate brokerage still gets the professional license as REQUIRED (RULE_0209 verified, Ley 10-1994)"
+  );
+});

@@ -4076,13 +4076,21 @@
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-19",
+    "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
+    "reason": "QA 2026-09-19 15:00 cycle (S66, Carolina): a facility-management franchise (janitorial/maintenance coordination, explicitly no construction or brokerage services) got Professional License as REQUIRED/verify_existing on the generic Juntas Examinadoras citation. Ley 10-1994 (20 L.P.R.A. 3035, Art. 12) licenses Empresas de Bienes Raices whose personnel perform brokerage functions; pure facility/janitorial management is not brokerage, and Art. 2(g) exempts owner-acting transactions. Whether this BT engages in licensed brokerage is an activity fact, not a BT-alone fact. Mirrors the 594af48/51805ec demotion precedents (RULE_0116/0227/0211/0213, golden G04); no golden pins this rule; RULE_0664 lesson (heuristic+NMI carries no compliance_mode)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "licensed_profession_type"
   ]
  },
  {
