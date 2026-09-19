@@ -505,6 +505,13 @@ export function IntakeVoiceOrb({
           from { transform: rotate(360deg); }
           to { transform: rotate(0deg); }
         }
+        /* Slow positional drift so the smoke visibly travels across the globe
+           even when the rotation reads as subtle on small screens. */
+        @keyframes spr-smoke-drift {
+          0% { background-position: 25% 35%; }
+          50% { background-position: 75% 65%; }
+          100% { background-position: 25% 35%; }
+        }
         @keyframes spr-orb-alive {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.07); }
@@ -531,10 +538,12 @@ export function IntakeVoiceOrb({
           animation: spr-orb-ring 3.6s ease-out infinite 1.2s;
         }
         .spr-smoke-swirl {
-          animation: spr-smoke-swirl 9s linear infinite;
+          animation: spr-smoke-swirl 9s linear infinite, spr-smoke-drift 14s ease-in-out infinite;
+          will-change: transform, background-position;
         }
         .spr-smoke-swirl-rev {
-          animation: spr-smoke-swirl-rev 15s linear infinite;
+          animation: spr-smoke-swirl-rev 15s linear infinite, spr-smoke-drift 21s ease-in-out infinite reverse;
+          will-change: transform, background-position;
         }
         .spr-orb-alive {
           animation: spr-orb-alive 4.5s ease-in-out infinite;
@@ -830,20 +839,21 @@ export function IntakeVoiceOrb({
             />
             </span>
           )}
-          {/* Icon: white waveform signal — pulsating while listening, calm on the globe */}
-          <span className="relative z-10">
-            {state === "listening" ? (
-              <span className="flex flex-col items-center gap-1"><WaveformBars live level={level} reducedMotion={reducedMotion} /><Square className="h-3 w-3 fill-white text-white" /></span>
-            ) : state === "processing" ? (
-              <span
-                className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
-                  reducedMotion ? "" : "animate-spin"
-                }`}
-              />
-            ) : (
-              <WaveformBars live={false} level={0} reducedMotion={reducedMotion} />
-            )}
-          </span>
+          {/* Icon: white waveform signal while listening; the idle globe is
+              clean cosmos smoke with no overlay lines. */}
+          {(state === "listening" || state === "processing") && (
+            <span className="relative z-10">
+              {state === "listening" ? (
+                <span className="flex flex-col items-center gap-1"><WaveformBars live level={level} reducedMotion={reducedMotion} /><Square className="h-3 w-3 fill-white text-white" /></span>
+              ) : (
+                <span
+                  className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
+                    reducedMotion ? "" : "animate-spin"
+                  }`}
+                />
+              )}
+            </span>
+          )}
         </button>
       </div>
     </>
