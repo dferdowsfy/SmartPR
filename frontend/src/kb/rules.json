@@ -5500,7 +5500,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0579",
@@ -5514,7 +5522,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0580",
@@ -5528,7 +5544,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0581",
@@ -5542,7 +5566,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0582",
@@ -5556,7 +5588,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0583",
@@ -5570,7 +5610,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0584",
@@ -5584,7 +5632,15 @@
     "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/125-1942.pdf",
     "citation_confidence": "statute",
     "citation_inherited_from": "DOC_PORT_FACILITY_PERMIT",
-    "citation_source": "document"
+    "citation_source": "document",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 03:00 cycle (S53): a 12-year Ponce trucking company got DOC_PORT_FACILITY_PERMIT as REQUIRED-as-new with the industrial_port flag confirmed — an operating obligation framed as a first-time filing. Same defect class as the 14 prior posture sweeps. Whole DOC_PORT_FACILITY_PERMIT family (RULE_0578-0584, all non-heuristic, no missing_fact_keys). Unconfirmed flags stay conditional via the classifier's assert-basis gate (f34f925). New businesses keep REQUIRED."
+      }
+    ]
   },
   {
     "id": "RULE_0585",

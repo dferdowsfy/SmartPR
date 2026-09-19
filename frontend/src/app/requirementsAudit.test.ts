@@ -1851,3 +1851,74 @@ test("CASE Y: DOC_ENTERTAINMENT_PERMIT is verify_existing for existing entertain
     );
   }
 });
+
+test("CASE Z: DOC_PORT_FACILITY_PERMIT is verify_existing for existing port-area operators, required for new ones", () => {
+  // 2026-09-19 03:00 QA cycle (S53): a 12-year Ponce trucking company with
+  // the industrial_port flag confirmed got DOC_PORT_FACILITY_PERMIT
+  // (RULE_0578) as REQUIRED-as-new — the same defect class as the 14 prior
+  // posture sweeps (health, fire/CFPM, tourism, vehicle, contractor,
+  // childcare, alcohol, transport/agriculture/insurance, LUMA,
+  // net-metering, OPPE, entertainment, plus the industrial-port
+  // environmental families of CASE T). Whole family swept per the 332b659
+  // lesson: RULE_0578 (trucking), 0579 (freight forwarding), 0580
+  // (warehouse operator), 0581 (logistics), 0582 (import/export), 0583
+  // (wholesale goods distributor), 0584 (wholesale food distributor). All
+  // seven are non-heuristic with no missing_fact_keys (RULE_0664 lesson).
+  // The classifier's assert-basis gate (CASE T) keeps unconfirmed flags
+  // conditional for both intents — the sweep cannot assert applicability
+  // the engine left undecided.
+  const DOC_PORT = docByName("port facility");
+  assert.equal(DOC_PORT, "DOC_PORT_FACILITY_PERMIT");
+
+  for (const businessTypeName of ["Trucking Company", "Freight Forwarding Company"]) {
+    // Existing port-area operator verifies its standing authorization.
+    const existing = classifyWithDecisions(
+      {
+        municipalityName: "Ponce",
+        businessTypeName,
+        businessStatus: "existing",
+        answers: { Q_EMPLOYEES_HIRED: true },
+      },
+      "existing",
+      { industrial_port: "applies" }
+    ).classified;
+    assert.equal(
+      byId(existing, DOC_PORT)?.applicability,
+      "verify_existing",
+      `an existing ${businessTypeName.toLowerCase()} with a confirmed port flag verifies its port facility permit (not REQUIRED-as-new)`
+    );
+
+    // Unconfirmed flag stays conditional — the engine does not assert.
+    const unconfirmed = classify(
+      {
+        municipalityName: "Ponce",
+        businessTypeName,
+        businessStatus: "existing",
+        answers: { Q_EMPLOYEES_HIRED: true },
+      },
+      "existing"
+    ).classified;
+    assert.equal(
+      byId(unconfirmed, DOC_PORT)?.applicability,
+      "conditional",
+      `an unconfirmed industrial_port flag keeps the port facility permit conditional`
+    );
+
+    // New port-area operator still applies for the first time.
+    const fresh = classifyWithDecisions(
+      {
+        municipalityName: "Ponce",
+        businessTypeName,
+        businessStatus: "new",
+        answers: { Q_EMPLOYEES_HIRED: true },
+      },
+      "new",
+      { industrial_port: "applies" }
+    ).classified;
+    assert.equal(
+      byId(fresh, DOC_PORT)?.applicability,
+      "required",
+      `a new ${businessTypeName.toLowerCase()} with a confirmed port flag still gets the port facility permit as REQUIRED`
+    );
+  }
+});
