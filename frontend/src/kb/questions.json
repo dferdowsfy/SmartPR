@@ -495,7 +495,8 @@
     "type": "single_select",
     "options": [
       "Own",
-      "Lease"
+      "Lease",
+      "Customer / third-party property"
     ]
   },
   {

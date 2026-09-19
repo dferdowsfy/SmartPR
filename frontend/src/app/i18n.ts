@@ -1007,6 +1007,7 @@ export const ES: Record<string, string> = {
   "What is the planned solar system capacity?": "¿Cuál es la capacidad planificada del sistema solar?",
   "Will the system be installed on an existing structure?": "¿Se instalará el sistema en una estructura existente?",
   "Does the business own the property where the solar system will be installed?": "¿El negocio es dueño de la propiedad donde se instalará el sistema solar?",
+  "Customer / third-party property": "Propiedad de clientes o terceros",
   "Will battery energy storage be installed with the solar system?": "¿Se instalarán baterías para almacenar energía junto con el sistema solar?",
   "Do you already have a Puerto Rico Tourism Company Innkeeper ID for this property?": "¿Ya tienes un Número de Identificación de Hostelero de la Compañía de Turismo para esta propiedad?",
   "What is your relationship to the property?": "¿Cuál es tu relación con la propiedad?",

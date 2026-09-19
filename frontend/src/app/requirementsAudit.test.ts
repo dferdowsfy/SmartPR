@@ -2359,3 +2359,101 @@ test("CASE AE: DOC_PROFESSIONAL_LICENSE is needs_more_information for property m
     "a new real estate brokerage still gets the professional license as REQUIRED (RULE_0209 verified, Ley 10-1994)"
   );
 });
+
+test("CASE AF: DOC_OWNER_AFFIDAVIT never fabricates a Lease fact for installers; verify_existing posture for existing businesses", () => {
+  // 2026-09-19 18:00 QA cycle (live S69, Cataño): an existing 6-year solar
+  // installer answered the forced Own/Lease binary on Q_SOLAR_OWNERSHIP with
+  // "Lease" (its systems sit on CUSTOMER properties — neither option was
+  // truthful) and RULE_0614 fired the Property Owner Authorization Affidavit
+  // as REQUIRED-as-new. Same forced-fabrication class as the 09:00
+  // Q_LICENSE_TYPES defect (dbe50f8). Fix: Q_SOLAR_OWNERSHIP gains a
+  // "Customer / third-party property" option (RULE_0614 still fires only on
+  // "Lease"), and RULE_0614 carries compliance_mode=verify_existing so
+  // existing businesses verify a standing authorization instead of applying
+  // as new (non-heuristic, no missing_fact_keys — the RULE_0664 lesson;
+  // same posture-sweep class as the 09-18/09-19 series).
+  const DOC_AFFIDAVIT = docByName("property owner", "affidavit");
+
+  // 1. Installer answers the honest third option: no affidavit may fire.
+  const third = classify(
+    {
+      municipalityName: "Cataño",
+      businessTypeName: "Solar Installer",
+      businessStatus: "existing",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_SOLAR_OWNERSHIP: "Customer / third-party property",
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.ok(
+    !byId(third, DOC_AFFIDAVIT),
+    "an installer whose systems are on customer properties must not get the owner-authorization affidavit"
+  );
+
+  // 2. Existing installer with a genuine leased-premises system: verify_existing.
+  const existing = classify(
+    {
+      municipalityName: "Cataño",
+      businessTypeName: "Solar Installer",
+      businessStatus: "existing",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_SOLAR_OWNERSHIP: "Lease",
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(existing, DOC_AFFIDAVIT)?.applicability,
+    "verify_existing",
+    "an existing installer with solar on leased premises verifies the standing affidavit, not applies-as-new"
+  );
+
+  // 3. New installer with a leased-premises system: still required-as-new.
+  const fresh = classify(
+    {
+      municipalityName: "Cataño",
+      businessTypeName: "Solar Installer",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_SOLAR_OWNERSHIP: "Lease",
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, DOC_AFFIDAVIT)?.applicability,
+    "required",
+    "a new installer with solar on leased premises still gets the affidavit as REQUIRED"
+  );
+
+  // 4. Owner-developer path untouched: renewable energy company, leased, new.
+  const developer = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Renewable Energy Company",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_SOLAR_OWNERSHIP: "Lease",
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(developer, DOC_AFFIDAVIT)?.applicability,
+    "required",
+    "the owner-developer affidavit path on a genuine Lease answer is unchanged"
+  );
+});

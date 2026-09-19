@@ -6243,7 +6243,15 @@
   "question_id": "Q_SOLAR_OWNERSHIP",
   "expected_answer": "Lease",
   "municipality_flag": null,
-  "requires_document_id": "DOC_OWNER_AFFIDAVIT"
+  "requires_document_id": "DOC_OWNER_AFFIDAVIT",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-19",
+    "change": "compliance_mode=verify_existing (QA 18:00 cycle, live S69 Cataño solar installer)",
+    "reason": "An existing installer got the Property Owner Authorization Affidavit as REQUIRED-as-new. Existing businesses verify a standing owner-authorization rather than applying as new; new businesses keep REQUIRED via the classifier businessStatus mapping. Non-heuristic, no missing_fact_keys (RULE_0664 lesson). Same posture-sweep defect class as the 09-18/09-19 series."
+   }
+  ]
  },
  {
   "id": "RULE_0615",
