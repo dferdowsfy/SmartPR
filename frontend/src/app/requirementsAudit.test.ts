@@ -1804,3 +1804,50 @@ test("CASE X: OPPE installer registration posture — existing installers verify
     "a new solar installer still gets the PPPE installer certification as REQUIRED"
   );
 });
+
+test("CASE Y: DOC_ENTERTAINMENT_PERMIT is verify_existing for existing entertainment businesses, required for new ones", () => {
+  // 2026-09-19 00:00 QA cycle (S51): an existing 6-year Toa Baja event
+  // venue got DOC_ENTERTAINMENT_PERMIT (RULE_0246) as REQUIRED-as-new —
+  // the same defect class as the health/fire/CFPM/tourism/vehicle/
+  // contractor/childcare/alcohol/transport/agriculture/insurance/LUMA/
+  // net-metering/OPPE sweeps. Whole family swept per the 332b659 lesson:
+  // RULE_0245 (music venue), RULE_0246 (event venue), RULE_0247 (theater).
+  // None carries missing_fact_keys (RULE_0664 lesson) or a citation, and
+  // the posture fix is citation-independent. RULE_0032 deliberately
+  // excluded — heuristic + missing_fact_keys=[entertainment_details].
+  const DOC_ENT = docByName("entertainment permit");
+
+  for (const businessTypeName of ["Music Venue", "Event Venue", "Theater"]) {
+    // Existing entertainment businesses verify their standing authorization.
+    const existing = classify(
+      {
+        municipalityName: "Toa Baja",
+        businessTypeName,
+        businessStatus: "existing",
+        answers: { Q_EMPLOYEES_HIRED: true },
+      },
+      "existing"
+    ).classified;
+    assert.equal(
+      byId(existing, DOC_ENT)?.applicability,
+      "verify_existing",
+      `an existing ${businessTypeName.toLowerCase()} verifies its entertainment permit (not REQUIRED-as-new)`
+    );
+
+    // New entertainment businesses still apply for the first time.
+    const fresh = classify(
+      {
+        municipalityName: "Toa Baja",
+        businessTypeName,
+        businessStatus: "new",
+        answers: { Q_EMPLOYEES_HIRED: true },
+      },
+      "new"
+    ).classified;
+    assert.equal(
+      byId(fresh, DOC_ENT)?.applicability,
+      "required",
+      `a new ${businessTypeName.toLowerCase()} still gets the entertainment permit as REQUIRED`
+    );
+  }
+});

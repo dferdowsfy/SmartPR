@@ -4716,7 +4716,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_ENTERTAINMENT_PERMIT"
+    "requires_document_id": "DOC_ENTERTAINMENT_PERMIT",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 00:00 cycle (S51, Toa Baja event venue): a 6-year operating venue got the entertainment permit as REQUIRED-as-new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1), contractor (600090a), transport/agri/insurance (b549a04) sweeps. Whole family swept per the 332b659 lesson (RULE_0245 music venue, RULE_0246 event venue, RULE_0247 theater). RULE_0032 deliberately excluded (heuristic + missing_fact_keys=[entertainment_details] -- the RULE_0664 lesson). New businesses keep REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0246",
@@ -4725,7 +4733,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_ENTERTAINMENT_PERMIT"
+    "requires_document_id": "DOC_ENTERTAINMENT_PERMIT",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 00:00 cycle (S51, Toa Baja event venue): a 6-year operating venue got the entertainment permit as REQUIRED-as-new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1), contractor (600090a), transport/agri/insurance (b549a04) sweeps. Whole family swept per the 332b659 lesson (RULE_0245 music venue, RULE_0246 event venue, RULE_0247 theater). RULE_0032 deliberately excluded (heuristic + missing_fact_keys=[entertainment_details] -- the RULE_0664 lesson). New businesses keep REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0247",
@@ -4734,7 +4750,15 @@
     "question_id": null,
     "expected_answer": null,
     "municipality_flag": null,
-    "requires_document_id": "DOC_ENTERTAINMENT_PERMIT"
+    "requires_document_id": "DOC_ENTERTAINMENT_PERMIT",
+    "compliance_mode": "verify_existing",
+    "change_log": [
+      {
+        "date": "2026-09-19",
+        "change": "compliance_mode set to verify_existing",
+        "reason": "QA 2026-09-19 00:00 cycle (S51, Toa Baja event venue): a 6-year operating venue got the entertainment permit as REQUIRED-as-new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1), contractor (600090a), transport/agri/insurance (b549a04) sweeps. Whole family swept per the 332b659 lesson (RULE_0245 music venue, RULE_0246 event venue, RULE_0247 theater). RULE_0032 deliberately excluded (heuristic + missing_fact_keys=[entertainment_details] -- the RULE_0664 lesson). New businesses keep REQUIRED via the classifier businessStatus mapping."
+      }
+    ]
   },
   {
     "id": "RULE_0248",

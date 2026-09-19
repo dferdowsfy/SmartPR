@@ -32,14 +32,24 @@ test("each reviewed concept passes validation and produces guidance for matching
   }
 });
 test("unreviewed documents are flagged, even if a previous builder asserted an explanation", () => {
-  // The old fixture incorrectly declared these valid for a bar without relevant facts or source URLs.
+  // DOC_TOURISM_REGISTRATION and DOC_ROOM_TAX_RETURN graduated to validated
+  // concepts in the 2026-09-18 15:00 cycle (REG-GUIDE-TOURISM-001); they no
+  // longer render the unvalidated-description placeholder — a non-lodging BT
+  // like this bar instead gets honest provisional framing (GUIDANCE_NEEDS_
+  // REVIEW with MATCH_TRACE_MISSING) in front of real regulatory content.
   // (DOC_CERT_INCORPORATION graduated to validated guidance in the
   // 2026-09-17 18:00 cycle — see REG-GUIDE-FORMATION-001 below.)
-  for (const id of ["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN", "DOC_HOA_AUTHORIZATION"]) {
+  for (const id of ["DOC_HOA_AUTHORIZATION"]) {
     const g = buildRequirementGuidance(req(id), context);
     assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", id);
     assert.match(g.whyThisApplies, /hasn't validated the exact regulatory basis yet/);
   }
+  // Graduated documents never regress to the unvalidated placeholder: the
+  // tourism concept renders real regulatory content even for this bar.
+  const t = buildRequirementGuidance(req("DOC_TOURISM_REGISTRATION"), context);
+  assert.equal(t.status, "GUIDANCE_NEEDS_REVIEW", "non-lodging BT: provisional framing");
+  assert.doesNotMatch(t.whyThisApplies, /hasn't validated the exact regulatory basis yet/i);
+  assert.match(t.whyThisApplies, /Compañía de Turismo/i);
 });
 test("REG-GUIDE-WITHHOLDING-001 / REG-GUIDE-FORMATION-001: validated guidance for withholding + formation certificates, never placeholders", () => {
   // Live QA 2026-09-17 18:00 cycle: a Bayamón general contractor filing
@@ -71,10 +81,16 @@ test("REG-GUIDE-WITHHOLDING-001 / REG-GUIDE-FORMATION-001: validated guidance fo
   }
 });
 test("DOC_CFPM is a reviewed concept: without a confirmed food fact it teaches the document instead of the generic fallback", () => {
+  // DOC_CFPM graduated to a validated concept (d4940f4 [business] fallback,
+  // 2026-09-18 03:00 cycle): for a bar, the heuristic BT_BAR → CFPM firing
+  // (RULE_0064) now validates honestly via the business fallback — the
+  // concept teaches the document with real regulatory content, never the
+  // unvalidated placeholder.
   const g = buildRequirementGuidance(req("DOC_CFPM"), context);
-  assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW");
-  assert.match(g.whyThisApplies, /not confirmed yet/);
+  assert.equal(g.status, "VALIDATED");
+  assert.doesNotMatch(g.whyThisApplies, /hasn't validated the exact regulatory basis yet/i);
   assert.ok(g.purpose.length > 0);
+  assert.match(g.regulatoryReason, /food protection|manejador/i);
 });
 test("unrelated Critical Path requirements have distinct rationale and purpose in both languages", () => {
   for (const language of ["en", "es"] as const) {
