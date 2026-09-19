@@ -751,6 +751,25 @@ export function filterQuestionsByContext(
   return questions;
 }
 
+// Answer-conditional question suppression (QA 2026-09-19 09:00 cycle, live
+// audit S58/S59). "Which professional licenses apply?" (Q_LICENSE_TYPES) is
+// the follow-up to "Will professional licenses be required for staff?"
+// (professional_licenses_required) — asking it after an explicit No forced
+// the user to invent an answer (the 9-option list has no "none" and the
+// wizard offers no skip), and REL_LICENSE_TYPES_IMPLY_PROFESSIONAL_LICENSES
+// would then derive Q_PROFESSIONAL_LICENSES=true, contradicting the user's
+// explicit answer. Suppression is dynamic: flipping the parent answer back
+// to Yes re-arms the follow-up. Exported for regression testing.
+export function isQuestionSuppressedByAnswers(
+  questionId: string,
+  answers: Record<string, unknown>
+): boolean {
+  if (questionId === "Q_LICENSE_TYPES") {
+    return answers["professional_licenses_required"] === false;
+  }
+  return false;
+}
+
 // Exported for regression testing: the intake's location-type combobox must
 // offer a home-based option for business types that can plausibly operate
 // from home, otherwise the AI-extracted "from my house" fact gets clobbered
@@ -2373,7 +2392,11 @@ export default function SmartPRIntake() {
     (start: number): number => {
       for (let i = Math.max(0, start); i < questionList.length; i++) {
         const questionId = questionList[i].id;
-        if (!isQuestionPreAnswered(questionId) && discoveryAnswers[questionId] === undefined) return i;
+        if (
+          !isQuestionPreAnswered(questionId) &&
+          discoveryAnswers[questionId] === undefined &&
+          !isQuestionSuppressedByAnswers(questionId, discoveryAnswers)
+        ) return i;
       }
       return questionList.length;
     },
@@ -2383,7 +2406,9 @@ export default function SmartPRIntake() {
   // The stable guided set excludes answers SmartPR already knew, but retains
   // questions answered by the user so totals do not shrink while progressing.
   const activeQuestionIndex = nextUnansweredQuestion(currentQuestionIndex);
-  const guidedQuestions = questionList.filter((q) => !isQuestionPreAnswered(q.id));
+  const guidedQuestions = questionList.filter(
+    (q) => !isQuestionPreAnswered(q.id) && !isQuestionSuppressedByAnswers(q.id, discoveryAnswers)
+  );
   // project_only asks zero business-formation questions: the visible profile
   // keeps only the project name and the project municipality; industry,
   // business type, location type, entity type, and headcount never appear.
@@ -2467,6 +2492,20 @@ export default function SmartPRIntake() {
     }
 
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
+    // Answering "No" to professional licenses supersedes any earlier
+    // Q_LICENSE_TYPES answer — a stale "Other" must not linger as a fact
+    // (QA 2026-09-19 09:00 cycle, live audit S58/S59).
+    if (
+      (q.id === "professional_licenses_required" || q.id === "licensed_professionals") &&
+      value === false
+    ) {
+      setDiscoveryAnswers((prev) => {
+        if (prev["Q_LICENSE_TYPES"] === undefined) return prev;
+        const next = { ...prev };
+        delete next["Q_LICENSE_TYPES"];
+        return next;
+      });
+    }
     // A manual answer confirms the field — drop any "needs confirmation" flag.
     markUserTouched(q.id);
     // Advance past the question just answered. Recorded and derived answers
@@ -5064,7 +5103,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const previousAnsweredQuestion = (start: number): number => {
     for (let i = Math.min(start, questionList.length) - 1; i >= 0; i--) {
       const questionId = questionList[i].id;
-      if (!isQuestionPreAnswered(questionId) && discoveryAnswers[questionId] !== undefined) return i;
+      if (
+        !isQuestionPreAnswered(questionId) &&
+        discoveryAnswers[questionId] !== undefined &&
+        !isQuestionSuppressedByAnswers(questionId, discoveryAnswers)
+      ) return i;
     }
     return -1;
   };
