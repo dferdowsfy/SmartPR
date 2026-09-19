@@ -1922,3 +1922,99 @@ test("CASE Z: DOC_PORT_FACILITY_PERMIT is verify_existing for existing port-area
     );
   }
 });
+
+test("CASE AA: DOC_PROFESSIONAL_LICENSE is needs_more_information for generic consulting firms, not REQUIRED", () => {
+  // 2026-09-19 06:00 QA cycle (S57, Caguas): a new home-based consulting
+  // company was shown Professional License as REQUIRED. Generic
+  // consulting (management/strategy/IT/marketing) is not a licensed
+  // profession in Puerto Rico — only specific licensed activities are
+  // (engineers, architects, CPAs, lawyers...). The validated review had
+  // already set the identical precedent for BT_ACCOUNTING_FIRM (RULE_0227,
+  // golden G04): consulting is heuristic +
+  // missing_fact_keys=[licensed_profession_type] so the card asks what
+  // licensed activity, if any, the firm performs. Per the RULE_0664
+  // lesson, heuristic+NMI rules carry no compliance_mode — the classifier
+  // previously promoted verify_existing to REQUIRED for new businesses.
+  // Unchanged (verified, golden-pinned or licensed professions):
+  // RULE_0114 (law, G19), RULE_0115 (CPA), RULE_0118 (engineering),
+  // RULE_0119 (architecture). Translation (RULE_0121) and staffing
+  // (RULE_0122) are flagged for regulatory review, not changed.
+  const DOC_PROFLIC = docByName("professional license");
+
+  for (const businessStatus of ["new", "existing"] as const) {
+    const consulting = classify(
+      {
+        municipalityName: "Caguas",
+        businessTypeName: "Consulting Firm",
+        businessStatus,
+        answers: {
+          Q_HOME_BASED: true,
+          Q_PHYSICAL_LOCATION: false,
+          Q_EMPLOYEES_HIRED: false,
+        },
+        projectFacts: { property_tenure: "unknown" },
+      },
+      businessStatus
+    ).classified;
+    const lic = byId(consulting, DOC_PROFLIC);
+    assert.ok(lic, `professional license row must exist for the consulting firm (${businessStatus})`);
+    assert.equal(
+      lic.applicability,
+      "needs_more_information",
+      `a ${businessStatus} consulting firm's professional license stays needs_more_information (RULE_0116 heuristic) — never promoted to REQUIRED`
+    );
+    assert.ok(
+      (lic.missingFacts ?? []).includes("licensed_profession_type"),
+      "the controlling unanswered fact must be named"
+    );
+  }
+
+  // Controls: genuinely licensed professions still hold.
+  const lawFirm = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Law Firm",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(lawFirm, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new law firm still gets the professional license as REQUIRED (RULE_0114 verified, golden G19)"
+  );
+
+  const cpaFirm = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "CPA Firm",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(cpaFirm, DOC_PROFLIC)?.applicability,
+    "verify_existing",
+    "an existing CPA firm verifies its professional license (RULE_0115 verified)"
+  );
+
+  const engineer = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Engineering Firm",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(engineer, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new engineering firm still gets the professional license as REQUIRED (RULE_0118 verified)"
+  );
+});
