@@ -4828,6 +4828,10 @@
     "question_id": "Q_FUEL_SOLD"
   },
   {
+    "business_type_id": "BT_CONVENIENCE_STORE",
+    "question_id": "Q_FUEL_SOLD"
+  },
+  {
     "business_type_id": "BT_FARM",
     "question_id": "Q_BUSINESS_STRUCTURE"
   },

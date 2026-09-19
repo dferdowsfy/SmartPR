@@ -59,4 +59,29 @@ describe("businessTypeNamesForIndustry", () => {
         `renewable question missing for ${name}: ${JSON.stringify(ids(name))}`);
     }
   });
+
+  it("the fuel-sales question reaches convenience stores (gas-station use case)", () => {
+    // 2026-09-19 03:00 QA cycle (S54 live retest): a 15-year Trujillo Alto
+    // gas station resolved to "Convenience Store" (the KB has no gas-station
+    // business type) and the intake NEVER asked about fuel sales across its
+    // 13 follow-up questions — Q_FUEL_SOLD was gated to 7 automotive BTs
+    // only, so the fuel dimension was dropped entirely and the DACO
+    // fuel-retailer registration + fuel-dispenser weights & measures cards
+    // never fired (two false negatives). Same defect class as the
+    // Q_RENEWABLE_INSTALL gating fix (a97bbb9): a rule's trigger question
+    // must be asked of every BT that can plausibly answer yes. Convenience
+    // Store is the gas-station proxy, so it now gets the question; a Yes
+    // fires RULE_0654/0655 (verify_existing for existing stations) and
+    // RULE_0682 (NMI honest, missing tank_type).
+    const { discoveryQuestionsForBusinessType } = require("./kb") as typeof import("./kb");
+    const ids = (name: string) =>
+      (discoveryQuestionsForBusinessType(name) ?? []).map((q) => q.id);
+    assert.ok(ids("Convenience Store").includes("Q_FUEL_SOLD"),
+      `fuel-sales question missing for Convenience Store: ${JSON.stringify(ids("Convenience Store"))}`);
+    // Automotive BTs keep the question (no regression on existing gating).
+    for (const name of ["Auto Repair Shop", "Car Wash", "Tire Shop"]) {
+      assert.ok(ids(name).includes("Q_FUEL_SOLD"),
+        `fuel-sales question missing for ${name}`);
+    }
+  });
 });
