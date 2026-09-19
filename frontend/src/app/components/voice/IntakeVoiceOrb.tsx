@@ -484,7 +484,7 @@ export function IntakeVoiceOrb({
           : L("Mic off · Processing…", "Micrófono apagado · Procesando…", lang)
         : state === "error"
           ? L("Something went wrong", "Algo salió mal", lang)
-          : L("Mic off · Tap to speak", "Micrófono apagado · Toque para hablar", lang);
+          : L("Fill by voice", "Llena por voz", lang);
 
   const showHints = state !== "error";
 
@@ -755,7 +755,7 @@ export function IntakeVoiceOrb({
               void startListening();
             }
           }}
-          aria-label={state === "listening" ? L("Stop recording and use speech", "Terminar grabación y usar voz", lang) : L("Start voice input — microphone off", "Activar voz — micrófono apagado", lang)}
+          aria-label={state === "listening" ? L("Stop recording and use speech", "Terminar grabación y usar voz", lang) : L("Fill in fields by voice", "Llena los campos por voz", lang)}
           aria-pressed={state === "listening"}
           aria-busy={state === "processing"}
           className={`pointer-events-auto group relative order-4 flex items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 ${state === "listening" ? "h-24 w-24 ring-4 ring-teal-600 ring-offset-4 md:h-28 md:w-28" : "h-[5.5rem] w-[5.5rem] md:h-24 md:w-24"}`}
