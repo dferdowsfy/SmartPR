@@ -4617,12 +4617,20 @@
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "residential_work"
+  ],
   "change_log": [
    {
     "change": "compliance_mode set to verify_existing",
     "date": "2026-09-18",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "change": "demoted to heuristic + missing_fact_keys=[residential_work], compliance_mode removed",
+    "date": "2026-09-20",
+    "reason": "QA 2026-09-20 06:00 cycle (S79): BT_RENEWABLE_ENERGY_COMPANY (owner/developer of an energy-storage facility) showed the DACO contractor license (Ley 146-1995) as REQUIRED on business type alone — same defect class as RULE_0135 (landscaping) / RULE_0232 (energy consulting), demoted in 51805ec. Ley 146-1995 covers the residential construction business; a renewable energy company is trade-adjacent, not a contractor, and the standing QA rule requires at least one question/fact guard on verified contractor-BT rules (validated golden G12 pins even a general contractor at NMI). Heuristic+NMI rules carry no compliance_mode (RULE_0664 lesson: compliance_mode on heuristic+NMI rules promotes NMI to REQUIRED for new businesses). The honest path for genuine construction services is RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES, scoped to buildings/structures)."
    }
   ]
  },

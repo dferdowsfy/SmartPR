@@ -2516,3 +2516,71 @@ test("CASE AF: DOC_OWNER_AFFIDAVIT never fabricates a Lease fact for installers;
     "the owner-developer affidavit path on a genuine Lease answer is unchanged"
   );
 });
+
+test("CASE AG: DOC_CONTRACTOR_LICENSE is needs_more_information for renewable energy companies, not REQUIRED", () => {
+  // 2026-09-20 06:00 QA cycle (S79, Ponce): a new utility-scale battery
+  // energy-storage facility (owner/developer, not an installer — third-party
+  // GC builds it) got the DACO contractor license (Ley 146-1995) as REQUIRED
+  // on business type alone via RULE_0237. Same defect class as RULE_0135
+  // (landscaping) / RULE_0232 (energy consulting), demoted in 51805ec:
+  // verified, BT-alone, no question guard, Ley 146-1995 citation. A
+  // renewable energy company is trade-adjacent, not a construction business —
+  // Ley 146-1995 covers the residential construction business, and validated
+  // golden G12 pins even BT_GENERAL_CONTRACTOR at needs_more_information
+  // ("do not assume from general contractor alone"). RULE_0237 is heuristic
+  // + missing_fact_keys=[residential_work], no compliance_mode (RULE_0664
+  // lesson) — mirroring RULE_0123's guard. The honest path for genuine
+  // construction services is RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES,
+  // scoped to buildings/structures per b116725); the installer registration
+  // (RULE_0605) and owner-side LUMA/net-metering rules (0608–0611) are
+  // unchanged.
+  const DOC_CONTRACTOR = docByName("contractor license");
+
+  for (const businessStatus of ["new", "existing"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Ponce",
+        businessTypeName: "Renewable Energy Company",
+        businessStatus,
+        answers: {
+          Q_EMPLOYEES_HIRED: true,
+          Q_PHYSICAL_LOCATION: true,
+          Q_OFFERS_CONSTRUCTION_SERVICES: false,
+        },
+        projectFacts: { property_tenure: "leased" },
+      },
+      businessStatus
+    ).classified;
+    const lic = byId(rows, DOC_CONTRACTOR);
+    assert.ok(
+      lic,
+      `contractor license row must exist for Renewable Energy Company (${businessStatus})`
+    );
+    assert.equal(
+      lic.applicability,
+      "needs_more_information",
+      `a ${businessStatus} renewable energy company stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+    );
+    assert.ok(
+      (lic.missingFacts ?? []).includes("residential_work"),
+      "the controlling unanswered fact must be named"
+    );
+  }
+
+  // Control: a genuine contractor still holds.
+  const electrician = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Electrical Contractor",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(electrician, DOC_CONTRACTOR)?.applicability,
+    "required",
+    "a new electrical contractor still gets the DACO contractor license as REQUIRED (RULE_0125 verified)"
+  );
+});
