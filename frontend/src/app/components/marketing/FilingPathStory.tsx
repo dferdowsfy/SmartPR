@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
 import { Building, Building2, Check, HeartPulse, Landmark, Lightbulb, Receipt, ShieldCheck } from "lucide-react";
 import styles from "./filingPath.module.css";
 
@@ -17,11 +16,11 @@ const STEP_ICONS: Array<typeof Building2> = [
 ];
 
 
-type Token = { text: string; mark: boolean; start: number; end: number };
+type Token = { text: string; mark: boolean };
 
 /** Splits `sentence` into ordered, non-overlapping segments, tagging the ones
- * that match an entry in `marks`. Segments partition the sentence exactly,
- * so cumulative lengths double as reveal offsets for the typing animation. */
+ * that match an entry in `marks`. Rendered statically — no typing or staged
+ * reveal (owner direction 2026-09-20). */
 function tokenize(sentence: string, marks: string[]): Token[] {
   const lower = sentence.toLowerCase();
   const hits: { start: number; end: number }[] = [];
@@ -37,7 +36,7 @@ function tokenize(sentence: string, marks: string[]): Token[] {
     if (last && hit.start <= last.end) last.end = Math.max(last.end, hit.end);
     else merged.push({ ...hit });
   }
-  const parts: { text: string; mark: boolean }[] = [];
+  const parts: Token[] = [];
   let cursor = 0;
   for (const hit of merged) {
     if (hit.start > cursor) parts.push({ text: sentence.slice(cursor, hit.start), mark: false });
@@ -45,12 +44,7 @@ function tokenize(sentence: string, marks: string[]): Token[] {
     cursor = hit.end;
   }
   if (cursor < sentence.length) parts.push({ text: sentence.slice(cursor), mark: false });
-  let offset = 0;
-  return parts.map((part) => {
-    const start = offset;
-    offset += part.text.length;
-    return { ...part, start, end: offset };
-  });
+  return parts;
 }
 
 const copy = {
@@ -130,257 +124,41 @@ const copy = {
 
 export default function FilingPathStory({ language }: { language: Language }) {
   const c = copy[language];
-  const tokens = useMemo(() => tokenize(c.sentence, [...c.marks]), [c]);
-  const markTokens = useMemo(() => tokens.filter((t) => t.mark), [tokens]);
+  const tokens = tokenize(c.sentence, [...c.marks]);
 
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const anchorRef = useRef<HTMLDivElement | null>(null);
-  // Tracks whether the current effect run is a language toggle (a settings
-  // change, not a visit).
-  const prevLanguageRef = useRef<Language | null>(null);
-
-  const [typedCount, setTypedCount] = useState(0);
-  const [caretDone, setCaretDone] = useState(false);
-  const [parseOn, setParseOn] = useState(false);
-  const [parseSettled, setParseSettled] = useState(false);
-  const [parseLabel, setParseLabel] = useState<string>(c.parseReading);
-  const [markedCount, setMarkedCount] = useState(0);
-  const [liftedCount, setLiftedCount] = useState(0);
-  const [agenciesShown, setAgenciesShown] = useState(0);
-  const [stepsShown, setStepsShown] = useState(0);
-  const [incentivesShown, setIncentivesShown] = useState(0);
-
-  // The staged reveal (chips, agencies, steps, incentives) plays as a timeline,
-  // but the sentence itself appears instantly — the typewriter pacing made
-  // users wait too long (owner direction 2026-09-20). Assistive tech gets
-  // the full sentence immediately via the sr-only paragraph below.
-  const effTypedCount = typedCount;
-  const effCaretDone = caretDone;
-  const effParseOn = parseOn;
-  const effParseSettled = parseSettled;
-  const effParseLabel = parseLabel;
-  const effMarkedCount = markedCount;
-  const effLiftedCount = liftedCount;
-  const effAgenciesShown = agenciesShown;
-  const effStepsShown = stepsShown;
-  const effIncentivesShown = incentivesShown;
-
-  const reset = () => {
-    setTypedCount(0);
-    setCaretDone(false);
-    setParseOn(false);
-    setParseSettled(false);
-    setParseLabel(c.parseReading);
-    setMarkedCount(0);
-    setLiftedCount(0);
-    setAgenciesShown(0);
-    setStepsShown(0);
-    setIncentivesShown(0);
-  };
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    const anchor = anchorRef.current;
-    if (!section || !anchor) return;
-    const compactLayout = window.matchMedia("(max-width: 959px)").matches;
-
-    // A language toggle is a settings change, not a new visit: show the
-    // finished panel immediately instead of replaying the reveal from blank.
-    const languageSwitched =
-      prevLanguageRef.current !== null && prevLanguageRef.current !== language;
-    prevLanguageRef.current = language;
-
-    let armed = !languageSwitched;
-    if (languageSwitched) {
-      setTypedCount(c.sentence.length);
-      setCaretDone(true);
-      setParseOn(true);
-      setParseSettled(true);
-      setParseLabel(c.parseMapped);
-      setMarkedCount(markTokens.length);
-      setLiftedCount(markTokens.length);
-      setAgenciesShown(c.agencies.length);
-      setStepsShown(c.path.length);
-      setIncentivesShown(c.incentives.length);
-    }
-
-    let runId = 0;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    const pause = (ms: number, id: number) =>
-      new Promise<void>((resolve) => {
-        timers.push(setTimeout(resolve, ms));
-      }).then(() => id === runId);
-
-    // The sentence appears fully formed the moment the reveal starts — no
-    // typewriter pacing, so nobody waits for it to finish (owner direction
-    // 2026-09-20). The staged parse/agency/step reveals below still play.
-    async function run() {
-      const id = ++runId;
-      reset();
-      if (!(await pause(500, id))) return;
-
-      setTypedCount(c.sentence.length);
-      setCaretDone(true);
-      if (!(await pause(420, id))) return;
-
-      setParseOn(true);
-      for (let i = 1; i <= markTokens.length; i++) {
-        setMarkedCount(i);
-        if (!(await pause(230, id))) return;
-      }
-      if (!(await pause(180, id))) return;
-      setParseLabel(c.parseDetails(markTokens.length));
-      setParseSettled(true);
-      if (!(await pause(320, id))) return;
-
-      for (let i = 1; i <= markTokens.length; i++) {
-        setLiftedCount(i);
-        if (!(await pause(150, id))) return;
-      }
-      if (!(await pause(280, id))) return;
-
-      setParseLabel(c.parseAgencies(c.agencies.length));
-      for (let i = 1; i <= c.agencies.length; i++) {
-        setAgenciesShown(i);
-        if (!(await pause(70, id))) return;
-      }
-      if (!(await pause(360, id))) return;
-
-      setParseLabel(c.parseMapped);
-      for (let i = 1; i <= c.path.length; i++) {
-        setStepsShown(i);
-        if (!(await pause(430, id))) return;
-      }
-      if (!(await pause(300, id))) return;
-
-      for (let i = 1; i <= c.incentives.length; i++) {
-        setIncentivesShown(i);
-        if (!(await pause(150, id))) return;
-      }
-    }
-
-    // The reveal plays when the human is actually looking at the panel — not
-    // at page load while they're still reading the hero. With a short hero
-    // the sentence can already sit inside the viewport on load; starting the
-    // sequence then burns the whole typing effect unseen. So the first play
-    // waits for the user's first scroll (or, if they never scroll, a short
-    // fallback delay), and any later scroll back into view replays it.
-    let userScrolled = window.scrollY > 40;
-    let played = false;
-    let scrollRestarted = false;
-    const anchorInView = () => {
-      const r = anchor.getBoundingClientRect();
-      const vh = window.innerHeight || 1;
-      return r.top < vh * 0.9 && r.bottom > vh * 0.1;
-    };
-    const tryPlay = () => {
-      if (!armed || played) return;
-      if (anchorInView()) {
-        played = true;
-        void run();
-      }
-    };
-    const onScroll = () => {
-      if (window.scrollY > 40) userScrolled = true;
-      if (!userScrolled || !anchorInView()) return;
-      if (!played) {
-        tryPlay();
-      } else if (!scrollRestarted) {
-        // The fallback below may have started the reveal before the human
-        // looked at the panel; the first real scroll restarts it from blank
-        // so they see the full reveal sequence from the beginning.
-        scrollRestarted = true;
-        void run();
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    // The panel never sits blank forever: if it's visible at load and the
-    // user doesn't scroll, the reveal starts on its own after a beat.
-    timers.push(setTimeout(tryPlay, 4000));
-
-    const player = new IntersectionObserver(
-      ([entry]) => {
-        // Observer-driven plays only happen once the user has scrolled the
-        // section into view themselves; the at-load case is handled by the
-        // scroll listener + fallback above.
-        if (entry.isIntersecting && armed && !played && userScrolled) {
-          played = true;
-          void run();
-        }
-      },
-      { threshold: 0, rootMargin: compactLayout ? "0px 0px -10% 0px" : "0px 0px -50% 0px" },
-    );
-    player.observe(anchor);
-
-    const rearm = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting && played) {
-          played = false;
-          armed = true;
-          runId++;
-          timers.splice(0).forEach(clearTimeout);
-          reset();
-        }
-      },
-      { threshold: 0 },
-    );
-    rearm.observe(section);
-
-    return () => {
-      runId++;
-      timers.splice(0).forEach(clearTimeout);
-      player.disconnect();
-      rearm.disconnect();
-      window.removeEventListener("scroll", onScroll);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
-
+  // Static render: the full sentence, chips, agencies, steps and incentives
+  // are all visible immediately. The typewriter and the staged-reveal
+  // timeline were removed (owner direction 2026-09-20).
   return (
-    <section id="how-it-works" ref={sectionRef} className={styles.pin} aria-labelledby="filing-path-title">
+    <section id="how-it-works" className={styles.pin} aria-labelledby="filing-path-title">
       <div className={styles.frame}>
         <div className={styles.headingRow}>
           <h2 id="filing-path-title" className={styles.heading}>{c.mapped}</h2>
           <span className={styles.summary}>{c.summary}</span>
         </div>
 
-        {/* Full sentence for assistive tech / no-JS; the animated version below is aria-hidden. */}
-        <p className={styles.srOnly}>{c.sentence}</p>
-
-        <div ref={anchorRef} className={styles.sentence} aria-hidden="true">
-          {tokens.map((token, i) => {
-            const markIndex = markTokens.indexOf(token);
-            const revealed = token.text.slice(0, Math.max(0, effTypedCount - token.start));
-            if (!revealed) return null;
-            const isMarked = token.mark && markIndex < effMarkedCount;
-            const isLifted = token.mark && markIndex < effLiftedCount;
-            return (
-              <span
-                key={i}
-                className={
-                  token.mark
-                    ? `${styles.tok} ${styles.key} ${isMarked ? styles.marked : ""} ${isLifted ? styles.lifted : ""}`
-                    : styles.tok
-                }
-              >
-                {revealed}
-              </span>
-            );
-          })}
-          <span className={`${styles.caret} ${effCaretDone ? styles.caretDone : ""}`} />
+        <div className={styles.sentence}>
+          {tokens.map((token, i) => (
+            <span
+              key={i}
+              className={
+                token.mark
+                  ? `${styles.tok} ${styles.key} ${styles.marked} ${styles.lifted}`
+                  : styles.tok
+              }
+            >
+              {token.text}
+            </span>
+          ))}
         </div>
 
-        <div
-          className={`${styles.parse} ${effParseOn ? styles.on : ""} ${effParseSettled ? styles.settled : ""}`}
-          aria-hidden="true"
-        >
-          <span className={styles.pulse} />
-          <span>{effParseLabel}</span>
+        <div className={`${styles.parse} ${styles.on} ${styles.settled}`}>
+          <span>{c.parseMapped}</span>
         </div>
 
-        <div className={styles.chips} aria-hidden="true">
-          {c.chips.map((label, i) => (
-            <div key={label} className={`${styles.chip} ${i < effLiftedCount ? styles.in : ""}`}>
+        <div className={styles.chips}>
+          {c.chips.map((label) => (
+            <div key={label} className={`${styles.chip} ${styles.in}`}>
               {label}
             </div>
           ))}
@@ -388,7 +166,7 @@ export default function FilingPathStory({ language }: { language: Language }) {
 
         <p className={styles.agencies}>
           {c.agencies.map((agency, i) => (
-            <span key={agency} className={`${styles.ag} ${i < effAgenciesShown ? styles.in : ""}`}>
+            <span key={agency} className={`${styles.ag} ${styles.in}`}>
               {agency}
               {i < c.agencies.length - 1 ? <span className={styles.dot}>•</span> : null}
             </span>
@@ -400,7 +178,7 @@ export default function FilingPathStory({ language }: { language: Language }) {
             {c.path.map((step, i) => {
               const Icon = STEP_ICONS[i];
               return (
-                <li key={step.title} className={`${styles.step} ${i < effStepsShown ? styles.in : ""}`}>
+                <li key={step.title} className={`${styles.step} ${styles.in}`}>
                   <div className={styles.node}>
                     <Icon size={16} strokeWidth={1.5} aria-hidden="true" />
                   </div>
@@ -418,8 +196,8 @@ export default function FilingPathStory({ language }: { language: Language }) {
         <div className={styles.incentivesWrap}>
           <p className={styles.incentivesLabel}>{c.incentivesLabel}</p>
           <ul className={styles.incentives}>
-            {c.incentives.map((incentive, i) => (
-              <li key={incentive} className={`${styles.incentive} ${i < effIncentivesShown ? styles.in : ""}`}>
+            {c.incentives.map((incentive) => (
+              <li key={incentive} className={`${styles.incentive} ${styles.in}`}>
                 <Lightbulb size={13} strokeWidth={1.75} aria-hidden="true" />
                 <span>{incentive}</span>
               </li>
