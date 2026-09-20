@@ -276,13 +276,35 @@ export default function FilingPathStory({ language }: { language: Language }) {
       }
     }
 
+    // The reveal should play when the human scrolls it into view — not at
+    // page load while they're still reading the hero. With a short hero the
+    // sentence can already sit inside the viewport on load, which would run
+    // the whole typing sequence unseen; that first run is marked so the
+    // moment they actually scroll, it replays at full cinematic speed while
+    // they're watching.
+    let userScrolled = window.scrollY > 40;
+    let unseenFirstPlay = false;
+    const onScroll = () => {
+      if (window.scrollY > 40) userScrolled = true;
+      if (unseenFirstPlay && userScrolled && anchor) {
+        const r = anchor.getBoundingClientRect();
+        if (r.top < window.innerHeight * 0.85 && r.bottom > window.innerHeight * 0.15) {
+          unseenFirstPlay = false;
+          void run(1);
+        }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     const player = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && armed) {
           armed = false;
-          const speed = hasPlayedRef.current ? 1 : 0.5;
+          const first = !hasPlayedRef.current;
           hasPlayedRef.current = true;
-          run(speed);
+          if (first && !userScrolled) unseenFirstPlay = true;
+          else unseenFirstPlay = false;
+          run(first ? 0.5 : 1);
         }
       },
       // Hold off until the section has actually scrolled up into view, rather
@@ -312,6 +334,7 @@ export default function FilingPathStory({ language }: { language: Language }) {
       timers.splice(0).forEach(clearTimeout);
       player.disconnect();
       rearm.disconnect();
+      window.removeEventListener("scroll", onScroll);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduced, language]);
