@@ -276,7 +276,21 @@ export function buildRequirementGuidance(req: GuidanceRequirement, ctx: Guidance
   const matches = ctx.engineInput ? runRulesEngine(kb, ctx.engineInput).debug.rulesMatched.filter(r => r.document_id === req.document_id) : [];
   const entityTrace = req.triggerFacts?.includes(`entityType:${ctx.entityType}`) && concept.conditions.some(g => g.some(t => t.key === "entityType" && t.equals === ctx.entityType));
   if (!matches.length && !entityTrace) return provisional(concept, ctx, ["MATCH_TRACE_MISSING"]);
+  // REG-GUIDE-BTID-001 (2026-09-20 QA): per-BT `equals: "BT_*"` conditions
+  // (22 across the pack) could never match — factValue("businessType")
+  // returns the display name, never the BT id. A fired business-type rule
+  // is the honest trigger, so match these conditions against the fired
+  // rules' business_type_id. Presentation-only: firing/gating untouched.
+  const firedBtIds = new Set(
+    (kb.rules as { id?: string; business_type_id?: string | null }[])
+      .filter(r => r && matches.some(m => m.rule_id === r.id))
+      .map(r => r.business_type_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+  );
   const group = concept.conditions.find(g => g.every(t => {
+    if (t.key === "businessType" && typeof t.equals === "string" && t.equals.startsWith("BT_")) {
+      return firedBtIds.has(t.equals);
+    }
     const value = factValue(t.key, ctx);
     return t.equals === undefined ? typeof value === "string" && value.length > 0 : value === t.equals;
   }));

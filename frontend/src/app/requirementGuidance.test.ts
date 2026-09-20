@@ -557,3 +557,41 @@ test("REG-GUIDE-ADVISORY-002: every pack municipality-flag advisory has a PR-Spa
     );
   }
 });
+
+test("REG-GUIDE-BTID-001: per-BT `equals: \"BT_*\"` guidance conditions match fired BT rules", () => {
+  // 2026-09-20 QA (S84 cycle): 22 pack conditions pair businessType with an
+  // `equals: "BT_*"` id, but factValue("businessType") returns the display
+  // name — so they could never match. A validated SAM.gov concept fired by
+  // RULE_0638 (BT_IT_GOVERNMENT_CONTRACTOR, no question) hedged "whether
+  // this requirement applies ... is not confirmed yet" whenever
+  // Q_FEDERAL_CONTRACTS_GRANTS was unanswered — the d4940f4 mixed-signal
+  // class. The matcher now resolves BT-id conditions against the fired
+  // rules' business_type_id (presentation-only; firing/gating untouched).
+  const samDoc = kb.documents.find(d => d.id === "DOC_SAM_REGISTRATION")!;
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = {
+      language, municipality: "San Juan", businessTypeName: "IT Government Contractor",
+      discoveryAnswers: {}, profile: {}, entityType: "limited_liability_company", kb,
+      engineInput: { municipalityName: "San Juan", businessTypeName: "IT Government Contractor", answers: {} },
+    };
+    const g = buildRequirementGuidance(
+      { document_id: "DOC_SAM_REGISTRATION", code: "doc_sam_registration", name: samDoc.name, agency: samDoc.agency, reason: "", applicability: "required" },
+      ctx
+    );
+    assert.equal(g.status, "VALIDATED", `SAM.gov validates on the BT rule alone (${language})`);
+    assert.doesNotMatch(g.whyThisApplies ?? "", /not confirmed yet|no se ha confirmado/i, `no hedge on validated concept (${language})`);
+    assert.deepEqual(g.triggerFacts?.map(t => t.label), language === "es" ? ["Contratista del gobierno: tecnología"] : ["Government contractor: IT"], `per-BT trigger label (${language})`);
+  }
+  // Negative control: a business type with no fired BT rule must NOT match
+  // a BT-id condition — the hedge stays honest there.
+  const ctxBar: GuidanceContext = {
+    language: "en", municipality: "San Juan", businessTypeName: "Bar",
+    discoveryAnswers: {}, profile: {}, entityType: "limited_liability_company", kb,
+    engineInput: { municipalityName: "San Juan", businessTypeName: "Bar", answers: {} },
+  };
+  const gBar = buildRequirementGuidance(
+    { document_id: "DOC_SAM_REGISTRATION", code: "doc_sam_registration", name: samDoc.name, agency: samDoc.agency, reason: "", applicability: "required" },
+    ctxBar
+  );
+  assert.equal(gBar.status, "GUIDANCE_NEEDS_REVIEW", "no fired BT rule: hedge stays");
+});
