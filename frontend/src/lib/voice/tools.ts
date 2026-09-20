@@ -575,7 +575,7 @@ export async function toolEmailMySummary(
           `<p style="color:#666;font-size:12px">Sent from your SmartPR voice call.</p>`;
       }
 
-      const delivered = await sendComplianceEmail(recipient, subject, text, html, VOICE_SUMMARY_FROM);
+      const delivered = await sendComplianceEmail(recipient, subject, text, html, VOICE_SUMMARY_FROM, "voice_recap");
       if (!delivered) {
         throw new VoiceAuthError("delivery_failed", "The summary email could not be delivered.", 502);
       }

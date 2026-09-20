@@ -2,47 +2,33 @@
 //
 // When someone clicks "Start my application" on the landing page we capture
 // the minimum needed to follow up (name + email) before the assessment
-// begins. The founder gets an email for every new lead and every signup,
-// sent directly from the SmartPR Google Workspace mailbox
-// (darius@getsmartpr.com) via Gmail SMTP. Notifications are fire-and-forget:
-// they never throw and never block the user flow.
+// begins. The founder gets an email for every new lead and every signup.
 //
-// Required env: GMAIL_SMTP_APP_PASSWORD (a Google "app password" for the
-// mailbox — create at myaccount.google.com → Security → 2-Step Verification
-// → App passwords). Optional: GMAIL_SMTP_USER (defaults to
-// darius@getsmartpr.com), GMAIL_FROM (defaults to
-// "SmartPR <darius@getsmartpr.com>").
+// Delivery runs through the Supabase email path (owner direction
+// 2026-09-20): notifications are enqueued into the `email_outbox` table and
+// the `email-sender` edge function delivers them via Resend. The app server
+// never touches SMTP or provider APIs directly — this replaces the old
+// Gmail SMTP wiring, which was never configured in production and silently
+// dropped every alert. Notifications are fire-and-forget: they never throw
+// and never block the user flow.
 //
-// History: this previously used FormSubmit's ajax endpoint, which rejects
-// server-side requests (no browser Origin header) with HTTP 200 +
-// {"success":"false"} — so every notification silently died. Never use
-// FormSubmit from the server again.
+// Optional: GMAIL_FROM (defaults to "SmartPR <alerts@getsmartpr.com>").
+// The From address must be authorized in Resend for getsmartpr.com.
 import { randomUUID } from "crypto";
-import nodemailer from "nodemailer";
 import type { Pool } from "pg";
+import { enqueueEmail } from "./email-outbox";
 
 const FOUNDER_EMAIL = "dferdows@gmail.com";
-const SMTP_USER = process.env.GMAIL_SMTP_USER || "darius@getsmartpr.com";
-const MAIL_FROM = process.env.GMAIL_FROM || "SmartPR <darius@getsmartpr.com>";
+const MAIL_FROM = process.env.GMAIL_FROM || "SmartPR <alerts@getsmartpr.com>";
 
 interface Mailer {
   sendMail(options: Record<string, unknown>): Promise<unknown>;
 }
 
-// Test seam: tests replace the SMTP transport with a fake.
+// Test seam: tests replace the outbox enqueue with a fake.
 let mailerOverride: Mailer | null = null;
 export function setMailerForTests(mailer: Mailer | null): void {
   mailerOverride = mailer;
-}
-
-function getMailer(): Mailer {
-  if (mailerOverride) return mailerOverride;
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user: SMTP_USER, pass: process.env.GMAIL_SMTP_APP_PASSWORD || "" },
-  });
 }
 
 function escapeHtml(s: string): string {
@@ -83,23 +69,35 @@ export function buildAlertHtml(subject: string, fields: Record<string, string>):
 export async function notifyFounder(subject: string, fields: Record<string, string>): Promise<void> {
   const line = `[founder-notify] ${subject} :: ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   console.info(line);
-  if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
-    // Loud on purpose: a missing credential means the founder hears nothing.
-    console.error("[founder-notify] skipped: GMAIL_SMTP_APP_PASSWORD is not set");
-    return;
-  }
   const text = Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join("\n");
   const html = buildAlertHtml(subject, fields);
+  const mail = {
+    from: MAIL_FROM,
+    to: FOUNDER_EMAIL,
+    subject: `[SmartPR] ${subject}`,
+    text: `[SmartPR] ${subject}\n\n${text}`,
+    html,
+  };
   try {
-    // nodemailer throws on delivery failure (unlike fetch, there is no
-    // silent 200-with-error-payload case), so try/catch is the check.
-    await getMailer().sendMail({
-      from: MAIL_FROM,
-      to: FOUNDER_EMAIL,
-      subject: `[SmartPR] ${subject}`,
-      text: `[SmartPR] ${subject}\n\n${text}`,
-      html,
+    if (mailerOverride) {
+      // Test seam (and only the test seam) sends directly.
+      await mailerOverride.sendMail(mail);
+      return;
+    }
+    // Production path: enqueue into the Supabase email outbox. The
+    // `email-sender` edge function delivers via Resend.
+    const queued = await enqueueEmail({
+      senderKey: "lead_alert",
+      from: mail.from,
+      to: mail.to,
+      subject: mail.subject,
+      text: mail.text,
+      html: mail.html,
     });
+    if (!queued) {
+      // Loud on purpose: a failed enqueue means the founder hears nothing.
+      console.error("[founder-notify] enqueue failed — founder alert was not queued");
+    }
   } catch (err) {
     // Notification failed — the lead is already stored; never break the flow.
     console.error(`[founder-notify] delivery failed: ${(err as Error)?.message || err}`);
@@ -120,34 +118,6 @@ function easternNow(): string {
       timeStyle: "short",
     }) + " ET"
   );
-}
-
-function splitName(user: LeadUser): { first: string; last: string } {
-  const meta = user.user_metadata ?? {};
-  const first = typeof meta.first_name === "string" ? meta.first_name.trim() : "";
-  const last = typeof meta.last_name === "string" ? meta.last_name.trim() : "";
-  if (first || last) return { first, last };
-  const full =
-    (typeof meta.full_name === "string" && meta.full_name.trim()) ||
-    (typeof meta.name === "string" && meta.name.trim()) ||
-    "";
-  if (full) {
-    const parts = full.split(/\s+/);
-    return { first: parts[0] || "", last: parts.slice(1).join(" ") };
-  }
-  return { first: "", last: "" };
-}
-
-/** The person-level fields every signup/lead alert carries. */
-function personFields(user: LeadUser, source: string): Record<string, string> {
-  const { first, last } = splitName(user);
-  return {
-    "First name": first || "—",
-    "Last name": last || "—",
-    Email: (user.email || "").trim().toLowerCase(),
-    "Signed up": easternNow(),
-    Source: source,
-  };
 }
 
 export interface NewBusinessAlert {
@@ -219,8 +189,12 @@ export async function markLeadConverted(
 
 /**
  * Link a lead to a freshly signed-up user. Creates the lead row when the
- * user signed up without going through landing capture. Notifies the founder
- * exactly once per conversion.
+ * user signed up without going through landing capture.
+ *
+ * Founder notification for signups is owned by the database trigger
+ * `trg_users_new_signup` (data/email_outbox_schema.sql), which fires on the
+ * public.users insert — this function deliberately does NOT notify, so a
+ * signup can never alert twice.
  */
 export async function convertLeadForUser(pool: Pool, user: LeadUser): Promise<void> {
   const email = (user.email || "").trim().toLowerCase();
@@ -237,18 +211,9 @@ export async function convertLeadForUser(pool: Pool, user: LeadUser): Promise<vo
        VALUES ($1,$2,$3,$4,'CONVERTED','signup_direct',now(),now())`,
       [randomUUID(), email, name, user.id]
     );
-    await notifyFounder(
-      "New signup",
-      personFields(user, "Signed up directly (no prior lead capture).")
-    );
     return;
   }
   // Attach the account even when the lead was already converted elsewhere.
   await pool.query(`UPDATE leads SET user_id = COALESCE(user_id, $2) WHERE id = $1`, [existing.id, user.id]);
-  if (await markLeadConverted(pool, existing.id, user.id)) {
-    await notifyFounder(
-      "Lead converted to signup",
-      personFields(user, "Started as a landing-page lead, now created an account.")
-    );
-  }
+  await markLeadConverted(pool, existing.id, user.id);
 }

@@ -22,7 +22,7 @@ import {
   type VoiceContext,
 } from "./context";
 import { logVoiceAudit } from "./audit";
-import { sendComplianceEmail } from "../compliance-reminders";
+import { sendComplianceEmail, REMINDER_FROM } from "../compliance-reminders";
 import { getSiteUrl } from "../siteUrl";
 
 export type SecureLinkPurpose = "upload_evidence" | "secure_action";
@@ -109,7 +109,7 @@ export async function createSecureLink(
       `<p>This link is for: <strong>${escapeHtml(opts.label)}</strong><br/>` +
       `It expires on ${escapeHtml(expiresAt)} and only works for your signed-in SmartPR account.</p>` +
       `<p style="color:#666;font-size:12px">Sent from your SmartPR voice call.</p>`;
-    emailed = await sendComplianceEmail(recipient, subject, text, html);
+    emailed = await sendComplianceEmail(recipient, subject, text, html, REMINDER_FROM, "voice_recap");
   }
 
   await logVoiceAudit(db, {

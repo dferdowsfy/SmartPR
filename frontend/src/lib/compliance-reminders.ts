@@ -3,15 +3,17 @@
  * daily cron (POST /api/cron/compliance-reminders).
  *
  * Founder constraints enforced here:
- * - Email ONLY (Gmail SMTP, from alerts@getsmartpr.com).
+ * - Email ONLY (from alerts@getsmartpr.com, delivered through the Supabase
+ *   email path — the app enqueues into `email_outbox`, the `email-sender`
+ *   edge function delivers via Resend; owner direction 2026-09-20).
  * - Free workspaces never get reminders; paid plans do.
  * - Global / per-business / per-obligation mutes are honored.
  * - A reminder is sent only when the obligation still has a stored due date
  *   with a real provenance (never "UNKNOWN", never NULL) — no estimates.
  */
 import { createHmac, randomUUID } from "crypto";
-import nodemailer from "nodemailer";
 import type { Pool, PoolClient } from "pg";
+import { enqueueEmail, type EmailSenderKey } from "./email-outbox";
 import { getWorkspacePlanState } from "./billing/access";
 import {
   buildReminderEmailWithTemplate,
@@ -149,7 +151,13 @@ export function selectDueNotifications(
 }
 
 // ---------------------------------------------------------------------------
-// Email sending (Gmail SMTP — same transport as verification mail)
+// Email sending — Supabase email path (owner direction 2026-09-20).
+//
+// The app NEVER sends mail directly. Every sender enqueues into the
+// `email_outbox` table; the Supabase `email-sender` edge function (driven
+// by pg_cron) delivers through Resend. This replaces the old direct
+// Resend/Gmail-SMTP wiring, which was never configured in production and
+// silently dropped every reminder and recap.
 // ---------------------------------------------------------------------------
 
 let mailerOverride: { sendMail: (opts: Record<string, unknown>) => Promise<unknown> } | null = null;
@@ -166,79 +174,21 @@ export async function sendComplianceEmail(
   text: string,
   html: string,
   /** Optional From override (e.g. voice summaries). Defaults to REMINDER_FROM. */
-  from: string = REMINDER_FROM
+  from: string = REMINDER_FROM,
+  /** Which outbox sender bucket this belongs to. Voice callers pass "voice_recap". */
+  senderKey: EmailSenderKey = "compliance_reminder"
 ): Promise<boolean> {
   if (!to || !to.includes("@")) return false;
-  // Prefer Resend's HTTPS API when configured: it does not depend on
-  // outbound SMTP, which the hosting network can throttle or blackhole.
-  // A hanging SMTP connect (nodemailer's 120s default) outlasts the voice
-  // tool-call window, so calls hear "connected services unavailable".
-  if (process.env.RESEND_API_KEY && !mailerOverride) {
-    return sendViaResend(to, subject, text, html, from);
-  }
-  if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
-    console.error("[compliance-reminders] email skipped: GMAIL_SMTP_APP_PASSWORD is not set");
-    return false;
-  }
   try {
-    const mailer =
-      mailerOverride ??
-      nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
-        // Fail fast: a hanging SMTP connect must never outlast the voice
-        // tool-call window. Errors become a clean delivery failure the
-        // agent can report honestly instead of a connector timeout.
-        connectionTimeout: 15000,
-        greetingTimeout: 10000,
-        socketTimeout: 20000,
-        auth: {
-          // Align with leads.ts / invites.ts / enterprise-reminders.ts defaults.
-          user: process.env.GMAIL_SMTP_USER || "darius@getsmartpr.com",
-          pass: process.env.GMAIL_SMTP_APP_PASSWORD || "",
-        },
-      });
-    await mailer.sendMail({ from, to, subject, text, html });
-    return true;
-  } catch (err) {
-    console.error(`[compliance-reminders] email delivery failed: ${(err as Error)?.message || err}`);
-    return false;
-  }
-}
-
-async function sendViaResend(
-  to: string,
-  subject: string,
-  text: string,
-  html: string,
-  from: string = REMINDER_FROM
-): Promise<boolean> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from, to, subject, text, html }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error(
-        `[compliance-reminders] resend delivery failed: ${res.status} ${body.slice(0, 300)}`
-      );
-      return false;
+    if (mailerOverride) {
+      // Test seam (and only the test seam) sends directly.
+      await mailerOverride.sendMail({ from, to, subject, text, html });
+      return true;
     }
-    return true;
+    return await enqueueEmail({ senderKey, from, to, subject, text, html });
   } catch (err) {
-    console.error(`[compliance-reminders] resend delivery failed: ${(err as Error)?.message || err}`);
+    console.error(`[compliance-reminders] enqueue failed: ${(err as Error)?.message || err}`);
     return false;
-  } finally {
-    clearTimeout(timer);
   }
 }
 

@@ -2,9 +2,10 @@ import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import { notifyFounder, notifyNewBusiness, buildAlertHtml, setMailerForTests } from "./leads.ts";
 
-// notifyFounder sends through the Workspace mailbox via SMTP. These tests
-// swap the real transport for a fake and verify the recipient, the subject,
-// the failure logging, and the missing-credential behavior.
+// notifyFounder enqueues into the Supabase email outbox (delivered by the
+// `email-sender` edge function via Resend). These tests swap the enqueue
+// for a fake and verify the recipient, the subject, the failure logging,
+// and the loud-failure behavior when enqueue is impossible.
 describe("notifyFounder", () => {
   let sent: Array<Record<string, unknown>> = [];
   let shouldFail = false;
@@ -12,7 +13,6 @@ describe("notifyFounder", () => {
   beforeEach(() => {
     sent = [];
     shouldFail = false;
-    delete process.env.GMAIL_SMTP_APP_PASSWORD;
     setMailerForTests({
       sendMail: async (options: Record<string, unknown>) => {
         if (shouldFail) throw new Error("SMTP rejected");
@@ -24,7 +24,6 @@ describe("notifyFounder", () => {
 
   afterEach(() => {
     setMailerForTests(null);
-    delete process.env.GMAIL_SMTP_APP_PASSWORD;
   });
 
   it("sends to the founder with the SmartPR subject", async () => {
@@ -53,8 +52,8 @@ describe("notifyFounder", () => {
     );
   });
 
-  it("skips loudly when no app password is configured", async () => {
-    setMailerForTests(null); // no fake transport and no credential
+  it("fails loudly when the alert cannot be queued", async () => {
+    setMailerForTests(null); // no fake transport and no Supabase credentials
     const errors: string[] = [];
     const origError = console.error;
     console.error = (msg: string) => errors.push(String(msg));
@@ -64,8 +63,8 @@ describe("notifyFounder", () => {
       console.error = origError;
     }
     assert.ok(
-      errors.some((m) => m.includes("GMAIL_SMTP_APP_PASSWORD is not set")),
-      `expected a missing-credential log, got: ${JSON.stringify(errors)}`
+      errors.some((m) => m.includes("enqueue failed")),
+      `expected an enqueue-failed log, got: ${JSON.stringify(errors)}`
     );
   });
 

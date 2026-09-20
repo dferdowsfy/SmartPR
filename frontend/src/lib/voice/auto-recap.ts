@@ -166,7 +166,7 @@ async function processSession(db: Db, session: CandidateSession): Promise<Sessio
     `<p>${esc(body).replace(/\n/g, "<br/>")}</p>` +
     `<p style="color:#666;font-size:12px">Sent automatically after your SmartPR voice call.</p>`;
 
-  const delivered = await sendComplianceEmail(recipient, subject, text, html, VOICE_SUMMARY_FROM);
+  const delivered = await sendComplianceEmail(recipient, subject, text, html, VOICE_SUMMARY_FROM, "voice_recap");
   if (!delivered) {
     await logVoiceAudit(db, {
       userId: session.user_id,
