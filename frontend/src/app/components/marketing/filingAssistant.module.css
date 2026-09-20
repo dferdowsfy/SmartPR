@@ -1,0 +1,266 @@
+.wrap {
+  display: grid;
+  gap: 3rem;
+  align-items: center;
+}
+
+@media (min-width: 64rem) {
+  .wrap {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: #245c5c;
+  font-size: 0.675rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.betaPill {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid rgba(36, 92, 92, 0.35);
+  border-radius: 999px;
+  background: rgba(36, 92, 92, 0.1);
+  color: #245c5c;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  vertical-align: 0.15em;
+}
+
+.copy h2 {
+  max-width: 24rem;
+}
+
+.lead {
+  max-width: 34rem;
+  margin: 1rem 0 0;
+  color: #1b1b1b;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.points {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75rem;
+  max-width: 32rem;
+}
+
+.points li {
+  position: relative;
+  padding-left: 1.5rem;
+  color: #1b1b1b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.points li::before {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  top: 0.55em;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #245c5c;
+}
+
+.cta {
+  margin-top: 2rem;
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6rem;
+  padding: 0 1.15rem;
+  border: none;
+  border-radius: 8px;
+  background: #245c5c;
+  color: #f6f3ea;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.primary:hover {
+  background: #194d4d;
+}
+
+.primary:active {
+  transform: translateY(1px);
+}
+
+/* ---- Chat mockup ---- */
+
+.chatCol {
+  display: flex;
+  justify-content: center;
+}
+
+.chat {
+  width: min(100%, 24rem);
+  border: 1px solid color-mix(in oklab, #161616 12%, transparent);
+  border-radius: 1.25rem;
+  background: #fffdf8;
+  box-shadow: 0 24px 60px -24px rgba(22, 22, 22, 0.25);
+  overflow: hidden;
+}
+
+.chatHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid color-mix(in oklab, #161616 10%, transparent);
+  background: #f6f3ea;
+}
+
+.chatHead .betaPill {
+  margin-left: auto;
+}
+
+.chatAvatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: none;
+  border-radius: 999px;
+  background: radial-gradient(circle at 36% 28%, #7fe3d2 0%, #3fbfae 55%, #2a9d8f 100%);
+}
+
+.chatHeadText {
+  min-width: 0;
+}
+
+.chatTitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #161616;
+}
+
+.chatSub {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  color: #5b5b5b;
+}
+
+.chatBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+}
+
+.msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.9rem;
+  background: #f1efe7;
+  color: #2b2b2b;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.pulse {
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.35em;
+  border-radius: 999px;
+  background: #2a9d8f;
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.pauseCard {
+  border: 1px solid color-mix(in oklab, #b07d2b 40%, transparent);
+  border-radius: 0.9rem;
+  background: #fbf4e3;
+  padding: 0.9rem 1rem;
+}
+
+.pauseCard p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b4d1a;
+  line-height: 1.45;
+}
+
+.pauseBtns {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.pauseBtnPrimary,
+.pauseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.1rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pauseBtnPrimary {
+  background: #245c5c;
+  color: #f6f3ea;
+}
+
+.pauseBtn {
+  border: 1px solid color-mix(in oklab, #161616 20%, transparent);
+  color: #2b2b2b;
+}
+
+.readyMsg {
+  background: #e7f2ec;
+}
+
+.check {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: #2a7d5f;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}
