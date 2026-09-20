@@ -51,6 +51,16 @@ const TRANSPORT_AGRI_GATED = new Set(["DOC_TRANSPORT_PERMIT", "DOC_AGRICULTURE_R
 // (correct — MATCH_TRACE_MISSING, not a placeholder). Added with the
 // tourism-validated concepts (REG-GUIDE-TOURISM-001, 2026-09-18).
 const TOURISM_GATED = new Set(["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN"]);
+// Sign/annual-report-gated: the sign/rótulo authorization applies only when
+// signage is stated (RULE_0030) or the municipality carries the tourism
+// flag (RULE_0535–0543) — Bayamón has neither; the annual report / LLC fee
+// fires only for existing registered entities (RULE_0636
+// requires_existing_business) — the bar profile has no business status.
+// Both validated concepts stay provisional for it (correct —
+// MATCH_TRACE_MISSING, not a placeholder). Added with the sign and
+// annual-report concepts (REG-GUIDE-SIGN-001 / REG-GUIDE-ANNUAL-001,
+// 2026-09-20).
+const SIGN_ANNUAL_GATED = new Set(["DOC_SIGN_PERMIT", "DOC_ANNUAL_REPORT"]);
 
 // Entity-gated: the Certificate of Incorporation concept applies only when a
 // corporation is (or may be) the chosen legal form; the bar profile is a
@@ -60,11 +70,11 @@ const TOURISM_GATED = new Set(["DOC_TOURISM_REGISTRATION", "DOC_ROOM_TAX_RETURN"
 // (REG-GUIDE-FORMATION-001, 2026-09-17).
 const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
 
-test("same Bayamón bar: all thirty source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all thirty-two source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -80,7 +90,7 @@ test("same Bayamón bar: all thirty source-backed explanations are distinct and 
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 30);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 32);
   }
 });
 
@@ -177,6 +187,69 @@ test("OPPE installer concept validates for the solar-installer firing path in EN
       assert.doesNotMatch(g.regulatoryReason, /installer certification is the installer's credential/);
       assert.match(g.regulatoryReason, /Ley 17-2019/);
     }
+  }
+});
+
+// REG-GUIDE-SIGN-001 (2026-09-20 QA): the Sign / Rótulo Permit card rendered
+// the unvalidated-description placeholder on live Guaynabo (car wash),
+// San Juan (boutique), and Carolina (gym) filings. The concept now
+// validates for every firing path — the signage question (RULE_0030) and
+// the tourism-flag retail rules (RULE_0535/0537/0539/0541/0543, via the
+// businessType fallback) — in EN and PR-ES, with the Ley 355-1999
+// (Ley Uniforme de Rótulos y Anuncios), Art. 29 source.
+test("sign/rótulo concept validates for every signage firing path in EN/ES", () => {
+  const mkCtx = (profile: Record<string, unknown>, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+    return { ...ctx, businessTypeName: profile.business_type as string, profile, discoveryAnswers, engineInput: buildEngineInput(profile, discoveryAnswers) };
+  };
+  const guaynaboRetail = { municipality: "Guaynabo", business_type: "Clothing Store", business_structure: "LLC", location_type: "Retail Storefront", number_of_employees: 4 };
+  const sanJuanRetail = { ...guaynaboRetail, municipality: "San Juan" };
+  const guaynaboCarWash = { municipality: "Guaynabo", business_type: "Car Wash", business_structure: "LLC", location_type: "Commercial Space", number_of_employees: 8 };
+  for (const language of ["en", "es"] as const) {
+    // Question path: the commercial-signage question answers RULE_0030.
+    const q = buildRequirementGuidance(req("DOC_SIGN_PERMIT"), { ...mkCtx(guaynaboRetail, { commercial_signage: true }), language });
+    assert.equal(q.status, "VALIDATED", `DOC_SIGN_PERMIT (question): ${q.reviewReasons}`);
+    assert.deepEqual(q.triggerFacts.map(f => f.key), ["Q_COMMERCIAL_SIGNAGE"]);
+    assert.ok(q.whyThisApplies.includes(q.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(q), /validated description pending|not confirmed yet/);
+    assert.match(JSON.stringify(q.sources), /Ley 355-1999|355/);
+    // Tourism-flag path: San Juan clothing store matches RULE_0543 with no
+    // signage question answered; the businessType fallback explains it.
+    const t = buildRequirementGuidance(req("DOC_SIGN_PERMIT"), { ...mkCtx(sanJuanRetail, {}), language });
+    assert.equal(t.status, "VALIDATED", `DOC_SIGN_PERMIT (tourism flag): ${t.reviewReasons}`);
+    assert.deepEqual(t.triggerFacts.map(f => f.key), ["businessType"]);
+    assert.ok(t.triggerFacts.every(f => f.ruleIds.includes("RULE_0543")));
+    assert.doesNotMatch(JSON.stringify(t), /validated description pending|not confirmed yet/);
+    // Honest negative control: Guaynabo car wash with no signage fact
+    // matches no rule — the card hedges (MATCH_TRACE_MISSING) but renders
+    // the validated copy, never the placeholder.
+    const n = buildRequirementGuidance(req("DOC_SIGN_PERMIT"), { ...mkCtx(guaynaboCarWash, {}), language });
+    assert.equal(n.status, "GUIDANCE_NEEDS_REVIEW");
+    assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `DOC_SIGN_PERMIT (negative): ${n.reviewReasons}`);
+    assert.doesNotMatch(JSON.stringify(n), /validated description pending/);
+    assert.match(JSON.stringify(n.sources), /Ley 355-1999|355/);
+  }
+});
+
+// REG-GUIDE-ANNUAL-001 (2026-09-20 QA): the Annual Report / Annual Fee card
+// rendered the unvalidated-description placeholder on a live Carolina gym
+// filing. RULE_0636 is requires_business with requires_existing_business
+// and excluded entity types, so the concept is validated against the
+// existing-business firing path; the generic businessType fallback explains
+// the match honestly. EN and PR-ES, Ley 164-2009 Arts. 15.01(A) y 21.03(C)
+// source (April 15 deadline, $150 annual fee; late fees $750 corp /
+// $500 + 1.5%/month LLC).
+test("annual report concept validates via the businessType fallback in EN/ES", () => {
+  for (const language of ["en", "es"] as const) {
+    const p = { municipality: "Carolina", business_type: "Gym / Fitness Studio", business_structure: "LLC", location_type: "Commercial Space", number_of_employees: 8 };
+    const c: GuidanceContext = { ...ctx, language, businessTypeName: p.business_type, profile: p, discoveryAnswers: {}, engineInput: buildEngineInput(p, {}, {}, { projectIntent: "existing_business" }) };
+    const g = buildRequirementGuidance(req("DOC_ANNUAL_REPORT"), c);
+    assert.equal(g.status, "VALIDATED", `DOC_ANNUAL_REPORT: ${g.reviewReasons}`);
+    assert.deepEqual(g.triggerFacts.map(f => f.key), ["businessType"]);
+    assert.ok(g.triggerFacts.every(f => f.ruleIds.includes("RULE_0636")));
+    assert.ok(g.whyThisApplies.includes(g.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(g), /validated description pending|not confirmed yet/);
+    assert.match(JSON.stringify(g.sources), /Ley 164-2009|15\.01/);
+    assert.match(g.regulatoryReason, /April 15|15 de abril/);
   }
 });
 

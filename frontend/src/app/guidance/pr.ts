@@ -54,6 +54,23 @@ export const PR_GUIDANCE_SOURCES = {
   // DOC_HACIENDA_EMPLOYER_WITHHOLDING card rendered the
   // unvalidated-description placeholder on a Bayamón contractor filing.
   withholding: source("SRC_GUIDANCE_WITHHOLDING", "Departamento de Hacienda", "SURI — employer tax transactions", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI is Hacienda's portal for employer tax transactions, including employer withholding registration, withholding deposits, and payroll filings."),
+  // REG-GUIDE-SIGN-001 (2026-09-20 QA): the Sign / Rótulo Permit card
+  // rendered the unvalidated-description placeholder on live Guaynabo,
+  // San Juan, and Carolina filings. The document cites Ley 355-1999
+  // (Ley Uniforme de Rótulos y Anuncios), Art. 29 (9 L.P.R.A. § 56b) at
+  // statute confidence; the municipality is the issuing office (per the
+  // document's own agency note) and signage is handled via the OGPe
+  // Permiso Único or the municipality depending on location (per the
+  // document's download note).
+  signRotulo: source("SRC_GUIDANCE_SIGN_ROTULO", "Municipal Government", "Ley 355-1999 (Ley Uniforme de Rótulos y Anuncios), Art. 29 (9 L.P.R.A. § 56b) — municipal sign/rótulo authorization", "https://www.permisos.pr.gov/", "Exterior commercial signage (rótulos) requires the municipality's authorization under the Uniform Sign and Advertisement Law; the issuing office depends on the municipality, and signage is handled via the OGPe Permiso Único or the municipality depending on location."),
+  // REG-GUIDE-ANNUAL-001 (2026-09-20 QA): the Annual Report / Annual Fee
+  // card rendered the unvalidated-description placeholder on a live
+  // Carolina gym filing. The document cites Ley 164-2009, Arts. 15.01(A)
+  // y 21.03(C) at statute confidence; the April 15 deadline and the $150
+  // amount are verified against Dept. of State material (Art. 15.01(A):
+  // corporations file the Informe Anual by April 15; Art. 21.03(C): LLCs
+  // pay the annual fee with basic company info).
+  annualReport: source("SRC_GUIDANCE_ANNUAL_REPORT", "Departamento de Estado", "Ley 164-2009, Arts. 15.01(A) y 21.03(C) — informe anual (corps) / anualidad (LLC), vence 15 de abril", "https://www.estado.pr.gov/", "Corporations file the Informe Anual with the Department of State on or before April 15 each year (Art. 15.01(A)); LLCs pay the $150 annual fee with basic company information (Art. 21.03(C))."),
   // REG-GUIDE-TRANSPORT-001 (2026-09-18 QA): DOC_TRANSPORT_PERMIT cards were
   // rendering the unvalidated-description placeholder; the document itself
   // cites Law 109-1962 / NTSP Regulation 9156 §10.02 at statute confidence.
@@ -117,6 +134,11 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_OGPE_CONSTRUCTION_PERMIT: { en: ["ogpe", "construction permit"], es: ["ogpe", "permiso de construcción"] },
   DOC_OWNER_AFFIDAVIT: { en: ["affidavit", "owner authorization"], es: ["declaración jurada", "autorización del dueño"] },
   DOC_OPPE_INSTALLER_REG: { en: ["oppe", "installer registration"], es: ["oppe", "registro de instalador"] },
+  // REG-GUIDE-SIGN-001 / REG-GUIDE-ANNUAL-001 (2026-09-20 QA): validated
+  // subject terms for the sign/rótulo and annual-report cards that were
+  // rendering placeholder copy on live filings.
+  DOC_SIGN_PERMIT: { en: ["sign", "rótulo", "signage"], es: ["rótulo", "letrero", "rotulación"] },
+  DOC_ANNUAL_REPORT: { en: ["annual report", "annual fee"], es: ["informe anual", "anualidad"] },
   DOC_VEHICLE_REGISTRATION: { en: ["vehicle registration", "dtop", "marbete"], es: ["registro de vehículos", "vehículo comercial", "dtop", "marbete"] },
   DOC_TRANSPORT_PERMIT: { en: ["transport", "ntsp", "franchise", "porteador"], es: ["transporte", "ntsp", "franquicia", "porteador", "acarreo"] },
   DOC_AGRICULTURE_REGISTRATION: { en: ["bona fide", "farmer", "agriculture"], es: ["bona fide", "agricultor", "agricultura", "finca"] },
@@ -440,5 +462,42 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The OPPE installer registration is the installer's credential with the energy program: it documents that the installer completed the required installer course (or NABCEP/US course plus the 4-hour PR norms course), holds a professional license as an engineer or electrician, and passed the exam.", "El registro de instalador de OPPE es la credencial del instalador ante el programa de energía: documenta que completó el curso de instalador requerido (o el curso NABCEP/EE. UU. más el curso de 4 horas de normas de PR), que tiene licencia profesional de ingeniero o electricista, y que aprobó el examen."),
     text("Apply for a new OPPE installer registration or renew with the PPPE (Programa de Política Pública Energética, DDEC): complete the official application, attach the course certificate, the exam score (new applications), the professional license, and evidence of collegiation for engineers, and submit by email to energia@ddec.pr.gov or in person at the PPPE offices.", "Solicita el registro de instalador de OPPE nuevo o la renovación en el PPPE (Programa de Política Pública Energética, DDEC): completa la solicitud oficial, adjunta el certificado del curso, la puntuación del examen (solicitudes nuevas), la licencia profesional y la evidencia de colegiación para ingenieros, y envíala por correo electrónico a energia@ddec.pr.gov o entrégala en persona en las oficinas del PPPE."),
     text("Working as a renewable-systems installer without the OPPE installer registration leaves the work outside the energy program's authorization framework; false statements on the application are grounds for cancellation of the certification and fines.", "Trabajar como instalador de sistemas renovables sin el registro de instalador de OPPE deja el trabajo fuera del marco de autorización del programa de energía; la información falsa en la solicitud es motivo de cancelación de la certificación y multas."),
+  ]),
+  // REG-GUIDE-SIGN-001 (2026-09-20 QA): the Sign / Rótulo Permit card
+  // rendered the unvalidated-description placeholder on live Guaynabo
+  // (car wash), San Juan (boutique), and Carolina (gym) filings. Conditions
+  // cover every firing path: the signage question (RULE_0030, heuristic +
+  // missing sign_installation_plans) and the tourism-flag retail rules
+  // (RULE_0535/0537/0539/0541/0543), plus the generic businessType fallback
+  // (d4940f4 class — the BT is the honest trigger explanation for a
+  // rule match with no question path).
+  DOC_SIGN_PERMIT: concept("DOC_SIGN_PERMIT", [
+    [condition("Q_COMMERCIAL_SIGNAGE", "Commercial signage: Yes", "Rotulación comercial: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.signRotulo], [
+    text("Exterior commercial signage (rótulos) in Puerto Rico is regulated under the Uniform Sign and Advertisement Law (Ley 355-1999). Before a storefront sign, monument sign, or advertising panel goes up, the business needs the municipality's sign/rótulo authorization (Art. 29, 9 L.P.R.A. § 56b).", "La rotulación comercial exterior (rótulos) en Puerto Rico se rige por la Ley Uniforme de Rótulos y Anuncios (Ley 355-1999). Antes de instalar un rótulo de fachada, un rótulo monumental o un panel publicitario, el negocio necesita la autorización de rótulos del municipio (Art. 29, 9 L.P.R.A. § 56b)."),
+    text("The sign authorization covers the specific sign at the specific location — its size, placement, and design must conform to the municipal ordinance that governs signs in that municipality.", "La autorización de rótulos cubre el rótulo específico en la ubicación específica — su tamaño, ubicación y diseño tienen que conformar a la ordenanza municipal que rige los rótulos en ese municipio."),
+    // Status-neutral next action (concepts are shared across business
+    // statuses): "obtain or confirm", never "apply for" on an existing
+    // business (the 590603a lesson).
+    text("Obtain the sign authorization from the municipality's permits office — or through the OGPe Permiso Único where the municipality routes signage through it — before fabrication and installation, or confirm an existing sign authorization is current. Provide the sign's design, dimensions, and installation details.", "Obtén la autorización de rótulos en la oficina de permisos del municipio — o por el Permiso Único de OGPe donde el municipio tramite la rotulación por esa vía — antes de fabricar e instalar el rótulo, o confirma que una autorización de rótulos vigente está al día. Provee el diseño, las dimensiones y los detalles de instalación del rótulo."),
+    text("Signage installed without the municipal authorization can trigger enforcement action and removal orders; keep the issued authorization with the premises records.", "La rotulación instalada sin la autorización municipal puede acarrear acción de fiscalización y órdenes de remoción; guarda la autorización emitida en los récords del local."),
+  ]),
+  // REG-GUIDE-ANNUAL-001 (2026-09-20 QA): the Annual Report / Annual Fee
+  // card rendered the unvalidated-description placeholder on a live
+  // Carolina gym filing. The rule (RULE_0636) is requires_business with
+  // excluded entity types, so the generic businessType fallback is the
+  // honest condition path; entity-type eligibility is the rule's job, not
+  // the concept's.
+  DOC_ANNUAL_REPORT: concept("DOC_ANNUAL_REPORT", [
+    [business],
+  ], [PR_GUIDANCE_SOURCES.annualReport], [
+    text("Puerto Rico corporations and LLCs owe the Department of State a yearly filing: corporations file the Informe Anual, and LLCs pay the $150 annual fee with basic company information, on or before April 15 each year (Ley 164-2009, Art. 15.01(A) for corporations; Art. 21.03(C) for LLCs).", "Las corporaciones y las LLC de Puerto Rico le deben una radicación anual al Departamento de Estado: las corporaciones radican el Informe Anual, y las LLC pagan la anualidad de $150 con la información básica de la compañía, en o antes del 15 de abril de cada año (Ley 164-2009, Art. 15.01(A) para corporaciones; Art. 21.03(C) para LLC)."),
+    text("The annual report (corporations) and the $150 annual fee (LLCs) keep the entity in good standing with the Department of State: they confirm the resident agent and the company's current information on the public record.", "El informe anual (corporaciones) y la anualidad de $150 (LLC) mantienen la entidad al día (good standing) con el Departamento de Estado: confirman el agente residente y la información vigente de la compañía en el registro público."),
+    // Status-neutral: RULE_0636 carries compliance_mode=verify_existing,
+    // so the next action reads for existing holders ("verify … current"),
+    // which is also correct for a new entity approaching its first filing.
+    text("Verify the entity's standing with the Department of State and confirm the April 15 deadline on the current-year calendar; file the Informe Anual (corporations) or pay the annual fee (LLCs) through the Department of State's filing portal at estado.pr.gov.", "Verifica que la entidad esté al día con el Departamento de Estado y confirma la fecha límite del 15 de abril en el calendario del año en curso; radica el Informe Anual (corporaciones) o paga la anualidad (LLC) en el portal de radicaciones del Departamento de Estado (estado.pr.gov)."),
+    text("Missing the April 15 deadline can cost a lot: the administrative fine is $750 for a for-profit corporation, and LLCs owe $500 plus 1.5% monthly interest on the $150 annual fee — and an entity that stays delinquent can lose its good standing and have its registration cancelled.", "Perder la fecha límite del 15 de abril puede salir caro: la multa administrativa es de $750 para una corporación con fines de lucro, y las LLC deben $500 más 1.5% de interés mensual sobre la anualidad de $150 — y una entidad que siga en mora puede perder su buen estado (good standing) y el Departamento puede cancelar su registro."),
   ]),
 };

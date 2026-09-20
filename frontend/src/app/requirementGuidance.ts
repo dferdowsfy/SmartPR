@@ -89,6 +89,9 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     Q_AGRICULTURE_PRODUCTION: ["agriculture_production"],
     Q_SHORT_TERM_RENTAL: ["short_term_rental"],
     Q_GUESTS_OVERNIGHT: ["guests_stay_overnight"],
+    // REG-GUIDE-SIGN-001 (2026-09-20 QA): the signage question fires
+    // RULE_0030; the bundled flow answers it by writeKey.
+    Q_COMMERCIAL_SIGNAGE: ["commercial_signage"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;
