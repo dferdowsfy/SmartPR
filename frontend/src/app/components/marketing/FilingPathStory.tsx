@@ -150,12 +150,10 @@ export default function FilingPathStory({ language }: { language: Language }) {
   const [stepsShown, setStepsShown] = useState(0);
   const [incentivesShown, setIncentivesShown] = useState(0);
 
-  // The typewriter is a content reveal the site owner explicitly wants visible,
-  // so the JS timeline always runs: with `prefers-reduced-motion` the CSS
-  // keyframe flourishes (caret blink, float, pulse, smoke) are still disabled
-  // by the media query in the stylesheet, but the sentence itself types out
-  // instead of appearing instantly. Assistive tech gets the full sentence
-  // immediately via the sr-only paragraph below.
+  // The staged reveal (chips, agencies, steps, incentives) plays as a timeline,
+  // but the sentence itself appears instantly — the typewriter pacing made
+  // users wait too long (owner direction 2026-09-20). Assistive tech gets
+  // the full sentence immediately via the sr-only paragraph below.
   const effTypedCount = typedCount;
   const effCaretDone = caretDone;
   const effParseOn = parseOn;
@@ -213,21 +211,15 @@ export default function FilingPathStory({ language }: { language: Language }) {
         timers.push(setTimeout(resolve, ms));
       }).then(() => id === runId);
 
-    // One cinematic speed for every play. The typing itself is deliberately
-    // paced (~50/75ms per character) so it reads as typing rather than a
-    // flicker; the earlier double-speed "catch up" play is gone because the
-    // reveal no longer burns itself at page load.
+    // The sentence appears fully formed the moment the reveal starts — no
+    // typewriter pacing, so nobody waits for it to finish (owner direction
+    // 2026-09-20). The staged parse/agency/step reveals below still play.
     async function run() {
       const id = ++runId;
       reset();
       if (!(await pause(500, id))) return;
 
-      for (const token of tokens) {
-        for (let i = token.start + 1; i <= token.end; i++) {
-          setTypedCount(i);
-          if (!(await pause(token.mark ? 75 : 50, id))) return;
-        }
-      }
+      setTypedCount(c.sentence.length);
       setCaretDone(true);
       if (!(await pause(420, id))) return;
 
@@ -296,7 +288,7 @@ export default function FilingPathStory({ language }: { language: Language }) {
       } else if (!scrollRestarted) {
         // The fallback below may have started the reveal before the human
         // looked at the panel; the first real scroll restarts it from blank
-        // so they see the typing from the beginning.
+        // so they see the full reveal sequence from the beginning.
         scrollRestarted = true;
         void run();
       }
