@@ -20,10 +20,7 @@ const copy = {
     login: "Login",
     started: "Sign up",
     privacy: "Privacy Policy",
-    eyebrow: "Puerto Rico · Guided filing",
-    hero: "Start your business in Puerto Rico.",
-    heroAccent: "We make it easy.",
-    heroSub: "Puerto Rico requirements, simplified.",
+    hero: "Business requirements, simplified.",
     heroCta: "Start my application",
     seeHow: "See how it works",
     stepsTitle: "From uncertainty to submission-ready.",
@@ -91,10 +88,7 @@ const copy = {
     login: "Iniciar sesión",
     started: "Registrarse",
     privacy: "Política de privacidad",
-    eyebrow: "Puerto Rico · Trámite guiado",
-    hero: "Comience su negocio en Puerto Rico.",
-    heroAccent: "Lo hacemos fácil.",
-    heroSub: "Requisitos de Puerto Rico, simplificados.",
+    hero: "Requisitos de negocio, simplificados.",
     heroCta: "Comenzar mi solicitud",
     seeHow: "Vea cómo funciona",
     stepsTitle: "De la incertidumbre a estar listo para presentar.",
@@ -308,12 +302,9 @@ export default function MarketingLanding() {
         <div className={styles.showcase}>
           <section className={styles.hero}>
             <div className={styles.heroCopy}>
-              <p className={styles.eyebrow}>{c.eyebrow}</p>
               <h1>
                 <span>{c.hero}</span>
-                <strong>{c.heroAccent}</strong>
               </h1>
-              <p className={styles.heroLead}>{c.heroSub}</p>
               <div className={styles.heroActions}>
                 <button type="button" className={styles.primary} onClick={() => void start()}>
                   {c.heroCta}
