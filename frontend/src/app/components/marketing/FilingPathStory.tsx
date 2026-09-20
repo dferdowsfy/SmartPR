@@ -16,17 +16,6 @@ const STEP_ICONS: Array<typeof Building2> = [
   Check, // review & submission
 ];
 
-function useReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return reduced;
-}
 
 type Token = { text: string; mark: boolean; start: number; end: number };
 
@@ -140,16 +129,14 @@ const copy = {
 } as const;
 
 export default function FilingPathStory({ language }: { language: Language }) {
-  const reduced = useReducedMotion();
   const c = copy[language];
   const tokens = useMemo(() => tokenize(c.sentence, [...c.marks]), [c]);
   const markTokens = useMemo(() => tokens.filter((t) => t.mark), [tokens]);
 
   const sectionRef = useRef<HTMLElement | null>(null);
   const anchorRef = useRef<HTMLDivElement | null>(null);
-  // Tracks whether the reveal animation has played at least once, and whether
-  // the current effect run is a language toggle (a settings change, not a visit).
-  const hasPlayedRef = useRef(false);
+  // Tracks whether the current effect run is a language toggle (a settings
+  // change, not a visit).
   const prevLanguageRef = useRef<Language | null>(null);
 
   const [typedCount, setTypedCount] = useState(0);
@@ -163,18 +150,22 @@ export default function FilingPathStory({ language }: { language: Language }) {
   const [stepsShown, setStepsShown] = useState(0);
   const [incentivesShown, setIncentivesShown] = useState(0);
 
-  // Reduced motion never touches the timeline state above — it just renders
-  // the finished values directly, so there's nothing to synchronize in an effect.
-  const effTypedCount = reduced ? c.sentence.length : typedCount;
-  const effCaretDone = reduced ? true : caretDone;
-  const effParseOn = reduced ? true : parseOn;
-  const effParseSettled = reduced ? true : parseSettled;
-  const effParseLabel = reduced ? c.parseMapped : parseLabel;
-  const effMarkedCount = reduced ? markTokens.length : markedCount;
-  const effLiftedCount = reduced ? markTokens.length : liftedCount;
-  const effAgenciesShown = reduced ? c.agencies.length : agenciesShown;
-  const effStepsShown = reduced ? c.path.length : stepsShown;
-  const effIncentivesShown = reduced ? c.incentives.length : incentivesShown;
+  // The typewriter is a content reveal the site owner explicitly wants visible,
+  // so the JS timeline always runs: with `prefers-reduced-motion` the CSS
+  // keyframe flourishes (caret blink, float, pulse, smoke) are still disabled
+  // by the media query in the stylesheet, but the sentence itself types out
+  // instead of appearing instantly. Assistive tech gets the full sentence
+  // immediately via the sr-only paragraph below.
+  const effTypedCount = typedCount;
+  const effCaretDone = caretDone;
+  const effParseOn = parseOn;
+  const effParseSettled = parseSettled;
+  const effParseLabel = parseLabel;
+  const effMarkedCount = markedCount;
+  const effLiftedCount = liftedCount;
+  const effAgenciesShown = agenciesShown;
+  const effStepsShown = stepsShown;
+  const effIncentivesShown = incentivesShown;
 
   const reset = () => {
     setTypedCount(0);
@@ -190,7 +181,6 @@ export default function FilingPathStory({ language }: { language: Language }) {
   };
 
   useEffect(() => {
-    if (reduced) return;
     const section = sectionRef.current;
     const anchor = anchorRef.current;
     if (!section || !anchor) return;
@@ -223,102 +213,107 @@ export default function FilingPathStory({ language }: { language: Language }) {
         timers.push(setTimeout(resolve, ms));
       }).then(() => id === runId);
 
-    // The first view plays at double speed so the hero panel fills in within a
-    // few seconds instead of sitting mostly empty; replays (scroll away and
-    // back) keep the full cinematic timing.
-    async function run(speed: number) {
+    // One cinematic speed for every play. The typing itself is deliberately
+    // paced (~50/75ms per character) so it reads as typing rather than a
+    // flicker; the earlier double-speed "catch up" play is gone because the
+    // reveal no longer burns itself at page load.
+    async function run() {
       const id = ++runId;
       reset();
-      if (!(await pause(400 * speed, id))) return;
+      if (!(await pause(500, id))) return;
 
       for (const token of tokens) {
         for (let i = token.start + 1; i <= token.end; i++) {
           setTypedCount(i);
-          if (!(await pause((token.mark ? 34 : 22) * speed, id))) return;
+          if (!(await pause(token.mark ? 75 : 50, id))) return;
         }
       }
       setCaretDone(true);
-      if (!(await pause(420 * speed, id))) return;
+      if (!(await pause(420, id))) return;
 
       setParseOn(true);
       for (let i = 1; i <= markTokens.length; i++) {
         setMarkedCount(i);
-        if (!(await pause(230 * speed, id))) return;
+        if (!(await pause(230, id))) return;
       }
-      if (!(await pause(180 * speed, id))) return;
+      if (!(await pause(180, id))) return;
       setParseLabel(c.parseDetails(markTokens.length));
       setParseSettled(true);
-      if (!(await pause(320 * speed, id))) return;
+      if (!(await pause(320, id))) return;
 
       for (let i = 1; i <= markTokens.length; i++) {
         setLiftedCount(i);
-        if (!(await pause(150 * speed, id))) return;
+        if (!(await pause(150, id))) return;
       }
-      if (!(await pause(280 * speed, id))) return;
+      if (!(await pause(280, id))) return;
 
       setParseLabel(c.parseAgencies(c.agencies.length));
       for (let i = 1; i <= c.agencies.length; i++) {
         setAgenciesShown(i);
-        if (!(await pause(70 * speed, id))) return;
+        if (!(await pause(70, id))) return;
       }
-      if (!(await pause(360 * speed, id))) return;
+      if (!(await pause(360, id))) return;
 
       setParseLabel(c.parseMapped);
       for (let i = 1; i <= c.path.length; i++) {
         setStepsShown(i);
-        if (!(await pause(430 * speed, id))) return;
+        if (!(await pause(430, id))) return;
       }
-      if (!(await pause(300 * speed, id))) return;
+      if (!(await pause(300, id))) return;
 
       for (let i = 1; i <= c.incentives.length; i++) {
         setIncentivesShown(i);
-        if (!(await pause(150 * speed, id))) return;
+        if (!(await pause(150, id))) return;
       }
     }
 
-    // The reveal should play when the human scrolls it into view — not at
-    // page load while they're still reading the hero. With a short hero the
-    // sentence can already sit inside the viewport on load, which would run
-    // the whole typing sequence unseen; that first run is marked so the
-    // moment they actually scroll, it replays at full cinematic speed while
-    // they're watching.
+    // The reveal plays when the human is actually looking at the panel — not
+    // at page load while they're still reading the hero. With a short hero
+    // the sentence can already sit inside the viewport on load; starting the
+    // sequence then burns the whole typing effect unseen. So the first play
+    // waits for the user's first scroll (or, if they never scroll, a short
+    // fallback delay), and any later scroll back into view replays it.
     let userScrolled = window.scrollY > 40;
-    let unseenFirstPlay = false;
-    const onScroll = () => {
-      if (window.scrollY > 40) userScrolled = true;
-      if (unseenFirstPlay && userScrolled && anchor) {
-        const r = anchor.getBoundingClientRect();
-        if (r.top < window.innerHeight * 0.85 && r.bottom > window.innerHeight * 0.15) {
-          unseenFirstPlay = false;
-          void run(1);
-        }
+    let played = false;
+    const anchorInView = () => {
+      const r = anchor.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      return r.top < vh * 0.9 && r.bottom > vh * 0.1;
+    };
+    const tryPlay = () => {
+      if (!armed || played) return;
+      if (anchorInView()) {
+        played = true;
+        void run();
       }
     };
+    const onScroll = () => {
+      if (window.scrollY > 40) userScrolled = true;
+      if (userScrolled) tryPlay();
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
+    // The panel never sits blank forever: if it's visible at load and the
+    // user doesn't scroll, the reveal starts on its own after a beat.
+    timers.push(setTimeout(tryPlay, 4000));
 
     const player = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && armed) {
-          armed = false;
-          const first = !hasPlayedRef.current;
-          hasPlayedRef.current = true;
-          if (first && !userScrolled) unseenFirstPlay = true;
-          else unseenFirstPlay = false;
-          run(first ? 0.5 : 1);
+        // Observer-driven plays only happen once the user has scrolled the
+        // section into view themselves; the at-load case is handled by the
+        // scroll listener + fallback above.
+        if (entry.isIntersecting && armed && !played && userScrolled) {
+          played = true;
+          void run();
         }
       },
-      // Hold off until the section has actually scrolled up into view, rather
-      // than the instant it peeks over the bottom edge. On a tall phone
-      // viewport the sentence sits within the first screen, so an edge-only
-      // trigger starts the sequence at page load — and it is over by the time
-      // you have scrolled down far enough to watch it.
       { threshold: 0, rootMargin: compactLayout ? "0px 0px -10% 0px" : "0px 0px -50% 0px" },
     );
     player.observe(anchor);
 
     const rearm = new IntersectionObserver(
       ([entry]) => {
-        if (!entry.isIntersecting && !armed) {
+        if (!entry.isIntersecting && played) {
+          played = false;
           armed = true;
           runId++;
           timers.splice(0).forEach(clearTimeout);
@@ -337,7 +332,7 @@ export default function FilingPathStory({ language }: { language: Language }) {
       window.removeEventListener("scroll", onScroll);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduced, language]);
+  }, [language]);
 
   return (
     <section id="how-it-works" ref={sectionRef} className={styles.pin} aria-labelledby="filing-path-title">
