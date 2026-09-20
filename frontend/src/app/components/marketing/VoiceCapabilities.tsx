@@ -72,7 +72,7 @@ const copy = {
 
 const PILL_ICONS = [Phone, Lock, ClipboardList, Check] as const;
 
-/** White voice-activity bars used inside both orbs. */
+/** Black voice-activity bars used inside both orbs (contrast on the teal orb). */
 function Waveform({ bars, className }: { bars: number[]; className?: string }) {
   return (
     <span className={`${styles.waveform} ${className ?? ""}`} aria-hidden="true">

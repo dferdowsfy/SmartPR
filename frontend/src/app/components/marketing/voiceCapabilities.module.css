@@ -281,8 +281,8 @@
 .waveBar {
   width: 3.5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  background: rgba(0, 0, 0, 0.85);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.35);
   animation: wavePulse 1.6s ease-in-out infinite;
 }
 
