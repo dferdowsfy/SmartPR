@@ -23,8 +23,7 @@ const copy = {
     eyebrow: "Puerto Rico · Guided filing",
     hero: "Start your business in Puerto Rico.",
     heroAccent: "We make it easy.",
-    heroSub:
-      "Enter your business details and upload any documents you already have. SmartPR identifies the required permits, licenses, registrations, and supporting documents, flags what’s missing, and prepares the official government forms for you.",
+    heroSub: "Puerto Rico requirements, simplified.",
     heroCta: "Start my application",
     seeHow: "See how it works",
     stepsTitle: "From uncertainty to submission-ready.",
@@ -95,8 +94,7 @@ const copy = {
     eyebrow: "Puerto Rico · Trámite guiado",
     hero: "Comience su negocio en Puerto Rico.",
     heroAccent: "Lo hacemos fácil.",
-    heroSub:
-      "Ingrese los datos de su negocio y cargue los documentos que ya tenga. SmartPR identifica los permisos, licencias, registros y documentos de apoyo requeridos, señala lo que falta y prepara los formularios oficiales del gobierno.",
+    heroSub: "Requisitos de Puerto Rico, simplificados.",
     heroCta: "Comenzar mi solicitud",
     seeHow: "Vea cómo funciona",
     stepsTitle: "De la incertidumbre a estar listo para presentar.",
