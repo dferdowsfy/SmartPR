@@ -511,7 +511,7 @@
   },
   {
     "id": "Q_OFFERS_CONSTRUCTION_SERVICES",
-    "question": "Will you offer construction, installation, repair, or contracting services to others (not only on property you own)?",
+    "question": "Will you offer construction, installation, repair, or contracting services to others on buildings or structures (not only on property you own)?",
     "type": "boolean"
   }
 ]

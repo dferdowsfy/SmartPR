@@ -6818,7 +6818,7 @@
    "BT_BODY_SHOP",
    "BT_TIRE_SHOP"
   ],
-  "trigger_summary": "DACO contractor registration (Ley 146-1995 Registro de Contratistas) applies to construction contracting. Vehicle-repair businesses (auto/motorcycle/body/tire shops) are excluded: their \"repair services to others\" is automotive repair, not construction contracting, so an honest Yes to Q_OFFERS_CONSTRUCTION_SERVICES must not produce a construction-contractor license requirement.",
+  "trigger_summary": "DACO contractor registration (Ley 146-1995 Registro de Contratistas) applies to construction contracting. Vehicle-repair businesses (auto/motorcycle/body/tire shops) are excluded: their \"repair services to others\" is automotive repair, not construction contracting, so an honest Yes to Q_OFFERS_CONSTRUCTION_SERVICES must not produce a construction-contractor license requirement. The bundled question now scopes all four service terms to buildings/structures so repair businesses without a KB business type (e.g. device repair) also answer honestly.",
   "change_log": [
    {
     "date": "2026-09-17",
@@ -6829,6 +6829,11 @@
     "change": "compliance_mode set to verify_existing",
     "date": "2026-09-18",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-20",
+    "change": "Q_OFFERS_CONSTRUCTION_SERVICES reworded: '... to others on buildings or structures (not only on property you own)?'",
+    "reason": "QA 2026-09-20 03:00 cycle (live S77, Arecibo): a device-repair franchise honestly answered Yes to the unqualified 'repair' in the bundled question and received DACO Contractor License as REQUIRED. Same defect class as S7 auto-repair (2026-09-17, fixed by BT exclusion), but the business has no KB business type so the exclusion cannot protect it. Scoping the question to buildings/structures fixes the root cause generally for all repair businesses; genuine construction contractors still trigger."
    }
   ],
   "compliance_mode": "verify_existing"

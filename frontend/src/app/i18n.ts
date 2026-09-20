@@ -233,8 +233,8 @@ export const ES: Record<string, string> = {
   "Will clients or members visit?": "¿Visitarán clientes o miembros?",
   "Do you plan to bid on federal contracts or apply for federal grants or awards?":
     "¿El negocio licitará contratos federales o solicitará fondos federales?",
-  "Will you offer construction, installation, repair, or contracting services to others (not only on property you own)?":
-    "¿Ofrecerás servicios de construcción, instalación, reparación o contratación a terceros (no solo en propiedad tuya)?",
+  "Will you offer construction, installation, repair, or contracting services to others on buildings or structures (not only on property you own)?":
+    "¿Ofrecerás servicios de construcción, instalación, reparación o contratación a terceros en edificios o estructuras (no solo en propiedad tuya)?",
 
   // ---- Requirement names ----
   "Certificate of Incorporation / LLC Formation":

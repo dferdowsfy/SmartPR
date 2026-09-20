@@ -208,7 +208,14 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
   ]),
   
   DOC_CONTRACTOR_LICENSE: concept("DOC_CONTRACTOR_LICENSE", [
-    [condition("Q_OFFERS_CONSTRUCTION_SERVICES", "Offers construction, installation, repair, or contracting services to others", "Ofrece construcción, instalación, reparación o contratación a terceros", true)],
+    // REG-DACO-REPAIR-001 (2026-09-20 QA): the bundled question's unqualified
+    // "repair" invited an honest Yes from a device-repair franchise (live
+    // S77, Arecibo) — and previously from an auto repair shop (live S7,
+    // 2026-09-17, fixed by BT exclusion). The question now scopes all four
+    // service terms to buildings/structures; the trigger label matches the
+    // question actually asked. (The validated regulatory reason below is
+    // untouched.)
+    [condition("Q_OFFERS_CONSTRUCTION_SERVICES", "Offers construction, installation, repair, or contracting services to others on buildings or structures", "Ofrece construcción, instalación, reparación o contratación a terceros en edificios o estructuras", true)],
     [condition("businessType", "General contractor", "Contratista general", "BT_GENERAL_CONTRACTOR")],
     [condition("businessType", "Specialty trade contractor", "Contratista de oficio especializado", "BT_SPECIALTY_TRADE_CONTRACTOR")],
     [condition("businessType", "Construction government contractor", "Contratista de construcción del gobierno", "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR")],

@@ -29,6 +29,8 @@ import {
   bucketForApplicability,
   type ClassifiedRequirement,
 } from "./requirementApplicability.ts";
+import { ES } from "./i18n.ts";
+import { PR_REQUIREMENT_GUIDANCE } from "./guidance/pr.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const kbDir = join(here, "..", "kb");
@@ -649,6 +651,63 @@ test("CASE K: RULE_0642 (DACO contractor license) never fires for vehicle-repair
     "required",
     "a new general contractor still receives the DACO contractor license"
   );
+});
+
+test("CASE K2: Q_OFFERS_CONSTRUCTION_SERVICES scopes repair to buildings/structures", () => {
+  // REG-DACO-REPAIR-001 (2026-09-20 03:00 QA cycle, live S77 Arecibo): a
+  // device-repair franchise honestly answered Yes to the bundled question's
+  // unqualified "repair" and was shown the DACO Contractor License as a
+  // REQUIRED Critical Path card. Same defect class as CASE K (S7 auto
+  // repair, 2026-09-17), but the business has no KB business type, so the
+  // BT-exclusion fix cannot protect it. The generalized fix scopes the
+  // question itself: all four service terms now apply to buildings or
+  // structures, so any repair business (device, appliance, watch, shoe)
+  // answers honestly without tripping a construction-contractor license.
+  const q = (KB.questions as Array<{ id: string; question: string }>).find(
+    (x) => x.id === "Q_OFFERS_CONSTRUCTION_SERVICES"
+  );
+  assert.ok(q, "Q_OFFERS_CONSTRUCTION_SERVICES must exist in questions.json");
+  assert.match(
+    q!.question,
+    /on buildings or structures/i,
+    "the bundled question must scope its service terms to buildings/structures"
+  );
+  assert.doesNotMatch(
+    q!.question,
+    /repair, or contracting services to others \(not only/,
+    "the unqualified-repair wording must be gone"
+  );
+
+  // The ES rendering must carry the same scope (PR Spanish).
+  const es = ES[q!.question] as string | undefined;
+  assert.ok(es, "the reworded question needs an ES i18n entry");
+  assert.match(es!, /edificios o estructuras/, "ES must scope to edificios o estructuras");
+
+  // The guidance trigger label ("Your situation:" lead) must match the
+  // question actually asked — not the old unqualified wording.
+  const label = PR_REQUIREMENT_GUIDANCE.DOC_CONTRACTOR_LICENSE.conditions[0][0].label;
+  assert.match(label.en, /on buildings or structures/, "EN trigger label matches the scoped question");
+  assert.match(label.es, /edificios o estructuras/, "ES trigger label matches the scoped question");
+
+  // Behavioral: a repair business with no KB business type (the S77 shape),
+  // answering honestly under the new wording (No), never fires the license;
+  // a genuine contractor answering Yes still does.
+  for (const answers of [{ Q_OFFERS_CONSTRUCTION_SERVICES: false }]) {
+    const rows = classify(
+      {
+        municipalityName: "Arecibo",
+        businessTypeName: "Device Repair Service",
+        businessStatus: "new",
+        answers,
+      },
+      "new"
+    ).classified;
+    assert.equal(
+      byId(rows, DOC_CONTRACTOR),
+      undefined,
+      "a device-repair business answering No must not trigger the DACO contractor license"
+    );
+  }
 });
 
 test("CASE L: DOC_HEALTH_PERMIT is verify_existing for existing businesses, required for new ones", () => {
