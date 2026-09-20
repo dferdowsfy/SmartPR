@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import styles from "./marketing.module.css";
@@ -181,6 +181,20 @@ export default function MarketingLanding() {
   const [leadBusy, setLeadBusy] = useState(false);
   const [leadError, setLeadError] = useState<string | null>(null);
   const c = copy[language];
+
+  // The landing page always opens at the very top: the browser must not
+  // restore a previous scroll position (or a stale anchor jump) that would
+  // cut off the hero headline above the viewport.
+  useEffect(() => {
+    try {
+      if ("scrollRestoration" in window.history) {
+        window.history.scrollRestoration = "manual";
+      }
+    } catch {
+      // Older browsers: fall through to the explicit scroll below.
+    }
+    window.scrollTo(0, 0);
+  }, []);
 
   function goToAssessment() {
     router.push("/?entry=new-business");
