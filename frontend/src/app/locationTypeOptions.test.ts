@@ -63,3 +63,19 @@ test("home-plausible retail/personal-care types offer a home-based location opti
     `business types missing a home-based location option: ${missing.join(", ")}`
   );
 });
+
+// Generalized 2026-09-20 (live, Dorado home-based bakery): the same defect
+// recurred for "Bakery", whose options were Restaurant Location / Retail
+// Storefront / Commercial Kitchen / Industrial Facility only. The auditor
+// had to pick "Commercial Kitchen" (least-wrong), so the checklist treated
+// a home kitchen as a commercial establishment — Permiso Único REQUIRED as
+// "Nonresidential business location" and health/fire/CFPM framed for
+// commercial premises. Food business types that can plausibly operate from
+// home must offer a home-based label so Q_HOME_BASED survives the combobox.
+test("Bakery offers a home-based location option", () => {
+  assert.ok(
+    hasHomeBasedOption("Bakery"),
+    `Bakery options must include a home-based label; got: ` +
+      (LOCATION_TYPES_BY_BUSINESS_TYPE["Bakery"] ?? []).join(", ")
+  );
+});

@@ -778,7 +778,7 @@ export function isQuestionSuppressedByAnswers(
 export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Restaurant": ["Restaurant Location", "Retail Storefront", "Mixed Use Property", "Tourism Facility", "Commercial Office"],
   "Fast Food Restaurant": ["Restaurant Location", "Retail Storefront", "Mixed Use Property"],
-  "Bakery": ["Restaurant Location", "Retail Storefront", "Commercial Kitchen", "Industrial Facility"],
+  "Bakery": ["Restaurant Location", "Retail Storefront", "Commercial Kitchen", "Industrial Facility", "Home-Based Business"],
   "Cafe": ["Restaurant Location", "Retail Storefront", "Mixed Use Property"],
   "Coffee Shop": ["Restaurant Location", "Retail Storefront", "Mixed Use Property"],
   "Bar": ["Restaurant Location", "Retail Storefront", "Entertainment Venue", "Tourism Facility"],
