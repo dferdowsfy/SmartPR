@@ -519,7 +519,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_OUTDOOR_SEATING_AUTH",
-  "citation": "Código de Orden Público del Municipio de San Juan, Art. 2.301 (Espacios Públicos) — los cafés al aire libre en aceras y espacios públicos requieren autorización municipal",
+  "citation": "Código de Orden Público del Municipio de San Juan, Art. 2.301 (Espacios Públicos) — verificado para San Juan: los cafés al aire libre en aceras y espacios públicos requieren autorización municipal; en otros municipios aplica la ordenanza municipal correspondiente.",
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_OUTDOOR_SEATING_AUTH",
   "citation_source": "document",
@@ -529,6 +529,11 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-20",
+    "change": "citation self-scoped to San Juan",
+    "reason": "QA 2026-09-20: rule fires in any municipality but cited San Juan's ordinance as if it applied everywhere. Citation now discloses its verified San Juan scope and points other municipalities to their own ordinance; no new citation invented (pending per-municipality ordinance research)."
    }
   ]
  },

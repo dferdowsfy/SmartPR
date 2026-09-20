@@ -205,19 +205,38 @@ test("legal-basis citations stay municipality-neutral (parking subject retired b
   }>;
   const docs = (kb as any).documents as Array<{ id: string; citation?: string }>;
   const MUNI = /San Juan|Bayamón|Carolina|Guaynabo|Cataño|Trujillo Alto|Toa Baja|Toa Alta|Dorado|Ponce|Mayagüez|Caguas|Arecibo/i;
-  // Known exception (REQUIRES_REGULATORY_REVIEW, 2026-09-17 QA): RULE_0031
-  // fires for outdoor seating in ANY municipality but cites San Juan's
-  // Código de Orden Público. Unverified rule — do not "fix" by inventing a
-  // neutral citation; the applicable municipal ordinance needs research.
-  const KNOWN_EXCEPTIONS = new Set(["RULE_0031", "DOC_OUTDOOR_SEATING_AUTH"]);
+  // Self-scoped citations (2026-09-20 QA): RULE_0031 fires for outdoor seating
+  // in ANY municipality, and the only verified ordinance is San Juan's Código
+  // de Orden Público Art. 2.301. Rather than inventing a neutral citation,
+  // the citation self-scopes: it states it is verified for San Juan and that
+  // other municipalities are governed by their own ordinance. The sweep below
+  // still flags any municipality-named citation that LACKS that explicit
+  // territorial-scope disclosure, so the disclosure can never be silently
+  // dropped.
+  const SELF_SCOPED = new Set(["RULE_0031", "DOC_OUTDOOR_SEATING_AUTH"]);
+  const SCOPE_DISCLOSURE = /verificado para|en otros municipios/i;
   const offenders: string[] = [];
   for (const r of rules) {
-    if (r.citation && MUNI.test(r.citation) && !r.municipality_flag && !KNOWN_EXCEPTIONS.has(r.id)) {
+    if (r.citation && MUNI.test(r.citation) && !r.municipality_flag) {
+      if (SELF_SCOPED.has(r.id)) {
+        assert.ok(
+          SCOPE_DISCLOSURE.test(r.citation),
+          `${r.id} must keep its territorial-scope disclosure (verified-for-San-Juan + other-municipalities pointer)`
+        );
+        continue;
+      }
       offenders.push(r.id);
     }
   }
   for (const d of docs) {
-    if (d.citation && MUNI.test(d.citation) && !KNOWN_EXCEPTIONS.has(d.id)) {
+    if (d.citation && MUNI.test(d.citation)) {
+      if (SELF_SCOPED.has(d.id)) {
+        assert.ok(
+          SCOPE_DISCLOSURE.test(d.citation),
+          `${d.id} must keep its territorial-scope disclosure (verified-for-San-Juan + other-municipalities pointer)`
+        );
+        continue;
+      }
       offenders.push(d.id);
     }
   }
