@@ -275,6 +275,7 @@ export default function FilingPathStory({ language }: { language: Language }) {
     // fallback delay), and any later scroll back into view replays it.
     let userScrolled = window.scrollY > 40;
     let played = false;
+    let scrollRestarted = false;
     const anchorInView = () => {
       const r = anchor.getBoundingClientRect();
       const vh = window.innerHeight || 1;
@@ -289,7 +290,16 @@ export default function FilingPathStory({ language }: { language: Language }) {
     };
     const onScroll = () => {
       if (window.scrollY > 40) userScrolled = true;
-      if (userScrolled) tryPlay();
+      if (!userScrolled || !anchorInView()) return;
+      if (!played) {
+        tryPlay();
+      } else if (!scrollRestarted) {
+        // The fallback below may have started the reveal before the human
+        // looked at the panel; the first real scroll restarts it from blank
+        // so they see the typing from the beginning.
+        scrollRestarted = true;
+        void run();
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     // The panel never sits blank forever: if it's visible at load and the
