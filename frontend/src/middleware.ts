@@ -7,13 +7,31 @@ import { createServerClient } from "@supabase/ssr";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/businesses", "/calendar", "/history", "/settings"];
 const TRUST_HOST = "trust.getsmartpr.com";
+const APEX_HOST = "getsmartpr.com";
+const WWW_HOST = "www.getsmartpr.com";
+
+function hostOf(req: NextRequest): string {
+  return req.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+}
 
 function isTrustHost(req: NextRequest): boolean {
-  const host = req.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
-  return host === TRUST_HOST;
+  return hostOf(req) === TRUST_HOST;
+}
+
+function isApexHost(req: NextRequest): boolean {
+  return hostOf(req) === APEX_HOST;
 }
 
 export async function middleware(req: NextRequest) {
+  // Bare apex domain: canonicalize to www, preserving the full path.
+  // (e.g. getsmartpr.com/es -> www.getsmartpr.com/es)
+  if (isApexHost(req)) {
+    const url = req.nextUrl.clone();
+    url.host = WWW_HOST;
+    url.protocol = "https:";
+    url.port = "";
+    return NextResponse.redirect(url, 308);
+  }
   // Public Trust Center subdomain: serve /trust at the apex path.
   // /trust/* (including the security PDF) continues to resolve normally.
   if (isTrustHost(req)) {
