@@ -54,6 +54,20 @@ export const PR_GUIDANCE_SOURCES = {
   // DOC_HACIENDA_EMPLOYER_WITHHOLDING card rendered the
   // unvalidated-description placeholder on a Bayamón contractor filing.
   withholding: source("SRC_GUIDANCE_WITHHOLDING", "Departamento de Hacienda", "SURI — employer tax transactions", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI is Hacienda's portal for employer tax transactions, including employer withholding registration, withholding deposits, and payroll filings."),
+  // REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the San Juan primary source for
+  // outdoor seating was verified verbatim 2026-09-20 (Código de Orden Público,
+  // Art. 2.301 — cafés al aire libre on sidewalks/public spaces require the
+  // municipality's authorization). lastVerified is set explicitly: the
+  // shared source() helper stamps 2026-09-03, which would be dishonest here.
+  outdoorSeating: {
+    id: "SRC_GUIDANCE_OUTDOOR_SEATING",
+    agency: "Municipio de San Juan",
+    citation: "Código de Orden Público del Municipio de San Juan, Art. 2.301 (Espacios Públicos) — cafés al aire libre en aceras y espacios públicos requieren la autorización del Municipio",
+    url: "https://www.sanjuanciudadpatria.com/wp-content/uploads/2022/10/1-ORD.-2-Serie-2020-21-Nuevo-Co%CC%81digo-de-Orden-Pu%CC%81blico.pdf",
+    lastVerified: "2026-09-20",
+    sourceVersion: "public-guidance-2026-09-20",
+    supports: "Art. 2.301 verified verbatim: los cafés al aire libre, bares o cualquier otra operación de restaurantes en aceras y espacios públicos requerirán la autorización del Municipio — verificado para San Juan; en otros municipios aplica la ordenanza municipal correspondiente.",
+  },
   // REG-GUIDE-SIGN-001 (2026-09-20 QA): the Sign / Rótulo Permit card
   // rendered the unvalidated-description placeholder on live Guaynabo,
   // San Juan, and Carolina filings. The document cites Ley 355-1999
@@ -147,6 +161,10 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // rendering placeholder copy.
   DOC_TOURISM_REGISTRATION: { en: ["innkeeper", "tourism", "lodging", "hostelero"], es: ["hostelero", "turismo", "hospedería", "alojamiento"] },
   DOC_ROOM_TAX_RETURN: { en: ["room tax", "room-occupancy", "monthly return"], es: ["impuesto de habitación", "declaración mensual", "canon por ocupación"] },
+  // REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the Outdoor Seating Authorization
+  // card rendered the unvalidated-description placeholder on a live Mayagüez
+  // café filing. Subject terms for the validated concept.
+  DOC_OUTDOOR_SEATING_AUTH: { en: ["outdoor seating", "sidewalk", "public space"], es: ["mesas en la acera", "acera", "espacio público", "café al aire libre"] },
 };
 function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = []): GuidanceConcept {
   return { requirementId, version: "2026-09-03.1", validationStatus: "validated", subjectTerms: SUBJECTS[requirementId], conditions, sources, regulatoryReason: content[0], purpose: content[1], nextAction: content[2], consequenceOrNextStep: content[3], dependencies,
@@ -506,5 +524,22 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     // which is also correct for a new entity approaching its first filing.
     text("Verify the entity's standing with the Department of State and confirm the April 15 deadline on the current-year calendar; file the Informe Anual (corporations) or pay the annual fee (LLCs) through the Department of State's filing portal at estado.pr.gov.", "Verifica que la entidad esté al día con el Departamento de Estado y confirma la fecha límite del 15 de abril en el calendario del año en curso; radica el Informe Anual (corporaciones) o paga la anualidad (LLC) en el portal de radicaciones del Departamento de Estado (estado.pr.gov)."),
     text("Missing the April 15 deadline can cost a lot: the administrative fine is $750 for a for-profit corporation, and LLCs owe $500 plus 1.5% monthly interest on the $150 annual fee — and an entity that stays delinquent can lose its good standing and have its registration cancelled.", "Perder la fecha límite del 15 de abril puede salir caro: la multa administrativa es de $750 para una corporación con fines de lucro, y las LLC deben $500 más 1.5% de interés mensual sobre la anualidad de $150 — y una entidad que siga en mora puede perder su buen estado (good standing) y el Departamento puede cancelar su registro."),
+  ]),
+  // REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the Outdoor Seating Authorization
+  // card rendered the unvalidated-description placeholder on a live Mayagüez
+  // café filing (S96). The San Juan basis is primary-source verified
+  // (Código de Orden Público, Art. 2.301, verbatim 2026-09-20); the concept
+  // is self-scoped — San Juan facts cite Art. 2.301, other municipalities are
+  // directed to their own municipal ordinance (no invented Mayagüez basis).
+  // Conditions cover the seating question (RULE_0031) plus the generic
+  // businessType fallback (d4940f4 class).
+  DOC_OUTDOOR_SEATING_AUTH: concept("DOC_OUTDOOR_SEATING_AUTH", [
+    [condition("Q_OUTDOOR_SEATING", "Outdoor seating: Yes", "Mesas en la acera: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.outdoorSeating], [
+    text("Tables and chairs on a public sidewalk (acera) or other public space are not covered by the café's use permit alone — occupying public space needs the municipality's separate authorization. In San Juan, Art. 2.301 of the Código de Orden Público requires cafés al aire libre, bars, and other restaurant operations on sidewalks and public spaces to obtain the municipality's authorization.", "Las mesas y sillas en la acera u otro espacio público no están cubiertas por el permiso de uso del café nada más — ocupar el espacio público requiere la autorización separada del municipio. En San Juan, el Art. 2.301 del Código de Orden Público exige que los cafés al aire libre, bares y demás operaciones de restaurantes en aceras y espacios públicos obtengan la autorización del Municipio."),
+    text("The authorization permits a specific outdoor seating arrangement — the number of tables, the footprint, and the exact location on the public space — under the municipality's conditions: clear passage for pedestrians, operating hours, and compliance with sanitary and health laws and regulations. It does not replace the café's health and sanitary permits.", "La autorización permite un arreglo específico de mesas en el exterior — la cantidad de mesas, el área que ocupan y la ubicación exacta en el espacio público — bajo las condiciones del municipio: paso libre para los peatones, horario de operación y cumplimiento con las leyes y reglamentos de sanidad y salud. No sustituye los permisos sanitarios del café."),
+    text("Request the authorization from the municipality's permits office before placing tables and chairs on the sidewalk or public space — in San Juan under Art. 2.301 of the Código de Orden Público; in other municipalities, confirm the applicable municipal ordinance with the alcaldía first. Have the seating layout ready: number of tables and chairs, dimensions, and the exact spot on the acera.", "Solicita la autorización en la oficina de permisos del municipio antes de poner mesas y sillas en la acera o el espacio público — en San Juan bajo el Art. 2.301 del Código de Orden Público; en otros municipios, confirma primero en la alcaldía la ordenanza municipal que aplica. Ten a la mano el plano del arreglo: cantidad de mesas y sillas, dimensiones y el punto exacto en la acera."),
+    text("Outdoor seating on public space without the municipal authorization exposes the business to fines and sanctions under the applicable municipal ordinance; operating out of compliance can also complicate the café's other permits.", "Poner mesas en el espacio público sin la autorización municipal expone el negocio a multas y sanciones bajo la ordenanza municipal que aplique; operar fuera de cumplimiento también puede enredar los demás permisos del café."),
   ]),
 };

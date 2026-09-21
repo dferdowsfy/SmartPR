@@ -545,9 +545,19 @@ export function buildEngineInput(
     Q_PHYSICAL_LOCATION: locKnown ? (!online && !isHomeBasedLocation(loc)) : undefined,
     Q_HOME_BASED: locKnown ? isHomeBasedLocation(loc) : undefined,
     Q_ONLINE_ONLY: locKnown ? online : undefined,
-    Q_FOOD_PREPARED: on("food_prepared_or_sold", "food_prepared_on_site", "food_prepared"),
-    Q_FOOD_SOLD: on("food_prepared_or_sold", "food_sold"),
-    Q_FOOD_SERVED: on("food_served", "food_prepared_or_sold"),
+    // QA 2026-09-20 21:00 (S94 live Guaynabo gym): the coarse profile key
+    // food_prepared_or_sold is written by the wizard whenever ANY of
+    // prepared/served/delivered is answered Yes, so reading it as "prepared"
+    // manufactured Q_FOOD_PREPARED=true from a mere "serves pre-packaged
+    // food" — escalating a gym with a smoothie bar into the full food-prep
+    // path (health/CFPM/fire REQUIRED) and mislabeling the manufactured fact
+    // "Answer: Yes" for a question never asked. A disjunctive coarse key must
+    // never assert specific conjunctive facts: each food fact now reads only
+    // its precise keys (wizard discovery answers, interpreter writeKeys, and
+    // BT-level deterministic derivations are unaffected).
+    Q_FOOD_PREPARED: on("food_prepared_on_site", "food_prepared"),
+    Q_FOOD_SOLD: on("food_sold"),
+    Q_FOOD_SERVED: on("food_served"),
     Q_ALCOHOL_SOLD: on("alcohol_sold"),
     Q_ALCOHOL_SERVED: on("alcohol_served", "alcohol_sold"),
     Q_HEALTHCARE_SERVICES: on("healthcare_services", "healthcare_professionals", "patients_visit"),

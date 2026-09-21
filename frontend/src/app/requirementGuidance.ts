@@ -79,8 +79,15 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
   const aliases: Partial<Record<GuidanceFactKey, string[]>> = {
     Q_ALCOHOL_SOLD: ["alcohol_sold"], Q_EMPLOYEES_HIRED: ["employees_hired", "employees_work_on_site"],
     Q_EXISTING_LEASE: ["existing_lease"], Q_PHYSICAL_LOCATION: ["physical_location"],
-    Q_FOOD_PREPARED: ["food_prepared_or_sold", "food_prepared_on_site", "food_prepared"],
-    Q_FOOD_SOLD: ["food_prepared_or_sold", "food_sold"],
+    // REG-FOOD-COARSE-001 (2026-09-20 QA): the coarse profile key
+    // food_prepared_or_sold is a disjunction ("prepared OR sold") written by
+    // the wizard whenever ANY of prepared/served/delivered is answered Yes.
+    // Reading it as a specific fact manufactured Q_FOOD_PREPARED=true from a
+    // mere "serves pre-packaged food" (live Guaynabo gym, S94) — the same
+    // conflation fixed in buildEngineInput must not live on in guidance
+    // trigger facts either. Each food fact reads only its precise keys.
+    Q_FOOD_PREPARED: ["food_prepared_on_site", "food_prepared"],
+    Q_FOOD_SOLD: ["food_sold"],
     Q_CUSTOMERS_VISIT: ["customers_visit", "customers_on_site"],
     Q_FEDERAL_CONTRACTS_GRANTS: ["federal_contracts_grants"],
     Q_OFFERS_CONSTRUCTION_SERVICES: ["offers_construction_services"],
@@ -92,6 +99,9 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     // REG-GUIDE-SIGN-001 (2026-09-20 QA): the signage question fires
     // RULE_0030; the bundled flow answers it by writeKey.
     Q_COMMERCIAL_SIGNAGE: ["commercial_signage"],
+    // REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the outdoor-seating question
+    // fires RULE_0031; the bundled flow answers it by writeKey.
+    Q_OUTDOOR_SEATING: ["outdoor_seating"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;

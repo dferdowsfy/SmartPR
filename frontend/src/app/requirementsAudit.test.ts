@@ -2584,3 +2584,89 @@ test("CASE AG: DOC_CONTRACTOR_LICENSE is needs_more_information for renewable en
     "a new electrical contractor still gets the DACO contractor license as REQUIRED (RULE_0125 verified)"
   );
 });
+
+test("CASE AH: coarse food_prepared_or_sold never asserts Q_FOOD_PREPARED (served != prepared)", () => {
+  // 2026-09-20 21:00 QA cycle (S94, live Guaynabo gym): the wizard mirrors a
+  // "food served = Yes" answer onto profile.food_prepared_or_sold, and
+  // buildEngineInput read that coarse key as Q_FOOD_PREPARED=true —
+  // manufacturing on-site food preparation from a smoothie bar serving
+  // pre-packaged items. Live result: Health Permit + CFPM + Fire Safety as
+  // REQUIRED with the false trigger "Will food be prepared on-site? |
+  // Answer: Yes" for a question the user never answered. Root cause: the
+  // disjunctive coarse key ("prepared OR sold") fanned out to three specific
+  // conjunctive facts. Fix: each food fact reads only its precise keys.
+  const DOC_HEALTH = docByName("health", "sanitary");
+  const DOC_FIRE = docByName("fire safety");
+  const DOC_CFPM = docByName("food protection manager");
+
+  // The live defect shape: wizard discovery answer food_served=Yes plus the
+  // profile mirror the wizard itself writes (SmartPRIntake handleQuestionAnswer).
+  const coarse = buildEngineInput(
+    {
+      municipality: "Guaynabo",
+      business_type: "Gym / Fitness Studio",
+      location_type: "Commercial Facility",
+      food_prepared_or_sold: true,
+    } as any,
+    { food_served: true },
+    {}
+  );
+  assert.equal(
+    coarse.answers["Q_FOOD_PREPARED"],
+    false,
+    "serving food must not assert on-site food preparation"
+  );
+  assert.equal(
+    coarse.answers["Q_FOOD_SERVED"],
+    true,
+    "the precise served answer still lands"
+  );
+
+  const rows = classify(coarse, "new").classified;
+  const health = byId(rows, DOC_HEALTH);
+  assert.ok(
+    !health || health.applicability !== "required",
+    "a gym serving pre-packaged smoothies must not get the health permit as REQUIRED via manufactured Q_FOOD_PREPARED (RULE_0009)"
+  );
+  assert.ok(
+    (byId(rows, DOC_FIRE)?.applicability ?? "absent") !== "required",
+    "no REQUIRED fire certification from manufactured food preparation"
+  );
+  assert.ok(
+    (byId(rows, DOC_CFPM)?.applicability ?? "absent") !== "required",
+    "no REQUIRED food protection manager from manufactured food preparation"
+  );
+
+  // Coarse key arriving via the answers namespace (legacy interpreter/import
+  // shape) must not assert preparation either.
+  const coarseAnswers = buildEngineInput(
+    { municipality: "Guaynabo", business_type: "Gym / Fitness Studio" } as any,
+    { food_prepared_or_sold: true },
+    {}
+  );
+  assert.equal(
+    coarseAnswers.answers["Q_FOOD_PREPARED"],
+    false,
+    "coarse key in answers must not assert preparation"
+  );
+  assert.equal(
+    coarseAnswers.answers["Q_FOOD_SOLD"],
+    false,
+    "coarse key in answers must not assert selling"
+  );
+
+  // Positive control: a genuine precise prepared answer still drives the
+  // food-prep path.
+  const precise = buildEngineInput(
+    { municipality: "Guaynabo", business_type: "Restaurant" } as any,
+    { food_prepared_on_site: true },
+    {}
+  );
+  assert.equal(precise.answers["Q_FOOD_PREPARED"], true, "precise prepared key still asserts preparation");
+  const preciseRows = classify(precise, "new").classified;
+  assert.equal(
+    byId(preciseRows, DOC_HEALTH)?.applicability,
+    "required",
+    "a restaurant that genuinely prepares food on-site still gets the health permit as REQUIRED (RULE_0009)"
+  );
+});

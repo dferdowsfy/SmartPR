@@ -70,11 +70,18 @@ const SIGN_ANNUAL_GATED = new Set(["DOC_SIGN_PERMIT", "DOC_ANNUAL_REPORT"]);
 // (REG-GUIDE-FORMATION-001, 2026-09-17).
 const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
 
-test("same Bayamón bar: all thirty-two source-backed explanations are distinct and actionable in EN/ES", () => {
+// Outdoor-seating-gated: the Outdoor Seating Authorization applies only when
+// outdoor seating is stated (RULE_0031) — the Bayamón bar profile answers no
+// seating question, so the validated concept stays provisional for it
+// (correct — MATCH_TRACE_MISSING, not a placeholder). Added with the
+// validated outdoor-seating concept (REG-GUIDE-OUTDOOR-001, 2026-09-20).
+const OUTDOOR_GATED = new Set(["DOC_OUTDOOR_SEATING_AUTH"]);
+
+test("same Bayamón bar: all thirty-three source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -90,7 +97,7 @@ test("same Bayamón bar: all thirty-two source-backed explanations are distinct 
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 32);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 33);
   }
 });
 
@@ -443,4 +450,49 @@ test("REG-GUIDE-ENTITY-001: incorporation and LLC formation cite their own sourc
   const llcSources = JSON.stringify(llc.sources);
   assert.match(llcSources, /Certificate of Organization/);
   assert.doesNotMatch(llcSources, /incorporation by Certificate of Incorporation/);
+});
+
+// REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the Outdoor Seating Authorization
+// card rendered the unvalidated-description placeholder on a live Mayagüez
+// café filing (S96). The concept now validates for the seating-question
+// firing path (RULE_0031, verified) in EN and PR-ES, with the
+// primary-source-verified San Juan Art. 2.301 citation — self-scoped so
+// non-San Juan filings are directed to their own municipal ordinance (no
+// invented Mayagüez basis). The negative control confirms the card hedges
+// (MATCH_TRACE_MISSING) but still renders validated copy, never the
+// placeholder.
+test("REG-GUIDE-OUTDOOR-001: outdoor seating concept validates for the seating-question path in EN/ES", () => {
+  const mkCtx = (profile: Record<string, unknown>, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+    return { ...ctx, businessTypeName: profile.business_type as string, profile, discoveryAnswers, engineInput: buildEngineInput(profile, discoveryAnswers) };
+  };
+  const mayaguezCafe = { municipality: "Mayagüez", business_type: "Cafe", business_structure: "LLC", location_type: "Restaurant Location", number_of_employees: 6 };
+  const sanJuanCafe = { ...mayaguezCafe, municipality: "San Juan" };
+  for (const language of ["en", "es"] as const) {
+    // Question path: the outdoor-seating question answers RULE_0031.
+    const q = buildRequirementGuidance(req("DOC_OUTDOOR_SEATING_AUTH"), { ...mkCtx(mayaguezCafe, { outdoor_seating: true }), language });
+    assert.equal(q.status, "VALIDATED", `DOC_OUTDOOR_SEATING_AUTH (question): ${q.reviewReasons}`);
+    assert.deepEqual(q.triggerFacts.map(f => f.key), ["Q_OUTDOOR_SEATING"]);
+    assert.ok(q.triggerFacts.every(f => f.ruleIds.includes("RULE_0031")));
+    assert.ok(q.whyThisApplies.includes(q.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(q), /validated description pending|not confirmed yet|still pending/);
+    assert.match(JSON.stringify(q.sources), /2\.301|San Juan/);
+    if (language === "es") {
+      assert.match(q.regulatoryReason, /Art\. 2\.301|Código de Orden Público/);
+      assert.match(q.whatYouNeedToDo, /alcaldía/);
+    } else {
+      assert.match(q.whatYouNeedToDo, /alcald/);
+    }
+    // San Juan path: the same validated concept, San Juan-scoped citation.
+    const s = buildRequirementGuidance(req("DOC_OUTDOOR_SEATING_AUTH"), { ...mkCtx(sanJuanCafe, { outdoor_seating: true }), language });
+    assert.equal(s.status, "VALIDATED", `DOC_OUTDOOR_SEATING_AUTH (San Juan): ${s.reviewReasons}`);
+    assert.match(JSON.stringify(s.sources), /2\.301/);
+    // Honest negative control: Mayagüez café with no seating answer matches
+    // no rule — the card hedges (MATCH_TRACE_MISSING) but renders the
+    // validated copy, never the placeholder.
+    const n = buildRequirementGuidance(req("DOC_OUTDOOR_SEATING_AUTH"), { ...mkCtx(mayaguezCafe, {}), language });
+    assert.equal(n.status, "GUIDANCE_NEEDS_REVIEW");
+    assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `DOC_OUTDOOR_SEATING_AUTH (negative): ${n.reviewReasons}`);
+    assert.doesNotMatch(JSON.stringify(n), /validated description pending|still pending/);
+    assert.match(JSON.stringify(n.sources), /2\.301|San Juan/);
+  }
 });
