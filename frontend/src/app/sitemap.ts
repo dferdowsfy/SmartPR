@@ -42,5 +42,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     { url: `${site}/pricing`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${site}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
+    {
+      url: `${site}/voice`,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+      alternates: { languages: { en: `${site}/voice`, es: `${site}/es/voz` } },
+    },
+    {
+      url: `${site}/es/voz`,
+      changeFrequency: 'monthly',
+      priority: 0.7,
+      alternates: { languages: { en: `${site}/voice`, es: `${site}/es/voz` } },
+    },
   ];
 }

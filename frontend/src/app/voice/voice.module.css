@@ -1,0 +1,129 @@
+.shell {
+  min-height: 100dvh;
+  background: #fbf8f2;
+  color: #161616;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem clamp(1.25rem, 4vw, 3rem);
+}
+
+.logo {
+  display: inline-flex;
+}
+
+.languages {
+  display: inline-flex;
+  gap: 0.25rem;
+  border: 1px solid rgba(22, 22, 22, 0.18);
+  border-radius: 999px;
+  padding: 0.2rem;
+}
+
+.languages button {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #161616;
+  cursor: pointer;
+}
+
+.languages button[aria-pressed="true"] {
+  background: #161616;
+  color: #fbf8f2;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem clamp(1.25rem, 4vw, 3rem) 4rem;
+}
+
+.card {
+  text-align: center;
+  max-width: 34rem;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #245c5c;
+  margin: 0 0 1rem;
+}
+
+.title {
+  font-size: clamp(2.25rem, 6vw, 3.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.25rem;
+}
+
+.lead {
+  font-size: clamp(1rem, 2.4vw, 1.2rem);
+  line-height: 1.6;
+  color: rgba(22, 22, 22, 0.78);
+  margin: 0 0 2.25rem;
+}
+
+.callButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #245c5c;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 1.1rem 3rem;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.callButton:hover {
+  background: #194d4d;
+  transform: translateY(-1px);
+}
+
+.number {
+  display: block;
+  margin-top: 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #161616;
+  text-decoration: none;
+}
+
+.number:hover {
+  text-decoration: underline;
+}
+
+.meta {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: rgba(22, 22, 22, 0.6);
+}
+
+.meta p {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
