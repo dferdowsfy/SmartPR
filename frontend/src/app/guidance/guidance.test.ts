@@ -97,7 +97,7 @@ test("same Bayamón bar: all thirty-three source-backed explanations are distinc
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 33);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 35);
   }
 });
 
@@ -494,5 +494,85 @@ test("REG-GUIDE-OUTDOOR-001: outdoor seating concept validates for the seating-q
     assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `DOC_OUTDOOR_SEATING_AUTH (negative): ${n.reviewReasons}`);
     assert.doesNotMatch(JSON.stringify(n), /validated description pending|still pending/);
     assert.match(JSON.stringify(n.sources), /2\.301|San Juan/);
+  }
+});
+
+// REG-GUIDE-TAX-COMPLIANCE-001 (2026-09-21 QA): the Hacienda Tax Filing &
+// Debt Compliance Evidence card rendered the unvalidated-description
+// placeholder on live Carolina and Ponce alcohol-chain filings (S98/S99,
+// 2026-09-21 00:00). The concept now validates for the Q_ALCOHOL_SOLD firing
+// path (RULE_0663, verified) in EN and PR-ES, grounded in Hacienda's
+// official internal-revenue license requirements (founder judgment §29.2,
+// 2026-09-16, settled). The next action is status-neutral ("obtain or
+// confirm") because RULE_0663 carries compliance_mode=verify_existing. The
+// negative control confirms the card hedges (MATCH_TRACE_MISSING) but still
+// renders validated copy, never the placeholder.
+test("REG-GUIDE-TAX-COMPLIANCE-001: Hacienda tax filing/debt compliance concept validates for the alcohol path in EN/ES", () => {
+  const mkCtx = (prof: Record<string, unknown>, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+    return { ...ctx, businessTypeName: prof.business_type as string, profile: prof, discoveryAnswers, engineInput: buildEngineInput(prof, discoveryAnswers) };
+  };
+  const ponceBar = { municipality: "Ponce", business_type: "Bar", business_structure: "LLC", location_type: "Commercial Facility", number_of_employees: 3, alcohol_sold: true };
+  for (const language of ["en", "es"] as const) {
+    // Question path: the alcohol-sold answer fires RULE_0663 (verified).
+    const q = buildRequirementGuidance(req("DOC_HACIENDA_TAX_COMPLIANCE"), { ...mkCtx(ponceBar, { alcohol_sold: true }), language });
+    assert.equal(q.status, "VALIDATED", `DOC_HACIENDA_TAX_COMPLIANCE (question): ${q.reviewReasons}`);
+    assert.deepEqual(q.triggerFacts.map(f => f.key), ["Q_ALCOHOL_SOLD"]);
+    assert.ok(q.triggerFacts.every(f => f.ruleIds.includes("RULE_0663")));
+    assert.ok(q.whyThisApplies.includes(q.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(q), /validated description pending|not confirmed yet|still pending/);
+    assert.match(JSON.stringify(q.sources), /Licencia de Traficante al Detalle/);
+    if (language === "es") {
+      assert.match(q.regulatoryReason, /radicación de planillas|deudas contributivas/);
+      assert.match(q.whatYouNeedToDo, /SURI/);
+    } else {
+      assert.match(q.whatYouNeedToDo, /SURI/);
+    }
+    // Honest negative control: Ponce café with no alcohol facts at all matches
+    // no rule for this document — the card hedges (MATCH_TRACE_MISSING) but
+    // renders the validated copy, never the placeholder.
+    const noAlcohol = { municipality: "Ponce", business_type: "Cafe", business_structure: "LLC", location_type: "Commercial Facility", number_of_employees: 3 };
+    const n = buildRequirementGuidance(req("DOC_HACIENDA_TAX_COMPLIANCE"), { ...mkCtx(noAlcohol, {}), language });
+    assert.equal(n.status, "GUIDANCE_NEEDS_REVIEW");
+    assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `DOC_HACIENDA_TAX_COMPLIANCE (negative): ${n.reviewReasons}`);
+    assert.doesNotMatch(JSON.stringify(n), /validated description pending|still pending/);
+  }
+});
+
+// REG-GUIDE-ALCOHOL-SALES-001 (2026-09-21 QA): the Alcohol Sales Projection /
+// Volume Information card rendered the unvalidated-description placeholder on
+// live alcohol-chain filings. The concept now validates for the Q_ALCOHOL_SOLD
+// firing path (RULE_0665, heuristic) in EN and PR-ES, grounded in Hacienda's
+// official internal-revenue license requirements (founder judgment §29.2,
+// 2026-09-16, settled). The negative control confirms the card hedges
+// (MATCH_TRACE_MISSING) but still renders validated copy, never the
+// placeholder.
+test("REG-GUIDE-ALCOHOL-SALES-001: alcohol sales projection concept validates for the alcohol path in EN/ES", () => {
+  const mkCtx = (prof: Record<string, unknown>, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+    return { ...ctx, businessTypeName: prof.business_type as string, profile: prof, discoveryAnswers, engineInput: buildEngineInput(prof, discoveryAnswers) };
+  };
+  const ponceBar = { municipality: "Ponce", business_type: "Bar", business_structure: "LLC", location_type: "Commercial Facility", number_of_employees: 3, alcohol_sold: true };
+  for (const language of ["en", "es"] as const) {
+    // Question path: the alcohol-sold answer fires RULE_0665 (heuristic).
+    const q = buildRequirementGuidance(req("DOC_ALCOHOL_SALES_PROJECTION"), { ...mkCtx(ponceBar, { alcohol_sold: true }), language });
+    assert.equal(q.status, "VALIDATED", `DOC_ALCOHOL_SALES_PROJECTION (question): ${q.reviewReasons}`);
+    assert.deepEqual(q.triggerFacts.map(f => f.key), ["Q_ALCOHOL_SOLD"]);
+    assert.ok(q.triggerFacts.every(f => f.ruleIds.includes("RULE_0665")));
+    assert.ok(q.whyThisApplies.includes(q.regulatoryReason));
+    assert.doesNotMatch(JSON.stringify(q), /validated description pending|not confirmed yet|still pending/);
+    assert.match(JSON.stringify(q.sources), /Licencia de Traficante al Detalle/);
+    if (language === "es") {
+      assert.match(q.regulatoryReason, /proyección de ventas/);
+      assert.match(q.whatYouNeedToDo, /ventas de alcohol/);
+    } else {
+      assert.match(q.whatYouNeedToDo, /alcohol sales/);
+    }
+    // Honest negative control: Ponce café with no alcohol facts at all matches
+    // no rule for this document — the card hedges (MATCH_TRACE_MISSING) but
+    // renders the validated copy, never the placeholder.
+    const noAlcohol = { municipality: "Ponce", business_type: "Cafe", business_structure: "LLC", location_type: "Commercial Facility", number_of_employees: 3 };
+    const n = buildRequirementGuidance(req("DOC_ALCOHOL_SALES_PROJECTION"), { ...mkCtx(noAlcohol, {}), language });
+    assert.equal(n.status, "GUIDANCE_NEEDS_REVIEW");
+    assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `DOC_ALCOHOL_SALES_PROJECTION (negative): ${n.reviewReasons}`);
+    assert.doesNotMatch(JSON.stringify(n), /validated description pending|still pending/);
   }
 });

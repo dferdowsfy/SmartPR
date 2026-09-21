@@ -45,6 +45,18 @@ export const PR_GUIDANCE_SOURCES = {
   // page lists them for the Licencia de Traficante al Detalle de Bebidas
   // Alcohólicas.
   alcoholReqs: source("SRC_GUIDANCE_ALCOHOL_REQS", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas", "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas", "Hacienda's internal-revenue license requirements list the ASUME certification, the CRIM debt certification, and the criminal-record certificate among the prerequisites for the retail alcoholic-beverage dealer license."),
+  // REG-GUIDE-TAX-COMPLIANCE-001 (2026-09-21 QA): source for the Hacienda
+  // Tax Filing & Debt Compliance evidence card. The requirement is
+  // established by the founder judgment (§29.2, 2026-09-16, settled):
+  // "tax filing/debt compliance" is one of Hacienda's official prerequisites
+  // for the Licencia de Traficante al Detalle de Bebidas Alcohólicas.
+  taxCompliance: source("SRC_GUIDANCE_HACIENDA_TAX_COMPLIANCE", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas — Licencia de Traficante al Detalle de Bebidas Alcohólicas: evidencia de radicación de planillas y cumplimiento de deudas contributivas", "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas", "Hacienda's official internal-revenue license requirements list tax filing and debt compliance among the prerequisites for the retail alcoholic-beverage dealer license (founder judgment §29.2, 2026-09-16)."),
+  // REG-GUIDE-ALCOHOL-SALES-001 (2026-09-21 QA): source for the Alcohol
+  // Sales Projection card. The requirement is established by the founder
+  // judgment (§29.2, 2026-09-16, settled): "projected sales" is one of
+  // Hacienda's official prerequisites for the Licencia de Traficante al
+  // Detalle de Bebidas Alcohólicas.
+  alcoholSales: source("SRC_GUIDANCE_ALCOHOL_SALES_PROJECTION", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas — Licencia de Traficante al Detalle de Bebidas Alcohólicas: proyección del volumen de ventas", "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas", "Hacienda's official internal-revenue license requirements list projected alcohol sales among the prerequisites for the retail alcoholic-beverage dealer license (founder judgment §29.2, 2026-09-16)."),
   antecedentes: source("SRC_GUIDANCE_ANTECEDENTES", "Policía de Puerto Rico", "Ley 254-1974, Art. 1 (34 L.P.R.A. § 1725)", "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Polic%C3%ADa/254-1974/254-1974.pdf", "Authorizes the Puerto Rico Police to issue the Certificado de Antecedentes Penales."),
   // REG-GUIDE-VEHICLE-001 (2026-09-17 QA): DOC_VEHICLE_REGISTRATION cards
   // were rendering the unvalidated-description placeholder; the document
@@ -165,6 +177,15 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // card rendered the unvalidated-description placeholder on a live Mayagüez
   // café filing. Subject terms for the validated concept.
   DOC_OUTDOOR_SEATING_AUTH: { en: ["outdoor seating", "sidewalk", "public space"], es: ["mesas en la acera", "acera", "espacio público", "café al aire libre"] },
+  // REG-GUIDE-TAX-COMPLIANCE-001 (2026-09-21 QA): the Hacienda Tax Filing &
+  // Debt Compliance card rendered the unvalidated-description placeholder on
+  // live Carolina and Ponce alcohol-chain filings. Subject terms for the
+  // validated concept.
+  DOC_HACIENDA_TAX_COMPLIANCE: { en: ["tax filing", "debt compliance", "Hacienda"], es: ["radicación de planillas", "cumplimiento contributivo", "deudas contributivas"] },
+  // REG-GUIDE-ALCOHOL-SALES-001 (2026-09-21 QA): the Alcohol Sales Projection
+  // card rendered the unvalidated-description placeholder on live
+  // alcohol-chain filings. Subject terms for the validated concept.
+  DOC_ALCOHOL_SALES_PROJECTION: { en: ["sales projection", "projected sales", "alcohol sales"], es: ["proyección de ventas", "ventas de alcohol", "volumen"] },
 };
 function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = []): GuidanceConcept {
   return { requirementId, version: "2026-09-03.1", validationStatus: "validated", subjectTerms: SUBJECTS[requirementId], conditions, sources, regulatoryReason: content[0], purpose: content[1], nextAction: content[2], consequenceOrNextStep: content[3], dependencies,
@@ -541,5 +562,53 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The authorization permits a specific outdoor seating arrangement — the number of tables, the footprint, and the exact location on the public space — under the municipality's conditions: clear passage for pedestrians, operating hours, and compliance with sanitary and health laws and regulations. It does not replace the café's health and sanitary permits.", "La autorización permite un arreglo específico de mesas en el exterior — la cantidad de mesas, el área que ocupan y la ubicación exacta en el espacio público — bajo las condiciones del municipio: paso libre para los peatones, horario de operación y cumplimiento con las leyes y reglamentos de sanidad y salud. No sustituye los permisos sanitarios del café."),
     text("Request the authorization from the municipality's permits office before placing tables and chairs on the sidewalk or public space — in San Juan under Art. 2.301 of the Código de Orden Público; in other municipalities, confirm the applicable municipal ordinance with the alcaldía first. Have the seating layout ready: number of tables and chairs, dimensions, and the exact spot on the acera.", "Solicita la autorización en la oficina de permisos del municipio antes de poner mesas y sillas en la acera o el espacio público — en San Juan bajo el Art. 2.301 del Código de Orden Público; en otros municipios, confirma primero en la alcaldía la ordenanza municipal que aplica. Ten a la mano el plano del arreglo: cantidad de mesas y sillas, dimensiones y el punto exacto en la acera."),
     text("Outdoor seating on public space without the municipal authorization exposes the business to fines and sanctions under the applicable municipal ordinance; operating out of compliance can also complicate the café's other permits.", "Poner mesas en el espacio público sin la autorización municipal expone el negocio a multas y sanciones bajo la ordenanza municipal que aplique; operar fuera de cumplimiento también puede enredar los demás permisos del café."),
+  ]),
+  // REG-GUIDE-TAX-COMPLIANCE-001 (2026-09-21 QA): the Hacienda Tax Filing &
+  // Debt Compliance Evidence card rendered the unvalidated-description
+  // placeholder on live Carolina and Ponce alcohol-chain filings (S98/S99,
+  // 2026-09-21 00:00). The requirement is grounded in Hacienda's official
+  // internal-revenue license requirements: tax filing/debt compliance is one
+  // of the official prerequisites for the beverage-alcohol internal-revenue
+  // licenses — founder judgment §29.2 (2026-09-16, settled) for the retail
+  // dealer license, and Hacienda's official requirements page lists it for
+  // every license type including the manufacturer/fabricante license
+  // (verified 2026-09-21 from hacienda.pr.gov).
+  // Conditions cover the Q_ALCOHOL_SOLD firing path (RULE_0663, verified)
+  // plus the generic businessType fallback (d4940f4 class); the next action
+  // is status-neutral ("obtain or confirm") because RULE_0663 carries
+  // compliance_mode=verify_existing (the 590603a lesson).
+  DOC_HACIENDA_TAX_COMPLIANCE: concept("DOC_HACIENDA_TAX_COMPLIANCE", [
+    [condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.taxCompliance], [
+    text("Hacienda requires alcohol-license applicants to prove they are current on tax filings and free of tax debts. The tax filing and debt compliance evidence is one of Hacienda's official prerequisites for beverage-alcohol internal-revenue licenses (licencias de rentas internas de bebidas alcohólicas — the retail dealer, wholesale, and manufacturer licenses) — Hacienda does not issue the license to a business with unfiled returns or outstanding tax debts.", "Hacienda exige que quien solicita una licencia de bebidas alcohólicas pruebe que está al día en la radicación de planillas y libre de deudas contributivas. Esta evidencia de radicación y cumplimiento contributivo es uno de los requisitos oficiales para las licencias de rentas internas de bebidas alcohólicas de Hacienda — la de detallista, la de por mayor y la de fabricante — Hacienda no emite la licencia a un negocio con planillas sin radicar o deudas contributivas pendientes."),
+    text("This evidence proves the business is in good tax standing with Hacienda: the required returns are filed and there is no outstanding tax debt. It belongs in the alcohol-license file alongside the Merchant Registration, the ASUME certification, the municipal patent, the CRIM debt certification, and the criminal-record certificate.", "Esta evidencia demuestra que el negocio está al día con Hacienda: las planillas requeridas están radicadas y no hay deudas contributivas por pagar. Es parte del expediente de la licencia de bebidas alcohólicas, junto al Registro de Comerciante, la certificación de ASUME, la patente municipal, la certificación de deuda de CRIM y el certificado de antecedentes penales."),
+    // Status-neutral next action (concepts are shared across business
+    // statuses): "obtain or confirm", never "apply for" on an existing
+    // business (the 590603a lesson).
+    text("Obtain the tax filing and debt compliance evidence through Hacienda's SURI portal — the filing certification (Certificación de Radicación de Planillas) and the debt-free certification — or confirm the evidence already in the file is current. File any missing returns and pay any outstanding debts first so the certifications come back clean.", "Obtén la evidencia de radicación y cumplimiento contributivo por el portal SURI de Hacienda — la Certificación de Radicación de Planillas y la certificación de libre de deuda — o confirma que la evidencia que ya está en el expediente sigue vigente. Radica primero cualquier planilla pendiente y salda cualquier deuda contributiva para que las certificaciones salgan limpias."),
+    text("An alcohol-license application filed without this evidence is incomplete: Hacienda holds the license until the tax filing and debt compliance evidence enters the file. Resolve filing gaps and debts early — they are the most common cause of license delays.", "Una solicitud de licencia de bebidas alcohólicas sin esta evidencia está incompleta: Hacienda la detiene hasta que la evidencia de radicación y cumplimiento contributivo entre al expediente. Brega con las planillas y deudas contributivas temprano — son la causa más común de atrasos en la licencia."),
+  ]),
+  // REG-GUIDE-ALCOHOL-SALES-001 (2026-09-21 QA): the Alcohol Sales
+  // Projection / Volume Information card rendered the unvalidated-description
+  // placeholder on live alcohol-chain filings. The requirement is grounded in
+  // Hacienda's official internal-revenue license requirements: projected
+  // sales is one of the official prerequisites for the beverage-alcohol
+  // internal-revenue licenses — founder judgment §29.2 (2026-09-16, settled)
+  // for the retail dealer license, and Hacienda's official requirements page
+  // lists it for every license type including the manufacturer/fabricante
+  // license (verified 2026-09-21 from hacienda.pr.gov). RULE_0665 is heuristic with
+  // missing_fact_keys=[alcohol_sales_volume], so the copy stays honest
+  // about the unresolved volume fact — no invented volume thresholds.
+  // Conditions cover the Q_ALCOHOL_SOLD firing path (RULE_0665) plus the
+  // generic businessType fallback (d4940f4 class).
+  DOC_ALCOHOL_SALES_PROJECTION: concept("DOC_ALCOHOL_SALES_PROJECTION", [
+    [condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.alcoholSales], [
+    text("Hacienda asks alcohol-license applicants for their projected alcohol sales volume. The alcohol sales projection is one of Hacienda's official prerequisites for beverage-alcohol internal-revenue licenses (licencias de rentas internas de bebidas alcohólicas — retail dealer, wholesale, and manufacturer) — it tells the agency the scale of the operation the license will cover.", "Hacienda pide a los solicitantes de la licencia de bebidas alcohólicas una proyección del volumen de ventas de alcohol. La proyección de ventas es uno de los requisitos oficiales para las licencias de rentas internas de bebidas alcohólicas — detallista, por mayor y fabricante — le dice a la agencia la escala de la operación que cubrirá la licencia."),
+    text("This sales projection describes the volume of alcohol the business expects to sell — how much, and of what type — so Hacienda can complete the license file. It is a filing input for the alcohol license, alongside the Merchant Registration, the ASUME and CRIM certifications, and the criminal-record certificate.", "Esta proyección describe el volumen de alcohol que el negocio espera vender — cuánto y de qué tipo — para completar el expediente de la licencia. Es un insumo de la solicitud de la licencia de bebidas alcohólicas, junto al Registro de Comerciante, las certificaciones de ASUME y CRIM, y el certificado de antecedentes penales."),
+    text("Prepare the projected sales volume for the licensed premises — estimated monthly or annual alcohol sales — and enter it when completing the alcohol-license application. Keep the working numbers with the license file; Hacienda uses them as the declared basis for the license.", "Prepara la proyección del volumen de ventas del local — ventas de alcohol estimadas por mes o por año — y anótala al completar la solicitud de la licencia. Guarda los números de trabajo en el expediente; Hacienda los usa como la base declarada de la licencia."),
+    text("An alcohol-license application without the sales projection is incomplete: Hacienda holds the license until the projected sales volume is in the file. Prepare the numbers before filing so the application is not held up.", "Una solicitud de licencia de bebidas alcohólicas sin la proyección de ventas está incompleta: Hacienda la detiene hasta que el volumen proyectado entre al expediente. Prepara los números antes de radicar para que la solicitud no se tranque."),
   ]),
 };
