@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import styles from "./marketing.module.css";
 import { SmartPRLogo } from "../brand/SmartPRLogo";
@@ -153,9 +153,10 @@ function LanguageToggle({ language, onChange }: { language: Language; onChange: 
   );
 }
 
-export default function MarketingLanding() {
+export default function MarketingLanding({ initialLanguage = "EN" }: { initialLanguage?: Language }) {
   const router = useRouter();
-  const [language, setLanguage] = useState<Language>("EN");
+  const pathname = usePathname();
+  const [language, setLanguage] = useState<Language>(initialLanguage);
   const [navOpen, setNavOpen] = useState(false);
   const [leadOpen, setLeadOpen] = useState(false);
   const [leadName, setLeadName] = useState("");
@@ -164,6 +165,15 @@ export default function MarketingLanding() {
   const [leadBusy, setLeadBusy] = useState(false);
   const [leadError, setLeadError] = useState<string | null>(null);
   const c = copy[language];
+
+  // Keep the URL shareable: the Spanish homepage lives at /es, so toggling
+  // the language on the homepage navigates between / and /es instead of
+  // only swapping copy in place.
+  const handleLanguageChange = (lang: Language) => {
+    setLanguage(lang);
+    if (lang === "ES" && pathname === "/") router.push("/es");
+    else if (lang === "EN" && pathname === "/es") router.push("/");
+  };
 
   // The landing page always opens at the very top: the browser must not
   // restore a previous scroll position (or a stale anchor jump) that would
@@ -256,7 +266,7 @@ export default function MarketingLanding() {
             <a href="#professionals">{c.professionals}</a>
           </nav>
           <div className={styles.desktopActions}>
-            <LanguageToggle language={language} onChange={setLanguage} />
+            <LanguageToggle language={language} onChange={handleLanguageChange} />
             <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
             <Link href="/signup" className={styles.primary}>
               {c.started}
@@ -286,7 +296,7 @@ export default function MarketingLanding() {
             </a>
             <div className={styles.mobileAccountRow}>
               <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
-              <LanguageToggle language={language} onChange={setLanguage} />
+              <LanguageToggle language={language} onChange={handleLanguageChange} />
             </div>
             <Link href="/signup" className={styles.primary} onClick={() => setNavOpen(false)}>
               {c.started}
@@ -478,7 +488,7 @@ export default function MarketingLanding() {
           <Link href="/privacy">{c.privacy}</Link>
           <a href="#how-it-works">{c.how}</a>
           <a href="#technology">{c.tech}</a>
-          <LanguageToggle language={language} onChange={setLanguage} />
+          <LanguageToggle language={language} onChange={handleLanguageChange} />
         </div>
       </footer>
     </div>

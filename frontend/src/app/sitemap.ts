@@ -4,7 +4,18 @@ const site = 'https://www.getsmartpr.com';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
-    { url: site, changeFrequency: 'weekly', priority: 1 },
+    {
+      url: site,
+      changeFrequency: 'weekly',
+      priority: 1,
+      alternates: { languages: { en: site, es: `${site}/es` } },
+    },
+    {
+      url: `${site}/es`,
+      changeFrequency: 'weekly',
+      priority: 1,
+      alternates: { languages: { en: site, es: `${site}/es` } },
+    },
     {
       url: `${site}/restaurants`,
       changeFrequency: 'weekly',
