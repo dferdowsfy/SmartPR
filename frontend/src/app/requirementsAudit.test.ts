@@ -3020,3 +3020,32 @@ test("CASE AL: insurance agencies get professional license as needs_more_informa
     "a new pharmacy still gets the professional license as REQUIRED (RULE_0094 verified)"
   );
 });
+
+test("CASE AM: RULE_0224 cites the OCS, never Juntas Examinadoras (REG-CITATION-INSURANCE-001)", () => {
+  // RULE_0224 (BT_INSURANCE_AGENCY → DOC_PROFESSIONAL_LICENSE) carried the
+  // document-inherited "Juntas Examinadoras (Dept of State)" citation even
+  // after its 06:00-cycle demotion. PR insurance producers are licensed by
+  // the Oficina del Comisionado de Seguros under the Insurance Code
+  // (Art 9.160(1), 26 L.P.R.A. § 916(1)) — never by a Junta Examinadora.
+  const rules = load("rules.json") as Array<Record<string, unknown>>;
+  const r = rules.find((x) => x.id === "RULE_0224");
+  assert.ok(r, "RULE_0224 must exist");
+  const citation = String(r.citation ?? "");
+  assert.ok(
+    citation.includes("Oficina del Comisionado de Seguros"),
+    `RULE_0224 must cite the OCS, got: ${citation}`
+  );
+  assert.ok(
+    citation.includes("9.160"),
+    `RULE_0224 must name the Insurance Code basis, got: ${citation}`
+  );
+  assert.ok(
+    !citation.includes("Juntas Examinadoras"),
+    `RULE_0224 must not cite Juntas Examinadoras, got: ${citation}`
+  );
+  assert.equal(
+    r.citation_source,
+    "rule",
+    "the corrected citation overrides the inherited document citation"
+  );
+});
