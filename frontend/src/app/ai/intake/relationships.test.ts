@@ -542,3 +542,27 @@ test("operators: each behaves as the registry assumes", () => {
   assert.equal(evaluateCondition(undefined, { operator: "truthy" }), false);
   assert.equal(evaluateCondition(false, { operator: "falsy" }), true);
 });
+
+test("renewable: an installer's trade does not mean it owns renewable systems (REG-LUMA-INSTALLER-001 derivation fix 2026-09-21)", () => {
+  // Live finding (cache-busted, 2026-09-21): REL_BT_SOLAR_INSTALLER_RENEWABLE
+  // and its battery/renewable-company siblings derived Q_RENEWABLE_INSTALL=true
+  // "definitionally", overriding the installer's explicit No and firing the
+  // LUMA interconnection + net-metering owner-side rules (RULE_0610/0611).
+  // Installing systems for customers is not owning them — the derivations were
+  // deleted from fact_derivations.json AND relationshipRegistry.ts. The
+  // discovery questions already ask Q_RENEWABLE_INSTALL for all three BTs, so
+  // the user's answer governs. (The resolver tracks the raw Q_ id; the wizard
+  // writeKey "renewable_install" is read directly by buildEngineInput.)
+  for (const bt of ["Solar Installer", "Battery Storage Installer", "Renewable Energy Company"]) {
+    // No derivation may invent renewable ownership from the trade alone.
+    const bare = resolve({ business_type: bt });
+    assert.equal(q(bare, "Q_RENEWABLE_INSTALL"), undefined, `${bt}: trade alone must not derive renewable install`);
+    assert.equal(origin(bare, "Q_RENEWABLE_INSTALL"), undefined, `${bt}: no derived provenance`);
+    // An explicit No stands.
+    const no = resolve({ business_type: bt }, { Q_RENEWABLE_INSTALL: false });
+    assert.equal(q(no, "Q_RENEWABLE_INSTALL"), false, `${bt}: explicit No must not be overridden`);
+  }
+  // Positive control: a genuine owner-operator answering Yes still resolves true.
+  const owner = resolve({ business_type: "Solar Installer" }, { Q_RENEWABLE_INSTALL: true });
+  assert.equal(q(owner, "Q_RENEWABLE_INSTALL"), true);
+});

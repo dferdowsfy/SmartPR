@@ -2088,42 +2088,6 @@
     "note": "Definitional."
   },
   {
-    "id": "REL_BT_SOLAR_INSTALLER_RENEWABLE__e0",
-    "relationship_id": "REL_BT_SOLAR_INSTALLER_RENEWABLE",
-    "source_fact_id": "IF_business_type__BT_SOLAR_INSTALLER",
-    "condition_operator": "truthy",
-    "target_fact_id": "IF_question__Q_RENEWABLE_INSTALL",
-    "target_value": "true",
-    "derive_kind": "literal",
-    "certainty": "deterministic",
-    "relationship": "IMPLIES",
-    "note": "Definitional."
-  },
-  {
-    "id": "REL_BT_BATTERY_STORAGE_INSTALLER_RENEWABLE__e0",
-    "relationship_id": "REL_BT_BATTERY_STORAGE_INSTALLER_RENEWABLE",
-    "source_fact_id": "IF_business_type__BT_BATTERY_STORAGE_INSTALLER",
-    "condition_operator": "truthy",
-    "target_fact_id": "IF_question__Q_RENEWABLE_INSTALL",
-    "target_value": "true",
-    "derive_kind": "literal",
-    "certainty": "deterministic",
-    "relationship": "IMPLIES",
-    "note": "Definitional."
-  },
-  {
-    "id": "REL_BT_RENEWABLE_ENERGY_COMPANY_RENEWABLE__e0",
-    "relationship_id": "REL_BT_RENEWABLE_ENERGY_COMPANY_RENEWABLE",
-    "source_fact_id": "IF_business_type__BT_RENEWABLE_ENERGY_COMPANY",
-    "condition_operator": "truthy",
-    "target_fact_id": "IF_question__Q_RENEWABLE_INSTALL",
-    "target_value": "true",
-    "derive_kind": "literal",
-    "certainty": "deterministic",
-    "relationship": "IMPLIES",
-    "note": "Definitional."
-  },
-  {
     "id": "REL_BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR_GOV__e0",
     "relationship_id": "REL_BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR_GOV",
     "source_fact_id": "IF_business_type__BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",

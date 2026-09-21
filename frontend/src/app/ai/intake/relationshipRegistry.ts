@@ -714,9 +714,13 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
   ),
 
   // --- Energy, government, nonprofit, real estate ---------------------------
-  ...["BT_SOLAR_INSTALLER", "BT_BATTERY_STORAGE_INSTALLER", "BT_RENEWABLE_ENERGY_COMPANY"].map((id) =>
-    fromBusinessType(`REL_${id}_RENEWABLE`, id, [det("Q_RENEWABLE_INSTALL", true)], "Definitional.")
-  ),
+  // NOTE (QA 2026-09-21, REG-LUMA-INSTALLER-001): the installer-BT renewable
+  // derivations were removed. Installing renewable systems for customers does
+  // NOT mean the business has them on its own premises — the old entries
+  // derived Q_RENEWABLE_INSTALL=true "definitionally" and overrode the
+  // installer's explicit No, firing the LUMA owner-side rules for
+  // non-generators. All three BTs already ask Q_RENEWABLE_INSTALL in
+  // discovery, so the user's answer governs.
   ...[
     "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",
     "BT_IT_GOVERNMENT_CONTRACTOR",
