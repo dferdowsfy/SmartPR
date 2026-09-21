@@ -1724,15 +1724,23 @@ test("CASE V: LUMA interconnection + net metering posture — existing customer-
   // LUMA interconnection and the net metering agreement as REQUIRED-as-new —
   // the same defect class as the health/fire/CFPM/tourism/vehicle/
   // contractor/childcare/alcohol/transport/agriculture/insurance sweeps.
-  // Swept compliance_mode=verify_existing onto the whole document families:
-  //  - DOC_LUMA_INTERCONNECTION: RULE_0603/0606/0608 (installer BTs),
-  //    RULE_0610 (Q_RENEWABLE_INSTALL).
-  //  - DOC_NET_METERING_AGREEMENT: RULE_0604/0607/0609 (installer BTs),
-  //    RULE_0611 (Q_RENEWABLE_INSTALL).
+  // Swept compliance_mode=verify_existing onto the document families:
+  //  - DOC_LUMA_INTERCONNECTION: RULE_0610 (Q_RENEWABLE_INSTALL).
+  //  - DOC_NET_METERING_AGREEMENT: RULE_0611 (Q_RENEWABLE_INSTALL).
   // All swept rules have no missing_fact_keys (RULE_0664 lesson) and statute
-  // -confidence citations. Installer-BT rules are included per the 332b659
-  // whole-family lesson — installer interconnection obligations are
-  // per-project/recurring, not first-time filings.
+  // -confidence citations.
+  // CORRECTION 2026-09-21 06:00 (REG-LUMA-INSTALLER-001): the installer-BT
+  // rules (RULE_0603/0604/0606/0607/0608/0609) were REMOVED. The LUMA
+  // interconnection registration and the net-metering agreement are
+  // generator/customer instruments (Law 114-2007 Art. 9;
+  // CEPR-MI-2014-0001; the KB's own guidance concepts are
+  // Q_RENEWABLE_INSTALL-conditioned and written for the system owner) — a
+  // solar/battery installer company does not hold them for its own
+  // business; its proper instrument is the OPPE installer registration
+  // (RULE_0605, untouched). The 2026-09-18 "installer interconnection
+  // obligations are per-project/recurring" rationale was wrong — the
+  // per-project obligation the installer carries is the OPPE registration,
+  // and the owner-side rules (0610/0611) cover genuine generators.
 
   // S40: existing Dorado warehouse distributor, 5-year-old solar array.
   const warehouse = classify(
@@ -1776,7 +1784,11 @@ test("CASE V: LUMA interconnection + net metering posture — existing customer-
     "a new warehouse with a new solar project still gets the net metering agreement as REQUIRED"
   );
 
-  // Existing installer business type: verify_existing, not REQUIRED-as-new.
+  // Installer business types no longer receive generator instruments: the
+  // interconnection registration and net-metering agreement belong to the
+  // distributed generator (customer), never to the installer company itself
+  // (REG-LUMA-INSTALLER-001). An installer keeps the OPPE installer
+  // registration (RULE_0605) and the DACO contractor license where earned.
   const installer = classify(
     {
       municipalityName: "San Juan",
@@ -1787,9 +1799,19 @@ test("CASE V: LUMA interconnection + net metering posture — existing customer-
     "existing"
   ).classified;
   assert.equal(
-    byId(installer, DOC_LUMA)?.applicability,
+    byId(installer, DOC_LUMA),
+    undefined,
+    "an existing solar installer gets NO LUMA interconnection card — the registration belongs to the generator, not the installer"
+  );
+  assert.equal(
+    byId(installer, DOC_NETMETER),
+    undefined,
+    "an existing solar installer gets NO net metering card — the agreement belongs to the generator, not the installer"
+  );
+  assert.equal(
+    byId(installer, docByName("contractor license"))?.applicability,
     "verify_existing",
-    "an existing solar installer verifies its interconnection standing (whole-family sweep)"
+    "the installer still verifies its DACO contractor license (RULE_0230 untouched)"
   );
 });
 
@@ -2533,7 +2555,7 @@ test("CASE AG: DOC_CONTRACTOR_LICENSE is needs_more_information for renewable en
   // lesson) — mirroring RULE_0123's guard. The honest path for genuine
   // construction services is RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES,
   // scoped to buildings/structures per b116725); the installer registration
-  // (RULE_0605) and owner-side LUMA/net-metering rules (0608–0611) are
+  // (RULE_0605) and owner-side LUMA/net-metering rules (0610/0611) are
   // unchanged.
   const DOC_CONTRACTOR = docByName("contractor license");
 
@@ -2839,5 +2861,162 @@ test("CASE AJ: stock/close corporations never receive the LLC certificate of org
     byId(llc, DOC_INCORP),
     undefined,
     "limited_liability_company: no incorporation certificate for an LLC"
+  );
+});
+
+test("CASE AK: LUMA interconnection and net metering belong to the generator, never the installer (REG-LUMA-INSTALLER-001)", () => {
+  // 2026-09-21 06:00 QA cycle (S104, Dorado): an existing solar-installer
+  // company got the LUMA Interconnection Registration and the Net Metering
+  // Agreement as its own operating obligations (verify_existing) via the
+  // installer-BT rules. Those instruments belong to the distributed
+  // GENERATOR (the system owner/customer) — Law 114-2007 Art. 9,
+  // CEPR-MI-2014-0001, and the KB's own guidance concepts (all
+  // Q_RENEWABLE_INSTALL-conditioned, written for the system owner: "Execute
+  // LUMA's interconnection / net metering agreement for the commercial
+  // customer account"). An installer company's proper instrument is the OPPE
+  // installer registration (RULE_0605, untouched); genuine generators are
+  // covered by the owner-side rules RULE_0610/0611 (Q_RENEWABLE_INSTALL).
+  // Fix: RULE_0603/0604/0606/0607/0608/0609 (installer BTs x both docs)
+  // deleted. Generalizes across solar, battery-storage, and renewable-energy
+  // installer BTs and both documents — same class as the §29.2
+  // alcohol-prerequisite scoping (the instrument belongs to the license/
+  // generator, not the party). This supersedes the 2026-09-18 15:00 CASE V
+  // "installer interconnection obligations are per-project/recurring"
+  // rationale — the per-project obligation the installer carries is the OPPE
+  // registration, not a generator agreement.
+  for (const [btName, status] of [
+    ["Solar Installer", "new"],
+    ["Solar Installer", "existing"],
+    ["Battery Storage Installer", "existing"],
+    ["Renewable Energy Company", "new"],
+  ] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Dorado",
+        businessTypeName: btName,
+        businessStatus: status,
+        answers: { Q_EMPLOYEES_HIRED: true, Q_OFFERS_CONSTRUCTION_SERVICES: true },
+      },
+      status
+    ).classified;
+    assert.equal(
+      byId(rows, DOC_LUMA),
+      undefined,
+      `${btName} (${status}): no LUMA interconnection card on the installer BT alone`
+    );
+    assert.equal(
+      byId(rows, DOC_NETMETER),
+      undefined,
+      `${btName} (${status}): no net metering card on the installer BT alone`
+    );
+  }
+
+  // Control: the installer-appropriate instruments still fire.
+  const installer = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Solar Installer",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_OFFERS_CONSTRUCTION_SERVICES: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(installer, docByName("installer registration"))?.applicability,
+    "required",
+    "a new solar installer still gets the OPPE installer registration (RULE_0605)"
+  );
+  assert.equal(
+    byId(installer, docByName("contractor license"))?.applicability,
+    "required",
+    "a new solar installer offering construction services still gets the DACO contractor license (RULE_0230)"
+  );
+
+  // Control: a genuine generator-owner still gets both instruments.
+  const owner = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Warehouse Distributor",
+      businessStatus: "new",
+      answers: { Q_RENEWABLE_INSTALL: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(owner, DOC_LUMA)?.applicability,
+    "required",
+    "an owner with its own renewable installation still gets LUMA interconnection (RULE_0610)"
+  );
+  assert.equal(
+    byId(owner, DOC_NETMETER)?.applicability,
+    "required",
+    "an owner with its own renewable installation still gets the net metering agreement (RULE_0611)"
+  );
+});
+
+test("CASE AL: insurance agencies get professional license as needs_more_information, not REQUIRED (REG-PROF-INSURANCE-001)", () => {
+  // 2026-09-21 06:00 QA cycle (S105, Toa Baja): BT_INSURANCE_AGENCY asserted
+  // DOC_PROFESSIONAL_LICENSE as REQUIRED on the "Juntas Examinadoras (Dept of
+  // State)" citation — even when the user answered Q_PROFESSIONAL_LICENSES=false.
+  // Primary-source review: insurance producers/agencies in PR are licensed by
+  // the Oficina del Comisionado de Seguros (OCS) under the Insurance Code
+  // (Art 9.160(1), 26 L.P.R.A. sec. 916(1) — licenses as productor/agente
+  // general/ajustador extended by the OCS; OCS producer-license forms
+  // docs.pr.gov), NOT by a Junta Examinadora. Same defect class as the
+  // 594af48 demotions (RULE_0121/0122/0225/0226/0228/0229).
+  // Fix: RULE_0224 is heuristic + missing_fact_keys=[licensed_profession_type],
+  // no compliance_mode (RULE_0664 lesson).
+  const DOC_PROFLIC = docByName("professional license");
+  for (const businessStatus of ["new", "existing"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Toa Baja",
+        businessTypeName: "Insurance Agency",
+        businessStatus,
+        answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      },
+      businessStatus
+    ).classified;
+    const lic = byId(rows, DOC_PROFLIC);
+    assert.ok(lic, `professional license row must exist for Insurance Agency (${businessStatus})`);
+    assert.equal(
+      lic.applicability,
+      "needs_more_information",
+      `insurance agency (${businessStatus}) stays needs_more_information naming the controlling fact — never REQUIRED on the Juntas citation`
+    );
+    assert.ok(
+      (lic.missingFacts ?? []).includes("licensed_profession_type"),
+      "the controlling unanswered fact must be named"
+    );
+  }
+
+  // Controls: genuinely Junta-licensed professions keep REQUIRED.
+  const vet = classify(
+    {
+      municipalityName: "Guaynabo",
+      businessTypeName: "Veterinary Clinic",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true, Q_PROFESSIONAL_LICENSES: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(vet, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new veterinary clinic still gets the professional license as REQUIRED (RULE_0103 verified — vets are genuinely Junta-licensed)"
+  );
+  const pharmacy = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Pharmacy",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(pharmacy, DOC_PROFLIC)?.applicability,
+    "required",
+    "a new pharmacy still gets the professional license as REQUIRED (RULE_0094 verified)"
   );
 });
