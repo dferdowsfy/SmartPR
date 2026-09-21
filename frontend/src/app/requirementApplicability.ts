@@ -219,14 +219,20 @@ export function applyEntityFormationExclusivity<T extends { document_id?: string
     return requirements.filter((item) => item.document_id !== CORP_FORMATION);
   }
   if (CORPORATION_TYPES.includes(type as EntityType)) {
-    return requirements.filter((item) => item.document_id !== LLC_FORMATION);
+    // The engine can emit the LLC certificate under either of its two
+    // document ids (RULE_0651 fires DOC_CERT_ORGANIZATION; the augment path
+    // uses DOC_ARTICLES_ORGANIZATION) — a corporation must never keep either
+    // (live QA 2026-09-21 00:00: a stock corporation rendered both the
+    // incorporation and the LLC certificate because the single-id filter
+    // missed the engine's id).
+    return requirements.filter((item) => !LLC_FORMATION_DOCS.has(item.document_id ?? ""));
   }
   if (NON_INCORPORATING_TYPES.has(type)) {
     // F01: these legal forms never incorporate in Puerto Rico — drop both
     // formation certificates rather than presenting incorporation as a
     // mandatory duty.
     return requirements.filter(
-      (item) => item.document_id !== CORP_FORMATION && item.document_id !== LLC_FORMATION
+      (item) => item.document_id !== CORP_FORMATION && !LLC_FORMATION_DOCS.has(item.document_id ?? "")
     );
   }
   return requirements;
@@ -237,7 +243,7 @@ export function shouldAddLlcOrganization(
   entityType: EntityType | string | null | undefined
 ): boolean {
   if (entityType !== "limited_liability_company") return false;
-  return !existing.some((item) => item.document_id === LLC_FORMATION);
+  return !existing.some((item) => LLC_FORMATION_DOCS.has(item.document_id ?? ""));
 }
 
 function flagForRule(kb: KnowledgeBase, ruleId: string | undefined): string | null {

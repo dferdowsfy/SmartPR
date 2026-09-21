@@ -7005,6 +7005,8 @@
   "verification": "verified",
   "excluded_entity_types": [
    "corporation",
+   "stock_corporation",
+   "close_corporation",
    "foreign_corporation",
    "limited_liability_partnership",
    "partnership",
@@ -7013,7 +7015,14 @@
    "professional_corporation"
   ],
   "requires_new_unformed_business": true,
-  "requires_business": true
+  "requires_business": true,
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "excluded_entity_types += stock_corporation, close_corporation",
+    "reason": "QA 2026-09-21 00:00 cycle (S98 live, Carolina): a stock corporation rendered BOTH Certificate of Incorporation and Certificate of Organization (LLC). The exclusion list used the legacy 'corporation' identifier but the live intake's canonical EntityType values are 'stock_corporation'/'close_corporation' (forms/engine/types.ts) — the exact-string match in rulesEngine missed them, so the rule fired the LLC certificate for stock/close corps. Companion fix in requirementApplicability.applyEntityFormationExclusivity: the backstop filtered only DOC_ARTICLES_ORGANIZATION while the engine emits DOC_CERT_ORGANIZATION for the same filing (the LLC_FORMATION_DOCS set already documented the duality) — both ids are now dropped for corporations. Regression CASE AJ."
+   }
+  ]
  },
  {
   "id": "RULE_0652",

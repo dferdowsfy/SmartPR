@@ -26,6 +26,7 @@ import { runRulesEngine, type KnowledgeBase, type EngineInput } from "./rulesEng
 import { buildEngineInput } from "./kb.ts";
 import {
   classifyEngineRequirements,
+  applyEntityFormationExclusivity,
   bucketForApplicability,
   type ClassifiedRequirement,
 } from "./requirementApplicability.ts";
@@ -2759,5 +2760,84 @@ test("CASE AI: sports facility health permit is needs_more_information without a
     byId(bar, DOC_HEALTH)?.applicability,
     "required",
     "RULE_0062 (no-food bar) is unchanged — its UNCERTAIN primary-source verdict stays in REQUIRES_REGULATORY_REVIEW"
+  );
+});
+
+test("CASE AJ: stock/close corporations never receive the LLC certificate of organization (REG-FORMATION-EXCL-001)", () => {
+  // 2026-09-21 00:00 QA cycle (S98 live, Carolina): a new stock-corporation
+  // draft rendered BOTH Certificate of Incorporation AND Certificate of
+  // Organization (LLC) as REQUIRED — the two defects were:
+  // (1) RULE_0651's excluded_entity_types used the legacy "corporation"
+  //     identifier, but the live intake's canonical EntityType values are
+  //     "stock_corporation"/"close_corporation" (forms/engine/types.ts); the
+  //     exact-string match in rulesEngine let the LLC rule fire for corps.
+  // (2) applyEntityFormationExclusivity filtered only DOC_ARTICLES_ORGANIZATION
+  //     while RULE_0651 emits DOC_CERT_ORGANIZATION for the same filing
+  //     (the LLC_FORMATION_DOCS set already documented the duality), so the
+  //     backstop never dropped the engine's id.
+  const DOC_INCORP = "DOC_CERT_INCORPORATION";
+  const DOC_LLC_ORG = "DOC_CERT_ORGANIZATION";
+
+  // 1) The engine itself must not fire the LLC certificate for stock/close corps.
+  for (const entityType of ["stock_corporation", "close_corporation"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Carolina",
+        businessTypeName: "Bar",
+        businessStatus: "new",
+        entityType,
+        entityNotFormed: true,
+        answers: { Q_PHYSICAL_LOCATION: true },
+      },
+      "new"
+    ).classified;
+    assert.equal(
+      byId(rows, DOC_LLC_ORG),
+      undefined,
+      `${entityType}: RULE_0651 must stay silent — no LLC certificate for a corporation`
+    );
+    const incorp = byId(rows, DOC_INCORP);
+    assert.ok(
+      incorp,
+      `${entityType}: the corporation still gets its own Certificate of Incorporation`
+    );
+  }
+
+  // 2) Defense in depth: even if an engine path emits the LLC cert under the
+  //    engine's document id, the exclusivity backstop drops BOTH LLC-cert ids
+  //    for corporations.
+  const fabricated = [
+    { document_id: DOC_INCORP },
+    { document_id: DOC_LLC_ORG },
+    { document_id: "DOC_ARTICLES_ORGANIZATION" },
+  ];
+  const kept = applyEntityFormationExclusivity(fabricated, "stock_corporation");
+  assert.deepEqual(
+    kept.map((r) => r.document_id),
+    [DOC_INCORP],
+    "stock_corporation exclusivity keeps only the incorporation certificate"
+  );
+
+  // 3) Controls: an LLC still gets the LLC certificate and no incorporation
+  //    card, so the fix did not flip the LLC branch.
+  const llc = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Bar",
+      businessStatus: "new",
+      entityType: "limited_liability_company",
+      entityNotFormed: true,
+      answers: { Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.ok(
+    byId(llc, DOC_LLC_ORG),
+    "limited_liability_company: the LLC certificate still fires for an LLC"
+  );
+  assert.equal(
+    byId(llc, DOC_INCORP),
+    undefined,
+    "limited_liability_company: no incorporation certificate for an LLC"
   );
 });
