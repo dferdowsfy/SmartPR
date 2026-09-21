@@ -6,7 +6,7 @@ import { L } from './i18n';
 import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
-import { translateFlagTriggerReason } from './triggerReason';
+import { translateTriggerReason } from './triggerReason';
 import { buildRequirementGuidance, legalBasisFor, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
@@ -2112,10 +2112,11 @@ export default function SmartPRIntake() {
         ? 'Todavía no sabemos si esto aplica a tu negocio — contesta la pregunta aquí mismo para confirmarlo.'
         : 'We don’t know yet whether this applies to your business — answer the question right here to confirm.';
     }
-    // Municipality-flag trigger labels are rendered by the shared pure
-    // helper (user vocabulary in both languages; see REG-TRIGGER-LABEL-001).
-    const flagLabel = translateFlagTriggerReason(req.reason, profile.municipality, language);
-    if (flagLabel) return flagLabel;
+    // Raw engine trigger shapes (municipality-flag, business-type, and
+    // project-fact reasons) are rendered by the shared pure helper in user
+    // vocabulary in both languages (REG-TRIGGER-LABEL-001/002).
+    const triggerLabel = translateTriggerReason(req.reason, profile.municipality, language);
+    if (triggerLabel) return triggerLabel;
     if (language === 'es') {
       // Municipality flag advisories (potential_*): the pack authors the
       // advisory text in English only and the L() dictionary has no entries
@@ -2138,9 +2139,6 @@ export default function SmartPRIntake() {
       // surrounding template here instead.
       const municipalityMatch = req.reason.match(/^Municipality selected \((.+)\)$/);
       if (municipalityMatch) return `Municipio seleccionado (${municipalityMatch[1]})`;
-
-      const businessTypeMatch = req.reason.match(/^Business Type = (.+)$/);
-      if (businessTypeMatch) return `Tipo de Negocio = ${businessTypeMatch[1]}`;
 
       const questionMatch = req.reason.match(/^Question: (.+) \| Answer: Yes$/);
       // 2026-09-18 QA (live S41): the embedded question text was English
