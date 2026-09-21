@@ -256,7 +256,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_ALCOHOL_LICENSE",
-  "citation": "Sec. 5022.01, Código de Rentas Internas de 2011 (Ley 1-2011)",
+  "citation": "Ley 1-2011 Sec. 5022.01 y 5050.14; Reglamento Licencias Art. 5022.01-1 y 5022.01-2",
   "citation_url": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_ALCOHOL_LICENSE",
@@ -270,6 +270,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['alcohol_sold']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['alcohol_sold']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: The licensed occupation is trafficking/manufacturing/importing alcohol for sale, not merely serving. Category A/B/C retail, wholesale, manufacturer, and limited-time licenses are distinct. Serving without sale is outside Sec. 5022.01."
    }
   ]
  },
@@ -325,7 +330,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178; Reglamento General de Salud Ambiental (establecimiento de alimentos vs. facilidad de salud); Ley 2-1975 (CNC) para facilidades de salud",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -339,6 +344,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Q_HEALTHCARE_SERVICES does not select among food-establishment sanitary license, facility license (hospital/lab/clinic), CNC, pharmacy, or no Salud license. DOC_HEALTH_PERMIT as used here is the food sanitary permit."
    }
   ]
  },
@@ -372,8 +382,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_VEHICLE_REGISTRATION",
-  "citation": "Law 22-2000 Art. 23.01 — vehicle registration and annual marbete",
-  "citation_url": "https://dtop.pr.gov",
+  "citation": "Ley 22-2000 Arts. 2.05 y 23.01 (registro y marbete anual)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Veh%C3%ADculos%20y%20Tr%C3%A1nsito/22-2000/22-2000.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
   "citation_source": "document",
@@ -386,6 +396,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['vehicle_ownership']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['vehicle_ownership']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Registration/marbete attaches to the owner of a vehicle that will be operated on public roads, not to a yes-answer about commercial vehicles in the abstract. Leased, owner-operator, and third-party carrier arrangements change who must register."
    }
   ]
  },
@@ -397,8 +412,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_TRANSPORT_PERMIT",
-  "citation": "Law 109-1962; NTSP Reg. 9156 §10.02 — Porteador por Contrato franchise",
-  "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+  "citation": "Ley 109-1962 Arts. 2 y 39 (27 LPRA §§ 1002, 1202); Reglamento NTSP 9156 § 10.02",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/109-1962.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
   "citation_source": "document",
@@ -411,6 +426,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['transport_type']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['transport_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Private commercial vehicles used only to haul the owner's goods are not for-hire carriers. Need hire-vs-own, cargo-vs-passenger, and whether the operator is a public carrier, contract carrier, or private fleet."
    }
   ]
  },
@@ -444,7 +464,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_IMPORT_EXPORT_REG",
-  "citation": "Sec. 4041.02(a), Código de Rentas Internas de 2011 — Declaración de Importación",
+  "citation": "Ley 1-2011 Sec. 4041.02(a); Carta Circular RI 18-18",
   "citation_url": "https://hacienda.pr.gov/publicaciones/carta-circular-de-rentas-internas-num-18-18-cc-ri-18-18",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_IMPORT_EXPORT_REG",
@@ -458,6 +478,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['import_export_details']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['import_export_details']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: A bare Q_IMPORT_EXPORT does not distinguish goods subject to PR excise, customs-only movements, export of local manufacture, or courier samples. Need commodity class, direction, and whether the business is the importer of record."
    }
   ]
  },
@@ -469,8 +494,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
+  "citation": "Leyes orgánicas de cada Junta Examinadora, Departamento de Estado",
+  "citation_url": "https://www.estado.pr.gov/",
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
@@ -483,6 +508,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['licensed_profession_type']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['licensed_profession_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Keep asking which profession. Law, CPA, engineering, architecture, surveying, pharmacy, veterinary, nursing, real-estate brokerage, notary are genuine Junta or special-board licenses. Consulting, staffing, translation-as-business are not."
    }
   ]
  },
@@ -494,8 +524,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_SIGN_PERMIT",
-  "citation": "Ley 355-1999 (Ley Uniforme de Rótulos y Anuncios), Art. 29 (9 L.P.R.A. § 56b)",
-  "citation_url": "https://docs.pr.gov/files/OGPe/Manuales/OGPe%20Manual%20Externo%20PRA-%20FINAL.pdf",
+  "citation": "Ley 355-1999 Arts. 5 y 29 (9 LPRA §§ 51a, 56b)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/355-1999.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_SIGN_PERMIT",
   "citation_source": "document",
@@ -508,6 +538,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['sign_installation_plans']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['sign_installation_plans']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Need location (on-premises vs off-premises), size, illumination, and whether the device is a window sign, temporary banner, or vehicle wrap that the statute or joint regulation exempts. Municipal overlay may add a local seal."
    }
   ]
  },
@@ -554,8 +589,16 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['entertainment_details']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['entertainment_details']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Live entertainment yes is under-specified. Need type (amplified music, DJ, variety, adult), indoor/outdoor, occupancy, hours, and the host municipality's ordinance. Some events also need a promoter license at Hacienda, which is a different document."
    }
-  ]
+  ],
+  "citation": "Ordenanzas municipales de espectáculos/entretenimiento; Ley 161-2009 Art. 8.4A (Permiso Único puede incorporar autorizaciones de uso)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/161-2009.pdf",
+  "citation_confidence": "statute"
  },
  {
   "id": "RULE_0033",
@@ -587,7 +630,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_PROPERTY_DEED",
-  "citation": "Ley 210-2015 (Ley del Registro de la Propiedad Inmobiliaria) — títulos de propiedad se inscriben mediante escritura pública",
+  "citation": "Ley 210-2015 (Registro de la Propiedad Inmobiliaria)",
   "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/210-2015.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROPERTY_DEED",
@@ -604,6 +647,11 @@
     "date": "2026-09-16",
     "change": "verification=heuristic, missing_fact_keys=[ownership_documentation], compliance_mode removed",
     "reason": "Validated review: property description does not prove ownership — needs_more_information."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['ownership_documentation']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Q_OWNS_PROPERTY does not prove a recorded deed exists or that the business is the titled owner (vs. option, inheritance pending partition, or affiliate title). Treat as supporting evidence of tenure, never a standalone operating requirement."
    }
   ],
   "missing_fact_keys": [
@@ -660,8 +708,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_PESTICIDE_LICENSE",
-  "citation": "Regl. 6680 (Depto. Agricultura) — certificación de aplicadores de plaguicidas de uso restringido; Ley 49-1953",
-  "citation_url": "https://docs.pr.gov/files/Agricultura/Reglamentos/Reglamento Plaguicidas.pdf",
+  "citation": "Ley 49-1953; Reglamento 6680 Parte III (certificación de aplicadores de plaguicidas de uso restringido)",
+  "citation_url": "https://docs.pr.gov/files/Agricultura/Reglamentos/Reglamento%20Plaguicidas.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PESTICIDE_LICENSE",
   "citation_source": "document",
@@ -674,6 +722,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['restricted_use_pesticides']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['restricted_use_pesticides']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: General-use pesticides do not require applicator certification. Private vs commercial applicator categories differ. Physicians/veterinarians applying as drugs in practice are excepted."
    }
   ]
  },
@@ -1169,9 +1222,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_CFPM",
-  "citation": "Certificación privada acreditada por ANSI aceptada por el Depto. de Salud; Ley 81-1912, 3 LPRA § 178 (autoridad sanitaria)",
+  "citation": "Ley 81-1912, 3 LPRA § 178; FDA Food Code §§ 2-102.12 y 2-102.20 (adopted practice by Departamento de Salud)",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
-  "citation_confidence": "page",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CFPM",
   "citation_source": "document",
   "verification": "heuristic",
@@ -1183,6 +1236,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['food_preparation']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['food_preparation']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: A bar that only pours sealed or non-PHF beverages is not automatically a food establishment requiring CFPM. ANSI/ANAB-CFP credentials are accepted. Do not fire from BT_BAR alone."
    }
   ]
  },
@@ -1758,7 +1816,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178; reglamentos de facilidades de salud del Departamento de Salud",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -1772,6 +1830,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['facility_license_category']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: BT_MEDICAL_OFFICE plus DOC_HEALTH_PERMIT over-asserts the food-establishment permit. Separate professional and facility rules may apply."
    }
   ]
  },
@@ -1805,7 +1868,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -1825,6 +1888,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Dental offices are not food establishments. Do not require the food sanitary permit from BT alone."
    }
   ],
   "verification": "heuristic",
@@ -1862,7 +1930,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178; Ley 247-2004 (farmacias) para el régimen correcto",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -1882,6 +1950,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Pharmacies are licensed under the pharmacy statute and Junta de Farmacia, not as food establishments. Food permit only if they operate a food-service component."
    }
   ],
   "verification": "heuristic",
@@ -1919,7 +1992,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 97-1962 (laboratorios clínicos); Ley 81-1912 solo como autoridad orgánica general",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -1939,6 +2012,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Wrong document class if DOC_HEALTH_PERMIT means food sanitary permit. Confirm whether any on-site food service exists."
    }
   ],
   "verification": "heuristic",
@@ -1998,7 +2076,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -2018,6 +2096,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Food sanitary permit does not attach to BT_PHYSICAL_THERAPY_CLINIC."
    }
   ],
   "verification": "heuristic",
@@ -2055,7 +2138,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912; reglamentos de establecimientos veterinarios del Departamento de Salud",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -2075,6 +2158,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Veterinary practice is a different Salud/Junta track. Food permit only if the clinic operates public food service."
    }
   ],
   "verification": "heuristic",
@@ -2112,7 +2200,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912; Ley 2-1975 (CNC) para facilidades de salud",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -2132,6 +2220,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Do not map BT_URGENT_CARE_CENTER to the food sanitary permit."
    }
   ],
   "verification": "heuristic",
@@ -2169,7 +2262,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -2189,6 +2282,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Need to know medical procedures vs. cosmetic, and whether a public pool/spa/food service exists."
    }
   ],
   "verification": "heuristic",
@@ -2226,7 +2324,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912; reglamentos de agencias de cuidado en el hogar",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -2246,6 +2344,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode=verify_existing removed",
     "reason": "RULE_0664 lesson (QA 2026-09-17 00:00 cycle): verify_existing on a heuristic rule with unresolved missing_fact_keys promotes needs_more_information to REQUIRED for new businesses via the classifier's businessStatus mapping. Heuristic+NMI rules carry no compliance_mode; their posture is needs_more_information by design until the controlling fact (facility_license_category) is resolved."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['facility_license_category']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Home-health licensing is a separate Salud track. Food sanitary permit is the wrong document."
    }
   ],
   "verification": "heuristic",
@@ -2305,8 +2408,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
+  "citation": "No hay ley de Junta Examinadora que licencie 'consultoría' genérica",
+  "citation_url": "https://www.estado.pr.gov/",
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
@@ -2320,6 +2423,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 06:00 cycle (S57, Caguas home-based consulting): a generic consulting firm was shown Professional License as REQUIRED, but consulting is not a licensed profession — only specific licensed activities are (mirrors the validated-review treatment of BT_ACCOUNTING_FIRM / RULE_0227, golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. Unchanged: engineering (RULE_0118), architecture (RULE_0119), law (RULE_0114), CPA (RULE_0115) stay verified; translation (RULE_0121) and staffing (RULE_0122) flagged for regulatory review, not changed."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: DOC_PROFESSIONAL_LICENSE cannot fire from BT_CONSULTING_FIRM. Golden G04 pattern."
    }
   ],
   "verification": "heuristic",
@@ -2401,8 +2509,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
+  "citation": "Credencial de traductor-intérprete jurado del Tribunal Supremo de PR (no Junta Examinadora)",
+  "citation_url": "https://www.poderjudicial.pr/",
   "citation_confidence": "page",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
@@ -2416,6 +2524,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): translation services were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — the traductor-jurado credential is a Tribunal Supremo court credential for sworn translators, not a Dept of State professional license for translation businesses. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: Wrong document class. Ordinary translation agencies have no Junta license."
    }
   ],
   "verification": "heuristic",
@@ -2431,9 +2544,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley 417-1947 (agencias de empleo; Secretario del Trabajo y Recursos Humanos)",
+  "citation_url": "https://www.trabajo.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -2446,6 +2559,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): staffing agencies were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — private employment agencies are licensed by the Secretario del Trabajo y Recursos Humanos under Ley 417-1947, not by the Dept of State professional-license boards. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: Wrong document class. No Junta professional license for staffing."
    }
   ],
   "verification": "heuristic",
@@ -2461,8 +2579,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_CONTRACTOR_LICENSE",
-  "citation": "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO); Regl. 8172",
-  "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
+  "citation": "Ley 146-1995 Arts. 1–2 (23 LPRA §§ 1020a-1, 1020b), según enmendada por Ley 48-2017; Reglamento 8172",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Registros/146-1995.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
@@ -2475,6 +2593,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['residential_work']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['residential_work']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: General-contractor BT is not enough. Commercial-only work, owner-builder work on one's own property, and purely professional design services are outside the DACO residential registry. Bonding and classification follow the registry, not the BT label."
    }
   ]
  },
@@ -2728,8 +2851,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_CONTRACTOR_LICENSE",
-  "citation": "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO); Regl. 8172",
-  "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
+  "citation": "Ley 146-1995 Arts. 1–2; Ley 48-2017 exposición de motivos",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Registros/146-1995.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
@@ -2743,6 +2866,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[residential_work]; compliance_mode removed",
     "reason": "QA 2026-09-19 12:00 cycle (S62, Bayamón): a landscaping company got the DACO contractor license (Ley 146-1995) as REQUIRED on business type alone. Ley 146-1995 covers the residential construction business (Ley 48-2017 exposicion: construccion de viviendas, modificaciones, alteraciones, instalaciones y reparaciones esenciales en edificaciones de vivienda); validated golden G12 pins even BT_GENERAL_CONTRACTOR at needs_more_information ('do not assume from general contractor alone'). Mirrors RULE_0123's heuristic+missing_fact_keys=[residential_work] treatment; no golden pins this rule; RULE_0664 lesson."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['residential_work']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Landscaping for commercial sites, grounds maintenance without construction, and owner-performed work do not register. Only landscaping that is a residential construction/improvement contract is in scope."
    }
   ],
   "verification": "heuristic",
@@ -3522,20 +3650,20 @@
  },
  {
   "id": "RULE_0185",
-  "rule_type": "business_type",
-  "business_type_id": "BT_LOGISTICS_COMPANY",
-  "question_id": null,
-  "expected_answer": null,
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_COMMERCIAL_VEHICLES",
+  "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_TRANSPORT_PERMIT",
-  "citation": "Law 109-1962; NTSP Reg. 9156 §10.02 — Porteador por Contrato franchise",
-  "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+  "citation": "Ley 109-1962 Art. 2 (definición de porteador por contrato) y Art. 39 (27 LPRA § 1202)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/109-1962.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
   "citation_source": "document",
   "verification": "heuristic",
   "missing_fact_keys": [
-   "commercial_vehicles"
+   "transport_type"
   ],
   "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
   "reviewed_at": "2026-09-16",
@@ -3544,25 +3672,30 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic with missing_fact_keys",
     "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED: BT_LOGISTICS_COMPANY over-asserts NTSP franchise — Ley 109-1962 covers for-hire carriage only; brokers/4PLs without rolling stock are outside. Retargeted to Q_COMMERCIAL_VEHICLES + transport_type.",
+    "reason": "External legal-research review 2026-09-21. Research: Freight brokers, 4PLs, and warehouses that do not operate motor vehicles for hire are outside Ley 109. Do not assert DOC_TRANSPORT_PERMIT from BT_LOGISTICS_COMPANY."
    }
   ]
  },
  {
   "id": "RULE_0186",
-  "rule_type": "business_type",
-  "business_type_id": "BT_LOGISTICS_COMPANY",
-  "question_id": null,
-  "expected_answer": null,
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_COMMERCIAL_VEHICLES",
+  "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_VEHICLE_REGISTRATION",
-  "citation": "Law 22-2000 Art. 23.01 — vehicle registration and annual marbete",
+  "citation": "Ley 22-2000 Arts. 2.05 y 23.01",
   "citation_url": "https://dtop.pr.gov",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
   "citation_source": "document",
   "verification": "heuristic",
   "missing_fact_keys": [
-   "commercial_vehicles"
+   "vehicle_ownership"
   ],
   "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
   "reviewed_at": "2026-09-16",
@@ -3571,25 +3704,30 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic with missing_fact_keys",
     "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED: BT_LOGISTICS_COMPANY over-asserts — Ley 22-2000 duty attaches to the vehicle owner/operator, not the logistics label. Retargeted to Q_COMMERCIAL_VEHICLES + vehicle_ownership.",
+    "reason": "External legal-research review 2026-09-21. Research: BT_LOGISTICS_COMPANY over-asserts. A 3PL that only brokers freight and owns no vehicles has no marbete duty. Distinct from NTSP for-hire authority (DOC_TRANSPORT_PERMIT)."
    }
   ]
  },
  {
   "id": "RULE_0187",
-  "rule_type": "business_type",
-  "business_type_id": "BT_WAREHOUSE_OPERATOR",
-  "question_id": null,
-  "expected_answer": null,
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_COMMERCIAL_VEHICLES",
+  "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_TRANSPORT_PERMIT",
-  "citation": "Law 109-1962; NTSP Reg. 9156 §10.02 — Porteador por Contrato franchise",
-  "citation_url": "https://ntsp.pr.gov/Documents/C%C3%B3digo%20de%20Reglamentos%20Enmendado.pdf",
+  "citation": "Ley 109-1962 Arts. 2 y 39 (definición de porteador por contrato) y Art. 39 (27 LPRA § 1202)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/Pages/109-1962.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_TRANSPORT_PERMIT",
   "citation_source": "document",
   "verification": "heuristic",
   "missing_fact_keys": [
-   "commercial_vehicles"
+   "transport_type"
   ],
   "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
   "reviewed_at": "2026-09-16",
@@ -3598,25 +3736,30 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic with missing_fact_keys",
     "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED: private warehouse operation is not porteador por contrato by BT. Retargeted to Q_COMMERCIAL_VEHICLES + transport_type.",
+    "reason": "External legal-research review 2026-09-21. Research: BT_WAREHOUSE_OPERATOR over-asserts NTSP franchise. Storage-only facilities have no porteador duty."
    }
   ]
  },
  {
   "id": "RULE_0188",
-  "rule_type": "business_type",
-  "business_type_id": "BT_WAREHOUSE_OPERATOR",
-  "question_id": null,
-  "expected_answer": null,
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_COMMERCIAL_VEHICLES",
+  "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_VEHICLE_REGISTRATION",
-  "citation": "Law 22-2000 Art. 23.01 — vehicle registration and annual marbete",
+  "citation": "Ley 22-2000 Arts. 2.05 y 23.01",
   "citation_url": "https://dtop.pr.gov",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
   "citation_source": "document",
   "verification": "heuristic",
   "missing_fact_keys": [
-   "commercial_vehicles"
+   "vehicle_ownership"
   ],
   "trigger_summary": "Heuristic planning association: logistics/warehouse businesses often operate commercial vehicles subject to NTSP (formerly Comision de Servicio Publico) authorization and DTOP commercial-vehicle registration, but the actual regulatory trigger is vehicle operation, not the business type. Unverified as a blanket requirement: confirm whether the business will use commercial vehicles (Q_COMMERCIAL_VEHICLES) before treating these as required.",
   "reviewed_at": "2026-09-16",
@@ -3625,6 +3768,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic with missing_fact_keys",
     "reason": "QA 2026-09-16: NTSP/CSP transport authorization applies to persons transporting cargo/passengers for hire (Ley de Servicio Publico, 27 LPRA 1202/1280c; NTSP Reglamento Empresas de Transporte de Carga), not to every business whose type name says logistics/warehouse. Business-type-only presentation as REQUIRED over-asserts. The KB's own Q_COMMERCIAL_VEHICLES (RULE_0022) is the authoritative trigger; the business-type association is a planning heuristic until vehicle use is confirmed."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED: BT_WAREHOUSE_OPERATOR is not a vehicle-registration class. Retargeted to Q_COMMERCIAL_VEHICLES + vehicle_ownership.",
+    "reason": "External legal-research review 2026-09-21. Research: BT_WAREHOUSE_OPERATOR is not a vehicle-registration class. Storage without owned rolling stock is outside Ley 22-2000 Art. 23.01."
    }
   ]
  },
@@ -4076,9 +4224,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley 10-1994 Art. 12 y Art. 2(g) (20 LPRA §§ 3035, 3025)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/10-1994.pdf",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4091,6 +4239,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 15:00 cycle (S66, Carolina): a facility-management franchise (janitorial/maintenance coordination, explicitly no construction or brokerage services) got Professional License as REQUIRED/verify_existing on the generic Juntas Examinadoras citation. Ley 10-1994 (20 L.P.R.A. 3035, Art. 12) licenses Empresas de Bienes Raices whose personnel perform brokerage functions; pure facility/janitorial management is not brokerage, and Art. 2(g) exempts owner-acting transactions. Whether this BT engages in licensed brokerage is an activity fact, not a BT-alone fact. Mirrors the 594af48/51805ec demotion precedents (RULE_0116/0227/0211/0213, golden G04); no golden pins this rule; RULE_0664 lesson (heuristic+NMI carries no compliance_mode)."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['licensed_profession_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Pure facility/janitorial/maintenance management is not brokerage. Need whether the firm lists, sells, leases, or negotiates real estate for third parties."
    }
   ],
   "verification": "heuristic",
@@ -4106,9 +4259,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley 10-1994 Art. 2(g) (20 LPRA § 3025)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/10-1994.pdf",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4121,6 +4274,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 12:00 cycle (S63, Toa Baja): a real estate developer buying/holding/developing its own properties got Professional License as REQUIRED/verify_existing on a Juntas Examinadoras citation, but Ley 10-1994 Art 2(g) (20 L.P.R.A. 3025) expressly excludes from the corredor profession any transaction where the person is the property owner acting for their own benefit rather than as intermediary between two clients. Only intermediaries for others (RULE_0209 brokerage) need the Junta license. Mirrors the 594af48 demotion precedent (RULE_0116/0227, golden G04); no golden pins this rule; RULE_0664 lesson (heuristic+NMI carries no compliance_mode)."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['licensed_profession_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: A developer buying/holding/selling its own inventory is the owner exemption. Intermediary sales of others' inventory need the Junta license. Juntas Examinadoras generic citation is the wrong pointer if the activity is not brokerage."
    }
   ],
   "verification": "heuristic",
@@ -4158,9 +4316,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley 10-1994 Art. 2(g) (20 LPRA § 3025)",
+  "citation_url": "https://www.estado.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4173,6 +4331,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 12:00 cycle (S63, Toa Baja): a real estate investment firm buying/holding/developing its own properties got Professional License as REQUIRED/verify_existing on a Juntas Examinadoras citation, but Ley 10-1994 Art 2(g) (20 L.P.R.A. 3025) expressly excludes from the corredor profession any transaction where the person is the property owner acting for their own benefit rather than as intermediary between two clients. Only intermediaries for others (RULE_0209 brokerage) need the Junta license. Mirrors the 594af48 demotion precedent (RULE_0116/0227, golden G04); no golden pins this rule; RULE_0664 lesson (heuristic+NMI carries no compliance_mode)."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['licensed_profession_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Same owner-exemption as RULE_0211. Investment firm holding title is not a licensed profession by BT."
    }
   ],
   "verification": "heuristic",
@@ -4354,9 +4517,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Oficina del Comisionado de Seguros (OCS) — licencia de productor/agente de seguros; Código de Seguros de PR, Art. 9.160(1) (26 L.P.R.A. § 916(1))",
+  "citation": "Código de Seguros de PR, Ley 77-1957 Arts. 9.060 y 9.160 (26 LPRA §§ 949i, 950g)",
   "citation_url": "https://ocs.pr.gov/",
-  "citation_confidence": "site",
+  "citation_confidence": "statute",
   "citation_source": "rule",
   "change_log": [
    {
@@ -4373,6 +4536,11 @@
     "date": "2026-09-21",
     "change": "citation corrected: Juntas Examinadoras (Dept of State) → Oficina del Comisionado de Seguros (OCS), Código de Seguros Art. 9.160(1)",
     "reason": "QA 2026-09-21 09:00 cycle (REG-PROF-INSURANCE-001 follow-up): the demoted heuristic rule still carried the wrong authority. Primary-source basis verified 2026-09-21 06:00 cycle (OCS producer-license forms at docs.pr.gov; Art 9.160(1) Codigo de Seguros, 26 L.P.R.A. sec. 916(1) — licenses as productor/agente general/ajustador extended by the OCS). Copy-level fix; no behavior change."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: DOC_PROFESSIONAL_LICENSE with a Departamento de Estado Junta citation is the wrong authority. Keep a separate OCS document class."
    }
   ],
   "verification": "heuristic",
@@ -4388,9 +4556,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley 24-2010 (Instituciones Hipotecarias); registro NMLS; OCIF",
+  "citation_url": "https://ocif.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4403,6 +4571,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): mortgage brokers were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — licensed by the Oficina del Comisionado de Instituciones Financieras (OCIF/OCS) under the Mortgage Institutions Act (Act 24-2010), NMLS registration. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: Wrong document class."
    }
   ],
   "verification": "heuristic",
@@ -4418,9 +4591,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley Uniforme de Valores de Puerto Rico; registro de investment adviser (Form ADV; Series 65/66) ante OCS/OCIF",
+  "citation_url": "https://ocif.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4433,6 +4606,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): financial advisory firms were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — investment advisers register with the OCS/OCIF under the Uniform Securities Law of PR (Form ADV, Series 65/66). Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: Wrong document class. Federal covered advisers follow SEC; notice-file in PR as applicable."
    }
   ],
   "verification": "heuristic",
@@ -4448,9 +4626,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley 293-1945 / Junta de Contabilidad (CPA); 20 LPRA disposiciones de contadores públicos autorizados",
+  "citation_url": "https://www.estado.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "verification": "heuristic",
@@ -4462,6 +4640,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['licensed_profession_type']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['licensed_profession_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Directionally right only if the firm holds out as CPA or performs reserved attest work. Bookkeeping/tax-prep-only shops are not automatically a Junta-licensed practice."
    }
   ]
  },
@@ -4473,9 +4656,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley de Compañías de Inversión de PR, 10 LPRA § 671 et seq.; supervisión OCS/OCIF",
+  "citation_url": "https://ocif.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4488,6 +4671,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): investment firms were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — investment companies register with the OCS/OCIF under the PR Investment Company Act (10 L.P.R.A. 671). Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: Wrong document class."
    }
   ],
   "verification": "heuristic",
@@ -4503,9 +4691,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
+  "citation": "Ley de Agencias Rectificadoras de Crédito, 7 LPRA Cap. 64A (DACO)",
+  "citation_url": "https://www.daco.pr.gov/",
+  "citation_confidence": "statute",
   "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
   "citation_source": "document",
   "change_log": [
@@ -4518,6 +4706,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[licensed_profession_type]; compliance_mode removed",
     "reason": "QA 2026-09-19 09:00 cycle (S58/S59/S60): credit services companies were shown Professional License as REQUIRED/verify_existing, but the Juntas Examinadoras citation does not cover them — licensed under the Ley de Agencias Rectificadoras de Credito (PR Laws Tit. 7, Cap. 64A) through DACO, not the Juntas Examinadoras. Mirrors the RULE_0116/RULE_0227 demotion precedent (validated review; golden G04). Per the RULE_0664 lesson, heuristic+NMI rules carry no compliance_mode. DOC_PROFESSIONAL_LICENSE is not the right document class; no OCS/DTRH/DACO document exists in the KB yet (follow-up). Deliberately unchanged: law/CPA/engineering/architecture/notary (genuinely board-licensed). No golden pins any of these 6 rules."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — DOC_PROFESSIONAL_LICENSE is the wrong document class for this business type. Citation repointed to the true licensing authority. Rule stays heuristic + missing_fact_keys=['licensed_profession_type'] (engine surfaces needs_more_information, never a confirmed requirement). Follow-up: the correct document class is not in the KB yet — do not invent it here.",
+    "reason": "External legal-research review 2026-09-21. Research: Wrong document class."
    }
   ],
   "verification": "heuristic",
@@ -4549,14 +4742,14 @@
  },
  {
   "id": "RULE_0232",
-  "rule_type": "business_type",
-  "business_type_id": "BT_ENERGY_CONSULTING_FIRM",
-  "question_id": null,
-  "expected_answer": null,
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES",
+  "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CONTRACTOR_LICENSE",
-  "citation": "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO); Regl. 8172",
-  "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
+  "citation": "Ley 146-1995 Arts. 1–2; Ley 48-2017",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Registros/146-1995.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
@@ -4570,6 +4763,11 @@
     "date": "2026-09-19",
     "change": "verification set to heuristic; missing_fact_keys=[residential_work]; compliance_mode removed",
     "reason": "QA 2026-09-19 12:00 cycle (S62, Bayamón): a energy consulting firm got the DACO contractor license (Ley 146-1995) as REQUIRED on business type alone. Ley 146-1995 covers the residential construction business (Ley 48-2017 exposicion: construccion de viviendas, modificaciones, alteraciones, instalaciones y reparaciones esenciales en edificaciones de vivienda); validated golden G12 pins even BT_GENERAL_CONTRACTOR at needs_more_information ('do not assume from general contractor alone'). Mirrors RULE_0123's heuristic+missing_fact_keys=[residential_work] treatment; no golden pins this rule; RULE_0664 lesson."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED: energy consulting is not a DACO contractor class under Ley 146-1995. Retargeted to Q_OFFERS_CONSTRUCTION_SERVICES + residential_work.",
+    "reason": "External legal-research review 2026-09-21. Research: An energy consulting firm is not a DACO contractor by BT. If the firm actually installs or constructs residential energy systems, use the construction-services question, not the consulting BT."
    }
   ],
   "verification": "heuristic",
@@ -4623,14 +4821,14 @@
  },
  {
   "id": "RULE_0237",
-  "rule_type": "business_type",
-  "business_type_id": "BT_RENEWABLE_ENERGY_COMPANY",
-  "question_id": null,
-  "expected_answer": null,
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES",
+  "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CONTRACTOR_LICENSE",
-  "citation": "Ley 146-1995, Art. 2 — Registro de Contratistas (DACO); Regl. 8172",
-  "citation_url": "https://www.daco.pr.gov/wp-content/uploads/2018/11/8172.pdf",
+  "citation": "Ley 146-1995 Arts. 1–2; Ley 48-2017",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Registros/146-1995.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_CONTRACTOR_LICENSE",
   "citation_source": "document",
@@ -4648,6 +4846,11 @@
     "change": "demoted to heuristic + missing_fact_keys=[residential_work], compliance_mode removed",
     "date": "2026-09-20",
     "reason": "QA 2026-09-20 06:00 cycle (S79): BT_RENEWABLE_ENERGY_COMPANY (owner/developer of an energy-storage facility) showed the DACO contractor license (Ley 146-1995) as REQUIRED on business type alone — same defect class as RULE_0135 (landscaping) / RULE_0232 (energy consulting), demoted in 51805ec. Ley 146-1995 covers the residential construction business; a renewable energy company is trade-adjacent, not a contractor, and the standing QA rule requires at least one question/fact guard on verified contractor-BT rules (validated golden G12 pins even a general contractor at NMI). Heuristic+NMI rules carry no compliance_mode (RULE_0664 lesson: compliance_mode on heuristic+NMI rules promotes NMI to REQUIRED for new businesses). The honest path for genuine construction services is RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES, scoped to buildings/structures)."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED: energy-facility owner/developer is trade-adjacent, not a Ley 146 contractor. Retargeted to Q_OFFERS_CONSTRUCTION_SERVICES + residential_work.",
+    "reason": "External legal-research review 2026-09-21. Research: Owner/developer of an energy-storage facility is trade-adjacent, not a Ley 146 contractor. Commercial/industrial energy construction is outside DACO's residential consumer-protection registry."
    }
   ]
  },
@@ -4813,7 +5016,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912, 3 LPRA § 178; RGSA definición de establecimiento público de alimentos",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -4827,6 +5030,11 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['health_license_trigger']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['health_license_trigger']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Trigger if the gym operates a juice bar/kitchen or a public pool/spa/jacuzzi. Membership gym without those activities has no food-sanitary-permit basis."
    }
   ]
  },
@@ -4889,7 +5097,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912; enumeración de actividades de licencia sanitaria (alimentos, piscinas/spas/jacuzzis públicos, servicios de salud pública)",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
@@ -4908,6 +5116,11 @@
     "date": "2026-09-21",
     "change": "verification set to heuristic; missing_fact_keys=['health_license_trigger']; compliance_mode removed",
     "reason": "QA 2026-09-21 00:00 cycle (S97, Bayamon sports facility): primary-source review found NO Salud licensing basis for a sports facility without food service. RGSA 7655 (Reglamento General de Salud Ambiental) Art VI defines 'establecimiento publico' as establishments that handle or produce food or beverages; Ley 1-2013 Art 2.7 (the only official government enumeration of licencia-sanitaria-applicable businesses) lists food services, public-health services, drinking-water/ice, public pools/spas/jacuzzis, funeral, animal-control, pesticide services — no sports facilities; SASA's official inspection fee schedule names no bars and no sports facilities. A BT-alone verified assert for a non-food facility is unsupported, so the rule is demoted to honest needs_more_information naming the controlling fact (mirrors the validated-review demotion of RULE_0244 gym and the RULE_0116/RULE_0121 professional-license demotions). Exception: a facility WITH a public pool/spa/jacuzzi IS in scope (Ley 1-2013 Art 2.7 names 'servicios de piscinas, spas o jacuzzis publicos') — the health_license_trigger fact must capture that. RULE_0664 lesson: heuristic rules carry no compliance_mode. No golden pins RULE_0248/BT_SPORTS_FACILITY."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['health_license_trigger']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Exception: public pool, spa, or jacuzzi is in scope. Concession food service is in scope. Bare BT_SPORTS_FACILITY is not."
    }
   ]
  },
@@ -6285,7 +6498,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CRIM_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": "Carta Circular RI 05-09; Hacienda documentos de solicitud de Licencias de Rentas Internas",
   "citation_source": "rule",
   "verification": "heuristic",
   "missing_fact_keys": [
@@ -6296,8 +6509,15 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['alcohol_sold']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['alcohol_sold']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: CRIM movable-property tax clearance is an RI-license filing exhibit, not an independent duty created by serving alcohol. Renewal also requires updated CRIM verification."
    }
-  ]
+  ],
+  "citation_url": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/documentos-presentar-con-la-solicitud-de-licencias-de-rentas-internas",
+  "citation_confidence": null
  },
  {
   "id": "RULE_0623",
@@ -6345,7 +6565,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_ASUME_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": "Ley 1-2011 Sec. 5022.01; Reglamento Licencias de Rentas Internas Art. 5022.01-2; Hacienda checklist de documentos de solicitud",
   "citation_source": "rule",
   "verification": "heuristic",
   "missing_fact_keys": [
@@ -6356,8 +6576,15 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['alcohol_sold']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['alcohol_sold']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: ASUME clearance is a Hacienda license-application exhibit, not a standalone obligation triggered by serving drinks. Complimentary service, BYOB, or service without a licensed sale/dispense occupation does not start Sec. 5022.01. Applies to the applicant and, for entities, the president/managing part"
    }
-  ]
+  ],
+  "citation_url": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/documentos-presentar-con-la-solicitud-de-licencias-de-rentas-internas",
+  "citation_confidence": "statute"
  },
  {
   "id": "RULE_0626",
@@ -6405,7 +6632,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_BACKGROUND_CHECK",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": "Carta Circular de Rentas Internas 05-09; Reglamento Licencias Art. 5022.01-2 y 5022.01-4; Hacienda checklist",
   "citation_source": "rule",
   "verification": "heuristic",
   "missing_fact_keys": [
@@ -6416,8 +6643,15 @@
     "date": "2026-09-16",
     "change": "verification set to heuristic; missing_fact_keys=['alcohol_sold']",
     "reason": "Validated review 2026-09-16: controlling fact unknown — needs_more_information instead of required/recommended."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['alcohol_sold']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Antecedentes penales are an exhibit to the Hacienda alcohol (and other RI) license, not a general duty triggered by serving alcohol. Required of the individual applicant or the entity's president/managing partner or local manager."
    }
-  ]
+  ],
+  "citation_url": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation_confidence": "statute"
  },
  {
   "id": "RULE_0629",
@@ -7164,8 +7398,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_HACIENDA_TAX_COMPLIANCE",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 1-2011 Sec. 5022.01; Reglamento Licencias Art. 5022.01-2(b); Hacienda requisitos generales de solicitud/renovación",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
@@ -7176,8 +7410,14 @@
     "date": "2026-09-17",
     "change": "compliance_mode NOT set (reverted during QA)",
     "reason": "QA 2026-09-17 00:00 cycle: setting verify_existing on this heuristic rule promoted needs_more_information to required for new businesses (classifier maps verify_existing+NMI to required for businessStatus=new), breaking validated golden G07. The heuristic alcohol-served path must keep asking about alcohol_sold. Only the verified RULE_0663 carries verify_existing."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['alcohol_sold']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Tax-compliance evidence is an RI-license condition, not a separate duty created by serving alcohol. Do not attach verify_existing to this heuristic path; that promotes NMI to REQUIRED for new businesses."
    }
-  ]
+  ],
+  "citation_url": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/que-hacer-para-solicitar-una-licencia-de-rentas-internas"
  },
  {
   "id": "RULE_0665",
@@ -7187,12 +7427,20 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_ALCOHOL_SALES_PROJECTION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamento Licencias de Rentas Internas Art. 5022.01-2(a)(1); Hacienda requisitos por tipo de licencia",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "alcohol_sales_volume"
+  ],
+  "citation_url": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['alcohol_sales_volume']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Q_ALCOHOL_SOLD is the right family, but the exhibit is a volume/projection figure used to classify the license and compute fees. Limited-time licenses are excepted. Existing operators typically report actual volume, not a startup projection."
+   }
   ]
  },
  {
@@ -7203,12 +7451,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley de AAA / reglamentos de pretratamiento; Ley 416-2004; NPDES si descarga a aguas de EE.UU.",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "wastewater_discharge_route"
+  ],
+  "citation_url": "https://www.acueductospr.com/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['wastewater_discharge_route']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: A car wash to sanitary sewer needs AAA pretreatment review; to a storm drain or coastal water needs NPDES; to a holding tank may be different. Recycle-loop washers with zero discharge may need no discharge permit."
+   }
   ]
  },
  {
@@ -7219,12 +7475,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamentos de pretratamiento AAA; Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "wastewater_discharge_route"
+  ],
+  "citation_url": "https://www.acueductospr.com/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['wastewater_discharge_route']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Same as RULE_0666."
+   }
   ]
  },
  {
@@ -7235,12 +7499,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamentos de pretratamiento AAA; 40 CFR 122 (si descarga directa); Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "wastewater_discharge_route"
+  ],
+  "citation_url": "https://www.acueductospr.com/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['wastewater_discharge_route']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Packaging-only or fully hauled process water changes the permit. Metro flag is irrelevant."
+   }
   ]
  },
  {
@@ -7251,12 +7523,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamentos de pretratamiento AAA; 40 CFR 122; Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "wastewater_discharge_route"
+  ],
+  "citation_url": "https://www.acueductospr.com/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['wastewater_discharge_route']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Same as RULE_0668. Direct discharge to coastal waters would be NPDES, not an AAA sewer permit."
+   }
   ]
  },
  {
@@ -7267,12 +7547,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_NPDES_INDUSTRIAL_STORMWATER",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "40 CFR 122.26(b)(14) y 122.26(g); EPA MSGP (EPA is NPDES authority in PR)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "stormwater_exposure"
+  ],
+  "citation_url": "https://www.epa.gov/npdes/stormwater-discharges-industrial-activities",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['stormwater_exposure']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Beverage manufacturing can be regulated industrial activity, but indoor-only bottling with no exposure may certify no-exposure instead of MSGP. Metro flag is not an NPDES element."
+   }
   ]
  },
  {
@@ -7283,12 +7571,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_NPDES_INDUSTRIAL_STORMWATER",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "40 CFR 122.26(b)(14) y 122.26(g)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "stormwater_exposure"
+  ],
+  "citation_url": "https://www.epa.gov/npdes/stormwater-discharges-industrial-activities-conditional-no-exposure-exclusion",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['stormwater_exposure']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Coastal flag is irrelevant to MSGP applicability."
+   }
   ]
  },
  {
@@ -7299,12 +7595,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_NPDES_INDUSTRIAL_STORMWATER",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "40 CFR 122.26(b)(14) y 122.26(g)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "stormwater_exposure"
+  ],
+  "citation_url": "https://www.epa.gov/npdes/stormwater-discharges-industrial-activities",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['stormwater_exposure']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: BT plus metro is not the test. Confirm outdoor storage/processing."
+   }
   ]
  },
  {
@@ -7315,12 +7619,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_NPDES_INDUSTRIAL_STORMWATER",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "40 CFR 122.26(b)(14) y 122.26(g)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "stormwater_exposure"
+  ],
+  "citation_url": "https://www.epa.gov/npdes/stormwater-discharges-industrial-activities-conditional-no-exposure-exclusion",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['stormwater_exposure']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Same as RULE_0672."
+   }
   ]
  },
  {
@@ -7331,12 +7643,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_AIR_PERMIT",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamento 5300 (Reglamento para el Control de la Contaminación Atmosférica) Regla 102/201/204; Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "air_emissions"
+  ],
+  "citation_url": "https://www.drna.pr.gov/acai/permisos/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['air_emissions']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Beverage manufacturing is not per se a permitted source. Metro flag is not a statutory criterion. De-minimis and synthetic-minor paths exist under Rule 211. Trigger is actual or potential emissions from equipment/processes, not business type plus municipality class."
+   }
   ]
  },
  {
@@ -7347,12 +7667,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_AIR_PERMIT",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamento 5300 Regla 102/201/204; Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "air_emissions"
+  ],
+  "citation_url": "https://www.drna.pr.gov/acai/permisos/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['air_emissions']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Coastal flag is not an air-permit element. Same emissions test as RULE_0674. Need process units, fuel combustion, and potential-to-emit before calling a minor-source determination required."
+   }
   ]
  },
  {
@@ -7363,12 +7691,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_AIR_PERMIT",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamento 5300 Regla 102/201/204; Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "air_emissions"
+  ],
+  "citation_url": "https://www.drna.pr.gov/acai/permisos/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['air_emissions']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Tire recycling may emit if it includes grinding, heating, or combustion, but the BT label plus metro flag is not the legal test. Confirm emission units and PTE."
+   }
   ]
  },
  {
@@ -7379,12 +7715,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_AIR_PERMIT",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamento 5300 Regla 102/201/204; Ley 416-2004",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "air_emissions"
+  ],
+  "citation_url": "https://www.drna.pr.gov/acai/permisos/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['air_emissions']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Coastal location does not create an air-permit duty. Same controlling fact as RULE_0676."
+   }
   ]
  },
  {
@@ -7395,12 +7739,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_USED_OIL_GENERATOR_ID",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 172-1996 (Manejo Adecuado del Aceite Usado); Reglamento 5717 Cap. VII; formulario DRNA de número de identificación de generador",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "used_oil_generation"
+  ],
+  "citation_url": "https://www.drna.pr.gov/programas-y-proyectos/manejo-residuos/manejo-de-aceite-usado/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['used_oil_generation']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Auto-repair BT plus metro flag is not the test. Many shops generate used oil; some do not (mobile diagnostics, detailing-only). Storage over 220 gallons requires a tank. Lubricant retailers have a separate CRAU duty."
+   }
   ]
  },
  {
@@ -7411,12 +7763,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_USED_OIL_GENERATOR_ID",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 172-1996; Reglamento 5717 Cap. VII",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "used_oil_generation"
+  ],
+  "citation_url": "https://www.drna.pr.gov/programas-y-proyectos/manejo-residuos/manejo-de-aceite-usado/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['used_oil_generation']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Coastal flag is irrelevant. Same generation test as RULE_0679."
+   }
   ]
  },
  {
@@ -7427,12 +7787,20 @@
   "expected_answer": null,
   "municipality_flag": "metro",
   "requires_document_id": "DOC_EPA_HAZARDOUS_WASTE_ID",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "RCRA 40 CFR 262; Ley 70-1992; EPA Form 8700-12 / myRCRAid",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "hazardous_waste_generation"
+  ],
+  "citation_url": "https://www.epa.gov/hwgenerators/hazardous-waste-generator-regulatory-summary",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['hazardous_waste_generation']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Auto repair often generates spent solvents, parts washer fluid, or mixed oil that can be hazardous, but not always above notification thresholds. Metro flag is not a RCRA element. Used oil managed under Part 279 is not automatically hazardous waste."
+   }
   ]
  },
  {
@@ -7443,12 +7811,20 @@
   "expected_answer": null,
   "municipality_flag": "coastal",
   "requires_document_id": "DOC_EPA_HAZARDOUS_WASTE_ID",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "RCRA 40 CFR 262; Ley 70-1992",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "hazardous_waste_generation"
+  ],
+  "citation_url": "https://www.epa.gov/hwgenerators/hazardous-waste-generator-regulatory-summary",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['hazardous_waste_generation']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Coastal flag is irrelevant. Same quantity/characterization test as RULE_0680."
+   }
   ]
  },
  {
@@ -7459,12 +7835,20 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_UST_OPERATING_PERMIT",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "40 CFR Part 280; programa DRNA de tanques subterráneos",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "tank_type"
+  ],
+  "citation_url": "https://www.epa.gov/ust",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['tank_type']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Q_FUEL_SOLD can be a cardlock, mobile tank, or AST gas station with no UST. Need underground vs aboveground, capacity, and substance. Heating-oil USTs have partial exclusions."
+   }
   ]
  },
  {
@@ -7475,65 +7859,147 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Reglamentos de desperdicios biomédicos del Departamento de Salud / DRNA; 40 CFR 259 analog and PR medical-waste rules",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "biomedical_waste_types"
+  ],
+  "citation_url": "https://www.salud.pr.gov/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['biomedical_waste_types']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Home-health sharps, dental amalgam, and hospital RMW are different regimes. Need waste stream, monthly quantity, and whether a vendor manifests as the generator."
+   }
   ]
  },
  {
   "id": "RULE_0684",
-  "rule_type": "municipality_flag",
+  "rule_type": "business_type",
   "business_type_id": "BT_NONPROFIT_ORGANIZATION",
   "question_id": null,
   "expected_answer": null,
-  "municipality_flag": "metro",
+  "municipality_flag": null,
   "requires_document_id": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
+  "citation": "26 U.S.C. § 501(c); IRS Form 1023/1023-EZ / 1024",
   "citation_confidence": "review",
   "citation_source": "review",
-  "verification": "heuristic"
+  "verification": "heuristic",
+  "citation_url": "https://www.irs.gov/charities-non-profits/charitable-organizations/exemption-requirements-501c3-organizations",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — municipality flag (metro/coastal) is legally meaningless for 26 U.S.C. § 501(c); determination is sought by the entity, not imposed by geography. Flag removed; gated on federal_tax_exemption_claim. (RULE_0684/0685 now share identical triggers — duplicate pair from the metro/coastal split.)",
+    "reason": "External legal-research review 2026-09-21. Research: Metro flag is legally meaningless. Many PR nonprofits never seek 501(c)(3). Churches and some categories have different IRS paths. Distinct from Hacienda Sec. 1101.01 (RULE_0686/0687)."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Correction: rule_type set to business_type (BT_NONPROFIT_ORGANIZATION); municipality flag removed per REJECTED verdict — metro/coastal is not a 501(c) element. No missing_fact_keys: the verdict's correct_trigger is 'entity will seek 501(c)', rendered as heuristic conditional '(if sought)', matching validated golden G20.",
+    "reason": "Fix own edit error; keep verdict application faithful to the research output."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Final form: business_type BT_NONPROFIT_ORGANIZATION, no municipality flag, missing_fact_keys=[federal_tax_exemption_claim] -> needs_more_information (asks whether the entity will seek 501(c)). The 501(c) determination is sought, not imposed; metro/coastal flags are not federal tax elements.",
+    "reason": "Deep-research REJECTED verdict applied; correct_trigger rendered as a named missing fact per the validated NMI ground-truth principle."
+   }
+  ],
+  "missing_fact_keys": [
+   "federal_tax_exemption_claim"
+  ]
  },
  {
   "id": "RULE_0685",
-  "rule_type": "municipality_flag",
+  "rule_type": "business_type",
   "business_type_id": "BT_NONPROFIT_ORGANIZATION",
   "question_id": null,
   "expected_answer": null,
-  "municipality_flag": "coastal",
+  "municipality_flag": null,
   "requires_document_id": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
+  "citation": "26 U.S.C. § 501(c)",
   "citation_confidence": "review",
   "citation_source": "review",
-  "verification": "heuristic"
+  "verification": "heuristic",
+  "citation_url": "https://www.irs.gov/charities-non-profits/charitable-organizations/exemption-requirements-501c3-organizations",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: REJECTED — municipality flag (metro/coastal) is legally meaningless for 26 U.S.C. § 501(c); determination is sought by the entity, not imposed by geography. Flag removed; gated on federal_tax_exemption_claim. (RULE_0684/0685 now share identical triggers — duplicate pair from the metro/coastal split.)",
+    "reason": "External legal-research review 2026-09-21. Research: Same defect as RULE_0684. Coastal flag is not a federal tax element."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Correction: rule_type set to business_type (BT_NONPROFIT_ORGANIZATION); municipality flag removed per REJECTED verdict — metro/coastal is not a 501(c) element. No missing_fact_keys: the verdict's correct_trigger is 'entity will seek 501(c)', rendered as heuristic conditional '(if sought)', matching validated golden G20.",
+    "reason": "Fix own edit error; keep verdict application faithful to the research output."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Final form: business_type BT_NONPROFIT_ORGANIZATION, no municipality flag, missing_fact_keys=[federal_tax_exemption_claim] -> needs_more_information (asks whether the entity will seek 501(c)). The 501(c) determination is sought, not imposed; metro/coastal flags are not federal tax elements.",
+    "reason": "Deep-research REJECTED verdict applied; correct_trigger rendered as a named missing fact per the validated NMI ground-truth principle."
+   }
+  ],
+  "missing_fact_keys": [
+   "federal_tax_exemption_claim"
+  ]
  },
  {
   "id": "RULE_0686",
-  "rule_type": "municipality_flag",
+  "rule_type": "business_type",
   "business_type_id": "BT_NONPROFIT_ORGANIZATION",
   "question_id": null,
   "expected_answer": null,
-  "municipality_flag": "metro",
+  "municipality_flag": null,
   "requires_document_id": "DOC_HACIENDA_PR_TAX_EXEMPTION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 1-2011 Sec. 1101.01; CC RI 18-08; Modelo SC 2645",
+  "citation_confidence": "statute",
   "citation_source": "review",
-  "verification": "heuristic"
+  "verification": "heuristic",
+  "citation_url": "https://hacienda.pr.gov/publicaciones/carta-circular-de-rentas-internas-num-18-08",
+  "missing_fact_keys": [
+   "pr_tax_exemption_claim"
+  ],
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['pr_tax_exemption_claim']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Metro flag is irrelevant. Federal 501(c)(3) helps but is not automatic PR exemption. Churches are exempt without application. Unrelated business income remains taxable."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Trigger broadened: municipality flag (metro/coastal) removed per verdict — Sec. 1101.01 exemption does not arise from the municipality. Now business_type BT_NONPROFIT_ORGANIZATION + missing_fact_keys=[pr_tax_exemption_claim] -> needs_more_information.",
+    "reason": "Deep-research NEEDS-FACT verdict; flag removal follows the verdict notes."
+   }
+  ]
  },
  {
   "id": "RULE_0687",
-  "rule_type": "municipality_flag",
+  "rule_type": "business_type",
   "business_type_id": "BT_NONPROFIT_ORGANIZATION",
   "question_id": null,
   "expected_answer": null,
-  "municipality_flag": "coastal",
+  "municipality_flag": null,
   "requires_document_id": "DOC_HACIENDA_PR_TAX_EXEMPTION",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 1-2011 Sec. 1101.01; CC RI 18-08",
+  "citation_confidence": "statute",
   "citation_source": "review",
-  "verification": "heuristic"
+  "verification": "heuristic",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Registros/146-1995.pdf",
+  "missing_fact_keys": [
+   "pr_tax_exemption_claim"
+  ],
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['pr_tax_exemption_claim']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Same as RULE_0686. Coastal flag is not a tax element."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "Trigger broadened: municipality flag (metro/coastal) removed per verdict — Sec. 1101.01 exemption does not arise from the municipality. Now business_type BT_NONPROFIT_ORGANIZATION + missing_fact_keys=[pr_tax_exemption_claim] -> needs_more_information.",
+    "reason": "Deep-research NEEDS-FACT verdict; flag removal follows the verdict notes."
+   }
+  ]
  },
  {
   "id": "RULE_0688",
@@ -7543,12 +8009,20 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_NOISE_VARIANCE",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 416-2004; Reglamento de Ruido de la JCA/DRNA (endoso/varianza de ruido)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "entertainment_details"
+  ],
+  "citation_url": "https://www.drna.pr.gov/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['entertainment_details']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Need source level, hours, indoor vs outdoor, and zoning. Municipal entertainment permits are separate. Acoustic music inside a closed bar at legal hours typically needs no DRNA variance."
+   }
   ]
  },
  {
@@ -7559,12 +8033,20 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_PERMISO_UNICO",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 161-2009 Art. 8.4A (23 LPRA § 9018c-1)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "physical_operating_location"
+  ],
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/161-2009.pdf",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['physical_operating_location']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Q_ONLINE_ONLY true cuts against a use permit if there is no non-residential building or local premises. A home office, warehouse, pickup point, or shared workspace reintroduces PU. Online-only with no PR physical presence is outside Art. 8.4A."
+   }
   ]
  },
  {
@@ -7638,14 +8120,22 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PATENTE_MUNICIPAL",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 113-1974 Sec. 9 (21 LPRA § 651h); Código Municipal de PR disposiciones de patente",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "patente_exemption_status"
   ],
-  "requires_business": true
+  "requires_business": true,
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Municipios/113-1974/113-1974.pdf",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['patente_exemption_status']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Farms are not automatically exempt. Exemption covers direct farmer sales of agricultural products and specified agricultural organizations, not every agribusiness, farm stand of non-farm goods, or agro-tourism."
+   }
+  ]
  },
  {
   "id": "RULE_0694",
@@ -7655,14 +8145,22 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PATENTE_MUNICIPAL",
-  "citation": "Validated review 2026-09-16 (SmartPR_25_Goldens_Validated_Review.xlsx)",
-  "citation_confidence": "review",
+  "citation": "Ley 113-1974 Sec. 9 (21 LPRA § 651h)",
+  "citation_confidence": "statute",
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
    "patente_exemption_status"
   ],
-  "requires_business": true
+  "requires_business": true,
+  "citation_url": "https://law.justia.com/codes/puerto-rico/2020/titulo-21/subtitulo-3/capitulo-71/651h/",
+  "change_log": [
+   {
+    "date": "2026-09-21",
+    "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['patente_exemption_status']",
+    "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: A 501(c)(3) determination does not by itself waive patente. Unrelated business activity can remain taxable. Municipality still administers the local ordinance."
+   }
+  ]
  },
  {
   "id": "RULE_0695",
