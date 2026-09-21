@@ -4882,12 +4882,20 @@
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
+  ],
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "verification set to heuristic; missing_fact_keys=['health_license_trigger']; compliance_mode removed",
+    "reason": "QA 2026-09-21 00:00 cycle (S97, Bayamon sports facility): primary-source review found NO Salud licensing basis for a sports facility without food service. RGSA 7655 (Reglamento General de Salud Ambiental) Art VI defines 'establecimiento publico' as establishments that handle or produce food or beverages; Ley 1-2013 Art 2.7 (the only official government enumeration of licencia-sanitaria-applicable businesses) lists food services, public-health services, drinking-water/ice, public pools/spas/jacuzzis, funeral, animal-control, pesticide services — no sports facilities; SASA's official inspection fee schedule names no bars and no sports facilities. A BT-alone verified assert for a non-food facility is unsupported, so the rule is demoted to honest needs_more_information naming the controlling fact (mirrors the validated-review demotion of RULE_0244 gym and the RULE_0116/RULE_0121 professional-license demotions). Exception: a facility WITH a public pool/spa/jacuzzi IS in scope (Ley 1-2013 Art 2.7 names 'servicios de piscinas, spas o jacuzzis publicos') — the health_license_trigger fact must capture that. RULE_0664 lesson: heuristic rules carry no compliance_mode. No golden pins RULE_0248/BT_SPORTS_FACILITY."
    }
   ]
  },

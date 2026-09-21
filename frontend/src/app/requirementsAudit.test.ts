@@ -2670,3 +2670,94 @@ test("CASE AH: coarse food_prepared_or_sold never asserts Q_FOOD_PREPARED (serve
     "a restaurant that genuinely prepares food on-site still gets the health permit as REQUIRED (RULE_0009)"
   );
 });
+
+test("CASE AI: sports facility health permit is needs_more_information without a food/pool trigger (REG-HEALTH-SPORTS-001)", () => {
+  // 2026-09-21 00:00 QA cycle (S97, Bayamon): a new youth-soccer academy
+  // (no kitchen, no food service, no pool) got the Licencia Sanitaria as
+  // REQUIRED on business type alone via RULE_0248 (BT_SPORTS_FACILITY).
+  // Primary-source review: NOT SUPPORTED. RGSA 7655 (Reglamento General de
+  // Salud Ambiental) Art VI defines "establecimiento publico" as
+  // establishments that handle or produce food or beverages; Ley 1-2013 Art
+  // 2.7 — the only official government enumeration of licencia-sanitaria-
+  // applicable businesses — lists food services, public-health services,
+  // drinking-water/ice, PUBLIC pools/spas/jacuzzis, funeral, animal-control,
+  // pesticide services, and no sports facilities; SASA's official inspection
+  // fee schedule names no bars and no sports facilities. The verified BT-alone
+  // assert was the inverse of the validated-review demotions of RULE_0244
+  // (gym) and the RULE_0116/RULE_0121 professional-license rules.
+  // Fix: RULE_0248 is heuristic + missing_fact_keys=[health_license_trigger],
+  // no compliance_mode (RULE_0664 lesson). A facility WITH a public pool,
+  // spa, or jacuzzi IS in scope (Ley 1-2013 Art 2.7) — the named controlling
+  // fact captures exactly that.
+  const DOC_HEALTH = docByName("health", "sanitary");
+
+  for (const businessStatus of ["new", "existing"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Bayamón",
+        businessTypeName: "Sports Facility",
+        businessStatus,
+        answers: {
+          Q_EMPLOYEES_HIRED: true,
+          Q_PHYSICAL_LOCATION: true,
+          Q_FOOD_PREPARED: false,
+          Q_FOOD_SOLD: false,
+          Q_FOOD_SERVED: false,
+          Q_ALCOHOL_SOLD: false,
+        },
+      },
+      businessStatus
+    ).classified;
+    const health = byId(rows, DOC_HEALTH);
+    assert.ok(
+      health,
+      `health permit row must exist for Sports Facility (${businessStatus})`
+    );
+    assert.equal(
+      health.applicability,
+      "needs_more_information",
+      `a ${businessStatus} sports facility without food service stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+    );
+    assert.ok(
+      (health.missingFacts ?? []).includes("health_license_trigger"),
+      "the controlling unanswered fact must be named"
+    );
+  }
+
+  // Control: a genuine food establishment still holds.
+  const cafe = classify(
+    {
+      municipalityName: "Mayagüez",
+      businessTypeName: "Cafe",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(cafe, DOC_HEALTH)?.applicability,
+    "required",
+    "a new cafe still gets the health permit as REQUIRED (RULE_0058 verified, genuine food establishment)"
+  );
+
+  // Control: the no-food bar stays in its known REQUIRES_REVIEW posture —
+  // this fix must not touch it (primary-source verdict: UNCERTAIN).
+  const bar = classify(
+    {
+      municipalityName: "Carolina",
+      businessTypeName: "Bar",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_FOOD_PREPARED: false,
+        Q_FOOD_SERVED: false,
+      },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(bar, DOC_HEALTH)?.applicability,
+    "required",
+    "RULE_0062 (no-food bar) is unchanged — its UNCERTAIN primary-source verdict stays in REQUIRES_REGULATORY_REVIEW"
+  );
+});
