@@ -15,7 +15,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { LOCATION_TYPES_BY_BUSINESS_TYPE } from "./SmartPRIntake.tsx";
-import { HOME_BASED_LOCATION_TYPES } from "./locationTypes.ts";
+import { HOME_BASED_LOCATION_TYPES, isHomeBasedLocation } from "./locationTypes.ts";
 
 const canon = (s: string) => s.trim().toLowerCase();
 const HOME_BASED = new Set(HOME_BASED_LOCATION_TYPES.map(canon));
@@ -78,4 +78,27 @@ test("Bakery offers a home-based location option", () => {
     `Bakery options must include a home-based label; got: ` +
       (LOCATION_TYPES_BY_BUSINESS_TYPE["Bakery"] ?? []).join(", ")
   );
+});
+
+// REG-LOCATION-STR-001 (2026-09-21 18:00 QA, live Arecibo STR filing): an
+// owner-managed investment condo (owner does not live there) had no
+// residential-rental location option — the combobox offered only
+// Home-Based Business / Tourism Facility / Mixed Use Property. The auditor
+// picked "Home-Based Business" as the least-wrong fit, which derived
+// Q_HOME_BASED and falsely required Permiso Único — Domiciliary Use.
+// Short-term-rental business types must offer a plain residential-property
+// option that does NOT resolve to a home-based location.
+test("short-term-rental business types offer a non-home-based residential property option", () => {
+  for (const bt of ["Airbnb", "Short-Term Rental"]) {
+    const options = LOCATION_TYPES_BY_BUSINESS_TYPE[bt] ?? [];
+    assert.ok(
+      options.includes("Residential Property"),
+      `${bt} options must include "Residential Property"; got: ${options.join(", ")}`
+    );
+    assert.equal(
+      isHomeBasedLocation("Residential Property"),
+      false,
+      `"Residential Property" must not resolve as home-based (would wrongly trigger Domiciliary Use)`
+    );
+  }
 });

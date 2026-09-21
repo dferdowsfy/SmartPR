@@ -850,8 +850,14 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Hotel": ["Tourism Facility"],
   "Resort": ["Tourism Facility"],
   "Guest House": ["Tourism Facility", "Mixed Use Property"],
-  "Airbnb": ["Home-Based Business", "Tourism Facility", "Mixed Use Property"],
-  "Short-Term Rental": ["Home-Based Business", "Tourism Facility", "Mixed Use Property"],
+  // REG-LOCATION-STR-001 (2026-09-21 18:00 QA): a live Arecibo STR filing
+  // (owner-managed investment condo, stays under 90 days) had no
+  // residential-rental option — "Home-Based Business" was the closest fit,
+  // which wrongly derived Q_HOME_BASED and required Permiso Único —
+  // Domiciliary Use for a property the owner does not live in. STRs must
+  // offer a plain residential-property option.
+  "Airbnb": ["Residential Property", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
+  "Short-Term Rental": ["Residential Property", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
   "Vacation Rental Manager": ["Commercial Office", "Professional Office"],
   "Tour Operator": ["Commercial Office", "Tourism Facility"],
   "Excursion Company": ["Tourism Facility", "Commercial Office"],
