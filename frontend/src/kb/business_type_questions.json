@@ -3685,6 +3685,14 @@
   },
   {
     "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_ALCOHOL_MANUFACTURED"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_ALCOHOL_SOLD"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
     "question_id": "Q_PHYSICAL_LOCATION"
   },
   {
@@ -5618,6 +5626,10 @@
   {
     "business_type_id": "BT_BEVERAGE_DISTRIBUTOR",
     "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_DISTRIBUTOR",
+    "question_id": "Q_ALCOHOL_SOLD"
   },
   {
     "business_type_id": "BT_BEVERAGE_DISTRIBUTOR",

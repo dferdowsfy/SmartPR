@@ -215,3 +215,29 @@ test("F06 empty or scope-only criteria cannot establish substantive eligibility"
     assert.match(result.explanation, /needs review/i);
   }
 });
+
+test("REG-ALCOHOL-INTAKE-001: beverage manufacturing discovery asks alcohol questions; nonalcoholic manufacturers stay silent (live S108 finding 2026-09-21)", () => {
+  // Live audit finding: the Mayagüez brewery/taproom intake never asked whether
+  // alcohol is manufactured or sold, so the validated fabricante chain was
+  // unreachable through the real intake. The fix links the alcohol discovery
+  // questions to the beverage business types.
+  // NOTE: discovery ids pass through QUESTION_KEY_MAP (Q_ALCOHOL_SOLD renders
+  // as "alcohol_sold"); Q_ALCOHOL_MANUFACTURED has no mapping and renders raw.
+  const mfg = discoveryQuestionsForBusinessType("Beverage Manufacturing")!.map(q => q.id);
+  assert.ok(mfg.includes("alcohol_sold"), "beverage manufacturing must ask whether alcohol is sold");
+  assert.ok(mfg.includes("Q_ALCOHOL_MANUFACTURED"), "beverage manufacturing must ask whether alcohol is manufactured/bottled");
+  const dist = discoveryQuestionsForBusinessType("Beverage Distributor")!.map(q => q.id);
+  assert.ok(dist.includes("alcohol_sold"), "beverage distributor must ask whether alcohol is sold");
+
+  // Engine behavior: answering no keeps the fabricante chain silent (it must not
+  // be assumed for nonalcoholic manufacturers); answering yes fires it.
+  const profile = { business_type: "Beverage Manufacturing", municipality: "Mayagüez", location_type: "Industrial", number_of_employees: 12 };
+  const opts = { entityType: "limited_liability_company", projectIntent: "existing_business" } as const;
+  const noAlcohol = computeRequirementsFromKB(profile, { Q_ALCOHOL_SOLD: false, Q_ALCOHOL_MANUFACTURED: false }, {}, opts).map(r => r.document_id);
+  for (const id of ["DOC_ALCOHOL_LICENSE", "DOC_ASUME_CLEARANCE", "DOC_CRIM_CLEARANCE", "DOC_BACKGROUND_CHECK"]) {
+    assert.ok(!noAlcohol.includes(id), `${id} must not fire for a nonalcoholic beverage manufacturer`);
+  }
+  const brewery = computeRequirementsFromKB(profile, { Q_ALCOHOL_SOLD: true, Q_ALCOHOL_MANUFACTURED: true }, {}, opts).map(r => r.document_id);
+  assert.ok(brewery.includes("DOC_ALCOHOL_LICENSE"), "alcohol license must fire when the manufacturer brews and sells alcohol");
+  assert.ok(brewery.includes("DOC_ASUME_CLEARANCE"), "ASUME prerequisite must fire on the fabricante path");
+});
