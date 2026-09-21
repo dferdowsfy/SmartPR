@@ -120,6 +120,34 @@ export const PR_GUIDANCE_SOURCES = {
   // (rev. Feb 2025) was verified on docs.pr.gov — the concept below is
   // grounded in that form and Ley 17-2019. No invented procedure.
   oppe: source("SRC_GUIDANCE_OPPE", "Programa de Política Pública Energética (PPPE), DDEC", "Ley 17-2019 (Política Pública Energética) — Certificación de Instalador de Sistemas Eléctricos Renovables", "https://docs.pr.gov/files/DDEC/PPPE/Solicitud%20de%20Certificaci%C3%B3n%20de%20Instalador%20de%20Sistemas%20El%C3%A9ctricos%20Renovables.pdf", "The PPPE certifies installers of renewable electric systems (photovoltaic or wind); new and renewal applications use the official Solicitud de Certificación (rev. Feb 2025), submitted by email to energia@ddec.pr.gov or in person."),
+  // REG-GUIDE-FDA-001 (2026-09-21 QA): the FDA Food Facility Registration
+  // card rendered the unvalidated-description placeholder on live Arecibo
+  // brewery and Trujillo Alto roastery filings (S100/S102), with a confident
+  // REQUIRED badge next to "A validated description of this document is
+  // still pending." The concept below is grounded in FD&C Act §415
+  // (21 U.S.C. §350d) and 21 CFR Part 1, Subpart H: domestic facilities —
+  // including Puerto Rico — that manufacture/process/pack/hold food for US
+  // consumption must register; biennial renewal Oct 1–Dec 31 of even years.
+  fda: source("SRC_GUIDANCE_FDA", "U.S. Food and Drug Administration", "FD&C Act §415 (21 U.S.C. §350d); 21 CFR Part 1, Subpart H — Registration of Food Facilities", "https://www.fda.gov/food/online-registration-food-facilities", "Domestic facilities, including Puerto Rico, that manufacture, process, pack, or hold food for consumption in the United States must register with FDA; registrations renew biennially October 1–December 31 of even-numbered years."),
+  // REG-GUIDE-WASTEWATER-001 (2026-09-21 QA): the Wastewater Discharge /
+  // Sewer Pretreatment Authorization card rendered the unvalidated
+  // placeholder on the same live beverage-manufacturing filings. Concept is
+  // deliberately general — discharge/pretreatment authorization from AAA for
+  // industrial wastewater to the public sewer, DRNA water-quality oversight —
+  // with no invented thresholds, forms, or deadlines.
+  wastewater: source("SRC_GUIDANCE_WASTEWATER", "Autoridad de Acueductos y Alcantarillados (AAA) / DRNA", "Puerto Rico industrial wastewater discharge — AAA sewer pretreatment authorization; DRNA water-quality oversight", "https://www.drna.pr.gov/", "Industrial wastewater discharged to AAA's public sewer system requires a discharge/pretreatment authorization from AAA; DRNA oversees water-quality protection island-wide."),
+  // REG-GUIDE-STORMWATER-001 (2026-09-21 QA): the NPDES
+  // Industrial-Stormwater card rendered the unvalidated placeholder on the
+  // same live filings. Concept stays at the program level — NPDES coverage
+  // or certified no-exposure exclusion via EPA/DRNA — no invented sector
+  // codes or deadlines.
+  stormwaterIndustrial: source("SRC_GUIDANCE_STORMWATER_INDUSTRIAL", "U.S. EPA / DRNA", "NPDES industrial stormwater — coverage or no-exposure certification", "https://www.epa.gov/npdes", "Industrial sites whose operations are exposed to stormwater need NPDES stormwater permit coverage or a certified no-exposure exclusion; in Puerto Rico this runs through the EPA/DRNA NPDES program."),
+  // REG-GUIDE-AIR-001 (2026-09-21 QA): the Air Permit / Minor-Source
+  // Determination card rendered the unvalidated placeholder on the same
+  // live filings. Concept stays at the program level — DRNA administers
+  // Puerto Rico's own air-emissions program (not federal EPA Title V) — no
+  // invented emission thresholds.
+  airPermit: source("SRC_GUIDANCE_AIR", "Departamento de Recursos Naturales y Ambientales (DRNA)", "Puerto Rico air quality program — air permit / minor-source determination", "https://www.drna.pr.gov/", "DRNA administers Puerto Rico's air-emissions program; manufacturing facilities with air emissions may need a DRNA air permit or a minor-source determination."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -160,6 +188,14 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_OGPE_CONSTRUCTION_PERMIT: { en: ["ogpe", "construction permit"], es: ["ogpe", "permiso de construcción"] },
   DOC_OWNER_AFFIDAVIT: { en: ["affidavit", "owner authorization"], es: ["declaración jurada", "autorización del dueño"] },
   DOC_OPPE_INSTALLER_REG: { en: ["oppe", "installer registration"], es: ["oppe", "registro de instalador"] },
+  // REG-GUIDE-FDA-001 / REG-GUIDE-WASTEWATER-001 / REG-GUIDE-STORMWATER-001 /
+  // REG-GUIDE-AIR-001 (2026-09-21 QA): validated subject terms for the FDA
+  // registration and the three environmental cards that were rendering
+  // placeholder copy on live beverage-manufacturing filings.
+  DOC_FDA_FOOD_FACILITY_REGISTRATION: { en: ["fda", "food facility", "federal registration"], es: ["fda", "instalación alimentaria", "registro federal"] },
+  DOC_WASTEWATER_DISCHARGE_AUTHORIZATION: { en: ["wastewater", "sewer", "pretreatment", "discharge"], es: ["aguas residuales", "alcantarillado", "pretratamiento", "descarga"] },
+  DOC_NPDES_INDUSTRIAL_STORMWATER: { en: ["stormwater", "npdes", "no-exposure"], es: ["aguas pluviales", "npdes", "no exposición"] },
+  DOC_AIR_PERMIT: { en: ["air permit", "emissions", "minor-source"], es: ["permiso de aire", "emisiones", "fuente menor"] },
   // REG-GUIDE-SIGN-001 / REG-GUIDE-ANNUAL-001 (2026-09-20 QA): validated
   // subject terms for the sign/rótulo and annual-report cards that were
   // rendering placeholder copy on live filings.
@@ -230,7 +266,12 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
   DOC_EIN: concept("DOC_EIN", [[employee]], [PR_GUIDANCE_SOURCES.ein], [
     text("The IRS identifies a business by its Employer Identification Number (EIN). Employers need one for employment-tax reporting, and most registered entities need one as well.", "El IRS identifica a un negocio por su Número de Identificación Patronal (EIN). Los patronos lo necesitan para informar contribuciones sobre el empleo, y la mayoría de las entidades registradas también."),
     text("IRS confirmation is official evidence of the EIN assigned to the business, not the application for that number.", "La confirmación del IRS es evidencia oficial del EIN asignado al negocio, no la solicitud de ese número."),
-    text("Prepare the EIN application, or upload IRS confirmation if already assigned. A new entity must be formed before it can apply for an EIN.", "Prepara la solicitud del EIN o sube la confirmación del IRS si ya fue asignado. Una entidad nueva tiene que estar constituida antes de solicitar el EIN."),
+    // Status-neutral next action (concepts are shared across business
+    // statuses and the EIN card renders with VERIFY EXISTING on operating
+    // businesses — REG-GUIDE-VERIFY-001, 2026-09-21 QA): lead with the
+    // upload; the SS-4 application is the alternative for businesses that do
+    // not have an EIN yet (the 590603a lesson).
+    text("Upload the IRS EIN confirmation (CP 575 notice or other accepted IRS confirmation). If the business does not have an EIN yet, prepare the SS-4 application — a new entity must be formed before it can apply for an EIN.", "Sube la confirmación del EIN del IRS (aviso CP 575 u otra confirmación aceptada). Si el negocio aún no tiene EIN, prepara la solicitud SS-4 — una entidad nueva tiene que estar constituida antes de solicitar el EIN."),
     text("The assigned EIN can identify the business on tax returns and later licensing applications. Do not substitute a draft for IRS confirmation.", "El EIN asignado identifica al negocio en planillas y solicitudes de licencias. Un borrador no sustituye la confirmación del IRS."),
   ]),
   DOC_SAM_REGISTRATION: concept("DOC_SAM_REGISTRATION", [
@@ -610,5 +651,73 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("This sales projection describes the volume of alcohol the business expects to sell — how much, and of what type — so Hacienda can complete the license file. It is a filing input for the alcohol license, alongside the Merchant Registration, the ASUME and CRIM certifications, and the criminal-record certificate.", "Esta proyección describe el volumen de alcohol que el negocio espera vender — cuánto y de qué tipo — para completar el expediente de la licencia. Es un insumo de la solicitud de la licencia de bebidas alcohólicas, junto al Registro de Comerciante, las certificaciones de ASUME y CRIM, y el certificado de antecedentes penales."),
     text("Prepare the projected sales volume for the licensed premises — estimated monthly or annual alcohol sales — and enter it when completing the alcohol-license application. Keep the working numbers with the license file; Hacienda uses them as the declared basis for the license.", "Prepara la proyección del volumen de ventas del local — ventas de alcohol estimadas por mes o por año — y anótala al completar la solicitud de la licencia. Guarda los números de trabajo en el expediente; Hacienda los usa como la base declarada de la licencia."),
     text("An alcohol-license application without the sales projection is incomplete: Hacienda holds the license until the projected sales volume is in the file. Prepare the numbers before filing so the application is not held up.", "Una solicitud de licencia de bebidas alcohólicas sin la proyección de ventas está incompleta: Hacienda la detiene hasta que el volumen proyectado entre al expediente. Prepara los números antes de radicar para que la solicitud no se tranque."),
+  ]),
+  // REG-GUIDE-FDA-001 (2026-09-21 QA): the FDA Food Facility Registration
+  // card rendered the unvalidated-description placeholder with a confident
+  // REQUIRED badge on live Arecibo brewery and Trujillo Alto roastery
+  // filings (S100/S102). The concept is grounded in FD&C Act §415
+  // (21 U.S.C. §350d) and 21 CFR Part 1, Subpart H (verified 2026-09-21 from
+  // fda.gov): domestic facilities — including Puerto Rico — that
+  // manufacture, process, pack, or hold food for US consumption must
+  // register; biennial renewal Oct 1–Dec 31 of even-numbered years.
+  // Status-neutral ("register or confirm"); no invented UFI mechanics beyond
+  // what FDA's own renewal guide states.
+  DOC_FDA_FOOD_FACILITY_REGISTRATION: concept("DOC_FDA_FOOD_FACILITY_REGISTRATION", [
+    [condition("businessType", "Beverage manufacturing", "Manufactura de bebidas", "BT_BEVERAGE_MANUFACTURING")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.fda], [
+    text("The FDA requires domestic food facilities — including facilities in Puerto Rico — that manufacture, process, pack, or hold food for consumption in the United States to register with the agency. A brewery or beverage plant that produces drinks for sale is a food facility under Section 415 of the Federal Food, Drug, and Cosmetic Act (21 U.S.C. §350d); 21 CFR Part 1, Subpart H sets the registration rules.", "La FDA exige que las instalaciones alimentarias domésticas — incluyendo las de Puerto Rico — que manufacturan, procesan, empacan o almacenan alimentos para consumo en los Estados Unidos se registren con la agencia. Una cervecería o planta de bebidas que produce bebidas para la venta es una instalación alimentaria bajo la Sección 415 de la ley federal de alimentos, medicamentos y cosméticos (21 U.S.C. §350d); el 21 CFR Parte 1, Subparte H establece las reglas de registro."),
+    text("The registration puts the facility on FDA's official record as a food facility — it is how the agency knows who makes food and where. It is not a license to sell and does not replace Puerto Rico's health and sanitary permits.", "El registro pone la instalación en el récord oficial de la FDA como instalación alimentaria — es como la agencia sabe quién produce alimentos y dónde. No es una licencia de venta ni sustituye los permisos sanitarios de Puerto Rico."),
+    text("Register the facility through FDA's online Food Facility Registration system (free), or confirm the existing registration is current — registrations renew every two years, October 1 through December 31 of even-numbered years, and must be updated when facility information changes.", "Registra la instalación en el sistema en línea de registro de instalaciones alimentarias de la FDA (gratis), o confirma que el registro existente sigue vigente — los registros se renuevan cada dos años, del 1 de octubre al 31 de diciembre de los años pares, y hay que actualizarlos cuando cambia la información de la instalación."),
+    text("An unregistered food facility violates federal law — FDA can enforce the registration requirement against the operation. Keep the registration number in the facility's compliance file and calendar the biennial renewal.", "Una instalación alimentaria sin registrar viola la ley federal — la FDA puede hacer valer el requisito de registro contra la operación. Guarda el número de registro en el expediente de cumplimiento y apunta la renovación bienal en el calendario."),
+  ]),
+  // REG-GUIDE-WASTEWATER-001 (2026-09-21 QA): the Wastewater Discharge /
+  // Sewer Pretreatment Authorization card rendered the unvalidated
+  // placeholder on the same live beverage-manufacturing filings
+  // (RULE_0668/0669, municipality_flag heuristic, MORE INFORMATION NEEDED).
+  // Concept stays general — AAA discharge/pretreatment authorization for
+  // industrial wastewater to the public sewer, DRNA water-quality oversight —
+  // status-neutral ("confirm or document"), no invented thresholds/forms.
+  DOC_WASTEWATER_DISCHARGE_AUTHORIZATION: concept("DOC_WASTEWATER_DISCHARGE_AUTHORIZATION", [
+    [condition("businessType", "Beverage manufacturing", "Manufactura de bebidas", "BT_BEVERAGE_MANUFACTURING")],
+    [condition("businessType", "Car wash", "Car wash", "BT_CAR_WASH")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.wastewater], [
+    text("Beverage manufacturing produces industrial wastewater — from brewing, cleaning, and cooling — that cannot go down the drain untreated. When a facility discharges that wastewater to the public sewer, the Autoridad de Acueductos y Alcantarillados (AAA) requires a discharge/pretreatment authorization; DRNA oversees water-quality protection island-wide.", "La manufactura de bebidas produce aguas residuales industriales — del proceso, la limpieza y el enfriamiento — que no pueden ir al drenaje sin tratar. Cuando una instalación descarga esas aguas al alcantarillado público, la Autoridad de Acueductos y Alcantarillados (AAA) requiere una autorización de descarga/pretratamiento; el DRNA supervisa la protección de la calidad del agua en toda la isla."),
+    text("The authorization sets the terms under which the facility may discharge industrial wastewater to the sewer — what pretreatment is required and what limits apply. It is separate from the municipal use permit and the health permit.", "La autorización establece las condiciones bajo las cuales la instalación puede descargar aguas residuales industriales al alcantarillado — qué pretratamiento se requiere y qué límites aplican. Es aparte del permiso de uso municipal y del permiso de salud."),
+    text("Confirm with AAA whether the facility's wastewater discharge needs a pretreatment authorization — have the discharge route ready (to the public sewer, to a private system, or hauled off-site). If the operation produces no industrial wastewater discharge, document that so the file is clear.", "Confirma con la AAA si la descarga de aguas residuales de la instalación requiere una autorización de pretratamiento — ten a la mano la ruta de descarga (al alcantarillado público, a un sistema privado o por acarreo). Si la operación no genera descarga de aguas industriales, documéntalo para que el expediente quede claro."),
+    text("Discharging industrial wastewater to the sewer without the required authorization exposes the facility to AAA enforcement and DRNA sanctions. Resolve the discharge route before the facility starts operating.", "Descargar aguas industriales al alcantarillado sin la autorización requerida expone la instalación a acciones de la AAA y sanciones del DRNA. Resuelve la ruta de descarga antes de que la instalación empiece a operar."),
+  ]),
+  // REG-GUIDE-STORMWATER-001 (2026-09-21 QA): the NPDES
+  // Industrial-Stormwater Coverage / No-Exposure Determination card rendered
+  // the unvalidated placeholder on the same live filings (RULE_0670/0671,
+  // municipality_flag heuristic, MORE INFORMATION NEEDED). Concept stays at
+  // the program level — NPDES coverage or certified no-exposure exclusion
+  // via EPA/DRNA — status-neutral, no invented sector codes or deadlines.
+  DOC_NPDES_INDUSTRIAL_STORMWATER: concept("DOC_NPDES_INDUSTRIAL_STORMWATER", [
+    [condition("businessType", "Beverage manufacturing", "Manufactura de bebidas", "BT_BEVERAGE_MANUFACTURING")],
+    [condition("businessType", "Tire recycling", "Reciclaje de gomas", "BT_TIRE_RECYCLING")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.stormwaterIndustrial], [
+    text("Industrial sites whose operations are exposed to rain — outdoor storage, loading areas, waste handling — need federal stormwater coverage. Under the NPDES industrial stormwater program, the facility needs permit coverage or a certified no-exposure exclusion; in Puerto Rico this runs through the EPA/DRNA program.", "Las instalaciones industriales cuyas operaciones están expuestas a la lluvia — almacenaje al aire libre, áreas de carga, manejo de desperdicios — necesitan cobertura federal de aguas pluviales. Bajo el programa NPDES de aguas pluviales industriales, la instalación necesita cobertura del permiso o una exclusión certificada de no exposición; en Puerto Rico esto corre por el programa EPA/DRNA."),
+    text("The coverage — or the no-exposure certification — documents how stormwater leaving the site is controlled, or certifies that no industrial materials are exposed to rain at all. It is separate from the wastewater discharge authorization.", "La cobertura — o la certificación de no exposición — documenta cómo se controlan las aguas pluviales que salen del predio, o certifica que ningún material industrial está expuesto a la lluvia. Es aparte de la autorización de descarga de aguas residuales."),
+    text("Confirm with EPA/DRNA whether the site needs industrial stormwater permit coverage or qualifies for the no-exposure exclusion — walk the site for exposed materials, outdoor storage, and loading areas first. File the coverage or the no-exposure certification before operations expose materials to rain.", "Confirma con EPA/DRNA si el predio necesita cobertura del permiso de aguas pluviales industriales o si cualifica para la exclusión de no exposición — primero recorre el predio buscando materiales expuestos, almacenaje al aire libre y áreas de carga. Radica la cobertura o la certificación de no exposición antes de que las operaciones expongan materiales a la lluvia."),
+    text("Operating an exposed industrial site without stormwater coverage is a federal Clean Water Act violation. Keep the coverage or no-exposure certification in the facility's environmental file.", "Operar un predio industrial expuesto sin cobertura de aguas pluviales es una violación federal de la Ley de Agua Limpia. Guarda la cobertura o la certificación de no exposición en el expediente ambiental de la instalación."),
+  ]),
+  // REG-GUIDE-AIR-001 (2026-09-21 QA): the Air Permit / Minor-Source
+  // Determination card rendered the unvalidated placeholder on the same
+  // live filings (RULE_0674/0675, municipality_flag heuristic, MORE
+  // INFORMATION NEEDED). Concept stays at the program level — DRNA
+  // administers Puerto Rico's own air-emissions program (not federal EPA
+  // Title V) — status-neutral, no invented emission thresholds.
+  DOC_AIR_PERMIT: concept("DOC_AIR_PERMIT", [
+    [condition("businessType", "Beverage manufacturing", "Manufactura de bebidas", "BT_BEVERAGE_MANUFACTURING")],
+    [condition("businessType", "Tire recycling", "Reciclaje de gomas", "BT_TIRE_RECYCLING")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.airPermit], [
+    text("Beverage manufacturing can produce air emissions — boilers, brewing vapors, and fuel-burning equipment. Puerto Rico runs its own air quality program through the Departamento de Recursos Naturales y Ambientales (DRNA); a facility with air emissions may need a DRNA air permit or a minor-source determination.", "La manufactura de bebidas puede generar emisiones al aire — calderas, vapores del proceso y equipo que quema combustible. Puerto Rico corre su propio programa de calidad del aire a través del Departamento de Recursos Naturales y Ambientales (DRNA); una instalación con emisiones puede necesitar un permiso de aire del DRNA o una determinación de fuente menor."),
+    text("The air permit — or the minor-source determination — establishes which emissions the facility may release and under what controls. It is separate from the municipal use permit and from any federal EPA filing: Puerto Rico's program runs through DRNA.", "El permiso de aire — o la determinación de fuente menor — establece qué emisiones puede liberar la instalación y bajo qué controles. Es aparte del permiso de uso municipal y de cualquier radicación federal ante la EPA: el programa de Puerto Rico corre por el DRNA."),
+    text("Confirm with DRNA whether the facility's equipment and emissions trigger an air permit or a minor-source determination — have the equipment list ready (boilers, burners, and fuel types). If the operation has no meaningful air emissions, document that so the file is clear.", "Confirma con el DRNA si el equipo y las emisiones de la instalación activan un permiso de aire o una determinación de fuente menor — ten a la mano la lista de equipos (calderas, quemadores y tipos de combustible). Si la operación no tiene emisiones significativas, documéntalo para que el expediente quede claro."),
+    text("Operating emission sources without the required DRNA air permit exposes the facility to DRNA enforcement. Resolve the air question before installing fuel-burning equipment.", "Operar fuentes de emisión sin el permiso de aire requerido del DRNA expone la instalación a acciones del DRNA. Resuelve lo del aire antes de instalar equipo que queme combustible."),
   ]),
 };

@@ -1054,8 +1054,18 @@ export const SAMPLE_APPLICATIONS: Record<string, SampleApplicationDefinition> = 
 export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
   certificate_of_incorporation: "Open and complete the official Department of State form here. After the agency accepts the filing, upload the official Certificate of Incorporation to complete this requirement.",
   merchant_registration: "Complete merchant registration in SURI. After Hacienda issues the certificate, upload the official Merchant Registration Certificate to complete this requirement.",
-  permiso_unico: "SmartPR prepares a bilingual Permiso Único / use-occupancy prep checklist (no standalone OGPe PDF — filing is portal-only). Prefill identity from the Business Passport, assemble Evidence locker files tagged DOC_PERMISO_UNICO and related DOC_* codes, file at ogpe.pr.gov, then upload the issued Permiso Único to complete this requirement.",
-  ein_letter: "SmartPR prepares the IRS Form SS-4 application for you. The EIN itself is agency-issued: after the IRS processes the application, upload the CP 575 notice or other accepted IRS EIN confirmation to complete this requirement.",
+  // REG-GUIDE-VERIFY-001 (2026-09-21 QA): the Permiso Único card rendered
+  // "complete the permit application in SBP" with a VERIFY EXISTING badge on
+  // the same live filing — apply-copy contradicting the verify posture.
+  // Status-neutral: lead with the upload; the prep checklist is the
+  // alternative for businesses without an issued permit.
+  permiso_unico: "Upload the issued Permiso Único to complete this requirement. If the business does not have one yet, SmartPR prepares a bilingual Permiso Único / use-occupancy prep checklist (no standalone OGPe PDF — filing is portal-only): prefill identity from the Business Passport, assemble Evidence locker files tagged DOC_PERMISO_UNICO and related DOC_* codes, then file at ogpe.pr.gov.",
+  // REG-GUIDE-VERIFY-001 (2026-09-21 QA): the EIN card rendered
+  // "SmartPR prepares the IRS Form SS-4 application for you" with a VERIFY
+  // EXISTING badge on a live Toa Alta auto-parts filing for an operating
+  // business (S101) — apply-copy contradicting the verify posture. Status-
+  // neutral: lead with the upload; preparation is the alternative.
+  ein_letter: "Upload the IRS EIN confirmation (CP 575 notice or other accepted IRS EIN confirmation) to complete this requirement. If the business does not have an EIN yet, SmartPR prepares the IRS Form SS-4 application for you — the EIN itself is agency-issued.",
   health_permit: "SmartPR prepares a bilingual sanitary / food-establishment prep checklist when DOC_HEALTH_PERMIT applies (often via OGPe Permiso Único). Tag supporting evidence (DOC_CFPM, DOC_FLOOR_PLANS, etc.) in the Evidence locker, complete the agency/portal steps, then upload the issued Health / Sanitary Permit tagged DOC_HEALTH_PERMIT.",
   fire_certification: "SmartPR prepares a bilingual Bomberos fire-safety inspection prep checklist. CPI is processed through OGPe after Bomberos inspection — SmartPR does not e-file. Assemble Evidence locker tags (DOC_FIRE_CERT and related), prepare the premises, then upload the issued certification tagged DOC_FIRE_CERT.",
   alcohol_permit: "SmartPR prepares an alcohol beverage license worksheet for you. The license itself is agency-issued: complete the application with Hacienda, and after it issues the license, upload the official Alcohol Beverage License to complete this requirement.",
@@ -1068,8 +1078,10 @@ export const ISSUED_DOCUMENT_GUIDANCE: Record<string, string> = {
 export const ISSUED_DOCUMENT_GUIDANCE_ES: Record<string, string> = {
   certificate_of_incorporation: "Abre y completa aquí el formulario oficial del Departamento de Estado. Después de que la agencia acepte la radicación, sube el Certificado de Incorporación oficial para completar este requisito.",
   merchant_registration: "Completa el registro de comerciante en SURI. Después de que Hacienda emita el certificado, sube el Certificado de Registro de Comerciante oficial para completar este requisito.",
-  permiso_unico: "SmartPR te prepara una lista bilingüe de preparación del Permiso Único / uso-ocupación (no hay PDF independiente de OGPe — la radicación es solo por portal). Prellena la identidad desde el Pasaporte de negocio, reúne archivos del Evidence locker con DOC_PERMISO_UNICO y códigos DOC_* relacionados, radica en ogpe.pr.gov y luego sube el Permiso Único emitido para completar este requisito.",
-  ein_letter: "SmartPR prepara la solicitud del Formulario SS-4 del IRS por ti. El EIN en sí lo emite la agencia: después de que el IRS procese la solicitud, sube el aviso CP 575 u otra confirmación de EIN aceptada por el IRS para completar este requisito.",
+  // REG-GUIDE-VERIFY-001 (2026-09-21 QA): status-neutral — see the EN entry.
+  permiso_unico: "Sube el Permiso Único emitido para completar este requisito. Si el negocio aún no tiene uno, SmartPR te prepara una lista bilingüe de preparación del Permiso Único / uso-ocupación (no hay PDF independiente de OGPe — la radicación es solo por portal): prellena la identidad desde el Pasaporte de negocio, reúne archivos del Evidence locker con DOC_PERMISO_UNICO y códigos DOC_* relacionados, y luego radica en ogpe.pr.gov.",
+  // REG-GUIDE-VERIFY-001 (2026-09-21 QA): status-neutral — see the EN entry.
+  ein_letter: "Sube la confirmación del EIN del IRS (aviso CP 575 u otra confirmación aceptada por el IRS) para completar este requisito. Si el negocio aún no tiene EIN, SmartPR prepara la solicitud del Formulario SS-4 del IRS por ti — el EIN en sí lo emite la agencia.",
   health_permit: "SmartPR te prepara una lista bilingüe de preparación sanitaria / de establecimiento de alimentos cuando aplica DOC_HEALTH_PERMIT (a menudo vía Permiso Único de OGPe). Etiqueta evidencia de apoyo (DOC_CFPM, DOC_FLOOR_PLANS, etc.) en el Evidence locker, completa los pasos de la agencia/portal y luego sube el Permiso de Salud emitido etiquetado DOC_HEALTH_PERMIT.",
   fire_certification: "SmartPR te prepara una lista bilingüe de preparación para la inspección de Bomberos. La CPI se tramita por OGPe después de la inspección — SmartPR no radica electrónicamente. Reúne etiquetas del Evidence locker (DOC_FIRE_CERT y relacionadas), prepara el local y luego sube la certificación emitida etiquetada DOC_FIRE_CERT.",
   alcohol_permit: "SmartPR te prepara una hoja de trabajo para la licencia de bebidas alcohólicas. La licencia en sí la emite la agencia: completa la solicitud con Hacienda y, después de emitida, sube la Licencia de Bebidas Alcohólicas oficial para completar este requisito.",

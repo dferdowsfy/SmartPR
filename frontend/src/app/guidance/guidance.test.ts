@@ -4,6 +4,7 @@ import { buildRequirementGuidance, type GuidanceContext, type GuidanceRequiremen
 import { KB, buildEngineInput, applyKbSnapshot } from "../kb";
 import { runRulesEngine } from "../rulesEngine";
 import { PR_REQUIREMENT_GUIDANCE } from "./pr";
+import { ISSUED_DOCUMENT_GUIDANCE, ISSUED_DOCUMENT_GUIDANCE_ES } from "../sampleApplicationForms";
 import { duplicateGuidanceIds, validateGuidanceConcept } from "./model";
 import { buildSeedNodes } from "../rk/seed-data";
 import { compileKb } from "../rk/compile";
@@ -77,11 +78,21 @@ const ENTITY_GATED = new Set(["DOC_CERT_INCORPORATION"]);
 // validated outdoor-seating concept (REG-GUIDE-OUTDOOR-001, 2026-09-20).
 const OUTDOOR_GATED = new Set(["DOC_OUTDOOR_SEATING_AUTH"]);
 
-test("same Bayamón bar: all thirty-three source-backed explanations are distinct and actionable in EN/ES", () => {
+// Beverage-manufacturing-gated: the FDA food-facility registration and the
+// three environmental cards (wastewater discharge, NPDES industrial
+// stormwater, air permit) apply only to beverage-manufacturing (and a few
+// other industrial) business types — the Bayamón bar profile matches none of
+// their firing rules, so the validated concepts stay provisional for it
+// (correct — MATCH_TRACE_MISSING, not a placeholder). Added with the
+// FDA/environmental concepts (REG-GUIDE-FDA-001 / REG-GUIDE-WASTEWATER-001 /
+// REG-GUIDE-STORMWATER-001 / REG-GUIDE-AIR-001, 2026-09-21).
+const BEVERAGE_MFG_GATED = new Set(["DOC_FDA_FOOD_FACILITY_REGISTRATION", "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION", "DOC_NPDES_INDUSTRIAL_STORMWATER", "DOC_AIR_PERMIT"]);
+
+test("same Bayamón bar: all thirty-nine source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -97,7 +108,7 @@ test("same Bayamón bar: all thirty-three source-backed explanations are distinc
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 35);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 39);
   }
 });
 
@@ -575,4 +586,67 @@ test("REG-GUIDE-ALCOHOL-SALES-001: alcohol sales projection concept validates fo
     assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `DOC_ALCOHOL_SALES_PROJECTION (negative): ${n.reviewReasons}`);
     assert.doesNotMatch(JSON.stringify(n), /validated description pending|still pending/);
   }
+});
+
+// REG-GUIDE-FDA-001 / REG-GUIDE-WASTEWATER-001 / REG-GUIDE-STORMWATER-001 /
+// REG-GUIDE-AIR-001 (2026-09-21 QA): the FDA Food Facility Registration card
+// and the three environmental cards (wastewater discharge, NPDES
+// industrial-stormwater, air permit) rendered the unvalidated-description
+// placeholder — with a confident REQUIRED badge on the FDA card — on live
+// Arecibo brewery and Trujillo Alto roastery filings (S100/S102). The four
+// validated concepts below cover the verified BT firing path (RULE_0656)
+// and the municipality_flag heuristic paths (RULE_0668/0669, 0670/0671,
+// 0674/0675) in EN and PR-ES. Negative controls confirm the cards hedge
+// (MATCH_TRACE_MISSING) but still render validated copy, never the
+// placeholder.
+for (const [docId, ruleIds, basis, esBits] of [
+  ["DOC_FDA_FOOD_FACILITY_REGISTRATION", ["RULE_0656"], /415|350d/, ["instalación alimentaria", "FDA"]] as const,
+  ["DOC_WASTEWATER_DISCHARGE_AUTHORIZATION", ["RULE_0668", "RULE_0669"], /AAA/, ["aguas residuales", "AAA"]] as const,
+  ["DOC_NPDES_INDUSTRIAL_STORMWATER", ["RULE_0670", "RULE_0671"], /NPDES|no-exposure/, ["aguas pluviales", "no exposición"]] as const,
+  ["DOC_AIR_PERMIT", ["RULE_0674", "RULE_0675"], /DRNA/, ["permiso de aire", "DRNA"]] as const,
+]) {
+  test(`REG-GUIDE-${docId === "DOC_FDA_FOOD_FACILITY_REGISTRATION" ? "FDA" : docId === "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION" ? "WASTEWATER" : docId === "DOC_NPDES_INDUSTRIAL_STORMWATER" ? "STORMWATER" : "AIR"}-001: ${docId} concept validates for beverage manufacturing in EN/ES`, () => {
+    const mkCtx = (prof: Record<string, unknown>, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+      return { ...ctx, businessTypeName: prof.business_type as string, profile: prof, discoveryAnswers, engineInput: buildEngineInput(prof, discoveryAnswers) };
+    };
+    const brewery = { municipality: "Arecibo", business_type: "Beverage Manufacturing", business_structure: "LLC", location_type: "Industrial Facility", number_of_employees: 8 };
+    for (const language of ["en", "es"] as const) {
+      const q = buildRequirementGuidance(req(docId), { ...mkCtx(brewery, {}), language });
+      assert.equal(q.status, "VALIDATED", `${docId}: ${q.reviewReasons}`);
+      assert.ok(q.triggerFacts.some(f => ruleIds.some(r => f.ruleIds.includes(r))), `${docId} trigger rules: ${JSON.stringify(q.triggerFacts.map(f => f.ruleIds))}`);
+      assert.doesNotMatch(JSON.stringify(q), /validated description pending|not confirmed yet|still pending/);
+      assert.match(JSON.stringify(q.sources), basis);
+      for (const bit of esBits) {
+        if (language === "es") assert.match(JSON.stringify(q), new RegExp(bit), `${docId} ES copy`);
+      }
+      // Honest negative control: Ponce café matches none of the firing rules
+      // — the card hedges (MATCH_TRACE_MISSING) but renders validated copy,
+      // never the placeholder.
+      const cafe = { municipality: "Ponce", business_type: "Cafe", business_structure: "LLC", location_type: "Commercial Facility", number_of_employees: 3 };
+      const n = buildRequirementGuidance(req(docId), { ...mkCtx(cafe, {}), language });
+      assert.equal(n.status, "GUIDANCE_NEEDS_REVIEW");
+      assert.ok(n.reviewReasons.includes("MATCH_TRACE_MISSING"), `${docId} (negative): ${n.reviewReasons}`);
+      assert.doesNotMatch(JSON.stringify(n), /validated description pending|still pending/);
+    }
+  });
+}
+
+// REG-GUIDE-VERIFY-001 (2026-09-21 QA): the EIN and Permiso Único cards
+// rendered apply-copy ("SmartPR prepares the IRS Form SS-4 application for
+// you" / "complete the permit application in SBP") with a VERIFY EXISTING
+// badge on a live Toa Alta auto-parts filing for an operating business
+// (S101). The issued-document guidance and the DOC_EIN concept next action
+// are now status-neutral: they lead with the upload and offer preparation
+// only as the alternative.
+test("REG-GUIDE-VERIFY-001: EIN and Permiso Único guidance lead with upload, not application (EN/ES)", () => {
+  assert.match(ISSUED_DOCUMENT_GUIDANCE.ein_letter, /^Upload the IRS EIN confirmation/);
+  assert.doesNotMatch(ISSUED_DOCUMENT_GUIDANCE.ein_letter, /^SmartPR prepares/);
+  assert.match(ISSUED_DOCUMENT_GUIDANCE_ES.ein_letter, /^Sube la confirmación del EIN/);
+  assert.match(ISSUED_DOCUMENT_GUIDANCE.permiso_unico, /^Upload the issued Permiso Único/);
+  assert.doesNotMatch(ISSUED_DOCUMENT_GUIDANCE.permiso_unico, /^SmartPR prepares/);
+  assert.match(ISSUED_DOCUMENT_GUIDANCE_ES.permiso_unico, /^Sube el Permiso Único emitido/);
+  const einConcept = PR_REQUIREMENT_GUIDANCE["DOC_EIN"];
+  assert.match(einConcept.nextAction.en, /^Upload the IRS EIN confirmation/);
+  assert.match(einConcept.nextAction.es, /^Sube la confirmación del EIN/);
+  assert.doesNotMatch(JSON.stringify(einConcept.nextAction), /A new entity must be formed before it can apply/);
 });
