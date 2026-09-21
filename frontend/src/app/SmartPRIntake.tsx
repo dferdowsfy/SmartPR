@@ -73,7 +73,7 @@ import {
 } from './forms/engine/projectPassport';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
 import { selectFormForRequirement, selectEntriesForRequirement } from './forms/engine/routing';
-import { buildCanonicalFromIntake, entityTypeFromLegacyStructure } from './forms/engine/intake';
+import { buildCanonicalFromIntake, entityTypeFromLegacyStructure, ENTITY_TYPE_OPTIONS } from './forms/engine/intake';
 import { passportJsonFromCanonical, worksheetPrefillFromPassport, type BusinessPassportJson } from './forms/engine/businessPassport';
 import { requirementFormState, actionsForFormState } from './forms/engine/application';
 import { generatePreparationPdf } from './forms/engine/pdfGenerator';
@@ -2136,10 +2136,9 @@ export default function SmartPRIntake() {
       // Generic engine-generated reason shapes (rulesEngine.ts) — these embed
       // dynamic values (municipality name, business type, question text) so
       // they can never be exact-matched in the L() dictionary; translate the
-      // surrounding template here instead.
-      const municipalityMatch = req.reason.match(/^Municipality selected \((.+)\)$/);
-      if (municipalityMatch) return `Municipio seleccionado (${municipalityMatch[1]})`;
-
+      // surrounding template here instead. The municipality-baseline shape
+      // ("Municipality selected (...)") is translated by translateTriggerReason
+      // in both languages (REG-TRIGGER-LABEL-003).
       const questionMatch = req.reason.match(/^Question: (.+) \| Answer: Yes$/);
       // 2026-09-18 QA (live S41): the embedded question text was English
       // inside a Spanish filing. Localize it through the i18n dictionary —
@@ -5257,8 +5256,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         : { label: language === 'es' ? 'Se necesita el tipo de ubicación' : 'Physical location needed', state: 'needs-info' as const },
   ];
   if (profile.business_structure) {
+    // REG-ENTITY-LABEL-001 (2026-09-21 18:00 QA): the panel showed the raw
+    // internal enum ("Entity: llc") instead of a user-readable label.
+    // Resolve through the canonical entity type and reuse the same
+    // localized option labels the entity-type select already uses.
+    const entityType = entityTypeFromLegacyStructure(profile.business_structure);
+    const entityOption = ENTITY_TYPE_OPTIONS.find((o) => o.value === entityType);
+    const entityLabel = entityOption
+      ? (language === 'es' ? (entityOption.label.es ?? entityOption.label.en) : entityOption.label.en)
+      : profile.business_structure;
     intelligenceSignals.push({
-      label: language === 'es' ? `Entidad: ${profile.business_structure}` : `Entity: ${profile.business_structure}`,
+      label: language === 'es' ? `Entidad: ${entityLabel}` : `Entity: ${entityLabel}`,
       state: 'confirmed',
     });
   }

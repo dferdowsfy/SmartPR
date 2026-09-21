@@ -85,10 +85,39 @@ test("REG-TRIGGER-LABEL-002: business-type and project-fact trigger labels rende
       "Business Type = Beverage Manufacturing",
       "Project fact: project_type = renovation",
       "Municipality Flag = metro + Business Type = Auto Repair Shop",
+      "Municipality selected (Carolina)",
     ]) {
       const label = translateTriggerReason(reason, "Guaynabo", lang)!;
       assert.doesNotMatch(label, /Flag|Bandera/i);
       assert.doesNotMatch(label, /=/);
     }
+  }
+});
+
+// REG-TRIGGER-LABEL-003 (2026-09-21 18:00 QA): the municipality-baseline
+// shape "Municipality selected (<name>)" rendered raw on English cards
+// (EIN, Merchant Registration, Patente, Certificate of Organization,
+// Annual Report) — the i18n layer only translated it in the Spanish
+// branch. It now translates in the shared helper in both languages with
+// the same "Municipality: X" / "Municipio: X" vocabulary as the flag
+// shape (REG-TRIGGER-LABEL-001).
+test("REG-TRIGGER-LABEL-003: municipality-baseline trigger labels render in user vocabulary (EN/ES)", () => {
+  assert.equal(
+    translateTriggerReason("Municipality selected (Carolina)", "Carolina", "en"),
+    "Municipality: Carolina",
+  );
+  assert.equal(
+    translateTriggerReason("Municipality selected (Carolina)", "Carolina", "es"),
+    "Municipio: Carolina",
+  );
+  assert.equal(
+    translateTriggerReason("Municipality selected (Arecibo)", "Arecibo", "en"),
+    "Municipality: Arecibo",
+  );
+  // Raw internal phrasing never survives translation in either language.
+  for (const lang of ["en", "es"] as const) {
+    const label = translateTriggerReason("Municipality selected (Bayamón)", "Bayamón", lang)!;
+    assert.doesNotMatch(label, /selected|seleccionado/i);
+    assert.doesNotMatch(label, /=/);
   }
 });

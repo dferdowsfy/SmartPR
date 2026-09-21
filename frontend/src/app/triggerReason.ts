@@ -4,8 +4,9 @@
  * - "Municipality Flag = <flag> [+ Business Type = <bt>]" (flag rules)
  * - "Business Type = <bt>" (business-type rules)
  * - "Project fact: <key> = <value>" (project-fact rules)
- * Returns null when no translation applies (question triggers and
- * "Municipality selected (...)" are handled by the caller's i18n layer).
+ * - "Municipality selected (<name>)" (municipality-baseline rules)
+ * Returns null when no translation applies (question triggers fall through
+ * to the caller's i18n layer).
  *
  * REG-TRIGGER-LABEL-001 (2026-09-21 QA): live filings showed the raw
  * internal "Municipality Flag = metro + Business Type = X" string on
@@ -22,6 +23,14 @@
  * brewery filing. Project-fact labels reuse the user-facing project-context
  * chip vocabulary ("Project: ...", "Structural work", ...); unknown
  * fact keys fall through (null) rather than inventing labels.
+ *
+ * REG-TRIGGER-LABEL-003 (2026-09-21 18:00 QA): the municipality-baseline
+ * shape "Municipality selected (<name>)" rendered raw in en-US — the
+ * SmartPRIntake i18n layer only translated it in the Spanish branch, so
+ * English cards (EIN, Merchant Registration, Patente, Certificate of
+ * Organization, Annual Report) showed the raw internal phrasing. It now
+ * translates in the shared helper in both languages, consistent with the
+ * municipality-flag vocabulary ("Municipality: X" / "Municipio: X").
  */
 export function translateTriggerReason(
   reason: string,
@@ -48,6 +57,10 @@ export function translateTriggerReason(
     const label = PROJECT_FACT_LABELS[projectFactMatch[1]]?.[projectFactMatch[2]];
     if (!label) return null;
     return language === "es" ? label.es : label.en;
+  }
+  const muniMatch = reason.match(/^Municipality selected \((.+)\)$/);
+  if (muniMatch) {
+    return language === "es" ? `Municipio: ${muniMatch[1]}` : `Municipality: ${muniMatch[1]}`;
   }
   return null;
 }

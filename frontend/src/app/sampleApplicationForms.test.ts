@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   generateSampleApplicationPdf,
   getSampleApplication,
+  ISSUED_DOCUMENT_GUIDANCE,
+  ISSUED_DOCUMENT_GUIDANCE_ES,
   missingRequiredSampleFields,
   prefillSampleApplication,
 } from "./sampleApplicationForms.ts";
@@ -337,5 +339,26 @@ test("Bomberos fire-safety prep checklist covers inspection readiness and DOC_FI
       language
     );
     assert.ok(blob.size > 0, `Bomberos prep checklist PDF should not be empty (${language})`);
+  }
+});
+
+// REG-GUIDE-DOCCODE-001 (2026-09-21 18:00 QA): a live Bayamón pharmacy
+// filing's Health / Sanitary Permit card rendered raw internal identifiers
+// ("when `DOC_HEALTH_PERMIT` applies", "tagged `DOC_HEALTH_PERMIT`") in its
+// expanded guidance. The issued-document guidance is requirement-card
+// copy — it must name documents in user vocabulary, never DOC_* codes
+// (the Evidence locker's DOC_* tags are a separate, intentional surface).
+test("REG-GUIDE-DOCCODE-001: issued-document guidance contains no internal DOC_* identifiers (EN/ES)", () => {
+  for (const [lang, map] of [
+    ["en", ISSUED_DOCUMENT_GUIDANCE],
+    ["es", ISSUED_DOCUMENT_GUIDANCE_ES],
+  ] as const) {
+    for (const [key, copy] of Object.entries(map)) {
+      assert.doesNotMatch(
+        copy,
+        /DOC_[A-Z][A-Z0-9_]+/,
+        `ISSUED_DOCUMENT_GUIDANCE[${lang}].${key} leaks an internal DOC_* identifier`,
+      );
+    }
   }
 });
