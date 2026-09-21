@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { buildRequirementGuidance, type GuidanceContext, type GuidanceRequirement } from "../requirementGuidance";
 import { KB, buildEngineInput, applyKbSnapshot } from "../kb";
 import { runRulesEngine } from "../rulesEngine";
-import { PR_REQUIREMENT_GUIDANCE } from "./pr";
+import { PR_REQUIREMENT_GUIDANCE, PR_GUIDANCE_SOURCES } from "./pr";
 import { ISSUED_DOCUMENT_GUIDANCE, ISSUED_DOCUMENT_GUIDANCE_ES } from "../sampleApplicationForms";
 import { duplicateGuidanceIds, validateGuidanceConcept } from "./model";
 import { buildSeedNodes } from "../rk/seed-data";
@@ -649,4 +649,31 @@ test("REG-GUIDE-VERIFY-001: EIN and Permiso Único guidance lead with upload, no
   assert.match(einConcept.nextAction.en, /^Upload the IRS EIN confirmation/);
   assert.match(einConcept.nextAction.es, /^Sube la confirmación del EIN/);
   assert.doesNotMatch(JSON.stringify(einConcept.nextAction), /A new entity must be formed before it can apply/);
+});
+
+// REG-GUIDE-OUTDOOR-AGENCY-001 (2026-09-21 QA): a live Toa Baja gelato filing
+// (S109) rendered the Outdoor Seating Authorization card's source agency as
+// "Municipio de San Juan". The Art. 2.301 citation is verified for San Juan
+// only; the agency label must stay municipal-generic (matching the document
+// node's own "Municipal Government") so no filing names the wrong
+// municipality as the source.
+test("REG-GUIDE-OUTDOOR-AGENCY-001: outdoor seating source agency is municipal-generic (live S109 finding 2026-09-21)", () => {
+  const src = PR_GUIDANCE_SOURCES.outdoorSeating;
+  assert.equal(src.agency, "Municipal Government");
+  assert.doesNotMatch(src.agency, /San Juan/);
+  // The citation itself stays the verified San Juan source with its
+  // self-scoping disclosure (7488cb5) — only the agency label changed.
+  assert.match(src.citation, /Art\. 2\.301/);
+});
+
+// REG-GUIDE-ALCOHOL-CITATION-001 (2026-09-21 QA): a live Guaynabo brewery
+// filing (S111) showed the alcohol-license source citation as "Internal
+// Revenue Code, Subtitle E" alongside the PR "Código de Rentas Internas de
+// 2011" rule citation — in en-US UI "Internal Revenue Code" reads as the
+// federal IRC. The source must name the Puerto Rico statute, matching the
+// KB rule citation and the linked hacienda.pr.gov PDF.
+test("REG-GUIDE-ALCOHOL-CITATION-001: alcohol source cites the PR Código de Rentas Internas, not the federal IRC (live S111 finding 2026-09-21)", () => {
+  const src = PR_GUIDANCE_SOURCES.alcohol;
+  assert.match(src.citation, /Código de Rentas Internas de 2011/);
+  assert.doesNotMatch(src.citation, /Internal Revenue Code/);
 });

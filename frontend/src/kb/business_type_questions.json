@@ -3685,6 +3685,14 @@
   },
   {
     "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_ALCOHOL_SERVED"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_COMMERCIAL_VEHICLES"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
     "question_id": "Q_ALCOHOL_MANUFACTURED"
   },
   {

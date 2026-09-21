@@ -5,7 +5,7 @@ const condition = (key: GuidanceCondition["key"], en: string, es: string, equals
 const source = (id: string, agency: string, citation: string, url: string, supports: string): GuidanceSource => ({ id, agency, citation, url, supports, lastVerified: "2026-09-03", sourceVersion: "public-guidance-2026-09-03" });
 
 export const PR_GUIDANCE_SOURCES = {
-  alcohol: source("SRC_GUIDANCE_ALCOHOL", "Departamento de Hacienda", "Internal Revenue Code, Subtitle E; licensing FAQs", "https://hacienda.pr.gov/sites/default/files/codigo_de_rentas_internas.pdf", "Subtitle E, sections 5050.01–5050.18: licensing alcoholic-beverage dealers and limits on licensed sales."),
+  alcohol: source("SRC_GUIDANCE_ALCOHOL", "Departamento de Hacienda", "Código de Rentas Internas de 2011 (Ley 1-2011), Subtítulo E; licensing FAQs", "https://hacienda.pr.gov/sites/default/files/codigo_de_rentas_internas.pdf", "Subtitle E, sections 5050.01–5050.18: licensing alcoholic-beverage dealers and limits on licensed sales."),
   ein: source("SRC_GUIDANCE_EIN", "Internal Revenue Service", "Employer identification number — who needs an EIN; confirmation", "https://www.irs.gov/businesses/employer-identification-number", "Employers need an EIN; IRS confirmation documents the assigned number; form the legal entity before applying."),
   merchant: source("SRC_GUIDANCE_MERCHANT", "Departamento de Hacienda", "SURI — merchant location registration and certificates", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI registers merchant locations and issues the Merchant Registration Certificate electronically."),
   merchantLaw: source("SRC_GUIDANCE_MERCHANT_RULE", "Departamento de Hacienda", "Regulation 8942 — Merchant Registration Certificate", "https://hacienda.pr.gov/sites/default/files/8942.pdf", "Merchant registration identifies each commercial location and whether the merchant is an IVU withholding agent."),
@@ -73,7 +73,7 @@ export const PR_GUIDANCE_SOURCES = {
   // shared source() helper stamps 2026-09-03, which would be dishonest here.
   outdoorSeating: {
     id: "SRC_GUIDANCE_OUTDOOR_SEATING",
-    agency: "Municipio de San Juan",
+    agency: "Municipal Government",
     citation: "Código de Orden Público del Municipio de San Juan, Art. 2.301 (Espacios Públicos) — cafés al aire libre en aceras y espacios públicos requieren la autorización del Municipio",
     url: "https://www.sanjuanciudadpatria.com/wp-content/uploads/2022/10/1-ORD.-2-Serie-2020-21-Nuevo-Co%CC%81digo-de-Orden-Pu%CC%81blico.pdf",
     lastVerified: "2026-09-20",

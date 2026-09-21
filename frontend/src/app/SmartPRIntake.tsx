@@ -6,6 +6,7 @@ import { L } from './i18n';
 import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
+import { translateFlagTriggerReason } from './triggerReason';
 import { buildRequirementGuidance, legalBasisFor, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
@@ -2111,6 +2112,10 @@ export default function SmartPRIntake() {
         ? 'Todavía no sabemos si esto aplica a tu negocio — contesta la pregunta aquí mismo para confirmarlo.'
         : 'We don’t know yet whether this applies to your business — answer the question right here to confirm.';
     }
+    // Municipality-flag trigger labels are rendered by the shared pure
+    // helper (user vocabulary in both languages; see REG-TRIGGER-LABEL-001).
+    const flagLabel = translateFlagTriggerReason(req.reason, profile.municipality, language);
+    if (flagLabel) return flagLabel;
     if (language === 'es') {
       // Municipality flag advisories (potential_*): the pack authors the
       // advisory text in English only and the L() dictionary has no entries
@@ -2133,12 +2138,6 @@ export default function SmartPRIntake() {
       // surrounding template here instead.
       const municipalityMatch = req.reason.match(/^Municipality selected \((.+)\)$/);
       if (municipalityMatch) return `Municipio seleccionado (${municipalityMatch[1]})`;
-
-      const flagMatch = req.reason.match(/^Municipality Flag = (.+?)(?: \+ Business Type = (.+))?$/);
-      if (flagMatch) {
-        const [, flag, businessType] = flagMatch;
-        return `Bandera de Municipio = ${flag}${businessType ? ` + Tipo de Negocio = ${businessType}` : ''}`;
-      }
 
       const businessTypeMatch = req.reason.match(/^Business Type = (.+)$/);
       if (businessTypeMatch) return `Tipo de Negocio = ${businessTypeMatch[1]}`;

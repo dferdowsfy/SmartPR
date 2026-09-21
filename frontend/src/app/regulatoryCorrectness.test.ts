@@ -241,3 +241,29 @@ test("REG-ALCOHOL-INTAKE-001: beverage manufacturing discovery asks alcohol ques
   assert.ok(brewery.includes("DOC_ALCOHOL_LICENSE"), "alcohol license must fire when the manufacturer brews and sells alcohol");
   assert.ok(brewery.includes("DOC_ASUME_CLEARANCE"), "ASUME prerequisite must fire on the fabricante path");
 });
+
+test("REG-ALCOHOL-INTAKE-002: beverage manufacturing discovery asks alcohol-served + commercial-vehicle questions (live S111 finding 2026-09-21)", () => {
+  // Live audit finding: the Guaynabo brewery/taproom intake never asked about
+  // on-site alcohol service (the taproom) or commercial vehicles (the
+  // keg-delivery box truck), so those card families were unreachable through
+  // the real intake. Same discovery-gap class as REG-ALCOHOL-INTAKE-001.
+  // NOTE: discovery ids pass through QUESTION_KEY_MAP (Q_ALCOHOL_SERVED
+  // renders as "alcohol_served", Q_COMMERCIAL_VEHICLES as
+  // "commercial_vehicles").
+  const mfg = discoveryQuestionsForBusinessType("Beverage Manufacturing")!.map(q => q.id);
+  assert.ok(mfg.includes("alcohol_served"), "beverage manufacturing must ask whether alcohol is served on site");
+  assert.ok(mfg.includes("commercial_vehicles"), "beverage manufacturing must ask about commercial vehicles");
+
+  // Engine behavior: answering no keeps the vehicle cards silent; answering
+  // yes surfaces them honestly (heuristic NMI — missing vehicle_ownership /
+  // transport_type — never promoted to REQUIRED, per the 6818ff1 lesson).
+  const profile = { business_type: "Beverage Manufacturing", municipality: "Guaynabo", location_type: "Industrial", number_of_employees: 8 };
+  const opts = { entityType: "limited_liability_company", projectIntent: "new_business" } as const;
+  const noTruck = computeRequirementsFromKB(profile, { Q_ALCOHOL_SERVED: false, Q_COMMERCIAL_VEHICLES: false }, {}, opts).map(r => r.document_id);
+  assert.ok(!noTruck.includes("DOC_VEHICLE_REGISTRATION"), "no vehicle registration card for a brewery with no commercial vehicles");
+  assert.ok(!noTruck.includes("DOC_TRANSPORT_PERMIT"), "no transport permit card for a brewery with no commercial vehicles");
+  const truck = computeRequirementsFromKB(profile, { Q_COMMERCIAL_VEHICLES: true }, {}, opts);
+  const vr = truck.find(r => r.document_id === "DOC_VEHICLE_REGISTRATION");
+  assert.ok(vr, "box truck must surface the vehicle registration card");
+  assert.equal(vr!.applicability, "needs_more_information", "heuristic vehicle card stays honest NMI");
+});
