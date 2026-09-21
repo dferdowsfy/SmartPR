@@ -20,7 +20,7 @@ const display = Newsreader({
 const SITE_URL = "https://www.getsmartpr.com/";
 const SITE_TITLE = "Puerto Rico Business Permits & Licensing | SmartPR";
 const SITE_DESCRIPTION =
-  "Starting a business in Puerto Rico? Prepare business registrations, permits, licenses and municipal requirements with SmartPR. Government agencies approve filings.";
+  "Starting a business in Puerto Rico? SmartPR prepares your registrations, permits, licenses, and municipal requirements.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

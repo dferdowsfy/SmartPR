@@ -12,7 +12,7 @@ const copy = {
     callLabel: "On your time · by phone",
     callTitle: "Call SmartPR.",
     callBody:
-      "Call for general guidance, or verify with a PIN to securely access permits, requirements, evidence, and project status by voice.",
+      "Call for general guidance, or verify with a PIN to securely review your requirements, missing items, deadlines, and project status — and update your business information by voice.",
     pills: ["General guidance", "PIN verified", "Project status", "Requirements"],
     callCta: "Call SmartPR",
     callAvailability: "Available 24/7 · Spanish and English",
@@ -27,7 +27,7 @@ const copy = {
     phoneAlt: "SmartPR voice assistant on an active phone call",
     speakLabel: "Faster filing · voice powered",
     speakTitle: "Speak instead of type.",
-    speakBody: "As you talk, SmartPR maps what you say into the right fields automatically.",
+    speakBody: "As you talk, SmartPR fills in the right fields automatically.",
     transcript:
       "“My business is Caribe Industrial Manufacturing LLC. We are already formed in Puerto Rico and have 24 employees.”",
     mappingTitle: "Mapping to your application",
@@ -42,7 +42,7 @@ const copy = {
     callLabel: "A tu tiempo · por teléfono",
     callTitle: "Llama a SmartPR.",
     callBody:
-      "Llama para orientación general, o verifícate con un PIN para acceder por voz y de forma segura a permisos, requisitos, evidencia y el estatus de tu proyecto.",
+      "Llama para orientación general, o verifícate con un PIN para revisar por voz — de forma segura — tus requisitos, documentos pendientes, fechas límite y el estatus de tu proyecto, y actualizar los datos de tu negocio.",
     pills: ["Orientación general", "PIN verificado", "Estatus del proyecto", "Requisitos"],
     callCta: "Llamar a SmartPR",
     callAvailability: "Disponible 24/7 · Español e inglés",
@@ -57,7 +57,7 @@ const copy = {
     phoneAlt: "Asistente de voz de SmartPR en una llamada activa",
     speakLabel: "Radicación más rápida · con voz",
     speakTitle: "Habla en vez de escribir.",
-    speakBody: "Mientras hablas, SmartPR lleva lo que dices a los campos correctos automáticamente.",
+    speakBody: "Mientras hablas, SmartPR llena los campos correctos automáticamente.",
     transcript:
       "“Mi negocio es Caribe Industrial Manufacturing LLC. Ya estamos formados en Puerto Rico y tenemos 24 empleados.”",
     mappingTitle: "Llevando a tu solicitud",

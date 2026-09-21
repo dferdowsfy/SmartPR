@@ -9,10 +9,10 @@ const copy = {
     eyebrow: "Assisted live filing",
     beta: "Beta",
     title: "Skip the SURI maze.",
-    lead: "The assistant opens the government website for you and fills in the forms with your business info. You watch it work, step by step. When it needs something only you can do — your login, a document, a captcha, a payment — it stops and asks. At the end, you review everything and click submit yourself.",
+    lead: "The assistant opens the government website for you and fills in the forms with your business info. You watch it work, step by step. When it needs something only you can do — your login, a certification, a payment, or your approval — it stops and asks. At the end, you review everything and click submit yourself.",
     points: [
       "Opens the real government site and fills it in for you.",
-      "Stops and asks when it needs you — login, documents, captcha, payment.",
+      "Stops and asks when it needs you — your login, a captcha, or a payment.",
       "You review and submit. Nothing gets filed without you.",
     ],
     chatAlt:
@@ -31,10 +31,10 @@ const copy = {
     eyebrow: "Trámite asistido en vivo",
     beta: "Beta",
     title: "Sáltate el revolú de SURI.",
-    lead: "El asistente abre la página del gobierno por ti y llena los formularios con los datos de tu negocio. Lo ves trabajar paso a paso. Cuando necesita algo que solo tú puedes hacer — tu contraseña, un documento, el captcha, un pago — se detiene y te avisa. Al final, revisas todo y le das a enviar tú mismo.",
+    lead: "El asistente abre la página del gobierno por ti y llena los formularios con los datos de tu negocio. Lo ves trabajar paso a paso. Cuando necesita algo que solo tú puedes hacer — tu inicio de sesión, una certificación, un pago o tu aprobación — se detiene y te avisa. Al final, revisas todo y lo envías tú mismo.",
     points: [
       "Abre la página real del gobierno y la llena por ti.",
-      "Se detiene y te avisa cuando te necesita — contraseña, documentos, captcha, pago.",
+      "Se detiene y te avisa cuando te necesita — tu inicio de sesión, un captcha o un pago.",
       "Revisas y envías tú. Nada se radica sin ti.",
     ],
     chatAlt:

@@ -71,7 +71,7 @@ const copy = {
       { title: "Entity registration", detail: "Department of State · Corporation or LLC registration" },
       { title: "Federal tax registration", detail: "IRS · Employer Identification Number (EIN)" },
       { title: "Puerto Rico tax registration", detail: "Hacienda · SURI registration and applicable tax accounts" },
-      { title: "Municipal registration", detail: "Municipio de Bayamón · Municipal patent / applicable local registration" },
+      { title: "Municipal registration", detail: "Municipio de Bayamón · Municipal patent and applicable local registrations" },
       { title: "Permits & use requirements", detail: "OGPe · Permiso Único and applicable use requirements" },
       { title: "Health & fire requirements", detail: "Department of Health · Fire Bureau / applicable inspections" },
       { title: "Review & submission", detail: "SmartPR review before you submit" },
