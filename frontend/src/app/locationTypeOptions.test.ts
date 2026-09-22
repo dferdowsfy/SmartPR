@@ -102,3 +102,41 @@ test("short-term-rental business types offer a non-home-based residential proper
     );
   }
 });
+
+// REG-LOCATION-MOBILE-001 (2026-09-22 15:00 QA, live S136): a mobile car
+// detailer ("Car Wash") was forced into "Commercial Facility" because the
+// automotive combobox offered no mobile label — the forced commercial pick
+// derived Q_PHYSICAL_LOCATION=Yes and put Permiso Único in the blocking
+// critical path. Business types that can plausibly operate as fully mobile
+// or field-service operations must offer "Mobile Business" so the extracted
+// mobile fact survives the combobox and the REG-MOBILE-PHYSICAL-001 engine
+// correction fires.
+import { isMobileLocation } from "./locationTypes.ts";
+
+const MOBILE_PLAUSIBLE_BUSINESS_TYPES = [
+  "Car Wash",
+  "Auto Repair Shop",
+  "Body Shop",
+  "Motorcycle Repair",
+  "Tire Shop",
+  "General Contractor",
+  "Electrical Contractor",
+  "Plumbing Contractor",
+  "HVAC Contractor",
+  "Roofing Contractor",
+  "Concrete Contractor",
+  "Specialty Trade Contractor",
+  "Landscaping Company",
+  "Surveying Company",
+];
+
+test("mobile-plausible business types offer a Mobile Business location option", () => {
+  const missing = MOBILE_PLAUSIBLE_BUSINESS_TYPES.filter(
+    (bt) => !(LOCATION_TYPES_BY_BUSINESS_TYPE[bt] ?? []).some((o) => isMobileLocation(o))
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    `business types missing a mobile location option: ${missing.join(", ")}`
+  );
+});

@@ -889,17 +889,17 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Cosmetics Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
   "Pharmacy Retail": ["Retail Storefront"],
   "Home Goods Store": ["Retail Storefront", "Home-Based Business", "Online Only"],
-  "General Contractor": ["Commercial Office", "Warehouse", "Industrial Facility", "Home-Based Business"],
-  "Electrical Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
-  "Plumbing Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
-  "HVAC Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
-  "Roofing Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
-  "Concrete Contractor": ["Commercial Office", "Warehouse", "Industrial Facility"],
-  "Landscaping Company": ["Commercial Office", "Warehouse", "Home-Based Business"],
-  "Surveying Company": ["Professional Office", "Commercial Office", "Home-Based Business"],
+  "General Contractor": ["Commercial Office", "Warehouse", "Industrial Facility", "Home-Based Business", "Mobile Business"],
+  "Electrical Contractor": ["Commercial Office", "Warehouse", "Home-Based Business", "Mobile Business"],
+  "Plumbing Contractor": ["Commercial Office", "Warehouse", "Home-Based Business", "Mobile Business"],
+  "HVAC Contractor": ["Commercial Office", "Warehouse", "Home-Based Business", "Mobile Business"],
+  "Roofing Contractor": ["Commercial Office", "Warehouse", "Home-Based Business", "Mobile Business"],
+  "Concrete Contractor": ["Commercial Office", "Warehouse", "Industrial Facility", "Mobile Business"],
+  "Landscaping Company": ["Commercial Office", "Warehouse", "Home-Based Business", "Mobile Business"],
+  "Surveying Company": ["Professional Office", "Commercial Office", "Home-Based Business", "Mobile Business"],
   "Engineering Contractor": ["Commercial Office", "Professional Office"],
   "Construction Management Firm": ["Professional Office", "Commercial Office"],
-  "Specialty Trade Contractor": ["Commercial Office", "Warehouse", "Home-Based Business"],
+  "Specialty Trade Contractor": ["Commercial Office", "Warehouse", "Home-Based Business", "Mobile Business"],
   "Hotel": ["Tourism Facility"],
   "Resort": ["Tourism Facility"],
   "Guest House": ["Tourism Facility", "Mixed Use Property"],
@@ -977,14 +977,23 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Developer": ["Professional Office", "Commercial Office"],
   "Real Estate Consulting": ["Professional Office", "Commercial Office"],
   "Leasing Office": ["Professional Office", "Commercial Office"],
-  "Auto Repair Shop": ["Industrial Facility", "Commercial Facility"],
-  "Body Shop": ["Industrial Facility"],
+  // REG-LOCATION-MOBILE-001 (2026-09-22 15:00 QA, live S136): a mobile car
+  // detailer ("Car Wash") was forced into "Commercial Facility" because the
+  // automotive options had no mobile label — the AI interpreter correctly
+  // read "Mobile Business" from the description, but the combobox clobbered
+  // it, so Q_PHYSICAL_LOCATION derived Yes and Permiso Único landed in the
+  // blocking critical path. Business types that can plausibly operate as
+  // fully mobile or field-service operations must offer "Mobile Business"
+  // so the extracted mobile fact survives the combobox and the
+  // REG-MOBILE-PHYSICAL-001 engine correction can fire.
+  "Auto Repair Shop": ["Industrial Facility", "Commercial Facility", "Mobile Business"],
+  "Body Shop": ["Industrial Facility", "Mobile Business"],
   "Car Dealership": ["Commercial Facility"],
-  "Motorcycle Repair": ["Industrial Facility"],
+  "Motorcycle Repair": ["Industrial Facility", "Mobile Business"],
   "Auto Parts Store": ["Retail Storefront"],
   "Vehicle Rental": ["Commercial Facility"],
-  "Car Wash": ["Commercial Facility"],
-  "Tire Shop": ["Commercial Facility"],
+  "Car Wash": ["Commercial Facility", "Mobile Business"],
+  "Tire Shop": ["Commercial Facility", "Mobile Business"],
   "Farm": ["Agricultural Property"],
   "Livestock Operation": ["Agricultural Property"],
   "Aquaculture": ["Agricultural Property"],

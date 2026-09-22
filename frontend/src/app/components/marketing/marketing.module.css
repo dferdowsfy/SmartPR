@@ -238,6 +238,27 @@
   z-index: 1;
 }
 
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2.25rem;
+  align-items: center;
+}
+
+.heroChat {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 64rem) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: 2.5rem;
+  }
+}
+
 .eyebrow {
   margin: 0;
   color: #245c5c;

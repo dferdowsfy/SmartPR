@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
 import HowItWorks from "./HowItWorks";
+import { FilingAssistantChat } from "./FilingAssistant";
 import LeadModal from "./LeadModal";
 import { createSupabaseBrowser } from "../../../lib/supabase/client";
 
@@ -246,7 +247,8 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
       <main>
         <div className={styles.showcase}>
           <section className={styles.hero}>
-            <div className={styles.heroCopy}>
+            <div className={styles.heroGrid}>
+              <div className={styles.heroCopy}>
               <h1>
                 <span>{c.heroTitle}</span>
               </h1>
@@ -268,6 +270,10 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
                 </li>
               </ol>
               <p className={styles.lead}>{c.whatNext}</p>
+              </div>
+              <div className={styles.heroChat}>
+                <FilingAssistantChat language={language} />
+              </div>
             </div>
           </section>
         </div>

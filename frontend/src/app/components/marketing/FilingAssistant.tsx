@@ -69,15 +69,7 @@ function firstChunk(text: string): string {
   return text.slice(0, CHARS_PER_TICK);
 }
 
-export default function FilingAssistant({
-  language,
-  cta,
-  onStart,
-}: {
-  language: Language;
-  cta: string;
-  onStart: () => void;
-}) {
+export function FilingAssistantChat({ language }: { language: Language }) {
   const c = copy[language];
 
   const [reducedMotion, setReducedMotion] = useState<boolean>(
@@ -201,26 +193,7 @@ export default function FilingAssistant({
   }, [steps, active]);
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.copy}>
-        <p className={styles.eyebrow}>
-          {c.eyebrow} <span className={styles.betaPill}>{c.beta}</span>
-        </p>
-        <h2>{c.title}</h2>
-        <p className={styles.lead}>{c.lead}</p>
-        <ul className={styles.points}>
-          {c.points.map((p) => (
-            <li key={p}>{p}</li>
-          ))}
-        </ul>
-        <div className={styles.cta}>
-          <button type="button" className={styles.primary} onClick={onStart}>
-            {cta}
-          </button>
-        </div>
-      </div>
-      <div className={styles.chatCol}>
-        <div className={styles.chat} role="img" aria-label={c.chatAlt}>
+    <div className={styles.chat} role="img" aria-label={c.chatAlt}>
           <div className={styles.chatHead} aria-hidden="true">
             <span className={styles.chatAvatar} />
             <div className={styles.chatHeadText}>
@@ -293,7 +266,41 @@ export default function FilingAssistant({
               return null;
             })}
           </div>
+    </div>
+  );
+}
+
+export default function FilingAssistant({
+  language,
+  cta,
+  onStart,
+}: {
+  language: Language;
+  cta: string;
+  onStart: () => void;
+}) {
+  const c = copy[language];
+  return (
+    <div className={styles.wrap}>
+      <div className={styles.copy}>
+        <p className={styles.eyebrow}>
+          {c.eyebrow} <span className={styles.betaPill}>{c.beta}</span>
+        </p>
+        <h2>{c.title}</h2>
+        <p className={styles.lead}>{c.lead}</p>
+        <ul className={styles.points}>
+          {c.points.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+        <div className={styles.cta}>
+          <button type="button" className={styles.primary} onClick={onStart}>
+            {cta}
+          </button>
         </div>
+      </div>
+      <div className={styles.chatCol}>
+        <FilingAssistantChat language={language} />
       </div>
     </div>
   );
