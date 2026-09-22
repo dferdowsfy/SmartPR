@@ -170,3 +170,124 @@ test("unknown entity type: formation certificates are conditional, never require
   assert.ok(llcKnownCert, "DOC_CERT_ORGANIZATION should surface for a known LLC");
   assert.equal(llcKnownCert.applicability, "required");
 });
+
+test("REG-MFK-ANSWERED-001: an answered fact is never reported missing", () => {
+  // The alcohol chain's heuristic siblings (RULE_0014 on the license,
+  // RULE_0622/0625/0628 on CRIM/ASUME/background, RULE_0664 on tax
+  // compliance) all name alcohol_sold as their missing fact. When the
+  // intake answered Q_ALCOHOL_SOLD, the fact is known — no card may list
+  // it as missing, and no card may be forced into needs_more_information
+  // over it (QA 2026-09-22 00:00, S121 Dorado restaurant).
+  const answers = {
+    Q_PHYSICAL_LOCATION: true,
+    Q_ALCOHOL_SOLD: true,
+    Q_ALCOHOL_SERVED: true,
+    Q_EMPLOYEES_HIRED: true,
+  };
+  const generated = runRulesEngine(KB, {
+    municipalityName: "Dorado",
+    businessTypeName: "Restaurant",
+    answers,
+  }).requirements;
+  // NOTE: this direct runRulesEngine path bypasses buildEngineInput, so the
+  // answers object here IS the raw intake — pass it as rawAnswers exactly
+  // as computeRequirementsFromSnapshot does. Passing only `answers` would
+  // not exercise the fix (REG-MFK-ANSWERED-001 v2: input.answers always
+  // carries default-false for legacy questions; G07 proved presence there
+  // is not an answered question).
+  const classified = classifyEngineRequirements(generated, {
+    kb: KB,
+    entityType: "limited_liability_company",
+    businessStatus: "new",
+    answers,
+    rawAnswers: answers,
+  });
+  for (const docId of [
+    "DOC_ALCOHOL_LICENSE",
+    "DOC_CRIM_CLEARANCE",
+    "DOC_ASUME_CLEARANCE",
+    "DOC_BACKGROUND_CHECK",
+    "DOC_HACIENDA_TAX_COMPLIANCE",
+  ]) {
+    const card = classified.find((r) => r.document_id === docId);
+    assert.ok(card, docId + " should surface");
+    assert.ok(
+      !card.missingFacts.includes("alcohol_sold"),
+      docId + " must not name answered alcohol_sold as missing: " +
+        JSON.stringify(card.missingFacts)
+    );
+  }
+  const license = classified.find((r) => r.document_id === "DOC_ALCOHOL_LICENSE");
+  assert.equal(license?.applicability, "required");
+
+  // Control: served-only (sold genuinely unasked) keeps the honest
+  // needs_more_information posture — the fact really is unknown there.
+  const servedOnly = {
+    Q_PHYSICAL_LOCATION: true,
+    Q_ALCOHOL_SERVED: true,
+    Q_EMPLOYEES_HIRED: true,
+  };
+  const generated2 = runRulesEngine(KB, {
+    municipalityName: "Dorado",
+    businessTypeName: "Restaurant",
+    answers: servedOnly,
+  }).requirements;
+  const classified2 = classifyEngineRequirements(generated2, {
+    kb: KB,
+    entityType: "limited_liability_company",
+    businessStatus: "new",
+    answers: servedOnly,
+    rawAnswers: servedOnly,
+  });
+  const license2 = classified2.find((r) => r.document_id === "DOC_ALCOHOL_LICENSE");
+  assert.ok(license2, "DOC_ALCOHOL_LICENSE should surface for served-only");
+  assert.equal(license2.applicability, "needs_more_information");
+  assert.ok(
+    license2.missingFacts.includes("alcohol_sold"),
+    "served-only must still name the genuinely unknown alcohol_sold: " +
+      JSON.stringify(license2.missingFacts)
+  );
+});
+
+test("REG-MFK-ANSWERED-001 v2: an engine default-false is not an answered question", () => {
+  // v1 of this fix checked presence in the engine's answers object — but
+  // buildEngineInput always emits a concrete boolean for legacy-mapped
+  // questions (false when unanswered), so G07's never-asked Q_ALCOHOL_SOLD
+  // read as "answered" and a validated needs_more_information flipped to
+  // likely_required. Only rawAnswers/resolvedAnswers establish a fact.
+  const engineAnswers = {
+    Q_PHYSICAL_LOCATION: true,
+    Q_ALCOHOL_SOLD: false, // the unanswered default, as buildEngineInput emits it
+    Q_ALCOHOL_SERVED: true,
+    Q_EMPLOYEES_HIRED: true,
+  };
+  const rawAnswers = {
+    Q_PHYSICAL_LOCATION: true,
+    Q_ALCOHOL_SERVED: true,
+    Q_EMPLOYEES_HIRED: true,
+  };
+  const generated = runRulesEngine(KB, {
+    municipalityName: "Dorado",
+    businessTypeName: "Restaurant",
+    answers: engineAnswers,
+  }).requirements;
+  const classified = classifyEngineRequirements(generated, {
+    kb: KB,
+    entityType: "limited_liability_company",
+    businessStatus: "new",
+    answers: engineAnswers,
+    rawAnswers,
+  });
+  const license = classified.find((r) => r.document_id === "DOC_ALCOHOL_LICENSE");
+  assert.ok(license, "DOC_ALCOHOL_LICENSE should surface");
+  assert.equal(
+    license.applicability,
+    "needs_more_information",
+    "a default-false must not flip the validated NMI posture"
+  );
+  assert.ok(
+    license.missingFacts.includes("alcohol_sold"),
+    "the never-asked fact must still be reported missing: " +
+      JSON.stringify(license.missingFacts)
+  );
+});

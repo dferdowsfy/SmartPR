@@ -995,6 +995,12 @@ export function computeRequirementsFromSnapshot(
     // employment-sensitive calls (e.g. EIN for an unknown entity type that
     // will hire employees is required; without that fact it is conditional).
     answers: input.answers,
+    // REG-MFK-ANSWERED-001: the classifier resolves missing-fact keys
+    // against the pre-build answers — input.answers always carries a
+    // concrete boolean for legacy-mapped questions (false when unanswered),
+    // which cannot distinguish an explicit answer from the default.
+    rawAnswers: answers,
+    resolvedAnswers: resolved,
     potentialDecisions: options.potentialDecisions,
     legacyCode: options.legacyCode ?? kbMeta.legacyCode,
     recommendedIds: options.recommendedIds ?? kbMeta.recommended,

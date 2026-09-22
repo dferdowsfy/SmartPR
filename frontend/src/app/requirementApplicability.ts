@@ -13,6 +13,7 @@
 import type { KnowledgeBase, GeneratedRequirement, KBRule } from "./rulesEngine";
 import type { PotentialDecision } from "./potentialRequirements";
 import type { EntityType } from "./forms/engine/types";
+import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
 
 export type Applicability =
   | "required"
@@ -268,6 +269,16 @@ export interface ClassifyOptions {
    *  entity/employment-sensitive calls (e.g. EIN when the entity type is
    *  unknown but the user will hire employees). */
   answers?: Record<string, boolean | string | undefined>;
+  /** Pre-buildEngineInput intake answers, keyed by KB question id — the only
+   *  honest "was this question answered" signal. options.answers always
+   *  carries a concrete boolean for legacy-mapped questions (false when
+   *  unanswered), so it cannot distinguish an explicit No from a default.
+   *  Used by REG-MFK-ANSWERED-001 to resolve missing-fact keys. */
+  rawAnswers?: Record<string, unknown>;
+  /** Relationship-resolved facts (buildEngineInput's `resolved`), keyed by KB
+   *  question id — deterministically derived answers the engine treats as
+   *  established. Also used by REG-MFK-ANSWERED-001. */
+  resolvedAnswers?: Record<string, boolean | string>;
   potentialDecisions?: Record<string, PotentialDecision>;
   legacyCode?: Record<string, string>;
   recommendedIds?: Set<string>;
@@ -326,15 +337,42 @@ export function classifyEngineRequirements(
     const basisRules = basisIds.map((id) => options.kb.rules.find((r) => r.id === id));
     const basisHeuristic = basisRules.map((r) => r?.verification === "heuristic");
     const anyHeuristic = basisHeuristic.some(Boolean);
+    // REG-MFK-ANSWERED-001 (2026-09-22 QA, corrected after G07 drift): a
+    // missing-fact key is established only when its question was actually
+    // answered — the raw intake answers or relationship-resolved facts. The
+    // answers the engine saw (options.answers) ALWAYS carry a concrete
+    // boolean for legacy-mapped questions (false when unanswered), so
+    // presence there proves nothing: v1 treated G07's default-false
+    // Q_ALCOHOL_SOLD as answered and flipped a validated
+    // needs_more_information to likely_required. Only the writeKey direction
+    // is sound: answering Q_ALCOHOL_SERVED does not establish alcohol_sold
+    // (kb.ts maps Q_ALCOHOL_SOLD: on("alcohol_sold") but Q_ALCOHOL_SERVED:
+    // on("alcohol_served", "alcohol_sold")), but answering Q_ALCOHOL_SOLD
+    // does. An explicit No counts — the fact is known, not missing.
+    // Without this, a card displays "missing" facts the user already
+    // provided (e.g. the alcohol chain naming alcohol_sold after
+    // Q_ALCOHOL_SOLD=true, S121 Dorado restaurant).
+    const explicitAnswers: Record<string, unknown> = {
+      ...(options.rawAnswers ?? {}),
+      ...(options.resolvedAnswers ?? {}),
+    };
+    const knownFactKeys = new Set<string>();
+    for (const [qid, binding] of Object.entries(QUESTION_KEY_MAP)) {
+      if ((explicitAnswers[qid] ?? undefined) !== undefined) {
+        knownFactKeys.add(binding.writeKey);
+      }
+    }
+    const stillMissing = (keys: readonly string[] | undefined | null) =>
+      (keys ?? []).filter((k) => !knownFactKeys.has(k));
     const missingFacts = [
       ...new Set(
         basisRules.flatMap((r, i) =>
-          basisHeuristic[i] && r?.missing_fact_keys?.length ? r.missing_fact_keys : []
+          basisHeuristic[i] && r?.missing_fact_keys?.length ? stillMissing(r.missing_fact_keys) : []
         )
       ),
     ];
     if (row.missing_fact_keys?.length) {
-      for (const k of row.missing_fact_keys) if (!missingFacts.includes(k)) missingFacts.push(k);
+      for (const k of stillMissing(row.missing_fact_keys)) if (!missingFacts.includes(k)) missingFacts.push(k);
     }
 
     let applicability: Applicability = recommended ? "recommended" : "required";
@@ -384,9 +422,11 @@ export function classifyEngineRequirements(
     // that names the facts blocking the decision becomes "needs more
     // information" so the UI asks for them instead of guessing — for every
     // rule type, not just municipality-flag rules. A verified required basis
-    // still wins over every heuristic basis.
+    // still wins over every heuristic basis. REG-MFK-ANSWERED-001: a basis
+    // whose named facts are all already answered is not blocked — it must
+    // not force needs_more_information over an answered question.
     const basisNeedsInfo = basisRules.map(
-      (r, i) => basisHeuristic[i] && (r?.missing_fact_keys?.length ?? 0) > 0
+      (r, i) => basisHeuristic[i] && stillMissing(r?.missing_fact_keys).length > 0
     );
     if (basisStates.includes("required")) applicability = recommended ? "recommended" : "required";
     else if (basisNeedsInfo.some(Boolean)) applicability = "needs_more_information";

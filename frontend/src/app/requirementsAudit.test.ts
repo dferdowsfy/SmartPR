@@ -3287,3 +3287,59 @@ test("REG-PROVENANCE-WINNER-001: a verified basis wins both applicability and so
     "the card must cite the winning verified basis, not the heuristic sibling RULE_0232"
   );
 });
+
+test("CASE AO: licensed-profession rules cite their actual examining authority, never the generic Juntas Examinadoras line (REG-CITATION-PROFESSIONS-001)", () => {
+  // RULE_0114 (law), RULE_0115 (CPA), RULE_0118 (engineering),
+  // RULE_0119 (architecture), RULE_0120 (notary) all carried the
+  // document-inherited "Juntas Examinadoras (Dept of State)" citation plus
+  // a third-party URL — the same defect class as REG-CITATION-VET-001
+  // (RULE_0103) and REG-CITATION-INSURANCE-001 (RULE_0224). Primary-source
+  // verification (QA 2026-09-22 00:00, S123 Trujillo Alto CPA firm):
+  // lawyers and notaries are admitted by the Tribunal Supremo de Puerto
+  // Rico (Junta Examinadora de Aspirantes al Ejercicio de la Abogacía y la
+  // Notaría, 4 L.P.R.A. Ap. XVII-B) — never the Dept. of State; CPAs by the
+  // Junta Examinadora de Contadores Públicos Autorizados (Ley 293-1945,
+  // 20 L.P.R.A. §§ 773, 779); engineers by the Junta Examinadora de
+  // Ingenieros y Agrimensores and architects by the Junta Examinadora de
+  // Arquitectos y Arquitectos Paisajistas (Ley 173-1988, 20 L.P.R.A.
+  // §§ 711 et seq., split by Ley 138-2000). Citation-only; verified
+  // posture is unchanged for all five (genuine licensed professions).
+  const rules = load("rules.json") as Array<Record<string, unknown>>;
+  const expectations: Array<[string, string, string]> = [
+    ["RULE_0114", "Tribunal Supremo de Puerto Rico", "poderjudicial.pr"],
+    ["RULE_0115", "Junta Examinadora de Contadores Públicos Autorizados", "293-1945"],
+    ["RULE_0118", "Junta Examinadora de Ingenieros y Agrimensores", "173-1988"],
+    ["RULE_0119", "Junta Examinadora de Arquitectos y Arquitectos Paisajistas", "173-1988"],
+    ["RULE_0120", "Tribunal Supremo de Puerto Rico", "poderjudicial.pr"],
+  ];
+  for (const [id, authority, marker] of expectations) {
+    const r = rules.find((x) => x.id === id);
+    assert.ok(r, `${id} must exist`);
+    const citation = String(r.citation ?? "");
+    assert.ok(
+      citation.includes(authority),
+      `${id} must cite ${authority}, got: ${citation}`
+    );
+    assert.ok(
+      citation.includes(marker) || String(r.citation_url ?? "").includes(marker),
+      `${id} must name/link its legal basis (${marker})`
+    );
+    assert.ok(
+      !citation.includes("Juntas Examinadoras (Dept of State)"),
+      `${id} must not carry the generic inherited line, got: ${citation}`
+    );
+    assert.equal(
+      r.citation_source,
+      "rule",
+      `${id}: the corrected citation overrides the inherited document citation`
+    );
+    assert.ok(
+      !("citation_inherited_from" in r),
+      `${id}: the corrected citation must not inherit the document-level citation`
+    );
+    assert.ok(
+      !String(r.citation_url ?? "").includes("didaxispr.com"),
+      `${id} must not link the third-party URL, got: ${r.citation_url}`
+    );
+  }
+});
