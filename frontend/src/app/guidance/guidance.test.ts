@@ -873,9 +873,15 @@ test("REG-GUIDE-ENTERTAINMENT-001: entertainment-permit guidance is validated fr
     assert.ok(g.triggerFacts.some(f => f.key === "Q_LIVE_ENTERTAINMENT"), `must trigger on the Q_LIVE_ENTERTAINMENT branch, got: ${JSON.stringify(g.triggerFacts)}`);
   }
   // Sources: Ley 161-2009 Art. 8.4A (OGP) and Ley 182-1996 (promoter law).
+  // Pin the correct L.P.R.A. section number: Art. 8.4A is codified at
+  // 23 L.P.R.A § 9018c-1 (OGP consolidated text, rev. 14 May 2026) — the
+  // previously-authored "§ 9048n" appears nowhere in the law.
   const en = buildRequirementGuidance(req2("DOC_ENTERTAINMENT_PERMIT"), ctx2);
   assert.ok(en.sources.some(s => s.citation.includes("Ley 161-2009")), `must cite Ley 161-2009, got: ${JSON.stringify(en.sources.map(s => s.citation))}`);
   assert.ok(en.sources.some(s => s.citation.includes("Ley 182-1996")), `must cite Ley 182-1996, got: ${JSON.stringify(en.sources.map(s => s.citation))}`);
+  const ley161 = en.sources.find(s => s.citation.includes("Ley 161-2009"))!;
+  assert.match(ley161.citation, /23 L\.P\.R\.A § 9018c-1/, `Art. 8.4A citation must pin the correct L.P.R.A. section number, got: ${ley161.citation}`);
+  assert.doesNotMatch(ley161.citation, /9048n/, `citation must not carry the wrong § 9048n number, got: ${ley161.citation}`);
   // Validator must pass the authored concept cleanly.
   assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ENTERTAINMENT_PERMIT), [], `entertainment-permit concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ENTERTAINMENT_PERMIT).join(", ")}`);
 });

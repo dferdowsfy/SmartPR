@@ -185,7 +185,7 @@ export const PR_GUIDANCE_SOURCES = {
   entertainment161: {
     id: "SRC_GUIDANCE_ENTERTAINMENT_PERMIT",
     agency: "Oficina de Gerencia y Presupuesto — Biblioteca Virtual (Ley 161-2009)",
-    citation: "Ley 161-2009, Art. 8.4A (23 L.P.R.A § 9048n) — el Permiso Único para edificaciones o negocios no residenciales, nuevos o existentes, incluye las licencias y autorizaciones aplicables, consolidadas en una sola solicitud",
+    citation: "Ley 161-2009, Art. 8.4A (23 L.P.R.A § 9018c-1) — el Permiso Único para edificaciones o negocios no residenciales, nuevos o existentes, incluye las licencias y autorizaciones aplicables, consolidadas en una sola solicitud",
     url: "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/161-2009.pdf",
     lastVerified: "2026-09-22",
     sourceVersion: "public-guidance-2026-09-22",
