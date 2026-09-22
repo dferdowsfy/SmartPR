@@ -43,6 +43,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${site}/pricing`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${site}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
     {
+      url: `${site}/professionals`,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+      alternates: { languages: { en: `${site}/professionals`, es: `${site}/es/profesionales` } },
+    },
+    {
+      url: `${site}/es/profesionales`,
+      changeFrequency: 'monthly',
+      priority: 0.8,
+      alternates: { languages: { en: `${site}/professionals`, es: `${site}/es/profesionales` } },
+    },
+    {
+      url: `${site}/about`,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+      alternates: { languages: { en: `${site}/about`, es: `${site}/es/nosotros` } },
+    },
+    {
+      url: `${site}/es/nosotros`,
+      changeFrequency: 'monthly',
+      priority: 0.5,
+      alternates: { languages: { en: `${site}/about`, es: `${site}/es/nosotros` } },
+    },
+    {
       url: `${site}/voice`,
       changeFrequency: 'monthly',
       priority: 0.7,
