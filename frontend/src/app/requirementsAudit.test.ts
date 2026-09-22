@@ -3359,9 +3359,10 @@ test("CASE AQ: fire-certificate rules and document cite the current fire authori
   for (const r of fireRules) {
     const citation = String(r.citation ?? "");
     // The repealed Ley 43-1988 may appear only in a historical change-log
-    // note ("derogated/repealed by Ley 20-2017") — never as live authority.
+    // note (Spanish "derogó/derogada" or "derogated/repealed by Ley 20-2017")
+    // — never as live authority.
     assert.ok(
-      !/43-1988/.test(citation) || /derogat|repeal/i.test(citation),
+      !/43-1988/.test(citation) || /derogat|derog|repeal/i.test(citation),
       `${r.id} cites repealed Ley 43-1988 as live authority, got: ${citation}`
     );
     assert.ok(
@@ -3388,11 +3389,93 @@ test("CASE AQ: fire-certificate rules and document cite the current fire authori
     `DOC_FIRE_CERT must cite Ley 20-2017, got: ${docCitation}`
   );
   assert.ok(
-    /repeal|derogada|repealed/i.test(docCitation),
+    /repeal|derog/i.test(docCitation),
     `DOC_FIRE_CERT must note that Ley 43-1988 was repealed by Ley 20-2017, got: ${docCitation}`
   );
   assert.ok(
     String(doc.citation_url ?? "").includes("bvirtualogp.pr.gov"),
     `DOC_FIRE_CERT must link the primary-source Ley 20-2017 text, got: ${doc.citation_url}`
   );
+});
+
+test("CASE AR: a business-type professional-license rule wins the card's legal basis over the generic question rule (REG-PROVENANCE-SPECIFICITY-001)", () => {
+  // 2026-09-22 09:00 QA cycle (S131, Ponce): an insurance agency answering
+  // Q_PROFESSIONAL_LICENSES=yes fired both RULE_0029 (generic
+  // question_trigger, "Leyes orgánicas de cada Junta Examinadora") and
+  // RULE_0224 (business_type, OCS / Código de Seguros Art. 9.160(1)).
+  // Array order let the generic rule win the card, so its legal basis and
+  // agency pointed at the Dept of State examining boards — the wrong
+  // licensing authority (REG-CITATION-INSURANCE-001's OCS citation never
+  // surfaced). Fix: among independent bases with the winning state, a
+  // business_type basis outranks the generic question fallback.
+  // Applicability is untouched — only reason/source_rule move.
+  const DOC_PROFLIC = docByName("professional license");
+  const ins = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Insurance Agency",
+      businessStatus: "existing",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+    },
+    "existing"
+  ).classified;
+  const lic = byId(ins, DOC_PROFLIC);
+  assert.ok(lic, "professional license row must exist for Insurance Agency");
+  assert.equal(
+    lic.source_rule_id,
+    "RULE_0224",
+    "the BT-specific OCS rule must win the card over the generic RULE_0029"
+  );
+  assert.equal(
+    lic.applicability,
+    "needs_more_information",
+    "posture is untouched — still NMI naming the controlling fact"
+  );
+  assert.ok(
+    (lic.missingFacts ?? []).includes("licensed_profession_type"),
+    "the controlling unanswered fact must still be named"
+  );
+
+  // Control: a business type with no professional-license rule of its own
+  // still sources the generic question rule.
+  const generic = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Gift Shop",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(generic, DOC_PROFLIC)?.source_rule_id,
+    "RULE_0029",
+    "the generic fallback is unchanged when no BT-specific rule fires"
+  );
+
+  // Control: a verified BT rule still wins outright (pre-existing behavior).
+  const law = classify(
+    {
+      municipalityName: "San Juan",
+      businessTypeName: "Law Firm",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+    },
+    "new"
+  ).classified;
+  const lawLic = byId(law, DOC_PROFLIC);
+  assert.equal(lawLic?.source_rule_id, "RULE_0114", "verified BT rule still wins");
+  assert.equal(lawLic?.applicability, "required", "law posture unchanged");
 });

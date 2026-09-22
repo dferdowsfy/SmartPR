@@ -535,8 +535,32 @@ export function classifyEngineRequirements(
     // winning verified RULE_0103). Prefer the first independent basis whose
     // state matches the winning state; fall back to the first winning-state
     // basis so municipality-flag wins are preserved.
-    const independentIndex = flags.findIndex((flag, i) => flag === null && basisStates[i] === selectedState);
-    const basis = bases[independentIndex >= 0 ? independentIndex : basisStates.indexOf(selectedState)];
+    // Specificity tiebreak (REG-PROVENANCE-SPECIFICITY-001, QA 2026-09-22):
+    // among independent bases that produced the winning state, a
+    // business-type rule outranks a generic question-triggered fallback.
+    // An insurance agency answering Q_PROFESSIONAL_LICENSES=yes fired both
+    // RULE_0029 (generic question_trigger, "Juntas Examinadoras") and
+    // RULE_0224 (business_type, OCS / Código de Seguros Art. 9.160(1)), and
+    // array order let the generic rule win the card's legal basis — pointing
+    // the user at the Dept of State examining boards instead of the OCS
+    // (REG-CITATION-INSURANCE-001's citation never surfaced). Applicability
+    // is untouched: this only selects which winning basis supplies
+    // reason/source_rule. All other orderings keep the existing array-order
+    // behavior.
+    const isBusinessTypeBasis = (i: number) =>
+      basisRules[i]?.rule_type === "business_type";
+    const winningIndependent = basisStates
+      .map((state, i) => i)
+      .filter((i) => flags[i] === null && basisStates[i] === selectedState);
+    const specificFirst = winningIndependent.find(isBusinessTypeBasis);
+    const basis =
+      bases[
+        specificFirst !== undefined
+          ? specificFirst
+          : winningIndependent.length
+            ? winningIndependent[0]
+            : basisStates.indexOf(selectedState)
+      ];
     const mandatory = applicability === "required" && !recommended;
     // Confidence bands (never false precision — UI renders bands, not decimals):
     // 0.9 verified winning basis + user-given facts; 0.7 verified + derived
