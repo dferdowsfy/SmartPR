@@ -3343,3 +3343,56 @@ test("CASE AO: licensed-profession rules cite their actual examining authority, 
     );
   }
 });
+
+test("CASE AQ: fire-certificate rules and document cite the current fire authority — the repealed Ley 43-1988 may not appear as live authority (REG-CITATION-FIRE-001)", () => {
+  // 2026-09-22 QA: all 30 fire-certificate rules (RULE_0008 family) and
+  // DOC_FIRE_CERT cited "Ley Núm. 43-1988" as the live authority. Ley
+  // 20-2017 (Ley del Departamento de Seguridad Pública) created the
+  // Negociado del Cuerpo de Bomberos within DSP and expressly repealed Ley
+  // 43-1988; the fire-inspection/certification authority is therefore Ley
+  // 20-2017. Every fire rule carries an explicit rule-level citation that
+  // overrides the document's inherited citation.
+  const rules = load("rules.json") as Array<Record<string, unknown>>;
+  const docs = load("documents.json") as Array<Record<string, unknown>>;
+  const fireRules = rules.filter((r) => r.requires_document_id === "DOC_FIRE_CERT");
+  assert.ok(fireRules.length >= 20, `expected the fire rule family, got ${fireRules.length}`);
+  for (const r of fireRules) {
+    const citation = String(r.citation ?? "");
+    // The repealed Ley 43-1988 may appear only in a historical change-log
+    // note ("derogated/repealed by Ley 20-2017") — never as live authority.
+    assert.ok(
+      !/43-1988/.test(citation) || /derogat|repeal/i.test(citation),
+      `${r.id} cites repealed Ley 43-1988 as live authority, got: ${citation}`
+    );
+    assert.ok(
+      citation.includes("Ley 20-2017"),
+      `${r.id} must cite the current authority (Ley 20-2017), got: ${citation}`
+    );
+    assert.ok(
+      /bomberos|fire prevention|fire code|fire safety|fire/i.test(citation),
+      `${r.id} must name the Negociado del Cuerpo de Bomberos authority, got: ${citation}`
+    );
+    // The fire citation is document-inherited (stamped with provenance),
+    // so the fix lives at the document and propagates honestly.
+    assert.equal(r.citation_inherited_from, "DOC_FIRE_CERT", `${r.id} must inherit its citation from DOC_FIRE_CERT`);
+    assert.ok(
+      String(r.citation_url ?? "").includes("bvirtualogp.pr.gov"),
+      `${r.id} must link the primary-source Ley 20-2017 text, got: ${r.citation_url}`
+    );
+  }
+  const doc = docs.find((d) => d.id === "DOC_FIRE_CERT");
+  assert.ok(doc, "DOC_FIRE_CERT must exist");
+  const docCitation = String(doc.citation ?? "");
+  assert.ok(
+    docCitation.includes("Ley 20-2017"),
+    `DOC_FIRE_CERT must cite Ley 20-2017, got: ${docCitation}`
+  );
+  assert.ok(
+    /repeal|derogada|repealed/i.test(docCitation),
+    `DOC_FIRE_CERT must note that Ley 43-1988 was repealed by Ley 20-2017, got: ${docCitation}`
+  );
+  assert.ok(
+    String(doc.citation_url ?? "").includes("bvirtualogp.pr.gov"),
+    `DOC_FIRE_CERT must link the primary-source Ley 20-2017 text, got: ${doc.citation_url}`
+  );
+});

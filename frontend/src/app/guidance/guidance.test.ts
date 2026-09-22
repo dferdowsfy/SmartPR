@@ -677,3 +677,43 @@ test("REG-GUIDE-ALCOHOL-CITATION-001: alcohol source cites the PR Código de Ren
   assert.match(src.citation, /Código de Rentas Internas de 2011/);
   assert.doesNotMatch(src.citation, /Internal Revenue Code/);
 });
+
+// REG-GUIDE-BACKGROUND-001 (2026-09-22 QA): a live Guaynabo daycare filing
+// (S125) fired DOC_BACKGROUND_CHECK via RULE_0195/RULE_0039, but the concept
+// only knew the alcohol-license context — its copy framed the
+// criminal-record certificate as an alcohol-license prerequisite and its
+// dependency claimed the certificate belongs to an alcohol-license file.
+// The concept is now context-aware: the copy describes the certificate
+// itself, and dependencies are fact-key conditioned (the generalized
+// conditionalDependencies model), so each requiring context renders only
+// its own parent filing.
+test("REG-GUIDE-BACKGROUND-001: background-check guidance names the true requiring context — daycare staff checks are not framed as an alcohol prerequisite", () => {
+  const daycareProfile = { municipality: "Guaynabo", business_type: "Daycare", location_type: "Commercial Facility" };
+  const daycareAnswers = { children_present: true };
+  const daycareCtx: GuidanceContext = { language: "en", municipality: "Guaynabo", businessTypeName: "Daycare", profile: daycareProfile, discoveryAnswers: daycareAnswers, entityType: "limited_liability_company", kb: KB, engineInput: buildEngineInput(daycareProfile, daycareAnswers) };
+  const daycareReq = (id: string): GuidanceRequirement => {
+    const doc = KB.documents.find(d => d.id === id)!;
+    return { document_id: id, code: id.toLowerCase(), name: doc?.name ?? id, agency: doc?.agency ?? "", reason: "Old generic text must not leak", applicability: "required", triggerFacts: [] };
+  };
+  const g = buildRequirementGuidance(daycareReq("DOC_BACKGROUND_CHECK"), daycareCtx);
+  assert.equal(g.status, "VALIDATED", `daycare background check must validate, got: ${g.status} (${g.reviewReasons.join(", ")})`);
+  // The trigger is the childcare branch — never the alcohol branch.
+  assert.ok(g.triggerFacts.some(f => f.key === "Q_CHILDREN_PRESENT" || f.key === "businessType"), `must trigger on the childcare branch, got: ${JSON.stringify(g.triggerFacts)}`);
+  assert.ok(!g.triggerFacts.some(f => f.key === "Q_ALCOHOL_SOLD" || f.key === "Q_ALCOHOL_SERVED" || f.key === "Q_ALCOHOL_MANUFACTURED"), "daycare guidance must not trigger on an alcohol branch");
+  // The copy is about the certificate itself and names childcare staffing as
+  // a requiring context; it never frames the certificate as an alcohol
+  // prerequisite for this filing.
+  assert.match(g.regulatoryReason, /children/i);
+  assert.doesNotMatch(g.regulatoryReason, /prerequisite for the retail alcohol|alcohol dealer license file/);
+  // The dependency chain is context-conditioned: the daycare card points at
+  // the childcare license — never the alcohol license.
+  assert.deepEqual(g.dependencies, ["DOC_CHILDCARE_LICENSE"], `daycare background check must depend on the childcare license only, got: ${JSON.stringify(g.dependencies)}`);
+  // Control: the alcohol branch still validates for an actual alcohol
+  // filing (the Bayamón bar fixture answers alcohol_sold) and still
+  // identifies the background certificate as part of the alcohol-license
+  // chain (§29.2 founder judgment preserved).
+  const bar = buildRequirementGuidance(req("DOC_BACKGROUND_CHECK"), ctx);
+  assert.equal(bar.status, "VALIDATED", `bar background check must validate, got: ${bar.status} (${bar.reviewReasons.join(", ")})`);
+  assert.ok(bar.triggerFacts.some(f => f.key === "Q_ALCOHOL_SOLD"), `bar guidance must still trigger on the alcohol branch, got: ${JSON.stringify(bar.triggerFacts)}`);
+  assert.deepEqual(bar.dependencies, ["DOC_ALCOHOL_LICENSE"], `bar background check must still depend on the alcohol license, got: ${JSON.stringify(bar.dependencies)}`);
+});

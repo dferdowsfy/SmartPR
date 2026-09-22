@@ -102,6 +102,10 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     // REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the outdoor-seating question
     // fires RULE_0031; the bundled flow answers it by writeKey.
     Q_OUTDOOR_SEATING: ["outdoor_seating"],
+    // REG-GUIDE-BACKGROUND-001 (2026-09-22 QA): the children-present question
+    // fires RULE_0039 (background checks for childcare contexts); the
+    // bundled flow answers it by writeKey.
+    Q_CHILDREN_PRESENT: ["children_present"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;
@@ -319,7 +323,13 @@ export function buildRequirementGuidance(req: GuidanceRequirement, ctx: Guidance
   return {
     requirementId: concept.requirementId, status: "VALIDATED", reviewReasons: [], triggerFacts,
     regulatoryReason, purpose, nextAction, consequenceOrNextStep,
-    dependencies: [...new Set([...concept.dependencies, ...(concept.conditionalDependencies ?? []).filter(d => d.entityType === ctx.entityType).map(d => d.documentId)])],
+    dependencies: [...new Set([...concept.dependencies, ...(concept.conditionalDependencies ?? []).filter(d =>
+      // REG-GUIDE-BACKGROUND-001 (2026-09-22 QA): a conditional dependency
+      // renders only when every stated condition holds; an unknown fact
+      // fails closed (never claims a parent filing it cannot confirm).
+      (d.entityType === undefined || d.entityType === ctx.entityType) &&
+      (d.factKey === undefined || factValue(d.factKey, ctx) === d.factValue)
+    ).map(d => d.documentId)])],
     sources: concept.sources, sourceVersion: concept.version,
     summary: why, whyThisApplies: why, whatThisIs: purpose, whatYouNeedToDo: nextAction, whatHappensNext: consequenceOrNextStep,
     triggeredBy: triggerFacts.map(f => f.label), satisfiesOrUnlocks: [consequenceOrNextStep], sourceReferences: concept.sources,

@@ -1,6 +1,6 @@
 // Published document-node content. No AI generation and no obligation matching.
 export type LocalizedText = { en: string; es: string };
-export type GuidanceFactKey = "Q_ALCOHOL_SOLD" | "Q_PHYSICAL_LOCATION" | "Q_EMPLOYEES_HIRED" | "Q_EXISTING_LEASE" | "Q_FOOD_PREPARED" | "Q_FOOD_SOLD" | "Q_CUSTOMERS_VISIT" | "Q_RENEWABLE_INSTALL" | "Q_SOLAR_MOUNTING" | "Q_SOLAR_SIZE" | "Q_SOLAR_OWNERSHIP" | "Q_FEDERAL_CONTRACTS_GRANTS" | "Q_OFFERS_CONSTRUCTION_SERVICES" | "Q_COMMERCIAL_VEHICLES" | "Q_HAZMAT_TRANSPORT" | "Q_AGRICULTURE_PRODUCTION" | "Q_SHORT_TERM_RENTAL" | "Q_GUESTS_OVERNIGHT" | "Q_COMMERCIAL_SIGNAGE" | "Q_OUTDOOR_SEATING" | "project_type" | "entityType" | "municipality" | "businessType";
+export type GuidanceFactKey = "Q_ALCOHOL_SOLD" | "Q_ALCOHOL_SERVED" | "Q_ALCOHOL_MANUFACTURED" | "Q_PHYSICAL_LOCATION" | "Q_EMPLOYEES_HIRED" | "Q_EXISTING_LEASE" | "Q_FOOD_PREPARED" | "Q_FOOD_SOLD" | "Q_CUSTOMERS_VISIT" | "Q_RENEWABLE_INSTALL" | "Q_SOLAR_MOUNTING" | "Q_SOLAR_SIZE" | "Q_SOLAR_OWNERSHIP" | "Q_FEDERAL_CONTRACTS_GRANTS" | "Q_OFFERS_CONSTRUCTION_SERVICES" | "Q_COMMERCIAL_VEHICLES" | "Q_HAZMAT_TRANSPORT" | "Q_AGRICULTURE_PRODUCTION" | "Q_SHORT_TERM_RENTAL" | "Q_GUESTS_OVERNIGHT" | "Q_COMMERCIAL_SIGNAGE" | "Q_OUTDOOR_SEATING" | "Q_CHILDREN_PRESENT" | "project_type" | "entityType" | "municipality" | "businessType";
 export interface GuidanceCondition {
   key: GuidanceFactKey;
   equals?: string | boolean;
@@ -30,12 +30,18 @@ export interface GuidanceConcept {
   nextAction: LocalizedText;
   consequenceOrNextStep: LocalizedText;
   dependencies: string[];
-  conditionalDependencies?: { entityType: string; documentId: string }[];
+  /** REG-GUIDE-BACKGROUND-001 (2026-09-22 QA): a shared document (e.g. the
+   *  criminal-record certificate) feeds different parent filings in
+   *  different contexts — the alcohol license when alcohol is sold, the
+   *  childcare license when children are present. A dependency may therefore
+   *  be conditioned on an entity type, a fact key/value, or both; it renders
+   *  only when every stated condition holds (unknown facts fail closed). */
+  conditionalDependencies?: { entityType?: string; factKey?: GuidanceFactKey; factValue?: string | boolean; documentId: string }[];
   sources: GuidanceSource[];
 }
 
 const GENERIC = /applies based on what SmartPR knows|issued or required by|is required by|keeps? (your |the )?(business |compliance profile )?(compliant|current)|keeps? you compliant|guide you through the exact steps|comply with local regulations|keep it on file|mantiene tu perfil de cumplimiento|emitido o requerido por/i;
-const KEYS = new Set<GuidanceFactKey>(["Q_ALCOHOL_SOLD", "Q_PHYSICAL_LOCATION", "Q_EMPLOYEES_HIRED", "Q_EXISTING_LEASE", "Q_FOOD_PREPARED", "Q_FOOD_SOLD", "Q_CUSTOMERS_VISIT", "Q_RENEWABLE_INSTALL", "Q_SOLAR_MOUNTING", "Q_SOLAR_SIZE", "Q_SOLAR_OWNERSHIP", "Q_FEDERAL_CONTRACTS_GRANTS", "Q_OFFERS_CONSTRUCTION_SERVICES", "Q_COMMERCIAL_VEHICLES", "Q_HAZMAT_TRANSPORT", "Q_AGRICULTURE_PRODUCTION", "Q_SHORT_TERM_RENTAL", "Q_GUESTS_OVERNIGHT", "Q_COMMERCIAL_SIGNAGE", "Q_OUTDOOR_SEATING", "project_type", "entityType", "municipality", "businessType"]);
+const KEYS = new Set<GuidanceFactKey>(["Q_ALCOHOL_SOLD", "Q_ALCOHOL_SERVED", "Q_ALCOHOL_MANUFACTURED", "Q_PHYSICAL_LOCATION", "Q_EMPLOYEES_HIRED", "Q_EXISTING_LEASE", "Q_FOOD_PREPARED", "Q_FOOD_SOLD", "Q_CUSTOMERS_VISIT", "Q_RENEWABLE_INSTALL", "Q_SOLAR_MOUNTING", "Q_SOLAR_SIZE", "Q_SOLAR_OWNERSHIP", "Q_FEDERAL_CONTRACTS_GRANTS", "Q_OFFERS_CONSTRUCTION_SERVICES", "Q_COMMERCIAL_VEHICLES", "Q_HAZMAT_TRANSPORT", "Q_AGRICULTURE_PRODUCTION", "Q_SHORT_TERM_RENTAL", "Q_GUESTS_OVERNIGHT", "Q_COMMERCIAL_SIGNAGE", "Q_OUTDOOR_SEATING", "Q_CHILDREN_PRESENT", "project_type", "entityType", "municipality", "businessType"]);
 const CONTENT_FIELDS = ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const;
 
 /** Untrusted published JSON must fail closed, not crash the Requirements page. */
@@ -61,7 +67,11 @@ export function validateGuidanceConcept(value: unknown, requirementId?: string):
   }
   if (!Array.isArray(c.conditions) || !c.conditions.length || c.conditions.some(g => !Array.isArray(g) || !g.length || g.some(t => !t || !KEYS.has(t.key) || !t.label?.en || !t.label?.es))) issues.push("TRIGGER_CONDITIONS_MISSING");
   if (!Array.isArray(c.dependencies) || c.dependencies.some(d => typeof d !== "string")) issues.push("INVALID_DEPENDENCIES");
-  if (c.conditionalDependencies !== undefined && (!Array.isArray(c.conditionalDependencies) || c.conditionalDependencies.some(d => !d?.entityType || !d.documentId))) issues.push("INVALID_DEPENDENCIES");
+  if (c.conditionalDependencies !== undefined && (!Array.isArray(c.conditionalDependencies) || c.conditionalDependencies.some(d =>
+    !d?.documentId ||
+    (d.entityType === undefined && d.factKey === undefined) ||
+    (d.factKey !== undefined && (!KEYS.has(d.factKey) || (typeof d.factValue !== "string" && typeof d.factValue !== "boolean")))
+  ))) issues.push("INVALID_DEPENDENCIES");
   if (!Array.isArray(c.sources) || !c.sources.length || c.sources.some(s => {
     if (!s || !s.id || !s.citation || !s.agency || !s.supports || !s.sourceVersion || !/^\d{4}-\d{2}-\d{2}$/.test(s.lastVerified)) return true;
     try {

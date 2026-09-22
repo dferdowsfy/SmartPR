@@ -178,9 +178,16 @@
     "download_url": "https://www.ogpe.pr.gov",
     "download_kind": "filing_portal",
     "download_note": "Certificación de Prevención de Incendios (CPI) processed through OGPe; an inspection by the Cuerpo de Bomberos underlies it.",
-    "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-    "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
-    "citation_confidence": "statute"
+    "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
+    "citation_confidence": "statute",
+    "change_log": [
+      {
+        "date": "2026-09-22",
+        "change": "DOC_FIRE_CERT citation updated from repealed Ley 43-1988 to Ley 20-2017",
+        "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov)."
+      }
+    ]
   },
   {
     "id": "DOC_CFPM",

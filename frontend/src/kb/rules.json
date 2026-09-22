@@ -190,8 +190,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -201,6 +201,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -442,8 +447,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -453,6 +458,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -824,8 +834,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -835,6 +845,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -918,8 +933,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -929,6 +944,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1012,8 +1032,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1023,6 +1043,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1106,8 +1131,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1117,6 +1142,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1200,8 +1230,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1211,6 +1241,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1324,8 +1359,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1335,6 +1370,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1418,8 +1458,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1429,6 +1469,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1512,8 +1557,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1523,6 +1568,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1606,8 +1656,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1617,6 +1667,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -1722,8 +1777,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -1733,6 +1788,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -2998,8 +3058,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3009,6 +3069,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3064,8 +3129,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3075,6 +3140,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3130,8 +3200,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3141,6 +3211,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3350,8 +3425,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3361,6 +3436,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3372,8 +3452,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3383,6 +3463,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3394,8 +3479,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3405,6 +3490,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3416,8 +3506,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3427,6 +3517,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3438,8 +3533,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3449,6 +3544,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3460,8 +3560,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3471,6 +3571,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3482,8 +3587,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3493,6 +3598,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3874,8 +3984,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3885,6 +3995,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -3940,8 +4055,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -3951,6 +4066,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -4006,8 +4126,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -4017,6 +4137,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -4072,8 +4197,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -4083,6 +4208,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -4138,8 +4268,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -4149,6 +4279,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -4204,8 +4339,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -4215,6 +4350,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -6411,8 +6551,8 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -6422,6 +6562,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
@@ -6433,8 +6578,8 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_FIRE_CERT",
-  "citation": "Ley 43-1988 (Ley del Cuerpo de Bomberos de Puerto Rico); 25 LPRA § 3566 — inspecciones de prevención",
-  "citation_url": "https://bomberos.pr.gov/divisiones/prevenci%C3%B3n",
+  "citation": "Ley 20-2017 (Ley del Departamento de Seguridad Pública de Puerto Rico), que derogó la Ley 43-1988; Negociado del Cuerpo de Bomberos — inspección y certificación de prevención de incendios",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2-ingles/20-2017.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_FIRE_CERT",
   "citation_source": "document",
@@ -6444,6 +6589,11 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an 8-year operating restaurant was shown the Fire Safety Certification and CFPM as REQUIRED — as if applying for the first time. Same defect class as the DOC_HEALTH_PERMIT sweep (257f7b6): fire-safety certification and certified food protection are recurring operating obligations; an operating business verifies what it holds, a new business applies. New businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys deliberately excluded (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation updated from repealed Ley 43-1988 to Ley 20-2017",
+    "reason": "QA 2026-09-22 03:00 cycle (REG-CITATION-FIRE-001): Ley 20-2017 (Ley del Departamento de Seguridad Pública) expressly repealed the 'Puerto Rico Firefighters Corps Act' (Ley 43-1988). Citation-only change; requirement behavior and posture unchanged. Verified against the primary source text of Ley 20-2017 (bvirtualogp.pr.gov). All 30 fire-cert rules inherit this citation from DOC_FIRE_CERT (citation_source=document)."
    }
   ]
  },
