@@ -18,8 +18,7 @@ const copy = {
     path1Title: "I'm a business owner",
     path1Body: "See exactly what applies to your business.",
     path1Cta: "Start my application",
-    path2Title: "I manage filings for clients",
-    path2Body: "Prepare permits and filings for every client in one place.",
+    proLinkLead: "I manage filings for clients?",
     path2Cta: "See the professional platform",
     whatNext:
       "Clicking 'Start my application' takes 30 seconds: leave your name and email so we can save your progress, then answer questions about your business. You immediately get your requirements checklist — free. Official filled forms and exportable submission packages are part of paid plans (see Pricing). If you're already signed in, you skip the form and go straight to the assessment.",
@@ -104,8 +103,7 @@ const copy = {
     path1Title: "Soy dueño de negocio",
     path1Body: "Vea exactamente qué le aplica a su negocio.",
     path1Cta: "Comenzar mi solicitud",
-    path2Title: "Manejo trámites de clientes",
-    path2Body: "Prepare permisos y trámites para todos sus clientes en un solo lugar.",
+    proLinkLead: "¿Maneja trámites para clientes?",
     path2Cta: "Ver la plataforma profesional",
     whatNext:
       "Pulsar 'Comenzar mi solicitud' toma 30 segundos: deje su nombre y email para guardar su progreso, y conteste preguntas sobre su negocio. Al momento recibe su lista de requisitos — gratis. Los formularios oficiales llenados y los paquetes de radicación exportables son parte de los planes pagos (ver Planes). Si ya inició sesión, va directo a la evaluación.",
@@ -260,14 +258,13 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
                     {c.path1Cta}
                   </button>
                 </li>
-                <li className={styles.card}>
-                  <h3>{c.path2Title}</h3>
-                  <p>{c.path2Body}</p>
-                  <Link className={styles.primary} href={professionalsHref}>
-                    {c.path2Cta}
-                  </Link>
-                </li>
               </ol>
+              <p className={styles.proLink}>
+                {c.proLinkLead}{" "}
+                <Link href={professionalsHref}>
+                  {c.path2Cta} <span aria-hidden="true">→</span>
+                </Link>
+              </p>
               <p className={styles.lead}>{c.whatNext}</p>
             </div>
           </section>

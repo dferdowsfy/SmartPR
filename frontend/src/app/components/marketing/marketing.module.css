@@ -361,6 +361,23 @@
   color: #1b1b1b;
 }
 
+.proLink {
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
+  color: #4a4a4a;
+}
+
+.proLink a {
+  color: #245c5c;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.proLink a:hover {
+  color: #161616;
+}
+
 .techStats {
   display: grid;
   gap: 1rem;
