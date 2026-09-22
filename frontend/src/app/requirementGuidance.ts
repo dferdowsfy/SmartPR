@@ -319,7 +319,11 @@ export function buildRequirementGuidance(req: GuidanceRequirement, ctx: Guidance
   const regulatoryReason = render(concept.regulatoryReason[lang]), purpose = render(concept.purpose[lang]);
   const nextAction = render(concept.nextAction[lang]), consequenceOrNextStep = render(concept.consequenceOrNextStep[lang]);
   const lead = contextualLead(triggerFacts, ctx);
-  const why = lead ? `${lead} ${regulatoryReason}` : regulatoryReason;
+  // REG-GUIDE-BACKGROUND-002 (2026-09-22 QA, live S125): the requiring
+  // basis belongs to the matched branch, not the shared body — a daycare
+  // card renders the childcare basis only, never the alcohol file.
+  const branchBasis = concept.branchContext?.[concept.conditions.indexOf(group)];
+  const why = [lead, branchBasis ? render(branchBasis[lang]) : "", regulatoryReason].filter(s => s && s.length > 0).join(" ");
   return {
     requirementId: concept.requirementId, status: "VALIDATED", reviewReasons: [], triggerFacts,
     regulatoryReason, purpose, nextAction, consequenceOrNextStep,

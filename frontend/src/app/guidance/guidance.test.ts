@@ -701,10 +701,14 @@ test("REG-GUIDE-BACKGROUND-001: background-check guidance names the true requiri
   assert.ok(g.triggerFacts.some(f => f.key === "Q_CHILDREN_PRESENT" || f.key === "businessType"), `must trigger on the childcare branch, got: ${JSON.stringify(g.triggerFacts)}`);
   assert.ok(!g.triggerFacts.some(f => f.key === "Q_ALCOHOL_SOLD" || f.key === "Q_ALCOHOL_SERVED" || f.key === "Q_ALCOHOL_MANUFACTURED"), "daycare guidance must not trigger on an alcohol branch");
   // The copy is about the certificate itself and names childcare staffing as
-  // a requiring context; it never frames the certificate as an alcohol
-  // prerequisite for this filing.
-  assert.match(g.regulatoryReason, /children/i);
-  assert.doesNotMatch(g.regulatoryReason, /prerequisite for the retail alcohol|alcohol dealer license file/);
+  // the requiring basis for this filing — the card never frames the
+  // certificate as an alcohol prerequisite (REG-GUIDE-BACKGROUND-002: the
+  // basis lives in branchContext, rendered for the matched branch only).
+  assert.match(g.whyThisApplies, /Establishments that care for or educate children/);
+  assert.doesNotMatch(g.whyThisApplies, /alcohol/i);
+  assert.doesNotMatch(g.regulatoryReason, /alcohol/i);
+  assert.doesNotMatch(g.nextAction, /alcohol/i);
+  assert.doesNotMatch(g.consequenceOrNextStep, /alcohol/i);
   // The dependency chain is context-conditioned: the daycare card points at
   // the childcare license — never the alcohol license.
   assert.deepEqual(g.dependencies, ["DOC_CHILDCARE_LICENSE"], `daycare background check must depend on the childcare license only, got: ${JSON.stringify(g.dependencies)}`);
@@ -715,5 +719,26 @@ test("REG-GUIDE-BACKGROUND-001: background-check guidance names the true requiri
   const bar = buildRequirementGuidance(req("DOC_BACKGROUND_CHECK"), ctx);
   assert.equal(bar.status, "VALIDATED", `bar background check must validate, got: ${bar.status} (${bar.reviewReasons.join(", ")})`);
   assert.ok(bar.triggerFacts.some(f => f.key === "Q_ALCOHOL_SOLD"), `bar guidance must still trigger on the alcohol branch, got: ${JSON.stringify(bar.triggerFacts)}`);
+  assert.match(bar.whyThisApplies, /Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file/);
+  assert.doesNotMatch(bar.whyThisApplies, /children/i);
   assert.deepEqual(bar.dependencies, ["DOC_ALCOHOL_LICENSE"], `bar background check must still depend on the alcohol license, got: ${JSON.stringify(bar.dependencies)}`);
+});
+
+// REG-GUIDE-BACKGROUND-002 (2026-09-22 QA, live S125 follow-up): the
+// branchContext model — the requiring basis belongs to the matched
+// condition branch, never the shared body. The validator rejects a
+// branchContext that does not parallel conditions or that carries
+// placeholder copy.
+test("REG-GUIDE-BACKGROUND-002: branchContext parallels conditions and names the subject", () => {
+  const base = PR_REQUIREMENT_GUIDANCE.DOC_BACKGROUND_CHECK;
+  assert.equal(base.branchContext?.length, base.conditions.length, "branchContext must parallel conditions");
+  assert.deepEqual(validateGuidanceConcept(base), [], `background-check concept must validate clean, got: ${validateGuidanceConcept(base).join(", ")}`);
+  assert.ok(
+    validateGuidanceConcept({ ...base, branchContext: base.branchContext!.slice(0, 3) }).includes("BRANCH_CONTEXT_INVALID"),
+    "a branchContext shorter than conditions must fail validation"
+  );
+  assert.ok(
+    validateGuidanceConcept({ ...base, branchContext: base.branchContext!.map((b, i) => i === 0 ? { en: "Some generic text about this document.", es: "Algún texto genérico sobre este documento." } : b) }).includes("BRANCH_CONTEXT_INVALID"),
+    "a branch that does not name the subject must fail validation"
+  );
 });

@@ -37,6 +37,14 @@ export interface GuidanceConcept {
    *  be conditioned on an entity type, a fact key/value, or both; it renders
    *  only when every stated condition holds (unknown facts fail closed). */
   conditionalDependencies?: { entityType?: string; factKey?: GuidanceFactKey; factValue?: string | boolean; documentId: string }[];
+  /** REG-GUIDE-BACKGROUND-002 (2026-09-22 QA, live S125): the shared body
+   *  copy must stay context-free; the requiring basis belongs to the
+   *  matched branch. branchContext[i] states the basis for conditions[i]'s
+   *  branch and renders only when that branch matches — so a daycare card
+   *  never presents the alcohol file as its basis, while an alcohol filing
+   *  still sees the Hacienda basis (§29.2). Same length as conditions when
+   *  present. */
+  branchContext?: { en: string; es: string }[];
   sources: GuidanceSource[];
 }
 
@@ -72,6 +80,15 @@ export function validateGuidanceConcept(value: unknown, requirementId?: string):
     (d.entityType === undefined && d.factKey === undefined) ||
     (d.factKey !== undefined && (!KEYS.has(d.factKey) || (typeof d.factValue !== "string" && typeof d.factValue !== "boolean")))
   ))) issues.push("INVALID_DEPENDENCIES");
+  if (c.branchContext !== undefined && (!Array.isArray(c.branchContext) || c.branchContext.length !== (Array.isArray(c.conditions) ? c.conditions.length : -1) || c.branchContext.some(b => {
+    // Placeholder guard: each branch states a genuine requiring basis in
+    // both languages and names the concept's subject (checked across the
+    // paired texts so a branch may name it in either language).
+    if (!b || typeof b.en !== "string" || b.en.trim().length < 25 || typeof b.es !== "string" || b.es.trim().length < 25) return true;
+    const terms = [...(c.subjectTerms?.en ?? []), ...(c.subjectTerms?.es ?? [])];
+    const both = `${b.en} ${b.es}`.toLowerCase();
+    return !terms.length || !terms.some(t => typeof t === "string" && t.length > 2 && both.includes(t.toLowerCase()));
+  }))) issues.push("BRANCH_CONTEXT_INVALID");
   if (!Array.isArray(c.sources) || !c.sources.length || c.sources.some(s => {
     if (!s || !s.id || !s.citation || !s.agency || !s.supports || !s.sourceVersion || !/^\d{4}-\d{2}-\d{2}$/.test(s.lastVerified)) return true;
     try {

@@ -223,9 +223,10 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // alcohol-chain filings. Subject terms for the validated concept.
   DOC_ALCOHOL_SALES_PROJECTION: { en: ["sales projection", "projected sales", "alcohol sales"], es: ["proyección de ventas", "ventas de alcohol", "volumen"] },
 };
-function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = [], conditionalDependencies?: GuidanceConcept["conditionalDependencies"]): GuidanceConcept {
+function concept(requirementId: string, conditions: GuidanceCondition[][], sources: GuidanceSource[], content: [LocalizedText, LocalizedText, LocalizedText, LocalizedText], dependencies: string[] = [], conditionalDependencies?: GuidanceConcept["conditionalDependencies"], branchContext?: GuidanceConcept["branchContext"]): GuidanceConcept {
   return { requirementId, version: "2026-09-03.1", validationStatus: "validated", subjectTerms: SUBJECTS[requirementId], conditions, sources, regulatoryReason: content[0], purpose: content[1], nextAction: content[2], consequenceOrNextStep: content[3], dependencies,
     ...(conditionalDependencies ? { conditionalDependencies } : {}),
+    ...(branchContext ? { branchContext } : {}),
     ...(requirementId === "DOC_EIN" ? { conditionalDependencies: [
       { entityType: "limited_liability_company", documentId: "DOC_ARTICLES_ORGANIZATION" },
       ...["stock_corporation", "close_corporation", "professional_corporation", "nonprofit_nonstock_corporation"].map(entityType => ({ entityType, documentId: "DOC_CERT_INCORPORATION" })),
@@ -269,6 +270,11 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
   // certificate itself (not only the alcohol file), and the conditions gain
   // a branch per requiring context so the card's trigger label names the
   // real basis. The alcohol branch is unchanged.
+  // REG-GUIDE-BACKGROUND-002 (2026-09-22 QA, live S125): the shared body
+  // copy stays context-free; the requiring basis lives in branchContext so
+  // each matched branch renders only its own basis. A daycare card never
+  // mentions the alcohol file; an alcohol filing still sees the Hacienda
+  // basis (§29.2).
   DOC_BACKGROUND_CHECK: concept("DOC_BACKGROUND_CHECK", [
     [condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)],
     [condition("Q_ALCOHOL_SERVED", "Alcohol service: Yes", "Servicio de alcohol: Sí", true)],
@@ -277,10 +283,10 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     ...["BT_DAYCARE", "BT_TUTORING_CENTER", "BT_PRIVATE_SCHOOL", "BT_VOCATIONAL_SCHOOL", "BT_TRAINING_COMPANY", "BT_AFTER_SCHOOL_PROGRAM"].map(bt => [condition("businessType", "Childcare/education staffing", "Personal de cuido/educación", bt)]),
     [condition("businessType", "Security staff", "Personal de seguridad", "BT_SECURITY_CONTRACTOR")],
   ], [PR_GUIDANCE_SOURCES.alcoholReqs, PR_GUIDANCE_SOURCES.antecedentes], [
-    text("The criminal-record certificate (Certificado de Antecedentes Penales) documents a person's criminal history as recorded by the Policía de Puerto Rico, which issues it under Ley 254-1974. Hacienda requires it inside the retail alcohol beverage license file; establishments that care for or educate children must also clear their staff with criminal-record checks as part of their licensing.", "El certificado de antecedentes penales documenta el historial delictivo de una persona según lo registra la Policía de Puerto Rico, que lo expide bajo la Ley 254-1974. Hacienda lo exige dentro del expediente de la licencia de bebidas alcohólicas al detal; los establecimientos que cuidan o educan niños también tienen que depurar a su personal con verificaciones de antecedentes como parte de su licenciamiento."),
+    text("The criminal-record certificate (Certificado de Antecedentes Penales) documents a person's criminal history as recorded by the Policía de Puerto Rico, which issues it under Ley 254-1974. Every licensing process that asks for criminal-record documentation accepts this certificate as the proof.", "El certificado de antecedentes penales documenta el historial delictivo de una persona según lo registra la Policía de Puerto Rico, que lo expide bajo la Ley 254-1974. Todo proceso de licenciamiento que pida documentación de antecedentes penales acepta este certificado como prueba."),
     text("The certificate proves the applicant or staff member has no disqualifying criminal record for the filing that requires it. The Policía issues it free through the official pr.gov portal, and every licensing process that asks for criminal-record documentation accepts it.", "El certificado prueba que el solicitante o empleado no tiene un récord criminal que lo descalifique para la solicitud que lo exige. La Policía lo expide gratis en el portal oficial de pr.gov, y todo proceso de licenciamiento que pida documentación de antecedentes penales lo acepta."),
-    text("Request a Certificado de Antecedentes Penales for each person who must be cleared — through the official pr.gov portal (free, online) — and file each certificate with the application that requires it: the alcohol-license file for alcohol applicants, or the childcare/education licensing file for staff.", "Solicita un certificado de antecedentes penales para cada persona que haya que depurar — en el portal oficial de pr.gov (gratis, en línea) — y radica cada certificado con la solicitud que lo exige: el expediente de la licencia de alcohol para los solicitantes de alcohol, o el expediente de licenciamiento de cuido/educación para el personal."),
-    text("Without a criminal record certificate on file, the requiring application cannot move forward: Hacienda will not issue the alcohol license, and childcare or education licensing cannot clear the staff member. Keep certificates current wherever renewals ask for fresh criminal-record checks.", "Sin el certificado de antecedentes penales en el expediente, la solicitud que lo exige no puede avanzar: Hacienda no expide la licencia de alcohol, y el licenciamiento de cuido o educación no puede depurar al empleado. Mantén los certificados vigentes donde las renovaciones pidan verificaciones de antecedentes nuevas."),
+    text("Request a Certificado de Antecedentes Penales for each person who must be cleared — through the official pr.gov portal (free, online) — and file each certificate with the application that requires it.", "Solicita un certificado de antecedentes penales para cada persona que haya que depurar — en el portal oficial de pr.gov (gratis, en línea) — y radica cada certificado con la solicitud que lo exige."),
+    text("Without a criminal record certificate on file, the requiring application cannot move forward. Keep certificates current wherever renewals ask for fresh criminal-record checks.", "Sin el certificado de antecedentes penales en el expediente, la solicitud que lo exige no puede avanzar. Mantén los certificados vigentes donde las renovaciones pidan verificaciones de antecedentes nuevas."),
   ], [], [
     // REG-GUIDE-BACKGROUND-001 (2026-09-22 QA): the certificate is a child
     // of the requiring filing — the alcohol license when alcohol is sold
@@ -291,6 +297,18 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     { factKey: "Q_ALCOHOL_SERVED", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
     { factKey: "Q_ALCOHOL_MANUFACTURED", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
     { factKey: "Q_CHILDREN_PRESENT", factValue: true, documentId: "DOC_CHILDCARE_LICENSE" },
+  ], [
+    text("Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de bebidas alcohólicas al detal."),
+    text("Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de bebidas alcohólicas al detal."),
+    text("Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de bebidas alcohólicas al detal."),
+    text("Establishments that care for or educate children must clear their staff with criminal-record checks as part of their licensing.", "Los establecimientos que cuidan o educan niños tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+    text("Security contractors must clear their personnel with criminal-record checks as part of their licensing.", "Los contratistas de seguridad tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
   ]),
   DOC_EIN: concept("DOC_EIN", [[employee]], [PR_GUIDANCE_SOURCES.ein], [
     text("The IRS identifies a business by its Employer Identification Number (EIN). Employers need one for employment-tax reporting, and most registered entities need one as well.", "El IRS identifica a un negocio por su Número de Identificación Patronal (EIN). Los patronos lo necesitan para informar contribuciones sobre el empleo, y la mayoría de las entidades registradas también."),
