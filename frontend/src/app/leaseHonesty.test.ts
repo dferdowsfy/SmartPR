@@ -179,20 +179,19 @@ test("provenance: location-derived physical/home/online values render as Derived
   // for users who were never asked those questions — the values came from
   // the location-type dropdown, not from answers. The location model is a
   // translation of a dropdown choice, so its values are derived.
+  //
+  // REG-MOBILE-PHYSICAL-001 (2026-09-22 QA): a mobile business is not a
+  // nonresidential physical location, so Permiso Único must not fire for
+  // it at all — there is no physical-location value left to label.
   const mobile = engineInputFor({
-    business_type: "Food Truck",
-    municipality: "Arecibo",
+    business_type: "Mobile Detailing",
+    municipality: "San Juan",
     location_type: "Mobile Business",
   });
   const mobileRule = runRulesEngine(KB, mobile).debug.rulesMatched.find(
     (r) => r.rule_id === "RULE_0007"
   );
-  assert.ok(mobileRule, "Permiso Único fires for the mobile vendor via the location-derived physical value");
-  assert.ok(
-    mobileRule!.reason.includes("Derived answer:"),
-    `location-derived value labeled honestly: ${mobileRule!.reason}`
-  );
-  assert.ok(!mobileRule!.reason.includes("| Answer:"), "never presented as the user's answer");
+  assert.ok(!mobileRule, "Permiso Único must not fire for a mobile business (REG-MOBILE-PHYSICAL-001)");
 
   const home = engineInputFor({
     business_type: "Bookkeeping Service",
@@ -314,6 +313,90 @@ test("home-based: non-home business with Q_PHYSICAL_LOCATION=true still fires th
   );
   const docs = reqs.map((r) => r.document_id);
   assert.ok(docs.includes("DOC_PERMISO_UNICO"), "commercial premises still trigger Permiso Único");
+});
+
+// --- 8. Mobile business is not a nonresidential physical location (REG-MOBILE-PHYSICAL-001) ---
+//
+// 2026-09-22 QA (S136, San Juan mobile car detailer): buildEngineInput set
+// Q_PHYSICAL_LOCATION=true for a "Mobile Business" location type, firing
+// RULE_0007 (Permiso Único) REQUIRED for a business with no fixed
+// commercial premises — the same false-positive class as
+// REG-HOME-PHYSICAL-001. The permit rules read Q_PHYSICAL_LOCATION as
+// "nonresidential commercial premises", which a mobile business has none
+// of. EXCEPTION: food trucks keep the Darius-validated G10 posture
+// (Permiso Único REQUIRED for a mobile food unit) — the exemption is keyed
+// on Q_FOOD_TRUCK_MOBILE, never on the location label alone.
+
+const MOBILE_DETAILER = {
+  business_type: "Car Wash",
+  municipality: "San Juan",
+  location_type: "Mobile Business",
+  number_of_employees: 0,
+};
+
+test("mobile: Q_PHYSICAL_LOCATION is false, never true", () => {
+  const input = engineInputFor(MOBILE_DETAILER, { employees_hired: false });
+  assert.equal(input.answers["Q_PHYSICAL_LOCATION"], false);
+});
+
+test("mobile: Permiso Único does not fire for a mobile service business (REG-MOBILE-PHYSICAL-001)", () => {
+  const input = engineInputFor(MOBILE_DETAILER, { employees_hired: false });
+  const debug = runRulesEngine(KB, input).debug;
+  const matched = debug.rulesMatched.map((r) => r.rule_id);
+  assert.ok(!matched.includes("RULE_0007"), "RULE_0007 (Permiso Único) must not fire for a mobile business");
+  const reqs = computeRequirementsFromKB(MOBILE_DETAILER, { employees_hired: false }, {});
+  const docs = reqs.map((r) => r.document_id);
+  assert.ok(!docs.includes("DOC_PERMISO_UNICO"), "no Permiso Único requirement for a mobile business");
+  // Municipal obligations stand: the patente still fires for a mobile business.
+  assert.ok(docs.includes("DOC_PATENTE_MUNICIPAL"), "patente still required for a mobile business");
+});
+
+test("mobile: food truck keeps the validated G10 Permiso Único posture (exemption, not drift)", () => {
+  // G10 golden pins DOC_PERMISO_UNICO=required for a mobile food unit —
+  // never drift a validated golden. The exemption keys on the food-truck
+  // fact, not on the mobile location label.
+  const truck = engineInputFor(
+    { business_type: "Food Truck", municipality: "Ponce", location_type: "Mobile / Food Truck", number_of_employees: 2 },
+    { Q_FOOD_TRUCK_MOBILE: true, Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true, employees_hired: true }
+  );
+  const matched = runRulesEngine(KB, truck).debug.rulesMatched.map((r) => r.rule_id);
+  assert.ok(matched.includes("RULE_0007"), "food truck keeps Permiso Único (G10 validated posture)");
+  // And the mobile food unit still gets its dedicated ambulant instrument.
+  const reqs = computeRequirementsFromKB(
+    { business_type: "Food Truck", municipality: "Ponce", location_type: "Mobile / Food Truck", number_of_employees: 2 },
+    { Q_FOOD_TRUCK_MOBILE: true, Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true, employees_hired: true },
+    {},
+    { projectIntent: "new_business", entityType: "sole_proprietorship" }
+  );
+  assert.ok(reqs.some((r) => r.document_id === "DOC_AMBULANT_BUSINESS_LICENSE"), "food truck keeps the ambulant license");
+});
+
+test("mobile: raw Q_PHYSICAL_LOCATION=true in answers does not defeat the correction (order-dependence)", () => {
+  const reqs = computeRequirementsFromKB(
+    MOBILE_DETAILER,
+    { Q_PHYSICAL_LOCATION: true, employees_hired: false },
+    {}
+  );
+  const docs = reqs.map((r) => r.document_id);
+  assert.ok(!docs.includes("DOC_PERMISO_UNICO"), "no Permiso Único even when raw answers carry Q_PHYSICAL_LOCATION=true");
+});
+
+test("mobile neighbors: commercial, online-only and unknown locations unchanged", () => {
+  // Commercial premises still count as a physical (nonresidential) location.
+  assert.equal(
+    engineInputFor({ ...MOBILE_DETAILER, location_type: "Commercial Facility" }).answers["Q_PHYSICAL_LOCATION"],
+    true
+  );
+  // Online-only has no physical premises.
+  assert.equal(
+    engineInputFor({ ...MOBILE_DETAILER, location_type: "Online Only" }).answers["Q_PHYSICAL_LOCATION"],
+    false
+  );
+  // A location the user never chose stays unknown — never invented.
+  assert.equal(
+    engineInputFor({ business_type: "Car Wash", municipality: "San Juan" }).answers["Q_PHYSICAL_LOCATION"],
+    undefined
+  );
 });
 
 // --- 7. Interpreter pre-answers never render as the user's own answer -------

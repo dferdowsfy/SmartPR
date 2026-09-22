@@ -113,7 +113,13 @@ export const PR_GUIDANCE_SOURCES = {
   // hostelero, obtain the Innkeeper ID, collect the room-occupancy tax,
   // file the monthly return by the 10th). No invented procedure.
   tourism: source("SRC_GUIDANCE_TOURISM", "Compañía de Turismo de Puerto Rico", "Ley 272-2003 — Registro de hosteleros (Art. 26, 13 L.P.R.A. § 2271q)", "https://tourism.pr.gov/", "Short-term lodging (stays of fewer than 90 days) registers with the Compañía de Turismo as an innkeeper (hostelero) and obtains an Innkeeper Identification Number; registration applies island-wide."),
-  roomTax: source("SRC_GUIDANCE_ROOM_TAX", "Compañía de Turismo de Puerto Rico", "Ley 272-2003, Art. 28(A)-(B) (13 L.P.R.A. § 2271s) — declaración del impuesto sobre el canon por ocupación de habitación", "https://tourism.pr.gov/", "Article 28(A)-(B) governs the room-occupancy tax declaration: operators file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month."),
+  // REG-GUIDE-ROOMTAX-001 (2026-09-22 QA): S138 closed the §29.4
+  // founder-settled chain question — innkeeper registration, Innkeeper ID
+  // and the monthly room-tax return all fire — but the 7% room-tax rate
+  // itself appeared nowhere in the graph's guidance. Verified 2026-09-22
+  // on the PRTC's own page (tourism.pr.gov/room-tax/): "you must charge
+  // your guests a room occupancy tax equal to 7% of the room's rate".
+  roomTax: source("SRC_GUIDANCE_ROOM_TAX", "Compañía de Turismo de Puerto Rico", "Ley 272-2003, Art. 28(A)-(B) (13 L.P.R.A. § 2271s) — declaración del impuesto sobre el canon por ocupación de habitación; PRTC: 7% of the room rate", "https://tourism.pr.gov/room-tax/", "Article 28(A)-(B) governs the room-occupancy tax declaration: operators charge guests 7% of the room rate (PRTC) and file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month."),
   // REG-GUIDE-OPPE-001 (2026-09-18 QA): the OPPE installer registration card
   // rendered the unvalidated-description placeholder on a live Toa Alta
   // solar-installer filing. The official Solicitud de Certificación form
@@ -157,6 +163,18 @@ export const PR_GUIDANCE_SOURCES = {
   // license is issued for a specific site, is non-transferable, must be
   // displayed publicly, and lasts no more than two years.
   childcareLicensing: source("SRC_GUIDANCE_CHILDCARE_LICENSING", "Departamento de la Familia — Oficina de Licenciamiento (SULME)", "Ley 173-2016, Ley para el Licenciamiento de Establecimientos de Cuidado, Desarrollo y Aprendizaje de los Niños y Niñas — childcare establishments are licensed and supervised by the Departamento de la Familia", "https://childcare.familia.pr.gov/proveedores/licenciamientos.html", "The Oficina de Licenciamiento is the office empowered by law to license and supervise public and private childcare establishments in Puerto Rico; it decides on a complete license application within 90 days, and the license is issued for the specific site and entity, is non-transferable, must be displayed publicly, and lasts no more than two years."),
+  // REG-GUIDE-HOA-001 (2026-09-22 QA): the Condo / HOA Short-Term Rental
+  // Authorization card rendered the unvalidated-description placeholder on a
+  // live Guaynabo STR filing (S138). Concept grounded in the rule's own
+  // cited authority, Ley 129-2020 (Ley de Condominios), Art. 40
+  // (31 L.P.R.A § 1922l) — verified in the OGP Biblioteca Virtual text
+  // (rev. 10 Aug 2026): STRs of condo units cannot be prohibited unless the
+  // escritura matriz or the reglamento contains an express prohibition or a
+  // minimum lease term; the reglamento may regulate how STRs are conducted,
+  // including a minimum number of nights and a special monthly fee (capped
+  // at the maintenance fee). The copy stays conditional on what the
+  // documents actually contain — never a claim of a universal HOA permit.
+  hoaCondo: source("SRC_GUIDANCE_HOA_CONDO", "Oficina de Gerencia y Presupuesto — Biblioteca Virtual (Ley 129-2020)", "Ley 129-2020 (Ley de Condominios), Art. 40 (31 L.P.R.A § 1922l) — short-term rentals of condo units cannot be prohibited unless the escritura matriz or reglamento contains an express prohibition or a minimum lease term", "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/129-2020.pdf", "Article 40 provides that short-term rentals of apartments under the horizontal-property regime cannot be prohibited unless the master deed or regulations contain an express prohibition or a minimum lease term; the regulations may govern how STRs are conducted, including a minimum number of nights and a special monthly fee not greater than the maintenance fee."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -172,6 +190,9 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // rendered the unvalidated-description placeholder on live daycare
   // filings. Subject terms for the validated concept (Ley 173-2016).
   DOC_CHILDCARE_LICENSE: { en: ["childcare", "license", "daycare"], es: ["cuido", "licencia de cuido", "niños"] },
+  // REG-GUIDE-HOA-001 (2026-09-22 QA): subject terms for the validated
+  // condo/HOA STR authorization concept (Ley 129-2020).
+  DOC_HOA_AUTHORIZATION: { en: ["hoa", "condo", "condominio", "short-term rental authorization"], es: ["hoa", "condominio", "autorización de alquiler", "corto plazo"] },
   DOC_EIN: { en: ["ein", "federal tax identifier"], es: ["ein", "identificador contributivo"] },
   DOC_SAM_REGISTRATION: { en: ["sam.gov", "federal registration", "federal contractor"], es: ["sam.gov", "registro federal", "contratista federal"] },
   DOC_CONTRACTOR_LICENSE: { en: ["DACO", "contractor registry", "urbanizador", "constructor"], es: ["DACO", "registro de contratistas", "urbanizador", "constructor"] },
@@ -607,10 +628,31 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     [condition("Q_GUESTS_OVERNIGHT", "Guests stay overnight", "Huéspedes se hospedan", true)],
     [business],
   ], [PR_GUIDANCE_SOURCES.roomTax], [
-    text("Short-term lodging operators collect the room-occupancy tax from guests and file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month.", "Los operadores de alojamiento de corta duración cobran el impuesto sobre el canon por ocupación de habitación a los huéspedes y radican la declaración mensual del impuesto de habitación en la Compañía de Turismo el día 10 del mes siguiente."),
-    text("The monthly return reports the room-occupancy tax collected on guest stays. It is separate from the innkeeper registration itself — the registration authorizes the operation; the return accounts for the tax.", "La declaración mensual informa el impuesto sobre el canon por ocupación de habitación cobrado en las estadías de huéspedes. Es independiente del registro de hostelero — el registro autoriza la operación; la declaración rinde cuentas del impuesto."),
+    // REG-GUIDE-ROOMTAX-001 (2026-09-22 QA): the §29.4 founder-settled chain
+    // pins "7% room tax" as graph content — the rate now appears in the
+    // copy, verified on tourism.pr.gov/room-tax/ (PRTC: "a room occupancy
+    // tax equal to 7% of the room's rate").
+    text("Short-term lodging operators charge guests a room-occupancy tax of 7% of the room rate (Ley 272-2003) and file the monthly room-tax return with the Compañía de Turismo by the 10th of the following month.", "Los operadores de alojamiento de corta duración cobran a los huéspedes un impuesto sobre el canon por ocupación de habitación del 7% de la tarifa de la habitación (Ley 272-2003) y radican la declaración mensual del impuesto de habitación en la Compañía de Turismo el día 10 del mes siguiente."),
+    text("The monthly return reports the 7% room-occupancy tax collected on guest stays. It is separate from the innkeeper registration itself — the registration authorizes the operation; the return accounts for the tax.", "La declaración mensual informa el impuesto sobre el canon por ocupación de habitación del 7% cobrado en las estadías de huéspedes. Es independiente del registro de hostelero — el registro autoriza la operación; la declaración rinde cuentas del impuesto."),
     text("File the monthly room-tax declaration with the Compañía de Turismo by the 10th of each month and pay the room-occupancy tax collected during the prior month.", "Radica la declaración mensual del impuesto de habitación en la Compañía de Turismo el día 10 de cada mes y paga el impuesto sobre el canon por ocupación cobrado durante el mes anterior."),
     text("A filed return keeps the innkeeper account current; operating short-term lodging without filing the monthly return exposes the operator to penalties.", "Una declaración radicada mantiene la cuenta de hostelero al día; operar alojamiento de corta duración sin radicar la declaración mensual expone al operador a penalidades."),
+  ]),
+  // REG-GUIDE-HOA-001 (2026-09-22 QA): the Condo / HOA Short-Term Rental
+  // Authorization card rendered the unvalidated-description placeholder on
+  // the live Guaynabo STR filing (S138). Conditions cover the firing path
+  // (RULE_0600, Q_HOA_CONDO=true) plus the STR business-type path and the
+  // generic businessType fallback (d4940f4 class). Copy stays conditional —
+  // the governing documents decide — never a claim of a universal HOA
+  // permit.
+  DOC_HOA_AUTHORIZATION: concept("DOC_HOA_AUTHORIZATION", [
+    [condition("Q_HOA_CONDO", "Condo or HOA property: Yes", "Propiedad en condominio o HOA: Sí", true)],
+    [condition("businessType", "Airbnb / Short-Term Rental", "Alquiler a corto plazo (Airbnb)", "BT_AIRBNB_SHORT_TERM_RENTAL")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.hoaCondo], [
+    text("Puerto Rico's condo law (Ley 129-2020, Art. 40, 31 L.P.R.A § 1922l) addresses short-term rentals directly: a condo unit cannot be prohibited from short-term rental unless the master deed (escritura matriz) or the regulations contain an express prohibition or set a minimum lease term. The regulations may also govern how short-term rentals are conducted — including a minimum number of nights and a special monthly fee on STR owners, capped at the maintenance fee.", "La ley de condominios de Puerto Rico (Ley 129-2020, Art. 40, 31 L.P.R.A § 1922l) atiende los alquileres a corto plazo directamente: no se puede prohibir el alquiler a corto plazo de un apartamento, salvo que la escritura matriz o el reglamento contengan una prohibición expresa o establezcan un término mínimo de arrendamiento. El reglamento también puede regular la forma de los alquileres a corto plazo — incluyendo un mínimo de noches y una cuota mensual especial a los titulares que alquilen a corto plazo, sin exceder la cuota de mantenimiento."),
+    text("The condo/HOA short-term-rental authorization is the unit owner's evidence that the unit's short-term-rental use complies with the condominium's governing documents — no express prohibition, no unmet minimum lease term, and the reglamento's rules for short-term rentals observed. It is separate from the Tourism Company innkeeper registration — the innkeeper registration authorizes the lodging operation; the HOA authorization clears the condominium's own rules.", "La autorización de alquiler a corto plazo del condominio/HOA es la evidencia del titular de que el alquiler a corto plazo de la unidad cumple con los documentos del condominio — que no hay una prohibición expresa ni un término mínimo de arrendamiento incumplido, y que se observan las reglas que el reglamento fije para el alquiler a corto plazo. Es independiente del registro de hostelero de la Compañía de Turismo — el registro de hostelero autoriza la operación de alojamiento; la autorización del HOA aclara las reglas propias del condominio."),
+    text("Before listing the unit, read the escritura matriz and the reglamento: confirm there is no express prohibition or minimum lease term blocking short-term rental, note any reglamento rules (minimum nights, special fee), and obtain written authorization from the condo board or administrator where the documents require it.", "Antes de publicar la unidad, lee la escritura matriz y el reglamento: confirma que no haya una prohibición expresa ni un término mínimo de arrendamiento que impida el alquiler a corto plazo, toma nota de las reglas del reglamento (mínimo de noches, cuota especial), y obtén autorización escrita de la junta del condominio o del administrador donde los documentos la exijan."),
+    text("Renting short-term in violation of an express prohibition or a minimum lease term in the condo documents exposes the owner to enforcement by the Consejo de Titulares — confirm the documents allow the use before taking bookings.", "Alquilar a corto plazo en violación de una prohibición expresa o de un término mínimo de arrendamiento en los documentos del condominio expone al titular a acciones del Consejo de Titulares — confirma que los documentos permiten el uso antes de aceptar reservaciones."),
   ]),
   // REG-GUIDE-OPPE-001 (2026-09-18 QA): the OPPE installer registration card
   // rendered the unvalidated-description placeholder on a live Toa Alta

@@ -105,7 +105,10 @@ export function runGolden(golden: Golden): GoldenRunResult {
     const direct = golden.answers[question.id];
     if (direct !== undefined) input.answers[question.id] = direct as boolean | string;
   }
-  applyPermitModelCorrections(input.answers);
+  applyPermitModelCorrections(
+    input.answers,
+    typeof golden.profile.location_type === "string" ? golden.profile.location_type : null
+  );
   const { debug } = runRulesEngine(KB, input);
   const rulesFired = [...new Set(debug.rulesMatched.map((m) => m.rule_id))];
 

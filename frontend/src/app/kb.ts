@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { ACTIVE_JURISDICTION } from "./jurisdictions/index.ts";
-import { isHomeBasedLocation, isOnlineOnlyLocation } from "./locationTypes";
+import { isHomeBasedLocation, isMobileLocation, isOnlineOnlyLocation } from "./locationTypes";
 import {
   runRulesEngine,
   type KnowledgeBase,
@@ -461,9 +461,29 @@ const sameAnswerValue = (a: unknown, b: unknown): boolean => {
  * satisfies the nonresidential premise. Idempotent — safe to apply after
  * any later pass that re-asserts raw caller answers (see
  * computeRequirementsFromSnapshot).
+ *
+ * REG-MOBILE-PHYSICAL-001 (2026-09-22 QA): the same correction applies to
+ * mobile businesses — a "Mobile Business" location type has no fixed
+ * nonresidential commercial premises, so firing RULE_0007 (Permiso Único)
+ * REQUIRED from the location-derived Q_PHYSICAL_LOCATION=true is the same
+ * false-positive class. EXCEPTION: food trucks (Q_FOOD_TRUCK_MOBILE=true)
+ * keep the validated G10 posture — Darius validated Permiso Único REQUIRED
+ * for a mobile food unit, and the KB models food trucks as mobile units
+ * under OGPe authorization (plus the dedicated ambulant license RULE_0653).
+ * Never drift a validated golden: the exemption is explicit, not incidental.
  */
-export function applyPermitModelCorrections(a: Record<string, boolean | string | undefined>): void {
+export function applyPermitModelCorrections(
+  a: Record<string, boolean | string | undefined>,
+  locationType?: string | null
+): void {
   if (a["Q_HOME_BASED"] === true) {
+    a["Q_PHYSICAL_LOCATION"] = false;
+  }
+  if (
+    locationType != null &&
+    isMobileLocation(locationType) &&
+    a["Q_FOOD_TRUCK_MOBILE"] !== true
+  ) {
     a["Q_PHYSICAL_LOCATION"] = false;
   }
 }
@@ -578,7 +598,7 @@ export function buildEngineInput(
     Q_SHORT_TERM_RENTAL: on("short_term_rental", "guests_stay_overnight"),
     Q_GUESTS_OVERNIGHT: on("guests_stay_overnight"),
     Q_HAZMAT_TRANSPORT: on("hazardous_materials_transported"),
-    Q_FOOD_TRUCK_MOBILE: on("food_truck_or_mobile"),
+    Q_FOOD_TRUCK_MOBILE: on("food_truck_or_mobile", "Q_FOOD_TRUCK_MOBILE"),
     Q_HOA_CONDO: on("hoa_condo"),
     Q_TOURISM_ACTIVITY:
       on("tourism_activity", "water_activities", "excursions") || p.industry === "Accommodation & Tourism",
@@ -686,7 +706,7 @@ export function buildEngineInput(
  * any later pass that re-asserts raw caller answers (see
  * computeRequirementsFromSnapshot).
  */
-  applyPermitModelCorrections(a);
+  applyPermitModelCorrections(a, loc);
 
   // Project-first wiring: the intent branch drives the engine's formation
   // gating (businessStatus / entityNotFormed) and the validated project
@@ -981,7 +1001,10 @@ export function computeRequirementsFromSnapshot(
   // Q_PHYSICAL_LOCATION=true would wrongly satisfy the nonresidential
   // premise and fire RULE_0007/RULE_0008. The correction is idempotent, so
   // re-apply it last — the permit meaning always wins.
-  applyPermitModelCorrections(input.answers);
+  applyPermitModelCorrections(
+    input.answers,
+    (profile as { location_type?: string } | null | undefined)?.location_type ?? null
+  );
   // Entity type from explicit caller options must reach the engine so
   // entity-scoped rules (excluded_entity_types) filter correctly; the
   // profile-derived value is only a fallback.

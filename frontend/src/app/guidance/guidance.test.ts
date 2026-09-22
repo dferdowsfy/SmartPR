@@ -95,11 +95,18 @@ const BEVERAGE_MFG_GATED = new Set(["DOC_FDA_FOOD_FACILITY_REGISTRATION", "DOC_W
 // childcare-license concept (REG-GUIDE-CHILDCARE-001, 2026-09-22).
 const CHILDCARE_GATED = new Set(["DOC_CHILDCARE_LICENSE"]);
 
-test("same Bayamón bar: all forty source-backed explanations are distinct and actionable in EN/ES", () => {
+// HOA-gated: the condo/HOA short-term-rental authorization applies only to
+// condo/HOA lodging properties — the Bayamón bar profile matches none of
+// its firing rules, so the validated concept stays provisional for it
+// (correct — MATCH_TRACE_MISSING, not a placeholder). Added with the
+// validated HOA concept (REG-GUIDE-HOA-001, 2026-09-22).
+const HOA_GATED = new Set(["DOC_HOA_AUTHORIZATION"]);
+
+test("same Bayamón bar: all forty-one source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -115,7 +122,7 @@ test("same Bayamón bar: all forty source-backed explanations are distinct and a
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 40);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 41);
   }
 });
 
@@ -783,4 +790,67 @@ test("REG-GUIDE-CHILDCARE-001: childcare-license guidance is validated from Ley 
   assert.ok(en.sources.some(s => s.citation.includes("Ley 173-2016")), "must cite Ley 173-2016");
   // Validator must pass the authored concept cleanly.
   assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_CHILDCARE_LICENSE), [], `childcare-license concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_CHILDCARE_LICENSE).join(", ")}`);
+});
+
+// REG-GUIDE-HOA-001 (2026-09-22 QA): the Condo / HOA Short-Term Rental
+// Authorization card rendered the unvalidated-description placeholder on the
+// live Guaynabo STR filing (S138). The concept is now validated against the
+// rule's own cited authority, Ley 129-2020 (Ley de Condominios): short-term
+// rentals of a condo unit are subject to the condominium's master deed
+// (escritura matriz) and regulations — the governing documents decide. The
+// test pins both languages, the Ley 129-2020 citation, that the copy stays
+// conditional (never claims a universal HOA permit exists), and that the
+// concept validates cleanly through the model validator.
+test("REG-GUIDE-HOA-001: HOA-authorization guidance is validated from Ley 129-2020, not a placeholder", () => {
+  const strProfile = { municipality: "Guaynabo", business_type: "Airbnb / Short-Term Rental", location_type: "Condominium", number_of_employees: 0 };
+  const strAnswers = { hoa_condo: true, guests_stay_overnight: true, short_term_rental: true };
+  const strCtx: GuidanceContext = { language: "en", municipality: "Guaynabo", businessTypeName: "Airbnb / Short-Term Rental", profile: strProfile, discoveryAnswers: strAnswers, entityType: "sole_proprietorship", kb: KB, engineInput: buildEngineInput(strProfile, strAnswers) };
+  const strReq = (id: string): GuidanceRequirement => {
+    const doc = KB.documents.find(d => d.id === id)!;
+    return { document_id: id, code: id.toLowerCase(), name: doc?.name ?? id, agency: doc?.agency ?? "", reason: "Old generic text must not leak", applicability: "required", triggerFacts: [] };
+  };
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(strReq("DOC_HOA_AUTHORIZATION"), { ...strCtx, language });
+    assert.equal(g.status, "VALIDATED", `HOA authorization (${language}) must validate, got: ${g.status} (${g.reviewReasons.join(", ")})`);
+    // Primary legal basis present in the copy.
+    assert.match(g.regulatoryReason, /Ley 129-2020/);
+    // Never a placeholder.
+    assert.doesNotMatch(g.regulatoryReason + g.purpose + g.nextAction + g.consequenceOrNextStep, /pending|placeholder|coming soon|not yet validated/i);
+    // Conditional framing: the governing documents decide — never a claim
+    // of a universal HOA permit.
+    const copy = g.regulatoryReason + g.purpose + g.nextAction + g.consequenceOrNextStep;
+    assert.match(copy, /governing documents|documentos/i, "copy must stay conditional on the condo's governing documents");
+    // The copy names the real requiring context: the HOA/condo question.
+    assert.ok(g.triggerFacts.some(f => f.key === "businessType" || f.key === "Q_HOA_CONDO"), `must trigger on the HOA branch, got: ${JSON.stringify(g.triggerFacts)}`);
+  }
+  // Source: Ley 129-2020 (Ley de Condominios) cited on lexjuris.
+  const en = buildRequirementGuidance(strReq("DOC_HOA_AUTHORIZATION"), strCtx);
+  assert.ok(en.sources.some(s => s.citation.includes("Ley 129-2020")), `must cite Ley 129-2020, got: ${JSON.stringify(en.sources.map(s => s.citation))}`);
+  // Validator must pass the authored concept cleanly.
+  assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_HOA_AUTHORIZATION), [], `HOA-authorization concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_HOA_AUTHORIZATION).join(", ")}`);
+});
+
+// REG-GUIDE-ROOMTAX-001 (2026-09-22 QA): S138 closed the §29.4
+// founder-settled chain question — innkeeper registration, Innkeeper ID and
+// the monthly room-tax return all fire — but the 7% room-tax rate itself
+// appeared nowhere in the graph's guidance. The rate is now pinned in the
+// room-tax concept in EN/ES, verified 2026-09-22 on the PRTC's own page
+// (tourism.pr.gov/room-tax/: "a room occupancy tax equal to 7% of the
+// room's rate").
+test("REG-GUIDE-ROOMTAX-001: room-tax guidance states the verified 7% rate in EN/ES", () => {
+  const strProfile = { municipality: "Guaynabo", business_type: "Airbnb / Short-Term Rental", location_type: "Condominium", number_of_employees: 0 };
+  const strAnswers = { hoa_condo: true, guests_stay_overnight: true, short_term_rental: true };
+  const strCtx: GuidanceContext = { language: "en", municipality: "Guaynabo", businessTypeName: "Airbnb / Short-Term Rental", profile: strProfile, discoveryAnswers: strAnswers, entityType: "sole_proprietorship", kb: KB, engineInput: buildEngineInput(strProfile, strAnswers) };
+  const strReq = (id: string): GuidanceRequirement => {
+    const doc = KB.documents.find(d => d.id === id)!;
+    return { document_id: id, code: id.toLowerCase(), name: doc?.name ?? id, agency: doc?.agency ?? "", reason: "Old generic text must not leak", applicability: "required", triggerFacts: [] };
+  };
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(strReq("DOC_ROOM_TAX_RETURN"), { ...strCtx, language });
+    assert.equal(g.status, "VALIDATED", `room-tax return (${language}) must validate, got: ${g.status} (${g.reviewReasons.join(", ")})`);
+    assert.match(g.regulatoryReason, /7%/, `room-tax regulatory reason (${language}) must state the 7% rate`);
+    assert.match(g.purpose, /7%/, `room-tax purpose (${language}) must state the 7% rate`);
+  }
+  // Validator must still pass the edited concept cleanly.
+  assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ROOM_TAX_RETURN), [], `room-tax concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ROOM_TAX_RETURN).join(", ")}`);
 });
