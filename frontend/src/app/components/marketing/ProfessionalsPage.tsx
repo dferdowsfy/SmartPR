@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
-
-const DEMO_EMAIL = "darius@getsmartpr.com";
-const PILOT_SUBJECT = "SmartPR pilot";
-const DEMO_SUBJECT = "SmartPR demo request";
 
 const copy = {
   EN: {
@@ -158,11 +155,16 @@ const copy = {
 } as const;
 
 export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialLanguage?: Language }) {
+  const router = useRouter();
   const { language, handleLanguageChange } = useMarketingLanguage(initialLanguage);
   const c = copy[language];
   const home = language === "ES" ? "/es" : "/";
-  const pilotHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(PILOT_SUBJECT)}`;
-  const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(DEMO_SUBJECT)}`;
+
+  // Both CTAs enter the free platform directly — the existing guest intake
+  // entry the landing page uses. No mailto, no invented routes.
+  function goToAssessment() {
+    router.push("/?entry=new-business");
+  }
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -178,12 +180,12 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
           <h1>{c.heroTitle}</h1>
           <p className={styles.heroSub}>{c.heroSub}</p>
           <div className={styles.ctaRow}>
-            <a className={styles.primary} href={pilotHref}>
+            <button type="button" className={styles.primary} onClick={goToAssessment}>
               {c.startPilot}
-            </a>
-            <a className={styles.secondary} href={demoHref}>
+            </button>
+            <button type="button" className={styles.secondary} onClick={goToAssessment}>
               {c.bookDemo}
-            </a>
+            </button>
           </div>
           <p className={styles.escapeHatch}>{c.whoFor}</p>
         </section>
@@ -272,12 +274,12 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
             <h2>{c.closeTitle}</h2>
             <p className={styles.lead}>{c.closeSub}</p>
             <div className={styles.ctaRow}>
-              <a className={styles.primary} href={pilotHref}>
+              <button type="button" className={styles.primary} onClick={goToAssessment}>
                 {c.startPilot}
-              </a>
-              <a className={styles.secondary} href={demoHref}>
+              </button>
+              <button type="button" className={styles.secondary} onClick={goToAssessment}>
                 {c.bookDemo}
-              </a>
+              </button>
             </div>
           </div>
         </section>

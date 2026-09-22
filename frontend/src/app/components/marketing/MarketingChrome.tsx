@@ -119,7 +119,9 @@ export function SiteHeader({
   const c = copy[language];
   const [navOpen, setNavOpen] = useState(false);
   const nav = variant === "home" ? c.homeNav : c.proNav;
-  const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
+  // "Book a demo" enters the free platform directly — the existing guest
+  // intake entry — never a mailto.
+  const demoHref = "/?entry=new-business";
 
   return (
     <header className={styles.header}>

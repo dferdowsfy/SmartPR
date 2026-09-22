@@ -248,6 +248,11 @@ button.primary {
   text-align: center;
 }
 
+/* Homepage hero no longer carries a kicker — keep the H1 tight to the top. */
+.heroPlain h1:first-child {
+  margin-top: 0;
+}
+
 .heroPlain h1 {
   max-width: 62rem;
   margin: 1.5rem auto 0;
@@ -863,8 +868,7 @@ button.primary {
 }
 
 @media (max-width: 639px) {
-  .ctaRow .primary,
-  .ctaRow .secondary {
+  .ctaRow .primary {
     width: 100%;
   }
 
