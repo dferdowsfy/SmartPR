@@ -148,6 +148,15 @@ export const PR_GUIDANCE_SOURCES = {
   // Puerto Rico's own air-emissions program (not federal EPA Title V) — no
   // invented emission thresholds.
   airPermit: source("SRC_GUIDANCE_AIR", "Departamento de Recursos Naturales y Ambientales (DRNA)", "Puerto Rico air quality program — air permit / minor-source determination", "https://www.drna.pr.gov/", "DRNA administers Puerto Rico's air-emissions program; manufacturing facilities with air emissions may need a DRNA air permit or a minor-source determination."),
+  // REG-GUIDE-CHILDCARE-001 (2026-09-22 QA): the Childcare / Education
+  // License card rendered the unvalidated-description placeholder on live
+  // daycare filings. Concept grounded in Ley 173-2016 and the official
+  // Departamento de la Familia licensing office (SULME): the office is the
+  // office empowered by law to license and supervise childcare
+  // establishments; it decides on a filed application within 90 days; the
+  // license is issued for a specific site, is non-transferable, must be
+  // displayed publicly, and lasts no more than two years.
+  childcareLicensing: source("SRC_GUIDANCE_CHILDCARE_LICENSING", "Departamento de la Familia — Oficina de Licenciamiento (SULME)", "Ley 173-2016, Ley para el Licenciamiento de Establecimientos de Cuidado, Desarrollo y Aprendizaje de los Niños y Niñas — childcare establishments are licensed and supervised by the Departamento de la Familia", "https://childcare.familia.pr.gov/proveedores/licenciamientos.html", "The Oficina de Licenciamiento is the office empowered by law to license and supervise public and private childcare establishments in Puerto Rico; it decides on a complete license application within 90 days, and the license is issued for the specific site and entity, is non-transferable, must be displayed publicly, and lasts no more than two years."),
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -159,6 +168,10 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_ASUME_CLEARANCE: { en: ["asume", "child support clearance"], es: ["asume", "sustento de menores"] },
   DOC_CRIM_CLEARANCE: { en: ["crim", "property debt clearance"], es: ["crim", "deuda contributiva"] },
   DOC_BACKGROUND_CHECK: { en: ["criminal record", "antecedentes penales"], es: ["antecedentes penales", "certificado de antecedentes"] },
+  // REG-GUIDE-CHILDCARE-001 (2026-09-22 QA): the childcare-license card
+  // rendered the unvalidated-description placeholder on live daycare
+  // filings. Subject terms for the validated concept (Ley 173-2016).
+  DOC_CHILDCARE_LICENSE: { en: ["childcare", "license", "daycare"], es: ["cuido", "licencia de cuido", "niños"] },
   DOC_EIN: { en: ["ein", "federal tax identifier"], es: ["ein", "identificador contributivo"] },
   DOC_SAM_REGISTRATION: { en: ["sam.gov", "federal registration", "federal contractor"], es: ["sam.gov", "registro federal", "contratista federal"] },
   DOC_CONTRACTOR_LICENSE: { en: ["DACO", "contractor registry", "urbanizador", "constructor"], es: ["DACO", "registro de contratistas", "urbanizador", "constructor"] },
@@ -309,6 +322,22 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
     text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
     text("Security contractors must clear their personnel with criminal-record checks as part of their licensing.", "Los contratistas de seguridad tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
+  ]),
+  // REG-GUIDE-CHILDCARE-001 (2026-09-22 QA, live S127): the Childcare /
+  // Education License card rendered the unvalidated-description placeholder
+  // on live daycare filings. Validated concept grounded in Ley 173-2016
+  // (primary: bvirtual.ogp.pr.gov Cuido PDF) and the official Departamento
+  // de la Familia licensing office (SULME). The license is the legal
+  // permission to care for children in a facility — never assumed, never
+  // bundled into the health-permit or background-check cards.
+  DOC_CHILDCARE_LICENSE: concept("DOC_CHILDCARE_LICENSE", [
+    [condition("businessType", "Childcare/Daycare", "Cuido/educación", "BT_DAYCARE")],
+    [condition("Q_CHILDREN_PRESENT", "Children present at the business: Yes", "Niños presentes en el negocio: Sí", true)],
+  ], [PR_GUIDANCE_SOURCES.childcareLicensing], [
+    text("Puerto Rico licenses childcare, development and learning establishments under Ley 173-2016: the Departamento de la Familia's Oficina de Licenciamiento (SULME) must license a daycare center before it opens, and that childcare license — issued for a specific site, non-transferable, valid up to two years — is the legal permission to care for children in a facility.", "Puerto Rico licencia los establecimientos de cuido, desarrollo y aprendizaje bajo la Ley 173-2016: la Oficina de Licenciamiento del Departamento de la Familia (SULME) tiene que licenciar un centro de cuido antes de que abra, y esa licencia de cuido —expedida para un local específico, intransferible, vigente hasta dos años— es el permiso legal para cuidar niños en una facilidad."),
+    text("The childcare license certifies that the daycare meets Puerto Rico's childcare standards — cleared and qualified staff, safe facilities, and approved child-to-staff ratios — and it must be displayed where families can see it.", "La licencia de cuido certifica que el centro cumple los estándares de cuido de Puerto Rico —personal depurado y cualificado, facilidades seguras y proporciones niño-adulto aprobadas— y tiene que exhibirse donde las familias la vean."),
+    text("Apply for the childcare license through the Oficina de Licenciamiento (SULME) before opening: file the licensing application with staff background clearances, staff health certificates, staff qualifications, and the facility details, then display the issued daycare license publicly.", "Solicita la licencia de cuido en la Oficina de Licenciamiento (SULME) antes de abrir: radica la solicitud con las verificaciones de antecedentes del personal, certificados de salud, cualificaciones y los detalles del local, y luego exhibe la licencia de cuido expedida a la vista del público."),
+    text("Operating a daycare without the childcare license is unlawful and exposes the operator to enforcement from the Departamento de la Familia; the license lasts no more than two years and must be renewed before it expires.", "Operar un centro de cuido sin la licencia de cuido es ilegal y expone al operador a acciones del Departamento de la Familia; la licencia dura hasta dos años y tiene que renovarse antes de vencer."),
   ]),
   DOC_EIN: concept("DOC_EIN", [[employee]], [PR_GUIDANCE_SOURCES.ein], [
     text("The IRS identifies a business by its Employer Identification Number (EIN). Employers need one for employment-tax reporting, and most registered entities need one as well.", "El IRS identifica a un negocio por su Número de Identificación Patronal (EIN). Los patronos lo necesitan para informar contribuciones sobre el empleo, y la mayoría de las entidades registradas también."),

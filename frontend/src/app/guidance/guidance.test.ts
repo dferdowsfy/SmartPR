@@ -88,11 +88,18 @@ const OUTDOOR_GATED = new Set(["DOC_OUTDOOR_SEATING_AUTH"]);
 // REG-GUIDE-STORMWATER-001 / REG-GUIDE-AIR-001, 2026-09-21).
 const BEVERAGE_MFG_GATED = new Set(["DOC_FDA_FOOD_FACILITY_REGISTRATION", "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION", "DOC_NPDES_INDUSTRIAL_STORMWATER", "DOC_AIR_PERMIT"]);
 
-test("same Bayamón bar: all thirty-nine source-backed explanations are distinct and actionable in EN/ES", () => {
+// Childcare-gated: the childcare license applies only to childcare/education
+// businesses — the Bayamón bar profile matches none of its firing rules, so
+// the validated concept stays provisional for it (correct —
+// MATCH_TRACE_MISSING, not a placeholder). Added with the validated
+// childcare-license concept (REG-GUIDE-CHILDCARE-001, 2026-09-22).
+const CHILDCARE_GATED = new Set(["DOC_CHILDCARE_LICENSE"]);
+
+test("same Bayamón bar: all forty source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -108,7 +115,7 @@ test("same Bayamón bar: all thirty-nine source-backed explanations are distinct
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 39);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 40);
   }
 });
 
@@ -741,4 +748,39 @@ test("REG-GUIDE-BACKGROUND-002: branchContext parallels conditions and names the
     validateGuidanceConcept({ ...base, branchContext: base.branchContext!.map((b, i) => i === 0 ? { en: "Some generic text about this document.", es: "Algún texto genérico sobre este documento." } : b) }).includes("BRANCH_CONTEXT_INVALID"),
     "a branch that does not name the subject must fail validation"
   );
+});
+
+// REG-GUIDE-CHILDCARE-001 (2026-09-22 QA): the Childcare / Education License
+// card rendered the unvalidated-description placeholder on live daycare
+// filings (S127). The concept is now validated against Ley 173-2016 and the
+// official Departamento de la Familia licensing office (SULME): the license
+// is the legal permission to care for children in a facility — issued for a
+// specific site, non-transferable, valid up to two years, displayed
+// publicly. The test pins both languages, the Ley 173-2016 citation, the
+// SULME source, and that the concept validates cleanly through the model
+// validator (no generic or placeholder copy).
+test("REG-GUIDE-CHILDCARE-001: childcare-license guidance is validated from Ley 173-2016 / SULME, not a placeholder", () => {
+  const daycareProfile = { municipality: "Bayamón", business_type: "Daycare", location_type: "Commercial Facility" };
+  const daycareAnswers = { children_present: true, food_prepared: true };
+  const daycareCtx: GuidanceContext = { language: "en", municipality: "Bayamón", businessTypeName: "Daycare", profile: daycareProfile, discoveryAnswers: daycareAnswers, entityType: "limited_liability_company", kb: KB, engineInput: buildEngineInput(daycareProfile, daycareAnswers) };
+  const daycareReq = (id: string): GuidanceRequirement => {
+    const doc = KB.documents.find(d => d.id === id)!;
+    return { document_id: id, code: id.toLowerCase(), name: doc?.name ?? id, agency: doc?.agency ?? "", reason: "Old generic text must not leak", applicability: "required", triggerFacts: [] };
+  };
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(daycareReq("DOC_CHILDCARE_LICENSE"), { ...daycareCtx, language });
+    assert.equal(g.status, "VALIDATED", `daycare childcare license (${language}) must validate, got: ${g.status} (${g.reviewReasons.join(", ")})`);
+    // Primary legal basis present in the copy.
+    assert.match(g.regulatoryReason, /Ley 173-2016/);
+    // Never a placeholder.
+    assert.doesNotMatch(g.regulatoryReason + g.purpose + g.nextAction + g.consequenceOrNextStep, /pending|placeholder|coming soon|not yet validated/i);
+    // The copy names the real requiring context: childcare licensing.
+    assert.ok(g.triggerFacts.some(f => f.key === "businessType" || f.key === "Q_CHILDREN_PRESENT"), `must trigger on the childcare branch, got: ${JSON.stringify(g.triggerFacts)}`);
+  }
+  // Sources: Departamento de la Familia licensing office on a .pr.gov URL.
+  const en = buildRequirementGuidance(daycareReq("DOC_CHILDCARE_LICENSE"), daycareCtx);
+  assert.ok(en.sources.some(s => s.agency.includes("Departamento de la Familia") && s.url.includes("familia.pr.gov")), `must cite the Familia licensing office, got: ${JSON.stringify(en.sources.map(s => s.url))}`);
+  assert.ok(en.sources.some(s => s.citation.includes("Ley 173-2016")), "must cite Ley 173-2016");
+  // Validator must pass the authored concept cleanly.
+  assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_CHILDCARE_LICENSE), [], `childcare-license concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_CHILDCARE_LICENSE).join(", ")}`);
 });
