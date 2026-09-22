@@ -909,8 +909,16 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   // which wrongly derived Q_HOME_BASED and required Permiso Único —
   // Domiciliary Use for a property the owner does not live in. STRs must
   // offer a plain residential-property option.
-  "Airbnb": ["Residential Property", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
-  "Short-Term Rental": ["Residential Property", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
+  // REG-LOCATION-CONDO-001 (2026-09-22 18:00 QA): the KB's canonical
+  // business-type label "Airbnb / Short-Term Rental" had no entry, so a
+  // filing under that label fell back to the generic list — no
+  // Residential Property option (live Guaynabo STR, S138). The entry is
+  // now aliased with the same STR options. "Condominium" is added as an
+  // explicit option for condo STRs (S138) — label-only, it derives the
+  // same facts as Residential Property and changes no firing.
+  "Airbnb": ["Residential Property", "Condominium", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
+  "Short-Term Rental": ["Residential Property", "Condominium", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
+  "Airbnb / Short-Term Rental": ["Residential Property", "Condominium", "Home-Based Business", "Tourism Facility", "Mixed Use Property"],
   "Vacation Rental Manager": ["Commercial Office", "Professional Office"],
   "Tour Operator": ["Commercial Office", "Tourism Facility"],
   "Excursion Company": ["Tourism Facility", "Commercial Office"],
@@ -948,13 +956,19 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Delivery Service": ["Commercial Office", "Warehouse"],
   "Freight Forwarding": ["Warehouse", "Commercial Office"],
   "Private School": ["Educational Facility"],
-  "Daycare": ["Educational Facility", "Mixed Use Property"],
+  "Daycare": ["Educational Facility", "Mixed Use Property", "Home-Based Business"],
   "Tutoring Center": ["Educational Facility", "Commercial Office", "Home-Based Business"],
   "Vocational School": ["Educational Facility"],
   "Training Company": ["Educational Facility", "Commercial Office", "Online Only"],
   "Educational Services Company": ["Commercial Office", "Online Only"],
   "After-School Program": ["Educational Facility"],
-  "Childcare Center": ["Educational Facility"],
+  // REG-LOCATION-DAYCARE-001 (2026-09-22 18:00 QA): same as Daycare — a
+  // complete-intake existing home daycare (Toa Alta, S140) could not
+  // select "Home-Based Business", so the engine-level home-daycare
+  // posture (verified) was unreachable live. Location-label-only; no
+  // firing change. Residential daycare licensing itself remains a
+  // separate REQUIRES_REGULATORY_REVIEW question (RULE_0194/0195/0196).
+  "Childcare Center": ["Educational Facility", "Home-Based Business"],
   "Software Company": ["Online Only", "Home-Based Business", "Shared Workspace", "Commercial Office"],
   "SaaS Company": ["Online Only", "Home-Based Business", "Shared Workspace", "Commercial Office"],
   "IT Consulting Firm": ["Professional Office", "Shared Workspace", "Home-Based Business"],

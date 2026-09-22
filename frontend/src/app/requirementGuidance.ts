@@ -106,6 +106,9 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     // fires RULE_0039 (background checks for childcare contexts); the
     // bundled flow answers it by writeKey.
     Q_CHILDREN_PRESENT: ["children_present"],
+    // REG-GUIDE-ENTERTAINMENT-001 (2026-09-22 QA): the live-entertainment
+    // question fires RULE_0032; the bundled flow answers it by writeKey.
+    Q_LIVE_ENTERTAINMENT: ["live_entertainment"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;

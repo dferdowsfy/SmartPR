@@ -102,11 +102,20 @@ const CHILDCARE_GATED = new Set(["DOC_CHILDCARE_LICENSE"]);
 // validated HOA concept (REG-GUIDE-HOA-001, 2026-09-22).
 const HOA_GATED = new Set(["DOC_HOA_AUTHORIZATION"]);
 
-test("same Bayamón bar: all forty-one source-backed explanations are distinct and actionable in EN/ES", () => {
+// Entertainment-gated: the entertainment permit applies only to venues
+// with live entertainment (RULE_0032) or entertainment business types
+// (RULE_0245/0246/0247); the bar profile answers no entertainment
+// question, so the validated concept stays provisional for it (correct —
+// MATCH_TRACE_MISSING, not a placeholder). Added with the
+// Ley 161-2009/182-1996-validated entertainment concept
+// (REG-GUIDE-ENTERTAINMENT-001, 2026-09-22).
+const ENTERTAINMENT_GATED = new Set(["DOC_ENTERTAINMENT_PERMIT"]);
+
+test("same Bayamón bar: all forty-two source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -122,7 +131,7 @@ test("same Bayamón bar: all forty-one source-backed explanations are distinct a
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 41);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 42);
   }
 });
 
@@ -828,6 +837,47 @@ test("REG-GUIDE-HOA-001: HOA-authorization guidance is validated from Ley 129-20
   assert.ok(en.sources.some(s => s.citation.includes("Ley 129-2020")), `must cite Ley 129-2020, got: ${JSON.stringify(en.sources.map(s => s.citation))}`);
   // Validator must pass the authored concept cleanly.
   assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_HOA_AUTHORIZATION), [], `HOA-authorization concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_HOA_AUTHORIZATION).join(", ")}`);
+});
+
+// REG-GUIDE-ENTERTAINMENT-001 (2026-09-22 QA): the S139 scenario (live trio
+// at a new Dorado no-food bar) fires RULE_0032 (Q_LIVE_ENTERTAINMENT=true,
+// heuristic + mfk=entertainment_details). The card must never claim a
+// universal entertainment permit exists — Puerto Rico has no single
+// island-wide instrument — and must not invent a Dorado entertainment
+// permit or conflate the venue's authorization with promoter licensing
+// under Ley 182-1996. The test pins both languages, the Ley 161-2009
+// Art. 8.4A citation, the conditional framing, the promoter
+// disambiguation, and clean validation.
+test("REG-GUIDE-ENTERTAINMENT-001: entertainment-permit guidance is validated from Ley 161-2009, not a placeholder", () => {
+  const profile = { municipality: "Dorado", business_type: "Bar", location_type: "Commercial Facility", number_of_employees: 6 };
+  const answers = { live_entertainment: true, commercial_signage: true, alcohol_sold: true, alcohol_served: true };
+  const ctx2: GuidanceContext = { language: "en", municipality: "Dorado", businessTypeName: "Bar", profile, discoveryAnswers: answers, entityType: "limited_liability_company", kb: KB, engineInput: buildEngineInput(profile, answers) };
+  const req2 = (id: string): GuidanceRequirement => {
+    const doc = KB.documents.find(d => d.id === id)!;
+    return { document_id: id, code: id.toLowerCase(), name: doc?.name ?? id, agency: doc?.agency ?? "", reason: "Old generic text must not leak", applicability: "needs_more_information", triggerFacts: [] };
+  };
+  for (const language of ["en", "es"] as const) {
+    const g = buildRequirementGuidance(req2("DOC_ENTERTAINMENT_PERMIT"), { ...ctx2, language });
+    assert.equal(g.status, "VALIDATED", `entertainment permit (${language}) must validate, got: ${g.status} (${g.reviewReasons.join(", ")})`);
+    // Primary legal basis present in the copy.
+    assert.match(g.regulatoryReason, /Ley 161-2009/);
+    // Never a placeholder.
+    assert.doesNotMatch(g.regulatoryReason + g.purpose + g.nextAction + g.consequenceOrNextStep, /pending|placeholder|coming soon|not yet validated/i);
+    // Conditional framing: Puerto Rico has no single island-wide
+    // entertainment permit — never a claim of a universal instrument.
+    assert.match(g.regulatoryReason, /no single island-wide entertainment permit|no hay un permiso de entretenimiento único/i);
+    // The promoter-law disambiguation must be present in the copy.
+    assert.match(g.purpose, /Ley 182-1996/);
+    // The copy names the real requiring context: the live-entertainment
+    // question.
+    assert.ok(g.triggerFacts.some(f => f.key === "Q_LIVE_ENTERTAINMENT"), `must trigger on the Q_LIVE_ENTERTAINMENT branch, got: ${JSON.stringify(g.triggerFacts)}`);
+  }
+  // Sources: Ley 161-2009 Art. 8.4A (OGP) and Ley 182-1996 (promoter law).
+  const en = buildRequirementGuidance(req2("DOC_ENTERTAINMENT_PERMIT"), ctx2);
+  assert.ok(en.sources.some(s => s.citation.includes("Ley 161-2009")), `must cite Ley 161-2009, got: ${JSON.stringify(en.sources.map(s => s.citation))}`);
+  assert.ok(en.sources.some(s => s.citation.includes("Ley 182-1996")), `must cite Ley 182-1996, got: ${JSON.stringify(en.sources.map(s => s.citation))}`);
+  // Validator must pass the authored concept cleanly.
+  assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ENTERTAINMENT_PERMIT), [], `entertainment-permit concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ENTERTAINMENT_PERMIT).join(", ")}`);
 });
 
 // REG-GUIDE-ROOMTAX-001 (2026-09-22 QA): S138 closed the §29.4

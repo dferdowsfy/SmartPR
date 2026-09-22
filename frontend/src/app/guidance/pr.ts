@@ -175,6 +175,31 @@ export const PR_GUIDANCE_SOURCES = {
   // at the maintenance fee). The copy stays conditional on what the
   // documents actually contain — never a claim of a universal HOA permit.
   hoaCondo: source("SRC_GUIDANCE_HOA_CONDO", "Oficina de Gerencia y Presupuesto — Biblioteca Virtual (Ley 129-2020)", "Ley 129-2020 (Ley de Condominios), Art. 40 (31 L.P.R.A § 1922l) — short-term rentals of condo units cannot be prohibited unless the escritura matriz or reglamento contains an express prohibition or a minimum lease term", "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/129-2020.pdf", "Article 40 provides that short-term rentals of apartments under the horizontal-property regime cannot be prohibited unless the master deed or regulations contain an express prohibition or a minimum lease term; the regulations may govern how STRs are conducted, including a minimum number of nights and a special monthly fee not greater than the maintenance fee."),
+  // REG-GUIDE-ENTERTAINMENT-001 (2026-09-22 QA): the Entertainment Permit
+  // card rendered the unvalidated-description placeholder on a live Dorado
+  // no-food-bar filing (S139). The rule (RULE_0032) cites the municipal
+  // entertainment ordinances + Ley 161-2009 Art. 8.4A; both were verified
+  // verbatim in the OGP Biblioteca Virtual today. lastVerified is set
+  // explicitly: the shared source() helper stamps 2026-09-03, which would
+  // be dishonest here.
+  entertainment161: {
+    id: "SRC_GUIDANCE_ENTERTAINMENT_PERMIT",
+    agency: "Oficina de Gerencia y Presupuesto — Biblioteca Virtual (Ley 161-2009)",
+    citation: "Ley 161-2009, Art. 8.4A (23 L.P.R.A § 9048n) — el Permiso Único para edificaciones o negocios no residenciales, nuevos o existentes, incluye las licencias y autorizaciones aplicables, consolidadas en una sola solicitud",
+    url: "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/161-2009.pdf",
+    lastVerified: "2026-09-22",
+    sourceVersion: "public-guidance-2026-09-22",
+    supports: "Art. 8.4A verified verbatim: el Permiso Único para edificaciones o negocios no residenciales, nuevos o existentes, incluirá cualquier tipo de permiso, endoso, certificado, licencia, inspección, consulta o certificación que se requiera para su operación — las licencias y autorizaciones aplicables al negocio se consolidan en una sola solicitud.",
+  },
+  entertainmentPromoterLaw: {
+    id: "SRC_GUIDANCE_PROMOTER_LAW",
+    agency: "Departamento de Hacienda — Biblioteca Virtual (Ley 182-1996)",
+    citation: "Ley 182-1996 (Ley del Promotor de Espectáculos Públicos) — los promotores de espectáculos públicos se registran y obtienen licencia en el Departamento de Hacienda",
+    url: "https://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/pdf/182-1996.pdf",
+    lastVerified: "2026-09-22",
+    sourceVersion: "public-guidance-2026-09-22",
+    supports: "Ley 182-1996 creates a Hacienda registration and license for promoters of public shows (promotores de espectáculos públicos) — a person or entity that organizes and sells public shows. It is distinct from a venue's municipal authorization to host its own in-house entertainment.",
+  },
 };
 
 const employee = condition("Q_EMPLOYEES_HIRED", "Hiring employees", "Contratación de empleados", true);
@@ -193,6 +218,10 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // REG-GUIDE-HOA-001 (2026-09-22 QA): subject terms for the validated
   // condo/HOA STR authorization concept (Ley 129-2020).
   DOC_HOA_AUTHORIZATION: { en: ["hoa", "condo", "condominio", "short-term rental authorization"], es: ["hoa", "condominio", "autorización de alquiler", "corto plazo"] },
+  // REG-GUIDE-ENTERTAINMENT-001 (2026-09-22 QA): subject terms for the
+  // validated entertainment-permit concept (Ley 161-2009 Art. 8.4A; Ley
+  // 182-1996 promoter disambiguation).
+  DOC_ENTERTAINMENT_PERMIT: { en: ["entertainment", "live music", "trio", "dj", "variety show", "espectáculo", "municipal entertainment permit"], es: ["entretenimiento", "música en vivo", "trío", "dj", "variedades", "permiso de entretenimiento", "ordenanza municipal"] },
   DOC_EIN: { en: ["ein", "federal tax identifier"], es: ["ein", "identificador contributivo"] },
   DOC_SAM_REGISTRATION: { en: ["sam.gov", "federal registration", "federal contractor"], es: ["sam.gov", "registro federal", "contratista federal"] },
   DOC_CONTRACTOR_LICENSE: { en: ["DACO", "contractor registry", "urbanizador", "constructor"], es: ["DACO", "registro de contratistas", "urbanizador", "constructor"] },
@@ -653,6 +682,34 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The condo/HOA short-term-rental authorization is the unit owner's evidence that the unit's short-term-rental use complies with the condominium's governing documents — no express prohibition, no unmet minimum lease term, and the reglamento's rules for short-term rentals observed. It is separate from the Tourism Company innkeeper registration — the innkeeper registration authorizes the lodging operation; the HOA authorization clears the condominium's own rules.", "La autorización de alquiler a corto plazo del condominio/HOA es la evidencia del titular de que el alquiler a corto plazo de la unidad cumple con los documentos del condominio — que no hay una prohibición expresa ni un término mínimo de arrendamiento incumplido, y que se observan las reglas que el reglamento fije para el alquiler a corto plazo. Es independiente del registro de hostelero de la Compañía de Turismo — el registro de hostelero autoriza la operación de alojamiento; la autorización del HOA aclara las reglas propias del condominio."),
     text("Before listing the unit, read the escritura matriz and the reglamento: confirm there is no express prohibition or minimum lease term blocking short-term rental, note any reglamento rules (minimum nights, special fee), and obtain written authorization from the condo board or administrator where the documents require it.", "Antes de publicar la unidad, lee la escritura matriz y el reglamento: confirma que no haya una prohibición expresa ni un término mínimo de arrendamiento que impida el alquiler a corto plazo, toma nota de las reglas del reglamento (mínimo de noches, cuota especial), y obtén autorización escrita de la junta del condominio o del administrador donde los documentos la exijan."),
     text("Renting short-term in violation of an express prohibition or a minimum lease term in the condo documents exposes the owner to enforcement by the Consejo de Titulares — confirm the documents allow the use before taking bookings.", "Alquilar a corto plazo en violación de una prohibición expresa o de un término mínimo de arrendamiento en los documentos del condominio expone al titular a acciones del Consejo de Titulares — confirma que los documentos permiten el uso antes de aceptar reservaciones."),
+  ]),
+  // REG-GUIDE-ENTERTAINMENT-001 (2026-09-22 QA): the Entertainment Permit
+  // card rendered the unvalidated-description placeholder on a live Dorado
+  // no-food-bar filing (S139). Conditions cover the firing paths: the live
+  // entertainment question (RULE_0032, heuristic + missing
+  // entertainment_details) and the entertainment-venue business-type rules
+  // (RULE_0245/0246/0247 via the businessType fallback, d4940f4 class).
+  // Copy stays conditional — Puerto Rico has no single island-wide
+  // entertainment permit, so the card never claims one exists. The
+  // municipality's own ordinance decides whether the planned entertainment
+  // needs an authorization, and Ley 161-2009 Art. 8.4A folds applicable
+  // licenses/authorizations into the OGPe Permiso Único, so the municipal
+  // authorization can be routed through the Permiso Único where the
+  // municipality handles it that way. The Ley 182-1996 disambiguation is
+  // intentional: promoter licensing (promotores de espectáculos públicos,
+  // registered at Hacienda) is a separate obligation from a venue's own
+  // in-house entertainment, and the card must not conflate them.
+  DOC_ENTERTAINMENT_PERMIT: concept("DOC_ENTERTAINMENT_PERMIT", [
+    [condition("Q_LIVE_ENTERTAINMENT", "Live entertainment: Yes", "Entretenimiento en vivo: Sí", true)],
+    [condition("businessType", "Music Venue", "Local de música", "BT_MUSIC_VENUE")],
+    [condition("businessType", "Event Venue", "Salón de eventos", "BT_EVENT_VENUE")],
+    [condition("businessType", "Theater", "Teatro", "BT_THEATER")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.entertainment161, PR_GUIDANCE_SOURCES.entertainmentPromoterLaw], [
+    text("Puerto Rico has no single island-wide entertainment permit. When a business offers live entertainment to the public — a live band or trio, a DJ, variety shows — the municipality where the business operates is the authority that decides, under its own ordenanza, whether the planned entertainment needs an authorization. Ley 161-2009 (Art. 8.4A) folds applicable operating licenses and authorizations into the OGPe Permiso Único, so the municipal entertainment authorization can be routed through the Permiso Único where the municipality handles it that way.", "En Puerto Rico no hay un permiso de entretenimiento único para toda la isla. Cuando un negocio ofrece entretenimiento en vivo al público — una banda o un trío en vivo, un DJ, variedades — es el municipio donde opera el negocio la autoridad que decide, por su propia ordenanza, si el entretenimiento planificado requiere una autorización. La Ley 161-2009 (Art. 8.4A) consolida las licencias y autorizaciones aplicables a la operación en el Permiso Único de OGPe, así que la autorización municipal de entretenimiento puede tramitarse por el Permiso Único donde el municipio la maneje por esa vía."),
+    text("The entertainment authorization is the municipality's clearance that the planned entertainment is allowed at that venue under the local rules — it is not a promoter license. Promoters of public shows — the people who organize and sell public events — register and are licensed separately under Ley 182-1996 (Ley del Promotor de Espectáculos Públicos, at the Departamento de Hacienda); a venue hosting its own in-house music is generally not a promoter.", "La autorización de entretenimiento es el visto bueno del municipio de que el entretenimiento planificado se permite en ese local bajo las reglas locales — no es una licencia de promotor. Los promotores de espectáculos públicos — los que organizan y venden eventos públicos — se registran y obtienen licencia por separado bajo la Ley 182-1996 (Ley del Promotor de Espectáculos Públicos, en el Departamento de Hacienda); un local que presenta su propia música en vivo generalmente no es un promotor."),
+    text("Ask the municipal permits office (or the mayor's office) what authorization the planned entertainment needs and what the conditions are — the type of act, indoor or outdoor, hours, expected occupancy — and confirm whether it is handled through the Permiso Único or as a separate municipal filing before the entertainment starts.", "Pregunta en la oficina de permisos del municipio (o en la alcaldía) qué autorización necesita el entretenimiento planificado y cuáles son las condiciones — el tipo de acto, bajo techo o al aire libre, los horarios, la ocupación esperada — y confirma si se tramita por el Permiso Único o como una radicación municipal separada antes de empezar el entretenimiento."),
+    text("Offering live entertainment without the authorization the municipality requires can lead to fines and shutdown orders; this card stays as \"more information needed\" until the type, setting, and hours of the entertainment — and the municipality's own ordinance — are confirmed.", "Ofrecer entretenimiento en vivo sin la autorización que exija el municipio puede acarrear multas y órdenes de cierre; esta tarjeta se queda en \"se necesita más información\" hasta que se confirmen el tipo, el escenario y los horarios del entretenimiento — y la ordenanza del propio municipio."),
   ]),
   // REG-GUIDE-OPPE-001 (2026-09-18 QA): the OPPE installer registration card
   // rendered the unvalidated-description placeholder on a live Toa Alta

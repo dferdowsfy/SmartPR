@@ -103,6 +103,49 @@ test("short-term-rental business types offer a non-home-based residential proper
   }
 });
 
+// REG-LOCATION-DAYCARE-001 (2026-09-22 18:00 QA, S140): a complete-intake
+// existing home daycare (Toa Alta, sole prop, 2 employees, lunch prepared
+// at home) could not select "Home-Based Business" — the daycare combobox
+// offered only Educational Facility / Mixed Use Property, so the
+// engine-level home-daycare posture (verified) was unreachable live.
+// Daycare and Childcare Center must offer "Home-Based Business".
+test("daycare business types offer a Home-Based Business location option", () => {
+  for (const bt of ["Daycare", "Childcare Center"]) {
+    const options = LOCATION_TYPES_BY_BUSINESS_TYPE[bt] ?? [];
+    assert.ok(
+      options.includes("Home-Based Business"),
+      `${bt} options must include "Home-Based Business"; got: ${options.join(", ")}`
+    );
+  }
+});
+
+// REG-LOCATION-CONDO-001 (2026-09-22 18:00 QA, live S138): the Guaynabo
+// condo STR filing was recorded under the KB's canonical business-type
+// label "Airbnb / Short-Term Rental", which had no entry in
+// LOCATION_TYPES_BY_BUSINESS_TYPE — the combobox fell back to the generic
+// list and offered no Residential Property option. The KB-canonical label
+// must resolve to the same STR options, and condo STRs must have an
+// explicit "Condominium" option (label-only: it derives the same facts as
+// Residential Property, never a home-based location).
+test("the KB-canonical Airbnb label resolves to STR options with a Condominium choice", () => {
+  for (const bt of ["Airbnb", "Short-Term Rental", "Airbnb / Short-Term Rental"]) {
+    const options = LOCATION_TYPES_BY_BUSINESS_TYPE[bt] ?? [];
+    assert.ok(
+      options.includes("Residential Property"),
+      `${bt} options must include "Residential Property"; got: ${options.join(", ")}`
+    );
+    assert.ok(
+      options.includes("Condominium"),
+      `${bt} options must include "Condominium"; got: ${options.join(", ")}`
+    );
+    assert.equal(
+      isHomeBasedLocation("Condominium"),
+      false,
+      `"Condominium" must not resolve as home-based (would wrongly trigger Domiciliary Use)`
+    );
+  }
+});
+
 // REG-LOCATION-MOBILE-001 (2026-09-22 15:00 QA, live S136): a mobile car
 // detailer ("Car Wash") was forced into "Commercial Facility" because the
 // automotive combobox offered no mobile label — the forced commercial pick
