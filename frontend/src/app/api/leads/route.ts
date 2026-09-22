@@ -1,4 +1,4 @@
-// Minimal lead capture for the landing-page "Start my application" CTA.
+// Minimal lead capture for the landing-page "See what applies" CTA.
 // Guests give name + email before the assessment begins; authenticated users
 // are tracked silently (we already know them). The founder is notified by
 // email for every genuinely new lead — never more than once per address.

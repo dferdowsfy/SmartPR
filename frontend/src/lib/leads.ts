@@ -1,6 +1,6 @@
 // Lead capture + founder notifications.
 //
-// When someone clicks "Start my application" on the landing page we capture
+// When someone clicks "See what applies" on the landing page we capture
 // the minimum needed to follow up (name + email) before the assessment
 // begins. The founder gets an email for every new lead and every signup,
 // sent directly from the SmartPR Google Workspace mailbox

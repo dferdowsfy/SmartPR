@@ -15,13 +15,15 @@ const copy = {
     heroTitle: "Know which permits your Puerto Rico business needs — and get filing-ready.",
     heroSub:
       "SmartPR maps every requirement across agencies, prepares your official forms, and tracks your filings year after year.",
-    path1Title: "I'm a business owner",
-    path1Body: "See exactly what applies to your business.",
-    path1Cta: "Start my application",
-    proLinkLead: "I manage filings for clients?",
-    path2Cta: "See the professional platform",
+    projectEyebrow: "Start with your project",
+    projectTitle: "Find out what your business needs.",
+    projectBody:
+      "Tell SmartPR what you're planning. We'll map the permits, licenses, registrations, and documents that may apply—and show you what's missing.",
+    projectCta: "See what applies",
+    proLead: "Managing filings for clients?",
+    proCta: "Explore the professional workspace",
     whatNext:
-      "Clicking 'Start my application' takes 30 seconds: leave your name and email so we can save your progress, then answer questions about your business. You immediately get your requirements checklist — free. Official filled forms and exportable submission packages are part of paid plans (see Pricing). If you're already signed in, you skip the form and go straight to the assessment.",
+      "Clicking 'See what applies' takes 30 seconds: leave your name and email so we can save your progress, then answer questions about your business. You immediately get your requirements checklist — free. Official filled forms and exportable submission packages are part of paid plans (see Pricing). If you're already signed in, you skip the form and go straight to the assessment.",
     savingsEyebrow: "Productivity",
     savingsTitle: "How much time does SmartPR save?",
     savingsBody:
@@ -100,13 +102,15 @@ const copy = {
     heroTitle: "Sepa qué permisos necesita su negocio en Puerto Rico — y deje todo listo para radicar.",
     heroSub:
       "SmartPR mapea cada requisito en todas las agencias, prepara sus formularios oficiales y le lleva los trámites año tras año.",
-    path1Title: "Soy dueño de negocio",
-    path1Body: "Vea exactamente qué le aplica a su negocio.",
-    path1Cta: "Comenzar mi solicitud",
-    proLinkLead: "¿Maneja trámites para clientes?",
-    path2Cta: "Ver la plataforma profesional",
+    projectEyebrow: "Comience con su proyecto",
+    projectTitle: "Descubra lo que necesita su negocio.",
+    projectBody:
+      "Cuéntele a SmartPR lo que está planificando. Mapeamos los permisos, licencias, registros y documentos que podrían aplicarle—y le mostramos lo que falta.",
+    projectCta: "Vea lo que aplica",
+    proLead: "¿Maneja trámites de clientes?",
+    proCta: "Explore el espacio profesional",
     whatNext:
-      "Pulsar 'Comenzar mi solicitud' toma 30 segundos: deje su nombre y email para guardar su progreso, y conteste preguntas sobre su negocio. Al momento recibe su lista de requisitos — gratis. Los formularios oficiales llenados y los paquetes de radicación exportables son parte de los planes pagos (ver Planes). Si ya inició sesión, va directo a la evaluación.",
+      "Pulsar 'Vea lo que aplica' toma 30 segundos: deje su nombre y email para guardar su progreso, y conteste preguntas sobre su negocio. Al momento recibe su lista de requisitos — gratis. Los formularios oficiales llenados y los paquetes de radicación exportables son parte de los planes pagos (ver Planes). Si ya inició sesión, va directo a la evaluación.",
     savingsEyebrow: "Productividad",
     savingsTitle: "¿Cuánto tiempo ahorra SmartPR?",
     savingsBody:
@@ -252,17 +256,18 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
               <p className={styles.heroLead}>{c.heroSub}</p>
               <ol className={styles.cards}>
                 <li className={styles.card}>
-                  <h3>{c.path1Title}</h3>
-                  <p>{c.path1Body}</p>
+                  <span>{c.projectEyebrow}</span>
+                  <h3>{c.projectTitle}</h3>
+                  <p>{c.projectBody}</p>
                   <button type="button" className={styles.primary} onClick={() => void start()}>
-                    {c.path1Cta}
+                    {c.projectCta}
                   </button>
                 </li>
               </ol>
               <p className={styles.proLink}>
-                {c.proLinkLead}{" "}
+                {c.proLead}{" "}
                 <Link href={professionalsHref}>
-                  {c.path2Cta} <span aria-hidden="true">→</span>
+                  {c.proCta} <span aria-hidden="true">→</span>
                 </Link>
               </p>
               <p className={styles.lead}>{c.whatNext}</p>
@@ -271,7 +276,7 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
           <FilingPathStory language={language} />
         </div>
 
-        <HowItWorks language={language} cta={c.path1Cta} onStart={() => void start()} />
+        <HowItWorks language={language} cta={c.projectCta} onStart={() => void start()} />
 
         <section id="why-smartpr" className={styles.section}>
           <div className={styles.sectionInner}>
