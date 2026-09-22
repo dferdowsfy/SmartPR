@@ -771,6 +771,59 @@ export function isQuestionSuppressedByAnswers(
   return false;
 }
 
+// Answer-conditional follow-up (QA 2026-09-22 12:00 cycle, live audit S135).
+// Q_FOOD_PREPARED is load-bearing for verified rules (RULE_0009 Health /
+// Sanitary Permit, RULE_0010 CFPM, RULE_0011 Fire Safety Certification), but
+// 40 business-type discovery lists ask about food served/sold without ever
+// asking whether food is prepared on-site: a gym smoothie bar established
+// Q_FOOD_SERVED=true and production generated only the demoted heuristic
+// RULE_0244 card (needs_more_information, non-mandatory) — the verified
+// food-preparation pathway silently never fired. When food involvement is
+// established and preparation is unknown, the intake must ask
+// Q_FOOD_PREPARED. Serving ≠ preparing, so this asks rather than derives.
+// Exported for regression testing.
+export const FOOD_PREP_FOLLOW_UP_QUESTION_ID = "food_prepared_on_site";
+const FOOD_INVOLVEMENT_QUESTION_IDS: ReadonlySet<string> = new Set([
+  "food_served",
+  "food_sold",
+  // KB-id vocabulary: the interpreter may record answers under Q_* ids.
+  "Q_FOOD_SERVED",
+  "Q_FOOD_SOLD",
+]);
+export function needsFoodPrepFollowUp(
+  answers: Record<string, unknown>,
+  questionIds: Iterable<string>
+): boolean {
+  const ids = new Set(questionIds);
+  if (ids.has(FOOD_PREP_FOLLOW_UP_QUESTION_ID) || ids.has("Q_FOOD_PREPARED")) return false;
+  if (
+    answers[FOOD_PREP_FOLLOW_UP_QUESTION_ID] !== undefined ||
+    answers["Q_FOOD_PREPARED"] !== undefined
+  )
+    return false;
+  for (const id of FOOD_INVOLVEMENT_QUESTION_IDS) {
+    if (answers[id] === true) return true;
+  }
+  return false;
+}
+
+/**
+ * Build the Q_FOOD_PREPARED follow-up as a wizard DiscoveryQuestion, reusing
+ * the KB's canonical question text so it stays in sync with the snapshot.
+ * Exported for regression testing.
+ */
+export function buildFoodPrepFollowUpQuestion(): DiscoveryQuestion {
+  const kbq = KB.questions.find((q) => q.id === "Q_FOOD_PREPARED") as
+    | { question?: string }
+    | undefined;
+  return {
+    id: FOOD_PREP_FOLLOW_UP_QUESTION_ID,
+    text: kbq?.question ?? "Will food be prepared on-site?",
+    whyWeAsk:
+      "Preparing food on-site — cooking, baking, blending drinks, or otherwise making food — triggers health-department requirements that only serving pre-made food does not.",
+  };
+}
+
 // Exported for regression testing: the intake's location-type combobox must
 // offer a home-based option for business types that can plausibly operate
 // from home, otherwise the AI-extracted "from my house" fact gets clobbered
@@ -2252,6 +2305,18 @@ export default function SmartPRIntake() {
           ? list.filter((q) => q.id !== "Q_BUSINESS_STRUCTURE")
           : list;
       const fullList = [...intentFiltered, ...projectFollowUps];
+      // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): when
+      // the narrative/interpreter already established food served/sold, the
+      // snapshot list may still lack Q_FOOD_PREPARED — ask it rather than
+      // let the verified food-preparation pathway stay unknown.
+      if (
+        needsFoodPrepFollowUp(
+          discoveryAnswersRef.current,
+          fullList.map((q) => q.id)
+        )
+      ) {
+        fullList.push(buildFoodPrepFollowUpQuestion());
+      }
       setQuestionList(fullList);
       const firstUnanswered = fullList.findIndex(
         (question) => discoveryAnswersRef.current[question.id] === undefined
@@ -2494,6 +2559,16 @@ export default function SmartPRIntake() {
     }
 
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
+    // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): a Yes
+    // on food served/sold arms Q_FOOD_PREPARED when preparation is still
+    // unknown — the question is appended so the wizard asks it next.
+    if (value === true && FOOD_INVOLVEMENT_QUESTION_IDS.has(q.id)) {
+      const mergedAnswers = { ...discoveryAnswersRef.current, [q.id]: value, ...extraAnswers };
+      setQuestionList((prev) => {
+        if (!needsFoodPrepFollowUp(mergedAnswers, prev.map((p) => p.id))) return prev;
+        return [...prev, buildFoodPrepFollowUpQuestion()];
+      });
+    }
     // Answering "No" to professional licenses supersedes any earlier
     // Q_LICENSE_TYPES answer — a stale "Other" must not linger as a fact
     // (QA 2026-09-19 09:00 cycle, live audit S58/S59).
