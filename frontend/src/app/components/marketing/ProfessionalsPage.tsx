@@ -1,88 +1,168 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
-import LeadModal from "./LeadModal";
 
 const DEMO_EMAIL = "darius@getsmartpr.com";
+const PILOT_SUBJECT = "SmartPR pilot";
+const DEMO_SUBJECT = "SmartPR demo request";
 
 const copy = {
   EN: {
-    heroHeadline: "Prepare permits and filings for every client in one place.",
+    kicker: "Professional workspace",
+    heroTitle: "Manage every client's Puerto Rico filings in one dashboard.",
     heroSub:
-      "SmartPR gives your firm one platform for every client's Puerto Rico filings — from requirements to readiness to submission. Less chasing, fewer rejections, work your team can actually see.",
+      "SmartPR sits under your practice. You still talk to the client, review the package, and submit. The software removes the retyping, the missed requirement, and the “¿cómo va lo mío?” thread.",
     startPilot: "Start a pilot",
     bookDemo: "Book a demo",
-    demoSubject: "SmartPR demo request",
     whoFor: "Gestores · CPAs · Permitting firms · Law firms · Consultants · Multi-entity operators",
-    features: [
+    posKicker: "Positioning",
+    posTitle: "A tool that makes the firm faster. Not a replacement for the firm.",
+    posSub:
+      "Clients hire you because someone has to own the filing. SmartPR gives that person a complete path, filled forms, and a status they can see without digging through email.",
+    posCards: [
       {
-        title: "One dashboard for every client.",
-        body: "Each client gets a workspace with its businesses, filings, documents, and deadlines — all visible from your firm's dashboard. No more digging through email threads to answer '¿cómo va lo mío?'",
+        title: "One dashboard",
+        body: "Every client's businesses, filings, documents, and deadlines in one view.",
       },
       {
-        title: "Reusable business profiles.",
-        body: "Enter a client's facts once. Every form, checklist, and filing reuses the same profile — no retyping the same data across agencies.",
+        title: "Reusable profiles",
+        body: "Enter facts once. Formation, SURI, Permiso Único, and renewals reuse the same record.",
       },
       {
-        title: "Client filing status and readiness.",
-        body: "See at a glance which filings are ready, which are waiting on documents, and what's due next — for one client or fifty.",
-      },
-      {
-        title: "Fewer incomplete or rejected filings.",
-        body: "Structured requirements and completeness checks catch missing facts and documents before anything reaches the agency — fewer rejections, less rework.",
+        title: "Fewer rejected packages",
+        body: "Completeness checks catch missing facts and documents before the agency does.",
       },
     ],
-    pilotTitle: "How a pilot works",
-    pilotSteps: [
-      "Bring one client — or five.",
-      "We set up your firm workspace together.",
-      "Run real filings. Measure what changes.",
+    tableKicker: "Example · multi-client view",
+    tableTitle: "A gestor with four businesses, at four different stages.",
+    thClient: "Client",
+    thType: "Type",
+    thStatus: "Status",
+    thNext: "Next",
+    rows: [
+      { client: "Amigos Restaurant · Bayamón", type: "Restaurant", status: "78% ready", next: "Upload lease" },
+      { client: "HealthPR · San Juan", type: "Healthcare", status: "40% ready", next: "Estado formation" },
+      { client: "Marisquería del Oeste · Mayagüez", type: "Restaurant", status: "Due in 11 days", next: "Patente municipal" },
+      { client: "Taller Norte LLC · Arecibo", type: "Workshop", status: "Ready to submit", next: "Review package" },
     ],
-    closeTitle: "Start a pilot",
+    tableCaption: "Example only — sample names and statuses for the professional workspace.",
+    firmKicker: "Firm controls",
+    firmTitle: "Several people can work a client without mixing files.",
+    firmCards: [
+      {
+        title: "Role-based access",
+        body: "Owners, preparers, and reviewers see what their role allows. A junior can prepare. A partner submits.",
+      },
+      {
+        title: "Audit trail",
+        body: "Who changed a fact, uploaded a document, or marked a filing ready — on the client record.",
+      },
+    ],
+    pilotKicker: "How a pilot works",
+    pilotTitle: "Bring real clients. Measure what changes.",
+    pilotCards: [
+      {
+        num: "01",
+        title: "One client — or five",
+        body: "Pick filings you already know. The test is whether the path and the package match the work you do now.",
+      },
+      {
+        num: "02",
+        title: "We set up the workspace with you",
+        body: "Roles, client records, and the first profiles. No training theater.",
+      },
+      {
+        num: "03",
+        title: "Run the filings",
+        body: "Hours per package, missing-document catches, and time-to-ready get written down. We publish numbers when pilots produce them — not before.",
+      },
+    ],
+    closeTitle: "Start with the book of business you already have.",
+    closeSub: "If it does not save your team time on a real client, it does not belong in the firm.",
   },
   ES: {
-    heroHeadline: "Prepare permisos y trámites para todos sus clientes en un solo lugar.",
+    kicker: "Espacio profesional",
+    heroTitle: "Maneje las radicaciones de Puerto Rico de todos sus clientes en un solo panel.",
     heroSub:
-      "SmartPR le da a su firma una sola plataforma para los trámites de cada cliente en Puerto Rico — de los requisitos a la preparación a la radicación. Menos corre-corre, menos rechazos, trabajo que su equipo sí puede ver.",
+      "SmartPR trabaja bajo su práctica. Usted sigue hablando con el cliente, revisando el paquete y radicando. El software elimina la redigitación, el requisito que se escapa y el hilo de “¿cómo va lo mío?”.",
     startPilot: "Comenzar un piloto",
     bookDemo: "Agendar una demo",
-    demoSubject: "Solicitud de demo de SmartPR",
     whoFor: "Gestores · CPAs · Firmas de permisos · Bufetes · Consultores · Operadores con varias entidades",
-    features: [
+    posKicker: "Posicionamiento",
+    posTitle: "Una herramienta que hace la firma más rápida. No un reemplazo de la firma.",
+    posSub:
+      "Los clientes lo contratan porque alguien tiene que responder por la radicación. SmartPR le da a esa persona una ruta completa, formularios llenados y un estatus visible sin escarbar en el email.",
+    posCards: [
       {
-        title: "Un panel para cada cliente.",
-        body: "Cada cliente tiene su espacio con sus negocios, trámites, documentos y vencimientos — todo visible desde el panel de su firma. Adiós a buscar en emails para contestar '¿cómo va lo mío?'",
+        title: "Un solo panel",
+        body: "Los negocios, radicaciones, documentos y vencimientos de cada cliente en una sola vista.",
       },
       {
-        title: "Perfiles de negocio reutilizables.",
-        body: "Registre los datos de un cliente una vez. Cada formulario, lista y trámite reusa el mismo perfil — sin volver a escribir lo mismo en cada agencia.",
+        title: "Perfiles reutilizables",
+        body: "Registre los datos una vez. Formación, SURI, Permiso Único y renovaciones reusan el mismo récord.",
       },
       {
-        title: "Estatus y preparación por cliente.",
-        body: "Vea de un vistazo qué trámites están listos, cuáles esperan documentos y qué vence próximo — para un cliente o cincuenta.",
-      },
-      {
-        title: "Menos radicaciones incompletas o rechazadas.",
-        body: "Requisitos estructurados y chequeos de completitud detectan datos y documentos que faltan antes de que algo llegue a la agencia — menos rechazos, menos retrabajo.",
+        title: "Menos paquetes rechazados",
+        body: "Los chequeos de completitud detectan datos y documentos que faltan antes que la agencia.",
       },
     ],
-    pilotTitle: "Cómo funciona un piloto",
-    pilotSteps: [
-      "Traiga un cliente — o cinco.",
-      "Montamos juntos el espacio de su firma.",
-      "Corra trámites reales. Mida qué cambia.",
+    tableKicker: "Ejemplo · vista multi-cliente",
+    tableTitle: "Un gestor con cuatro negocios, en cuatro etapas distintas.",
+    thClient: "Cliente",
+    thType: "Tipo",
+    thStatus: "Estatus",
+    thNext: "Próximo",
+    rows: [
+      { client: "Amigos Restaurant · Bayamón", type: "Restaurante", status: "78% listo", next: "Subir contrato de alquiler" },
+      { client: "HealthPR · San Juan", type: "Salud", status: "40% listo", next: "Formación estatal" },
+      { client: "Marisquería del Oeste · Mayagüez", type: "Restaurante", status: "Vence en 11 días", next: "Patente municipal" },
+      { client: "Taller Norte LLC · Arecibo", type: "Taller", status: "Listo para radicar", next: "Revisar paquete" },
     ],
-    closeTitle: "Comenzar un piloto",
+    tableCaption: "Ejemplo solamente — nombres y estatus de muestra para el espacio profesional.",
+    firmKicker: "Controles de la firma",
+    firmTitle: "Varias personas pueden trabajar un cliente sin mezclar archivos.",
+    firmCards: [
+      {
+        title: "Acceso por rol",
+        body: "Dueños, preparadores y revisores ven lo que su rol permite. Un junior puede preparar. Un socio radica.",
+      },
+      {
+        title: "Registro de auditoría",
+        body: "Quién cambió un dato, subió un documento o marcó una radicación como lista — en el récord del cliente.",
+      },
+    ],
+    pilotKicker: "Cómo funciona un piloto",
+    pilotTitle: "Traiga clientes reales. Mida qué cambia.",
+    pilotCards: [
+      {
+        num: "01",
+        title: "Un cliente — o cinco",
+        body: "Escoja radicaciones que ya conoce. La prueba es si la ruta y el paquete coinciden con el trabajo que hace hoy.",
+      },
+      {
+        num: "02",
+        title: "Montamos el espacio con usted",
+        body: "Roles, récords de clientes y los primeros perfiles. Sin teatro de adiestramiento.",
+      },
+      {
+        num: "03",
+        title: "Corra las radicaciones",
+        body: "Horas por paquete, documentos detectados a tiempo y tiempo de preparación se anotan. Publicamos números cuando los pilotos los produzcan — no antes.",
+      },
+    ],
+    closeTitle: "Empiece con la cartera de negocios que ya tiene.",
+    closeSub: "Si no le ahorra tiempo a su equipo en un cliente real, no pertenece en la firma.",
   },
 } as const;
 
 export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialLanguage?: Language }) {
   const { language, handleLanguageChange } = useMarketingLanguage(initialLanguage);
-  const [leadOpen, setLeadOpen] = useState(false);
   const c = copy[language];
   const home = language === "ES" ? "/es" : "/";
+  const pilotHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(PILOT_SUBJECT)}`;
+  const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(DEMO_SUBJECT)}`;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -90,40 +170,34 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
 
   return (
     <div className={styles.shell}>
-      <SiteHeader language={language} home={home} onLanguageChange={handleLanguageChange} />
+      <SiteHeader language={language} home={home} variant="pro" onLanguageChange={handleLanguageChange} />
 
       <main>
-        <div className={styles.showcase}>
-          <section className={styles.hero}>
-            <div className={styles.heroCopy}>
-              <h1>
-                <span>{c.heroHeadline}</span>
-              </h1>
-              <p className={styles.heroLead}>{c.heroSub}</p>
-              <div className={styles.heroActions}>
-                <button type="button" className={styles.primary} onClick={() => setLeadOpen(true)}>
-                  {c.startPilot}
-                </button>
-                <a
-                  className={styles.ghost}
-                  href={`mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`}
-                >
-                  {c.bookDemo} <span aria-hidden>→</span>
-                </a>
-              </div>
-              <p className={styles.lead}>{c.whoFor}</p>
-            </div>
-          </section>
-        </div>
+        <section className={styles.heroPlain}>
+          <p className={styles.eyebrow}>{c.kicker}</p>
+          <h1>{c.heroTitle}</h1>
+          <p className={styles.heroSub}>{c.heroSub}</p>
+          <div className={styles.ctaRow}>
+            <a className={styles.primary} href={pilotHref}>
+              {c.startPilot}
+            </a>
+            <a className={styles.secondary} href={demoHref}>
+              {c.bookDemo}
+            </a>
+          </div>
+          <p className={styles.escapeHatch}>{c.whoFor}</p>
+        </section>
 
         <section className={styles.section}>
           <div className={styles.sectionInner}>
-            <ol className={styles.cards}>
-              {c.features.map((feature, i) => (
-                <li key={feature.title} className={styles.card}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.body}</p>
+            <p className={styles.eyebrow}>{c.posKicker}</p>
+            <h2>{c.posTitle}</h2>
+            <p className={styles.lead}>{c.posSub}</p>
+            <ol className={`${styles.cards} ${styles.cardsThree}`}>
+              {c.posCards.map((card) => (
+                <li key={card.title} className={styles.card}>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
                 </li>
               ))}
             </ol>
@@ -132,12 +206,61 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
 
         <section className={styles.section}>
           <div className={styles.sectionInner}>
-            <h2>{c.pilotTitle}</h2>
+            <p className={styles.eyebrow}>{c.tableKicker}</p>
+            <h2>{c.tableTitle}</h2>
+            <div className={styles.clientTableWrap}>
+              <table className={styles.clientTable}>
+                <thead>
+                  <tr>
+                    <th scope="col">{c.thClient}</th>
+                    <th scope="col">{c.thType}</th>
+                    <th scope="col">{c.thStatus}</th>
+                    <th scope="col">{c.thNext}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {c.rows.map((row) => (
+                    <tr key={row.client}>
+                      <td>{row.client}</td>
+                      <td>{row.type}</td>
+                      <td>
+                        <span className={styles.statusPill}>{row.status}</span>
+                      </td>
+                      <td>{row.next}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className={styles.tableCaption}>{c.tableCaption}</p>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.firmKicker}</p>
+            <h2>{c.firmTitle}</h2>
             <ol className={styles.cards}>
-              {c.pilotSteps.map((step, i) => (
-                <li key={step} className={styles.card}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  <p>{step}</p>
+              {c.firmCards.map((card) => (
+                <li key={card.title} className={styles.card}>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.pilotKicker}</p>
+            <h2>{c.pilotTitle}</h2>
+            <ol className={`${styles.cards} ${styles.cardsThree}`}>
+              {c.pilotCards.map((card) => (
+                <li key={card.title} className={styles.card}>
+                  <span>{card.num}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
                 </li>
               ))}
             </ol>
@@ -147,31 +270,20 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
         <section className={styles.section}>
           <div className={styles.close}>
             <h2>{c.closeTitle}</h2>
-            <div className={styles.heroActions}>
-              <button type="button" className={styles.primary} onClick={() => setLeadOpen(true)}>
+            <p className={styles.lead}>{c.closeSub}</p>
+            <div className={styles.ctaRow}>
+              <a className={styles.primary} href={pilotHref}>
                 {c.startPilot}
-              </button>
-              <a
-                className={styles.ghost}
-                href={`mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`}
-              >
-                {c.bookDemo} <span aria-hidden>→</span>
+              </a>
+              <a className={styles.secondary} href={demoHref}>
+                {c.bookDemo}
               </a>
             </div>
           </div>
         </section>
       </main>
 
-      <LeadModal
-        language={language}
-        open={leadOpen}
-        source="professionals_start_pilot"
-        successMode="confirm"
-        onClose={() => setLeadOpen(false)}
-        onDone={() => setLeadOpen(false)}
-      />
-
-      <SiteFooter language={language} home={home} onLanguageChange={handleLanguageChange} />
+      <SiteFooter language={language} variant="pro" />
     </div>
   );
 }

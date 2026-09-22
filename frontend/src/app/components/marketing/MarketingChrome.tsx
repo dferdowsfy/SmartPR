@@ -8,6 +8,10 @@ import styles from "./marketing.module.css";
 import { SmartPRLogo } from "../brand/SmartPRLogo";
 
 export type Language = "EN" | "ES";
+export type HeaderVariant = "home" | "pro";
+
+const DEMO_EMAIL = "darius@getsmartpr.com";
+const TRUST_URL = "https://trust.getsmartpr.com";
 
 /** Route pairs for the EN ⇄ ES toggle: toggling navigates between them. */
 const LANG_PAIRS: Array<[string, string]> = [
@@ -18,30 +22,64 @@ const LANG_PAIRS: Array<[string, string]> = [
 
 const copy = {
   EN: {
-    how: "How it works",
-    technology: "Technology",
-    pricing: "Pricing",
-    professionals: "For professionals",
-    login: "Login",
-    started: "Sign up",
-    privacy: "Privacy Policy",
-    about: "About",
-    restaurantChecklist: "Restaurant opening checklist",
+    homeNav: [
+      { label: "What you get", href: "#what-you-get" },
+      { label: "How it works", href: "#how-it-works" },
+      { label: "For professionals", href: "/professionals" },
+      { label: "Security", href: "#security" },
+    ],
+    proNav: [
+      { label: "Product", href: "/" },
+      { label: "Professionals", href: "/professionals" },
+      { label: "Security", href: "/#security" },
+    ],
+    bookDemo: "Book a demo",
+    demoSubject: "SmartPR demo request",
+    signIn: "Sign in",
     openMenu: "Open menu",
     closeMenu: "Close menu",
+    homeFooter: [
+      { label: "About", href: "/about" },
+      { label: "Professionals", href: "/professionals" },
+      { label: "Trust center", href: TRUST_URL, external: true },
+      { label: "Pricing", href: "/pricing" },
+      { label: "Privacy", href: "/privacy" },
+    ],
+    proFooter: [
+      { label: "Home", href: "/" },
+      { label: "About", href: "/about" },
+      { label: "Trust center", href: TRUST_URL, external: true },
+    ],
   },
   ES: {
-    how: "Cómo funciona",
-    technology: "Tecnología",
-    pricing: "Planes",
-    professionals: "Para profesionales",
-    login: "Iniciar sesión",
-    started: "Registrarse",
-    privacy: "Política de privacidad",
-    about: "Nosotros",
-    restaurantChecklist: "Abrir un restaurante",
+    homeNav: [
+      { label: "Lo que incluye", href: "#what-you-get" },
+      { label: "Cómo funciona", href: "#how-it-works" },
+      { label: "Para profesionales", href: "/es/profesionales" },
+      { label: "Seguridad", href: "#security" },
+    ],
+    proNav: [
+      { label: "Producto", href: "/es" },
+      { label: "Profesionales", href: "/es/profesionales" },
+      { label: "Seguridad", href: "/es#security" },
+    ],
+    bookDemo: "Agendar una demo",
+    demoSubject: "SmartPR demo request",
+    signIn: "Iniciar sesión",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",
+    homeFooter: [
+      { label: "Nosotros", href: "/es/nosotros" },
+      { label: "Profesionales", href: "/es/profesionales" },
+      { label: "Centro de confianza", href: TRUST_URL, external: true },
+      { label: "Planes", href: "/pricing" },
+      { label: "Privacidad", href: "/privacy" },
+    ],
+    proFooter: [
+      { label: "Inicio", href: "/es" },
+      { label: "Nosotros", href: "/es/nosotros" },
+      { label: "Centro de confianza", href: TRUST_URL, external: true },
+    ],
   },
 } as const;
 
@@ -64,21 +102,24 @@ export function LanguageToggle({ language, onChange }: { language: Language; onC
   );
 }
 
-/** Shared marketing header. `home` is the language-appropriate homepage path
- * ("/" or "/es"); anchors to homepage sections are prefixed with it so they
- * work from any page. */
+/** Shared marketing header. `variant` selects the homepage or the
+ * professionals-page navigation. `home` is the language-appropriate homepage
+ * path ("/" or "/es"); same-page anchors are prefixed with it. */
 export function SiteHeader({
   language,
   home,
+  variant,
   onLanguageChange,
 }: {
   language: Language;
   home: "/" | "/es";
+  variant: HeaderVariant;
   onLanguageChange: (lang: Language) => void;
 }) {
   const c = copy[language];
   const [navOpen, setNavOpen] = useState(false);
-  const professionalsHref = language === "ES" ? "/es/profesionales" : "/professionals";
+  const nav = variant === "home" ? c.homeNav : c.proNav;
+  const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
 
   return (
     <header className={styles.header}>
@@ -87,17 +128,16 @@ export function SiteHeader({
           <SmartPRLogo className={styles.logo} size="landing" />
         </Link>
         <nav className={styles.desktopNav} aria-label="Main navigation">
-          <a href={`${home}#how-it-works`}>{c.how}</a>
-          <a href={`${home}#technology`}>{c.technology}</a>
-          <Link href="/pricing">{c.pricing}</Link>
-          <Link href={professionalsHref}>{c.professionals}</Link>
+          {nav.map((item) => (
+            <a key={item.label} href={variant === "home" && item.href.startsWith("#") ? `${home}${item.href}` : item.href}>
+              {item.label}
+            </a>
+          ))}
         </nav>
         <div className={styles.desktopActions}>
           <LanguageToggle language={language} onChange={onLanguageChange} />
-          <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
-          <Link href="/signup" className={styles.primary}>
-            {c.started}
-          </Link>
+          {variant === "pro" ? <a href={demoHref}>{c.bookDemo}</a> : null}
+          <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.signIn}</Link>
         </div>
         <button
           className={styles.menuButton}
@@ -112,25 +152,24 @@ export function SiteHeader({
       </div>
       {navOpen ? (
         <div id="mobile-nav" className={styles.mobileNav}>
-          <a href={`${home}#how-it-works`} onClick={() => setNavOpen(false)}>
-            {c.how}
-          </a>
-          <a href={`${home}#technology`} onClick={() => setNavOpen(false)}>
-            {c.technology}
-          </a>
-          <Link href="/pricing" onClick={() => setNavOpen(false)}>
-            {c.pricing}
-          </Link>
-          <Link href={professionalsHref} onClick={() => setNavOpen(false)}>
-            {c.professionals}
-          </Link>
+          {nav.map((item) => (
+            <a
+              key={item.label}
+              href={variant === "home" && item.href.startsWith("#") ? `${home}${item.href}` : item.href}
+              onClick={() => setNavOpen(false)}
+            >
+              {item.label}
+            </a>
+          ))}
           <div className={styles.mobileAccountRow}>
-            <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.login}</Link>
+            <Link href="/auth/login?next=%2F%3Fentry%3Dnew-business">{c.signIn}</Link>
             <LanguageToggle language={language} onChange={onLanguageChange} />
           </div>
-          <Link href="/signup" className={styles.primary} onClick={() => setNavOpen(false)}>
-            {c.started}
-          </Link>
+          {variant === "pro" ? (
+            <a href={demoHref} onClick={() => setNavOpen(false)}>
+              {c.bookDemo}
+            </a>
+          ) : null}
         </div>
       ) : null}
     </header>
@@ -138,27 +177,27 @@ export function SiteHeader({
 }
 
 /** Shared marketing footer with language-aware links. */
-export function SiteFooter({
-  language,
-  home,
-  onLanguageChange,
-}: {
-  language: Language;
-  home: "/" | "/es";
-  onLanguageChange: (lang: Language) => void;
-}) {
+export function SiteFooter({ language, variant }: { language: Language; variant: HeaderVariant }) {
   const c = copy[language];
+  const links = variant === "home" ? c.homeFooter : c.proFooter;
   return (
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
         <span>© 2026 SmartPR</span>
-        <Link href={language === "ES" ? "/es/restaurantes" : "/restaurants"}>{c.restaurantChecklist}</Link>
-        <Link href="/privacy">{c.privacy}</Link>
-        <Link href={language === "ES" ? "/es/nosotros" : "/about"}>{c.about}</Link>
-        <Link href={language === "ES" ? "/es/profesionales" : "/professionals"}>{c.professionals}</Link>
-        <a href={`${home}#how-it-works`}>{c.how}</a>
-        <a href={`${home}#technology`}>{c.technology}</a>
-        <LanguageToggle language={language} onChange={onLanguageChange} />
+        <nav className={styles.footerNav} aria-label="Footer">
+          {links.map((link) =>
+            "external" in link && link.external ? (
+              <a key={link.label} href={link.href} target="_blank" rel="noreferrer">
+                {link.label}
+              </a>
+            ) : (
+              <Link key={link.label} href={link.href}>
+                {link.label}
+              </Link>
+            ),
+          )}
+          <a href={`mailto:${DEMO_EMAIL}`}>{DEMO_EMAIL}</a>
+        </nav>
       </div>
     </footer>
   );

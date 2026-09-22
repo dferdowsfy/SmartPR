@@ -1,16 +1,23 @@
+/* SmartPR public marketing visual system.
+ * bg #F4EFE6 · card #FBF8F2 · border #DDD4C4 · ink #1C1915 · muted #5C574E
+ * brand #2A4A3C (primary pill) · serif headlines 500 · generous whitespace.
+ */
+
 .shell {
   min-height: 100vh;
-  background: #f4f1ea;
-  color: #161616;
+  background: #f4efe6;
+  color: #1c1915;
   font-family: var(--font-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
 }
+
+/* ---------------- header ---------------- */
 
 .header {
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid color-mix(in oklab, #161616 12%, transparent);
-  background: color-mix(in oklab, #f4f1ea 92%, transparent);
+  border-bottom: 1px solid #ddd4c4;
+  background: color-mix(in oklab, #f4efe6 94%, transparent);
   backdrop-filter: blur(10px);
 }
 
@@ -29,7 +36,7 @@
   font-size: 1.35rem;
   font-weight: 500;
   letter-spacing: -0.03em;
-  color: #161616;
+  color: #1c1915;
 }
 
 .logo :global(.smartpr-logo-wordmark) {
@@ -47,19 +54,19 @@
 
 .desktopNav a,
 .desktopActions > a:not(.primary) {
-  color: #161616;
+  color: #1c1915;
   text-decoration: none;
 }
 
 .desktopNav a:hover,
 .desktopActions > a:not(.primary):hover {
-  color: #245c5c;
+  color: #2a4a3c;
 }
 
 .desktopActions {
   display: none;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .desktopActions > a:not(.primary) {
@@ -68,7 +75,7 @@
 
 .language {
   display: inline-flex;
-  border: 1px solid color-mix(in oklab, #161616 22%, transparent);
+  border: 1px solid #ddd4c4;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -79,7 +86,7 @@
   padding: 0 0.55rem;
   border: 0;
   background: transparent;
-  color: #5a5a5a;
+  color: #5c574e;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 0.875rem;
   font-weight: 650;
@@ -91,40 +98,130 @@
 }
 
 .language button[aria-pressed="true"] {
-  background: #161616;
-  color: #f6f3ea;
+  background: #1c1915;
+  color: #f4efe6;
 }
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #ddd4c4;
+  border-radius: 999px;
+  background: transparent;
+  color: #1c1915;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mobileNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem clamp(1rem, 2.6vw, 2.5rem) 1.25rem;
+  border-top: 1px solid #ddd4c4;
+  background: #f4efe6;
+}
+
+.mobileNav a {
+  padding: 0.6rem 0;
+  color: #1c1915;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.mobileNav a.primary {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.mobileAccountRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+}
+
+.mobileAccountRow > a {
+  padding: 0;
+}
+
+/* ---------------- buttons ---------------- */
 
 .primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.6rem;
-  padding: 0 1.15rem;
-  border-radius: 8px;
-  background: #245c5c;
-  color: #f6f3ea;
-  font-size: 0.875rem;
-  font-weight: 500;
+  min-height: 2.9rem;
+  padding: 0 1.6rem;
+  border-radius: 999px;
+  background: #2a4a3c;
+  color: #f4efe6;
+  font-size: 0.9rem;
+  font-weight: 600;
   text-decoration: none;
-  transition: background 180ms ease, transform 180ms ease;
+  transition: background 180ms ease;
 }
 
 .primary:hover {
-  background: #194d4d;
+  background: #1e3830;
+  color: #f4efe6;
 }
 
-.primary:active {
-  transform: translateY(1px);
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0 1.6rem;
+  border-radius: 999px;
+  border: 1px solid #ddd4c4;
+  background: transparent;
+  color: #1c1915;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
+.secondary:hover {
+  border-color: #1c1915;
+  background: #fbf8f2;
+  color: #1c1915;
+}
+
+button.primary {
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Plain underlined text link (owner escape hatch, footer-adjacent links). */
+.textLink {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.textLink:hover {
+  color: #2a4a3c;
+}
+
+/* Legacy text-link style kept for the About page. */
 .ghost {
   display: inline-flex;
   align-items: center;
   gap: 1rem;
   min-height: 2.6rem;
   padding: 0 0.25rem;
-  color: #161616;
+  color: #1c1915;
   font-size: 0.875rem;
   text-decoration: none;
 }
@@ -138,124 +235,59 @@
   transform: translateX(3px);
 }
 
-/* Inviting call CTA pill (How It Works, step 1). */
-.callCta {
-  display: inline-flex;
+/* ---------------- hero ---------------- */
+
+.heroPlain {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+  padding: clamp(4rem, 9vh, 7rem) clamp(1rem, 2.6vw, 2.5rem) clamp(3.5rem, 7vh, 5.5rem);
+  text-align: center;
+}
+
+.heroPlain .eyebrow {
+  text-align: center;
+}
+
+.heroPlain h1 {
+  max-width: 62rem;
+  margin: 1.5rem auto 0;
+  font-family: var(--font-display), Newsreader, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 6vw, 4.25rem);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.heroSub {
+  max-width: 44rem;
+  margin: 1.5rem auto 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: #3d3830;
+}
+
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.1rem;
-  padding: 0.65rem 1.25rem;
-  border: 1px solid #245c5c;
-  border-radius: 999px;
-  background: #245c5c;
-  color: #fff;
-  font-size: 0.95rem;
-  font-weight: 650;
-  text-decoration: none;
-  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
-}
-
-.callCta:hover {
-  background: #1b4747;
-  border-color: #1b4747;
-  color: #fff;
-}
-
-.callCta:active {
-  transform: translateY(1px);
-}
-
-/* How It Works tiles: restrained per-tile brand accents. Scoped to
- * #how-it-works so the shared .card styles used elsewhere are untouched. */
-#how-it-works .card:nth-child(1) {
-  --accent: #245c5c;
-}
-
-#how-it-works .card:nth-child(2) {
-  --accent: #6d8c7c;
-}
-
-#how-it-works .card:nth-child(3) {
-  --accent: #a4773d;
-}
-
-#how-it-works .card:nth-child(4) {
-  --accent: #6d8790;
-}
-
-#how-it-works .card {
-  --accent: #245c5c;
-  background: color-mix(in oklab, var(--accent) 7%, #fbf8f2);
-  border-color: color-mix(in oklab, var(--accent) 32%, transparent);
-  box-shadow: inset 0 3px 0 0 color-mix(in oklab, var(--accent) 60%, transparent);
-}
-
-#how-it-works .card > span {
-  color: var(--accent);
-}
-
-.menuButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-width: 2.75rem;
-  height: 2.75rem;
   justify-content: center;
-  padding: 0 0.75rem;
-  border: 1px solid color-mix(in oklab, #161616 22%, transparent);
-  border-radius: 8px;
-  background: transparent;
-  color: #161616;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.mobileNav {
-  display: flex;
-  flex-direction: column;
   gap: 0.75rem;
-  padding: 0 1.5rem 1.25rem;
+  margin-top: 2.25rem;
 }
 
-.mobileNav a {
-  color: #161616;
-  text-decoration: none;
+.escapeHatch {
+  margin: 1.5rem 0 0;
+  font-size: 0.95rem;
+  color: #5c574e;
 }
 
-.mobileNav a.primary {
-  color: #f6f3ea;
+.escapeHatch .textLink {
+  color: #1c1915;
+  font-weight: 600;
 }
 
-.mobileAccountRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.mobileAccountRow > a {
-  font-size: 1rem;
-}
-
-.mobileAccountRow .language {
-  border-color: color-mix(in oklab, #161616 14%, transparent);
-  background: color-mix(in oklab, #161616 3%, transparent);
-}
-
-.mobileAccountRow .language button {
-  min-width: 2.75rem;
-  height: 1.85rem;
-  padding: 0 0.5rem;
-  color: #6b6963;
-  font-size: 0.8125rem;
-  font-weight: 650;
-}
-
-.mobileAccountRow .language button[aria-pressed="true"] {
-  background: color-mix(in oklab, #161616 9%, transparent);
-  color: #161616;
-}
-
+/* Legacy bordered hero kept for the About page. */
 .showcase {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -271,8 +303,8 @@
   overflow: hidden;
   min-width: 0;
   padding: 2.4rem 1.5rem 2rem;
-  border: 1px solid color-mix(in oklab, #161616 13%, transparent);
-  border-radius: 15px;
+  border: 1px solid #ddd4c4;
+  border-radius: 18px;
   background: color-mix(in oklab, #fbf8f2 38%, transparent);
 }
 
@@ -294,72 +326,32 @@
   z-index: 1;
 }
 
-.eyebrow {
-  margin: 0;
-  color: #245c5c;
-  font-size: 0.675rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.hero h1 {
-  max-width: 35rem;
-  margin: 1.25rem 0 0;
-  font-family: var(--font-display), Newsreader, "Times New Roman", serif;
-  font-size: clamp(2.55rem, 12vw, 3.6rem);
-  font-weight: 500;
-  line-height: 1.01;
-  letter-spacing: -0.045em;
-  text-wrap: balance;
-}
-
-.hero h1 span,
-.hero h1 strong {
-  display: block;
-}
-
-.hero h1 strong {
-  color: #245c5c;
-  font-weight: 500;
-}
-
 .heroLead {
   max-width: 37rem;
   margin: 1.4rem 0 0;
   font-size: 0.99rem;
   line-height: 1.62;
-  color: #242424;
+  color: #3d3830;
 }
 
-.heroActions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.65rem;
-  margin-top: 1.6rem;
-}
+/* ---------------- sections ---------------- */
 
-.heroActions .primary,
-.heroActions .ghost {
-  min-height: 3.1rem;
-}
-
-.heroActions .primary {
-  width: 100%;
-}
-
-.heroActions .ghost {
-  justify-content: center;
+.eyebrow {
+  margin: 0;
+  color: #5c574e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 .section {
-  border-top: 1px solid color-mix(in oklab, #161616 12%, transparent);
+  border-top: 1px solid #ddd4c4;
 }
 
 .sectionInner,
 .close {
-  width: min(100%, 94rem);
+  width: min(100%, 72rem);
   margin: 0 auto;
   padding: 5rem clamp(1rem, 2.6vw, 2.5rem);
 }
@@ -375,31 +367,36 @@
   line-height: 1.12;
 }
 
+.section h2 {
+  margin-top: 1.1rem;
+}
+
 .lead {
   max-width: 42rem;
   margin: 1rem 0 0;
-  color: #1b1b1b;
+  color: #3d3830;
+  line-height: 1.65;
 }
 
 .cards {
   display: grid;
   gap: 1rem;
-  margin: 3.5rem 0 0;
+  margin: 3rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .card {
-  padding: 1.15rem 1.25rem;
-  border: 1px solid color-mix(in oklab, #161616 22%, transparent);
-  border-radius: 12px;
+  padding: 1.5rem 1.5rem 1.6rem;
+  border: 1px solid #ddd4c4;
+  border-radius: 18px;
   background: #fbf8f2;
 }
 
-.card span {
-  color: #245c5c;
-  font-size: 0.75rem;
-  font-weight: 500;
+.card > span {
+  color: #5c574e;
+  font-size: 0.7rem;
+  font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -407,131 +404,308 @@
 .card h3 {
   margin: 0.75rem 0 0;
   font-family: var(--font-display), Newsreader, "Times New Roman", serif;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .card p {
-  max-width: 24rem;
-  margin: 0.5rem 0 0;
-  color: #1b1b1b;
+  max-width: 26rem;
+  margin: 0.6rem 0 0;
+  color: #3d3830;
+  line-height: 1.6;
 }
 
-.proLink {
-  margin: 1rem 0 0;
+.cardLink {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #1c1915;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cardLink:hover {
+  color: #2a4a3c;
+}
+
+/* ---------------- how it works ---------------- */
+
+.stepsWrap {
+  display: grid;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+
+.stepList {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  align-content: start;
+}
+
+.stepList .card h3 {
+  font-family: var(--font-sans), "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.exampleCard {
+  padding: 1.75rem 1.75rem 1.5rem;
+  border: 1px solid #ddd4c4;
+  border-radius: 20px;
+  background: #fbf8f2;
+}
+
+.exampleLabel {
+  margin: 0;
+  color: #5c574e;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.exampleQuote {
+  margin: 1.25rem 0 0;
+  padding-left: 1.1rem;
+  border-left: 2px solid #2a4a3c;
+  font-family: var(--font-display), Newsreader, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  border: 1px solid #ddd4c4;
+  border-radius: 999px;
+  background: #f4efe6;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  color: #3d3830;
+}
+
+.filingRows {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.filingRows li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.8rem 0;
+  border-top: 1px solid #e9e1d1;
+}
+
+.filingNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 999px;
+  background: #e6ece4;
+  color: #2a4a3c;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.filingRows h4 {
+  margin: 0.15rem 0 0;
   font-size: 0.95rem;
-  color: #4a4a4a;
+  font-weight: 650;
 }
 
-.proLink a {
-  color: #245c5c;
+.filingRows p {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: #5c574e;
+}
+
+.exampleNote {
+  margin: 1.25rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: #5c574e;
+}
+
+.pilotLine {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.4rem;
+  border: 1px solid #ddd4c4;
+  border-radius: 14px;
+  background: #fbf8f2;
+  color: #5c574e;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* ---------------- why smartpr ---------------- */
+
+.whyList {
+  margin: 2.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.whyList li {
+  padding: 1.35rem 0;
+  border-top: 1px solid #ddd4c4;
+}
+
+.whyList li:last-child {
+  border-bottom: 1px solid #ddd4c4;
+}
+
+.whyList p {
+  max-width: 52rem;
+  margin: 0;
+  line-height: 1.65;
+  color: #3d3830;
+}
+
+.whyList strong {
+  color: #1c1915;
+  font-weight: 650;
+}
+
+/* ---------------- security ---------------- */
+
+.trustLink {
+  display: inline-block;
+  margin-top: 0.9rem;
+  color: #2a4a3c;
+  font-size: 0.9rem;
   font-weight: 650;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.proLink a:hover {
-  color: #161616;
+.trustLink:hover {
+  color: #1c1915;
 }
 
-.techStats {
-  display: grid;
-  gap: 1rem;
-  margin: 3rem 0 0;
-  padding: 0;
-  list-style: none;
-}
+/* ---------------- professionals table ---------------- */
 
-.techStat {
-  padding: 1.5rem 1.5rem 1.75rem;
-  border: 1px solid color-mix(in oklab, #161616 22%, transparent);
-  border-radius: 12px;
+.clientTableWrap {
+  margin-top: 3rem;
+  border: 1px solid #ddd4c4;
+  border-radius: 18px;
   background: #fbf8f2;
+  overflow-x: auto;
 }
 
-.techNum {
-  font-family: var(--font-display), Newsreader, "Times New Roman", serif;
-  font-size: clamp(2.5rem, 4vw, 3.25rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #245c5c;
-  line-height: 1;
+.clientTable {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
 }
 
-.techStat p {
-  max-width: 22rem;
-  margin: 0.75rem 0 0;
-  color: #1b1b1b;
-  font-size: 0.95rem;
+.clientTable th {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #ddd4c4;
+  color: #5c574e;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
 }
 
-.techCta {
-  margin: 2.5rem 0 0;
+.clientTable td {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e9e1d1;
+  vertical-align: middle;
 }
 
-.techCta .primary {
-  display: inline-block;
-  text-decoration: none;
-}
-
-.techTrust {
-  max-width: 44rem;
-  margin: 1.25rem 0 0;
-  color: #5a5a5a;
-  font-size: 0.95rem;
-}
-
-.portfolio {
-  margin: 3rem 0 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid color-mix(in oklab, #161616 12%, transparent);
-  border-bottom: 1px solid color-mix(in oklab, #161616 12%, transparent);
-}
-
-.portfolio li {
-  display: grid;
-  gap: 0.5rem;
-  padding: 1.5rem 0;
-  border-top: 1px solid color-mix(in oklab, #161616 12%, transparent);
-}
-
-.portfolio li:first-child {
+.clientTable tbody tr:first-child td {
   border-top: 0;
 }
 
-.portfolio strong {
-  display: block;
-  font-weight: 500;
+.statusPill {
+  display: inline-block;
+  border-radius: 999px;
+  background: #ece5d3;
+  padding: 0.28rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #5c574e;
+  white-space: nowrap;
 }
 
-.portfolio small,
-.meta {
-  color: #5a5a5a;
-  font-size: 0.875rem;
+.tableCaption {
+  margin: 0.9rem 0 0;
+  font-size: 0.82rem;
+  color: #5c574e;
 }
 
-.continue {
-  justify-self: start;
-  border: 0;
-  background: transparent;
-  color: #245c5c;
-  font-size: 0.875rem;
-  cursor: pointer;
+/* ---------------- close ---------------- */
+
+.close {
+  text-align: center;
+}
+
+.close .eyebrow {
+  text-align: center;
+}
+
+.close h2 {
+  max-width: 44rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
 }
 
 .close .lead {
-  font-size: 1.25rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 1.1rem;
 }
 
-.close .primary {
+.close .ctaRow {
   margin-top: 2.5rem;
-  min-height: 3rem;
-  padding: 0 1.25rem;
 }
+
+.closeNote {
+  margin: 1.5rem 0 0;
+  font-size: 0.92rem;
+  color: #5c574e;
+}
+
+.closeNote a {
+  color: #1c1915;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.closeNote a:hover {
+  color: #2a4a3c;
+}
+
+/* ---------------- footer ---------------- */
 
 .footer {
-  border-top: 1px solid color-mix(in oklab, #161616 12%, transparent);
+  border-top: 1px solid #ddd4c4;
 }
 
 .footerInner {
@@ -542,9 +716,16 @@
   gap: 1rem;
   width: min(100%, 94rem);
   margin: 0 auto;
-  padding: 1.5rem clamp(1rem, 2.6vw, 2.5rem);
-  color: #5a5a5a;
-  font-size: 0.8rem;
+  padding: 1.75rem clamp(1rem, 2.6vw, 2.5rem);
+  color: #5c574e;
+  font-size: 0.82rem;
+}
+
+.footerNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.4rem;
 }
 
 .footerInner a {
@@ -552,156 +733,11 @@
   text-decoration: none;
 }
 
-@media (min-width: 520px) {
-  .heroActions {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .heroActions .primary {
-    width: auto;
-  }
-
-  .cards {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .techStats {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .portfolio li {
-    grid-template-columns: 1.4fr 1fr auto;
-    align-items: center;
-  }
-
-  .continue {
-    justify-self: end;
-  }
+.footerInner a:hover {
+  color: #1c1915;
 }
 
-@media (min-width: 960px) {
-  .techStats {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .showcase {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.03fr);
-    gap: clamp(0.9rem, 1.3vw, 1.2rem);
-    padding: 1rem clamp(1.5rem, 2.6vw, 2.5rem) 2.5rem;
-  }
-
-  .hero {
-    min-height: clamp(37rem, calc(100svh - 7.1rem), 47rem);
-    padding: clamp(3rem, 5.2vh, 4.75rem) clamp(2rem, 3vw, 3.25rem) 2.75rem;
-  }
-
-  .hero::after {
-    right: -1%;
-    bottom: 2%;
-    width: 53%;
-    opacity: 0.25;
-  }
-
-  .hero h1 {
-    margin-top: clamp(1.7rem, 3.4vh, 3rem);
-    font-size: clamp(3.1rem, 4.2vw, 4.45rem);
-  }
-
-  .heroLead {
-    margin-top: clamp(1.5rem, 3.2vh, 2.5rem);
-    font-size: clamp(0.96rem, 1.15vw, 1.08rem);
-    line-height: 1.65;
-  }
-
-  .heroActions {
-    margin-top: clamp(2rem, 4vh, 3.25rem);
-    gap: clamp(1rem, 2vw, 2.1rem);
-  }
-
-  .heroActions .primary {
-    min-height: 3.2rem;
-    padding-inline: 1.35rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .desktopNav,
-  .desktopActions {
-    display: flex;
-  }
-
-  .menuButton,
-  .mobileNav {
-    display: none;
-  }
-}
-
-@media (max-width: 519px) {
-  .headerInner {
-    padding-block: 0.7rem;
-  }
-
-  .hero::after {
-    width: 45%;
-    opacity: 0.12;
-  }
-
-  .hero {
-    padding: 1.9rem 1.25rem 1.35rem;
-  }
-
-  .hero h1 {
-    margin-top: 1rem;
-    font-size: clamp(2.1rem, 10vw, 2.35rem);
-    line-height: 1.01;
-  }
-
-  .heroLead {
-    margin-top: 1.1rem;
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
-  .heroActions {
-    margin-top: 1.15rem;
-  }
-
-  .heroActions .primary,
-  .heroActions .ghost {
-    min-height: 2.8rem;
-  }
-
-  .sectionInner,
-  .close {
-    padding-block: 3.5rem;
-  }
-}
-
-@media (min-width: 360px) and (max-width: 519px) {
-  .heroActions {
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .heroActions .primary {
-    flex: 1;
-    width: auto;
-    padding-inline: 0.7rem;
-  }
-
-  .heroActions .ghost {
-    flex: 0 0 auto;
-    padding-inline: 0.35rem;
-  }
-}
-
-/* Lead-capture dialog shown before the assessment for signed-out visitors. */
-button.primary {
-  border: 0;
-  cursor: pointer;
-  font-family: inherit;
-}
+/* ---------------- lead modal ---------------- */
 
 .leadOverlay {
   position: fixed;
@@ -727,14 +763,14 @@ button.primary {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #161616;
+  color: #1c1915;
 }
 
 .leadBody {
   margin: 0.4rem 0 0;
   font-size: 0.875rem;
   line-height: 1.5;
-  color: #5a5a5a;
+  color: #5c574e;
 }
 
 .leadField {
@@ -742,7 +778,7 @@ button.primary {
   margin-top: 0.9rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #3d3d3d;
+  color: #3d3830;
 }
 
 .leadField input {
@@ -755,13 +791,13 @@ button.primary {
   padding: 0.65rem 0.8rem;
   font-size: 0.95rem;
   font-weight: 400;
-  color: #161616;
+  color: #1c1915;
 }
 
 .leadField input:focus {
-  outline: 2px solid #245c5c;
+  outline: 2px solid #2a4a3c;
   outline-offset: 1px;
-  border-color: #245c5c;
+  border-color: #2a4a3c;
 }
 
 .leadError {
@@ -780,16 +816,68 @@ button.primary {
 
 .leadCancel {
   border: 1px solid #d8d2c4;
-  border-radius: 10px;
+  border-radius: 999px;
   background: transparent;
-  padding: 0.65rem 1rem;
+  padding: 0.65rem 1.1rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #5a5a5a;
+  color: #5c574e;
   cursor: pointer;
   font-family: inherit;
 }
 
 .leadCancel:hover {
-  background: #f4f1ea;
+  background: #f4efe6;
+}
+
+/* ---------------- responsive ---------------- */
+
+@media (min-width: 640px) {
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .cardsThree {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stepsWrap {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktopNav,
+  .desktopActions {
+    display: flex;
+  }
+
+  .menuButton,
+  .mobileNav {
+    display: none;
+  }
+}
+
+@media (max-width: 639px) {
+  .ctaRow .primary,
+  .ctaRow .secondary {
+    width: 100%;
+  }
+
+  .sectionInner,
+  .close {
+    padding-block: 3.5rem;
+  }
+
+  .heroPlain {
+    padding-top: 3.25rem;
+  }
+
+  .exampleCard {
+    padding: 1.35rem 1.25rem 1.2rem;
+  }
 }

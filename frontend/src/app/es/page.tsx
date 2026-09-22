@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import MarketingLanding from '../components/marketing/MarketingLanding';
 
 export const metadata: Metadata = {
-  title: 'Permisos y licencias para negocios en Puerto Rico | SmartPR',
+  title: 'Radicaciones de Puerto Rico para cada cliente, en un solo lugar | SmartPR',
   description:
-    'Dile a SmartPR lo que quieres montar en Puerto Rico y te decimos qué permisos, licencias y radicaciones aplican — y te preparamos para someter. Lista preliminar gratuita.',
+    'Un espacio por cliente. Requisitos mapeados a la ley, formularios oficiales llenados desde el perfil y renovaciones monitoreadas antes de su vencimiento.',
   alternates: { canonical: '/es', languages: { en: '/', es: '/es' } },
   openGraph: {
-    title: 'Requisitos de negocio, simplificados.',
-    description: 'Dile a SmartPR lo que quieres construir. Trazamos lo que sigue.',
+    title: 'Prepare las radicaciones de Puerto Rico de todos sus clientes en un solo lugar.',
+    description: 'Tres cosas. No una pila de funciones.',
     url: '/es',
     locale: 'es_PR',
   },

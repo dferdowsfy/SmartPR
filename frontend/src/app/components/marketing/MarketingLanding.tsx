@@ -5,185 +5,242 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
-import HowItWorks from "./HowItWorks";
-import FilingPathStory from "./FilingPathStory";
 import LeadModal from "./LeadModal";
 import { createSupabaseBrowser } from "../../../lib/supabase/client";
 
+const DEMO_EMAIL = "darius@getsmartpr.com";
+const PILOT_SUBJECT = "SmartPR pilot";
+const DEMO_SUBJECT = "SmartPR demo request";
+const TRUST_URL = "https://trust.getsmartpr.com";
+
 const copy = {
   EN: {
-    heroTitle: "Know which permits your Puerto Rico business needs — and get filing-ready.",
+    kicker: "For gestores, CPAs, and permitting firms",
+    heroTitle: "Prepare Puerto Rico filings for every client in one place.",
     heroSub:
-      "SmartPR maps every requirement across agencies, prepares your official forms, and tracks your filings year after year.",
-    projectEyebrow: "Start with your project",
-    projectTitle: "Find out what your business needs.",
-    projectBody:
-      "Tell SmartPR what you're planning. We'll map the permits, licenses, registrations, and documents that may apply—and show you what's missing.",
-    projectCta: "See what applies",
-    proLead: "Managing filings for clients?",
-    proCta: "Explore the professional workspace",
-    whatNext:
-      "Clicking 'See what applies' takes 30 seconds: leave your name and email so we can save your progress, then answer questions about your business. You immediately get your requirements checklist — free. Official filled forms and exportable submission packages are part of paid plans (see Pricing). If you're already signed in, you skip the form and go straight to the assessment.",
-    savingsEyebrow: "Productivity",
-    savingsTitle: "How much time does SmartPR save?",
-    savingsBody:
-      "We're measuring it. SmartPR is in pilot with Puerto Rico businesses and firms right now. When pilots complete, this section will show real numbers — hours saved per filing, fewer rejected submissions, faster time to readiness. No estimates. No guesses.",
-    securityEyebrow: "Security",
-    securityTitle: "Your business data, protected.",
-    securityBullets: [
+      "One workspace per client. Requirements mapped to the law, official forms filled from the profile, and renewals tracked before they come due. Fewer incomplete packages. Less chasing.",
+    startPilot: "Start a pilot",
+    bookDemo: "Book a demo",
+    ownerLead: "Opening a business yourself?",
+    ownerCta: "See what applies",
+    buyKicker: "What you are buying",
+    buyTitle: "Three things. Not a pile of features.",
+    buyCards: [
       {
-        title: "Your documents stay yours.",
-        body: "Business profiles, forms, and uploads live in your private workspace. We never sell your data.",
+        eyebrow: "Requirements",
+        title: "Know what applies",
+        body: "Tell us the business. We identify every permit, license, and registration across agencies — from the facts you confirm.",
+        link: "See the path",
       },
       {
-        title: "Access controls.",
-        body: "Only people you authorize can see a business. Sensitive actions are gated by role and plan.",
+        eyebrow: "Preparation",
+        title: "We prepare the package",
+        body: "Official forms completed from the business profile. Documents checked. Gaps flagged before an agency sees them.",
+        link: "How filing works",
       },
       {
-        title: "Passwords handled properly.",
-        body: "Sign-in is handled by a dedicated authentication provider; passwords are never stored in plain text.",
+        eyebrow: "Annual filings",
+        title: "Stay compliant every year",
+        body: "Renewals and recurring filings tracked. Reminders at 60, 30, and 7 days. Next year's cycle queues when this year's is done.",
+        link: "After you open",
       },
     ],
-    teaserTitle: "Run every client's filings from one place.",
-    teaserBody:
-      "Gestores, CPAs, permitting firms, law firms, consultants, and operators — one dashboard for every client, reusable business profiles, and readiness you can see at a glance.",
-    teaserCta: "Explore the professional platform",
-    techEyebrow: "How SmartPR decides",
-    techTitle: "Every answer shows its work.",
-    techBullets: [
+    howKicker: "See how it works",
+    howTitle: "One example. One process.",
+    steps: [
       {
-        title: "Every requirement traces to its legal source.",
-        body: "Each requirement links the statute, regulation, or official guidance that creates it — so you can check the \"why\" behind every \"what.\"",
+        title: "1. Describe the business",
+        body: "A few questions — or say it in plain language. Same facts every time.",
       },
       {
-        title: "SmartPR reasons only from facts you confirm.",
-        body: "Stale or unconfirmed details never trigger or suppress requirements. When the facts don't support an answer, it asks — it doesn't guess.",
+        title: "2. Match it to the rules",
+        body: "SmartPR checks the profile against the regulations that actually apply.",
       },
       {
-        title: "Frozen tests keep it honest.",
-        body: "Twenty-five real-world scenarios with locked expectations run on every change. Those expectations are never rewritten to make SmartPR pass.",
-      },
-      {
-        title: "Under continuous expert review.",
-        body: "Rules are checked against primary sources and kept under ongoing expert review — not a one-time stamp of approval.",
+        title: "3. Get a package you can file",
+        body: "What applies, filled forms, missing documents, readiness. You review. You submit.",
       },
     ],
-    closeTitle: "Tell SmartPR what you want to build.",
-    closeBody: "We'll show you what comes next.",
-    closeCta: "Sign up",
-    whyEyebrow: "Why SmartPR",
-    whyTitle: "A chatbot gives you an answer. SmartPR gets the filing right.",
+    exampleLabel: "Example only · restaurant in Bayamón · 7 agencies · 7 filings",
+    exampleQuote: "I want to open a restaurant in Bayamón with 10 employees and outdoor seating.",
+    chips: ["Restaurant", "Bayamón", "10 employees", "Outdoor seating"],
+    filings: [
+      { title: "Entity registration", sub: "Department of State · Corporation or LLC" },
+      { title: "Federal tax registration", sub: "IRS · EIN" },
+      { title: "Puerto Rico tax registration", sub: "Hacienda · SURI and tax accounts" },
+      { title: "Municipal registration", sub: "Municipio de Bayamón · patente" },
+      { title: "Permits & use", sub: "OGPe · Permiso Único" },
+      { title: "Health & fire", sub: "Department of Health · Fire Bureau" },
+      { title: "Review & submit", sub: "Nothing is filed without you" },
+    ],
+    exampleNote: "This is a sample path, not your result. Incentive eligibility depends on the full profile.",
+    pilotLine:
+      "Assisted live filing is in pilot for SURI. The assistant opens the government site and fills it with the profile. It stops for your login, payment, and the final click.",
+    whyKicker: "Why SmartPR — not a chatbot",
+    whyTitle: "Chatbots explain. This is built to file.",
     whyLead:
-      "General AI is good at explaining. It wasn't built for the moment a reviewer looks at your paperwork. SmartPR was.",
-    whyPoints: [
-      ["01", "Every requirement cites the law", "Registro de Comerciante → Sec. 4060.01(a), Ley 1-2011. If a rule can't point to its authority, it doesn't ship as verified."],
-      ["02", "Same facts, same requirements — every time", "No improvisation. The same business profile always produces the same checklist."],
-      ["03", "When a fact is missing, it asks", "If a controlling detail isn't confirmed, SmartPR asks you instead of guessing an obligation."],
-      ["04", "Tested like a reviewer would test it", "25 frozen real-world scenarios run against the engine — and the expectations are never rewritten to make SmartPR pass."],
+      "Ask a chatbot what a Permiso Único is. That is useful. Do not ask it to decide what a client owes Hacienda and then put that on a form. SmartPR is the second job.",
+    whyLines: [
+      {
+        lead: "Curated rules, traced to the source.",
+        rest: " Requirements link to the statute or official guidance. Rules are reviewed against primary sources before they ship as verified.",
+      },
+      {
+        lead: "Same facts, same checklist. No improvisation.",
+        rest: " The same business profile produces the same requirements every time.",
+      },
+      {
+        lead: "Official forms, not a summary.",
+        rest: " Agency forms are filled from the profile and bundled into a submission package. Missing documents get flagged first.",
+      },
+      {
+        lead: "Annual filings don't depend on memory.",
+        rest: " Recurring obligations stay on one list, with 60 / 30 / 7-day reminders.",
+      },
+      {
+        lead: "Readiness before the agency sees it.",
+        rest: " Completeness checks run on the package. Nothing is submitted without your review.",
+      },
     ],
-    offerEyebrow: "What you get",
-    offerTitle: "Three ways SmartPR carries the paperwork.",
-    offerCards: [
-      ["Know what applies", "Tell us about the business. We identify every permit, license, and registration across agencies.", "How it works", "#how-it-works"],
-      ["Stay compliant every year", "Renewals and annual filings tracked with 60-, 30-, and 7-day reminders. Next year's filing queues itself.", "Annual filings", "#annual-filings"],
-      ["We prepare it all", "Official forms completed from your business profile, documents checked, submission-ready package.", "The technology", "#technology"],
+    secKicker: "Security",
+    secTitle: "Client files stay in the workspace.",
+    secCards: [
+      {
+        title: "Your documents stay yours",
+        body: "Profiles, forms, and uploads live in a private workspace. We do not sell customer data.",
+      },
+      {
+        title: "Access is role-based",
+        body: "Only people you authorize see a client. Sensitive actions are gated by role.",
+      },
+      {
+        title: "Passwords are not stored in SmartPR",
+        body: "Sign-in uses a dedicated auth provider. Government logins used in assisted filing are not kept by us.",
+      },
+      {
+        title: "SOC 2 readiness — not certified",
+        body: "Control inventory and evidence work are underway. No Type I or Type II claim.",
+        trustLink: "Trust center",
+      },
     ],
-    filingsEyebrow: "Annual filings",
-    filingsTitle: "Never miss another annual filing.",
-    filingsBody:
-      "Opening is the easy part. Every year the Informe Anual, the Patente, and CRIM come back around — and nobody reminds you. SmartPR tracks every recurring filing, reminds you 60, 30, and 7 days before it's due, and sets up next year's filing as soon as you finish this year's.",
-    filingsPoints: [
-      ["01", "Reminders that reach you", "Due-date alerts arrive in your SmartPR inbox well before the deadline."],
-      ["02", "One view for every business", "Every annual filing in your portfolio, with its status, in a single list."],
-      ["03", "Next year sets itself up", "Finish this year's filing and the next cycle — reminders included — is created automatically."],
-    ],
+    closeTitle: "Bring one client. Run the real process.",
+    closeSub: "A pilot is the product, not a slide deck.",
+    closeProLead: "Gestores, CPAs, and firms:",
+    closeProLink: "see the professional workspace",
   },
   ES: {
-    heroTitle: "Sepa qué permisos necesita su negocio en Puerto Rico — y deje todo listo para radicar.",
+    kicker: "Para gestores, CPAs y firmas de permisos",
+    heroTitle: "Prepare las radicaciones de Puerto Rico de todos sus clientes en un solo lugar.",
     heroSub:
-      "SmartPR mapea cada requisito en todas las agencias, prepara sus formularios oficiales y le lleva los trámites año tras año.",
-    projectEyebrow: "Comience con su proyecto",
-    projectTitle: "Descubra lo que necesita su negocio.",
-    projectBody:
-      "Cuéntele a SmartPR lo que está planificando. Mapeamos los permisos, licencias, registros y documentos que podrían aplicarle—y le mostramos lo que falta.",
-    projectCta: "Vea lo que aplica",
-    proLead: "¿Maneja trámites de clientes?",
-    proCta: "Explore el espacio profesional",
-    whatNext:
-      "Pulsar 'Vea lo que aplica' toma 30 segundos: deje su nombre y email para guardar su progreso, y conteste preguntas sobre su negocio. Al momento recibe su lista de requisitos — gratis. Los formularios oficiales llenados y los paquetes de radicación exportables son parte de los planes pagos (ver Planes). Si ya inició sesión, va directo a la evaluación.",
-    savingsEyebrow: "Productividad",
-    savingsTitle: "¿Cuánto tiempo ahorra SmartPR?",
-    savingsBody:
-      "Lo estamos midiendo. SmartPR está en piloto con negocios y firmas de Puerto Rico ahora mismo. Cuando los pilotos terminen, esta sección mostrará números reales — horas ahorradas por trámite, menos radicaciones rechazadas, más rapidez para estar listo. Sin estimados. Sin inventos.",
-    securityEyebrow: "Seguridad",
-    securityTitle: "Los datos de su negocio, protegidos.",
-    securityBullets: [
+      "Un espacio por cliente. Requisitos mapeados a la ley, formularios oficiales llenados desde el perfil y renovaciones monitoreadas antes de su vencimiento. Menos paquetes incompletos. Menos corre-corre.",
+    startPilot: "Comenzar un piloto",
+    bookDemo: "Agendar una demo",
+    ownerLead: "¿Abriendo un negocio por su cuenta?",
+    ownerCta: "Vea lo que aplica",
+    buyKicker: "Lo que está comprando",
+    buyTitle: "Tres cosas. No una pila de funciones.",
+    buyCards: [
       {
-        title: "Sus documentos son suyos.",
-        body: "Perfiles, formularios y archivos viven en su espacio privado. Nunca vendemos sus datos.",
+        eyebrow: "Requisitos",
+        title: "Sepa qué le aplica",
+        body: "Cuéntenos del negocio. Identificamos cada permiso, licencia y registro en todas las agencias — desde los datos que usted confirma.",
+        link: "Vea la ruta",
       },
       {
-        title: "Controles de acceso.",
-        body: "Solo las personas que usted autorice pueden ver un negocio. Las acciones sensibles están limitadas por rol y plan.",
+        eyebrow: "Preparación",
+        title: "Preparamos el paquete",
+        body: "Formularios oficiales completados desde el perfil del negocio. Documentos revisados. Brechas señaladas antes de que una agencia las vea.",
+        link: "Cómo se radica",
       },
       {
-        title: "Contraseñas bien manejadas.",
-        body: "El inicio de sesión lo maneja un proveedor de autenticación dedicado; las contraseñas nunca se guardan en texto plano.",
+        eyebrow: "Radicaciones anuales",
+        title: "Al día todos los años",
+        body: "Renovaciones y radicaciones recurrentes monitoreadas. Avisos a los 60, 30 y 7 días. El ciclo del próximo año se monta cuando termina el de este año.",
+        link: "Después de abrir",
       },
     ],
-    teaserTitle: "Maneje los trámites de todos sus clientes desde un solo lugar.",
-    teaserBody:
-      "Gestores, CPAs, firmas de permisos, bufetes, consultores y operadores — un panel para cada cliente, perfiles de negocio reutilizables y un estatus de preparación visible de un vistazo.",
-    teaserCta: "Explorar la plataforma profesional",
-    techEyebrow: "Cómo decide SmartPR",
-    techTitle: "Cada respuesta muestra su trabajo.",
-    techBullets: [
+    howKicker: "Vea cómo funciona",
+    howTitle: "Un ejemplo. Un proceso.",
+    steps: [
       {
-        title: "Cada requisito lleva a su fuente legal.",
-        body: "Cada requisito enlaza el estatuto, reglamento o guía oficial que lo crea — para que pueda verificar el \"por qué\" detrás de cada \"qué.\"",
+        title: "1. Describa el negocio",
+        body: "Unas preguntas — o dígalo en lenguaje sencillo. Los mismos datos siempre.",
       },
       {
-        title: "SmartPR razona solo con los datos que usted confirma.",
-        body: "Datos viejos o sin confirmar nunca activan ni suprimen requisitos. Cuando los datos no sustentan una respuesta, pregunta — no adivina.",
+        title: "2. Lo cruzamos con las reglas",
+        body: "SmartPR coteja el perfil con las regulaciones que de verdad aplican.",
       },
       {
-        title: "Pruebas congeladas lo mantienen honesto.",
-        body: "Veinticinco escenarios reales con expectativas fijas corren con cada cambio. Esas expectativas nunca se reescriben para que SmartPR pase.",
-      },
-      {
-        title: "Bajo revisión experta continua.",
-        body: "Las reglas se verifican contra fuentes primarias y se mantienen bajo revisión experta constante — no es un sello de aprobación de una sola vez.",
+        title: "3. Reciba un paquete que puede radicar",
+        body: "Qué aplica, formularios llenados, documentos que faltan, preparación. Usted revisa. Usted radica.",
       },
     ],
-    closeTitle: "Dígale a SmartPR lo que quiere construir.",
-    closeBody: "Trazamos lo que sigue.",
-    closeCta: "Registrarse",
-    whyEyebrow: "Por qué SmartPR",
-    whyTitle: "Un chatbot te da una respuesta. SmartPR te deja la radicación bien hecha.",
+    exampleLabel: "Ejemplo solamente · restaurante en Bayamón · 7 agencias · 7 radicaciones",
+    exampleQuote: "Quiero abrir un restaurante en Bayamón con 10 empleados y asientos al aire libre.",
+    chips: ["Restaurante", "Bayamón", "10 empleados", "Asientos al aire libre"],
+    filings: [
+      { title: "Registro de entidad", sub: "Departamento de Estado · Corporación o LLC" },
+      { title: "Registro contributivo federal", sub: "IRS · EIN" },
+      { title: "Registro contributivo de Puerto Rico", sub: "Hacienda · SURI y cuentas contributivas" },
+      { title: "Registro municipal", sub: "Municipio de Bayamón · patente" },
+      { title: "Permisos y uso", sub: "OGPe · Permiso Único" },
+      { title: "Salud y bomberos", sub: "Departamento de Salud · Bomberos" },
+      { title: "Revisión y radicación", sub: "Nada se radica sin usted" },
+    ],
+    exampleNote: "Esta es una ruta de ejemplo, no su resultado. La elegibilidad de incentivos depende del perfil completo.",
+    pilotLine:
+      "La radicación asistida en vivo está en piloto para SURI. El asistente abre el sitio del gobierno y lo llena con el perfil. Se detiene para su login, el pago y el clic final.",
+    whyKicker: "Por qué SmartPR — no un chatbot",
+    whyTitle: "Los chatbots explican. Esto está hecho para radicar.",
     whyLead:
-      "La IA general es buena explicando. Pero no está hecha para el momento en que un revisor mira tu papeleo. SmartPR sí.",
-    whyPoints: [
-      ["01", "Cada requisito cita la ley", "Registro de Comerciante → Sec. 4060.01(a), Ley 1-2011. Si una regla no puede señalar su autoridad, no sale como verificada."],
-      ["02", "Los mismos datos, los mismos requisitos — siempre", "Sin improvisar. El mismo perfil de negocio siempre produce la misma lista."],
-      ["03", "Si falta un dato, pregunta", "Si un dato clave no está confirmado, SmartPR te pregunta en vez de inventarse una obligación."],
-      ["04", "Probado como lo probaría un revisor", "25 escenarios reales congelados corren contra el motor — y las expectativas nunca se reescriben para que SmartPR pase."],
+      "Pregúntele a un chatbot qué es un Permiso Único. Eso es útil. No le pida que decida qué un cliente le debe a Hacienda y luego lo ponga en un formulario. SmartPR es ese segundo trabajo.",
+    whyLines: [
+      {
+        lead: "Reglas curadas, con su fuente.",
+        rest: " Los requisitos enlazan el estatuto o la guía oficial. Las reglas se revisan contra fuentes primarias antes de salir como verificadas.",
+      },
+      {
+        lead: "Los mismos datos, la misma lista. Sin improvisar.",
+        rest: " El mismo perfil de negocio produce los mismos requisitos siempre.",
+      },
+      {
+        lead: "Formularios oficiales, no un resumen.",
+        rest: " Los formularios de las agencias se llenan desde el perfil y se agrupan en un paquete de radicación. Los documentos que faltan se señalan primero.",
+      },
+      {
+        lead: "Las radicaciones anuales no dependen de la memoria.",
+        rest: " Las obligaciones recurrentes quedan en una sola lista, con avisos a los 60 / 30 / 7 días.",
+      },
+      {
+        lead: "Preparación antes de que la agencia lo vea.",
+        rest: " Los chequeos de completitud corren sobre el paquete. Nada se radica sin su revisión.",
+      },
     ],
-    offerEyebrow: "Lo que obtienes",
-    offerTitle: "Tres formas en que SmartPR carga con el papeleo.",
-    offerCards: [
-      ["Sepa qué le aplica", "Cuéntanos del negocio. Identificamos cada permiso, licencia y registro en todas las agencias.", "Cómo funciona", "#how-it-works"],
-      ["Al día, todos los años", "Renovaciones y radicaciones anuales con avisos a los 60, 30 y 7 días. La del próximo año se monta sola.", "Radicaciones anuales", "#annual-filings"],
-      ["Lo preparamos todo", "Formularios oficiales llenados desde tu perfil, documentos revisados, paquete listo para radicar.", "La tecnología", "#technology"],
+    secKicker: "Seguridad",
+    secTitle: "Los archivos del cliente se quedan en el espacio de trabajo.",
+    secCards: [
+      {
+        title: "Sus documentos son suyos",
+        body: "Perfiles, formularios y archivos viven en un espacio privado. No vendemos datos de clientes.",
+      },
+      {
+        title: "El acceso es por rol",
+        body: "Solo las personas que usted autorice ven un cliente. Las acciones sensibles están limitadas por rol.",
+      },
+      {
+        title: "Las contraseñas no se guardan en SmartPR",
+        body: "El inicio de sesión usa un proveedor de autenticación dedicado. Los logins del gobierno usados en la radicación asistida no los guardamos nosotros.",
+      },
+      {
+        title: "Preparación SOC 2 — no certificados",
+        body: "El inventario de controles y el trabajo de evidencia están en curso. Sin reclamo Tipo I ni Tipo II.",
+        trustLink: "Centro de confianza",
+      },
     ],
-    filingsEyebrow: "Radicaciones anuales",
-    filingsTitle: "Que no se te pase ni una radicación.",
-    filingsBody:
-      "Abrir es lo fácil. Todos los años vuelven el Informe Anual, la Patente y el CRIM — y nadie te avisa. SmartPR lleva tus radicaciones recurrentes, te avisa 60, 30 y 7 días antes del vencimiento, y en cuanto completas la de este año, la del próximo queda lista.",
-    filingsPoints: [
-      ["01", "Avisos que sí te llegan", "Las alertas llegan a tu buzón de SmartPR antes del vencimiento."],
-      ["02", "Todo en una sola vista", "Cada radicación anual de todos tus negocios, con su estatus, en una sola lista."],
-      ["03", "El próximo año se monta solo", "Terminas la de este año y el próximo ciclo — con sus avisos — se crea solo."],
-    ],
+    closeTitle: "Traiga un cliente. Corra el proceso real.",
+    closeSub: "Un piloto es el producto, no una presentación.",
+    closeProLead: "Gestores, CPAs y firmas:",
+    closeProLink: "vean el espacio profesional",
   },
 } as const;
 
@@ -194,6 +251,8 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
   const c = copy[language];
   const home = language === "ES" ? "/es" : "/";
   const professionalsHref = language === "ES" ? "/es/profesionales" : "/professionals";
+  const pilotHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(PILOT_SUBJECT)}`;
+  const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(DEMO_SUBJECT)}`;
 
   // The landing page always opens at the very top: the browser must not
   // restore a previous scroll position (or a stale anchor jump) that would
@@ -213,7 +272,7 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
     router.push("/?entry=new-business");
   }
 
-  // Every "start" entry point funnels through here. Signed-in visitors are
+  // The owner escape hatch funnels through here. Signed-in visitors are
   // tracked silently against their account; signed-out visitors give the
   // minimum (name + email) before the assessment begins. Tracking never
   // blocks the assessment itself.
@@ -244,68 +303,41 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
 
   return (
     <div className={styles.shell}>
-      <SiteHeader language={language} home={home} onLanguageChange={handleLanguageChange} />
+      <SiteHeader language={language} home={home} variant="home" onLanguageChange={handleLanguageChange} />
 
       <main>
-        <div className={styles.showcase}>
-          <section className={styles.hero}>
-            <div className={styles.heroCopy}>
-              <h1>
-                <span>{c.heroTitle}</span>
-              </h1>
-              <p className={styles.heroLead}>{c.heroSub}</p>
-              <ol className={styles.cards}>
-                <li className={styles.card}>
-                  <span>{c.projectEyebrow}</span>
-                  <h3>{c.projectTitle}</h3>
-                  <p>{c.projectBody}</p>
-                  <button type="button" className={styles.primary} onClick={() => void start()}>
-                    {c.projectCta}
-                  </button>
-                </li>
-              </ol>
-              <p className={styles.proLink}>
-                {c.proLead}{" "}
-                <Link href={professionalsHref}>
-                  {c.proCta} <span aria-hidden="true">→</span>
-                </Link>
-              </p>
-              <p className={styles.lead}>{c.whatNext}</p>
-            </div>
-          </section>
-          <FilingPathStory language={language} />
-        </div>
-
-        <HowItWorks language={language} cta={c.projectCta} onStart={() => void start()} />
-
-        <section id="why-smartpr" className={styles.section}>
-          <div className={styles.sectionInner}>
-            <p className={styles.eyebrow}>{c.whyEyebrow}</p>
-            <h2>{c.whyTitle}</h2>
-            <p className={styles.lead}>{c.whyLead}</p>
-            <ol className={styles.cards}>
-              {c.whyPoints.map(([n, title, body]) => (
-                <li key={n} className={styles.card}>
-                  <span>{n}</span>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </li>
-              ))}
-            </ol>
+        <section className={styles.heroPlain}>
+          <p className={styles.eyebrow}>{c.kicker}</p>
+          <h1>{c.heroTitle}</h1>
+          <p className={styles.heroSub}>{c.heroSub}</p>
+          <div className={styles.ctaRow}>
+            <a className={styles.primary} href={pilotHref}>
+              {c.startPilot}
+            </a>
+            <a className={styles.secondary} href={demoHref}>
+              {c.bookDemo}
+            </a>
           </div>
+          <p className={styles.escapeHatch}>
+            {c.ownerLead}{" "}
+            <button type="button" className={styles.textLink} onClick={() => void start()}>
+              {c.ownerCta}
+            </button>
+          </p>
         </section>
 
-        <section id="offerings" className={styles.section}>
+        <section id="what-you-get" className={styles.section}>
           <div className={styles.sectionInner}>
-            <p className={styles.eyebrow}>{c.offerEyebrow}</p>
-            <h2>{c.offerTitle}</h2>
-            <ol className={styles.cards}>
-              {c.offerCards.map(([title, body, linkLabel, href]) => (
-                <li key={title} className={styles.card}>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                  <a className={styles.ghost} href={href}>
-                    {linkLabel} <span aria-hidden>→</span>
+            <p className={styles.eyebrow}>{c.buyKicker}</p>
+            <h2>{c.buyTitle}</h2>
+            <ol className={`${styles.cards} ${styles.cardsThree}`}>
+              {c.buyCards.map((card) => (
+                <li key={card.title} className={styles.card}>
+                  <span>{card.eyebrow}</span>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                  <a className={styles.cardLink} href="#how-it-works">
+                    {card.link}
                   </a>
                 </li>
               ))}
@@ -313,67 +345,79 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
           </div>
         </section>
 
-        <section id="annual-filings" className={styles.section}>
+        <section id="how-it-works" className={styles.section}>
           <div className={styles.sectionInner}>
-            <p className={styles.eyebrow}>{c.filingsEyebrow}</p>
-            <h2>{c.filingsTitle}</h2>
-            <p className={styles.lead}>{c.filingsBody}</p>
-            <ol className={styles.cards}>
-              {c.filingsPoints.map(([n, title, body]) => (
-                <li key={n} className={styles.card}>
-                  <span>{n}</span>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </li>
-              ))}
-            </ol>
+            <p className={styles.eyebrow}>{c.howKicker}</p>
+            <h2>{c.howTitle}</h2>
+            <div className={styles.stepsWrap}>
+              <ol className={styles.stepList}>
+                {c.steps.map((step) => (
+                  <li key={step.title} className={styles.card}>
+                    <h3>{step.title}</h3>
+                    <p>{step.body}</p>
+                  </li>
+                ))}
+              </ol>
+              <div className={styles.exampleCard}>
+                <p className={styles.exampleLabel}>{c.exampleLabel}</p>
+                <p className={styles.exampleQuote}>{c.exampleQuote}</p>
+                <ul className={styles.chips}>
+                  {c.chips.map((chip) => (
+                    <li key={chip} className={styles.chip}>
+                      {chip}
+                    </li>
+                  ))}
+                </ul>
+                <ol className={styles.filingRows}>
+                  {c.filings.map((filing, i) => (
+                    <li key={filing.title}>
+                      <span className={styles.filingNum}>{i + 1}</span>
+                      <div>
+                        <h4>{filing.title}</h4>
+                        <p>{filing.sub}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+                <p className={styles.exampleNote}>{c.exampleNote}</p>
+              </div>
+            </div>
+            <p className={styles.pilotLine}>{c.pilotLine}</p>
           </div>
         </section>
 
-        <section id="time-savings" className={styles.section}>
+        <section id="why-smartpr" className={styles.section}>
           <div className={styles.sectionInner}>
-            <p className={styles.eyebrow}>{c.savingsEyebrow}</p>
-            <h2>{c.savingsTitle}</h2>
-            <p className={styles.lead}>{c.savingsBody}</p>
+            <p className={styles.eyebrow}>{c.whyKicker}</p>
+            <h2>{c.whyTitle}</h2>
+            <p className={styles.lead}>{c.whyLead}</p>
+            <ul className={styles.whyList}>
+              {c.whyLines.map((line) => (
+                <li key={line.lead}>
+                  <p>
+                    <strong>{line.lead}</strong>
+                    {line.rest}
+                  </p>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
         <section id="security" className={styles.section}>
           <div className={styles.sectionInner}>
-            <p className={styles.eyebrow}>{c.securityEyebrow}</p>
-            <h2>{c.securityTitle}</h2>
+            <p className={styles.eyebrow}>{c.secKicker}</p>
+            <h2>{c.secTitle}</h2>
             <ol className={styles.cards}>
-              {c.securityBullets.map((bullet, i) => (
-                <li key={bullet.title} className={styles.card}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  <h3>{bullet.title}</h3>
-                  <p>{bullet.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section id="for-professionals" className={styles.section}>
-          <div className={styles.sectionInner}>
-            <h2>{c.teaserTitle}</h2>
-            <p className={styles.lead}>{c.teaserBody}</p>
-            <Link className={styles.ghost} href={professionalsHref}>
-              {c.teaserCta} <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </section>
-
-        <section id="technology" className={styles.section}>
-          <div className={styles.sectionInner}>
-            <p className={styles.eyebrow}>{c.techEyebrow}</p>
-            <h2>{c.techTitle}</h2>
-            <ol className={styles.cards}>
-              {c.techBullets.map((bullet, i) => (
-                <li key={bullet.title} className={styles.card}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
-                  <h3>{bullet.title}</h3>
-                  <p>{bullet.body}</p>
+              {c.secCards.map((card) => (
+                <li key={card.title} className={styles.card}>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                  {"trustLink" in card ? (
+                    <a className={styles.trustLink} href={TRUST_URL} target="_blank" rel="noreferrer">
+                      {card.trustLink}
+                    </a>
+                  ) : null}
                 </li>
               ))}
             </ol>
@@ -383,10 +427,19 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
         <section className={styles.section}>
           <div className={styles.close}>
             <h2>{c.closeTitle}</h2>
-            <p className={styles.lead}>{c.closeBody}</p>
-            <button type="button" className={styles.primary} onClick={() => void start()}>
-              {c.closeCta}
-            </button>
+            <p className={styles.lead}>{c.closeSub}</p>
+            <div className={styles.ctaRow}>
+              <a className={styles.primary} href={pilotHref}>
+                {c.startPilot}
+              </a>
+              <a className={styles.secondary} href={demoHref}>
+                {c.bookDemo}
+              </a>
+            </div>
+            <p className={styles.closeNote}>
+              {c.closeProLead}{" "}
+              <Link href={professionalsHref}>{c.closeProLink}</Link>
+            </p>
           </div>
         </section>
       </main>
@@ -400,7 +453,7 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
         onDone={goToAssessment}
       />
 
-      <SiteFooter language={language} home={home} onLanguageChange={handleLanguageChange} />
+      <SiteFooter language={language} variant="home" />
     </div>
   );
 }

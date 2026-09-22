@@ -42,7 +42,7 @@ export default function AboutPage({ initialLanguage = "EN" }: { initialLanguage?
 
   return (
     <div className={styles.shell}>
-      <SiteHeader language={language} home={home} onLanguageChange={handleLanguageChange} />
+      <SiteHeader language={language} home={home} variant="home" onLanguageChange={handleLanguageChange} />
 
       <main>
         <div className={styles.showcase}>
@@ -83,7 +83,7 @@ export default function AboutPage({ initialLanguage = "EN" }: { initialLanguage?
         </section>
       </main>
 
-      <SiteFooter language={language} home={home} onLanguageChange={handleLanguageChange} />
+      <SiteFooter language={language} variant="home" />
     </div>
   );
 }
