@@ -49,6 +49,12 @@ function tokenize(sentence: string, marks: string[]): Token[] {
 
 const copy = {
   EN: {
+    exampleLabel: "Example: a restaurant in Bayamón",
+    flow: [
+      "Answer a few questions about the business",
+      "SmartPR checks it against the regulations",
+      "You get what applies, prepared forms, and a ready-to-submit package",
+    ],
     mapped: "Your filing path, mapped.",
     summary: "7 agencies · 7 filings",
     sentence: "I want to open a restaurant in Bayamón with 10 employees and outdoor seating.",
@@ -85,6 +91,12 @@ const copy = {
     incentivesNote: "Example only — actual eligibility depends on your full business profile.",
   },
   ES: {
+    exampleLabel: "Ejemplo: un restaurante en Bayamón",
+    flow: [
+      "Contesta unas preguntas sobre el negocio",
+      "SmartPR lo verifica contra los reglamentos",
+      "Recibes lo que aplica, formularios preparados y un paquete listo para radicar",
+    ],
     mapped: "Su ruta de radicación, trazada.",
     summary: "7 agencias · 7 trámites",
     sentence: "Quiero abrir un restaurante en Bayamón con 10 empleados y asientos al aire libre.",
@@ -130,12 +142,22 @@ export default function FilingPathStory({ language }: { language: Language }) {
   // are all visible immediately. The typewriter and the staged-reveal
   // timeline were removed (owner direction 2026-09-20).
   return (
-    <section id="how-it-works" className={styles.pin} aria-labelledby="filing-path-title">
+    <section id="filing-example" className={styles.pin} aria-labelledby="filing-path-title">
       <div className={styles.frame}>
+        <p className={styles.exampleEyebrow}>{c.exampleLabel}</p>
         <div className={styles.headingRow}>
           <h2 id="filing-path-title" className={styles.heading}>{c.mapped}</h2>
           <span className={styles.summary}>{c.summary}</span>
         </div>
+
+        <ol className={styles.flow}>
+          {c.flow.map((step, i) => (
+            <li key={i} className={styles.flowStep}>
+              <span className={styles.flowNum}>{String(i + 1).padStart(2, "0")}</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
 
         <div className={styles.sentence}>
           {tokens.map((token, i) => (

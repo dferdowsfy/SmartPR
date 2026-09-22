@@ -465,3 +465,36 @@
     animation: none !important;
   }
 }
+
+.exampleEyebrow {
+  margin: 0 0 0.65rem;
+  color: #245c5c;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.6rem;
+  margin: 1.15rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flowStep {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+  color: #3d3d3d;
+}
+
+.flowNum {
+  color: #245c5c;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}

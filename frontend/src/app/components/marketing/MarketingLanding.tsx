@@ -37,7 +37,7 @@ const copy = {
     filingsEyebrow: "Annual filings",
     filingsTitle: "Never miss another annual filing.",
     filingsBody:
-      "Opening is the easy part. Every year the Informe Anual, the Patente, and CRIM come back around — and nobody reminds you. SmartPR tracks every recurring filing, reminds you 90, 60, 30, and 7 days before it's due, and sets up next year's filing as soon as you finish this year's.",
+      "Opening is the easy part. Every year the Informe Anual, the Patente, and CRIM come back around — and nobody reminds you. SmartPR tracks every recurring filing, reminds you 60, 30, and 7 days before it's due, and sets up next year's filing as soon as you finish this year's.",
     filingsPoints: [
       ["01", "Reminders that reach you", "Due-date alerts arrive in your SmartPR inbox well before the deadline."],
       ["02", "One view for every business", "Every annual filing in your portfolio, with its status, in a single list."],
@@ -61,6 +61,23 @@ const copy = {
     techTrust: "Same facts, same requirements, every time. Verified by human experts before anything goes live.",
     closeTitle: "Tell SmartPR what you want to build.",
     closeBody: "We'll show you what comes next.",
+    whyEyebrow: "Why SmartPR",
+    whyTitle: "A chatbot gives you an answer. SmartPR gets the filing right.",
+    whyLead:
+      "General AI is good at explaining. It wasn't built for the moment a reviewer looks at your paperwork. SmartPR was.",
+    whyPoints: [
+      ["01", "Every requirement cites the law", "Registro de Comerciante → Sec. 4060.01(a), Ley 1-2011. If a rule can't point to its authority, it doesn't ship as verified."],
+      ["02", "Same facts, same requirements — every time", "No improvisation. The same business profile always produces the same checklist."],
+      ["03", "When a fact is missing, it asks", "If a controlling detail isn't confirmed, SmartPR asks you instead of guessing an obligation."],
+      ["04", "Tested like a reviewer would test it", "25 frozen real-world scenarios run against the engine — and the expectations are never rewritten to make SmartPR pass."],
+    ],
+    offerEyebrow: "What you get",
+    offerTitle: "Three ways SmartPR carries the paperwork.",
+    offerCards: [
+      ["Know what applies", "Tell us about the business. We identify every permit, license, and registration across agencies.", "How it works", "#how-it-works"],
+      ["Stay compliant every year", "Renewals and annual filings tracked with 60-, 30-, and 7-day reminders. Next year's filing queues itself.", "Annual filings", "#annual-filings"],
+      ["We prepare it all", "Official forms completed from your business profile, documents checked, submission-ready package.", "The technology", "#technology"],
+    ],
     leadTitle: "Before you start",
     leadBody: "Leave your name and email so we can save your progress and follow up. That's it — no spam, ever.",
     leadName: "Name",
@@ -96,7 +113,7 @@ const copy = {
     filingsEyebrow: "Radicaciones anuales",
     filingsTitle: "Que no se te pase ni una radicación.",
     filingsBody:
-      "Abrir es lo fácil. Todos los años vuelven el Informe Anual, la Patente y el CRIM — y nadie te avisa. SmartPR lleva tus radicaciones recurrentes, te avisa 90, 60, 30 y 7 días antes del vencimiento, y en cuanto completas la de este año, la del próximo queda lista.",
+      "Abrir es lo fácil. Todos los años vuelven el Informe Anual, la Patente y el CRIM — y nadie te avisa. SmartPR lleva tus radicaciones recurrentes, te avisa 60, 30 y 7 días antes del vencimiento, y en cuanto completas la de este año, la del próximo queda lista.",
     filingsPoints: [
       ["01", "Avisos que sí te llegan", "Las alertas llegan a tu buzón de SmartPR antes del vencimiento."],
       ["02", "Todo en una sola vista", "Cada radicación anual de todos tus negocios, con su estatus, en una sola lista."],
@@ -120,6 +137,23 @@ const copy = {
     techTrust: "Los mismos datos → los mismos requisitos, siempre. Verificado por expertos antes de publicarse.",
     closeTitle: "Dígale a SmartPR lo que quiere construir.",
     closeBody: "Trazamos lo que sigue.",
+    whyEyebrow: "Por qué SmartPR",
+    whyTitle: "Un chatbot te da una respuesta. SmartPR te deja la radicación bien hecha.",
+    whyLead:
+      "La IA general es buena explicando. Pero no está hecha para el momento en que un revisor mira tu papeleo. SmartPR sí.",
+    whyPoints: [
+      ["01", "Cada requisito cita la ley", "Registro de Comerciante → Sec. 4060.01(a), Ley 1-2011. Si una regla no puede señalar su autoridad, no sale como verificada."],
+      ["02", "Los mismos datos, los mismos requisitos — siempre", "Sin improvisar. El mismo perfil de negocio siempre produce la misma lista."],
+      ["03", "Si falta un dato, pregunta", "Si un dato clave no está confirmado, SmartPR te pregunta en vez de inventarse una obligación."],
+      ["04", "Probado como lo probaría un revisor", "25 escenarios reales congelados corren contra el motor — y las expectativas nunca se reescriben para que SmartPR pase."],
+    ],
+    offerEyebrow: "Lo que obtienes",
+    offerTitle: "Tres formas en que SmartPR carga con el papeleo.",
+    offerCards: [
+      ["Sepa qué le aplica", "Cuéntanos del negocio. Identificamos cada permiso, licencia y registro en todas las agencias.", "Cómo funciona", "#how-it-works"],
+      ["Al día, todos los años", "Renovaciones y radicaciones anuales con avisos a los 60, 30 y 7 días. La del próximo año se monta sola.", "Radicaciones anuales", "#annual-filings"],
+      ["Lo preparamos todo", "Formularios oficiales llenados desde tu perfil, documentos revisados, paquete listo para radicar.", "La tecnología", "#technology"],
+    ],
     leadTitle: "Antes de empezar",
     leadBody: "Déjanos tu nombre y tu email para guardarte el progreso y darte seguimiento. Eso es todo — cero spam.",
     leadName: "Nombre",
@@ -338,6 +372,41 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
           </div>
         </section>
 
+        <section id="why-smartpr" className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.whyEyebrow}</p>
+            <h2>{c.whyTitle}</h2>
+            <p className={styles.lead}>{c.whyLead}</p>
+            <ol className={styles.cards}>
+              {c.whyPoints.map(([n, title, body]) => (
+                <li key={n} className={styles.card}>
+                  <span>{n}</span>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section id="offerings" className={styles.section}>
+          <div className={styles.sectionInner}>
+            <p className={styles.eyebrow}>{c.offerEyebrow}</p>
+            <h2>{c.offerTitle}</h2>
+            <ol className={styles.cards}>
+              {c.offerCards.map(([title, body, linkLabel, href]) => (
+                <li key={title} className={styles.card}>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                  <a className={styles.ghost} href={href}>
+                    {linkLabel} <span aria-hidden>→</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
         <section id="how-it-works" className={styles.section}>
           <div className={styles.sectionInner}>
             <h2>{c.stepsTitle}</h2>
@@ -353,7 +422,7 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
           </div>
         </section>
 
-        <section className={styles.section}>
+        <section id="annual-filings" className={styles.section}>
           <div className={styles.sectionInner}>
             <p className={styles.eyebrow}>{c.filingsEyebrow}</p>
             <h2>{c.filingsTitle}</h2>
