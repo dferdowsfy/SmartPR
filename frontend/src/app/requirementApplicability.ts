@@ -486,7 +486,16 @@ export function classifyEngineRequirements(
     const selectedState = basisStates.includes("required") ? "required"
       : basisStates.includes("likely_required") ? "likely_required"
       : basisStates.includes("conditional") ? "conditional" : "not_applicable";
-    const independentIndex = flags.findIndex(flag => flag === null);
+    // Provenance (REG-PROVENANCE-WINNER-001, QA 2026-09-21 21:00): the card's
+    // reason/source_rule must come from a basis that actually produced the
+    // winning applicability. A heuristic sibling with no geographic flag used
+    // to win this slot by array order alone, so a card could show required
+    // (from a verified basis) while citing the heuristic rule's legal basis
+    // (e.g. professional-license cards sourcing RULE_0029 instead of the
+    // winning verified RULE_0103). Prefer the first independent basis whose
+    // state matches the winning state; fall back to the first winning-state
+    // basis so municipality-flag wins are preserved.
+    const independentIndex = flags.findIndex((flag, i) => flag === null && basisStates[i] === selectedState);
     const basis = bases[independentIndex >= 0 ? independentIndex : basisStates.indexOf(selectedState)];
     const mandatory = applicability === "required" && !recommended;
     // Confidence bands (never false precision — UI renders bands, not decimals):

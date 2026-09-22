@@ -399,16 +399,19 @@ test("bucketForApplicability maps statuses to review buckets", () => {
   assert.equal(bucketForApplicability("not_applicable"), "not_applicable");
 });
 
-test("REG-TRANSPORT-001: logistics/warehouse business without vehicle facts — transport permit is not REQUIRED", () => {
+test("REG-TRANSPORT-001: logistics/warehouse transport permit is question-gated on Q_COMMERCIAL_VEHICLES — never REQUIRED without vehicle facts", () => {
   // QA 2026-09-16: NTSP/CSP transport authorization applies to persons
   // transporting cargo/passengers for hire, not to every business whose
-  // type says "logistics"/"warehouse". Business-type-only rules
-  // (RULE_0185–RULE_0188) are heuristics gated on commercial_vehicles.
-  // Validated review 2026-09-16: Q_COMMERCIAL_VEHICLES (RULE_0022) is
-  // heuristic pending the transport_type fact — confirmed vehicle use
-  // surfaces the permit as needs_more_information, never required.
+  // type says "logistics"/"warehouse". Deep-research batch 1 (2026-09-21)
+  // retargeted RULE_0185–RULE_0188 from business-type heuristics to
+  // Q_COMMERCIAL_VEHICLES question triggers (the research verdicts judged
+  // BT-alone assertion an over-assertion). The discovery intake asks
+  // Q_COMMERCIAL_VEHICLES for Logistics/Warehouse BTs, so there is no recall
+  // gap: an unanswered or No answer means no transport card at all; a Yes
+  // surfaces the permit as needs_more_information naming transport_type —
+  // never required. The authoritative trigger stays RULE_0022.
   const DOC_TRANSPORT = docByName("transportation / puc permit");
-  const DOC_VEHICLE = docByName("commercial vehicle registration");
+  const DOC_VEHICLE = docByName("vehicle registration");
 
   const base: EngineInput = {
     municipalityName: "Cataño",
@@ -417,17 +420,28 @@ test("REG-TRANSPORT-001: logistics/warehouse business without vehicle facts — 
     answers: { Q_PHYSICAL_LOCATION: true },
   };
 
-  const noVehicleFacts = classify(base, "existing").classified;
-  const transport = byId(noVehicleFacts, DOC_TRANSPORT);
-  const vehicle = byId(noVehicleFacts, DOC_VEHICLE);
-  assert.ok(transport, "transport permit must be surfaced as an evaluation");
-  assert.ok(vehicle, "vehicle registration must be surfaced as an evaluation");
-  assert.notEqual(transport.applicability, "required", "transport permit must not be REQUIRED without vehicle facts");
-  assert.notEqual(vehicle.applicability, "required", "vehicle registration must not be REQUIRED without vehicle facts");
-  assert.ok(
-    transport.missingFacts?.includes("commercial_vehicles"),
-    "transport permit must name commercial_vehicles as the missing fact"
-  );
+  for (const businessTypeName of ["Logistics Company", "Warehouse Operator"]) {
+    const noVehicleFacts = classify({ ...base, businessTypeName }, "existing").classified;
+    assert.equal(
+      byId(noVehicleFacts, DOC_TRANSPORT),
+      undefined,
+      `${businessTypeName} with no vehicle facts must not surface a transport permit card (question-gated)`
+    );
+    assert.equal(
+      byId(noVehicleFacts, DOC_VEHICLE),
+      undefined,
+      `${businessTypeName} with no vehicle facts must not surface a vehicle registration card (question-gated)`
+    );
+    const declined = classify(
+      { ...base, businessTypeName, answers: { ...base.answers, Q_COMMERCIAL_VEHICLES: false } },
+      "existing"
+    ).classified;
+    assert.equal(
+      byId(declined, DOC_TRANSPORT),
+      undefined,
+      `${businessTypeName} answering No to commercial vehicles must not surface a transport permit card`
+    );
+  }
 
   const withVehicles = classify(
     { ...base, answers: { ...base.answers, Q_COMMERCIAL_VEHICLES: true } },
@@ -444,6 +458,13 @@ test("REG-TRANSPORT-001: logistics/warehouse business without vehicle facts — 
   assert.ok(
     transportReq.missingFacts?.includes("transport_type"),
     "transport permit must name transport_type as the missing fact"
+  );
+  const vehicleReq = byId(withVehicles, DOC_VEHICLE);
+  assert.ok(vehicleReq, "vehicle registration must fire when commercial vehicles are confirmed");
+  assert.equal(
+    vehicleReq.applicability,
+    "needs_more_information",
+    "vehicle registration must be needs_more_information until vehicle_ownership is known"
   );
 });
 
@@ -652,6 +673,28 @@ test("CASE K: RULE_0642 (DACO contractor license) never fires for vehicle-repair
     "required",
     "a new general contractor still receives the DACO contractor license"
   );
+
+  // REG-DACO-EXCLUSION-002 (2026-09-21 21:00 QA cycle): deep-research batch 1
+  // retargeted RULE_0232/RULE_0237 from business-type rules to
+  // Q_OFFERS_CONSTRUCTION_SERVICES question triggers, silently bypassing
+  // this exclusion — vehicle-repair BTs answering Yes got the contractor
+  // card through the retargeted rules. The exclusion family must be mirrored
+  // on every Q_OFFERS_CONSTRUCTION_SERVICES contractor rule so a future
+  // retarget cannot drop it again.
+  const rules = load("rules.json") as Array<Record<string, unknown>>;
+  const contractorRuleIds = ["RULE_0642", "RULE_0232", "RULE_0237"];
+  const vehicleRepairBTs = ["BT_AUTO_REPAIR_SHOP", "BT_MOTORCYCLE_REPAIR_SHOP", "BT_BODY_SHOP", "BT_TIRE_SHOP"];
+  for (const id of contractorRuleIds) {
+    const r = rules.find((x) => x.id === id);
+    assert.ok(r, `${id} must exist`);
+    const excl = (r.excluded_business_types as Array<string> | undefined) ?? [];
+    for (const bt of vehicleRepairBTs) {
+      assert.ok(
+        excl.includes(bt),
+        `${id} must exclude ${bt} (CASE K exclusion family)`
+      );
+    }
+  }
 });
 
 test("CASE K2: Q_OFFERS_CONSTRUCTION_SERVICES scopes repair to buildings/structures", () => {
@@ -2289,7 +2332,7 @@ test("CASE AC: DOC_PROFESSIONAL_LICENSE is needs_more_information for real-estat
   );
 });
 
-test("CASE AD: DOC_CONTRACTOR_LICENSE is needs_more_information for landscaping and energy-consulting BTs, not REQUIRED", () => {
+test("CASE AD: DOC_CONTRACTOR_LICENSE posture for landscaping and energy-consulting BTs — never REQUIRED on business type alone", () => {
   // 2026-09-19 12:00 QA cycle (S62, Bayamón): a home-based tree-care franchise
   // got the DACO contractor license (Ley 146-1995) as REQUIRED on business
   // type alone via RULE_0135. Primary-source review: Ley 146-1995 covers the
@@ -2299,46 +2342,111 @@ test("CASE AD: DOC_CONTRACTOR_LICENSE is needs_more_information for landscaping 
   // BT_GENERAL_CONTRACTOR at needs_more_information ("do not assume from
   // general contractor alone") — a landscaping company or energy consulting
   // firm is a weaker construction signal than a general contractor.
-  // RULE_0135 (landscaping) and RULE_0232 (energy consulting) are heuristic +
-  // missing_fact_keys=[residential_work], no compliance_mode — mirroring
-  // RULE_0123's treatment. Whole-family sibling audit (332b659 lesson):
-  // genuine construction trades (electrical 0125, plumbing 0127, HVAC 0129,
-  // roofing 0131, concrete 0133, specialty trade 0137, solar installer 0230,
-  // utility 0233, battery storage 0235, construction govcon 0250) and the
-  // Q_OFFERS_CONSTRUCTION_SERVICES question path (0642) are unchanged.
+  // Deep-research batch 1 (2026-09-21) retargeted RULE_0232 (energy
+  // consulting) from a business-type heuristic to a Q_OFFERS_CONSTRUCTION_
+  // SERVICES question trigger — the research verdicts judged BT-alone
+  // assertion an over-assertion. RULE_0135 (landscaping) kept its
+  // business-type heuristic shape. The discovery intake asks
+  // Q_OFFERS_CONSTRUCTION_SERVICES for both BTs, so there is no recall gap:
+  // an unanswered or No answer means no contractor card for the consulting
+  // firm; an honest Yes routes through the verified question path (RULE_0642)
+  // while the heuristic sibling still names residential_work as the
+  // controlling unanswered fact. Genuine construction trades (electrical
+  // 0125, plumbing 0127, HVAC 0129, roofing 0131, concrete 0133, specialty
+  // trade 0137, solar installer 0230, utility 0233, battery storage 0235,
+  // construction govcon 0250) are unchanged.
   const DOC_CONTRACTOR = docByName("contractor license");
 
-  for (const businessTypeName of ["Landscaping Company", "Energy Consulting Firm"]) {
-    for (const businessStatus of ["new", "existing"] as const) {
+  // Landscaping: RULE_0135 is still a business-type heuristic — the card is
+  // an honest evaluation naming residential_work, never REQUIRED.
+  for (const businessStatus of ["new", "existing"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Bayamón",
+        businessTypeName: "Landscaping Company",
+        businessStatus,
+        answers: {
+          Q_EMPLOYEES_HIRED: true,
+          Q_PHYSICAL_LOCATION: true,
+        },
+        projectFacts: { property_tenure: "leased" },
+      },
+      businessStatus
+    ).classified;
+    const lic = byId(rows, DOC_CONTRACTOR);
+    assert.ok(
+      lic,
+      `contractor license row must exist for Landscaping Company (${businessStatus})`
+    );
+    assert.equal(
+      lic.applicability,
+      "needs_more_information",
+      `a ${businessStatus} landscaping company stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+    );
+    assert.ok(
+      (lic.missingFacts ?? []).includes("residential_work"),
+      "the controlling unanswered fact must be named"
+    );
+  }
+
+  // Energy consulting: RULE_0232 is now a question trigger. No answer (or an
+  // honest No) means no contractor card — the BT alone never asserts it.
+  for (const businessStatus of ["new", "existing"] as const) {
+    for (const answers of [
+      { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true, Q_OFFERS_CONSTRUCTION_SERVICES: false },
+    ]) {
       const rows = classify(
         {
           municipalityName: "Bayamón",
-          businessTypeName,
+          businessTypeName: "Energy Consulting Firm",
           businessStatus,
-          answers: {
-            Q_EMPLOYEES_HIRED: true,
-            Q_PHYSICAL_LOCATION: true,
-          },
+          answers,
           projectFacts: { property_tenure: "leased" },
         },
         businessStatus
       ).classified;
-      const lic = byId(rows, DOC_CONTRACTOR);
-      assert.ok(
-        lic,
-        `contractor license row must exist for ${businessTypeName} (${businessStatus})`
-      );
       assert.equal(
-        lic.applicability,
-        "needs_more_information",
-        `a ${businessStatus} ${businessTypeName} stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
-      );
-      assert.ok(
-        (lic.missingFacts ?? []).includes("residential_work"),
-        "the controlling unanswered fact must be named"
+        byId(rows, DOC_CONTRACTOR),
+        undefined,
+        `a ${businessStatus} energy consulting firm with no construction-services signal must not surface a contractor license card`
       );
     }
   }
+
+  // An honest Yes routes through the verified question path (RULE_0642) —
+  // required, with the heuristic sibling's residential_work still named as
+  // the controlling unanswered fact (REG-PROVENANCE-WINNER-001).
+  const yesRows = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Energy Consulting Firm",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_OFFERS_CONSTRUCTION_SERVICES: true,
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  const yesLic = byId(yesRows, DOC_CONTRACTOR);
+  assert.ok(yesLic, "an energy consulting firm answering Yes to construction services must surface the contractor license");
+  assert.equal(
+    yesLic.applicability,
+    "required",
+    "an honest Yes to construction services asserts the license via the verified question path"
+  );
+  assert.equal(
+    yesLic.source_rule_id,
+    "RULE_0642",
+    "the card must cite the winning verified basis, not the heuristic sibling (REG-PROVENANCE-WINNER-001)"
+  );
+  assert.ok(
+    (yesLic.missingFacts ?? []).includes("residential_work"),
+    "the controlling unanswered fact must still be named"
+  );
 
   // Controls: genuine construction trades still hold.
   const electrician = classify(
@@ -2540,7 +2648,7 @@ test("CASE AF: DOC_OWNER_AFFIDAVIT never fabricates a Lease fact for installers;
   );
 });
 
-test("CASE AG: DOC_CONTRACTOR_LICENSE is needs_more_information for renewable energy companies, not REQUIRED", () => {
+test("CASE AG: DOC_CONTRACTOR_LICENSE is never REQUIRED on business type alone for renewable energy companies", () => {
   // 2026-09-20 06:00 QA cycle (S79, Ponce): a new utility-scale battery
   // energy-storage facility (owner/developer, not an installer — third-party
   // GC builds it) got the DACO contractor license (Ley 146-1995) as REQUIRED
@@ -2550,45 +2658,77 @@ test("CASE AG: DOC_CONTRACTOR_LICENSE is needs_more_information for renewable en
   // renewable energy company is trade-adjacent, not a construction business —
   // Ley 146-1995 covers the residential construction business, and validated
   // golden G12 pins even BT_GENERAL_CONTRACTOR at needs_more_information
-  // ("do not assume from general contractor alone"). RULE_0237 is heuristic
-  // + missing_fact_keys=[residential_work], no compliance_mode (RULE_0664
-  // lesson) — mirroring RULE_0123's guard. The honest path for genuine
-  // construction services is RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES,
-  // scoped to buildings/structures per b116725); the installer registration
-  // (RULE_0605) and owner-side LUMA/net-metering rules (0610/0611) are
-  // unchanged.
+  // ("do not assume from general contractor alone").
+  // Deep-research batch 1 (2026-09-21) retargeted RULE_0237 from a
+  // business-type heuristic to a Q_OFFERS_CONSTRUCTION_SERVICES question
+  // trigger — the research verdicts judged BT-alone assertion an
+  // over-assertion. The discovery intake asks Q_OFFERS_CONSTRUCTION_SERVICES
+  // for this BT, so there is no recall gap: an unanswered or No answer means
+  // no contractor card at all; an honest Yes routes through the verified
+  // question path (RULE_0642) while the heuristic sibling still names
+  // residential_work as the controlling unanswered fact. The installer
+  // registration (RULE_0605) and owner-side LUMA/net-metering rules (0610/0611)
+  // are unchanged.
   const DOC_CONTRACTOR = docByName("contractor license");
 
+  // The S79 shape: BT alone (no construction-services signal) never asserts
+  // the license.
   for (const businessStatus of ["new", "existing"] as const) {
-    const rows = classify(
-      {
-        municipalityName: "Ponce",
-        businessTypeName: "Renewable Energy Company",
-        businessStatus,
-        answers: {
-          Q_EMPLOYEES_HIRED: true,
-          Q_PHYSICAL_LOCATION: true,
-          Q_OFFERS_CONSTRUCTION_SERVICES: false,
+    for (const answers of [
+      { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+      { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true, Q_OFFERS_CONSTRUCTION_SERVICES: false },
+    ]) {
+      const rows = classify(
+        {
+          municipalityName: "Ponce",
+          businessTypeName: "Renewable Energy Company",
+          businessStatus,
+          answers,
+          projectFacts: { property_tenure: "leased" },
         },
-        projectFacts: { property_tenure: "leased" },
-      },
-      businessStatus
-    ).classified;
-    const lic = byId(rows, DOC_CONTRACTOR);
-    assert.ok(
-      lic,
-      `contractor license row must exist for Renewable Energy Company (${businessStatus})`
-    );
-    assert.equal(
-      lic.applicability,
-      "needs_more_information",
-      `a ${businessStatus} renewable energy company stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
-    );
-    assert.ok(
-      (lic.missingFacts ?? []).includes("residential_work"),
-      "the controlling unanswered fact must be named"
-    );
+        businessStatus
+      ).classified;
+      assert.equal(
+        byId(rows, DOC_CONTRACTOR),
+        undefined,
+        `a ${businessStatus} renewable energy company with no construction-services signal must not surface a contractor license card`
+      );
+    }
   }
+
+  // An honest Yes routes through the verified question path (RULE_0642) —
+  // required, with the heuristic sibling's residential_work still named as
+  // the controlling unanswered fact (REG-PROVENANCE-WINNER-001).
+  const yesRows = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Renewable Energy Company",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_OFFERS_CONSTRUCTION_SERVICES: true,
+      },
+      projectFacts: { property_tenure: "leased" },
+    },
+    "new"
+  ).classified;
+  const yesLic = byId(yesRows, DOC_CONTRACTOR);
+  assert.ok(yesLic, "a renewable energy company answering Yes to construction services must surface the contractor license");
+  assert.equal(
+    yesLic.applicability,
+    "required",
+    "an honest Yes to construction services asserts the license via the verified question path"
+  );
+  assert.equal(
+    yesLic.source_rule_id,
+    "RULE_0642",
+    "the card must cite the winning verified basis, not the heuristic sibling (REG-PROVENANCE-WINNER-001)"
+  );
+  assert.ok(
+    (yesLic.missingFacts ?? []).includes("residential_work"),
+    "the controlling unanswered fact must still be named"
+  );
 
   // Control: a genuine contractor still holds.
   const electrician = classify(
@@ -3047,5 +3187,103 @@ test("CASE AM: RULE_0224 cites the OCS, never Juntas Examinadoras (REG-CITATION-
     r.citation_source,
     "rule",
     "the corrected citation overrides the inherited document citation"
+  );
+});
+
+test("CASE AN: RULE_0103 cites the veterinary examining board under Dept. de Salud, never Dept. of State (REG-CITATION-VET-001)", () => {
+  // RULE_0103 (BT_VETERINARY_CLINIC → DOC_PROFESSIONAL_LICENSE) carried the
+  // document-inherited "Juntas Examinadoras (Dept of State)" citation.
+  // Puerto Rico veterinarians are licensed by the Junta Examinadora de
+  // Médicos Veterinarios, adscrita a la Oficina de Reglamentación y
+  // Certificación de Profesionales de la Salud (ORCPS) del Departamento de
+  // Salud — Ley Núm. 194-1979, Arts. 5 (board creation under ORCPS), 6
+  // (licensing powers) y 18 (unlicensed practice is a felony). The Dept. of
+  // State's Juntas Examinadoras never had jurisdiction over veterinarians.
+  // Same defect class as REG-CITATION-INSURANCE-001 (RULE_0224).
+  const rules = load("rules.json") as Array<Record<string, unknown>>;
+  const r = rules.find((x) => x.id === "RULE_0103");
+  assert.ok(r, "RULE_0103 must exist");
+  const citation = String(r.citation ?? "");
+  assert.ok(
+    citation.includes("Junta Examinadora de Médicos Veterinarios"),
+    `RULE_0103 must name the veterinary examining board, got: ${citation}`
+  );
+  assert.ok(
+    citation.includes("194-1979"),
+    `RULE_0103 must name the enabling law (Ley 194-1979), got: ${citation}`
+  );
+  assert.ok(
+    !citation.includes("Dept of State"),
+    `RULE_0103 must not cite the Dept. of State, got: ${citation}`
+  );
+  assert.ok(
+    String(r.citation_url ?? "").includes("salud.pr.gov"),
+    `RULE_0103 must link a primary Dept. de Salud source, got: ${r.citation_url}`
+  );
+  assert.equal(
+    r.citation_source,
+    "rule",
+    "the corrected citation overrides the inherited document citation"
+  );
+  assert.ok(
+    !("citation_inherited_from" in r),
+    "the corrected citation must not inherit the document-level citation"
+  );
+});
+
+test("REG-PROVENANCE-WINNER-001: a verified basis wins both applicability and source-rule provenance over a heuristic sibling", () => {
+  // QA 2026-09-21 21:00 cycle (S120, Mayagüez): the veterinary clinic's
+  // Professional License card showed required (from verified RULE_0103) but
+  // source_rule=RULE_0029 — a heuristic sibling that matched the same
+  // document won the provenance slot by array order alone. The card's
+  // reason/source_rule must come from a basis that actually produced the
+  // winning applicability: the first independent (non-geographic) basis
+  // whose state matches the winning state, falling back to the first
+  // winning-state basis so municipality-flag wins are preserved.
+  const DOC_LICENSE = docByName("professional license");
+  const DOC_CONTRACTOR = docByName("contractor license");
+
+  // Veterinary clinic: verified RULE_0103 (BT-gated) wins over heuristic
+  // RULE_0029 (question-trigger sibling on the same document).
+  const vet = classify(
+    {
+      municipalityName: "Mayagüez",
+      businessTypeName: "Veterinary Clinic",
+      businessStatus: "new",
+      entityType: "limited_liability_company",
+      answers: {
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+    },
+    "new"
+  ).classified;
+  const vetLic = byId(vet, DOC_LICENSE);
+  assert.ok(vetLic, "veterinary clinic must surface the professional license");
+  assert.equal(vetLic.applicability, "required", "the verified veterinary basis asserts required");
+  assert.equal(
+    vetLic.source_rule_id,
+    "RULE_0103",
+    "the card must cite the winning verified basis, not the heuristic sibling RULE_0029"
+  );
+
+  // Energy consulting firm answering Yes: verified RULE_0642 (question path)
+  // wins over heuristic RULE_0232 (retargeted question-trigger sibling).
+  const consulting = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Energy Consulting Firm",
+      businessStatus: "new",
+      answers: { Q_PHYSICAL_LOCATION: true, Q_OFFERS_CONSTRUCTION_SERVICES: true },
+    },
+    "new"
+  ).classified;
+  const conLic = byId(consulting, DOC_CONTRACTOR);
+  assert.ok(conLic, "energy consulting firm answering Yes must surface the contractor license");
+  assert.equal(conLic.applicability, "required", "the verified question-path basis asserts required");
+  assert.equal(
+    conLic.source_rule_id,
+    "RULE_0642",
+    "the card must cite the winning verified basis, not the heuristic sibling RULE_0232"
   );
 });

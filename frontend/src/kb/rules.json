@@ -2116,17 +2116,21 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Juntas Examinadoras (Dept of State) — licencia profesional; ley habilitadora varía por profesión",
-  "citation_url": "https://www.didaxispr.com/dept/estadojuntas",
-  "citation_confidence": "page",
-  "citation_inherited_from": "DOC_PROFESSIONAL_LICENSE",
-  "citation_source": "document",
+  "citation": "Junta Examinadora de Médicos Veterinarios, adscrita a la Oficina de Reglamentación y Certificación de Profesionales de la Salud (ORCPS), Departamento de Salud — licencia de médico veterinario; Ley Núm. 194-1979, Arts. 5 (junta bajo ORCPS), 6 (facultad de licenciar) y 18 (ejercicio sin licencia)",
+  "citation_url": "https://www.salud.pr.gov/CMS/133",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-21",
+    "change": "citation corrected: veterinary licensing authority is the Junta Examinadora de Médicos Veterinarios (ORCPS, Dept. de Salud) under Ley 194-1979 — never the Dept. of State's Juntas Examinadoras; citation_source rule (no longer inherited from document)",
+    "reason": "QA 2026-09-21 21:00 cycle (S120, Mayagüez): REG-CITATION-VET-001. Primary source: salud.pr.gov/CMS/133. Same defect class as REG-CITATION-INSURANCE-001 (RULE_0224)."
    }
   ]
  },
@@ -4517,7 +4521,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Código de Seguros de PR, Ley 77-1957 Arts. 9.060 y 9.160 (26 LPRA §§ 949i, 950g)",
+  "citation": "Oficina del Comisionado de Seguros (OCS) — licencia de productor/agente de seguros; Código de Seguros de PR, Ley 77-1957 Arts. 9.060 y 9.160 (26 LPRA §§ 949i, 950g)",
   "citation_url": "https://ocs.pr.gov/",
   "citation_confidence": "statute",
   "citation_source": "rule",
@@ -4745,6 +4749,7 @@
   "rule_type": "question_trigger",
   "business_type_id": null,
   "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES",
+  "excluded_business_types": ["BT_AUTO_REPAIR_SHOP", "BT_MOTORCYCLE_REPAIR_SHOP", "BT_BODY_SHOP", "BT_TIRE_SHOP"],
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CONTRACTOR_LICENSE",
@@ -4824,6 +4829,7 @@
   "rule_type": "question_trigger",
   "business_type_id": null,
   "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES",
+  "excluded_business_types": ["BT_AUTO_REPAIR_SHOP", "BT_MOTORCYCLE_REPAIR_SHOP", "BT_BODY_SHOP", "BT_TIRE_SHOP"],
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CONTRACTOR_LICENSE",
