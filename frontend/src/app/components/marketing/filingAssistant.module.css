@@ -238,6 +238,47 @@
 .pauseBtn {
   border: 1px solid color-mix(in oklab, #161616 20%, transparent);
   color: #2b2b2b;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.pauseBtnPressed {
+  background: #245c5c;
+  border-color: transparent;
+  color: #f6f3ea;
+  transform: scale(0.94);
+}
+
+/* ---- Live chat script animation ---- */
+
+.stepIn {
+  animation: stepIn 0.28s ease-out;
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: #2a9d8f;
+  vertical-align: -0.12em;
+  animation: caretBlink 0.8s steps(2, start) infinite;
+}
+
+@keyframes caretBlink {
+  50% {
+    opacity: 0;
+  }
 }
 
 .readyMsg {
@@ -261,6 +302,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pulse {
+    animation: none;
+  }
+  .stepIn {
+    animation: none;
+  }
+  .caret {
     animation: none;
   }
 }
