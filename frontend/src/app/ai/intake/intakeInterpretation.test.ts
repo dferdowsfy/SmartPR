@@ -529,3 +529,27 @@ test("'nonprofit' is accepted as for_profit_status", () => {
   assert.equal(patch.profile.for_profit_status, "nonprofit");
   assert.deepEqual(patch.chips.map((c) => c.label), ["Nonprofit"]);
 });
+
+// --- PR-Spanish renovation phrasings surface Q_RENOVATIONS -------------------
+// QA 2026-09-21 21:00 live audit: "hay que hacer un pequeño arreglo interior
+// antes de abrir" (restaurant, Cataño) and "hay que acondicionar por dentro"
+// (vet clinic, Mayagüez) never surfaced the renovation question, so the
+// construction-permit path stayed silent. These candidacy checks pin the fix.
+
+test("\"pequeño arreglo interior\" surfaces Q_RENOVATIONS as a candidate", () => {
+  const candidates = buildKbCandidates(
+    KB,
+    "Queremos abrir un restaurante en Cataño, hay que hacer un pequeño arreglo interior antes de abrir"
+  );
+  const qids = candidates.questions.map((q) => q.id);
+  assert.ok(qids.includes("Q_RENOVATIONS"), `Q_RENOVATIONS must be a candidate, got ${qids.join(", ")}`);
+});
+
+test("\"acondicionar por dentro\" surfaces Q_RENOVATIONS as a candidate", () => {
+  const candidates = buildKbCandidates(
+    KB,
+    "Vamos a abrir una clínica veterinaria en Mayagüez, alquilamos un local que hay que acondicionar por dentro"
+  );
+  const qids = candidates.questions.map((q) => q.id);
+  assert.ok(qids.includes("Q_RENOVATIONS"), `Q_RENOVATIONS must be a candidate, got ${qids.join(", ")}`);
+});

@@ -107,7 +107,10 @@ const QUESTION_HINTS: Record<string, string[]> = {
   Q_AGRICULTURE_PRODUCTION: ["farm", "agriculture", "crop", "livestock", "harvest", "finca", "agricola"],
   Q_FIREARMS_SOLD: ["firearm", "gun", "weapon", "ammunition", "arma"],
   Q_NONPROFIT_STATUS: ["nonprofit", "non-profit", "charity", "foundation", "sin fines de lucro"],
-  Q_RENOVATIONS: ["renovation", "construction", "remodel", "build out", "buildout", "renovacion", "construccion"],
+  Q_RENOVATIONS: ["renovation", "construction", "remodel", "build out", "buildout", "renovacion", "construccion",
+    // PR-Spanish fit-out phrasings (QA 2026-09-21 21:00: "pequeño arreglo interior",
+    // "acondicionar por dentro" never surfaced the renovation question).
+    "arreglo", "arreglos", "acondicionar", "acondicionamiento", "mejoras"],
   Q_OWNS_PROPERTY: ["own the", "owns the", "purchased", "bought", "my building", "propiedad"],
   Q_EXISTING_LEASE: ["lease", "rent", "renting", "leasing", "arrendar", "alquilar"],
   Q_HOME_BASED: ["home", "house", "home-based", "from home", "casa", "desde casa"],
