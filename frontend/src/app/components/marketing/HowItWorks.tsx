@@ -2,7 +2,6 @@
 
 import styles from "./marketing.module.css";
 import type { Language } from "./MarketingChrome";
-import FilingPathStory from "./FilingPathStory";
 import FilingAssistant from "./FilingAssistant";
 
 const VOICE_AGENT_TEL = "tel:+17405636900";
@@ -64,10 +63,11 @@ const copy = {
   },
 } as const;
 
-/** One merged section: the Bayamón restaurant example, the voice channel, and
- * the assisted-filing assistant become proof inside the 4-step flow instead of
- * three standalone sections. Voice is a channel note in Step 1; the filing
- * assistant keeps its Beta badge in Step 3/4. */
+/** One merged section: the voice channel and the assisted-filing assistant
+ * become proof inside the 4-step flow instead of standalone sections. Voice
+ * is a channel note in Step 1; the filing assistant keeps its Beta badge in
+ * Step 3/4. The "Your filing path, mapped" Bayamón example now sits beside
+ * the homepage hero (see MarketingLanding). */
 export default function HowItWorks({
   language,
   cta,
@@ -97,10 +97,6 @@ export default function HowItWorks({
             </li>
           ))}
         </ol>
-      </div>
-
-      <div className={styles.sectionInner}>
-        <FilingPathStory language={language} />
       </div>
 
       <div className={styles.sectionInner}>

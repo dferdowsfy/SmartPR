@@ -69,7 +69,15 @@ function firstChunk(text: string): string {
   return text.slice(0, CHARS_PER_TICK);
 }
 
-export function FilingAssistantChat({ language }: { language: Language }) {
+export default function FilingAssistant({
+  language,
+  cta,
+  onStart,
+}: {
+  language: Language;
+  cta: string;
+  onStart: () => void;
+}) {
   const c = copy[language];
 
   const [reducedMotion, setReducedMotion] = useState<boolean>(
@@ -193,94 +201,6 @@ export function FilingAssistantChat({ language }: { language: Language }) {
   }, [steps, active]);
 
   return (
-    <div className={styles.chat} role="img" aria-label={c.chatAlt}>
-      <div className={styles.chatHead} aria-hidden="true">
-        <span className={styles.chatAvatar} />
-        <div className={styles.chatHeadText}>
-          <p className={styles.chatTitle}>{c.chatTitle}</p>
-          <p className={styles.chatSub}>{c.chatSub}</p>
-        </div>
-        <span className={styles.betaPill}>{c.beta}</span>
-      </div>
-      <div className={styles.chatBody} aria-hidden="true">
-        {steps.map((s, i) => {
-          if (i < doneCount) {
-            if (s.kind === "pause") {
-              return (
-                <div
-                  key={i}
-                  className={`${styles.pauseCard} ${styles.stepIn}`}
-                >
-                  <p>{s.text}</p>
-                  <div className={styles.pauseBtns}>
-                    <span className={styles.pauseBtnPrimary}>
-                      {s.takeover}
-                    </span>
-                    <span
-                      className={`${styles.pauseBtn} ${
-                        resumePressed ? styles.pauseBtnPressed : ""
-                      }`}
-                    >
-                      {s.resume}
-                    </span>
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div
-                key={i}
-                className={`${styles.msg} ${
-                  s.kind === "ready" ? styles.readyMsg : ""
-                }`}
-              >
-                {s.kind === "ready" ? (
-                  <span className={styles.check}>✓</span>
-                ) : (
-                  <span className={styles.pulse} />
-                )}
-                <span>{s.text}</span>
-              </div>
-            );
-          }
-          if (i === doneCount && s.kind !== "pause") {
-            return (
-              <div
-                key={`typing-${i}`}
-                className={`${styles.msg} ${styles.stepIn} ${
-                  s.kind === "ready" ? styles.readyMsg : ""
-                }`}
-              >
-                {s.kind === "ready" ? (
-                  <span className={styles.check}>✓</span>
-                ) : (
-                  <span className={styles.pulse} />
-                )}
-                <span>
-                  {typed}
-                  <span className={styles.caret} />
-                </span>
-              </div>
-            );
-          }
-          return null;
-        })}
-      </div>
-    </div>
-  );
-}
-
-export default function FilingAssistant({
-  language,
-  cta,
-  onStart,
-}: {
-  language: Language;
-  cta: string;
-  onStart: () => void;
-}) {
-  const c = copy[language];
-  return (
     <div className={styles.wrap}>
       <div className={styles.copy}>
         <p className={styles.eyebrow}>
@@ -300,7 +220,80 @@ export default function FilingAssistant({
         </div>
       </div>
       <div className={styles.chatCol}>
-        <FilingAssistantChat language={language} />
+        <div className={styles.chat} role="img" aria-label={c.chatAlt}>
+          <div className={styles.chatHead} aria-hidden="true">
+            <span className={styles.chatAvatar} />
+            <div className={styles.chatHeadText}>
+              <p className={styles.chatTitle}>{c.chatTitle}</p>
+              <p className={styles.chatSub}>{c.chatSub}</p>
+            </div>
+            <span className={styles.betaPill}>{c.beta}</span>
+          </div>
+          <div className={styles.chatBody} aria-hidden="true">
+            {steps.map((s, i) => {
+              if (i < doneCount) {
+                if (s.kind === "pause") {
+                  return (
+                    <div
+                      key={i}
+                      className={`${styles.pauseCard} ${styles.stepIn}`}
+                    >
+                      <p>{s.text}</p>
+                      <div className={styles.pauseBtns}>
+                        <span className={styles.pauseBtnPrimary}>
+                          {s.takeover}
+                        </span>
+                        <span
+                          className={`${styles.pauseBtn} ${
+                            resumePressed ? styles.pauseBtnPressed : ""
+                          }`}
+                        >
+                          {s.resume}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={i}
+                    className={`${styles.msg} ${
+                      s.kind === "ready" ? styles.readyMsg : ""
+                    }`}
+                  >
+                    {s.kind === "ready" ? (
+                      <span className={styles.check}>✓</span>
+                    ) : (
+                      <span className={styles.pulse} />
+                    )}
+                    <span>{s.text}</span>
+                  </div>
+                );
+              }
+              if (i === doneCount && s.kind !== "pause") {
+                return (
+                  <div
+                    key={`typing-${i}`}
+                    className={`${styles.msg} ${styles.stepIn} ${
+                      s.kind === "ready" ? styles.readyMsg : ""
+                    }`}
+                  >
+                    {s.kind === "ready" ? (
+                      <span className={styles.check}>✓</span>
+                    ) : (
+                      <span className={styles.pulse} />
+                    )}
+                    <span>
+                      {typed}
+                      <span className={styles.caret} />
+                    </span>
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
