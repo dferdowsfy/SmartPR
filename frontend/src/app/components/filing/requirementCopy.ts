@@ -79,6 +79,20 @@ const PATTERNS: NamePattern[] = [
     secondary: { prompt: "Already have this?", label: "Upload existing document", helper: "Accepted: PDF, JPG, PNG" },
   },
   {
+    // REG-COPY-DTRH-001 (2026-09-22 18:00 QA, live S139): the DTRH Employer
+    // Registration card — "DTRH Employer Registration (Unemployment &
+    // Disability Insurance)" — matched the generic insurance pattern via
+    // "Insurance" and showed "Upload proof of insurance" as its primary
+    // upload CTA. DTRH employer registration (unemployment/disability
+    // insurance registration with the Departamento del Trabajo) is not a
+    // commercial insurance policy; the CTA must say registration, not
+    // insurance. This pattern precedes the insurance rule.
+    test: /\bdtrh\b|departamento del trabajo/i,
+    icon: "blue",
+    primaryStart: "Complete employer registration",
+    secondary: { prompt: "Already registered with DTRH?", label: "Upload registration confirmation", helper: "Accepted: PDF, JPG, PNG" },
+  },
+  {
     test: /insurance|seguro|cfse|workers comp/i,
     icon: "gray",
     primaryStart: "Complete application",
