@@ -138,6 +138,62 @@
   transform: translateX(3px);
 }
 
+/* Inviting call CTA pill (How It Works, step 1). */
+.callCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.1rem;
+  padding: 0.65rem 1.25rem;
+  border: 1px solid #245c5c;
+  border-radius: 999px;
+  background: #245c5c;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 650;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.callCta:hover {
+  background: #1b4747;
+  border-color: #1b4747;
+  color: #fff;
+}
+
+.callCta:active {
+  transform: translateY(1px);
+}
+
+/* How It Works tiles: restrained per-tile brand accents. Scoped to
+ * #how-it-works so the shared .card styles used elsewhere are untouched. */
+#how-it-works .card:nth-child(1) {
+  --accent: #245c5c;
+}
+
+#how-it-works .card:nth-child(2) {
+  --accent: #6d8c7c;
+}
+
+#how-it-works .card:nth-child(3) {
+  --accent: #a4773d;
+}
+
+#how-it-works .card:nth-child(4) {
+  --accent: #6d8790;
+}
+
+#how-it-works .card {
+  --accent: #245c5c;
+  background: color-mix(in oklab, var(--accent) 7%, #fbf8f2);
+  border-color: color-mix(in oklab, var(--accent) 32%, transparent);
+  box-shadow: inset 0 3px 0 0 color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+#how-it-works .card > span {
+  color: var(--accent);
+}
+
 .menuButton {
   display: inline-flex;
   align-items: center;

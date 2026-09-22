@@ -28,7 +28,7 @@ const copy = {
         body: "A readiness check, then a complete submission package. Nothing is filed without your review and approval.",
       },
     ],
-    callCta: "Call SmartPR",
+    callCta: "Prefer to talk? Call SmartPR",
     callNumber: "+1 (740) 563-6900",
     betaLead: "Assisted live filing — currently in pilot.",
     betaRest:
@@ -55,7 +55,7 @@ const copy = {
         body: "Una revisión de preparación y un paquete de radicación completo. Nada se radica sin su revisión y aprobación.",
       },
     ],
-    callCta: "Llamar a SmartPR",
+    callCta: "¿Prefiere hablar? Llame a SmartPR",
     callNumber: "+1 (740) 563-6900",
     betaLead: "Trámite asistido en vivo — actualmente en piloto.",
     betaRest:
@@ -90,8 +90,8 @@ export default function HowItWorks({
               <h3>{step.title}</h3>
               <p>{step.body}</p>
               {i === 0 ? (
-                <a className={styles.ghost} href={VOICE_AGENT_TEL}>
-                  {c.callCta}: {c.callNumber} <span aria-hidden>→</span>
+                <a className={styles.callCta} href={VOICE_AGENT_TEL}>
+                  {c.callCta}: {c.callNumber}
                 </a>
               ) : null}
             </li>
