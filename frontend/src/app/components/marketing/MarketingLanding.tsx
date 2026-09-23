@@ -17,6 +17,8 @@ const copy = {
       "SmartPR maps the permits, licenses, and registrations for a business, fills the official forms from the profile, and tracks the ones that come back every year.",
     seeWhatApplies: "See what applies",
     fileForClients: "I file for clients",
+    talkItThrough: "Talk it through",
+    voiceNote: "You can also do this by voice.",
     buyKicker: "What you get",
     buyTitle: "Three things. Not a pile of features.",
     buyCards: [
@@ -123,6 +125,8 @@ const copy = {
       "SmartPR mapea los permisos, licencias y registros de un negocio, llena los formularios oficiales desde el perfil y le da seguimiento a los que vencen todos los años.",
     seeWhatApplies: "Vea lo que aplica",
     fileForClients: "Radico para clientes",
+    talkItThrough: "Háblalo por voz",
+    voiceNote: "También puedes hacerlo por voz.",
     buyKicker: "Lo que obtiene",
     buyTitle: "Tres cosas. No una pila de funciones.",
     buyCards: [
@@ -296,6 +300,19 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
               {c.fileForClients}
             </Link>
           </div>
+          <Link
+            href="/voice"
+            style={{
+              display: "inline-block",
+              marginTop: 14,
+              fontSize: 15,
+              color: "#5C574E",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            {c.talkItThrough}
+          </Link>
         </section>
 
         <section id="what-you-get" className={styles.section}>
@@ -320,10 +337,29 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
             <h2>{c.howTitle}</h2>
             <div className={styles.stepsWrap}>
               <ol className={styles.stepList}>
-                {c.steps.map((step) => (
+                {c.steps.map((step, i) => (
                   <li key={step.title} className={styles.card}>
                     <h3>{step.title}</h3>
-                    <p>{step.body}</p>
+                    <p>
+                      {step.body}
+                      {i === 0 ? (
+                        <>
+                          {" "}
+                          {c.voiceNote}{" "}
+                          <Link
+                            href="/voice"
+                            style={{
+                              color: "#2A4A3C",
+                              textDecoration: "underline",
+                              textUnderlineOffset: 3,
+                              fontWeight: 600,
+                            }}
+                          >
+                            {c.talkItThrough}
+                          </Link>
+                        </>
+                      ) : null}
+                    </p>
                   </li>
                 ))}
               </ol>
