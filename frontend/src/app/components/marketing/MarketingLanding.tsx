@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
@@ -233,6 +233,26 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
   const router = useRouter();
   const { language, handleLanguageChange } = useMarketingLanguage(initialLanguage);
   const [leadOpen, setLeadOpen] = useState(false);
+  const howRef = useRef<HTMLElement | null>(null);
+
+  // Reveal the how-it-works steps as a staged process when scrolled into view.
+  useEffect(() => {
+    const el = howRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            el.classList.add(styles.howVisible);
+            io.disconnect();
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const c = copy[language];
   const home = language === "ES" ? "/es" : "/";
   const professionalsHref = language === "ES" ? "/es/profesionales" : "/professionals";
@@ -331,7 +351,7 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
           </div>
         </section>
 
-        <section id="how-it-works" className={styles.section}>
+        <section id="how-it-works" ref={howRef} className={`${styles.section} ${styles.howSection}`}>
           <div className={styles.sectionInner}>
             <p className={styles.eyebrow}>{c.howKicker}</p>
             <h2>{c.howTitle}</h2>
