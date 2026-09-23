@@ -126,6 +126,13 @@ export interface ClassifiedRequirement {
   confidence: number;
   /** Human-readable regulatory basis carried from the rule, when present. */
   triggerSummary?: string;
+  /**
+   * Resolved "where to file" metadata carried from the engine (rule-level
+   * agency override wins — REG-PROFESSION-AGENCY-001). The UI prefers these
+   * over the shared document's defaults.
+   */
+  agency_url?: string | null;
+  agency_note?: string | null;
   acceptsOfficialUpload: boolean;
 }
 
@@ -585,6 +592,8 @@ export function classifyEngineRequirements(
       missingFacts,
       confidence,
       ...(row.trigger_summary ? { triggerSummary: row.trigger_summary } : {}),
+      ...(row.agency_url ? { agency_url: row.agency_url } : {}),
+      ...(row.agency_note ? { agency_note: row.agency_note } : {}),
       acceptsOfficialUpload: kind !== "review_condition" && kind !== "informational_notice" && applicability === "required",
     };
 

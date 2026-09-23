@@ -921,7 +921,9 @@ function appendUnansweredTriggerConditionals(
       | undefined;
     if (!d) continue;
     const name = d.name || rule.requires_document_id;
-    const agency = d.agency || "";
+    // REG-PROFESSION-AGENCY-001: rule-level issuing-agency override wins
+    // over the shared document default here too.
+    const agency = rule.agency ?? d.agency ?? "";
     const category = d.category || "";
     out.push({
       code: legacyCode[rule.requires_document_id] || rule.requires_document_id.toLowerCase(),
@@ -944,8 +946,8 @@ function appendUnansweredTriggerConditionals(
       unansweredTriggerQuestionId: rule.question_id,
       // Same "where to get this" metadata as a real requirement — the card
       // may become required the moment the user answers Yes.
-      agencyUrl: d.agency_url ?? null,
-      agencyNote: d.agency_note ?? null,
+      agencyUrl: rule.agency_url ?? d.agency_url ?? null,
+      agencyNote: rule.agency_note ?? d.agency_note ?? null,
       downloadUrl: d.download_url ?? null,
       downloadKind: d.download_kind ?? null,
       downloadNote: d.download_note ?? null,
@@ -1062,8 +1064,8 @@ export function computeRequirementsFromSnapshot(
       confidence: r.confidence,
       triggerSummary: r.triggerSummary,
       acceptsOfficialUpload: r.acceptsOfficialUpload,
-      agencyUrl: docById.get(r.document_id)?.agency_url ?? null,
-      agencyNote: docById.get(r.document_id)?.agency_note ?? null,
+      agencyUrl: r.agency_url ?? docById.get(r.document_id)?.agency_url ?? null,
+      agencyNote: r.agency_note ?? docById.get(r.document_id)?.agency_note ?? null,
       downloadUrl: docById.get(r.document_id)?.download_url ?? null,
       downloadKind: docById.get(r.document_id)?.download_kind ?? null,
       downloadNote: docById.get(r.document_id)?.download_note ?? null,

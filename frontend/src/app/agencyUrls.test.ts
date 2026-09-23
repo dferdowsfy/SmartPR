@@ -55,6 +55,49 @@ describe("agency URL coverage", () => {
   });
 });
 
+
+describe("REG-PROFESSION-AGENCY-001: rule-level issuing-agency override", () => {
+  // 2026-09-23 06:00 QA cycle (S156, Ponce): the tattoo-artist
+  // professional-license card pointed at the Juntas Examinadoras although
+  // Ley 318-1999 licenses tattoo artists through the Dept. de Salud.
+  // RULE_0696 overrides agency/agency_url/agency_note; the full pipeline
+  // (engine -> classifier -> kb.ts UIRequirement) must surface the rule's
+  // authority on the pill, the filing link, and the "where to get this"
+  // note — while a genuine Junta profession keeps the document default.
+  function tattooShopReqs() {
+    return computeRequirementsFromKB(
+      { business_type: "Tattoo Shop", municipality: "Ponce", industry: "Personal Care", location_type: "Commercial Facility", number_of_employees: 2 } as any,
+      { physical_location: true },
+      {},
+      { projectIntent: "existing_business" as any }
+    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null; agencyNote?: string | null; source_rule?: string }>;
+  }
+
+  it("tattoo artist professional license carries the Dept. de Salud authority end to end", () => {
+    const lic = tattooShopReqs().find((r) => r.document_id === "DOC_PROFESSIONAL_LICENSE");
+    assert.ok(lic, "professional license requirement must exist for an existing tattoo shop");
+    assert.equal(lic.source_rule, "RULE_0696");
+    assert.equal(lic.agency, "Departamento de Salud");
+    assert.equal(lic.agencyUrl, "https://www.salud.pr.gov/");
+    assert.ok(/318-1999/.test(String(lic.agencyNote ?? "")));
+    assert.ok(!/Junta|Examining Boards/i.test(String(lic.agency ?? "")), "the agency pill itself must not name the Juntas");
+    assert.ok(/no las Juntas/i.test(String(lic.agencyNote ?? "")), "the note explicitly disambiguates against the Juntas Examinadoras");
+  });
+
+  it("a genuine Junta-licensed profession keeps the document default", () => {
+    const reqs = computeRequirementsFromKB(
+      { business_type: "Barbershop", municipality: "Bayamón", industry: "Personal Care", location_type: "Commercial Facility", number_of_employees: 3 } as any,
+      { physical_location: true },
+      {},
+      { projectIntent: "existing_business" as any }
+    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null }>;
+    const lic = reqs.find((r) => r.document_id === "DOC_PROFESSIONAL_LICENSE");
+    assert.ok(lic, "professional license requirement must exist for an existing barbershop");
+    assert.equal(lic.agency, "Department of State Examining Boards");
+    assert.equal(lic.agencyUrl, "https://www.didaxispr.com/dept/estado-juntas");
+  });
+});
+
 describe("getDocumentDownload", () => {
   it("resolves a document id to its direct official destination", async () => {
     const { getDocumentDownload, downloadKindLabel } = await import("./kb");

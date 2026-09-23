@@ -22,6 +22,8 @@ export interface KBBusinessType { id: string; industry_id: string; name: string;
 export interface KBQuestion { id: string; question: string; type: string; options?: string[] }
 export interface KBDocument {
   id: string; name: string; agency: string; category: string; requirement_guidance?: unknown;
+  agency_url?: string | null;
+  agency_note?: string | null;
   /** Temporal validity, same semantics as KBRule (see temporal.ts). */
   effective_from?: string | null;
   effective_to?: string | null;
@@ -41,6 +43,19 @@ export interface KBRule {
   expected_answer: string | null;
   municipality_flag: Flag | null;
   requires_document_id: string;
+  /**
+   * Rule-level issuing-agency override (REG-PROFESSION-AGENCY-001). A shared
+   * document node (e.g. Professional License) can genuinely be issued by
+   * different authorities per profession — most PR professions by the Juntas
+   * Examinadoras (Dept. of State), tattoo artists by the Dept. de Salud
+   * under Ley 318-1999. When present, the rule's own authority wins over the
+   * document default for the agency pill, the "File online" link, and the
+   * guidance body (which interpolates the requirement's agency). Data-driven
+   * — the engine interprets it, never hardcodes per-case law.
+   */
+  agency?: string | null;
+  agency_url?: string | null;
+  agency_note?: string | null;
   /**
    * Project-first gate (data-driven): when true, the rule never fires for an
    * existing business, for a property/project with no business, or when the
@@ -340,6 +355,9 @@ export interface GeneratedRequirement {
   document_id: string;
   document_name: string;
   agency: string;
+  /** Resolved "where to file" metadata — rule-level override wins (see KBRule.agency). */
+  agency_url?: string | null;
+  agency_note?: string | null;
   category: string;
   reason: string;
   source_rule_id: string;
@@ -746,7 +764,12 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     return {
       document_id: docId,
       document_name: d ? d.name : docId,
-      agency: d ? d.agency : "",
+      // REG-PROFESSION-AGENCY-001: a rule's own issuing authority (when the
+      // KB carries one) wins over the shared document's default agency —
+      // e.g. tattoo-artist licenses are Salud-issued, not Junta-issued.
+      agency: rule.agency ?? d?.agency ?? "",
+      agency_url: rule.agency_url ?? d?.agency_url ?? null,
+      agency_note: rule.agency_note ?? d?.agency_note ?? null,
       category: d ? d.category : "",
       reason,
       source_rule_id: rule.id,

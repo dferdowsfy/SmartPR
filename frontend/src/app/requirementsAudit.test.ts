@@ -3588,3 +3588,86 @@ test("CASE AS: personal-care businesses get the health permit as needs_more_info
     "a new restaurant still gets the health permit as REQUIRED (RULE_0046 verified)"
   );
 });
+
+test("CASE REG-PROFESSION-AGENCY-001: rule-level issuing-agency override — the tattoo-artist license names Dept. de Salud, never the Juntas Examinadoras", () => {
+  // 2026-09-23 06:00 QA cycle live audit (S156, Ponce): the tattoo artist
+  // professional-license card cited Ley 318-1999 Arts. 3-6 correctly, but
+  // the agency pill, the "Confirm with Department of State Examining
+  // Boards" fallback body, and the Didaxis filing link all pointed at the
+  // Juntas Examinadoras — the wrong licensing authority for a
+  // Salud-issued license. The shared DOC_PROFESSIONAL_LICENSE node cannot
+  // carry a per-profession authority, so RULE_0696 now overrides
+  // agency/agency_url/agency_note (data-driven: the engine prefers the
+  // rule's own authority over the document default; nothing hardcoded).
+  const DOC_PROFLIC = docByName("professional license");
+  const tattoo = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Tattoo Shop",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "existing"
+  ).classified;
+  const lic = byId(tattoo, DOC_PROFLIC);
+  assert.ok(lic, "professional license row must exist for an existing tattoo shop");
+  assert.equal(
+    lic.source_rule_id,
+    "RULE_0696",
+    "the Salud-licensed tattoo-artist rule must win the card"
+  );
+  assert.equal(
+    lic.applicability,
+    "verify_existing",
+    "posture is untouched — an existing artist verifies their license"
+  );
+  assert.equal(
+    lic.agency,
+    "Departamento de Salud",
+    "the agency pill must name the actual licensing authority"
+  );
+  assert.equal(
+    lic.agency_url,
+    "https://www.salud.pr.gov/",
+    "the filing link must go to Salud, not the Didaxis Juntas portal"
+  );
+  assert.ok(
+    /318-1999/.test(String(lic.agency_note ?? "")),
+    "the agency note must cite the statutory basis"
+  );
+  assert.ok(
+    !/Junta|Examining Boards/i.test(String(lic.agency ?? "")),
+    "the agency pill itself must not name the Juntas"
+  );
+  assert.ok(
+    /no las Juntas/i.test(String(lic.agency_note ?? "")),
+    "the note explicitly disambiguates against the Juntas Examinadoras"
+  );
+
+  // Control: a genuine Junta-licensed profession keeps the document default.
+  const barber = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Barbershop",
+      businessStatus: "existing",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+    },
+    "existing"
+  ).classified;
+  const barberLic = byId(barber, DOC_PROFLIC);
+  assert.ok(barberLic, "professional license row must exist for an existing barbershop");
+  assert.equal(
+    barberLic.agency,
+    "Department of State Examining Boards",
+    "genuine Junta professions keep the document default agency"
+  );
+  assert.equal(
+    barberLic.agency_url,
+    "https://www.didaxispr.com/dept/estado-juntas",
+    "without a rule override the engine resolves the document default URL"
+  );
+});

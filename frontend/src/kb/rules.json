@@ -8435,6 +8435,9 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
+  "agency": "Departamento de Salud",
+  "agency_url": "https://www.salud.pr.gov/",
+  "agency_note": "Licencias de tatuadores las expide el Departamento de Salud (Ley Núm. 318-1999, Arts. 3-6) — no las Juntas Examinadoras del Departamento de Estado.",
   "citation": "Ley Núm. 318-1999, Arts. 3-6 — ningún artista dermatógrafo puede hacer tatuajes sin licencia del Departamento de Salud (examen de técnicas de asepsia, certificado de vacunación contra hepatitis; vigencia de 2 años, renovación de $125)",
   "citation_url": "https://www.lexjuris.com/LEXLEX/Ley1999/lex99318.htm",
   "citation_confidence": "statute",
@@ -8446,6 +8449,11 @@
     "date": "2026-09-22",
     "change": "new rule added (REG-PROFESSION-TATTOO-001)",
     "reason": "QA 2026-09-22 21:00 cycle (S144): KB INCOMPLETE — the KB modeled the tattoo studio's operating license (RULE_0160) but had no rule for the individual artist license. Primary-source verification against verbatim Ley 318-1999 Arts. 3-6 confirms tattoo artists are genuinely licensed by the Departamento de Salud (not a Junta Examinadora), so the professional-license card is genuinely REQUIRED — the same genuinely-licensed-profession pattern as RULE_0103 (vets) / RULE_0094 (pharmacists). compliance_mode verify_existing per the e676174 sweep (existing licensed artists verify their license)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "rule-level issuing-agency override added (REG-PROFESSION-AGENCY-001)",
+    "reason": "QA 2026-09-23 06:00 live audit (S156 Ponce tattoo): the card cited Ley 318-1999 correctly but the agency pill, \"Confirm with Department of State Examining Boards\" body, and Didaxis filing link pointed at the Juntas Examinadoras, contradicting the rule's own verified authority (Dept. de Salud, Arts. 3-6). The shared DOC_PROFESSIONAL_LICENSE node cannot carry a per-profession authority, so the rule now overrides agency/agency_url/agency_note."
    }
   ]
  },
