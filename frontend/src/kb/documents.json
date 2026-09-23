@@ -867,9 +867,9 @@
     "download_url": null,
     "download_kind": null,
     "download_note": null,
-    "citation": "Home-based activity needs the applicable domiciliary-use permitting path",
-    "citation_url": "https://www.permisos.pr.gov/",
-    "citation_confidence": "page",
+    "citation": "OGPe, Regulación de Profesionales ante la Oficina de Gerencia de Permisos (MO-OGPe-001, septiembre 2025), Regla 2.4.A.3 — Permisos Únicos, incluyendo los domiciliarios y temporeros, según lo establecido en el Reglamento Conjunto",
+    "citation_url": "https://docs.pr.gov/files/DDEC/Aviso%20Pu%CC%81blico/Revisi%C3%B3n-III%20FOMB-(9.4.2025)Reglamento%20Regulaci%C3%B3n%20Profesional-FINAL%20aceptado%20OGPe.pdf",
+    "citation_confidence": "official",
     "citation_note": "Modeled as the home-business pathway of the OGPe Permiso Único process (validated permit model REG-HOME-PHYSICAL-001 / G04), not an independent permit alongside the standard commercial Permiso Único."
   },
   {

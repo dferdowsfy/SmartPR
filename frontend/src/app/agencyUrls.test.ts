@@ -175,3 +175,32 @@ describe("getDocumentDownload", () => {
     assert.equal(getDocumentDownload(null), null);
   });
 });
+
+describe("REG-DOMICILIARY-CITATION-001: domiciliary-use permit cites a real OGPe regulation", () => {
+  // 2026-09-23 18:00 QA cycle (S163, Guaynabo home bakery): the
+  // DOC_DOMICILIARY_USE_PERMIT citation was a model-written generic sentence
+  // ("Home-based activity needs the applicable domiciliary-use permitting
+  // path") at page confidence. §14.7 fix — the OGPe regulation MO-OGPe-001
+  // (Regla 2.4.A.3, docs.pr.gov) explicitly names "Permisos Únicos ...
+  // incluyendo los domiciliarios ... según lo establecido en el Reglamento
+  // Conjunto". Pin the sourced citation so it never regresses to filler.
+  it("cites the OGPe regulation naming domiciliary Permiso Único permits", () => {
+    const docs = KB.documents as Array<{
+      id: string; citation?: string; citation_url?: string | null;
+      citation_confidence?: string;
+    }>;
+    const d = docs.find((x) => x.id === "DOC_DOMICILIARY_USE_PERMIT");
+    assert.ok(d, "DOC_DOMICILIARY_USE_PERMIT must exist in the KB");
+    assert.match(d.citation ?? "", /MO-OGPe-001/);
+    assert.match(d.citation ?? "", /domiciliarios/i);
+    assert.equal(d.citation_url, "https://docs.pr.gov/files/DDEC/Aviso%20Pu%CC%81blico/Revisi%C3%B3n-III%20FOMB-(9.4.2025)Reglamento%20Regulaci%C3%B3n%20Profesional-FINAL%20aceptado%20OGPe.pdf");
+    assert.equal(d.citation_confidence, "official");
+  });
+
+  it("still carries the not-an-independent-permit note (per §29.3)", () => {
+    const docs = KB.documents as Array<{ id: string; citation_note?: string }>;
+    const d = docs.find((x) => x.id === "DOC_DOMICILIARY_USE_PERMIT");
+    assert.ok(d);
+    assert.match(d.citation_note ?? "", /not an independent permit/i);
+  });
+});
