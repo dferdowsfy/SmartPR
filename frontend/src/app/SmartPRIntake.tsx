@@ -2581,6 +2581,22 @@ export default function SmartPRIntake() {
       setProfile(prev => ({ ...prev, ...updates }));
     }
 
+    // Deterministic renovation bridge (QA 2026-09-23 00:00, S150): a Yes on
+    // "renovations" arms the project path at confidence 1 — the user just
+    // stated construction/renovation work will happen at the location — so
+    // the OGPe construction-permit rule fires even when the interpreter
+    // missed the project in the narrative (live misses S111, S150).
+    if (q.id === "renovations" && value === true) {
+      const facts = projectContextAnswerToFacts(q.id, value, language);
+      if (facts.length > 0) {
+        setProjectContext((prev) => {
+          const next = { ...prev };
+          for (const { key, fact } of facts) next[key] = fact;
+          return next;
+        });
+      }
+    }
+
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
     // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): a Yes
     // on food served/sold arms Q_FOOD_PREPARED when preparation is still

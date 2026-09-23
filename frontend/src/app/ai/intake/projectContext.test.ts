@@ -309,6 +309,26 @@ test("projectContextAnswerToFacts: guided answers become confidence-1 facts", ()
   assert.deepEqual(projectContextAnswerToFacts("pc_occupancy_change", "warehouse", en), []);
 });
 
+test("projectContextAnswerToFacts: a renovations Yes arms the project path (S150)", () => {
+  // 2026-09-23 00:00 QA cycle (S150 live audit): the intake never asked
+  // about the explicit 4,000 sq ft renovation, and even a Yes on
+  // Q_RENOVATIONS fed no rule. The guided "renovations" answer now bridges
+  // to project_type=renovation at confidence 1 so RULE_0644 fires.
+  const en = "en" as const;
+  const facts = projectContextAnswerToFacts("renovations", true, en);
+  const byKey = new Map(facts.map((f) => [f.key, f.fact]));
+  assert.equal(byKey.get("project_type")?.value, "renovation");
+  assert.equal(byKey.get("project_type")?.confidence, 1);
+  assert.equal(byKey.get("renovation")?.value, true);
+  assert.equal(byKey.get("renovation")?.confidence, 1);
+  // A "no" applies nothing — any interpreter-extracted project facts stand
+  // and the project follow-ups resolve the conflict.
+  assert.deepEqual(projectContextAnswerToFacts("renovations", false, en), []);
+  // Spanish evidence string is used for ES intakes.
+  const es = projectContextAnswerToFacts("renovations", true, "es");
+  assert.ok(String(es[0].fact.evidence).includes("entrevista guiada"));
+});
+
 test("mergeProjectContext: restated facts win, otherwise higher confidence wins", () => {
   const prev: ProjectContext = {
     renovation: { value: true, confidence: 0.9, evidence: "renovate" },

@@ -84,4 +84,33 @@ describe("businessTypeNamesForIndustry", () => {
         `fuel-sales question missing for ${name}`);
     }
   });
+
+  it("the renovations question reaches every premises business type (S150 live FN)", () => {
+    // 2026-09-23 00:00 QA cycle (S150 live audit): an Arecibo logistics
+    // company with an explicit 4,000 sq ft interior renovation in its
+    // description never got asked about construction/renovation —
+    // Q_RENOVATIONS was gated to 8 contractor BTs only — and the answer
+    // fed no rule at all, so the OGPe construction-permit card never
+    // appeared (false negative; same miss as S111). Same defect class as
+    // the Q_FUEL_SOLD (cbdf085) and Q_RENEWABLE_INSTALL (a97bbb9) gating
+    // fixes: a rule's trigger question must be asked of every BT that can
+    // plausibly answer yes. Q_RENOVATIONS is now wired to every BT with a
+    // physical-location question, and a Yes bridges to
+    // project_type=renovation (see projectContextAnswerToFacts) so
+    // RULE_0644 fires. The question id in the flow is the questionKeyMap
+    // writeKey ("renovations").
+    const { discoveryQuestionsForBusinessType } = require("./kb") as typeof import("./kb");
+    const ids = (name: string) =>
+      (discoveryQuestionsForBusinessType(name) ?? []).map((q) => q.id);
+    // The S150 business type plus a spread of premises BTs.
+    for (const name of ["Logistics Company", "Restaurant", "Clothing Store", "Pharmacy", "Warehouse Distributor"]) {
+      assert.ok(ids(name).includes("renovations"),
+        `renovations question missing for ${name}: ${JSON.stringify(ids(name))}`);
+    }
+    // Contractor BTs keep the question (no regression on existing gating).
+    for (const name of ["General Contractor", "Electrical Contractor"]) {
+      assert.ok(ids(name).includes("renovations"),
+        `renovations question missing for ${name}`);
+    }
+  });
 });

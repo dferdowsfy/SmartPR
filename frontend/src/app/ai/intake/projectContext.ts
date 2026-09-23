@@ -401,6 +401,19 @@ export function projectContextAnswerToFacts(
             { key: "site_work", fact: { value, confidence: 1, evidence } },
           ]
         : [];
+    case "renovations":
+      // Q_RENOVATIONS ("Will construction or renovations be performed at the
+      // location?", QA 2026-09-23 00:00 S150): a Yes arms the project path
+      // directly at confidence 1 so the OGPe construction-permit rule fires
+      // even when the interpreter missed the project in the narrative
+      // (live misses S111, S150). A "no" leaves any interpreter-extracted
+      // project facts untouched — the project follow-ups resolve conflicts.
+      return typeof value === "boolean" && value
+        ? [
+            { key: "project_type", fact: { value: "renovation", confidence: 1, evidence } },
+            { key: "renovation", fact: { value: true, confidence: 1, evidence } },
+          ]
+        : [];
     default:
       return [];
   }
