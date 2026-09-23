@@ -3381,17 +3381,21 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
-  "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
+  "citation": "Ley Núm. 318-1999 (Ley para reglamentar la práctica de hacer tatuajes permanentes), Art. 10 — ningún estudio de tatuajes puede operar sin licencia expedida por el Departamento de Salud (Arts. 11-12: solicitud con cuota de $300, vigencia de 4 años, renovación de $150; Art. 14: inspecciones)",
+  "citation_url": "https://www.lexjuris.com/LEXLEX/Ley1999/lex99318.htm",
   "citation_confidence": "statute",
-  "citation_inherited_from": "DOC_HEALTH_PERMIT",
-  "citation_source": "document",
+  "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-22",
+    "change": "citation corrected to Ley 318-1999 (REG-CITATION-TATTOO-001)",
+    "reason": "QA 2026-09-22 21:00 cycle (S144): primary-source verification against the verbatim text of Ley 318-1999 on LexJuris — the food-establishment regulation citation (Ley 81-1912 / RGSA Art. VI) was the wrong legal basis for a tattoo studio. Art. 10 requires the studio operating license from the Departamento de Salud. Behavior unchanged (REQUIRED stands on the correct basis); compliance_mode verify_existing unchanged."
    }
   ]
  },
@@ -8366,6 +8370,52 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0696",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TATTOO_SHOP",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
+  "citation": "Ley Núm. 318-1999, Arts. 3-6 — ningún artista dermatógrafo puede hacer tatuajes sin licencia del Departamento de Salud (examen de técnicas de asepsia, certificado de vacunación contra hepatitis; vigencia de 2 años, renovación de $125)",
+  "citation_url": "https://www.lexjuris.com/LEXLEX/Ley1999/lex99318.htm",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-22",
+    "change": "new rule added (REG-PROFESSION-TATTOO-001)",
+    "reason": "QA 2026-09-22 21:00 cycle (S144): KB INCOMPLETE — the KB modeled the tattoo studio's operating license (RULE_0160) but had no rule for the individual artist license. Primary-source verification against verbatim Ley 318-1999 Arts. 3-6 confirms tattoo artists are genuinely licensed by the Departamento de Salud (not a Junta Examinadora), so the professional-license card is genuinely REQUIRED — the same genuinely-licensed-profession pattern as RULE_0103 (vets) / RULE_0094 (pharmacists). compliance_mode verify_existing per the e676174 sweep (existing licensed artists verify their license)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0697",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_BIOHAZARD_WASTE",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
+  "citation": "Reglamentos de desperdicios biomédicos del Departamento de Salud / DRNA; 40 CFR 259 analog and PR medical-waste rules",
+  "citation_confidence": "statute",
+  "citation_source": "review",
+  "citation_url": "https://www.salud.pr.gov/",
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "biomedical_waste_types"
+  ],
+  "change_log": [
+   {
+    "date": "2026-09-22",
+    "change": "new rule added (REG-BIOHAZARD-ORPHAN-001)",
+    "reason": "QA 2026-09-22 21:00 cycle (S144): Q_BIOHAZARD_WASTE is asked by 7 personal-care/body-art BTs (beauty salon, barbershop, nail salon, spa, massage therapy, tattoo shop, esthetics studio) but NO rule keyed on it — answering 'yes' (e.g. tattoo sharps) produced zero requirement. Biohazard waste (sharps/infectious) is a subset of medical waste; this rule mirrors RULE_0683's validated heuristic structure (stays heuristic by design per the 2026-09-21 deep-research verdict — waste stream, quantity, and vendor-manifest facts still needed via missing_fact_keys=[biomedical_waste_types]). Generalizes across all 7 BTs."
    }
   ]
  }

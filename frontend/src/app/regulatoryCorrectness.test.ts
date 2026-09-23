@@ -267,3 +267,58 @@ test("REG-ALCOHOL-INTAKE-002: beverage manufacturing discovery asks alcohol-serv
   assert.ok(vr, "box truck must surface the vehicle registration card");
   assert.equal(vr!.applicability, "needs_more_information", "heuristic vehicle card stays honest NMI");
 });
+
+test("REG-CITATION-TATTOO-001: tattoo studio health card cites Ley 318-1999, never food-establishment regulation (S144 finding 2026-09-22)", () => {
+  // The KB bound the tattoo studio's Salud license to a food-establishment
+  // citation (Ley 81-1912 / RGSA Art. VI). Primary-source verification against
+  // the verbatim text of Ley 318-1999 pins the real basis: Art. 10 requires a
+  // Departamento de Salud studio license.
+  const profile = { business_type: "Tattoo Shop", municipality: "Ponce", location_type: "Commercial Facility", number_of_employees: 0 };
+  const opts = { entityType: "sole_proprietorship", projectIntent: "new_business" } as const;
+  const health = computeRequirementsFromKB(profile, {}, {}, opts).find(r => r.document_id === "DOC_HEALTH_PERMIT");
+  assert.ok(health, "tattoo studio must carry the health-permit card");
+  assert.equal(health!.applicability, "required");
+  assert.equal(health!.source_rule, "RULE_0160");
+  const healthCitation = (KB.rules.find(r => r.id === health!.source_rule) as any)?.citation ?? "";
+  assert.match(healthCitation, /Ley Núm\. 318-1999/, "citation names Ley 318-1999");
+  assert.ok(!/alimentos/i.test(healthCitation), "citation no longer frames a tattoo studio as a food establishment");
+});
+
+test("REG-PROFESSION-TATTOO-001: tattoo artists are genuinely Salud-licensed (Ley 318-1999 Arts. 3-6); the professional-license card is REQUIRED, not silent (S144 finding 2026-09-22)", () => {
+  // The KB modeled the studio operating license but had no rule for the
+  // individual artist license. Ley 318-1999 Arts. 3-6 requires every artist
+  // dermatógrafo to hold a Departamento de Salud license — a genuinely
+  // licensed profession (same pattern as RULE_0103 vets / RULE_0094
+  // pharmacists), so the card is REQUIRED for a new studio.
+  const profile = { business_type: "Tattoo Shop", municipality: "Ponce", location_type: "Commercial Facility", number_of_employees: 0 };
+  const newOpts = { entityType: "sole_proprietorship", projectIntent: "new_business" } as const;
+  const prof = computeRequirementsFromKB(profile, {}, {}, newOpts).find(r => r.document_id === "DOC_PROFESSIONAL_LICENSE");
+  assert.ok(prof, "tattoo studio must surface the professional-license card");
+  assert.equal(prof!.applicability, "required");
+  assert.equal(prof!.source_rule, "RULE_0696");
+  const profCitation = (KB.rules.find(r => r.id === prof!.source_rule) as any)?.citation ?? "";
+  assert.match(profCitation, /318-1999/, "citation grounds the artist license in Ley 318-1999");
+  // Existing licensed artist: verify_existing, per the e676174 sweep pattern.
+  const existing = computeRequirementsFromKB(profile, {}, {}, { entityType: "sole_proprietorship", projectIntent: "existing_business" } as const)
+    .find(r => r.document_id === "DOC_PROFESSIONAL_LICENSE");
+  assert.equal(existing?.applicability, "verify_existing", "existing tattoo artist verifies the license rather than applying as if new");
+});
+
+test("REG-BIOHAZARD-ORPHAN-001: Q_BIOHAZARD_WASTE=yes reaches the biomedical-waste card (S144 finding 2026-09-22)", () => {
+  // Q_BIOHAZARD_WASTE is asked by 7 personal-care/body-art BTs but NO rule
+  // keyed on it — answering yes produced zero requirement. It mirrors
+  // RULE_0683's validated heuristic structure (honest NMI, never REQUIRED).
+  const profile = { business_type: "Tattoo Shop", municipality: "Ponce", location_type: "Commercial Facility", number_of_employees: 0 };
+  const opts = { entityType: "sole_proprietorship", projectIntent: "new_business" } as const;
+  const noWaste = computeRequirementsFromKB(profile, { Q_BIOHAZARD_WASTE: false }, {}, opts).map(r => r.document_id);
+  assert.ok(!noWaste.includes("DOC_BIOMEDICAL_WASTE_GENERATOR_ID"), "no biomedical-waste card when no biohazard waste");
+  const waste = computeRequirementsFromKB(profile, { Q_BIOHAZARD_WASTE: true }, {}, opts).find(r => r.document_id === "DOC_BIOMEDICAL_WASTE_GENERATOR_ID");
+  assert.ok(waste, "sharps stream must surface the biomedical-waste card");
+  assert.equal(waste!.applicability, "needs_more_information", "heuristic biomedical-waste card stays honest NMI");
+  assert.equal(waste!.source_rule, "RULE_0697");
+  assert.ok((waste as any).missingFacts?.includes("biomedical_waste_types"), "card names the controlling missing fact");
+  // Positive control across BTs: the fix generalizes to the other asking types.
+  const salon = computeRequirementsFromKB({ ...profile, business_type: "Beauty Salon" }, { Q_BIOHAZARD_WASTE: true }, {}, opts)
+    .find(r => r.document_id === "DOC_BIOMEDICAL_WASTE_GENERATOR_ID");
+  assert.ok(salon, "beauty salon biohazard waste reaches the same card");
+});
