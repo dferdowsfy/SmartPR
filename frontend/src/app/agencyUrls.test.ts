@@ -98,6 +98,60 @@ describe("REG-PROFESSION-AGENCY-001: rule-level issuing-agency override", () => 
   });
 });
 
+describe("REG-PROFESSION-AGENCY-001 (sweep): every professional-license rule whose citation names a non-Junta authority carries the override", () => {
+  // 2026-09-23 12:00 QA cycle (S161, San Juan): the 2f74e7f override
+  // mechanism was only populated on RULE_0696 — six other
+  // DOC_PROFESSIONAL_LICENSE rules cited a specific non-Junta authority
+  // but still rendered the "Department of State Examining Boards" pill.
+  // The mechanism generalizes; the data population did not. These tests
+  // pin the sweep (insurance, law, notary, sworn translator, staffing,
+  // credit services, mortgage broker).
+  function profLicenseFor(bt: string, extraAnswers: Record<string, unknown> = {}) {
+    const reqs = computeRequirementsFromKB(
+      { business_type: bt, municipality: "San Juan", location_type: "Commercial Facility", number_of_employees: 3 } as any,
+      { physical_location: true, ...extraAnswers } as any,
+      {},
+      { projectIntent: "existing_business" as any }
+    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null; agencyNote?: string | null; source_rule?: string }>;
+    return reqs.find((r) => r.document_id === "DOC_PROFESSIONAL_LICENSE");
+  }
+
+  const cases: Array<[string, string, string, string, string]> = [
+    ["Insurance Agency", "RULE_0224", "Oficina del Comisionado de Seguros (OCS)", "https://www.ocs.pr.gov/", "77-1957"],
+    ["Law Firm", "RULE_0114", "Tribunal Supremo de Puerto Rico", "https://www.poderjudicial.pr/", "abogacía"],
+    ["Notary Services", "RULE_0120", "Tribunal Supremo de Puerto Rico", "https://www.poderjudicial.pr/", "notaría"],
+    ["Translation Services", "RULE_0121", "Tribunal Supremo de Puerto Rico", "https://www.poderjudicial.pr/", "traductor-intérprete jurado"],
+    ["Staffing Agency", "RULE_0122", "Departamento del Trabajo y Recursos Humanos (DTRH)", "https://www.trabajo.pr.gov/", "417-1947"],
+    ["Credit Services Company", "RULE_0229", "Departamento de Asuntos del Consumidor (DACO)", "https://www.daco.pr.gov/", "64A"],
+    ["Mortgage Broker", "RULE_0225", "Oficina del Comisionado de Instituciones Financieras (OCIF)", "https://www.ocif.pr.gov/", "24-2010"],
+  ];
+
+  for (const [bt, rule, agency, url, noteFragment] of cases) {
+    it(`${bt} professional license carries the ${agency} authority`, () => {
+      const lic = profLicenseFor(bt);
+      assert.ok(lic, `professional license requirement must exist for ${bt}`);
+      assert.equal(lic.source_rule, rule);
+      assert.equal(lic.agency, agency);
+      assert.equal(lic.agencyUrl, url);
+      assert.ok(String(lic.agencyNote ?? "").includes(noteFragment), `agency note must reference ${noteFragment}`);
+      assert.ok(!/Junta|Examining Boards/i.test(String(lic.agency ?? "")), "the agency pill itself must not name the Juntas");
+    });
+  }
+
+  it("a generic fallback firing alongside the specific rule cannot steal the agency pill", () => {
+    // 2026-09-23 12:00 (S161): an insurance agency answering
+    // Q_PROFESSIONAL_LICENSES=yes fired both RULE_0029 (generic, matched
+    // first) and RULE_0224 — the classifier picked RULE_0224 as the winning
+    // basis for reason/source_rule but the pill kept the first-matched
+    // row's default agency. The pill must follow the winning basis.
+    const lic = profLicenseFor("Insurance Agency", { Q_PROFESSIONAL_LICENSES: true });
+    assert.ok(lic, "professional license requirement must exist for an insurance agency");
+    assert.equal(lic.source_rule, "RULE_0224");
+    assert.equal(lic.agency, "Oficina del Comisionado de Seguros (OCS)");
+    assert.equal(lic.agencyUrl, "https://www.ocs.pr.gov/");
+  });
+});
+
 describe("getDocumentDownload", () => {
   it("resolves a document id to its direct official destination", async () => {
     const { getDocumentDownload, downloadKindLabel } = await import("./kb");

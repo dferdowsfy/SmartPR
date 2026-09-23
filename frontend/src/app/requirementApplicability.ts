@@ -560,14 +560,24 @@ export function classifyEngineRequirements(
       .map((state, i) => i)
       .filter((i) => flags[i] === null && basisStates[i] === selectedState);
     const specificFirst = winningIndependent.find(isBusinessTypeBasis);
-    const basis =
-      bases[
-        specificFirst !== undefined
-          ? specificFirst
-          : winningIndependent.length
-            ? winningIndependent[0]
-            : basisStates.indexOf(selectedState)
-      ];
+    const basisIdx =
+      specificFirst !== undefined
+        ? specificFirst
+        : winningIndependent.length
+          ? winningIndependent[0]
+          : basisStates.indexOf(selectedState);
+    const basis = bases[basisIdx];
+    // REG-PROFESSION-AGENCY-001 (extension, QA 2026-09-23 12:00): the agency
+    // pill, filing link, and "where to get this" note must follow the SAME
+    // winning basis as reason/source_rule. The engine row carries the
+    // FIRST-matched rule's authority, so a generic fallback (e.g. RULE_0029)
+    // can set the pill even when a specific business-type rule (e.g.
+    // RULE_0224, OCS) wins the card. The winning basis's own override wins;
+    // fall back to the row's resolved authority otherwise.
+    const basisRule = basisRules[basisIdx];
+    const agency = basisRule?.agency ?? row.agency;
+    const basisAgencyUrl = basisRule?.agency_url ?? row.agency_url;
+    const basisAgencyNote = basisRule?.agency_note ?? row.agency_note;
     const mandatory = applicability === "required" && !recommended;
     // Confidence bands (never false precision — UI renders bands, not decimals):
     // 0.9 verified winning basis + user-given facts; 0.7 verified + derived
@@ -579,7 +589,7 @@ export function classifyEngineRequirements(
     const classified: ClassifiedRequirement = {
       document_id: row.document_id,
       document_name: row.document_name,
-      agency: row.agency,
+      agency,
       category: row.category,
       reason: basis.reason,
       source_rule_id: basis.rule_id,
@@ -592,8 +602,8 @@ export function classifyEngineRequirements(
       missingFacts,
       confidence,
       ...(row.trigger_summary ? { triggerSummary: row.trigger_summary } : {}),
-      ...(row.agency_url ? { agency_url: row.agency_url } : {}),
-      ...(row.agency_note ? { agency_note: row.agency_note } : {}),
+      ...(basisAgencyUrl ? { agency_url: basisAgencyUrl } : {}),
+      ...(basisAgencyNote ? { agency_note: basisAgencyNote } : {}),
       acceptsOfficialUpload: kind !== "review_condition" && kind !== "informational_notice" && applicability === "required",
     };
 

@@ -2444,7 +2444,10 @@
     "change": "Citation pinpointed to the actual licensing authority + statute (was the generic inherited \"Juntas Examinadoras (Dept of State)\" + third-party URL)",
     "reason": "QA 2026-09-22 00:00 cycle (S123 Trujillo Alto CPA firm), REG-CITATION-PROFESSIONS-001. Same defect class as REG-CITATION-VET-001 (RULE_0103) and REG-CITATION-INSURANCE-001 (RULE_0224): the inherited document citation named the wrong authority (law/notary belong to the Tribunal Supremo, not Dept of State) and a third-party URL. Primary sources: Tribunal Supremo reglamento 4 L.P.R.A. Ap. XVII-B (Junta Examinadora creada por el Tribunal Supremo); poderjudicial.pr official admission form. Citation-only; verified posture unchanged (all five are genuine licensed professions)."
    }
-  ]
+  ],
+  "agency": "Tribunal Supremo de Puerto Rico",
+  "agency_url": "https://www.poderjudicial.pr/",
+  "agency_note": "La admisión al ejercicio de la abogacía la otorga el Tribunal Supremo de Puerto Rico — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0115",
@@ -2583,7 +2586,10 @@
     "change": "Citation pinpointed to the actual licensing authority + statute (was the generic inherited \"Juntas Examinadoras (Dept of State)\" + third-party URL)",
     "reason": "QA 2026-09-22 00:00 cycle (S123 Trujillo Alto CPA firm), REG-CITATION-PROFESSIONS-001. Same defect class as REG-CITATION-VET-001 (RULE_0103) and REG-CITATION-INSURANCE-001 (RULE_0224): the inherited document citation named the wrong authority (law/notary belong to the Tribunal Supremo, not Dept of State) and a third-party URL. Primary sources: Tribunal Supremo reglamento 4 L.P.R.A. Ap. XVII-B; poderjudicial.pr official admission form (abogacía y notaría). Citation-only; verified posture unchanged (all five are genuine licensed professions)."
    }
-  ]
+  ],
+  "agency": "Tribunal Supremo de Puerto Rico",
+  "agency_url": "https://www.poderjudicial.pr/",
+  "agency_note": "La admisión al ejercicio de la notaría la otorga el Tribunal Supremo de Puerto Rico — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0121",
@@ -2618,7 +2624,10 @@
   "verification": "heuristic",
   "missing_fact_keys": [
    "licensed_profession_type"
-  ]
+  ],
+  "agency": "Tribunal Supremo de Puerto Rico",
+  "agency_url": "https://www.poderjudicial.pr/",
+  "agency_note": "La credencial de traductor-intérprete jurado la expide el Tribunal Supremo de Puerto Rico — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0122",
@@ -2653,7 +2662,10 @@
   "verification": "heuristic",
   "missing_fact_keys": [
    "licensed_profession_type"
-  ]
+  ],
+  "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)",
+  "agency_url": "https://www.trabajo.pr.gov/",
+  "agency_note": "Las agencias de empleo se registran ante el Departamento del Trabajo y Recursos Humanos (DTRH) — Ley 417-1947 — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0123",
@@ -4762,7 +4774,10 @@
   "verification": "heuristic",
   "missing_fact_keys": [
    "licensed_profession_type"
-  ]
+  ],
+  "agency": "Oficina del Comisionado de Seguros (OCS)",
+  "agency_url": "https://www.ocs.pr.gov/",
+  "agency_note": "Las licencias de productor/agente de seguros las expide la Oficina del Comisionado de Seguros (OCS) — Código de Seguros de PR, Ley 77-1957 — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0225",
@@ -4797,7 +4812,10 @@
   "verification": "heuristic",
   "missing_fact_keys": [
    "licensed_profession_type"
-  ]
+  ],
+  "agency": "Oficina del Comisionado de Instituciones Financieras (OCIF)",
+  "agency_url": "https://www.ocif.pr.gov/",
+  "agency_note": "Las instituciones hipotecarias se licencian ante OCIF (Ley 24-2010) con registro NMLS — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0226",
@@ -4932,7 +4950,10 @@
   "verification": "heuristic",
   "missing_fact_keys": [
    "licensed_profession_type"
-  ]
+  ],
+  "agency": "Departamento de Asuntos del Consumidor (DACO)",
+  "agency_url": "https://www.daco.pr.gov/",
+  "agency_note": "Las agencias rectificadoras de crédito se registran ante DACO (Ley de Agencias Rectificadoras de Crédito, 7 LPRA Cap. 64A) — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0230",
