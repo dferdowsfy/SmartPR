@@ -117,7 +117,7 @@ export default function TrustCenterPage() {
               Security package
             </a>
             <a
-              href="mailto:darius@getsmartpr.com"
+              href="mailto:contact@getsmartpr.com"
               className="rounded-full bg-brand px-3.5 py-1.5 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
             >
               Contact
@@ -362,9 +362,9 @@ export default function TrustCenterPage() {
               For questionnaires, NDAs, or diligence follow-ups, email{" "}
               <a
                 className="font-medium text-brand underline-offset-4 hover:underline"
-                href="mailto:darius@getsmartpr.com"
+                href="mailto:contact@getsmartpr.com"
               >
-                darius@getsmartpr.com
+                contact@getsmartpr.com
               </a>
               . We respond with facts we can stand behind — not inflated claims.
             </p>
@@ -395,10 +395,10 @@ export default function TrustCenterPage() {
                 Privacy
               </a>
               <a
-                href="mailto:darius@getsmartpr.com"
+                href="mailto:contact@getsmartpr.com"
                 className="text-[#c8c4bc] transition-colors hover:text-white"
               >
-                darius@getsmartpr.com
+                contact@getsmartpr.com
               </a>
             </div>
           </div>

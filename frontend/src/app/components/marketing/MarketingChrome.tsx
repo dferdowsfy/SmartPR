@@ -10,7 +10,7 @@ import { SmartPRLogo } from "../brand/SmartPRLogo";
 export type Language = "EN" | "ES";
 export type HeaderVariant = "home" | "pro";
 
-const DEMO_EMAIL = "darius@getsmartpr.com";
+const DEMO_EMAIL = "contact@getsmartpr.com";
 const TRUST_URL = "https://trust.getsmartpr.com";
 
 /** Route pairs for the EN ⇄ ES toggle: toggling navigates between them. */

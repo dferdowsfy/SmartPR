@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
 
-const CONTACT_EMAIL = "darius@getsmartpr.com";
+const CONTACT_EMAIL = "contact@getsmartpr.com";
 
 const copy = {
   EN: {
