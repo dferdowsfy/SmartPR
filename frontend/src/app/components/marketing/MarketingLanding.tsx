@@ -39,7 +39,7 @@ const copy = {
       },
     ],
     howKicker: "See how it works",
-    howTitle: "One example. One process.",
+    howTitle: "From a few answers to a filing package.",
     steps: [
       {
         title: "1. Describe the business",
@@ -147,7 +147,7 @@ const copy = {
       },
     ],
     howKicker: "Vea cómo funciona",
-    howTitle: "Un ejemplo. Un proceso.",
+    howTitle: "De unas respuestas a un paquete listo para radicar.",
     steps: [
       {
         title: "1. Describa el negocio",

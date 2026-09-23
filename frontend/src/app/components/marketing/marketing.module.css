@@ -851,7 +851,12 @@ button.primary {
   .stepsWrap {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: 1.25rem;
-    align-items: start;
+    align-items: stretch;
+  }
+
+  .stepList {
+    height: 100%;
+    align-content: space-between;
   }
 }
 
