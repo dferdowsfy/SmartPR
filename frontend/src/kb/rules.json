@@ -3271,18 +3271,26 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — no se identificó base estatutaria que exija licencia sanitaria a salones de belleza; el PS 971 (2026) propondría una licencia operacional del Departamento de Salud para centros de servicios de belleza, pero aún no es ley.",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "demoted to heuristic + missing_fact_keys=[health_license_trigger], compliance_mode removed; citation corrected from food-establishment framing",
+    "reason": "QA 2026-09-23 03:00 cycle (S151, Bayamón barbershop): BT-alone rule asserted the Licencia Sanitaria as REQUIRED on a food-establishment citation (same class as REG-CITATION-TATTOO-001 / REG-HEALTH-SPORTS-001). Primary-source review: no statutory basis identified for requiring a Department of Health sanitary license for personal-care establishments — RGSA Núm. 7655 Art VI covers food/beverage-handling 'establecimientos públicos'; Ley 1-2013 Art 2.7 (the only official enumeration, now derogada) listed food, public pools/spas/jacuzzis, funeral, animal-control, pesticide — not barbershops/salons/spas as such; PS 971 (2026) proposing Salud operating licenses for beauty/aesthetic centers is not yet law. Mirrors REG-HEALTH-SPORTS-001 (RULE_0248). The named controlling fact preserves the axis (e.g. a spa with a public pool). Tattoo (RULE_0160, Ley 318-1999 Art 10) deliberately unchanged — statutory per-type basis (S144 lesson)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
   ]
  },
  {
@@ -3293,18 +3301,26 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — no se identificó base estatutaria que exija licencia sanitaria al establecimiento; la barbería es una ocupación con licencia individual (Ley Núm. 146-1968, Junta Examinadora de Barberos y Estilistas en Barbería, Dept. de Estado).",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "demoted to heuristic + missing_fact_keys=[health_license_trigger], compliance_mode removed; citation corrected from food-establishment framing",
+    "reason": "QA 2026-09-23 03:00 cycle (S151, Bayamón barbershop): BT-alone rule asserted the Licencia Sanitaria as REQUIRED on a food-establishment citation (same class as REG-CITATION-TATTOO-001 / REG-HEALTH-SPORTS-001). Primary-source review: no statutory basis identified for requiring a Department of Health sanitary license for personal-care establishments — RGSA Núm. 7655 Art VI covers food/beverage-handling 'establecimientos públicos'; Ley 1-2013 Art 2.7 (the only official enumeration, now derogada) listed food, public pools/spas/jacuzzis, funeral, animal-control, pesticide — not barbershops/salons/spas as such; PS 971 (2026) proposing Salud operating licenses for beauty/aesthetic centers is not yet law. Mirrors REG-HEALTH-SPORTS-001 (RULE_0248). The named controlling fact preserves the axis (e.g. a spa with a public pool). Tattoo (RULE_0160, Ley 318-1999 Art 10) deliberately unchanged — statutory per-type basis (S144 lesson)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
   ]
  },
  {
@@ -3315,18 +3331,26 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — no se identificó base estatutaria que exija licencia sanitaria a salones de uñas; el PS 971 (2026) propondría una licencia operacional del Departamento de Salud para centros de servicios de belleza, pero aún no es ley.",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "demoted to heuristic + missing_fact_keys=[health_license_trigger], compliance_mode removed; citation corrected from food-establishment framing",
+    "reason": "QA 2026-09-23 03:00 cycle (S151, Bayamón barbershop): BT-alone rule asserted the Licencia Sanitaria as REQUIRED on a food-establishment citation (same class as REG-CITATION-TATTOO-001 / REG-HEALTH-SPORTS-001). Primary-source review: no statutory basis identified for requiring a Department of Health sanitary license for personal-care establishments — RGSA Núm. 7655 Art VI covers food/beverage-handling 'establecimientos públicos'; Ley 1-2013 Art 2.7 (the only official enumeration, now derogada) listed food, public pools/spas/jacuzzis, funeral, animal-control, pesticide — not barbershops/salons/spas as such; PS 971 (2026) proposing Salud operating licenses for beauty/aesthetic centers is not yet law. Mirrors REG-HEALTH-SPORTS-001 (RULE_0248). The named controlling fact preserves the axis (e.g. a spa with a public pool). Tattoo (RULE_0160, Ley 318-1999 Art 10) deliberately unchanged — statutory per-type basis (S144 lesson)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
   ]
  },
  {
@@ -3337,18 +3361,26 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — no se identificó base estatutaria que exija licencia sanitaria al spa como tal; la Ley 1-2013 Art. 2.7 (derogada) enumeraba piscinas/spas/jacuzzis públicos como actividades sujetas a licencia sanitaria.",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "demoted to heuristic + missing_fact_keys=[health_license_trigger], compliance_mode removed; citation corrected from food-establishment framing",
+    "reason": "QA 2026-09-23 03:00 cycle (S151, Bayamón barbershop): BT-alone rule asserted the Licencia Sanitaria as REQUIRED on a food-establishment citation (same class as REG-CITATION-TATTOO-001 / REG-HEALTH-SPORTS-001). Primary-source review: no statutory basis identified for requiring a Department of Health sanitary license for personal-care establishments — RGSA Núm. 7655 Art VI covers food/beverage-handling 'establecimientos públicos'; Ley 1-2013 Art 2.7 (the only official enumeration, now derogada) listed food, public pools/spas/jacuzzis, funeral, animal-control, pesticide — not barbershops/salons/spas as such; PS 971 (2026) proposing Salud operating licenses for beauty/aesthetic centers is not yet law. Mirrors REG-HEALTH-SPORTS-001 (RULE_0248). The named controlling fact preserves the axis (e.g. a spa with a public pool). Tattoo (RULE_0160, Ley 318-1999 Art 10) deliberately unchanged — statutory per-type basis (S144 lesson)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
   ]
  },
  {
@@ -3359,18 +3391,26 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — no se identificó base estatutaria que exija licencia sanitaria al estudio de masaje como tal.",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "demoted to heuristic + missing_fact_keys=[health_license_trigger], compliance_mode removed; citation corrected from food-establishment framing",
+    "reason": "QA 2026-09-23 03:00 cycle (S151, Bayamón barbershop): BT-alone rule asserted the Licencia Sanitaria as REQUIRED on a food-establishment citation (same class as REG-CITATION-TATTOO-001 / REG-HEALTH-SPORTS-001). Primary-source review: no statutory basis identified for requiring a Department of Health sanitary license for personal-care establishments — RGSA Núm. 7655 Art VI covers food/beverage-handling 'establecimientos públicos'; Ley 1-2013 Art 2.7 (the only official enumeration, now derogada) listed food, public pools/spas/jacuzzis, funeral, animal-control, pesticide — not barbershops/salons/spas as such; PS 971 (2026) proposing Salud operating licenses for beauty/aesthetic centers is not yet law. Mirrors REG-HEALTH-SPORTS-001 (RULE_0248). The named controlling fact preserves the axis (e.g. a spa with a public pool). Tattoo (RULE_0160, Ley 318-1999 Art 10) deliberately unchanged — statutory per-type basis (S144 lesson)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
   ]
  },
  {
@@ -3407,18 +3447,26 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HEALTH_PERMIT",
-  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — reglamentación sanitaria de establecimientos de alimentos",
+  "citation": "Ley 81-1912 (Ley del Departamento de Salud), 3 LPRA § 178 — no se identificó base estatutaria que exija licencia sanitaria a estudios de estética; el PS 971 (2026) propondría licencias operacionales del Departamento de Salud para centros de servicios estéticos, pero aún no es ley.",
   "citation_url": "http://bvirtualogp.pr.gov/ogp/Bvirtual/LeyesOrganicas/PDF/81-1912.pdf",
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_HEALTH_PERMIT",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 09:00 cycle (S10): an existing operating business verifies its existing health/sanitary permit rather than applying as if new. Same defect class as the RULE_0650-0663 sweep (e676174). Health permits are recurring operating obligations; new businesses still see REQUIRED via the classifier businessStatus mapping. Heuristic rules with missing_fact_keys (0017/0089/0244) deliberately excluded — their posture is needs_more_information by design (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "demoted to heuristic + missing_fact_keys=[health_license_trigger], compliance_mode removed; citation corrected from food-establishment framing",
+    "reason": "QA 2026-09-23 03:00 cycle (S151, Bayamón barbershop): BT-alone rule asserted the Licencia Sanitaria as REQUIRED on a food-establishment citation (same class as REG-CITATION-TATTOO-001 / REG-HEALTH-SPORTS-001). Primary-source review: no statutory basis identified for requiring a Department of Health sanitary license for personal-care establishments — RGSA Núm. 7655 Art VI covers food/beverage-handling 'establecimientos públicos'; Ley 1-2013 Art 2.7 (the only official enumeration, now derogada) listed food, public pools/spas/jacuzzis, funeral, animal-control, pesticide — not barbershops/salons/spas as such; PS 971 (2026) proposing Salud operating licenses for beauty/aesthetic centers is not yet law. Mirrors REG-HEALTH-SPORTS-001 (RULE_0248). The named controlling fact preserves the axis (e.g. a spa with a public pool). Tattoo (RULE_0160, Ley 318-1999 Art 10) deliberately unchanged — statutory per-type basis (S144 lesson)."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "health_license_trigger"
   ]
  },
  {
@@ -8360,7 +8408,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
-  "citation": "Validated review 2026-09-16: barbering/styling is an individually licensed occupation",
+  "citation": "Ley Núm. 146-1968 (Ley que crea la Junta Examinadora de Barberos y Estilistas en Barbería, Dept. de Estado) — la barbería es una ocupación con licencia individual",
   "citation_confidence": "review",
   "citation_source": "review",
   "verification": "verified",
@@ -8370,8 +8418,14 @@
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 21:00 cycle (S23, Bayamón barbershop): an existing licensed business verifies its professional license rather than applying as if new. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), tourism (3348c4d), vehicle (6818ff1) and operating-obligation (e676174) sweeps. Deliberately excluded RULE_0029 and RULE_0227 (heuristic + missing_fact_keys — the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). New businesses still see REQUIRED via the classifier businessStatus mapping."
+   },
+   {
+    "date": "2026-09-23",
+    "change": "citation upgraded from review-provenance to statute pinpoint (Ley 146-1968; Reglamento 8540)",
+    "reason": "QA 2026-09-23 03:00 cycle: primary-source verification confirmed barbering is individually licensed via the Junta Examinadora de Barberos y Estilistas en Barbería (Dept. of State), created by Ley 146-1968. Copy-level citation fix, posture unchanged."
    }
-  ]
+  ],
+  "citation_url": "http://app.estado.gobierno.pr/ReglamentosOnLine/Reglamentos/8540.pdf"
  },
  {
   "id": "RULE_0696",

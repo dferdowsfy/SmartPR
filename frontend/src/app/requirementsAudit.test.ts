@@ -3479,3 +3479,112 @@ test("CASE AR: a business-type professional-license rule wins the card's legal b
   assert.equal(lawLic?.source_rule_id, "RULE_0114", "verified BT rule still wins");
   assert.equal(lawLic?.applicability, "required", "law posture unchanged");
 });
+
+test("CASE AS: personal-care businesses get the health permit as needs_more_information, never REQUIRED on business type alone (REG-HEALTH-PERSONALCARE-001)", () => {
+  // 2026-09-23 03:00 QA cycle (S151, Bayamon): a new barbershop got the
+  // Licencia Sanitaria as REQUIRED on business type alone via RULE_0156
+  // (BT_BARBERSHOP), citing the food-establishment regulation
+  // ("reglamentacion sanitaria de establecimientos de alimentos") — the
+  // same citation family corrected for tattoo as REG-CITATION-TATTOO-001
+  // and the same defect class as REG-HEALTH-SPORTS-001 (RULE_0248).
+  // Primary-source review: NOT SUPPORTED. No statutory basis was found
+  // for requiring a Department of Health sanitary license for
+  // personal-care establishments — RGSA 7655 (Reglamento General de Salud
+  // Ambiental) Art VI covers food/beverage-handling "establecimientos
+  // publicos"; Ley 1-2013 Art 2.7 (the only official government
+  // enumeration of licencia-sanitaria-applicable businesses, now
+  // derogada) listed food, public pools/spas/jacuzzis, funeral,
+  // animal-control, pesticide — not barbershops/salons/spas as such;
+  // PS 971 (2026) proposing Salud operating licenses for beauty and
+  // aesthetic centers is not yet law. Barbering and beauty-specialty
+  // occupations are individually licensed (Ley 146-1968 for barbers;
+  // Ley 431-1950 for beauty specialists) — that is the PROFESSIONAL
+  // LICENSE axis, not a facility sanitary license.
+  // Fix: RULE_0155/0156/0157/0158/0159/0162 are heuristic +
+  // missing_fact_keys=[health_license_trigger], no compliance_mode
+  // (RULE_0664 lesson). Tattoo (RULE_0160, Ley 318-1999 Art 10) stays
+  // verified — statutory per-type basis (S144 lesson: do not generalize
+  // across body-art BTs).
+  const DOC_HEALTH = docByName("health", "sanitary");
+
+  for (const bt of ["Barbershop", "Beauty Salon", "Nail Salon", "Spa", "Massage Therapy Studio", "Esthetics Studio"] as const) {
+    for (const businessStatus of ["new", "existing"] as const) {
+      const rows = classify(
+        {
+          municipalityName: "Bayamón",
+          businessTypeName: bt,
+          businessStatus,
+          answers: {
+            Q_EMPLOYEES_HIRED: true,
+            Q_PHYSICAL_LOCATION: true,
+            Q_FOOD_PREPARED: false,
+            Q_FOOD_SOLD: false,
+            Q_FOOD_SERVED: false,
+            Q_ALCOHOL_SOLD: false,
+          },
+        },
+        businessStatus
+      ).classified;
+      const health = byId(rows, DOC_HEALTH);
+      assert.ok(health, `health permit row must exist for ${bt} (${businessStatus})`);
+      assert.equal(
+        health.applicability,
+        "needs_more_information",
+        `${bt} (${businessStatus}) without a food/pool trigger stays needs_more_information (heuristic rule) — never REQUIRED/verify_existing`
+      );
+      assert.ok(
+        (health.missingFacts ?? []).includes("health_license_trigger"),
+        `the controlling unanswered fact must be named (${bt})`
+      );
+    }
+  }
+
+  // The food-establishment citation may not appear on these cards.
+  const barberCite = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Barbershop",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  const barberHealth = byId(barberCite, DOC_HEALTH);
+  assert.ok(
+    !/establecimientos de alimentos/i.test(String((barberHealth as any).legal_basis ?? (barberHealth as any).citation ?? "")),
+    "the barbershop health citation must not frame itself as food-establishment regulation"
+  );
+
+  // Control: a tattoo studio keeps the verified REQUIRED posture —
+  // Ley 318-1999 Art 10 requires the studio license (REG-CITATION-TATTOO-001).
+  const tattoo = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Tattoo Shop",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(tattoo, DOC_HEALTH)?.applicability,
+    "required",
+    "a new tattoo studio still gets the health permit as REQUIRED (RULE_0160 verified, statutory per-type basis)"
+  );
+
+  // Control: a genuine food establishment still holds.
+  const restaurant = classify(
+    {
+      municipalityName: "Guaynabo",
+      businessTypeName: "Restaurant",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(restaurant, DOC_HEALTH)?.applicability,
+    "required",
+    "a new restaurant still gets the health permit as REQUIRED (RULE_0046 verified)"
+  );
+});
