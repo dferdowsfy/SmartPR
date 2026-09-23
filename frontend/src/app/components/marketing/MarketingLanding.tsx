@@ -357,29 +357,9 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
             <h2>{c.howTitle}</h2>
             <div className={styles.stepsWrap}>
               <ol className={styles.stepList}>
-                {c.steps.map((step, i) => (
+                {c.steps.map((step) => (
                   <li key={step.title} className={styles.card}>
                     <h3>{step.title}</h3>
-                    <p>
-                      {step.body}
-                      {i === 0 ? (
-                        <>
-                          {" "}
-                          {c.voiceNote}{" "}
-                          <Link
-                            href="/voice"
-                            style={{
-                              color: "#2A4A3C",
-                              textDecoration: "underline",
-                              textUnderlineOffset: 3,
-                              fontWeight: 600,
-                            }}
-                          >
-                            {c.talkItThrough}
-                          </Link>
-                        </>
-                      ) : null}
-                    </p>
                   </li>
                 ))}
               </ol>
