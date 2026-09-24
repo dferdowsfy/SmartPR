@@ -155,6 +155,32 @@ button { font-family: inherit; }
   background: #1f5252;
   border-color: #1f5252;
 }
+/* Sliding selected pill: the tabs keep their places and only this glides.
+   While it is mounted (.has-pill) the active tab paints no background of its
+   own — the pill underneath carries the teal. */
+.nav-tabs { position: relative; }
+.nav-tab-pill {
+  position: absolute; top: 0; left: 0; z-index: 0;
+  border-radius: 999px;
+  background: #245c5c;
+  pointer-events: none;
+  transition: transform .38s cubic-bezier(.32,.72,0,1), width .38s cubic-bezier(.32,.72,0,1), height .38s cubic-bezier(.32,.72,0,1);
+  will-change: transform, width;
+}
+.nav-tab-pill.no-anim { transition: none; }
+.nav-tabs.has-pill .nav-tab { z-index: 1; }
+.nav-tabs.has-pill .nav-tab.active,
+.nav-tabs.has-pill .nav-tab[aria-current="page"],
+.nav-tabs.has-pill .nav-tab[data-active="true"],
+.nav-tabs.has-pill .nav-tab.active:hover,
+.nav-tabs.has-pill .nav-tab[aria-current="page"]:hover,
+.nav-tabs.has-pill .nav-tab[data-active="true"]:hover {
+  background: transparent;
+  border-color: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-tab-pill { transition: none; }
+}
 .nav-tab .tab-icon { width: 14px; height: 14px; opacity: 0.85; }
 .nav-tab[disabled] { opacity: 0.4; cursor: not-allowed; }
 

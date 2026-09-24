@@ -157,8 +157,31 @@ async function workerFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
+/**
+ * Live-view URLs are session-scoped and stable for the session's lifetime —
+ * cache them so each 900ms status poll costs one API call instead of three.
+ */
+const liveUrlCache = new Map<string, string>();
+
+/**
+ * Remote browser viewport. The live view scales the remote screen down to
+ * fit the SmartPR panel, so a smaller viewport renders larger, legible text
+ * in the embed (1920px shrinks to ~38% in a 730px panel; 1100px to ~66%).
+ * Override per environment with BROWSER_USE_SCREEN_WIDTH / _HEIGHT.
+ */
+function screenSize(): { screenWidth: number; screenHeight: number } {
+  const w = Number(process.env.BROWSER_USE_SCREEN_WIDTH);
+  const h = Number(process.env.BROWSER_USE_SCREEN_HEIGHT);
+  return {
+    screenWidth: Number.isFinite(w) && w >= 800 ? Math.round(w) : 1100,
+    screenHeight: Number.isFinite(h) && h >= 600 ? Math.round(h) : 820,
+  };
+}
+
 /** Cloud v4 has no browsers.list in the SDK — one raw call for the live view URL. */
 async function cloudLiveUrl(sessionId: string): Promise<string | null> {
+  const cached = liveUrlCache.get(sessionId);
+  if (cached) return cached;
   const key = apiKey();
   if (!key) return null;
   const res = await fetch(
@@ -167,11 +190,14 @@ async function cloudLiveUrl(sessionId: string): Promise<string | null> {
   );
   if (!res.ok) return null;
   const body = (await res.json()) as { items?: Array<{ liveUrl?: string | null }> };
-  return body.items?.[0]?.liveUrl ?? null;
+  const url = body.items?.[0]?.liveUrl ?? null;
+  if (url) liveUrlCache.set(sessionId, url);
+  return url;
 }
 
 /** Stop the session's browser — ends Cloud browser billing. Idempotent. */
 export async function stopAgentBrowser(sessionId: string): Promise<void> {
+  liveUrlCache.delete(sessionId);
   if (agentProvider() === "self_hosted") {
     await workerFetch(`/api/v3/sessions/${encodeURIComponent(sessionId)}/stop`, {
       method: "POST",
@@ -222,7 +248,13 @@ export async function createAgentRun(input: {
   task: string;
   /** Deterministic domain allowlist — enforced by the self-hosted worker. */
   allowedDomains?: string[];
-  proxyCountryCode?: string;
+  /**
+   * ISO country for the residential proxy; null runs without a proxy. A
+   * proxy adds a hop to every page load — only use one where the portal
+   * needs a local IP (the PR government portals), never for SmartPR's own
+   * rehearsal portal.
+   */
+  proxyCountryCode?: string | null;
 }): Promise<BuRun> {
   const model = defaultModel();
   if (agentProvider() === "self_hosted") {
@@ -254,8 +286,12 @@ export async function createAgentRun(input: {
     model: model as V4Types["schemas"]["RunCreateRequest"]["model"],
     modelParams: modelParamsFor(model),
     browserSettings: {
-      // Puerto Rico Hacienda portal — US residential proxy is appropriate.
-      proxyCountryCode: (input.proxyCountryCode ?? "us") as V4Types["schemas"]["ProxyCountryCode"],
+      // Puerto Rico government portals — US residential proxy is appropriate.
+      proxyCountryCode:
+        input.proxyCountryCode === null
+          ? null
+          : ((input.proxyCountryCode ?? "us") as V4Types["schemas"]["ProxyCountryCode"]),
+      ...screenSize(),
     },
     maxCostUsd: maxCostUsd(),
   });
@@ -344,20 +380,48 @@ export async function queueAgentMessage(
   sessionId: string,
   text: string,
   opts?: { interrupt?: boolean }
-): Promise<{ runId: string | null }> {
+): Promise<{ runId: string | null; messageId: number | null }> {
   const interrupt = Boolean(opts?.interrupt);
   if (agentProvider() === "self_hosted") {
     const raw = await workerFetch<{ runId?: string | null }>(
       `/api/v4/sessions/${encodeURIComponent(sessionId)}/queue`,
       { method: "POST", body: JSON.stringify({ text, interrupt }) }
     );
-    return { runId: raw.runId ?? null };
+    return { runId: raw.runId ?? null, messageId: null };
   }
   const queued = await cloudClient().sessions.sendMessage(sessionId, {
     text,
     interrupt,
   });
-  return { runId: queued.runId ?? null };
+  // Cloud answers before the message is dispatched: runId is null until the
+  // follow-up turn actually starts. Callers resolve it later with
+  // resolveQueuedRunId — never keep polling the previous (finished) turn.
+  return { runId: queued.runId ?? null, messageId: queued.id ?? null };
+}
+
+/**
+ * Resolve the run a queued follow-up message started. Returns null while the
+ * message is still pending. `previousRunId` is the turn that was active when
+ * the message was queued — the session's latest run only counts once it is a
+ * different one.
+ */
+export async function resolveQueuedRunId(
+  sessionId: string,
+  messageId: number | null,
+  previousRunId: string | null
+): Promise<string | null> {
+  if (agentProvider() === "self_hosted") return null; // worker returns runId up front
+  const client = cloudClient();
+  if (messageId != null) {
+    try {
+      const msg = await client.sessions.getMessage(sessionId, messageId);
+      if (msg.runId && msg.runId !== previousRunId) return msg.runId;
+    } catch {
+      // Fall through to the session's latest run.
+    }
+  }
+  const info = await client.sessions.get(sessionId);
+  return info.latestRunId && info.latestRunId !== previousRunId ? info.latestRunId : null;
 }
 
 export async function listAgentRunEvents(

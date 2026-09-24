@@ -58,7 +58,6 @@ import {
   type ChatMilestone,
   type GoalBrief,
   type Preflight,
-  type PreflightQuestion,
 } from "./chatContracts";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -344,36 +343,27 @@ function PreflightCard({
   action,
   filingLabelEn,
   filingLabelEs,
-  uploadsEn,
-  uploadsEs,
   lang,
-  onUpload,
-  uploadBusy,
   onConfirm,
 }: {
   preflight: Preflight;
   action: AgencyAction;
   filingLabelEn: string;
   filingLabelEs: string;
-  uploadsEn: string;
-  uploadsEs: string;
   lang: Lang;
-  onUpload: (file: File, tags: string[]) => void;
-  uploadBusy: boolean;
   onConfirm: (answers: PreflightAnswers) => Promise<void>;
 }) {
   const [accountChoice, setAccountChoice] = useState<"has_account" | "no_account" | null>(null);
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
-  const [skippedFields, setSkippedFields] = useState<Record<string, boolean>>({});
-  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
-  const [evidenceSkipped, setEvidenceSkipped] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const evidenceFileRef = useRef<HTMLInputElement | null>(null);
 
   const items = preflight.passport_items ?? [];
   const inlineItems = items.slice(0, 5);
+  // Only the portal-account question is asked up front. Sensitive values
+  // (SSN, …) and documents are requested in the run, at the exact portal
+  // step that needs them — the pre-flight card stays a quick confirm.
+  const questions = preflight.questions.filter((q) => q.kind === "account_status");
 
   // Gate: SmartPR information still missing — the browser never launches
   // until these are complete (the human goes back to SmartPR fields).
@@ -383,16 +373,8 @@ function PreflightCard({
     setConfirmBusy(true);
     setConfirmError(null);
     try {
-      const fields: Record<string, string> = {};
-      for (const q of preflight.questions) {
-        if (q.kind === "sensitive_field" && !skippedFields[q.id]) {
-          const v = (fieldValues[q.id] || "").trim();
-          if (v) fields[q.id] = v;
-        }
-      }
       await onConfirm({
         ...(accountChoice ? { account_status: accountChoice } : {}),
-        ...(Object.keys(fields).length > 0 ? { fields } : {}),
       });
       setSubmitted(true);
     } catch (e) {
@@ -450,14 +432,14 @@ function PreflightCard({
         )}
       </div>
 
-      {/* Questions second — at most 3, all skippable */}
-      {preflight.questions.length > 0 && !submitted && (
+      {/* Questions second — only the portal-account choice */}
+      {questions.length > 0 && !submitted && (
         <div className="mt-2.5">
           <p className="text-sm font-semibold text-slate-700">
             {L("Still need from you:", "Todavía necesito de ti:", lang)}
           </p>
           <div className="mt-1.5 space-y-2.5">
-            {preflight.questions.map((q, qi) => {
+            {questions.map((q, qi) => {
               if (q.kind === "account_status") {
                 const portal = L(preflight.portal_name_en, preflight.portal_name_es, lang);
                 return (
@@ -500,129 +482,7 @@ function PreflightCard({
                   </div>
                 );
               }
-              if (q.kind === "sensitive_field") {
-                const skipped = Boolean(skippedFields[q.id]);
-                const isRevealed = Boolean(revealed[q.id]);
-                return (
-                  <div key={q.id} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-sm font-medium text-slate-800">
-                      {L(q.label_en, q.label_es, lang)}
-                    </p>
-                    {skipped ? (
-                      <p className="mt-1 text-sm text-slate-500">
-                        {L("I'll ask during the run.", "Te lo pregunto durante la ejecución.", lang)}{" "}
-                        <button
-                          type="button"
-                          onClick={() => setSkippedFields((s) => ({ ...s, [q.id]: false }))}
-                          className="font-semibold text-[#1e4d38] underline"
-                        >
-                          {L("Undo", "Deshacer", lang)}
-                        </button>
-                      </p>
-                    ) : (
-                      <>
-                        <div className="relative mt-1.5">
-                          <input
-                            type={isRevealed ? "text" : "password"}
-                            autoComplete="off"
-                            inputMode={/ssn|itin|tax_id/i.test(q.id) ? "numeric" : undefined}
-                            value={fieldValues[q.id] || ""}
-                            onChange={(e) =>
-                              setFieldValues((v) => ({ ...v, [q.id]: e.target.value }))
-                            }
-                            placeholder={L("Type here (optional)", "Escribe aquí (opcional)", lang)}
-                            className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 pr-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1e4d38] focus:outline-none focus:ring-1 focus:ring-[#1e4d38]"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setRevealed((r) => ({ ...r, [q.id]: !r[q.id] }))}
-                            className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-800"
-                            aria-label={
-                              isRevealed
-                                ? L("Hide value", "Ocultar valor", lang)
-                                : L("Show value", "Mostrar valor", lang)
-                            }
-                          >
-                            {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                          </button>
-                        </div>
-                        <div className="mt-1 flex items-center justify-between gap-2">
-                          <p className="text-sm leading-snug text-slate-500">
-                            {L(
-                              "Used once for this run and never stored.",
-                              "Se usa una sola vez para esta ejecución y no se guarda.",
-                              lang
-                            )}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSkippedFields((s) => ({ ...s, [q.id]: true }));
-                              setFieldValues((v) => ({ ...v, [q.id]: "" }));
-                            }}
-                            className="shrink-0 text-sm font-semibold text-[#1e4d38] underline"
-                          >
-                            {L("Ask me later", "Pregúntame después", lang)}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              }
-              // evidence
-              if (evidenceSkipped) {
-                return (
-                  <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-sm text-slate-500">
-                      {L("I'll ask for documents during the run.", "Te pido los documentos durante la ejecución.", lang)}{" "}
-                      <button
-                        type="button"
-                        onClick={() => setEvidenceSkipped(false)}
-                        className="font-semibold text-[#1e4d38] underline"
-                      >
-                        {L("Undo", "Deshacer", lang)}
-                      </button>
-                    </p>
-                  </div>
-                );
-              }
-              return (
-                <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                  <p className="text-sm font-medium text-slate-800">
-                    {L(uploadsEn, uploadsEs, lang)}
-                  </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <input
-                      ref={evidenceFileRef}
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => {
-                        const files = Array.from(e.target.files ?? []);
-                        for (const f of files) onUpload(f, preflight.evidence_tags);
-                        e.target.value = "";
-                      }}
-                    />
-                    <button
-                      type="button"
-                      disabled={uploadBusy}
-                      onClick={() => evidenceFileRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-[#1e4d38]/40 disabled:opacity-50"
-                    >
-                      {uploadBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                      {L("Attach documents", "Adjuntar documentos", lang)}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEvidenceSkipped(true)}
-                      className="text-sm font-semibold text-[#1e4d38] underline"
-                    >
-                      {L("I'll provide them during the run", "Los subo durante la ejecución", lang)}
-                    </button>
-                  </div>
-                </div>
-              );
+              return null;
             })}
           </div>
         </div>
@@ -814,7 +674,7 @@ function InterventionCard(props: InterventionProps) {
     : null;
 
   return (
-    <AssistantBubble>
+    <AssistantBubble id="agency-intervention">
       <div className="flex items-start gap-2">
         <Hand className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
         <div className="min-w-0 flex-1">
@@ -869,8 +729,8 @@ function InterventionCard(props: InterventionProps) {
           {askedAgain.length > 0 && !showValidationBanner && (
             <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-900">
               {L(
-                "You already provided this — the assistant is asking again. Confirm it's correct or fix it, then continue.",
-                "Ya me habías dado esto — el asistente lo está pidiendo de nuevo. Confirma que está correcto o corrígelo, y continúa.",
+                "I kept what you entered last time — check it and continue.",
+                "Guardé lo que escribiste la vez pasada — revísalo y continúa.",
                 lang
               )}
             </div>
@@ -892,10 +752,10 @@ function InterventionCard(props: InterventionProps) {
 
           {fieldsPause && (
             <div className="mt-2.5 space-y-2">
-              <p className="text-sm leading-snug text-amber-900/80">
+              <p className="text-sm leading-snug text-slate-500">
                 {L(
-                  "Type only here — the live browser is view-only while I wait. Non-sensitive values are prefilled from your passport when possible. Your entries are never stored.",
-                  "Escribe solo aquí — el navegador en vivo es solo lectura mientras espero. Los valores no sensibles se rellenan desde tu pasaporte cuando es posible. Tus entradas nunca se almacenan.",
+                  "Type it here and I'll enter it on the portal page shown in the browser. Never stored.",
+                  "Escríbelo aquí y lo pondré en la página del portal que ves en el navegador. No se guarda.",
                   lang
                 )}
               </p>
@@ -934,9 +794,13 @@ function InterventionCard(props: InterventionProps) {
                         : "text";
                 return (
                   <label key={field.id} className="block">
-                    <span className="sr-only">
+                    <span className="mb-1 block text-xs font-semibold text-slate-700">
                       {field.label}
-                      {field.optional ? L(" (optional)", " (opcional)", lang) : ""}
+                      {field.optional ? (
+                        <span className="font-normal text-slate-400">
+                          {L(" (optional)", " (opcional)", lang)}
+                        </span>
+                      ) : null}
                     </span>
                     <div className="relative">
                       <input
@@ -979,11 +843,6 @@ function InterventionCard(props: InterventionProps) {
                           }
                           props.onFieldChange(field.id, next);
                         }}
-                        placeholder={
-                          field.optional
-                            ? `${field.label}${L(" (optional)", " (opcional)", lang)}`
-                            : field.label
-                        }
                         className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1e4d38] focus:outline-none focus:ring-1 focus:ring-[#1e4d38] ${
                           isSensitive ? "pr-9" : ""
                         }`}
@@ -991,6 +850,7 @@ function InterventionCard(props: InterventionProps) {
                       {isSensitive && (
                         <button
                           type="button"
+                          data-no-autoscroll
                           onClick={() => props.onToggleReveal(field.id)}
                           className="absolute inset-y-0 right-0 flex items-center px-2 text-slate-500 hover:text-slate-800"
                           aria-label={
@@ -1346,13 +1206,43 @@ export function AgencyChat(props: AgencyChatProps) {
     box.scrollTo({ top: box.scrollHeight, behavior });
   };
 
-  // Only auto-scroll new chatter when the human is already near the bottom —
-  // never yank the view away while they're reading earlier messages.
+  /**
+   * Stick-to-bottom: while true, any growth of the thread (new milestone,
+   * status line, card) scrolls to the newest activity. Only an explicit
+   * scroll-up by the human (wheel / touch / keys) releases it; reaching the
+   * bottom again — or pressing any action button in the chat — re-arms it.
+   * Programmatic smooth scrolls never release it, which is what broke the
+   * old "only when already near the bottom" check after a click.
+   */
+  const stickRef = useRef(true);
+  const contentRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const box = scrollBoxRef.current;
+    const content = contentRef.current;
+    if (!box || !content) return;
+    const ro = new ResizeObserver(() => {
+      if (stickRef.current) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+    });
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, []);
+  const releaseStick = () => {
+    stickRef.current = false;
+  };
+  const onChatScroll = () => {
+    const box = scrollBoxRef.current;
     if (!box) return;
-    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 160;
-    if (nearBottom) scrollChatToBottom("smooth");
+    if (box.scrollHeight - box.scrollTop - box.clientHeight < 40) stickRef.current = true;
+  };
+  const onChatClickCapture = (e: React.MouseEvent) => {
+    const btn = (e.target as HTMLElement).closest("button");
+    if (!btn || btn.hasAttribute("data-no-autoscroll")) return;
+    stickRef.current = true;
+    window.setTimeout(() => scrollChatToBottom("smooth"), 120);
+  };
+
+  useEffect(() => {
+    if (stickRef.current) scrollChatToBottom("smooth");
   }, [props.scrollKey]);
 
   // The newest pre-flight card is the human's next step after pressing
@@ -1387,21 +1277,21 @@ export function AgencyChat(props: AgencyChatProps) {
     // Let the card mount first, then bring it into view.
     const t = window.setTimeout(() => {
       if (actionableKey.startsWith("preflight:")) {
-        // Scroll the card itself into view — whichever ancestor scrolls
-        // (the window pre-run, the chat box mid-run) is the one that moves.
-        // Container-local: move only the message list so the locked
-        // workspace (and the browser panel beside it) never shifts.
-        // scrollIntoView would also scroll overflow-hidden ancestors.
+        // Show the pre-flight card from its top so it can be read; the
+        // human's Start click re-arms stick-to-bottom. Container-local
+        // (scrollIntoView would also scroll overflow-hidden ancestors).
         const box = scrollBoxRef.current;
         const el = document.getElementById(
           `agency-msg-${actionableKey.slice("preflight:".length)}`
         );
         if (box && el) {
+          stickRef.current = false;
           const top =
             box.scrollTop + el.getBoundingClientRect().top - box.getBoundingClientRect().top - 16;
           box.scrollTo({ top, behavior: "smooth" });
         }
       } else {
+        stickRef.current = true;
         scrollChatToBottom("smooth");
       }
     }, 60);
@@ -1410,7 +1300,22 @@ export function AgencyChat(props: AgencyChatProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={scrollBoxRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 md:px-5">
+      <div
+        ref={scrollBoxRef}
+        onScroll={onChatScroll}
+        onWheel={(e) => {
+          if (e.deltaY < 0) releaseStick();
+        }}
+        onTouchMove={releaseStick}
+        onKeyDown={(e) => {
+          if (e.key === "PageUp" || e.key === "Home" || (e.key === "ArrowUp" && e.target === e.currentTarget)) {
+            releaseStick();
+          }
+        }}
+        onClickCapture={onChatClickCapture}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-5"
+      >
+        <div ref={contentRef} className="space-y-4">
         {props.msgs.map((msg) => {
           if (msg.type === "filing-picker") {
             return (
@@ -1514,11 +1419,7 @@ export function AgencyChat(props: AgencyChatProps) {
                   action={msg.action}
                   filingLabelEn={msg.filingLabelEn}
                   filingLabelEs={msg.filingLabelEs}
-                  uploadsEn={msg.uploadsEn}
-                  uploadsEs={msg.uploadsEs}
                   lang={lang}
-                  onUpload={props.onUploadEvidence}
-                  uploadBusy={props.uploadBusy}
                   onConfirm={(answers) => props.onConfirmPreflight(msg, answers)}
                 />
               </AssistantBubble>
@@ -1571,6 +1472,7 @@ export function AgencyChat(props: AgencyChatProps) {
         {props.transientHistory.length > 0 && (
           <TransientHistory labels={props.transientHistory} />
         )}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3">

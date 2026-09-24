@@ -259,6 +259,9 @@ GOAL
 - Open and stay on the allowlisted domains only: ${config.domains.join(", ")} (start: ${config.startUrl})
 - Spanish UI is OK; follow on-screen Spanish labels.
 
+SPEED (the human is watching live)
+- Fill every field you can identify on a page in as few steps as possible, then submit once. Do not re-read or re-navigate pages you have already completed, and do not wait or scroll without a reason.
+
 PREFILL — DO THIS AGGRESSIVELY
 - SEQUENCING (mandatory): on every page, FIRST fill ALL non-sensitive fields you can from the Business Passport JSON below. ONLY THEN pause for blanks the passport cannot satisfy (usually password / MFA / SSN / uploads).
 - Do NOT PAUSE and do NOT emit REQUIRED_FIELDS for any control the passport can already fill (email, phone, legal/business names, addresses, municipality, EIN/registry when present and non-sensitive, etc.).
@@ -267,11 +270,13 @@ ${renderPortalFieldMapping(config.agencyId)}
 - For the Entity type dropdown: match the passport's business.entityType to the option's VISIBLE TEXT — sole_proprietorship="Sole proprietorship", llc="Limited Liability Company (LLC)", corporation="Corporation", nonprofit="Nonprofit organization" (Spanish equivalents likewise). Never invent an option that is not listed; if the passport's entity type matches no visible option, ask the human instead of stalling on retries.
 - For dropdowns/selects: pick the option whose visible text best matches the passport value. Never leave a dropdown on a placeholder/default when the passport identifies the value.
 - For checkboxes/radios that clearly correspond to passport facts, set them.
-- If a field has no passport match and is not sensitive, use visible page context; if truly unknown, leave it blank and note it — do not invent.
+- If a field has no passport match and is not sensitive, use visible page context. If it is REQUIRED (asterisk, "required", or the browser blocks submit with "Please fill out this field") and still unknown: do NOT retry submit and do NOT guess — pause right away with PAUSE_USER_LOGIN and a REQUIRED_FIELDS line for exactly that field (e.g. id=fiscal_year_end; label=Fiscal year end; type=text; sensitive=false; hint=MM/DD/YYYY). Optional unknown fields stay blank.
+- DATE FIELDS: native date inputs (mm/dd/yyyy with a calendar icon) ignore pasted text with slashes. Click the month segment and type the digits only, in order, with no separators (e.g. 12312025 for 12/31/2025), then read the value back. If it still reads empty, set it via JavaScript (input.value = "2025-12-31" — ISO format — then dispatch "input" and "change" events) and read back again. Never click submit while a required date reads empty.
 - Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them blank for the human and pause with the right marker below.
 
 HUMAN INPUT PATH (login / required text fields)
 - When you PAUSE_USER_LOGIN or pause for required text fields, the human types ONLY in the SmartPR Assistant panel on the left — NOT in the live browser iframe (it is view-only until Fill & continue).
+- The Assistant panel shows EXACTLY the fields in your REQUIRED_FIELDS block, so that block must describe the blanks on the page you are on RIGHT NOW. Never list email / password / MFA unless the current page is a login or account-creation form; on an SSN step list only the SSN; on a form with one missing date list only that date.
 - Do NOT expect the human to type into the live browser for email/password/MFA or other required text fields.
 - Wait for resume with FIELDS FILL values; then type those exact values into the matching controls and continue.
 - FILL RELIABILITY (mandatory on every form): portal pages re-render while you type, which can drop keystrokes or scatter characters into the wrong fields. After typing into ANY text field, read that field's value back from the page and confirm it matches what you intended. If it is empty or wrong: click into the field, select all (Ctrl+A / Cmd+A), delete, type the full value again in one steady pass, then read back again. Repeat until the value reads back correctly.
@@ -311,6 +316,7 @@ Rules for the block:
 - sensitive=true for passwords, MFA, SSN/ITIN. Prefer type=password ONLY for actual passwords; use type=text with sensitive=true for SSN/ITIN/ID so the human can verify format with show/hide.
 - ALWAYS include hint= for SSN/ITIN/ID (and any format-sensitive field): describe the expected format as the portal shows it (e.g. "9 digits — dashes or no dashes as shown"). Do not put ";" inside hint or error values.
 - On re-pause after a failed fill (portal validation error visible on screen): REQUIRED_FIELDS MUST prefer error=<exact on-screen validation message> AND may keep hint= for format if still useful (e.g. hint=9 digits; error=Portal: el número de ID no es válido).
+- REQUIRED_FIELDS is mandatory on every PAUSE_USER_LOGIN — a pause without it cannot be answered.
 - For PAUSE_USER_UPLOAD the fields block may be empty (upload UI already exists).
 - For PAUSE_CAPTCHA / PAUSE_PAYMENT usually no text fields — takeover stays primary; you may emit an empty REQUIRED_FIELDS: block or omit field lines.
 - On login pages: pause once with REQUIRED_FIELDS (email if passport has no email, password, mfa if shown). Prefer the Assistant-fill path. Do NOT loop on login.
@@ -323,7 +329,7 @@ REQUIRED_FIELDS:
 - id=password; label=Password; type=password; sensitive=true
 - id=mfa; label=MFA code; type=text; sensitive=true; optional=true
 
-Example (sensitive profile blank):
+Example (SSN step — no login fields, the human is already signed in):
 PAUSE_USER_LOGIN
 REQUIRED_FIELDS:
 - id=ssn; label=SSN / ID; type=text; sensitive=true; hint=9 digits as shown on the portal (dashes OK)

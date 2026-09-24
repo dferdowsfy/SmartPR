@@ -12,6 +12,35 @@ import { readLang, setLang } from "../useLang";
 
 interface MeUser { id: string; email: string | null; name: string | null; avatar: string | null; isAdmin?: boolean }
 
+/**
+ * Nav-pill geometry survives client-side navigation (every page mounts its
+ * own TopNav), so the selected pill can glide from the previous tab to the
+ * new one instead of snapping. The Enterprise-tab probe result is cached the
+ * same way so the tab labels never shift when it resolves.
+ */
+type NavPillRect = { left: number; top: number; width: number; height: number };
+let lastNavPill: NavPillRect | null = null;
+/** The glide in flight, so a page that mounts mid-glide continues it. */
+let navGlide: { from: NavPillRect; to: NavPillRect; startedAt: number } | null = null;
+const NAV_GLIDE_MS = 380;
+
+/** Where the pill visually is right now (ease-out approximation of the CSS curve). */
+function currentNavPill(): NavPillRect | null {
+  if (!navGlide || !lastNavPill) return lastNavPill;
+  const p = Math.min(1, (performance.now() - navGlide.startedAt) / NAV_GLIDE_MS);
+  if (p >= 1) return lastNavPill;
+  const e = 1 - Math.pow(1 - p, 4);
+  const mix = (a: number, b: number) => a + (b - a) * e;
+  const { from, to } = navGlide;
+  return {
+    left: mix(from.left, to.left),
+    top: mix(from.top, to.top),
+    width: mix(from.width, to.width),
+    height: mix(from.height, to.height),
+  };
+}
+let cachedHasEnterprise = false;
+
 function signOutNow() {
   try {
     if (isAuthConfigured()) void createSupabaseBrowser().auth.signOut().catch(() => {});
@@ -30,7 +59,7 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const avatarBtnRef = useRef<HTMLButtonElement | null>(null);
   // Enterprise section: visible only when the user holds view_records in a workspace.
-  const [hasEnterprise, setHasEnterprise] = useState(false);
+  const [hasEnterprise, setHasEnterprise] = useState(() => cachedHasEnterprise);
 
   const placeMenu = useCallback(() => {
     const btn = avatarBtnRef.current;
@@ -51,9 +80,13 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
         const ws = (d.workspaces ?? []).some((w: { permissions?: string[] }) =>
           (w.permissions ?? []).includes("view_records")
         );
-        setHasEnterprise(Boolean(ws));
+        cachedHasEnterprise = Boolean(ws);
+        setHasEnterprise(cachedHasEnterprise);
       })
-      .catch(() => setHasEnterprise(false));
+      .catch(() => {
+        cachedHasEnterprise = false;
+        setHasEnterprise(false);
+      });
   }, []);
 
   // Only listen for outside clicks while open, and ignore the opening click.
@@ -158,6 +191,79 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
       active === "history" ||
       active === "settings");
 
+  // Sliding selected-tab pill. The labels stay put; only the pill moves.
+  // `pendingTab` moves it the moment a tab is clicked, before the next page
+  // has mounted, so the glide starts immediately.
+  const activeTab = startActive
+    ? "start"
+    : businessesActive
+      ? "businesses"
+      : active === "enterprise"
+        ? "enterprise"
+        : null;
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
+  if (prevActiveTab !== activeTab) {
+    setPrevActiveTab(activeTab);
+    setPendingTab(null);
+  }
+  const pillTab = pendingTab ?? activeTab;
+  const navRef = useRef<HTMLElement | null>(null);
+  const [pill, setPill] = useState<(NavPillRect & { animate: boolean }) | null>(() => {
+    const start = typeof window === "undefined" ? null : currentNavPill();
+    return start ? { ...start, animate: false } : null;
+  });
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const measure = (animate: boolean) => {
+      const el = pillTab
+        ? (nav.querySelector(`[data-tab="${pillTab}"]`) as HTMLElement | null)
+        : null;
+      if (!el) {
+        lastNavPill = null;
+        setPill(null);
+        return;
+      }
+      const n = nav.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      const next: NavPillRect = {
+        left: r.left - n.left - nav.clientLeft + nav.scrollLeft,
+        top: r.top - n.top - nav.clientTop,
+        width: r.width,
+        height: r.height,
+      };
+      if (animate) {
+        const from = currentNavPill();
+        const moved =
+          from && (from.left !== next.left || from.width !== next.width || from.top !== next.top);
+        navGlide = moved ? { from, to: next, startedAt: performance.now() } : navGlide;
+      } else {
+        navGlide = null;
+      }
+      lastNavPill = next;
+      setPill({ ...next, animate });
+    };
+    // Paint the previous position first (initial state), then glide.
+    const raf = window.requestAnimationFrame(() => measure(true));
+    // Later resizes (fonts, language, window) snap without animating. The
+    // observer's initial callback lands in the same frame as the glide —
+    // skip it, or it would cancel the transition.
+    let primed = false;
+    const ro = new ResizeObserver(() => {
+      if (!primed) {
+        primed = true;
+        return;
+      }
+      measure(false);
+    });
+    ro.observe(nav);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [pillTab, hasEnterprise, lang]);
+
   const langToggle = (
     <div className="spr-context-language" aria-label={lang === "es" ? "Idioma" : "Language"}>
       <button type="button" className={lang === "en" ? "active" : ""} aria-pressed={lang === "en"} onClick={() => changeLang("en")}>EN</button>
@@ -174,20 +280,35 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
           </Link>
         </div>
 
-        <nav className="nav-tabs" aria-label="Sections">
+        <nav ref={navRef} className={`nav-tabs${pill ? " has-pill" : ""}`} aria-label="Sections">
+          {pill && (
+            <span
+              aria-hidden="true"
+              className={`nav-tab-pill${pill.animate ? "" : " no-anim"}`}
+              style={{
+                width: pill.width,
+                height: pill.height,
+                transform: `translate(${pill.left}px, ${pill.top}px)`,
+              }}
+            />
+          )}
           <Link
             href="/?entry=new-business"
-            className={`nav-tab${startActive ? " active" : ""}`}
+            data-tab="start"
+            onClick={() => setPendingTab("start")}
+            className={`nav-tab${pillTab === "start" ? " active" : ""}`}
             aria-current={startActive ? "page" : undefined}
-            data-active={startActive ? "true" : undefined}
+            data-active={pillTab === "start" ? "true" : undefined}
           >
             {navStart}
           </Link>
           <Link
             href="/businesses"
-            className={`nav-tab${businessesActive ? " active" : ""}`}
+            data-tab="businesses"
+            onClick={() => setPendingTab("businesses")}
+            className={`nav-tab${pillTab === "businesses" ? " active" : ""}`}
             aria-current={businessesActive ? "page" : undefined}
-            data-active={businessesActive ? "true" : undefined}
+            data-active={pillTab === "businesses" ? "true" : undefined}
           >
             {navMyBiz}
           </Link>
@@ -195,9 +316,11 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
             <div className="nav-dropdown">
               <Link
                 href="/enterprise"
-                className={`nav-tab${active === "enterprise" ? " active" : ""}`}
+                data-tab="enterprise"
+                onClick={() => setPendingTab("enterprise")}
+                className={`nav-tab${pillTab === "enterprise" ? " active" : ""}`}
                 aria-current={active === "enterprise" ? "page" : undefined}
-                data-active={active === "enterprise" ? "true" : undefined}
+                data-active={pillTab === "enterprise" ? "true" : undefined}
               >
                 {es ? "Empresarial" : "Enterprise"}
               </Link>
