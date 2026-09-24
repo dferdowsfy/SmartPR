@@ -130,6 +130,7 @@ export default function RehearsalFilingPage() {
             onChange={(v) => setField("entityType", v)}
             required
             options={[
+              { value: "sole_prop", label: t("Sole proprietorship", "Negocio por cuenta propia") },
               { value: "llc", label: t("Limited Liability Company (LLC)", "Sociedad de Responsabilidad Limitada (LLC)") },
               { value: "corp", label: t("Corporation", "Corporación") },
               { value: "nonprofit", label: t("Nonprofit organization", "Organización sin fines de lucro") },

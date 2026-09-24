@@ -264,6 +264,7 @@ PREFILL — DO THIS AGGRESSIVELY
 - Do NOT PAUSE and do NOT emit REQUIRED_FIELDS for any control the passport can already fill (email, phone, legal/business names, addresses, municipality, EIN/registry when present and non-sensitive, etc.).
 - Fill EVERY form field whose meaning you can identify from the passport: legal/business names, entity type, addresses, phone, email, dates, organizer/member details, non-sensitive IDs, and anything else with a clear match.
 ${renderPortalFieldMapping(config.agencyId)}
+- For the Entity type dropdown: match the passport's business.entityType to the option's VISIBLE TEXT — sole_proprietorship="Sole proprietorship", llc="Limited Liability Company (LLC)", corporation="Corporation", nonprofit="Nonprofit organization" (Spanish equivalents likewise). Never invent an option that is not listed; if the passport's entity type matches no visible option, ask the human instead of stalling on retries.
 - For dropdowns/selects: pick the option whose visible text best matches the passport value. Never leave a dropdown on a placeholder/default when the passport identifies the value.
 - For checkboxes/radios that clearly correspond to passport facts, set them.
 - If a field has no passport match and is not sensitive, use visible page context; if truly unknown, leave it blank and note it — do not invent.

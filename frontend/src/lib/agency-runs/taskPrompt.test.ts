@@ -273,4 +273,11 @@ describe("buildAgencyTaskPrompt fill reliability", () => {
     // Demo labels must not leak into the SURI prompt.
     assert.ok(!task.includes('"City"'));
   });
+
+  it("guides entity-type dropdown matching by visible text", () => {
+    const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes('sole_proprietorship="Sole proprietorship"'));
+    assert.ok(task.includes("if the passport's entity type matches no visible option"));
+  });
 });
