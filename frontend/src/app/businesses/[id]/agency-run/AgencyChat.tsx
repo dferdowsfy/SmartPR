@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Bot, Building2, CheckCircle2, ChevronDown, ClipboardList, Eye, EyeOff,
-  Hand, KeyRound, Landmark, Loader2, Play, Square, Stamp, Upload,
+  Hand, KeyRound, Landmark, Loader2, Play, Send, Square, Stamp, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import type {
@@ -1027,14 +1027,21 @@ function ReviewCard({
   knownCount,
   onReviewInBrowser,
   onClose,
+  onAuthorize,
+  authorizeBusy,
+  authorizeError,
   busy,
 }: {
   lang: Lang;
   knownCount: number | null;
   onReviewInBrowser: () => void;
   onClose: () => void;
+  onAuthorize: () => void;
+  authorizeBusy: boolean;
+  authorizeError: string | null;
   busy: boolean;
 }) {
+  const [attested, setAttested] = useState(false);
   return (
     <AssistantBubble>
       <div className="flex items-start gap-2">
@@ -1061,11 +1068,44 @@ function ReviewCard({
                 )}
           </p>
           <p className="mt-1.5 text-sm font-medium text-slate-500">{gateCopy(lang)}</p>
+          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+            <input
+              type="checkbox"
+              checked={attested}
+              onChange={(e) => setAttested(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-700"
+            />
+            <span className="text-xs leading-snug text-slate-600">
+              {L(
+                "I authorize SmartPR to submit this filing on my behalf. I confirm the information is true and correct.",
+                "Autorizo a SmartPR a enviar este trámite por mí. Confirmo que la información es cierta y correcta.",
+                lang
+              )}
+            </span>
+          </label>
+          {authorizeError && (
+            <p className="mt-2 text-xs font-medium text-rose-700">{authorizeError}</p>
+          )}
+          <button
+            type="button"
+            disabled={busy || authorizeBusy || !attested}
+            onClick={onAuthorize}
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {authorizeBusy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            {authorizeBusy
+              ? L("Submitting…", "Enviando…", lang)
+              : L("File it for me", "Envíalo por mí", lang)}
+          </button>
           <button
             type="button"
             disabled={busy}
             onClick={onReviewInBrowser}
-            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
           >
             <Eye className="h-3.5 w-3.5" />
             {L("Review in browser", "Revisar en el navegador", lang)}
@@ -1078,6 +1118,58 @@ function ReviewCard({
           >
             <Square className="h-3.5 w-3.5" />
             {L("Close run", "Cerrar ejecución", lang)}
+          </button>
+        </div>
+      </div>
+    </AssistantBubble>
+  );
+}
+
+/* Submitted card — authorized filing completed on the portal            */
+/* ------------------------------------------------------------------ */
+
+function SubmittedCard({
+  lang,
+  confirmation,
+  onDone,
+  busy,
+}: {
+  lang: Lang;
+  confirmation: string | null;
+  onDone: () => void;
+  busy: boolean;
+}) {
+  return (
+    <AssistantBubble>
+      <div className="flex items-start gap-2">
+        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-[#161616]">
+            {L("Filed — you're all set.", "Enviado — listo.", lang)}
+          </p>
+          {confirmation && (
+            <p className="mt-1.5 text-sm font-medium text-slate-700">
+              {L(
+                `Confirmation: ${confirmation}`,
+                `Confirmación: ${confirmation}`,
+                lang
+              )}
+            </p>
+          )}
+          <p className="mt-1.5 text-sm leading-snug text-slate-600">
+            {L(
+              "SmartPR submitted this filing on the portal on your behalf — no need to visit the portal yourself.",
+              "SmartPR envió este trámite en el portal por ti — no necesitas visitar el portal tú mismo.",
+              lang
+            )}
+          </p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onDone}
+            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {L("Back to filings", "Volver a los trámites", lang)}
           </button>
         </div>
       </div>
@@ -1113,6 +1205,14 @@ export interface AgencyChatProps {
     knownCount: number | null;
     onReviewInBrowser: () => void;
     onClose: () => void;
+    onAuthorize: () => void;
+    authorizeBusy: boolean;
+    authorizeError: string | null;
+    busy: boolean;
+  } | null;
+  submitted: {
+    confirmation: string | null;
+    onDone: () => void;
     busy: boolean;
   } | null;
   terminalNote: { textEn: string; textEs: string; tone: "info" | "warn" } | null;
@@ -1279,6 +1379,7 @@ export function AgencyChat(props: AgencyChatProps) {
         {props.intervention && <InterventionCard {...props.intervention} />}
 
         {props.review && <ReviewCard lang={lang} {...props.review} />}
+        {props.submitted && <SubmittedCard lang={lang} {...props.submitted} />}
 
         {props.terminalNote && (
           <AssistantBubble>

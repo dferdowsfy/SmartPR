@@ -67,6 +67,7 @@ const STATUS_STYLES: Record<AgencyRunStatus, string> = {
   running: "border-sky-300 bg-sky-50 text-sky-800",
   paused: "border-amber-300 bg-amber-50 text-amber-900",
   review: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  submitted: "border-emerald-400 bg-emerald-100 text-emerald-900",
   stopped: "border-slate-400 bg-slate-200 text-slate-800",
   failed: "border-rose-300 bg-rose-50 text-rose-800",
 };
@@ -77,6 +78,7 @@ function statusLabel(status: AgencyRunStatus, lang: Lang): string {
     running: ["Running", "En curso"],
     paused: ["Paused", "Pausado"],
     review: ["Review", "Revisión"],
+    submitted: ["Submitted", "Enviado"],
     stopped: ["Stopped", "Detenido"],
     failed: ["Failed", "Falló"],
   };
@@ -216,13 +218,17 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
   useEffect(() => {
     if (!run?.id) return;
-    if (run.status === "stopped" || run.status === "failed" || run.status === "review") return;
+    if (run.status === "stopped" || run.status === "failed" || run.status === "review" || run.status === "submitted") return;
     // Keep polling while queued/running/paused so mock advances / Browser Use syncs.
     const handle = window.setInterval(() => {
       void poll(run.id);
     }, 900);
     return () => window.clearInterval(handle);
   }, [run?.id, run?.status, poll]);
+
+  /** "File it for me" state — declared before the run-reset block below. */
+  const [authorizeBusy, setAuthorizeBusy] = useState(false);
+  const [authorizeError, setAuthorizeError] = useState<string | null>(null);
 
   // Leaving takeover mode whenever a different run loads (adjust state during
   // render — the React-endorsed pattern for previous-render resets).
@@ -233,6 +239,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setFieldValues({});
     setRevealedFields({});
     setValidationError(null);
+    setAuthorizeError(null);
   }
 
   // Reset the preview loading animation whenever the stream is (re)created.
@@ -432,6 +439,47 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  /**
+   * "File it for me" — the owner authorizes SmartPR to click final submit.
+   * The ReviewCard only calls this after the attestation checkbox is
+   * checked; the API re-validates attestation server-side.
+   */
+  const authorize = async () => {
+    if (!run || run.status !== "review") return;
+    setAuthorizeBusy(true);
+    setAuthorizeError(null);
+    try {
+      const response = await fetch(`/api/agency-runs/${run.id}/authorize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attestation: true }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setAuthorizeError(
+          result.error === "attestation_required"
+            ? L(
+                "Please check the authorization box first.",
+                "Marca la casilla de autorización primero.",
+                lang
+              )
+            : result.error === "not_in_review"
+              ? L(
+                  "This filing is no longer at the review step.",
+                  "Este trámite ya no está en el paso de revisión.",
+                  lang
+                )
+              : result.error ||
+                L("Could not authorize.", "No se pudo autorizar.", lang)
+        );
+        return;
+      }
+      setRun(result.run as AgencyRunPublic);
+    } finally {
+      setAuthorizeBusy(false);
+    }
+  };
+
   const reconnectPreview = async () => {
     if (!run?.live_url) return;
     setReconnectBusy(true);
@@ -532,6 +580,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         status: run.status,
         pauseReason: run.pause_reason,
         pauseStreak: run.pause_streak ?? 0,
+        filingAuthorized: run.filing_authorized ?? false,
       })
     : null;
   const terminal = wfState ? isTerminalWorkflowState(wfState) : true;
@@ -706,6 +755,18 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             if (run.live_url) void enterTakeover();
           },
           onClose: () => void stop(),
+          onAuthorize: () => void authorize(),
+          authorizeBusy,
+          authorizeError,
+          busy,
+        }
+      : null;
+
+  const submitted =
+    run && run.status === "submitted"
+      ? {
+          confirmation: run.filing_confirmation,
+          onDone: () => newRun(),
           busy,
         }
       : null;
@@ -793,8 +854,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                   <Shield className="h-3.5 w-3.5 text-slate-400" />
                   {L(
-                    "I never click final submit — you always take the last step.",
-                    "Yo nunca hago clic en enviar — tú siempre das el último paso.",
+                    "I only submit when you explicitly authorize it — you always stay in control.",
+                    "Solo envío cuando tú lo autorizas explícitamente — tú siempre tienes el control.",
                     lang
                   )}
                 </span>
@@ -864,6 +925,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               uploadBusy={uploadBusy}
               intervention={intervention}
               review={review}
+              submitted={submitted}
               terminalNote={terminalNote}
               onStop={() => void stop()}
               busy={busy}

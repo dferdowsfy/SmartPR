@@ -31,6 +31,7 @@ import {
   resolvePendingFields,
 } from "./pendingFields";
 import {
+  buildAuthorizeTaskPrompt,
   buildResumeTaskPrompt,
   buildAgencyTaskPrompt,
   mergeResumeFields,
@@ -88,6 +89,9 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     goal_brief: run.goal_brief ?? null,
     // SubmissionObjective is ids/labels only — safe for public payloads.
     submission_objective: run.submission_objective ?? null,
+    // Authorization state — safe for public payloads (booleans + receipt ref).
+    filing_authorized: run.filing_authorized ?? false,
+    filing_confirmation: run.filing_confirmation ?? null,
     // Owner-gated API already; used for Assistant non-sensitive prefill only.
     passport_snapshot: run.passport_snapshot ?? null,
   };
@@ -184,6 +188,8 @@ export function advanceMock(run: AgencyRun): AgencyRun {
 function detectMarker(text: string): {
   status?: AgencyRunStatus;
   pause_reason?: AgencyPauseReason;
+  /** Portal confirmation / receipt reference parsed from SUBMITTED:<ref>. */
+  confirmation?: string | null;
 } {
   const upper = text.toUpperCase();
   if (upper.includes("PAUSE_USER_UPLOAD") || /\bUSER_UPLOAD\b/.test(upper)) {
@@ -204,6 +210,14 @@ function detectMarker(text: string): {
   }
   if (upper.includes("REVIEW_READY")) {
     return { status: "review", pause_reason: null };
+  }
+  // Authorized final submission completed — capture the portal confirmation.
+  // Only ever emitted when the run was dispatched with filing_authorized=true
+  // (the prompt withholds the SUBMITTED marker otherwise).
+  const submitted = /SUBMITTED:\s*([^\n\r]+)/i.exec(text);
+  if (submitted) {
+    const ref = submitted[1].trim().slice(0, 120);
+    return { status: "submitted", pause_reason: null, confirmation: ref || null };
   }
   if (upper.includes("FAILED:")) {
     return { status: "failed", pause_reason: null };
@@ -279,11 +293,59 @@ function resetPauseStreak(run: AgencyRun): void {
 }
 
 /**
+ * Terminal transition for an authorized final submission. Records the
+ * portal confirmation / receipt reference, logs the bilingual event, and
+ * stops the browser session so Cloud billing ends. Idempotent.
+ */
+async function finalizeSubmission(
+  run: AgencyRun,
+  confirmation: string | null
+): Promise<void> {
+  if (run.status === "submitted") return;
+  run.status = "submitted";
+  run.pause_reason = null;
+  run.filing_confirmation = confirmation;
+  clearPendingFields(run);
+  resetPauseStreak(run);
+  run.updated_at = nowIso();
+  pushEvent(run, {
+    message: confirmation
+      ? `Filing submitted on the portal — confirmation ${confirmation}. SmartPR filed this on your behalf after your authorization.`
+      : "Filing submitted on the portal. SmartPR filed this on your behalf after your authorization.",
+    message_es: confirmation
+      ? `Trámite enviado en el portal — confirmación ${confirmation}. SmartPR lo radicó por ti tras tu autorización.`
+      : "Trámite enviado en el portal. SmartPR lo radicó por ti tras tu autorización.",
+    screenshot_url:
+      run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+    kind: "submitted",
+  });
+  // Submission is terminal — end the browser session so billing stops.
+  // Best-effort: a failed cleanup must not flip a completed filing.
+  if (run.browser_use_run_id) {
+    try {
+      await cancelAgentRun(run.browser_use_run_id);
+    } catch {
+      // best-effort cleanup
+    }
+  }
+  if (run.browser_use_session_id) {
+    try {
+      await stopAgentBrowser(run.browser_use_session_id);
+    } catch {
+      // best-effort cleanup
+    }
+  }
+  run.live_url = null;
+}
+
+/**
  * v4 run → SmartPR run mapping. The run is one agent turn; terminal statuses
  * are decided by the marker protocol in the result/events (PAUSE_*,
- * REVIEW_READY, FAILED:) so the agent never clicks final submit unapproved.
+ * REVIEW_READY, SUBMITTED:, FAILED:). The agent only ever emits SUBMITTED
+ * after the owner authorized final submission — the prompt withholds both
+ * the submit permission and the marker otherwise.
  */
-function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
+async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Promise<void> {
   if (bu.liveUrl) run.live_url = bu.liveUrl;
 
   const blob = latestAgentBlob(bu, events);
@@ -340,6 +402,8 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
       run.pause_reason = null;
       clearPendingFields(run);
       resetPauseStreak(run);
+    } else if (marker.status === "submitted") {
+      await finalizeSubmission(run, marker.confirmation ?? null);
     } else if (marker.status === "failed") {
       run.status = "failed";
       run.pause_reason = null;
@@ -381,6 +445,8 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
           screenshot_url: shot,
           kind: "pause",
         });
+      } else if (marker.status === "submitted") {
+        await finalizeSubmission(run, marker.confirmation ?? null);
       } else if (marker.status === "failed") {
         run.status = "failed";
         run.pause_reason = null;
@@ -389,6 +455,23 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
         pushEvent(run, {
           message: out.trim() || "Agent reported a failure",
           message_es: out.trim() || "El agente reportó un error",
+          screenshot_url: shot,
+          kind: "info",
+        });
+      } else if (run.filing_authorized) {
+        // The owner authorized final submission but the turn finished
+        // without a SUBMITTED marker — do not silently drop the
+        // authorization. Back to review so the owner can re-authorize or
+        // take over; the agent keeps no submit permission until then.
+        run.status = "review";
+        run.pause_reason = null;
+        clearPendingFields(run);
+        resetPauseStreak(run);
+        pushEvent(run, {
+          message:
+            "The agent finished without submitting — the filing was not sent. You can authorize again or take over the browser.",
+          message_es:
+            "El agente terminó sin enviar — el trámite no se envió. Puedes autorizar de nuevo o tomar el control del navegador.",
           screenshot_url: shot,
           kind: "info",
         });
@@ -436,7 +519,7 @@ function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): void {
 
 async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
   if (!run.browser_use_run_id) return run;
-  if (run.status === "stopped" || run.status === "failed") return run;
+  if (run.status === "stopped" || run.status === "failed" || run.status === "submitted") return run;
 
   try {
     const bu = await getAgentRun(run.browser_use_run_id);
@@ -455,7 +538,7 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
       // Events endpoint optional — run poll still drives status.
     }
 
-    applyRunStatus(run, bu, events);
+    await applyRunStatus(run, bu, events);
 
     for (const ev of events) {
       // Skip the latest-step text we already logged in applyRunStatus.
@@ -485,6 +568,8 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
         run.status = "review";
         run.pause_reason = null;
         clearPendingFields(run);
+      } else if (marker.status === "submitted") {
+        await finalizeSubmission(run, marker.confirmation ?? null);
       } else if (marker.status === "failed") {
         run.status = "failed";
         run.pause_reason = null;
@@ -557,6 +642,10 @@ export async function createRun(input: {
     pause_streak: 0,
     prev_pause_reason: null,
     pending_fields: [],
+    // Submit permission starts off — only the owner-authenticated authorize
+    // endpoint can flip filing_authorized after pre-submit review.
+    filing_authorized: false,
+    filing_confirmation: null,
     // Seed from up-front (pre-flight) field ids so the agent never re-asks
     // for values the human already provided at start. Ids only — never values.
     supplied_field_ids: mergeSuppliedFieldIds([], input.fields),
@@ -824,6 +913,100 @@ export async function resumeRun(
 }
 
 /**
+ * "File it for me" — the owner authorized SmartPR to click final submit.
+ *
+ * SECURITY: the route layer must verify run ownership AND require an
+ * explicit attestation before calling this. This function additionally
+ * requires status === "review": the agent must have already prepared the
+ * filing and reported REVIEW_READY. The submit permission reaches the
+ * agent ONLY through buildAuthorizeTaskPrompt — never from agent output
+ * or client-supplied text.
+ *
+ * Returns the public run; null when the run does not exist.
+ */
+export async function authorizeFiling(id: string): Promise<AgencyRunPublic | null> {
+  const run = runs().get(id);
+  if (!run) return null;
+  if (run.status === "submitted") return toPublic(run);
+  // Authorization is only meaningful from pre-submit review. Anything else
+  // (paused, running, failed, stopped) is a no-op so a stale/double click
+  // can never dispatch a submit for a half-prepared filing.
+  if (run.status !== "review") return toPublic(run);
+
+  run.filing_authorized = true;
+  run.updated_at = nowIso();
+  pushEvent(run, {
+    message:
+      "You authorized SmartPR to submit this filing on your behalf — the agent is completing the submission now.",
+    message_es:
+      "Autorizaste a SmartPR a enviar este trámite por ti — el agente está completando el envío ahora.",
+    screenshot_url:
+      run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+    kind: "info",
+  });
+
+  if (run.worker === "mock") {
+    // Mock worker: simulate the authorized submission completing on the
+    // next poll so the demo exercises the full authorize → submitted path.
+    run.status = "submitted";
+    run.filing_confirmation = `MOCK-${run.id.slice(0, 8).toUpperCase()}`;
+    pushEvent(run, {
+      message: `Filing submitted on the portal — confirmation ${run.filing_confirmation}. SmartPR filed this on your behalf after your authorization.`,
+      message_es: `Trámite enviado en el portal — confirmación ${run.filing_confirmation}. SmartPR lo radicó por ti tras tu autorización.`,
+      screenshot_url: PLACEHOLDER_SHOTS.home,
+      kind: "info",
+    });
+    return toPublic(run);
+  }
+
+  run.status = "running";
+  run.pause_reason = null;
+  clearPendingFields(run);
+  resetPauseStreak(run);
+
+  if (!run.browser_use_session_id) {
+    // No session to dispatch to — back to review so the owner can retry.
+    run.status = "review";
+    pushEvent(run, {
+      message: "Could not dispatch the submission — the browser session is missing. Try authorizing again or Reconnect.",
+      message_es: "No se pudo enviar — falta la sesión del navegador. Intenta autorizar de nuevo o Reconectar.",
+      screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+      kind: "info",
+    });
+    return toPublic(run);
+  }
+
+  try {
+    const bu = run.browser_use_run_id ? await getAgentRun(run.browser_use_run_id) : null;
+    const terminal =
+      !bu || bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled";
+    const queued = await queueAgentMessage(
+      run.browser_use_session_id,
+      buildAuthorizeTaskPrompt({
+        config: getFilingConfig(run.filing_type),
+        passport: run.passport_snapshot ?? null,
+        goalBrief: run.goal_brief ?? null,
+        submissionObjective: run.submission_objective ?? null,
+      }),
+      // The review turn should be terminal; interrupt only if it is not.
+      { interrupt: !terminal }
+    );
+    if (queued.runId) run.browser_use_run_id = queued.runId;
+  } catch (err) {
+    // Dispatch failed — back to review so the owner can retry. The
+    // authorization flag stays set; re-authorizing re-dispatches.
+    run.status = "review";
+    pushEvent(run, {
+      message: `Could not dispatch the submission — try authorizing again. (${sanitizeError(err)})`,
+      message_es: `No se pudo enviar — intenta autorizar de nuevo. (${sanitizeError(err)})`,
+      screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+      kind: "info",
+    });
+  }
+  return toPublic(await syncBrowserUse(run));
+}
+
+/**
  * Record that the user took over the live browser. The run status itself is
  * unchanged (still paused/running) — this only logs the handoff so the
  * Assistant panel ("notifications") reflects the takeover.
@@ -876,12 +1059,14 @@ export async function stopRun(id: string): Promise<AgencyRunPublic | null> {
     }
   }
 
-  if (run.status === "stopped" || run.status === "review") {
+  if (run.status === "stopped" || run.status === "review" || run.status === "submitted") {
     if (run.worker === "browser_use" && run.status === "review") {
       await cleanupProvider();
       run.status = "stopped";
       run.updated_at = nowIso();
     }
+    // "submitted" is terminal — the filing already went out; the browser
+    // session was ended by finalizeSubmission. Never un-submit here.
     return toPublic(run);
   }
 

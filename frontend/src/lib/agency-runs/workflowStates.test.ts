@@ -22,6 +22,20 @@ describe("workflowStateForRun", () => {
     );
   });
 
+  it("maps running + filingAuthorized -> SUBMITTING", () => {
+    assert.equal(
+      workflowStateForRun({ status: "running", pauseReason: null, filingAuthorized: true }),
+      "SUBMITTING"
+    );
+  });
+
+  it("maps submitted -> COMPLETED", () => {
+    assert.equal(
+      workflowStateForRun({ status: "submitted", pauseReason: null }),
+      "COMPLETED"
+    );
+  });
+
   it("maps paused -> WAITING_FOR_USER for every pause reason", () => {
     const reasons: AgencyPauseReason[] = [
       "USER_LOGIN",

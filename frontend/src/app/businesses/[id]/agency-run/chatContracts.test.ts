@@ -209,11 +209,11 @@ describe("validationErrors", () => {
     assert.equal(interventionHeading(null, "es"), "Esperándote");
   });
 
-  it("gate copy states SmartPR never final-submits without the user", () => {
+  it("gate copy states SmartPR only final-submits with the user's authorization", () => {
     const en = gateCopy("en");
-    assert.ok(en.includes("Nothing is submitted until you say so"));
+    assert.ok(en.includes("Nothing is submitted until you authorize it"));
     const es = gateCopy("es");
-    assert.ok(es.includes("No se envía nada hasta que tú lo decidas"));
+    assert.ok(es.includes("No se envía nada hasta que tú lo autorices"));
   });
 });
 

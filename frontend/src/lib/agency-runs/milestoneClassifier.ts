@@ -147,6 +147,21 @@ function reviewMilestone(event: AgencyRunEvent): ChatMilestone {
   return milestone;
 }
 
+function submittedMilestone(event: AgencyRunEvent): ChatMilestone {
+  const milestone: ChatMilestone = {
+    id: `m-${event.index}`,
+    tone: "success",
+    heading_en: "Filed — your submission is complete.",
+    heading_es: "Enviado — tu radicación está completa.",
+    created_at: event.created_at,
+  };
+  const bodyEn = event.message.trim().replace(/\s+/g, " ").slice(0, 280);
+  const bodyEs = event.message_es.trim().replace(/\s+/g, " ").slice(0, 280);
+  if (bodyEn) milestone.body_en = bodyEn;
+  if (bodyEs) milestone.body_es = bodyEs;
+  return milestone;
+}
+
 export interface BuildChatMilestonesOpts {
   portalEn: string;
   portalEs: string;
@@ -195,7 +210,11 @@ export function buildChatMilestones(
     }
     flushBurst();
     milestones.push(
-      kind === "pause" ? pauseMilestone(event) : reviewMilestone(event)
+      kind === "pause"
+        ? pauseMilestone(event)
+        : kind === "submitted"
+          ? submittedMilestone(event)
+          : reviewMilestone(event)
     );
   });
   flushBurst();

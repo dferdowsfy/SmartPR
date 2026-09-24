@@ -70,11 +70,13 @@ const GATE_COPY: Record<IrreversibleGate, GateCopy> = {
     title_en: "Ready to submit — your call",
     title_es: "Lista para enviar — tú decides",
     body_en:
-      "SmartPR has prepared everything and it is ready for your review. Nothing is " +
-      "submitted until you say so — review every field, certify, and click submit yourself.",
+      "SmartPR has prepared everything and it is ready for your review. Nothing " +
+      "is submitted until you authorize it — review every field, confirm the " +
+      "information is true and correct, then let SmartPR file it for you.",
     body_es:
-      "SmartPR preparó todo y está listo para tu revisión. No se envía nada hasta que " +
-      "tú lo decidas — revisa cada campo, certifica y dale clic a enviar tú mismo.",
+      "SmartPR preparó todo y está listo para tu revisión. No se envía nada " +
+      "hasta que tú lo autorices — revisa cada campo, confirma que la " +
+      "información es cierta y correcta, y deja que SmartPR lo radique por ti.",
   },
 };
 

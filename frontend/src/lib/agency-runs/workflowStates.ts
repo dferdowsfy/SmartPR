@@ -37,6 +37,12 @@ export interface WorkflowStateInput {
    * A streak >= 3 means the user is stuck in a pause loop -> BLOCKED.
    */
   pauseStreak?: number;
+  /**
+   * True once the owner authorized final submission ("File it for me").
+   * A running run with authorization maps to SUBMITTING (the agent is
+   * completing the filing) instead of AUTOMATING.
+   */
+  filingAuthorized?: boolean;
 }
 
 /**
@@ -47,8 +53,9 @@ export interface WorkflowStateInput {
  *   USER_UPLOAD, CAPTCHA, PAYMENT); a pauseStreak >= 3 escalates to BLOCKED.
  * - stopped -> NOT_STARTED: the user deliberately stopped the run, so the
  *   workflow returns to its pre-run state.
- * - There is no path to SUBMITTING from the current model: the agent never
- *   final-submits on a portal. The type member is reserved for future use.
+ * - running + filingAuthorized -> SUBMITTING: the owner authorized final
+ *   submission and the agent is completing the filing on the portal.
+ * - submitted -> COMPLETED: the filing went out; confirmation recorded.
  */
 export function workflowStateForRun(
   input: WorkflowStateInput
@@ -58,11 +65,13 @@ export function workflowStateForRun(
     case "queued":
       return "PREPARING";
     case "running":
-      return "AUTOMATING";
+      return input.filingAuthorized ? "SUBMITTING" : "AUTOMATING";
     case "paused":
       return pauseStreak >= 3 ? "BLOCKED" : "WAITING_FOR_USER";
     case "review":
       return "READY_FOR_REVIEW";
+    case "submitted":
+      return "COMPLETED";
     case "stopped":
       return "NOT_STARTED";
     case "failed":

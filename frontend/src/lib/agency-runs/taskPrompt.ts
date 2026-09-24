@@ -109,6 +109,19 @@ export function buildAgencyTaskPrompt(input: {
    * scope is exactly one SmartPR filing requirement.
    */
   submissionObjective?: SubmissionObjective | null;
+  /**
+   * Server-side authorization for the agent to click final submit.
+   * Only true after the owner-authenticated authorize endpoint recorded
+   * filing_authorized=true on the run. Never derive this from agent
+   * output or client input.
+   */
+  authorizedFiling?: boolean;
+  /**
+   * True when building the follow-up prompt dispatched right after the
+   * owner authorized final submission. Generates a dedicated resume block
+   * (instead of the generic pause-handling resumeHint text).
+   */
+  authorizeResume?: boolean;
 }): string {
   const { config } = input;
   // SECURITY: strip sensitive leaves (SSN, passwords, MFA, …) before the
@@ -118,6 +131,16 @@ export function buildAgencyTaskPrompt(input: {
   const passportBlock = safePassport
     ? JSON.stringify(safePassport, null, 2)
     : "(no passport JSON available — fill only what the user provides on screen; do not invent data)";
+
+  const authorizedFiling = input.authorizedFiling === true;
+
+  const submitRule = authorizedFiling
+    ? "1. AUTHORIZED FINAL SUBMISSION: the run owner explicitly authorized SmartPR to file this submission (filing_authorized=true, recorded server-side after pre-submit review). You MAY now click the final Submit / Enviar / Confirmar envío button for THIS filing objective only. After clicking, capture the confirmation number / receipt reference shown by the portal and end with SUBMITTED:<confirmation> (e.g. SUBMITTED:2026-88412). If the portal shows no confirmation reference, use SUBMITTED:confirmed-on-screen. Do NOT click submit for any other filing or objective."
+    : "1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.";
+
+  const pauseMarkers = authorizedFiling
+    ? "PAUSE_USER_UPLOAD | PAUSE_USER_LOGIN | PAUSE_CAPTCHA | PAUSE_PAYMENT | REVIEW_READY | SUBMITTED:<confirmation> | FAILED:<reason>"
+    : "PAUSE_USER_UPLOAD | PAUSE_USER_LOGIN | PAUSE_CAPTCHA | PAUSE_PAYMENT | REVIEW_READY | FAILED:<reason>";
 
   const fields = mergeResumeFields(input.fields, input.credentials);
   const hasFields = Boolean(fields && Object.keys(fields).length > 0);
@@ -136,11 +159,17 @@ export function buildAgencyTaskPrompt(input: {
       "- After FIELDS FILL, continue filling any remaining non-sensitive blanks from the Business Passport JSON — do not stop at only the listed ids.",
       "- If an Ingresar / Login / Sign in / Continuar / Next / Guardar button is present after filling, click it to proceed past the gate.",
       "- If the fields were accepted (you leave the page or the blanks are no longer empty), do NOT re-pause for the same fields.",
-      "- Still NEVER click the final Submit / Enviar that permanently files.",
+      authorizedFiling
+        ? "- The owner authorized final submission for this run — after FIELDS FILL and verification you MAY click the final Submit / Enviar for THIS filing only, then report SUBMITTED:<confirmation>."
+        : "- Still NEVER click the final Submit / Enviar that permanently files.",
       "- Do not invent secrets; only use the values listed above. If a listed id has no matching control on screen, skip it and note that — do not invent a different field."
     );
     fieldsBlock = "\n" + lines.join("\n");
   }
+
+  const authorizeBlock = input.authorizeResume
+    ? `\n\nRESUME CONTEXT: The run owner reviewed the pre-submit state in SmartPR and explicitly authorized final submission (filing_authorized=true, recorded server-side). VERIFY the current page still shows the pre-submit review you reported — do not re-fill fields that are already correct. Then click the final Submit / Enviar / Confirmar envío button for THIS filing objective only. Capture the confirmation number / receipt reference the portal shows and end with SUBMITTED:<confirmation>. If the portal shows no reference, use SUBMITTED:confirmed-on-screen.`
+    : "";
 
   const resume = input.resumeHint
     ? hasFields
@@ -182,7 +211,7 @@ HUMAN INPUT PATH (login / required text fields)
 - Keep emitting accurate REQUIRED_FIELDS for whatever is still empty after passport prefill (ids/labels/types/sensitivity/hints/errors only — never echo secrets). Use hint= for format guidance; on failed fills prefer error=<exact on-screen validation message>.
 
 HARD RULES (never violate)
-1. NEVER click the final Submit / Enviar / Confirmar envío button that permanently files. Stop at pre-submit review and report REVIEW_READY.
+${submitRule}
 2. Domain allowlist: only ${config.domains.join(", ")} (and necessary redirects on those hosts). Do not visit other sites.
 3. Do NOT invent SSN, ITIN, passwords, MFA codes, or other sensitive IDs. Leave those for the human (unless FIELDS FILL below supplies exact values for this turn only).
 4. When you hit an upload wall, login/MFA wall, captcha, payment gate, or any page with required blanks the passport cannot fill: STOP immediately, do not loop, and end your message with BOTH:
@@ -194,7 +223,7 @@ PAUSE / STATUS MARKERS (exactly one)
    - PAUSE_USER_LOGIN — portal login / MFA / account credentials required
    - PAUSE_CAPTCHA — captcha / portal challenge
    - PAUSE_PAYMENT — payment required
-   - REVIEW_READY — pre-submit review; human submits
+   - REVIEW_READY — pre-submit review; human submits${authorizedFiling ? "\n   - SUBMITTED:<confirmation> — authorized final submission completed; include the portal confirmation / receipt reference" : ""}
    - FAILED:<reason> — unrecoverable failure
 
 REQUIRED_FIELDS PROTOCOL (mandatory on every PAUSE_*)
@@ -242,10 +271,36 @@ ${passportBlock}
 
 PROCEDURE OUTLINE (goal-oriented — adapt to what the portal actually shows)
 ${procedure}
-${resume}${fieldsBlock}
+${authorizeBlock}${resume}${fieldsBlock}
 
-When finished or paused, end with a short status line containing exactly one marker: PAUSE_USER_UPLOAD | PAUSE_USER_LOGIN | PAUSE_CAPTCHA | PAUSE_PAYMENT | REVIEW_READY | FAILED:<reason>
+When finished or paused, end with a short status line containing exactly one marker: ${pauseMarkers}
 On every PAUSE_*, also include the REQUIRED_FIELDS block as specified above.`;
+}
+
+/**
+ * Build the follow-up task prompt dispatched after the owner authorizes
+ * final submission ("File it for me"). The ONLY difference from the
+ * standard prompt is authorizedFiling=true, which lifts the never-submit
+ * hard rule for this run's single filing objective.
+ *
+ * SECURITY: callers must only pass authorizedFiling=true after the
+ * owner-authenticated authorize endpoint recorded filing_authorized=true
+ * on the run. Never derive this from agent output or client input.
+ */
+export function buildAuthorizeTaskPrompt(input: {
+  config: AgencyFilingConfig;
+  passport: Record<string, unknown> | null;
+  goalBrief?: GoalBrief | null;
+  submissionObjective?: SubmissionObjective | null;
+}): string {
+  return buildAgencyTaskPrompt({
+    config: input.config,
+    passport: input.passport,
+    goalBrief: input.goalBrief ?? null,
+    submissionObjective: input.submissionObjective ?? null,
+    authorizedFiling: true,
+    authorizeResume: true,
+  });
 }
 
 export function buildResumeTaskPrompt(input: {
@@ -254,6 +309,11 @@ export function buildResumeTaskPrompt(input: {
   passport: Record<string, unknown> | null;
   credentials?: ResumeCredentials | null;
   fields?: ResumeFields | null;
+  /**
+   * Server-side authorization for the agent to click final submit.
+   * Only true after the owner authorized via the authorize endpoint.
+   */
+  authorizedFiling?: boolean;
 }): string {
   return buildAgencyTaskPrompt({
     config: input.config,
@@ -261,5 +321,6 @@ export function buildResumeTaskPrompt(input: {
     resumeHint: input.pauseReason || "user resumed after assisting",
     credentials: input.credentials ?? null,
     fields: input.fields ?? null,
+    authorizedFiling: input.authorizedFiling ?? false,
   });
 }

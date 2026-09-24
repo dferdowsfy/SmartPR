@@ -31,7 +31,7 @@ Set `BROWSER_USE_API_KEY` on Railway (or local `.env`) and redeploy. Without it,
 - API key is read only in Node route handlers / `lib/agency-runs/browserUseClient.ts`.
 - `live_url` is session-scoped (treat as a credential). Returned only to the authenticated owner when `owner_user_id` was recorded at create time.
 - CSP on `/businesses/:id/agency-run` allows `frame-src` for `https://live.browser-use.com` (and `*.browser-use.com`).
-- Agent prompt: never click final SURI submit; pause at upload/login/captcha walls.
+- Agent prompt: never click final submit until the owner authorizes it ("File it for me" with an attestation); pause at upload/login/captcha walls.
 
 ## Persistence note
 Runs live in a **process-local `Map`** (`frontend/src/lib/agency-runs/store.ts`, keyed by run id). Fine for demos; replace with `agency_runs` / `agency_run_events` tables in a follow-up.
@@ -42,7 +42,7 @@ Runs live in a **process-local `Map`** (`frontend/src/lib/agency-runs/store.ts`,
 3. Start **Register Taxpayer** — right panel should show the live Browser Use iframe within a few seconds
 4. Watch the step log sync from Cloud messages / step summaries
 5. When the agent pauses for upload or login, use the overlay (Evidence Locker upload optional) → **Resume**
-6. At **Review**, submit yourself on SURI — the agent never clicks final submit
+6. At **Review**, check the attestation and hit **File it for me** — SmartPR submits the filing on the portal on your behalf (or take over the browser to file yourself)
 7. **Stop** cancels/ends the Browser Use session
 
 ## Demo (mock fallback)

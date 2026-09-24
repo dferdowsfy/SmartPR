@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { createRun } from "./store";
+import { authorizeFiling, createRun, peekRun } from "./store";
 import type { SubmissionObjective } from "./types";
 
 const objective: SubmissionObjective = {
@@ -41,5 +41,55 @@ describe("createRun submission-objective gate", () => {
     assert.equal(run.submission_objective?.submission_objective_id, "obj-123");
     assert.equal(run.submission_objective?.obligation_id, "obl-1");
     assert.equal(run.submission_objective?.requirement_id, "DOC_SURI_REGISTRATION");
+  });
+
+  it("starts with filing unauthorized and no confirmation", async () => {
+    const run = await createRun({
+      business_id: "biz-1",
+      filing_type: "SURI_REGISTER_TAXPAYER",
+      submissionObjective: objective,
+    });
+    assert.equal(run.filing_authorized, false);
+    assert.equal(run.filing_confirmation, null);
+  });
+});
+
+describe("authorizeFiling", () => {
+  it("returns null for an unknown run id", async () => {
+    assert.equal(await authorizeFiling("nope"), null);
+  });
+
+  it("is a no-op when the run is not at pre-submit review", async () => {
+    const run = await createRun({
+      business_id: "biz-1",
+      filing_type: "SURI_REGISTER_TAXPAYER",
+      submissionObjective: objective,
+    });
+    // Fresh mock run is mid-flow, not review — authorization must not arm.
+    assert.notEqual(run.status, "review");
+    const after = await authorizeFiling(run.id);
+    assert.ok(after);
+    assert.equal(after.filing_authorized, false);
+    assert.equal(after.status, run.status);
+  });
+
+  it("mock worker: review → submitted with a confirmation reference", async () => {
+    const run = await createRun({
+      business_id: "biz-1",
+      filing_type: "SURI_REGISTER_TAXPAYER",
+      submissionObjective: objective,
+    });
+    // Deterministic review state without wall-clock mock beats.
+    const internal = peekRun(run.id);
+    assert.ok(internal);
+    internal.status = "review";
+    const after = await authorizeFiling(run.id);
+    assert.ok(after);
+    assert.equal(after.status, "submitted");
+    assert.equal(after.filing_authorized, true);
+    assert.ok(after.filing_confirmation, "confirmation reference recorded");
+    // Authorizing an already-submitted run is a stable no-op.
+    const again = await authorizeFiling(run.id);
+    assert.equal(again?.status, "submitted");
   });
 });

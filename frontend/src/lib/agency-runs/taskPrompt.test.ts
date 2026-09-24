@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildAgencyTaskPrompt, submissionObjectivePromptBlock } from "./taskPrompt";
+import { buildAgencyTaskPrompt, buildAuthorizeTaskPrompt, buildResumeTaskPrompt, submissionObjectivePromptBlock } from "./taskPrompt";
 import { getFilingConfig } from "./filingTypes";
 import type { SubmissionObjective } from "./types";
 
@@ -67,5 +67,65 @@ describe("buildAgencyTaskPrompt with a submission objective", () => {
     const config = getFilingConfig("SURI_REGISTER_TAXPAYER");
     const task = buildAgencyTaskPrompt({ config, passport: null, goalBrief: null });
     assert.ok(!task.includes("=== SUBMISSION OBJECTIVE ==="));
+  });
+});
+
+describe("buildAgencyTaskPrompt final-submit permission", () => {
+  const config = getFilingConfig("SURI_REGISTER_TAXPAYER");
+
+  it("withholds submit permission and the SUBMITTED marker by default", () => {
+    const task = buildAgencyTaskPrompt({
+      config,
+      passport: null,
+      goalBrief: null,
+      submissionObjective: objective,
+    });
+    assert.ok(task.includes("NEVER click the final Submit"));
+    assert.ok(task.includes("REVIEW_READY"));
+    assert.ok(!task.includes("SUBMITTED:"), "unauthorized prompt must not mention the SUBMITTED marker");
+    assert.ok(!task.includes("AUTHORIZED FINAL SUBMISSION"));
+  });
+
+  it("grants submit permission only when authorizedFiling is true", () => {
+    const task = buildAgencyTaskPrompt({
+      config,
+      passport: null,
+      goalBrief: null,
+      submissionObjective: objective,
+      authorizedFiling: true,
+    });
+    assert.ok(task.includes("AUTHORIZED FINAL SUBMISSION"));
+    assert.ok(task.includes("SUBMITTED:<confirmation>"));
+    assert.ok(!task.includes("NEVER click the final Submit"));
+  });
+
+  it("buildAuthorizeTaskPrompt produces the authorized resume block", () => {
+    const task = buildAuthorizeTaskPrompt({
+      config,
+      passport: null,
+      goalBrief: null,
+      submissionObjective: objective,
+    });
+    assert.ok(task.includes("explicitly authorized final submission"));
+    assert.ok(task.includes("filing_authorized=true"));
+    assert.ok(task.includes("SUBMITTED:<confirmation>"));
+    assert.ok(!task.includes("NEVER click the final Submit"));
+  });
+
+  it("buildResumeTaskPrompt threads authorizedFiling through", () => {
+    const authed = buildResumeTaskPrompt({
+      config,
+      pauseReason: "REVIEW_READY",
+      passport: null,
+      authorizedFiling: true,
+    });
+    assert.ok(authed.includes("AUTHORIZED FINAL SUBMISSION"));
+    const plain = buildResumeTaskPrompt({
+      config,
+      pauseReason: "USER_LOGIN",
+      passport: null,
+    });
+    assert.ok(plain.includes("NEVER click the final Submit"));
+    assert.ok(!plain.includes("SUBMITTED:"));
   });
 });

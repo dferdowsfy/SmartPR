@@ -9,7 +9,7 @@ import type { AgencyRunEvent } from "./types";
 const ev = (
   index: number,
   message: string,
-  kind?: "info" | "pause" | "review",
+  kind?: "info" | "pause" | "review" | "submitted",
   message_es?: string
 ): AgencyRunEvent => ({
   index,
@@ -122,6 +122,27 @@ describe("buildChatMilestones", () => {
       review.heading_es,
       "Tu solicitud está preparada y lista para la revisión final."
     );
+  });
+
+  it("keeps every submitted event as its own success milestone", () => {
+    const events: AgencyRunEvent[] = [
+      ev(0, "Opening SURI…", "info"),
+      ev(
+        1,
+        "Filing submitted on the portal — confirmation ABC-123. SmartPR filed this on your behalf after your authorization.",
+        "submitted"
+      ),
+    ];
+    const milestones = buildChatMilestones(events, {
+      portalEn: "SURI",
+      portalEs: "SURI",
+    });
+    const submitted = milestones.find((m) => m.id === "m-1")!;
+    assert.ok(submitted, "submitted milestone present");
+    assert.equal(submitted.tone, "success");
+    assert.equal(submitted.heading_en, "Filed — your submission is complete.");
+    assert.equal(submitted.heading_es, "Enviado — tu radicación está completa.");
+    assert.ok(submitted.body_en?.includes("ABC-123"), "confirmation in body");
   });
 
   it("ids are deterministic m-<index> and output is ordered by created_at", () => {

@@ -183,7 +183,8 @@ export function workflowStatusLine(
 
 /**
  * Copy for the irreversible-action gate on the review card.
- * SmartPR never final-submits — the final-submission gate body says it plainly.
+ * SmartPR only final-submits after the owner explicitly authorizes it —
+ * the final-submission gate body says it plainly.
  */
 export function gateCopy(lang: Lang): string {
   const g = libGateCopy("final_submission", lang);

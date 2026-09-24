@@ -35,8 +35,8 @@ describe("irreversibleGates", () => {
     const c = gateCopy("final_submission", "es");
     assert.equal(c.title_en, "Ready to submit — your call");
     assert.equal(c.title_es, "Lista para enviar — tú decides");
-    assert.ok(/until you say so/i.test(c.body_en), c.body_en);
-    assert.ok(/tú lo decidas/i.test(c.body_es), c.body_es);
+    assert.ok(/until you authorize it/i.test(c.body_en), c.body_en);
+    assert.ok(/hasta que tú lo autorices/i.test(c.body_es), c.body_es);
   });
 
   it("every gate returns complete bilingual copy", () => {

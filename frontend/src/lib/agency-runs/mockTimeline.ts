@@ -75,15 +75,15 @@ export function timelineFor(config: AgencyFilingConfig): MockBeat[] {
     {
       kind: "step",
       delayMs: 1400,
-      message: "Navigating to pre-submit review (no final submit)",
-      message_es: "Navegando a revisión previa al envío (sin enviar)",
+      message: "Navigating to pre-submit review",
+      message_es: "Navegando a revisión previa al envío",
       shot: "review",
     },
     {
       kind: "review",
       delayMs: 800,
-      message: "Review ready — you submit on the portal. Agent never clicks final submit.",
-      message_es: "Revisión lista — usted envía en el portal. El agente nunca hace clic en enviar.",
+      message: "Review ready — authorize SmartPR to file it for you, or take over the browser.",
+      message_es: "Revisión lista — autoriza a SmartPR a enviarlo por ti, o toma el control del navegador.",
       shot: "review",
     }
   );

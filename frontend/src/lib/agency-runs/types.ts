@@ -13,6 +13,7 @@ export type AgencyRunStatus =
   | "running"
   | "paused"
   | "review"
+  | "submitted"
   | "stopped"
   | "failed";
 
@@ -80,7 +81,7 @@ export interface AgencyRunEvent {
   message_es: string;
   screenshot_url: string;
   created_at: string;
-  kind?: "info" | "pause" | "review";
+  kind?: "info" | "pause" | "review" | "submitted";
 }
 
 export interface AgencyRun {
@@ -134,6 +135,17 @@ export interface AgencyRun {
    */
   goal_brief?: GoalBrief | null;
   /**
+   * True once the owner explicitly authorized SmartPR to click final submit
+   * for this run ("File it for me"). The agent prompt only receives submit
+   * permission when this is true — it can never grant itself permission.
+   */
+  filing_authorized: boolean;
+  /**
+   * Confirmation / receipt reference captured by the agent after an
+   * authorized final submission. Null until SUBMITTED is reported.
+   */
+  filing_confirmation: string | null;
+  /**
    * Structured submission objective (labels/ids only — never values).
    * Present when the run was started from a specific SmartPR filing
    * requirement; the browser agent executes only this objective.
@@ -172,6 +184,16 @@ export interface AgencyRunPublic {
    * started directly via POST /api/agency-runs.
    */
   goal_brief: GoalBrief | null;
+  /**
+   * True once the owner explicitly authorized SmartPR to click final submit
+   * for this run. Mirrors AgencyRun.filing_authorized (server-side gate).
+   */
+  filing_authorized: boolean;
+  /**
+   * Confirmation / receipt reference captured after an authorized final
+   * submission. Null until the run reaches "submitted".
+   */
+  filing_confirmation: string | null;
   /**
    * Structured submission objective (labels/ids only — never values, never
    * secrets). Null for runs started without one (legacy path, now retired).
