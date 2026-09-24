@@ -29,7 +29,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Cloud, Eye, EyeOff, Server, Shield,
+  Cloud, Eye, EyeOff, KeyRound, Server, Shield,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
@@ -701,6 +701,19 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     : null;
   const terminal = wfState ? isTerminalWorkflowState(wfState) : true;
 
+  /**
+   * "I'm stuck" → take-over popup. Shown once per stuck episode (run +
+   * pause streak) when the agent is BLOCKED and the live browser is
+   * available; "Not now" dismisses it until the agent gets stuck again.
+   */
+  const stuckKey = run ? `${run.id}:${run.pause_streak ?? 0}` : "";
+  const [stuckDismissedKey, setStuckDismissedKey] = useState<string | null>(null);
+  const stuckPrompt =
+    wfState === "BLOCKED" &&
+    Boolean(run?.live_url) &&
+    !takeover &&
+    stuckDismissedKey !== stuckKey;
+
   const pendingFields: AgencyPendingField[] = useMemo(() => {
     if (!run || run.status !== "paused") return [];
     if (run.pending_fields?.length) return run.pending_fields;
@@ -791,7 +804,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       ? run?.pause_reason === "USER_UPLOAD"
         ? L("Waiting on you: upload the documents", "Esperando por ti: sube los documentos", lang)
         : run?.pause_reason === "USER_LOGIN"
-          ? L("Waiting on you: your portal login", "Esperando por ti: tu inicio de sesión", lang)
+          ? // Name what the page actually asks for — USER_LOGIN also covers
+            // SSN / other human-typed fields, not just a sign-in.
+            pendingFields.length > 0 &&
+            !pendingFields.some((f) => /^(email|password|mfa|username)$/.test(f.id))
+            ? L(
+                `Waiting on you: ${pendingFields.map((f) => f.label).join(", ")}`,
+                `Esperando por ti: ${pendingFields.map((f) => f.label).join(", ")}`,
+                lang
+              )
+            : L("Waiting on you: your portal login", "Esperando por ti: tu inicio de sesión", lang)
           : run?.pause_reason === "CAPTCHA"
             ? L("Waiting on you: complete the captcha", "Esperando por ti: completa el captcha", lang)
             : run?.pause_reason === "PAYMENT"
@@ -944,7 +966,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           <Link href={`/businesses/${businessId}`} className="text-sm font-semibold text-[#cfc6b4] hover:text-white">
             ← {L("Business profile", "Perfil del negocio", lang)}
           </Link>
-          {run && <StatusPill status={run.status} lang={lang} />}
+          {run && !inWorkspace && <StatusPill status={run.status} lang={lang} />}
         </div>
 
         {/* Business sub-header + step tracker (Mita design) */}
@@ -1013,14 +1035,55 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             </p>
           </header>
         ) : (
-          <div className="mt-3 hidden shrink-0 items-center gap-2.5 md:flex">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-base text-white">
-              M
-            </span>
-            <p className="font-[family-name:var(--font-display)] text-xl text-[#f4efe2]">
-              Mita
-            </p>
-            {run && <StatusPill status={run.status} lang={lang} />}
+          // The chat window has no header bar of its own — Mita's identity,
+          // run status, portal-field progress and the browser toggle live in
+          // this one row above the window.
+          <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-base text-white">
+                M
+              </span>
+              <p className="font-[family-name:var(--font-display)] text-xl text-[#f4efe2]">
+                Mita
+              </p>
+              {run && <StatusPill status={run.status} lang={lang} />}
+              {intervention && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-900">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  {L("Needs you", "Te necesita", lang)}
+                </span>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-4">
+              {portalFieldsProgress && (
+                <span className="hidden items-center gap-2 md:inline-flex">
+                  <span className="whitespace-nowrap text-[11px] font-semibold text-[#b9b0a0]">
+                    {L("Portal fields", "Campos del portal", lang)} ·{" "}
+                    {portalFieldsProgress.known} {L("of", "de", lang)}{" "}
+                    {portalFieldsProgress.total}
+                  </span>
+                  <SegmentedBar
+                    known={portalFieldsProgress.known}
+                    total={portalFieldsProgress.total}
+                  />
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setBrowserHidden((h) => !h)}
+                aria-pressed={!showBrowserPanel}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#e8e1d0] hover:bg-white/10"
+              >
+                {showBrowserPanel ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+                {showBrowserPanel
+                  ? L("Hide browser", "Ocultar navegador", lang)
+                  : L("View browser", "Ver navegador", lang)}
+              </button>
+            </div>
           </div>
         )}
 
@@ -1043,66 +1106,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           >
           {/* Chat: the primary surface. Its message list is the only thing
               that scrolls in the workspace. */}
+          {/* The chat column keeps a hard minimum width and clips its own
+              overflow, so the browser beside it can never cover its buttons. */}
           <section
-            className={`flex min-h-0 min-w-0 flex-col ${
+            className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${
               showBrowserPanel
-                ? "lg:basis-[40%] lg:flex-none lg:border-r lg:border-[#161616]/10"
+                ? "lg:w-[38%] lg:min-w-[360px] lg:max-w-[480px] lg:flex-none lg:border-r lg:border-[#161616]/10"
                 : "lg:mx-auto lg:w-full lg:max-w-3xl"
             }`}
             aria-label={L("Mita chat", "Chat de Mita", lang)}
           >
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#161616]/10 bg-[#f7f2e4] px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-base text-white">
-                  M
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#23211c]">Mita</p>
-                  <p className="truncate text-xs text-[#6b675e]">
-                    {L("Filing on your behalf", "Radicando por ti", lang)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {intervention && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-900">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    {L("Needs you", "Te necesita", lang)}
-                  </span>
-                )}
-                {portalFieldsProgress && (
-                  <span className="hidden items-center gap-2 md:inline-flex">
-                    <span className="whitespace-nowrap text-[11px] font-semibold text-[#6b675e]">
-                      {L("Portal fields", "Campos del portal", lang)} ·{" "}
-                      {portalFieldsProgress.known} {L("of", "de", lang)}{" "}
-                      {portalFieldsProgress.total}
-                    </span>
-                    <SegmentedBar
-                      known={portalFieldsProgress.known}
-                      total={portalFieldsProgress.total}
-                    />
-                  </span>
-                )}
-                {inWorkspace && (
-                  <button
-                    type="button"
-                    onClick={() => setBrowserHidden((h) => !h)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    {showBrowserPanel ? (
-                      <EyeOff className="h-3 w-3" />
-                    ) : (
-                      <Eye className="h-3 w-3" />
-                    )}
-                    {showBrowserPanel
-                      ? L("Hide browser", "Ocultar navegador", lang)
-                      : L("View browser", "Ver navegador", lang)}
-                  </button>
-                )}
-                {run && <StatusPill status={run.status} lang={lang} />}
-              </div>
-            </div>
-
             <AgencyChat
               lang={lang}
               businessId={businessId}
@@ -1197,6 +1210,55 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
       </main>
+
+      {stuckPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mita-stuck-title"
+        >
+          <div className="w-full max-w-md rounded-3xl bg-[#fbf8f2] p-6 shadow-2xl shadow-black/40">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+              <KeyRound className="h-5 w-5 text-amber-700" />
+            </span>
+            <h2
+              id="mita-stuck-title"
+              className="mt-3 font-[family-name:var(--font-display)] text-xl text-[#23211c]"
+            >
+              {L("Mita is stuck on this step", "Mita se trancó en este paso", lang)}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#6b675e]">
+              {L(
+                "I've tried this step a few times without getting past it. Take over the browser, finish this one step on the portal page, then press “I'm done” and I'll continue from there.",
+                "Intenté este paso varias veces sin pasarlo. Toma el control del navegador, completa este paso en la página del portal y luego pulsa “Terminé” y sigo desde ahí.",
+                lang
+              )}
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  setStuckDismissedKey(stuckKey);
+                  void enterTakeover();
+                }}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#16382a]"
+              >
+                <KeyRound className="h-4 w-4" />
+                {L("Take over the browser", "Tomar el control", lang)}
+              </button>
+              <button
+                type="button"
+                onClick={() => setStuckDismissedKey(stuckKey)}
+                className="inline-flex flex-1 items-center justify-center rounded-full border border-[#161616]/15 px-4 py-2.5 text-sm font-semibold text-[#23211c] hover:bg-black/5"
+              >
+                {L("Not now", "Ahora no", lang)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

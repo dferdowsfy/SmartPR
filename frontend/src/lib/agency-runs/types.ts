@@ -118,6 +118,25 @@ export interface AgencyRun {
   /** Pause reason of the previous pause cycle (for streak comparison). */
   prev_pause_reason: AgencyPauseReason;
   /**
+   * Reason + requested field ids of the previous pause. The streak only grows
+   * when the agent asks for the SAME thing again — a login pause followed by
+   * an SSN pause is progress, not a loop.
+   */
+  prev_pause_signature?: string | null;
+  /**
+   * Set after a follow-up message was queued on the Browser Use session but
+   * the provider has not yet reported the run it started (Cloud returns
+   * runId=null until dispatch). While set, the previous — already finished —
+   * turn is never re-read, so its stale PAUSE marker cannot re-pause the run
+   * and ask the human for the same values twice.
+   */
+  bu_awaiting_turn?: {
+    previous_run_id: string | null;
+    message_id: number | null;
+    since: string;
+    noted?: boolean;
+  } | null;
+  /**
    * Fields the human must fill in the Assistant panel (metadata only).
    * Cleared when pause clears or on successful resume that supplied values.
    */

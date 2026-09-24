@@ -9,9 +9,11 @@
  * unmount it) so the session survives toggling.
  */
 import { useEffect, useRef, useState } from "react";
+import { preconnect } from "react-dom";
 import {
-  AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, EyeOff, FileUp, KeyRound,
+  AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, FileUp, KeyRound,
   Loader2, Lock, Maximize2, Minimize2, PauseCircle, Play, RefreshCw, Square, Upload,
+  ZoomIn, ZoomOut,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import type {
@@ -47,11 +49,56 @@ export interface AgencyBrowserProps {
   onUpload: (file: File) => void;
 }
 
+/**
+ * Browser Use's hosted live view draws its own browser chrome (tab strip +
+ * address bar). SmartPR already frames the panel, so ask the viewer to hide
+ * its UI — the embed then reads as part of the platform, not a second,
+ * external browser. Unknown params are ignored by other viewers.
+ */
+export function embedLiveUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (/(^|\.)browser-use\.com$/i.test(u.hostname)) {
+      u.searchParams.set("ui", "false");
+    }
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Zoom steps for the live view (the iframe is enlarged; the panel pans). */
+const ZOOM_STEPS = [1, 1.25, 1.5] as const;
+const ZOOM_KEY = "smartpr-agency-browser-zoom";
+
+function readZoom(): number {
+  try {
+    const v = Number(window.localStorage.getItem(ZOOM_KEY));
+    return (ZOOM_STEPS as readonly number[]).includes(v) ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
 export function AgencyBrowser(props: AgencyBrowserProps) {
   const { lang, run } = props;
   const fileRef = useRef<HTMLInputElement | null>(null);
   const sectionRef = useRef<HTMLElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [zoom, setZoomState] = useState<number>(() =>
+    typeof window === "undefined" ? 1 : readZoom()
+  );
+  const setZoom = (z: number) => {
+    setZoomState(z);
+    try {
+      window.localStorage.setItem(ZOOM_KEY, String(z));
+    } catch {
+      // Per-viewer convenience only.
+    }
+  };
+  const zoomIdx = (ZOOM_STEPS as readonly number[]).indexOf(zoom);
+  // Warm the connection to the live-view host before the URL arrives.
+  preconnect("https://live.browser-use.com");
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -85,19 +132,29 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       aria-label={L("Live browser", "Navegador en vivo", lang)}
     >
       <div className="flex min-h-0 flex-1 flex-col bg-white">
-        {/* Browser chrome — one window with the chat: traffic lights, the
-            portal address, and the demo badge. */}
-        <div className="flex shrink-0 items-center gap-3 border-b border-[#161616]/10 bg-[#f7f2e4] px-4 py-2.5">
-          <div className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#e0655f]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#e8b93e]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#5fc46a]" />
-          </div>
-          <div className="flex min-w-0 flex-1 items-center justify-center">
-            <span className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#6b675e] ring-1 ring-[#161616]/10">
+        {/* Panel header — SmartPR's own chrome (no fake browser window):
+            what Mita is working in, the portal address, and live state. */}
+        <div className="flex shrink-0 items-center gap-3 border-b border-[#161616]/10 bg-[#f7f2e4] px-4 py-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
+              {run.live_url && (run.status === "running" || run.status === "queued") && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#1e4d38] opacity-50" />
+              )}
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${
+                  run.live_url ? "bg-[#1e4d38]" : "bg-slate-300"
+                }`}
+              />
+            </span>
+            <span className="hidden shrink-0 text-xs font-bold text-[#23211c] sm:inline">
+              {props.takeover
+                ? L("You're in control", "Tienes el control", lang)
+                : L("Mita's browser", "Navegador de Mita", lang)}
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-[#6b675e] ring-1 ring-[#161616]/10">
               <Lock className="h-3 w-3 shrink-0 text-[#1e4d38]" />
               <span className="truncate">
-                {props.domainsLabel || run.live_url || props.portalName}
+                {props.domainsLabel || props.portalName}
               </span>
               {props.isMock && (
                 <span className="shrink-0 rounded bg-amber-300 px-1 py-px text-[9px] font-extrabold uppercase tracking-wide text-black">
@@ -107,21 +164,33 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
             </span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {/* Mobile: the panel is static in-flow, so the hide control
-                lives in its own header (the chat header toggle sits below). */}
-            <button
-              type="button"
-              onClick={props.onClose}
-              className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 lg:hidden"
-            >
-              <EyeOff className="h-3 w-3" />
-              {L("Hide", "Ocultar", lang)}
-            </button>
-            <span className="hidden text-[11px] font-medium text-slate-400 xl:inline">
-              {run.live_url
-                ? L(`Live preview — ${props.domainsLabel}`, `Vista previa en vivo — ${props.domainsLabel}`, lang)
-                : L("Screenshots / placeholders", "Capturas / marcadores", lang)}
-            </span>
+            {run.live_url && (
+              <div className="hidden items-center overflow-hidden rounded-md border border-slate-200 bg-white sm:inline-flex">
+                <button
+                  type="button"
+                  disabled={zoomIdx <= 0}
+                  onClick={() => setZoom(ZOOM_STEPS[Math.max(0, zoomIdx - 1)])}
+                  title={L("Zoom out", "Alejar", lang)}
+                  aria-label={L("Zoom out", "Alejar", lang)}
+                  className="px-1.5 py-1 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  <ZoomOut className="h-3.5 w-3.5" />
+                </button>
+                <span className="min-w-[2.75rem] border-x border-slate-200 px-1 text-center text-[11px] font-semibold tabular-nums text-slate-600">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  disabled={zoomIdx >= ZOOM_STEPS.length - 1}
+                  onClick={() => setZoom(ZOOM_STEPS[Math.min(ZOOM_STEPS.length - 1, zoomIdx + 1)])}
+                  title={L("Zoom in", "Acercar", lang)}
+                  aria-label={L("Zoom in", "Acercar", lang)}
+                  className="px-1.5 py-1 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  <ZoomIn className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
             {/* In fullscreen there is no chat visible — offer an explicit way
                 back. Exits fullscreen AND closes the panel into the chat
                 split view. */}
@@ -222,74 +291,67 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
           </div>
         </div>
 
-        <div className="relative flex min-h-0 flex-1 flex-col bg-slate-900/5 p-3">
+        <div className="relative flex min-h-0 flex-1 flex-col bg-[#f3eee3] p-2">
           {props.takeover && run.live_url && (
             <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
               <KeyRound className="h-3.5 w-3.5 shrink-0 text-amber-700" />
               <span>
                 {L(
-                  "You're in control — click and type directly inside the browser below. Press “I'm done” (top right) when finished to hand it back to the assistant.",
-                  "Tienes el control — haz clic y escribe directamente dentro del navegador. Pulsa “Terminé” (arriba a la derecha) cuando acabes para devolverlo al asistente.",
-                  lang
-                )}
-              </span>
-            </div>
-          )}
-          {props.fieldsPause && !props.takeover && run.live_url && (
-            <div className="mb-2 flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-semibold text-sky-950">
-              <KeyRound className="h-3.5 w-3.5 shrink-0 text-sky-700" />
-              <span>
-                {L(
-                  "Fill the fields in the chat — don't type in this browser.",
-                  "Completa los campos en el chat — no escribas en este navegador.",
+                  "You're in control — click and type in the page below, then press “I'm done” to hand it back to Mita.",
+                  "Tienes el control — haz clic y escribe en la página, luego pulsa “Terminé” para devolvérselo a Mita.",
                   lang
                 )}
               </span>
             </div>
           )}
           <div
-            className={`relative w-full flex-1 overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
-              isFullscreen ? "min-h-0" : "min-h-0 lg:min-h-[16rem]"
-            } ${props.takeover ? "border-2 border-amber-400" : "border border-slate-200"}`}
+            className={`relative w-full flex-1 rounded-xl bg-white shadow-sm ${
+              zoom > 1 ? "overflow-auto" : "overflow-hidden"
+            } ${isFullscreen ? "min-h-0" : "min-h-0 lg:min-h-[16rem]"} ${
+              props.takeover ? "ring-2 ring-amber-400" : "ring-1 ring-[#161616]/10"
+            }`}
           >
             {run.live_url ? (
               <>
-                <iframe
-                  key={props.previewKey}
-                  src={run.live_url}
-                  title={L("Live Browser Use session", "Sesión Browser Use en vivo", lang)}
-                  className={`h-full w-full border-0 bg-white ${
-                    props.fieldsPause && !props.takeover ? "pointer-events-none" : ""
-                  }`}
-                  allow="clipboard-read; clipboard-write; autoplay"
-                  referrerPolicy="no-referrer"
-                  onLoad={props.onPreviewLoaded}
-                />
+                {/* Read-only while Mita waits on chat fields: `inert` blocks
+                    focus, keys and clicks while the stream keeps playing. */}
+                <div
+                  inert={props.fieldsPause && !props.takeover}
+                  style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}
+                >
+                  <iframe
+                    key={props.previewKey}
+                    src={embedLiveUrl(run.live_url)}
+                    title={L("Mita's live browser", "Navegador en vivo de Mita", lang)}
+                    className={`h-full w-full border-0 bg-white ${
+                      props.fieldsPause && !props.takeover ? "pointer-events-none" : ""
+                    }`}
+                    allow="clipboard-read; clipboard-write; autoplay"
+                    referrerPolicy="no-referrer"
+                    onLoad={props.onPreviewLoaded}
+                  />
+                </div>
                 {props.fieldsPause && !props.takeover && (
-                  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center p-2">
-                    <div className="rounded-full border border-sky-200/80 bg-sky-50/95 px-3 py-1 text-[11px] font-semibold text-sky-950 shadow-sm backdrop-blur-sm">
+                  <div className="pointer-events-none sticky inset-x-0 bottom-0 z-10 -mt-12 flex justify-center p-2">
+                    <div className="rounded-full bg-[#1e4d38] px-3 py-1.5 text-[11px] font-semibold text-white shadow-md">
                       {L(
-                        "Fill the fields in the chat — don't type in this browser.",
-                        "Completa los campos en el chat — no escribas en este navegador.",
+                        "Answer in the chat — Mita will type it here",
+                        "Responde en el chat — Mita lo escribirá aquí",
                         lang
                       )}
                     </div>
                   </div>
                 )}
                 {!props.previewLoaded && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#1e4d38]" />
-                    <p className="text-sm font-semibold text-slate-600">
-                      {L(
-                        "Starting secure browser session…",
-                        "Iniciando sesión segura del navegador…",
-                        lang
-                      )}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#fbf8f2]">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#1e4d38]" />
+                    <p className="text-sm font-semibold text-[#23211c]">
+                      {L("Opening the portal…", "Abriendo el portal…", lang)}
                     </p>
-                    <p className="max-w-xs text-center text-xs text-slate-400">
+                    <p className="max-w-xs text-center text-xs text-[#6b675e]">
                       {L(
-                        "This can take up to a minute the first time while the cloud browser spins up.",
-                        "Puede tardar hasta un minuto la primera vez mientras se inicia el navegador en la nube.",
+                        "Mita is connecting to a secure browser — usually a few seconds.",
+                        "Mita se está conectando a un navegador seguro — suele tardar unos segundos.",
                         lang
                       )}
                     </p>
@@ -304,10 +366,10 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 className="h-full w-full object-cover object-top"
               />
             ) : (
-              <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-3 bg-white">
-                <Loader2 className="h-8 w-8 animate-spin text-[#1e4d38]" />
-                <div className="text-sm font-semibold text-slate-600">
-                  {L("Waiting for first frame…", "Esperando el primer fotograma…", lang)}
+              <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-3 bg-[#fbf8f2]">
+                <Loader2 className="h-7 w-7 animate-spin text-[#1e4d38]" />
+                <div className="text-sm font-semibold text-[#23211c]">
+                  {L("Opening the portal…", "Abriendo el portal…", lang)}
                 </div>
               </div>
             )}

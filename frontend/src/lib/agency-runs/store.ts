@@ -16,6 +16,7 @@ import {
   isBrowserUseConfigured,
   listAgentRunEvents,
   queueAgentMessage,
+  resolveQueuedRunId,
   sanitizeError,
   stopAgentBrowser,
   type BuEvent,
@@ -28,6 +29,7 @@ import {
   displayMessagesForAgentText,
   humanizePauseEvent,
   mergeSuppliedFieldIds,
+  parseRequiredFields,
   resolvePendingFields,
 } from "./pendingFields";
 import {
@@ -258,15 +260,22 @@ function trackPause(
   shot: string,
   sourceText?: string
 ): void {
-  if (reason && reason === run.prev_pause_reason) {
+  run.status = "paused";
+  run.pause_reason = reason;
+  applyPendingFields(run, sourceText || "", reason);
+  // Same reason AND same requested fields = the agent is stuck on one step.
+  // A different field set (login → SSN → fiscal year) is forward progress.
+  const signature = `${reason ?? ""}:${run.pending_fields
+    .map((f) => f.id)
+    .sort()
+    .join(",")}`;
+  if (reason && signature === run.prev_pause_signature) {
     run.pause_streak += 1;
   } else {
     run.pause_streak = 1;
     run.prev_pause_reason = reason;
+    run.prev_pause_signature = signature;
   }
-  run.status = "paused";
-  run.pause_reason = reason;
-  applyPendingFields(run, sourceText || "", reason);
   run.updated_at = nowIso();
   // A login gate proves the business has a portal account — remember the
   // label (never credentials) so the pre-flight question is asked once.
@@ -290,6 +299,48 @@ function trackPause(
 function resetPauseStreak(run: AgencyRun): void {
   run.pause_streak = 0;
   run.prev_pause_reason = null;
+  run.prev_pause_signature = null;
+}
+
+/** Point the run at a new agent turn and start its event stream fresh. */
+function switchToTurn(run: AgencyRun, runId: string): void {
+  run.browser_use_run_id = runId;
+  run.bu_message_cursor = null;
+  run.bu_last_step = null;
+  run.bu_awaiting_turn = null;
+}
+
+/**
+ * Follow the turn a queued follow-up message starts. When the provider has
+ * not dispatched it yet (Cloud: runId=null), remember that we are waiting —
+ * syncBrowserUse resolves the new run id and never re-reads the previous,
+ * already finished turn (whose PAUSE marker would re-pause the run and ask
+ * the human for the same values again).
+ */
+function adoptQueuedTurn(
+  run: AgencyRun,
+  queued: { runId: string | null; messageId: number | null },
+  previousRunId: string | null
+): void {
+  if (queued.runId && queued.runId !== previousRunId) {
+    switchToTurn(run, queued.runId);
+    return;
+  }
+  run.bu_awaiting_turn = {
+    previous_run_id: previousRunId,
+    message_id: queued.messageId,
+    since: nowIso(),
+  };
+}
+
+/** Text a finished turn's markers are read from — its final message first. */
+function finalTurnText(bu: BuRun, blob: string): string {
+  return bu.result?.trim() || bu.lastStepSummary?.trim() || blob;
+}
+
+/** REQUIRED_FIELDS source: the final message, else the whole recent blob. */
+function fieldsSourceText(finalText: string, blob: string): string {
+  return parseRequiredFields(finalText).length > 0 ? finalText : blob;
 }
 
 /**
@@ -371,18 +422,24 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
       run.events[run.events.length - 1]?.screenshot_url ||
       PLACEHOLDER_SHOTS.home;
 
-  // Detect markers against the richest blob so REQUIRED_FIELDS is not missed
-  // when the marker and field lines span result vs lastStepSummary vs events.
   const detectText = blob || latestText || "";
+  // Status markers (PAUSE_*, REVIEW_READY, SUBMITTED:, FAILED:) are only
+  // honored from a FINISHED turn's final message. While the turn is still
+  // running, its step texts often *mention* markers ("if a login form
+  // appears, PAUSE_USER_LOGIN…") — treating those as real pauses showed a
+  // sign-in card while the agent was actually on the filing form.
+  const turnDone = bu.status === "completed";
+  const markerText = turnDone ? finalTurnText(bu, detectText) : "";
+  const fieldsText = fieldsSourceText(markerText, detectText);
 
   if (latestText && latestText !== run.bu_last_step) {
     run.bu_last_step = latestText;
-    const marker = detectMarker(detectText);
+    const marker = markerText ? detectMarker(markerText) : {};
     // Parse fields before display so pause events stay human-readable (no raw
     // REQUIRED_FIELDS spam in the Assistant panel).
     const previewFields =
       marker.status === "paused"
-        ? resolvePendingFields(detectText, marker.pause_reason ?? null)
+        ? resolvePendingFields(fieldsText, marker.pause_reason ?? null)
         : [];
     const display = displayMessagesForAgentText(
       latestText,
@@ -396,7 +453,7 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
       kind: marker.status === "paused" ? "pause" : "info",
     });
     if (marker.status === "paused") {
-      trackPause(run, marker.pause_reason ?? null, shot, detectText);
+      trackPause(run, marker.pause_reason ?? null, shot, fieldsText);
     } else if (marker.status === "review") {
       run.status = "review";
       run.pause_reason = null;
@@ -427,13 +484,13 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
     // Still refresh pending_fields from the full blob if we are paused, in case
     // REQUIRED_FIELDS only appeared in `result` after the first detect.
     if (run.status === "paused") {
-      applyPendingFields(run, detectText, run.pause_reason);
+      applyPendingFields(run, fieldsText, run.pause_reason);
     } else if (run.status !== "review" && run.status !== "failed") {
-      const out = detectText || `${bu.result || ""}\n${latestText || ""}`;
+      const out = markerText || `${bu.result || ""}\n${latestText || ""}`;
       const marker = detectMarker(out);
       if (marker.status === "paused") {
-        trackPause(run, marker.pause_reason ?? null, shot, out);
-        const pauseFields = resolvePendingFields(out, marker.pause_reason ?? null);
+        trackPause(run, marker.pause_reason ?? null, shot, fieldsText);
+        const pauseFields = resolvePendingFields(fieldsText, marker.pause_reason ?? null);
         const pauseDisplay = humanizePauseEvent(
           marker.pause_reason ?? null,
           pauseFields,
@@ -522,7 +579,37 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
   if (run.status === "stopped" || run.status === "failed" || run.status === "submitted") return run;
 
   try {
-    const bu = await getAgentRun(run.browser_use_run_id);
+    // A follow-up message is queued but its turn has not started yet: keep
+    // the run "running" and never read the previous (finished) turn.
+    if (run.bu_awaiting_turn && run.browser_use_session_id) {
+      const awaiting = run.bu_awaiting_turn;
+      let next: string | null = null;
+      try {
+        next = await resolveQueuedRunId(
+          run.browser_use_session_id,
+          awaiting.message_id,
+          awaiting.previous_run_id
+        );
+      } catch {
+        // Transient — try again on the next poll.
+      }
+      if (!next) {
+        if (!awaiting.noted && Date.now() - Date.parse(awaiting.since) > 90_000) {
+          awaiting.noted = true;
+          pushEvent(run, {
+            message: "Still handing your answers to the browser — this is taking longer than usual.",
+            message_es: "Todavía entregando tus respuestas al navegador — está tardando más de lo normal.",
+            screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
+            kind: "info",
+          });
+        }
+        run.updated_at = nowIso();
+        return run;
+      }
+      switchToTurn(run, next);
+    }
+
+    const bu = await getAgentRun(run.browser_use_run_id!);
 
     // Append new agent events as Assistant events when feasible.
     let events: BuEvent[] = [];
@@ -540,41 +627,19 @@ async function syncBrowserUse(run: AgencyRun): Promise<AgencyRun> {
 
     await applyRunStatus(run, bu, events);
 
+    // Step events are narration only. Status changes come from the finished
+    // turn's final message (applyRunStatus) — an intermediate step that
+    // merely mentions a marker must never pause, review, or fail the run.
     for (const ev of events) {
       // Skip the latest-step text we already logged in applyRunStatus.
       if (ev.text === run.bu_last_step) continue;
-      const marker = detectMarker(ev.text);
-      const blob = latestAgentBlob(bu, events);
-      const parseText = blob || ev.text;
-      const evFields =
-        marker.status === "paused"
-          ? resolvePendingFields(parseText, marker.pause_reason ?? null)
-          : [];
-      const evDisplay = displayMessagesForAgentText(
-        ev.text,
-        marker.pause_reason ?? run.pause_reason,
-        evFields
-      );
+      const evDisplay = displayMessagesForAgentText(ev.text, null, []);
       pushEvent(run, {
         message: evDisplay.message,
         message_es: evDisplay.message_es,
         screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
-        kind: marker.status === "paused" ? "pause" : marker.status === "review" ? "review" : "info",
+        kind: "info",
       });
-      if (marker.status === "paused") {
-        // Prefer the full blob (result + events) for REQUIRED_FIELDS when available.
-        trackPause(run, marker.pause_reason ?? null, PLACEHOLDER_SHOTS.home, parseText);
-      } else if (marker.status === "review") {
-        run.status = "review";
-        run.pause_reason = null;
-        clearPendingFields(run);
-      } else if (marker.status === "submitted") {
-        await finalizeSubmission(run, marker.confirmation ?? null);
-      } else if (marker.status === "failed") {
-        run.status = "failed";
-        run.pause_reason = null;
-        clearPendingFields(run);
-      }
     }
   } catch (err) {
     pushEvent(run, {
@@ -641,6 +706,8 @@ export async function createRun(input: {
     passport_snapshot: input.passport || null,
     pause_streak: 0,
     prev_pause_reason: null,
+    prev_pause_signature: null,
+    bu_awaiting_turn: null,
     pending_fields: [],
     // Submit permission starts off — only the owner-authenticated authorize
     // endpoint can flip filing_authorized after pre-submit review.
@@ -672,6 +739,9 @@ export async function createRun(input: {
       const buRun = await createAgentRun({
         task,
         allowedDomains: filingConfig.domains,
+        // The rehearsal portal is SmartPR's own site — a residential proxy
+        // only slows every page load there.
+        proxyCountryCode: filingConfig.agencyId === "DEMO_REHEARSAL" ? null : "us",
       });
       run.browser_use_run_id = buRun.id;
       run.browser_use_session_id = buRun.sessionId;
@@ -823,6 +893,7 @@ export async function resumeRun(
     }
     if (run.browser_use_session_id && run.browser_use_run_id) {
       try {
+        const previousRunId = run.browser_use_run_id;
         const bu = await getAgentRun(run.browser_use_run_id);
         const terminal =
           bu.status === "completed" ||
@@ -848,7 +919,7 @@ export async function resumeRun(
             }),
             { interrupt: Boolean(fields) && !terminal }
           );
-          if (queued.runId) run.browser_use_run_id = queued.runId;
+          adoptQueuedTurn(run, queued, previousRunId);
         }
       } catch (err) {
         if (fields) {
@@ -977,6 +1048,7 @@ export async function authorizeFiling(id: string): Promise<AgencyRunPublic | nul
   }
 
   try {
+    const previousRunId = run.browser_use_run_id;
     const bu = run.browser_use_run_id ? await getAgentRun(run.browser_use_run_id) : null;
     const terminal =
       !bu || bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled";
@@ -991,7 +1063,7 @@ export async function authorizeFiling(id: string): Promise<AgencyRunPublic | nul
       // The review turn should be terminal; interrupt only if it is not.
       { interrupt: !terminal }
     );
-    if (queued.runId) run.browser_use_run_id = queued.runId;
+    adoptQueuedTurn(run, queued, previousRunId);
   } catch (err) {
     // Dispatch failed — back to review so the owner can retry. The
     // authorization flag stays set; re-authorizing re-dispatches.
