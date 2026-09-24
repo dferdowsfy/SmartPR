@@ -193,7 +193,8 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
           setEditing(true);
           await save(next, true);
         }} />
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      {/* Sticky editor bar: Save/Cancel stay reachable while scrolling the long form. */}
+      <div className="sticky top-0 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-start justify-between gap-3 rounded-t-2xl bg-white/95 px-5 py-3 shadow-[0_1px_0_0_rgba(15,23,42,0.06)] backdrop-blur-sm">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-bold text-[#161616]">
