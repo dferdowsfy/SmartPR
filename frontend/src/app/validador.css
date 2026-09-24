@@ -116,14 +116,29 @@ button { font-family: inherit; }
 .project-pill .name { color: var(--on-navy); font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .project-pill .sep { color: var(--on-navy-3); }
 
-/* ---- Header tabs (with active white glow) ---- */
+/* ---- Header tabs (single gliding pill; labels stay fixed) ---- */
 .nav-tabs {
+  position: relative;
   display: flex; align-items: center; gap: 2px;
   justify-self: center;
   background: #fbf8f2;
   border: 1px solid var(--border-strong);
   padding: 4px;
   border-radius: 999px;
+}
+/* The one selected-tab pill: absolutely positioned behind the labels, it is
+   the only thing that moves when the selection changes. */
+.nav-glider {
+  position: absolute;
+  top: 4px; bottom: 4px; left: 0;
+  width: 0;
+  border-radius: 999px;
+  background: #245c5c;
+  pointer-events: none;
+  transition: transform .35s cubic-bezier(.32, .72, 0, 1), width .35s cubic-bezier(.32, .72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-glider { transition: none; }
 }
 .nav-tab {
   position: relative;
@@ -143,17 +158,17 @@ button { font-family: inherit; }
 .nav-tabs .nav-tab[aria-current="page"],
 .nav-tabs .nav-tab[data-active="true"] {
   color: #f6f3ea;
-  background: #245c5c;
-  border-color: #245c5c;
+  background: transparent;
+  border-color: transparent;
   box-shadow: none;
 }
-/* Keep selected tab teal even on hover (same specificity otherwise loses to :hover). */
+/* Selected label floats above the gliding pill; hover just lifts the text. */
 .nav-tabs .nav-tab.active:hover,
 .nav-tabs .nav-tab[aria-current="page"]:hover,
 .nav-tabs .nav-tab[data-active="true"]:hover {
-  color: #f6f3ea;
-  background: #1f5252;
-  border-color: #1f5252;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: transparent;
 }
 .nav-tab .tab-icon { width: 14px; height: 14px; opacity: 0.85; }
 .nav-tab[disabled] { opacity: 0.4; cursor: not-allowed; }

@@ -31,6 +31,17 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   const avatarBtnRef = useRef<HTMLButtonElement | null>(null);
   // Enterprise section: visible only when the user holds view_records in a workspace.
   const [hasEnterprise, setHasEnterprise] = useState(false);
+  // Gliding selected-tab pill: one absolutely-positioned pill behind the
+  // labels. The labels never move; only the pill translates/resizes.
+  const barRef = useRef<HTMLElement | null>(null);
+  const tabRefs = useRef<Record<"start" | "businesses" | "enterprise", HTMLAnchorElement | null>>({
+    start: null, businesses: null, enterprise: null,
+  });
+  const [glider, setGlider] = useState<{ left: number; width: number; animate: boolean } | null>(null);
+  const prevPillKeyRef = useRef<"start" | "businesses" | "enterprise" | null | undefined>(undefined);
+  // True while a cross-page FLIP glide is in flight: resize/font re-measures
+  // must not snap the pill mid-glide.
+  const glidingRef = useRef(false);
 
   const placeMenu = useCallback(() => {
     const btn = avatarBtnRef.current;
@@ -158,6 +169,78 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
       active === "history" ||
       active === "settings");
 
+  const pillKey: "start" | "businesses" | "enterprise" | null =
+    active === "enterprise" && hasEnterprise ? "enterprise"
+    : startActive ? "start"
+    : businessesActive ? "businesses"
+    : null;
+
+  // Remember the outgoing pill rect so the next page can glide from it
+  // (the header remounts on page navigation, so the handoff rides on storage).
+  const rememberPill = useCallback(() => {
+    const bar = barRef.current;
+    const el = pillKey ? tabRefs.current[pillKey] : null;
+    if (!bar || !el) return;
+    const barBox = bar.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    try {
+      sessionStorage.setItem("spr-nav-pill", JSON.stringify({ left: r.left - barBox.left, width: r.width }));
+    } catch { /* storage unavailable — pill just appears */ }
+  }, [pillKey]);
+
+  useLayoutEffect(() => {
+    const place = (animate: boolean) => {
+      if (glidingRef.current) return;
+      const bar = barRef.current;
+      const el = pillKey ? tabRefs.current[pillKey] : null;
+      if (!bar || !el) { setGlider(null); return; }
+      const barBox = bar.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      setGlider({ left: r.left - barBox.left, width: r.width, animate });
+    };
+    const bar = barRef.current;
+    const el = pillKey ? tabRefs.current[pillKey] : null;
+    if (bar && el) {
+      const barBox = bar.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      const target = { left: r.left - barBox.left, width: r.width };
+      let from: { left: number; width: number } | null = null;
+      try {
+        const raw = sessionStorage.getItem("spr-nav-pill");
+        sessionStorage.removeItem("spr-nav-pill");
+        const p = raw ? JSON.parse(raw) : null;
+        if (p && typeof p.left === "number" && typeof p.width === "number") from = p;
+      } catch { /* ignore */ }
+      const moved =
+        from && (Math.abs(from.left - target.left) > 1 || Math.abs(from.width - target.width) > 1);
+      const switchedInPlace = prevPillKeyRef.current !== undefined && prevPillKeyRef.current !== pillKey;
+      if (moved && from) {
+        // Start at the previous page's rect (no transition), then glide.
+        setGlider({ ...from, animate: false });
+        glidingRef.current = true;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          // Force the from-state to commit before applying the target, so the
+          // transition has a rendered starting frame to interpolate from.
+          void barRef.current?.offsetWidth;
+          setGlider({ ...target, animate: true });
+          window.setTimeout(() => { glidingRef.current = false; }, 400);
+        }));
+      } else {
+        setGlider({ ...target, animate: switchedInPlace });
+      }
+    } else {
+      setGlider(null);
+    }
+    prevPillKeyRef.current = pillKey;
+    const onResize = () => place(false);
+    window.addEventListener("resize", onResize);
+    let cancelled = false;
+    if (document.fonts) {
+      document.fonts.ready.then(() => { if (!cancelled) place(false); }).catch(() => {});
+    }
+    return () => { cancelled = true; window.removeEventListener("resize", onResize); };
+  }, [pillKey, hasEnterprise, lang]);
+
   const langToggle = (
     <div className="spr-context-language" aria-label={lang === "es" ? "Idioma" : "Language"}>
       <button type="button" className={lang === "en" ? "active" : ""} aria-pressed={lang === "en"} onClick={() => changeLang("en")}>EN</button>
@@ -174,9 +257,22 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
           </Link>
         </div>
 
-        <nav className="nav-tabs" aria-label="Sections">
+        <nav className="nav-tabs" aria-label="Sections" ref={barRef}>
+          {glider && (
+            <span
+              aria-hidden="true"
+              className="nav-glider"
+              style={{
+                transform: `translateX(${glider.left}px)`,
+                width: glider.width,
+                transition: glider.animate ? undefined : "none",
+              }}
+            />
+          )}
           <Link
+            ref={(el) => { tabRefs.current.start = el; }}
             href="/?entry=new-business"
+            onClick={rememberPill}
             className={`nav-tab${startActive ? " active" : ""}`}
             aria-current={startActive ? "page" : undefined}
             data-active={startActive ? "true" : undefined}
@@ -184,7 +280,9 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
             {navStart}
           </Link>
           <Link
+            ref={(el) => { tabRefs.current.businesses = el; }}
             href="/businesses"
+            onClick={rememberPill}
             className={`nav-tab${businessesActive ? " active" : ""}`}
             aria-current={businessesActive ? "page" : undefined}
             data-active={businessesActive ? "true" : undefined}
@@ -194,7 +292,9 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
           {hasEnterprise && (
             <div className="nav-dropdown">
               <Link
+                ref={(el) => { tabRefs.current.enterprise = el; }}
                 href="/enterprise"
+                onClick={rememberPill}
                 className={`nav-tab${active === "enterprise" ? " active" : ""}`}
                 aria-current={active === "enterprise" ? "page" : undefined}
                 data-active={active === "enterprise" ? "true" : undefined}
