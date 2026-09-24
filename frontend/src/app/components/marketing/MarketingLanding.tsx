@@ -16,7 +16,7 @@ const copy = {
     heroSub:
       "SmartPR maps the permits, licenses, and registrations for a business, fills the official forms from the profile, and tracks the ones that come back every year.",
     seeWhatApplies: "See what applies",
-    fileForClients: "I file for clients",
+    fileForClients: "For professionals",
     talkItThrough: "Talk it through",
     voiceNote: "You can also do this by voice.",
     buyKicker: "What you get",
@@ -124,7 +124,7 @@ const copy = {
     heroSub:
       "SmartPR mapea los permisos, licencias y registros de un negocio, llena los formularios oficiales desde el perfil y le da seguimiento a los que vencen todos los años.",
     seeWhatApplies: "Vea lo que aplica",
-    fileForClients: "Radico para clientes",
+    fileForClients: "Para profesionales",
     talkItThrough: "Háblalo por voz",
     voiceNote: "También puedes hacerlo por voz.",
     buyKicker: "Lo que obtiene",

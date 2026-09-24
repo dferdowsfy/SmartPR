@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
+
+const CONTACT_EMAIL = "contact@getsmartpr.com";
 
 const copy = {
   EN: {
@@ -13,6 +14,8 @@ const copy = {
       "SmartPR sits under your practice. You still talk to the client, review the package, and submit. The software removes the retyping, the missed requirement, and the “¿cómo va lo mío?” thread.",
     startPilot: "Start a pilot",
     bookDemo: "Book a demo",
+    pilotSubject: "I am interested in a pilot",
+    demoSubject: "I'm interested in a demo",
     whoFor: "Gestores · CPAs · Permitting firms · Law firms · Consultants · Multi-entity operators",
     posKicker: "Positioning",
     posTitle: "A tool that makes the firm faster. Not a replacement for the firm.",
@@ -86,6 +89,8 @@ const copy = {
       "SmartPR trabaja bajo su práctica. Usted sigue hablando con el cliente, revisando el paquete y radicando. El software elimina la redigitación, el requisito que se escapa y el hilo de “¿cómo va lo mío?”.",
     startPilot: "Comenzar un piloto",
     bookDemo: "Agendar una demo",
+    pilotSubject: "Me interesa un piloto",
+    demoSubject: "Me interesa una demo",
     whoFor: "Gestores · CPAs · Firmas de permisos · Bufetes · Consultores · Operadores con varias entidades",
     posKicker: "Posicionamiento",
     posTitle: "Una herramienta que hace la firma más rápida. No un reemplazo de la firma.",
@@ -155,16 +160,14 @@ const copy = {
 } as const;
 
 export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialLanguage?: Language }) {
-  const router = useRouter();
   const { language, handleLanguageChange } = useMarketingLanguage(initialLanguage);
   const c = copy[language];
   const home = language === "ES" ? "/es" : "/";
 
-  // Both CTAs enter the free platform directly — the existing guest intake
-  // entry the landing page uses. No mailto, no invented routes.
-  function goToAssessment() {
-    router.push("/?entry=new-business");
-  }
+  // Both CTAs open the visitor's email client with a pre-filled subject to
+  // contact@getsmartpr.com and an empty body — one click to send.
+  const pilotHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(c.pilotSubject)}`;
+  const demoHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -180,12 +183,12 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
           <h1>{c.heroTitle}</h1>
           <p className={styles.heroSub}>{c.heroSub}</p>
           <div className={styles.ctaRow}>
-            <button type="button" className={styles.primary} onClick={goToAssessment}>
+            <a href={pilotHref} className={styles.primary}>
               {c.startPilot}
-            </button>
-            <button type="button" className={styles.secondary} onClick={goToAssessment}>
+            </a>
+            <a href={demoHref} className={styles.secondary}>
               {c.bookDemo}
-            </button>
+            </a>
           </div>
           <p className={styles.escapeHatch}>{c.whoFor}</p>
         </section>
@@ -274,12 +277,12 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
             <h2>{c.closeTitle}</h2>
             <p className={styles.lead}>{c.closeSub}</p>
             <div className={styles.ctaRow}>
-              <button type="button" className={styles.primary} onClick={goToAssessment}>
+              <a href={pilotHref} className={styles.primary}>
                 {c.startPilot}
-              </button>
-              <button type="button" className={styles.secondary} onClick={goToAssessment}>
+              </a>
+              <a href={demoHref} className={styles.secondary}>
                 {c.bookDemo}
-              </button>
+              </a>
             </div>
           </div>
         </section>

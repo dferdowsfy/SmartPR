@@ -34,7 +34,7 @@ const copy = {
       { label: "Security", href: "/#security" },
     ],
     bookDemo: "Book a demo",
-    demoSubject: "SmartPR demo request",
+    demoSubject: "I'm interested in a demo",
     signIn: "Sign in",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -64,7 +64,7 @@ const copy = {
       { label: "Seguridad", href: "/es#security" },
     ],
     bookDemo: "Agendar una demo",
-    demoSubject: "SmartPR demo request",
+    demoSubject: "Me interesa una demo",
     signIn: "Iniciar sesión",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",
@@ -119,9 +119,9 @@ export function SiteHeader({
   const c = copy[language];
   const [navOpen, setNavOpen] = useState(false);
   const nav = variant === "home" ? c.homeNav : c.proNav;
-  // "Book a demo" enters the free platform directly — the existing guest
-  // intake entry — never a mailto.
-  const demoHref = "/?entry=new-business";
+  // "Book a demo" opens the visitor's email client with a pre-filled subject
+  // to contact@getsmartpr.com and an empty body — one click to send.
+  const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
 
   return (
     <header className={styles.header}>
