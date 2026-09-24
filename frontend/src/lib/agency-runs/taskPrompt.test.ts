@@ -255,4 +255,12 @@ describe("buildAgencyTaskPrompt fill reliability", () => {
     assert.ok(task.includes("Never click Submit / Log in / Continue / Guardar while a required field still reads back empty or wrong"));
     assert.ok(task.includes("do not blindly re-click the button"));
   });
+
+  it("maps addresses.municipality to the portal City field", () => {
+    const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("FIELD MAPPING"));
+    assert.ok(task.includes("addresses.municipality → City / Ciudad"));
+    assert.ok(task.includes("they are the SAME field"));
+  });
 });
