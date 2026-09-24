@@ -29,7 +29,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Cloud, Eye, EyeOff, KeyRound, Server, Shield,
+  Eye, EyeOff, KeyRound, Shield,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
@@ -96,7 +96,7 @@ function statusLabel(status: AgencyRunStatus, lang: Lang): string {
 
 function StatusPill({ status, lang }: { status: AgencyRunStatus; lang: Lang }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold tracking-wide ${STATUS_STYLES[status]}`}>
+    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[13px] font-bold tracking-wide ${STATUS_STYLES[status]}`}>
       {statusLabel(status, lang)}
     </span>
   );
@@ -133,6 +133,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [previewKey, setPreviewKey] = useState(0);
   const [reconnectBusy, setReconnectBusy] = useState(false);
   const [takeover, setTakeover] = useState(false);
+  /** Bumped when an action outside the chat should jump it to the newest activity. */
+  const [scrollToLatest, setScrollToLatest] = useState(0);
   /** Pending-field values (intervention card only — never mirrored into
    * chat text or events; only POSTed to resume as `{ fields }`).
    * Sensitive values are sealed (AES-GCM, session key) the moment they rest
@@ -623,7 +625,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   /** "I'm done" — exit takeover mode AND hand control back to the agent in one tap. */
   const handBackToAgent = async () => {
     setTakeover(false);
+    setScrollToLatest((n) => n + 1);
     await resume();
+    setScrollToLatest((n) => n + 1);
   };
 
   const uploadToLocker = async (file: File, tags?: string[]) => {
@@ -963,7 +967,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       <TopNav active="businesses" />
       <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 py-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href={`/businesses/${businessId}`} className="text-sm font-semibold text-[#cfc6b4] hover:text-white">
+          <Link href={`/businesses/${businessId}`} className="text-[15px] font-semibold text-[#cfc6b4] hover:text-white">
             ← {L("Business profile", "Perfil del negocio", lang)}
           </Link>
           {run && !inWorkspace && <StatusPill status={run.status} lang={lang} />}
@@ -973,7 +977,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
             {bizHeader && (
-              <p className="truncate text-[11px] font-bold uppercase tracking-[0.18em] text-[#9a917f]">
+              <p className="truncate text-[13px] font-bold uppercase tracking-[0.18em] text-[#9a917f]">
                 {bizHeader.municipality
                   ? `${bizHeader.name} · ${bizHeader.municipality}`
                   : bizHeader.name}
@@ -984,20 +988,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-4">
-            {run?.provider && run.provider !== "mock" && (
-              <p className="hidden items-center gap-1.5 text-[11px] font-semibold text-[#8a8272] sm:inline-flex">
-                {run.provider === "browser_use_cloud" ? (
-                  <Cloud className="h-3.5 w-3.5 text-sky-400" />
-                ) : (
-                  <Server className="h-3.5 w-3.5 text-violet-400" />
-                )}
-                {run.provider === "browser_use_cloud"
-                  ? L("Powered by Browser Use Cloud", "Con tecnología de Browser Use Cloud", lang)
-                  : L("Powered by self-hosted agent (Grok)", "Con tecnología de agente propio (Grok)", lang)}
-              </p>
-            )}
             <ol
-              className="flex items-center gap-2.5 text-[11px] font-bold"
+              className="flex items-center gap-2.5 text-[13px] font-bold"
               aria-label={L("Filing progress", "Progreso del trámite", lang)}
             >
               <li className="flex items-center gap-1.5 text-[#8f8674]">
@@ -1020,7 +1012,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             slim row so the chat + browser keep the viewport. */}
         {!inWorkspace ? (
           <header className="mt-8 max-w-3xl">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#c9a227]">
+            <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#c9a227]">
               {L("Mita · Assisted filing", "Mita · Radicación asistida", lang)}
             </p>
             <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight text-[#f7f2e4] md:text-5xl">
@@ -1040,7 +1032,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           // this one row above the window.
           <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-base text-white">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-lg text-white">
                 M
               </span>
               <p className="font-[family-name:var(--font-display)] text-xl text-[#f4efe2]">
@@ -1048,7 +1040,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               </p>
               {run && <StatusPill status={run.status} lang={lang} />}
               {intervention && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-900">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[13px] font-bold text-amber-900">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                   {L("Needs you", "Te necesita", lang)}
                 </span>
@@ -1057,7 +1049,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             <div className="flex shrink-0 items-center gap-4">
               {portalFieldsProgress && (
                 <span className="hidden items-center gap-2 md:inline-flex">
-                  <span className="whitespace-nowrap text-[11px] font-semibold text-[#b9b0a0]">
+                  <span className="whitespace-nowrap text-[13px] font-semibold text-[#b9b0a0]">
                     {L("Portal fields", "Campos del portal", lang)} ·{" "}
                     {portalFieldsProgress.known} {L("of", "de", lang)}{" "}
                     {portalFieldsProgress.total}
@@ -1072,7 +1064,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 type="button"
                 onClick={() => setBrowserHidden((h) => !h)}
                 aria-pressed={!showBrowserPanel}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#e8e1d0] hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
               >
                 {showBrowserPanel ? (
                   <EyeOff className="h-3.5 w-3.5" />
@@ -1088,7 +1080,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         )}
 
         {error && (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[15px] text-rose-800">
             {error}
           </div>
         )}
@@ -1125,6 +1117,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               runActive={Boolean(run)}
               transientHistory={transientHistory}
               scrollKey={scrollKey}
+              scrollToLatestSignal={scrollToLatest}
               onStartFiling={(filing) => void startFiling(filing)}
               filingBusyId={filingBusyId}
               onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}
@@ -1189,14 +1182,14 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e4d38]/10">
                 <Shield className="h-5 w-5 text-[#1e4d38]" />
               </span>
-              <p className="max-w-sm text-sm font-semibold text-[#23211c]">
+              <p className="max-w-sm text-[15px] font-semibold text-[#23211c]">
                 {L(
                   "The agency portal opens here when you confirm.",
                   "El portal de la agencia se abre aquí cuando confirmes.",
                   lang
                 )}
               </p>
-              <p className="max-w-sm text-xs text-[#6b675e]">
+              <p className="max-w-sm text-[13px] text-[#6b675e]">
                 {L(
                   "You'll watch every field fill in. Nothing is submitted without your approval.",
                   "Verás cada campo llenarse. Nada se envía sin tu aprobación.",
@@ -1228,7 +1221,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             >
               {L("Mita is stuck on this step", "Mita se trancó en este paso", lang)}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[#6b675e]">
+            <p className="mt-2 text-[15px] leading-relaxed text-[#6b675e]">
               {L(
                 "I've tried this step a few times without getting past it. Take over the browser, finish this one step on the portal page, then press “I'm done” and I'll continue from there.",
                 "Intenté este paso varias veces sin pasarlo. Toma el control del navegador, completa este paso en la página del portal y luego pulsa “Terminé” y sigo desde ahí.",
@@ -1243,7 +1236,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   setStuckDismissedKey(stuckKey);
                   void enterTakeover();
                 }}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#16382a]"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2.5 text-[15px] font-bold text-white hover:bg-[#16382a]"
               >
                 <KeyRound className="h-4 w-4" />
                 {L("Take over the browser", "Tomar el control", lang)}
@@ -1251,7 +1244,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               <button
                 type="button"
                 onClick={() => setStuckDismissedKey(stuckKey)}
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-[#161616]/15 px-4 py-2.5 text-sm font-semibold text-[#23211c] hover:bg-black/5"
+                className="inline-flex flex-1 items-center justify-center rounded-full border border-[#161616]/15 px-4 py-2.5 text-[15px] font-semibold text-[#23211c] hover:bg-black/5"
               >
                 {L("Not now", "Ahora no", lang)}
               </button>

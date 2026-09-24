@@ -119,13 +119,40 @@ export type SessionMsg =
 /* Small pieces                                                         */
 /* ------------------------------------------------------------------ */
 
-function AssistantBubble({ children, id }: { children: React.ReactNode; id?: string }) {
+/**
+ * Criticality tones for chat bubbles. Background carries the level; text
+ * stays near-black on every tone so each notification reads at a glance.
+ * - action (hand — Mita needs you): strongest, rose
+ * - warn (yield sign): light yellow
+ * - success / info (check marks): light green
+ */
+export type BubbleTone = "neutral" | "info" | "success" | "warn" | "action";
+
+const BUBBLE_TONE_CLASSES: Record<BubbleTone, string> = {
+  neutral: "border-[#161616]/10 bg-white",
+  info: "border-emerald-100 bg-emerald-50/60",
+  success: "border-emerald-200 bg-emerald-50",
+  warn: "border-amber-200 bg-amber-50",
+  action: "border-rose-300 bg-rose-100",
+};
+
+function AssistantBubble({
+  children,
+  id,
+  tone = "neutral",
+}: {
+  children: React.ReactNode;
+  id?: string;
+  tone?: BubbleTone;
+}) {
   return (
     <div id={id} className="flex scroll-mt-4 items-start gap-2.5">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-sm text-white">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[15px] text-white">
         M
       </span>
-      <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md border border-[#161616]/10 bg-white px-4 py-3 shadow-sm shadow-slate-950/[0.03]">
+      <div
+        className={`min-w-0 flex-1 rounded-2xl rounded-tl-md border px-4 py-3 shadow-sm shadow-slate-950/[0.03] ${BUBBLE_TONE_CLASSES[tone]}`}
+      >
         {children}
       </div>
     </div>
@@ -133,9 +160,9 @@ function AssistantBubble({ children, id }: { children: React.ReactNode; id?: str
 }
 
 function MilestoneIcon({ tone }: { tone: ChatMilestone["tone"] }) {
-  if (tone === "success") return <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />;
-  if (tone === "action") return <Hand className="h-4 w-4 shrink-0 text-amber-600" />;
-  if (tone === "warn") return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />;
+  if (tone === "success") return <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-700" />;
+  if (tone === "action") return <Hand className="h-4 w-4 shrink-0 text-rose-700" />;
+  if (tone === "warn") return <AlertTriangle className="h-4 w-4 shrink-0 text-amber-700" />;
   return <CheckCircle2 className="h-4 w-4 shrink-0 text-[#1e4d38]" />;
 }
 
@@ -143,15 +170,15 @@ function MilestoneBubble({ milestone, lang }: { milestone: ChatMilestone; lang: 
   const [open, setOpen] = useState(false);
   const hasDetails = (milestone.details?.length ?? 0) > 0;
   return (
-    <AssistantBubble>
+    <AssistantBubble tone={milestone.tone}>
       <div className="flex items-start gap-2">
         <MilestoneIcon tone={milestone.tone} />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-[#161616]">
+          <p className="text-[15px] font-semibold text-[#161616]">
             {L(milestone.heading_en, milestone.heading_es, lang)}
           </p>
           {milestone.body_en && milestone.tone !== "info" ? (
-            <p className="mt-1 text-sm leading-snug text-slate-600">
+            <p className="mt-1 text-[15px] leading-snug text-slate-800">
               {L(milestone.body_en, milestone.body_es ?? milestone.body_en, lang)}
             </p>
           ) : null}
@@ -160,7 +187,7 @@ function MilestoneBubble({ milestone, lang }: { milestone: ChatMilestone; lang: 
               <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
-                className="inline-flex items-center gap-1 text-sm font-semibold text-[#1e4d38]"
+                className="inline-flex items-center gap-1 text-[15px] font-semibold text-[#1e4d38]"
                 aria-expanded={open}
               >
                 {L("View details", "Ver detalles", lang)}
@@ -169,7 +196,7 @@ function MilestoneBubble({ milestone, lang }: { milestone: ChatMilestone; lang: 
               {open && (
                 <ul className="mt-2 space-y-1.5 rounded-xl bg-slate-50 p-3">
                   {milestone.details!.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                    <li key={i} className="flex items-start gap-2 text-[15px] text-slate-700">
                       <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
                       <span>{L(d.label_en, d.label_es, lang)}</span>
                     </li>
@@ -205,7 +232,7 @@ function TransientHistory({ labels }: { labels: string[] }) {
             ) : (
               <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-slate-300" />
             )}
-            <p className={latest ? "text-sm text-slate-500" : "text-xs text-slate-400"}>
+            <p className={latest ? "text-[15px] text-slate-500" : "text-[13px] text-slate-400"}>
               {label}
             </p>
           </div>
@@ -265,26 +292,26 @@ function FilingCard({
   return (
     <div className="rounded-2xl border border-[#161616]/10 bg-white p-4 shadow-sm shadow-slate-950/[0.03]">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-[family-name:var(--font-display)] text-base font-medium text-[#23211c]">
+        <p className="font-[family-name:var(--font-display)] text-lg font-medium text-[#23211c]">
           {L(filing.title_en, filing.title_es, lang)}
         </p>
         <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
+          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[13px] font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
         >
           {filingStatusChipLabel(filing, lang)}
         </span>
       </div>
       {filing.supported && (
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-[15px] text-slate-500">
           <span className="font-semibold">{L("SmartPR requirement: ", "Requisito de SmartPR: ", lang)}</span>
           {filing.obligation_name}
         </p>
       )}
       {!filing.supported && (
-        <p className="mt-1 text-sm text-slate-500">{filingUnsupportedCopy(lang)}</p>
+        <p className="mt-1 text-[15px] text-slate-500">{filingUnsupportedCopy(lang)}</p>
       )}
       {action && (
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-[15px] text-slate-500">
           {L(
             `${action.known} of ${action.total} ready from your Passport`,
             `${action.known} de ${action.total} listas en tu Pasaporte`,
@@ -293,12 +320,12 @@ function FilingCard({
         </p>
       )}
       {filing.filing_status === "missing_information" && gate > 0 && (
-        <p className="mt-1.5 text-sm font-semibold text-amber-800">
+        <p className="mt-1.5 text-[15px] font-semibold text-amber-800">
           {filingGateCopy(gate, lang)}
         </p>
       )}
       {action && action.blocked_by.length > 0 && (
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-[15px] text-slate-500">
           {L("Waiting on: ", "Esperando: ", lang)}
           {action.blocked_by.join(", ")}
         </p>
@@ -308,7 +335,7 @@ function FilingCard({
           type="button"
           disabled={busy || disabled}
           onClick={onStart}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-sm font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
@@ -319,7 +346,7 @@ function FilingCard({
       {filing.filing_status === "missing_information" && gate > 0 && passportHref && (
         <a
           href={passportHref}
-          className="ml-2 mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#1e4d38]/40 bg-[#1e4d38]/[.06] px-4 py-2 text-sm font-semibold text-[#1e4d38] hover:bg-[#1e4d38]/[.12]"
+          className="ml-2 mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#1e4d38]/40 bg-[#1e4d38]/[.06] px-4 py-2 text-[15px] font-semibold text-[#1e4d38] hover:bg-[#1e4d38]/[.12]"
         >
           <ClipboardList className="h-3.5 w-3.5" />
           {filingPassportCtaCopy(lang)}
@@ -388,10 +415,10 @@ function PreflightCard({
 
   return (
     <div className="rounded-2xl border border-[#161616]/10 bg-white p-4 shadow-sm shadow-slate-950/[0.03]">
-      <p className="font-[family-name:var(--font-display)] text-base font-medium text-[#23211c]">
+      <p className="font-[family-name:var(--font-display)] text-lg font-medium text-[#23211c]">
         {L("Before we start — quick check", "Antes de arrancar — chequeo rápido", lang)}
       </p>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-[15px] text-slate-600">
         {L(
           `Here's my plan for your ${filingLabelEn}.`,
           `Este es mi plan para tu ${filingLabelEs}.`,
@@ -401,28 +428,28 @@ function PreflightCard({
 
       {/* Passport first — labels only, nothing to fill in */}
       <div className="mt-2.5 rounded-xl border border-[#1e4d38]/25 bg-[#1e4d38]/[.06] p-3">
-        <p className="text-sm font-semibold text-[#1e4d38]">
+        <p className="text-[15px] font-semibold text-[#1e4d38]">
           {L(
             `Using from your Business Passport (${items.length} items):`,
             `Estoy usando de tu Pasaporte de Negocio (${items.length}):`,
             lang
           )}
         </p>
-        <p className="mt-1 text-sm leading-snug text-[#1e4d38]/80">
+        <p className="mt-1 text-[15px] leading-snug text-[#1e4d38]/80">
           {inlineItems.map((f) => L(f.label_en, f.label_es, lang)).join(", ")}
           {items.length > inlineItems.length ? ` +${items.length - inlineItems.length}` : ""}
         </p>
-        <p className="mt-1 text-sm font-medium text-[#1e4d38]/70">
+        <p className="mt-1 text-[15px] font-medium text-[#1e4d38]/70">
           {L("You won't need to re-enter any of this.", "No tienes que volver a escribir nada de esto.", lang)}
         </p>
         {items.length > inlineItems.length && (
           <details className="mt-1">
-            <summary className="cursor-pointer text-sm font-semibold text-[#1e4d38]">
+            <summary className="cursor-pointer text-[15px] font-semibold text-[#1e4d38]">
               {L("See all", "Ver todo", lang)}
             </summary>
             <ul className="mt-1 space-y-0.5">
               {items.map((f, i) => (
-                <li key={i} className="flex items-center gap-1.5 text-sm text-[#1e4d38]/80">
+                <li key={i} className="flex items-center gap-1.5 text-[15px] text-[#1e4d38]/80">
                   <CheckCircle2 className="h-3 w-3 shrink-0" />
                   {L(f.label_en, f.label_es, lang)}
                 </li>
@@ -435,7 +462,7 @@ function PreflightCard({
       {/* Questions second — only the portal-account choice */}
       {questions.length > 0 && !submitted && (
         <div className="mt-2.5">
-          <p className="text-sm font-semibold text-slate-700">
+          <p className="text-[15px] font-semibold text-slate-700">
             {L("Still need from you:", "Todavía necesito de ti:", lang)}
           </p>
           <div className="mt-1.5 space-y-2.5">
@@ -444,7 +471,7 @@ function PreflightCard({
                 const portal = L(preflight.portal_name_en, preflight.portal_name_es, lang);
                 return (
                   <div key={`q-${qi}`} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-sm font-medium text-slate-800">
+                    <p className="text-[15px] font-medium text-slate-800">
                       {L(
                         `Do you already have an account on ${portal}?`,
                         `¿Ya tienes cuenta en ${portal}?`,
@@ -462,7 +489,7 @@ function PreflightCard({
                           key={value}
                           type="button"
                           onClick={() => setAccountChoice(value)}
-                          className={`rounded-lg border px-2.5 py-2 text-sm font-semibold transition ${
+                          className={`rounded-lg border px-2.5 py-2 text-[15px] font-semibold transition ${
                             accountChoice === value
                               ? "border-[#1e4d38] bg-[#1e4d38]/[.06] text-[#1e4d38]"
                               : "border-slate-200 bg-white text-slate-700 hover:border-[#1e4d38]/40"
@@ -472,7 +499,7 @@ function PreflightCard({
                         </button>
                       ))}
                     </div>
-                    <p className="mt-1.5 text-sm leading-snug text-slate-500">
+                    <p className="mt-1.5 text-[15px] leading-snug text-slate-500">
                       {L(
                         "If you don't have one, I'll create it first and pause where a password must be created — I never invent it.",
                         "Si no tienes, la creo primero y me detengo donde haya que crear la contraseña — nunca la invento.",
@@ -490,17 +517,17 @@ function PreflightCard({
 
       {/* Start — always visible */}
       {submitted ? (
-        <p className="mt-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+        <p className="mt-3 flex items-center gap-1.5 text-[15px] font-semibold text-emerald-700">
           <CheckCircle2 className="h-4 w-4" />
           {L("Started — launching your filing…", "Empezado — lanzando tu radicación…", lang)}
         </p>
       ) : (
         <>
           {confirmError && (
-            <p className="mt-2.5 text-sm font-medium text-rose-700">{confirmError}</p>
+            <p className="mt-2.5 text-[15px] font-medium text-rose-700">{confirmError}</p>
           )}
           {gate > 0 && (
-            <p className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+            <p className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[15px] font-semibold text-amber-800">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {filingGateCopy(gate, lang)}
             </p>
@@ -509,7 +536,7 @@ function PreflightCard({
             type="button"
             disabled={confirmBusy}
             onClick={() => void handleConfirm()}
-            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2.5 text-sm font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2.5 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
           >
             {confirmBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
             {L("Start filing", "Empezar la radicación", lang)}
@@ -674,21 +701,21 @@ function InterventionCard(props: InterventionProps) {
     : null;
 
   return (
-    <AssistantBubble id="agency-intervention">
+    <AssistantBubble id="agency-intervention" tone="action">
       <div className="flex items-start gap-2">
-        <Hand className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <Hand className="mt-0.5 h-4 w-4 shrink-0 text-rose-700" />
         <div className="min-w-0 flex-1">
           {pendingFields.length > 0 && (
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a07d00]">
+            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-rose-800">
               {L("Item needed", "Falta un dato", lang)}
             </p>
           )}
-          <p className="text-sm font-bold text-[#161616]">
+          <p className="text-[15px] font-bold text-[#161616]">
             {interventionHeading(pauseReason, lang)}
           </p>
 
           {props.validationError && (
-            <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-800">
+            <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[15px] font-medium text-rose-800">
               {props.validationError}
             </div>
           )}
@@ -696,7 +723,7 @@ function InterventionCard(props: InterventionProps) {
           {showValidationBanner && (
             <div
               role="alert"
-              className="mt-2 flex gap-2 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-sm leading-snug text-rose-950"
+              className="mt-2 flex gap-2 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-2 text-[15px] leading-snug text-rose-950"
             >
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
               <div>
@@ -717,7 +744,7 @@ function InterventionCard(props: InterventionProps) {
           )}
 
           {run.pause_streak >= 3 && (
-            <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-800">
+            <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[15px] font-medium text-red-800">
               {L(
                 `Still stuck on this step after ${run.pause_streak} tries. If fields are listed, fill them and continue — otherwise take over only for captcha or odd UI, then press “I'm done”.`,
                 `Sigo atascado en este paso después de ${run.pause_streak} intentos. Si hay campos, llénalos y continúa — si no, toma el control solo para captcha o pantallas raras, luego pulsa “Terminé”.`,
@@ -727,7 +754,7 @@ function InterventionCard(props: InterventionProps) {
           )}
 
           {askedAgain.length > 0 && !showValidationBanner && (
-            <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-900">
+            <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-[15px] font-medium text-sky-900">
               {L(
                 "I kept what you entered last time — check it and continue.",
                 "Guardé lo que escribiste la vez pasada — revísalo y continúa.",
@@ -737,11 +764,11 @@ function InterventionCard(props: InterventionProps) {
           )}
 
           {gateBody && (
-            <p className="mt-1.5 text-sm leading-snug text-slate-600">{gateBody}</p>
+            <p className="mt-1.5 text-[15px] leading-snug text-slate-600">{gateBody}</p>
           )}
 
           {isUpload && (
-            <p className="mt-1.5 text-sm leading-snug text-slate-600">
+            <p className="mt-1.5 text-[15px] leading-snug text-slate-600">
               {L(
                 `${props.uploadsText}. Max 5 MB per file — upload into the Evidence Locker, then Resume.`,
                 `${props.uploadsText}. Máx. 5 MB por archivo — súbelo al Casillero de evidencia y luego Reanudar.`,
@@ -751,8 +778,15 @@ function InterventionCard(props: InterventionProps) {
           )}
 
           {fieldsPause && (
-            <div className="mt-2.5 space-y-2">
-              <p className="text-sm leading-snug text-slate-500">
+            <form
+              className="mt-2.5 space-y-2"
+              onSubmit={(e) => {
+                // Enter in any field submits, same as Fill & continue.
+                e.preventDefault();
+                if (!props.busy && props.canFillFields) props.onFillContinue();
+              }}
+            >
+              <p className="text-[15px] leading-snug text-slate-700">
                 {L(
                   "Type it here and I'll enter it on the portal page shown in the browser. Never stored.",
                   "Escríbelo aquí y lo pondré en la página del portal que ves en el navegador. No se guarda.",
@@ -794,7 +828,7 @@ function InterventionCard(props: InterventionProps) {
                         : "text";
                 return (
                   <label key={field.id} className="block">
-                    <span className="mb-1 block text-xs font-semibold text-slate-700">
+                    <span className="mb-1 block text-[13px] font-semibold text-slate-700">
                       {field.label}
                       {field.optional ? (
                         <span className="font-normal text-slate-400">
@@ -843,7 +877,7 @@ function InterventionCard(props: InterventionProps) {
                           }
                           props.onFieldChange(field.id, next);
                         }}
-                        className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#1e4d38] focus:outline-none focus:ring-1 focus:ring-[#1e4d38] ${
+                        className={`w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[15px] text-slate-900 placeholder:text-slate-400 focus:border-[#1e4d38] focus:outline-none focus:ring-1 focus:ring-[#1e4d38] ${
                           isSensitive ? "pr-9" : ""
                         }`}
                       />
@@ -868,13 +902,13 @@ function InterventionCard(props: InterventionProps) {
                       )}
                     </div>
                     {field.error ? (
-                      <p className="mt-1 text-[10px] font-medium leading-snug text-rose-700">
+                      <p className="mt-1 text-xs font-medium leading-snug text-rose-700">
                         {field.error}
                       </p>
                     ) : null}
                     {field.hint ? (
                       <p
-                        className={`mt-1 text-[10px] leading-snug ${
+                        className={`mt-1 text-xs leading-snug ${
                           !field.error && VALIDATION_HINT_RE.test(field.hint)
                             ? "font-medium text-rose-700"
                             : "text-slate-500"
@@ -887,15 +921,17 @@ function InterventionCard(props: InterventionProps) {
                 );
               })}
               <button
-                type="button"
+                type="submit"
                 disabled={props.busy || !props.canFillFields}
-                onClick={props.onFillContinue}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-sm font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
                 {L("Fill & continue", "Llenar y continuar", lang)}
+                <kbd className="ml-1 hidden rounded border border-white/30 px-1 text-xs font-medium text-white/80 sm:inline">
+                  Enter
+                </kbd>
               </button>
-            </div>
+            </form>
           )}
 
           {isUpload && (
@@ -915,14 +951,14 @@ function InterventionCard(props: InterventionProps) {
                 type="button"
                 disabled={props.uploadBusy}
                 onClick={() => fileRef.current?.click()}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800 disabled:opacity-50"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-[15px] font-semibold text-indigo-800 disabled:opacity-50"
               >
                 <Upload className="h-3.5 w-3.5" />
                 {props.uploadBusy
                   ? L("Uploading…", "Subiendo…", lang)
                   : L("Upload to Evidence Locker", "Subir al Casillero de evidencia", lang)}
               </button>
-              {props.uploadMsg && <p className="text-sm text-slate-600">{props.uploadMsg}</p>}
+              {props.uploadMsg && <p className="text-[15px] text-slate-600">{props.uploadMsg}</p>}
             </div>
           )}
 
@@ -930,7 +966,7 @@ function InterventionCard(props: InterventionProps) {
             <button
               type="button"
               onClick={props.onTakeover}
-              className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-sm font-bold text-white hover:bg-[#16382a]"
+              className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-[15px] font-bold text-white hover:bg-[#16382a]"
             >
               <KeyRound className="h-3.5 w-3.5" />
               {L("Take over the browser", "Tomar el control del navegador", lang)}
@@ -941,7 +977,7 @@ function InterventionCard(props: InterventionProps) {
             <button
               type="button"
               onClick={props.onTakeover}
-              className="mt-2 w-full text-center text-sm font-medium text-slate-500 underline-offset-2 hover:text-[#1e4d38] hover:underline"
+              className="mt-2 w-full text-center text-[15px] font-medium text-slate-700 underline-offset-2 hover:text-[#1e4d38] hover:underline"
             >
               {L(
                 "Need to solve a captcha or weird UI? Take over instead",
@@ -957,7 +993,7 @@ function InterventionCard(props: InterventionProps) {
                 type="button"
                 disabled={props.busy}
                 onClick={props.onResume}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-sm font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
                 {L("Resume", "Reanudar", lang)}
@@ -967,7 +1003,7 @@ function InterventionCard(props: InterventionProps) {
               type="button"
               disabled={props.busy}
               onClick={props.onStop}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-[15px] font-semibold text-slate-700 disabled:opacity-50"
             >
               <Square className="h-3.5 w-3.5" />
               {L("Stop", "Detener", lang)}
@@ -1004,18 +1040,18 @@ function ReviewCard({
 }) {
   const [attested, setAttested] = useState(false);
   return (
-    <AssistantBubble>
+    <AssistantBubble tone="success">
       <div className="flex items-start gap-2">
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#161616]">
+          <p className="text-[15px] font-bold text-[#161616]">
             {L(
               "Your application is prepared and ready for final review.",
               "Tu solicitud está preparada y lista para revisión final.",
               lang
             )}
           </p>
-          <p className="mt-1.5 text-sm leading-snug text-slate-600">
+          <p className="mt-1.5 text-[15px] leading-snug text-slate-600">
             {knownCount !== null
               ? L(
                   `I filled ${knownCount} fields from your Business Passport.`,
@@ -1028,7 +1064,7 @@ function ReviewCard({
                   lang
                 )}
           </p>
-          <p className="mt-1.5 text-sm font-medium text-slate-500">{gateCopy(lang)}</p>
+          <p className="mt-1.5 text-[15px] font-medium text-slate-500">{gateCopy(lang)}</p>
           <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
             <input
               type="checkbox"
@@ -1036,7 +1072,7 @@ function ReviewCard({
               onChange={(e) => setAttested(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-700"
             />
-            <span className="text-xs leading-snug text-slate-600">
+            <span className="text-[13px] leading-snug text-slate-600">
               {L(
                 "I authorize SmartPR to submit this filing on my behalf. I confirm the information is true and correct.",
                 "Autorizo a SmartPR a enviar este trámite por mí. Confirmo que la información es cierta y correcta.",
@@ -1045,13 +1081,13 @@ function ReviewCard({
             </span>
           </label>
           {authorizeError && (
-            <p className="mt-2 text-xs font-medium text-rose-700">{authorizeError}</p>
+            <p className="mt-2 text-[13px] font-medium text-rose-700">{authorizeError}</p>
           )}
           <button
             type="button"
             disabled={busy || authorizeBusy || !attested}
             onClick={onAuthorize}
-            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[15px] font-semibold text-white disabled:opacity-50"
           >
             {authorizeBusy ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1066,7 +1102,7 @@ function ReviewCard({
             type="button"
             disabled={busy}
             onClick={onReviewInBrowser}
-            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-[15px] font-semibold text-slate-700 disabled:opacity-50"
           >
             <Eye className="h-3.5 w-3.5" />
             {L("Review in browser", "Revisar en el navegador", lang)}
@@ -1075,7 +1111,7 @@ function ReviewCard({
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
+            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-[15px] font-semibold text-slate-700 disabled:opacity-50"
           >
             <Square className="h-3.5 w-3.5" />
             {L("Close run", "Cerrar ejecución", lang)}
@@ -1101,15 +1137,15 @@ function SubmittedCard({
   busy: boolean;
 }) {
   return (
-    <AssistantBubble>
+    <AssistantBubble tone="success">
       <div className="flex items-start gap-2">
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#161616]">
+          <p className="text-[15px] font-bold text-[#161616]">
             {L("Filed — you're all set.", "Enviado — listo.", lang)}
           </p>
           {confirmation && (
-            <p className="mt-1.5 text-sm font-medium text-slate-700">
+            <p className="mt-1.5 text-[15px] font-medium text-slate-700">
               {L(
                 `Confirmation: ${confirmation}`,
                 `Confirmación: ${confirmation}`,
@@ -1117,7 +1153,7 @@ function SubmittedCard({
               )}
             </p>
           )}
-          <p className="mt-1.5 text-sm leading-snug text-slate-600">
+          <p className="mt-1.5 text-[15px] leading-snug text-slate-600">
             {L(
               "SmartPR submitted this filing on the portal on your behalf — no need to visit the portal yourself.",
               "SmartPR envió este trámite en el portal por ti — no necesitas visitar el portal tú mismo.",
@@ -1128,7 +1164,7 @@ function SubmittedCard({
             type="button"
             disabled={busy}
             onClick={onDone}
-            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-sm font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+            className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
           >
             {L("Back to filings", "Volver a los trámites", lang)}
           </button>
@@ -1153,6 +1189,11 @@ export interface AgencyChatProps {
   /** Last few agent status updates — rendered as a persistent recent-activity list. */
   transientHistory: string[];
   scrollKey: string;
+  /**
+   * Bumped by actions outside the chat (e.g. "I'm done" in the browser
+   * panel) that must jump the thread to the newest activity.
+   */
+  scrollToLatestSignal?: number;
   /** Start pre-flight for a specific SmartPR filing (obligation-joined option). */
   onStartFiling: (filing: FilingOption) => void;
   filingBusyId: string | null;
@@ -1245,6 +1286,17 @@ export function AgencyChat(props: AgencyChatProps) {
     if (stickRef.current) scrollChatToBottom("smooth");
   }, [props.scrollKey]);
 
+  // Hand-backs from outside the chat always re-arm stick-to-bottom and jump
+  // to the newest activity (the thread may shrink first as the card closes,
+  // so scroll again once the new status lands).
+  useEffect(() => {
+    if (!props.scrollToLatestSignal) return;
+    stickRef.current = true;
+    scrollChatToBottom("smooth");
+    const t = window.setTimeout(() => scrollChatToBottom("smooth"), 400);
+    return () => window.clearTimeout(t);
+  }, [props.scrollToLatestSignal]);
+
   // The newest pre-flight card is the human's next step after pressing
   // Start. Pressing Start locks the page into the workspace (see page.tsx),
   // so the chat box is the scroller — track the card so the effect below
@@ -1320,18 +1372,18 @@ export function AgencyChat(props: AgencyChatProps) {
           if (msg.type === "filing-picker") {
             return (
               <AssistantBubble key={msg.id}>
-                <p className="text-sm leading-snug text-slate-700">
+                <p className="text-[15px] leading-snug text-slate-700">
                   {filingPickerIntro(lang)}
                 </p>
                 {msg.loading ? (
-                  <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                  <p className="mt-3 flex items-center gap-2 text-[15px] text-slate-500">
                     <Loader2 className="h-4 w-4 animate-spin text-[#1e4d38]" />
                     {L("Finding your filings…", "Buscando tus trámites…", lang)}
                   </p>
                 ) : msg.error ? (
-                  <p className="mt-3 text-sm font-medium text-rose-700">{msg.error}</p>
+                  <p className="mt-3 text-[15px] font-medium text-rose-700">{msg.error}</p>
                 ) : msg.groups.length === 0 ? (
-                  <p className="mt-3 text-sm leading-snug text-slate-500">
+                  <p className="mt-3 text-[15px] leading-snug text-slate-500">
                     {L(
                       "There's nothing I can file for this business yet.",
                       "Todavía no hay nada que pueda tramitar para este negocio.",
@@ -1344,11 +1396,11 @@ export function AgencyChat(props: AgencyChatProps) {
                       <div key={group.agency_id}>
                         <div className="flex items-center gap-2">
                           {agencyIcon(group.agency_id)}
-                          <p className="text-sm font-extrabold uppercase tracking-wider text-slate-500">
+                          <p className="text-[15px] font-extrabold uppercase tracking-wider text-slate-500">
                             {L(group.agency_name_en, group.agency_name_es, lang)}
                           </p>
                           {group.demo && (
-                            <span className="rounded-md bg-amber-300 px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-black">
+                            <span className="rounded-md bg-amber-300 px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-black">
                               Demo
                             </span>
                           )}
@@ -1379,17 +1431,17 @@ export function AgencyChat(props: AgencyChatProps) {
             const expected = b.user_input_expected ?? [];
             return (
               <AssistantBubble key={msg.id}>
-                <p className="font-[family-name:var(--font-display)] text-base font-medium text-[#23211c]">
+                <p className="font-[family-name:var(--font-display)] text-lg font-medium text-[#23211c]">
                   {L(
                     `I'm starting your ${msg.filingLabelEn}.`,
                     `Estoy empezando tu ${msg.filingLabelEs}.`,
                     lang
                   )}
                 </p>
-                <p className="mt-1.5 text-sm leading-snug text-slate-600">
+                <p className="mt-1.5 text-[15px] leading-snug text-slate-600">
                   {L(b.goal_en, b.goal_es, lang)}
                 </p>
-                <p className="mt-1.5 text-sm leading-snug text-slate-600">
+                <p className="mt-1.5 text-[15px] leading-snug text-slate-600">
                   {L(
                     `I already have ${known} pieces of information from your Business Passport.`,
                     `Ya tengo ${known} piezas de información de tu Pasaporte de Negocio.`,
@@ -1397,13 +1449,13 @@ export function AgencyChat(props: AgencyChatProps) {
                   )}
                 </p>
                 {expected.length > 0 && (
-                  <p className="mt-1.5 text-sm text-slate-500">
+                  <p className="mt-1.5 text-[15px] text-slate-500">
                     <span className="font-semibold">{L("I'll ask you for: ", "Te voy a pedir: ", lang)}</span>
                     {expected.map((f) => L(f.label_en, f.label_es, lang)).join(", ")}
                   </p>
                 )}
                 {b.expected_outcome_en && (
-                  <p className="mt-1.5 text-sm text-slate-500">
+                  <p className="mt-1.5 text-[15px] text-slate-500">
                     <span className="font-semibold">{L("Expected outcome: ", "Resultado esperado: ", lang)}</span>
                     {L(b.expected_outcome_en, b.expected_outcome_es, lang)}
                   </p>
@@ -1426,18 +1478,21 @@ export function AgencyChat(props: AgencyChatProps) {
             );
           }
           return (
-            <AssistantBubble key={msg.id}>
+            <AssistantBubble
+              key={msg.id}
+              tone={msg.tone === "warn" ? "warn" : msg.tone === "success" ? "success" : "neutral"}
+            >
               <div className="flex items-start gap-2">
                 {msg.tone === "warn" ? (
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 ) : msg.tone === "success" ? (
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                 ) : (
-                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[10px] leading-none text-white">
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-xs leading-none text-white">
                     M
                   </span>
                 )}
-                <p className="text-sm leading-snug text-slate-700">
+                <p className="text-[15px] leading-snug text-slate-700">
                   {L(msg.textEn, msg.textEs, lang)}
                 </p>
               </div>
@@ -1455,14 +1510,14 @@ export function AgencyChat(props: AgencyChatProps) {
         {props.submitted && <SubmittedCard lang={lang} {...props.submitted} />}
 
         {props.terminalNote && (
-          <AssistantBubble>
+          <AssistantBubble tone={props.terminalNote.tone === "warn" ? "warn" : "neutral"}>
             <div className="flex items-start gap-2">
               {props.terminalNote.tone === "warn" ? (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               ) : (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
               )}
-              <p className="text-sm leading-snug text-slate-700">
+              <p className="text-[15px] leading-snug text-slate-700">
                 {L(props.terminalNote.textEn, props.terminalNote.textEs, lang)}
               </p>
             </div>
@@ -1481,7 +1536,7 @@ export function AgencyChat(props: AgencyChatProps) {
             type="button"
             disabled={props.busy}
             onClick={props.onNewRun}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-sm font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
           >
             {props.runFailed
               ? L("Try again", "Intentar de nuevo", lang)
@@ -1493,7 +1548,7 @@ export function AgencyChat(props: AgencyChatProps) {
               type="button"
               disabled={props.busy}
               onClick={props.onStop}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-4 py-2 text-[15px] font-semibold text-slate-700 disabled:opacity-50"
             >
               <Square className="h-3.5 w-3.5" />
               {L("Stop", "Detener", lang)}

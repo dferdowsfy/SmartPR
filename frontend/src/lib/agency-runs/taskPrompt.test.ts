@@ -251,7 +251,9 @@ describe("buildAgencyTaskPrompt fill reliability", () => {
     const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
     const task = buildAgencyTaskPrompt({ config, passport: null });
     assert.ok(task.includes("FILL RELIABILITY"));
-    assert.ok(task.includes("read that field's value back from the page"));
+    // Verify once per page (fast), not after every field.
+    assert.ok(task.includes("read all required values back in ONE step"));
+    assert.ok(task.includes("FAST FILL"));
     assert.ok(task.includes("Never click Submit / Log in / Continue / Guardar while a required field still reads back empty or wrong"));
     assert.ok(task.includes("do not blindly re-click the button"));
   });

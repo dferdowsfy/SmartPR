@@ -146,12 +146,12 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 }`}
               />
             </span>
-            <span className="hidden shrink-0 text-xs font-bold text-[#23211c] sm:inline">
+            <span className="hidden shrink-0 text-[13px] font-bold text-[#23211c] sm:inline">
               {props.takeover
                 ? L("You're in control", "Tienes el control", lang)
                 : L("Mita's browser", "Navegador de Mita", lang)}
             </span>
-            <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-full bg-white px-2.5 py-0.5 text-[11px] font-medium text-[#6b675e] ring-1 ring-[#161616]/10">
+            <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-full bg-white px-2.5 py-0.5 text-[13px] font-medium text-[#6b675e] ring-1 ring-[#161616]/10">
               <Lock className="h-3 w-3 shrink-0 text-[#1e4d38]" />
               <span className="truncate">
                 {props.domainsLabel || props.portalName}
@@ -176,7 +176,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 >
                   <ZoomOut className="h-3.5 w-3.5" />
                 </button>
-                <span className="min-w-[2.75rem] border-x border-slate-200 px-1 text-center text-[11px] font-semibold tabular-nums text-slate-600">
+                <span className="min-w-[2.75rem] border-x border-slate-200 px-1 text-center text-[13px] font-semibold tabular-nums text-slate-600">
                   {Math.round(zoom * 100)}%
                 </span>
                 <button
@@ -201,7 +201,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                   void document.exitFullscreen().catch(() => {});
                   props.onClose();
                 }}
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-50"
               >
                 <ArrowLeft className="h-3 w-3" />
                 {L("Back to chat", "Volver al chat", lang)}
@@ -216,7 +216,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                     ? L("Exit fullscreen", "Salir de pantalla completa", lang)
                     : L("Maximize browser", "Maximizar navegador", lang)
                 }
-                className="hidden items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 lg:inline-flex"
+                className="hidden items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 lg:inline-flex"
               >
                 {isFullscreen ? (
                   <Minimize2 className="h-3 w-3" />
@@ -231,7 +231,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 type="button"
                 onClick={props.onHandBack}
                 disabled={props.busy}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d38] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#16382a] disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d38] px-3 py-1.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#16382a] disabled:opacity-60"
               >
                 {props.busy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -250,7 +250,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                     disabled={props.reconnectBusy}
                     onClick={props.onReconnect}
                     title={L("Reload the live preview stream", "Recargar la vista previa en vivo", lang)}
-                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                   >
                     <RefreshCw className="h-3 w-3" />
                     {props.reconnectBusy
@@ -278,8 +278,8 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                       }
                       className={
                         props.fieldsPause
-                          ? "inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-50"
-                          : "inline-flex items-center gap-1 rounded-md border border-[#1e4d38]/40 bg-[#1e4d38]/[.06] px-2 py-1 text-[11px] font-semibold text-[#1e4d38] hover:bg-[#1e4d38]/[.12]"
+                          ? "inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[13px] font-medium text-slate-500 hover:bg-slate-50"
+                          : "inline-flex items-center gap-1 rounded-md border border-[#1e4d38]/40 bg-[#1e4d38]/[.06] px-2 py-1 text-[13px] font-semibold text-[#1e4d38] hover:bg-[#1e4d38]/[.12]"
                       }
                     >
                       <KeyRound className="h-3 w-3" />
@@ -293,7 +293,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
 
         <div className="relative flex min-h-0 flex-1 flex-col bg-[#f3eee3] p-2">
           {props.takeover && run.live_url && (
-            <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+            <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] font-semibold text-amber-900">
               <KeyRound className="h-3.5 w-3.5 shrink-0 text-amber-700" />
               <span>
                 {L(
@@ -333,7 +333,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 </div>
                 {props.fieldsPause && !props.takeover && (
                   <div className="pointer-events-none sticky inset-x-0 bottom-0 z-10 -mt-12 flex justify-center p-2">
-                    <div className="rounded-full bg-[#1e4d38] px-3 py-1.5 text-[11px] font-semibold text-white shadow-md">
+                    <div className="rounded-full bg-[#1e4d38] px-3 py-1.5 text-[13px] font-semibold text-white shadow-md">
                       {L(
                         "Answer in the chat — Mita will type it here",
                         "Responde en el chat — Mita lo escribirá aquí",
@@ -345,10 +345,10 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 {!props.previewLoaded && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#fbf8f2]">
                     <Loader2 className="h-7 w-7 animate-spin text-[#1e4d38]" />
-                    <p className="text-sm font-semibold text-[#23211c]">
+                    <p className="text-[15px] font-semibold text-[#23211c]">
                       {L("Opening the portal…", "Abriendo el portal…", lang)}
                     </p>
-                    <p className="max-w-xs text-center text-xs text-[#6b675e]">
+                    <p className="max-w-xs text-center text-[13px] text-[#6b675e]">
                       {L(
                         "Mita is connecting to a secure browser — usually a few seconds.",
                         "Mita se está conectando a un navegador seguro — suele tardar unos segundos.",
@@ -368,7 +368,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
             ) : (
               <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-3 bg-[#fbf8f2]">
                 <Loader2 className="h-7 w-7 animate-spin text-[#1e4d38]" />
-                <div className="text-sm font-semibold text-[#23211c]">
+                <div className="text-[15px] font-semibold text-[#23211c]">
                   {L("Opening the portal…", "Abriendo el portal…", lang)}
                 </div>
               </div>
@@ -405,7 +405,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                       <div className="font-bold text-[#161616]">
                         {L("You submit on the portal", "Usted envía en el portal", lang)}
                       </div>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <p className="mt-1 text-[15px] text-slate-600">
                         {L(
                           "Review the last screenshot. The agency assistant never clicks final submit. When ready, take over the browser below and complete submission yourself directly in the live browser on this page.",
                           "Revise la última captura. El asistente nunca hace clic en enviar. Cuando esté listo, tome el control del navegador abajo y complete el envío usted mismo directamente en el navegador en vivo de esta página.",
@@ -416,7 +416,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                         <button
                           type="button"
                           onClick={props.onTakeover}
-                          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2 text-xs font-bold text-white hover:bg-[#16382a]"
+                          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#16382a]"
                         >
                           <KeyRound className="h-3.5 w-3.5" />
                           {L("Take over the browser to submit", "Tome el control del navegador para enviar", lang)}
@@ -425,7 +425,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                       <button
                         type="button"
                         onClick={props.onStop}
-                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-[13px] font-semibold text-slate-700"
                       >
                         <Square className="h-3.5 w-3.5" />
                         {L("Close run", "Cerrar ejecución", lang)}
@@ -544,14 +544,14 @@ function PauseOverlay({
           {icon}
           <div className="min-w-0 flex-1">
             <div className="font-bold text-[#161616]">{title}</div>
-            <p className="mt-1 text-sm text-slate-600">{body}</p>
+            <p className="mt-1 text-[15px] text-slate-600">{body}</p>
             {portalName ? (
-              <p className="mt-1 text-[11px] font-medium text-slate-400">{portalName}</p>
+              <p className="mt-1 text-[13px] font-medium text-slate-400">{portalName}</p>
             ) : null}
 
             {isUpload && (
               <div className="mt-3 space-y-2">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] text-slate-600">
                   <AlertTriangle className="mr-1 inline h-3 w-3 text-amber-600" />
                   {L(
                     "Remember Verify Address on the name/address step; attachments cannot be skipped.",
@@ -574,14 +574,14 @@ function PauseOverlay({
                   type="button"
                   disabled={uploadBusy}
                   onClick={() => fileRef.current?.click()}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-800 disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-[13px] font-semibold text-indigo-800 disabled:opacity-50"
                 >
                   <Upload className="h-3.5 w-3.5" />
                   {uploadBusy
                     ? L("Uploading…", "Subiendo…", lang)
                     : L("Upload to Evidence Locker", "Subir al Casillero de evidencia", lang)}
                 </button>
-                {uploadMsg && <p className="text-xs text-slate-600">{uploadMsg}</p>}
+                {uploadMsg && <p className="text-[13px] text-slate-600">{uploadMsg}</p>}
               </div>
             )}
 
@@ -589,7 +589,7 @@ function PauseOverlay({
               <button
                 type="button"
                 onClick={onTakeover}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#16382a]"
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2.5 text-[13px] font-bold text-white hover:bg-[#16382a]"
               >
                 <KeyRound className="h-3.5 w-3.5" />
                 {L("Take over the browser", "Tomar el control del navegador", lang)}
@@ -600,7 +600,7 @@ function PauseOverlay({
               <button
                 type="button"
                 onClick={onTakeover}
-                className="mt-2 w-full text-center text-xs font-semibold text-[#1e4d38] underline underline-offset-2"
+                className="mt-2 w-full text-center text-[13px] font-semibold text-[#1e4d38] underline underline-offset-2"
               >
                 {L(
                   "Or take over the browser to attach files directly on the portal",
@@ -611,7 +611,7 @@ function PauseOverlay({
             )}
 
             {pauseStreak >= 3 && (
-              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-medium text-red-800">
                 {L(
                   `Still stuck on this step after ${pauseStreak} tries. Prefer Fill & continue from the chat if fields are listed — or Take over only for captcha/odd UI, then press "I'm done".`,
                   `Sigue atascado en este paso después de ${pauseStreak} intentos. Prefiera Llenar y continuar desde el chat si hay campos — o Tome el control solo para captcha/UI rara, luego pulse "Terminé".`,
@@ -625,7 +625,7 @@ function PauseOverlay({
                 type="button"
                 disabled={busy}
                 onClick={onResume}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2 text-xs font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2 text-[13px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
                 {L("Resume", "Reanudar", lang)}
@@ -634,7 +634,7 @@ function PauseOverlay({
                 type="button"
                 disabled={busy}
                 onClick={onStop}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-[13px] font-semibold text-slate-700 disabled:opacity-50"
               >
                 <Square className="h-3.5 w-3.5" />
                 {L("Stop", "Detener", lang)}

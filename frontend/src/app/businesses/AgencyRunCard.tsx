@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bot, ArrowRight, Cloud, Server, FlaskConical } from "lucide-react";
+import { Bot, ArrowRight, FlaskConical } from "lucide-react";
 import type { Lang } from "../forms/engine/types";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -37,17 +37,9 @@ export function AgencyRunCard({
   }, []);
 
   const providerBadge =
-    provider === "browser_use_cloud" ? (
-      <span className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-bold text-sky-800">
-        <Cloud className="h-3 w-3" />
-        {L("Runs on Browser Use Cloud", "Corre en Browser Use Cloud", lang)}
-      </span>
-    ) : provider === "self_hosted" ? (
-      <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-800">
-        <Server className="h-3 w-3" />
-        {L("Runs on self-hosted agent (Grok)", "Corre en agente propio (Grok)", lang)}
-      </span>
-    ) : provider === "mock" ? (
+    // No third-party provider branding — the agent is part of SmartPR.
+    // Only the dev-facing mock notice remains.
+    provider === "mock" ? (
       <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">
         <FlaskConical className="h-3 w-3" />
         {L("Mock preview — agent not connected", "Vista simulada — agente no conectado", lang)}
