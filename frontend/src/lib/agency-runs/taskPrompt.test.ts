@@ -260,7 +260,17 @@ describe("buildAgencyTaskPrompt fill reliability", () => {
     const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
     const task = buildAgencyTaskPrompt({ config, passport: null });
     assert.ok(task.includes("FIELD MAPPING"));
-    assert.ok(task.includes("addresses.municipality → City / Ciudad"));
-    assert.ok(task.includes("they are the SAME field"));
+    assert.ok(task.includes('addresses.municipality → "City"'));
+    assert.ok(task.includes("municipalities, not cities"));
+  });
+
+  it("renders per-portal labels — SURI gets its own field names", () => {
+    const config = getFilingConfig("SURI_REGISTER_TAXPAYER");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("FIELD MAPPING"));
+    assert.ok(task.includes('addresses.municipality → "Municipio"'));
+    assert.ok(task.includes('contact.fullName → "Nombre y apellidos"'));
+    // Demo labels must not leak into the SURI prompt.
+    assert.ok(!task.includes('"City"'));
   });
 });

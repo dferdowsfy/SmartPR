@@ -1,4 +1,5 @@
 import type { AgencyFilingConfig, PlaybookChannel } from "./filingTypes";
+import { renderPortalFieldMapping } from "./canonicalFields";
 import {
   goalBriefToPromptBlock,
   stripSensitivePassport,
@@ -262,17 +263,7 @@ PREFILL — DO THIS AGGRESSIVELY
 - SEQUENCING (mandatory): on every page, FIRST fill ALL non-sensitive fields you can from the Business Passport JSON below. ONLY THEN pause for blanks the passport cannot satisfy (usually password / MFA / SSN / uploads).
 - Do NOT PAUSE and do NOT emit REQUIRED_FIELDS for any control the passport can already fill (email, phone, legal/business names, addresses, municipality, EIN/registry when present and non-sensitive, etc.).
 - Fill EVERY form field whose meaning you can identify from the passport: legal/business names, entity type, addresses, phone, email, dates, organizer/member details, non-sensitive IDs, and anything else with a clear match.
-- FIELD MAPPING (passport key → portal field meaning — use this table, do not guess):
-  - addresses.municipality → City / Ciudad / Town / Municipio. Puerto Rico has municipalities, not cities — they are the SAME field. If the passport has addresses.municipality, the City blank is fillable. Never leave City empty and never ask the human for it when addresses.municipality is present.
-  - addresses.principalPhysical.line1 → Street address / Dirección física / Dirección postal
-  - addresses.principalPhysical.postalCode → Postal code / Código postal / ZIP
-  - contact.fullName → Contact full name / Nombre del contacto (fallback: business.legalName)
-  - contact.email → Email / Correo electrónico
-  - contact.phone → Phone / Teléfono (fallback: business.phone)
-  - business.legalName → Legal name / Nombre legal de la entidad
-  - business.tradeName → Trade name / DBA / Nombre comercial
-  - business.entityType → Entity type / Tipo de entidad (map values: sole_proprietorship=Sole proprietorship, llc=LLC, corporation=Corporation)
-  - business.ein → EIN / FEIN / Employer ID (fill only if present — never invent)
+${renderPortalFieldMapping(config.agencyId)}
 - For dropdowns/selects: pick the option whose visible text best matches the passport value. Never leave a dropdown on a placeholder/default when the passport identifies the value.
 - For checkboxes/radios that clearly correspond to passport facts, set them.
 - If a field has no passport match and is not sensitive, use visible page context; if truly unknown, leave it blank and note it — do not invent.
