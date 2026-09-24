@@ -3691,3 +3691,104 @@ test("CASE REG-PROFESSION-AGENCY-001: rule-level issuing-agency override — the
   );
   assert.equal(barberLic.download_kind, "filing_portal");
 });
+
+test("CASE AP: installer-trade BTs never get generator-side LUMA/net-metering even with Q_RENEWABLE_INSTALL=true (REG-RENEWABLE-OWNER-001)", () => {
+  // 2026-09-24 18:00 QA cycle (S184, Guaynabo): a NEW solar-installation
+  // company answering Q_RENEWABLE_INSTALL=true — the installer-trade reading
+  // ("we install systems for clients"; the question is in the installer's
+  // discovery list) — got the LUMA Interconnection Registration and the Net
+  // Metering Agreement as REQUIRED. Those instruments belong to the
+  // distributed GENERATOR (system owner/customer): Ley 114-2007 Art. 9,
+  // CEPR-MI-2014-0001, and the KB's own guidance names the installer as
+  // information ON the filing, not the filer. This is the hole left by
+  // f992061 (2026-09-21, pinned by CASE AK): the BT->Q_RENEWABLE_INSTALL
+  // definitional derivations were deleted, but the bare question-triggered
+  // rules RULE_0610/0611 still fired for installer BTs answering Yes in
+  // discovery. Fix: excluded_business_types=[BT_SOLAR_INSTALLER,
+  // BT_BATTERY_STORAGE_INSTALLER] on RULE_0610/0611 — the same mechanism
+  // RULE_0237 uses for repair shops. Deliberately NOT excluding
+  // BT_RENEWABLE_ENERGY_COMPANY (owner/developer class, S79): a renewable
+  // energy company answering Yes in the owner reading keeps both cards.
+  for (const btName of ["Solar Installer", "Battery Storage Installer"] as const) {
+    const rows = classify(
+      {
+        municipalityName: "Guaynabo",
+        businessTypeName: btName,
+        businessStatus: "new",
+        answers: {
+          Q_EMPLOYEES_HIRED: true,
+          Q_PHYSICAL_LOCATION: true,
+          Q_RENEWABLE_INSTALL: true, // installer-trade reading: installs for clients
+          Q_OFFERS_CONSTRUCTION_SERVICES: true,
+        },
+        projectFacts: { property_tenure: "leased" },
+      },
+      "new"
+    ).classified;
+    assert.equal(
+      byId(rows, DOC_LUMA),
+      undefined,
+      `${btName}: installer trade answering Q_RENEWABLE_INSTALL=true must not surface LUMA interconnection`
+    );
+    assert.equal(
+      byId(rows, DOC_NETMETER),
+      undefined,
+      `${btName}: installer trade answering Q_RENEWABLE_INSTALL=true must not surface the net metering agreement`
+    );
+    // The installer's own instruments are untouched (RULE_0605 is
+    // BT_SOLAR_INSTALLER-keyed; no battery-installer equivalent exists in
+    // the KB — pre-existing gap, not this fix's scope).
+    if (btName === "Solar Installer") {
+      assert.equal(
+        byId(rows, docByName("installer registration"))?.applicability,
+        "required",
+        `${btName}: OPPE installer registration (RULE_0605) still fires`
+      );
+    }
+  }
+
+  // Owner/developer class preserved: a renewable energy company answering
+  // Yes in the owner reading keeps both generator-side instruments.
+  const owner = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Renewable Energy Company",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true, Q_RENEWABLE_INSTALL: true },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(owner, DOC_LUMA)?.applicability,
+    "required",
+    "a renewable energy company (owner/developer, S79 class) answering Yes keeps LUMA interconnection"
+  );
+  assert.equal(
+    byId(owner, DOC_NETMETER)?.applicability,
+    "required",
+    "a renewable energy company (owner/developer, S79 class) answering Yes keeps the net metering agreement"
+  );
+
+  // Non-trade owner BTs are untouched by the exclusion.
+  const hotel = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "Hotel",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true, Q_RENEWABLE_INSTALL: true },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(hotel, DOC_LUMA)?.applicability,
+    "required",
+    "a hotel with its own renewable installation still gets LUMA interconnection"
+  );
+  assert.equal(
+    byId(hotel, DOC_NETMETER)?.applicability,
+    "required",
+    "a hotel with its own renewable installation still gets the net metering agreement"
+  );
+});

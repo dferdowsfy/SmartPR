@@ -6533,6 +6533,10 @@
   "business_type_id": null,
   "question_id": "Q_RENEWABLE_INSTALL",
   "expected_answer": "true",
+  "excluded_business_types": [
+   "BT_SOLAR_INSTALLER",
+   "BT_BATTERY_STORAGE_INSTALLER"
+  ],
   "municipality_flag": null,
   "requires_document_id": "DOC_LUMA_INTERCONNECTION",
   "citation": "Law 114-2007 Art. 9; CEPR-MI-2014-0001 — distributed generator interconnection",
@@ -6546,6 +6550,11 @@
     "date": "2026-09-18",
     "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
     "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-24",
+    "change": "excluded_business_types=[BT_SOLAR_INSTALLER, BT_BATTERY_STORAGE_INSTALLER] (QA 18:00 cycle, REG-RENEWABLE-OWNER-001)",
+    "reason": "S184 (Guaynabo solar installer): Q_RENEWABLE_INSTALL=true in the installer-trade reading ('we install systems for clients') fired the owner-side LUMA interconnection + net-metering instruments as REQUIRED for a trade business that owns no generating system. Same installer!=owner defect class as f992061 (2026-09-21), which removed the BT->Q_RENEWABLE_INSTALL definitional derivations but left the bare question-triggered rules firing for installer BTs answering Yes in discovery. The instruments are customer-generator-side (Ley 114-2007 Art. 9 net metering; CEPR-MI-2014-0001 distributed-generator interconnection; the KB's own guidance names the installer as information ON the filing, not the filer). The project-scoped solar follow-ups (RULE_0612-0615: OGPe ground-mount/>1MW, owner affidavit, battery fire) are untouched - installers still get project cards. Owner/developer BTs (incl. BT_RENEWABLE_ENERGY_COMPANY, S79 class) and all other BTs keep the question-keyed behavior. Edge case documented: an installer BT that also owns a generating system at its own premises will not surface these cards."
    }
   ]
  },
@@ -6555,6 +6564,10 @@
   "business_type_id": null,
   "question_id": "Q_RENEWABLE_INSTALL",
   "expected_answer": "true",
+  "excluded_business_types": [
+   "BT_SOLAR_INSTALLER",
+   "BT_BATTERY_STORAGE_INSTALLER"
+  ],
   "municipality_flag": null,
   "requires_document_id": "DOC_NET_METERING_AGREEMENT",
   "citation": "Law 114-2007 (as amended Law 17-2019 Art. 3.1) — net metering program mandate",
@@ -6568,6 +6581,11 @@
     "date": "2026-09-18",
     "change": "compliance_mode=verify_existing (QA 15:00 sweep)",
     "reason": "Existing customer-generators/installers verify their standing interconnection / net-metering agreement rather than applying as new. New businesses keep REQUIRED via the classifier businessStatus mapping. Whole-family sweep incl. installer-BT rules (0603/0606/0608, 0604/0607/0609) per the 332b659 family lesson; installer interconnection obligations are per-project/recurring, not first-time filings. No missing_fact_keys on any swept rule (RULE_0664 lesson)."
+   },
+   {
+    "date": "2026-09-24",
+    "change": "excluded_business_types=[BT_SOLAR_INSTALLER, BT_BATTERY_STORAGE_INSTALLER] (QA 18:00 cycle, REG-RENEWABLE-OWNER-001)",
+    "reason": "S184 (Guaynabo solar installer): Q_RENEWABLE_INSTALL=true in the installer-trade reading ('we install systems for clients') fired the owner-side LUMA interconnection + net-metering instruments as REQUIRED for a trade business that owns no generating system. Same installer!=owner defect class as f992061 (2026-09-21), which removed the BT->Q_RENEWABLE_INSTALL definitional derivations but left the bare question-triggered rules firing for installer BTs answering Yes in discovery. The instruments are customer-generator-side (Ley 114-2007 Art. 9 net metering; CEPR-MI-2014-0001 distributed-generator interconnection; the KB's own guidance names the installer as information ON the filing, not the filer). The project-scoped solar follow-ups (RULE_0612-0615: OGPe ground-mount/>1MW, owner affidavit, battery fire) are untouched - installers still get project cards. Owner/developer BTs (incl. BT_RENEWABLE_ENERGY_COMPANY, S79 class) and all other BTs keep the question-keyed behavior. Edge case documented: an installer BT that also owns a generating system at its own premises will not surface these cards."
    }
   ]
  },
