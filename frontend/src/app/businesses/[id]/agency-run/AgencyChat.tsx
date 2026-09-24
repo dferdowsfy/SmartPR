@@ -1351,9 +1351,9 @@ export function AgencyChat(props: AgencyChatProps) {
   }, [props.scrollKey]);
 
   // The newest pre-flight card is the human's next step after pressing
-  // Start. Pre-run the page itself (not the chat box) is the scroller, so
-  // without help the card lands below the fold and nothing appears to
-  // happen — track it so the effect below can bring it into view.
+  // Start. Pressing Start locks the page into the workspace (see page.tsx),
+  // so the chat box is the scroller — track the card so the effect below
+  // scrolls it to the top of the list.
   const lastPreflightId = useMemo(() => {
     for (let i = props.msgs.length - 1; i >= 0; i--) {
       if (props.msgs[i].type === "preflight") return props.msgs[i].id;
@@ -1384,9 +1384,18 @@ export function AgencyChat(props: AgencyChatProps) {
       if (actionableKey.startsWith("preflight:")) {
         // Scroll the card itself into view — whichever ancestor scrolls
         // (the window pre-run, the chat box mid-run) is the one that moves.
-        document
-          .getElementById(`agency-msg-${actionableKey.slice("preflight:".length)}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        // Container-local: move only the message list so the locked
+        // workspace (and the browser panel beside it) never shifts.
+        // scrollIntoView would also scroll overflow-hidden ancestors.
+        const box = scrollBoxRef.current;
+        const el = document.getElementById(
+          `agency-msg-${actionableKey.slice("preflight:".length)}`
+        );
+        if (box && el) {
+          const top =
+            box.scrollTop + el.getBoundingClientRect().top - box.getBoundingClientRect().top - 16;
+          box.scrollTo({ top, behavior: "smooth" });
+        }
       } else {
         scrollChatToBottom("smooth");
       }

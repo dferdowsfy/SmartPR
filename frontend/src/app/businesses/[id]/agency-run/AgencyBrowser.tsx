@@ -79,7 +79,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       ref={sectionRef}
       className={
         props.open
-          ? "order-first flex min-h-0 shrink-0 flex-col bg-[#f4f1ea] h-[clamp(240px,32dvh,380px)] lg:order-none lg:h-auto"
+          ? "order-first flex min-h-0 shrink-0 flex-col overflow-hidden bg-[#f4f1ea] h-[clamp(240px,32dvh,380px)] lg:order-none lg:h-auto lg:min-w-0 lg:flex-1"
           : "hidden"
       }
       aria-label={L("Live browser", "Navegador en vivo", lang)}
@@ -236,7 +236,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
           )}
           <div
             className={`relative w-full flex-1 overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
-              isFullscreen ? "min-h-0" : "min-h-[16rem]"
+              isFullscreen ? "min-h-0" : "min-h-0 lg:min-h-[16rem]"
             } ${props.takeover ? "border-2 border-amber-400" : "border border-slate-200"}`}
           >
             {run.live_url ? (

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Agency assistant — CHAT-PRIMARY run page.
+ * SmartPR Relay (agency assistant) — CHAT-PRIMARY run page.
  *
  * The chat thread (AgencyChat) is the primary surface for the whole run:
  * filing picker → pre-flight card → goal brief → milestone messages → one
@@ -849,16 +849,27 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setMsgs((prev) => prev.filter((m) => m.type === "filing-picker"));
   };
 
+  /**
+   * Workspace mode starts the moment the human presses Start on a filing
+   * (a pre-flight card exists) and lasts through the run. In workspace mode
+   * the page is locked to exactly the viewport: the header compacts, the
+   * chat and the browser panel are both anchored full-height side by side
+   * (stacked on mobile), and only the chat's message list scrolls. Before
+   * Start (just the filing picker) the page is a normal scrolling page.
+   */
+  const inWorkspace = Boolean(run) || msgs.some((m) => m.type === "preflight");
+  /** Pre-run the browser panel is a placeholder so the layout doesn't jump when the run starts. */
+  const showBrowserPanel = inWorkspace && !browserHidden;
+
   return (
-    // Once a run is active the workspace locks to exactly the viewport —
-    // whether or not the browser panel is visible: the chat column keeps a
-    // fixed height and its message list scrolls internally (new messages and
-    // field cards scroll up inside it), the browser panel stays fixed in
-    // view when shown, and the body never scrolls into blank space or loses
-    // the field cards below the fold. No run → normal scrolling page.
+    // Workspace mode locks the page to exactly the viewport (see
+    // inWorkspace): every flex ancestor between here and the chat's message
+    // list carries min-h-0, so the list, not the page, is what scrolls, and
+    // the browser panel stays anchored beside it. Before Start, the page
+    // scrolls normally.
     <div
       className={`flex flex-col bg-[#f4f1ea] ${
-        run ? "h-dvh overflow-hidden" : "min-h-dvh"
+        inWorkspace ? "h-dvh overflow-hidden" : "min-h-dvh"
       }`}
     >
       <TopNav active="businesses" />
@@ -871,10 +882,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         </div>
 
         <header
-          className={`mt-3 rounded-2xl border border-[#161616]/15 bg-[#fbf8f2] p-6 text-[#161616] ${
-            /* Mid-run on mobile the header is redundant — the workspace is
-               browser + chat, and the status pill stays in the row above. */
-            run ? "hidden md:block" : ""
+          className={`mt-3 shrink-0 rounded-2xl border border-[#161616]/15 bg-[#fbf8f2] text-[#161616] ${
+            /* In the workspace the header compacts to one row so the chat +
+               browser keep the viewport; on mobile it hides entirely — the
+               status pill stays in the row above. */
+            inWorkspace ? "hidden px-5 py-3 md:block" : "p-6"
           }`}
         >
           <div className="flex items-start gap-3">
@@ -883,14 +895,18 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">
-                {L("Agency assistant", "Asistente de agencia", lang)}
+                {L("Assisted filing", "Radicación asistida", lang)}
               </p>
-              <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-medium tracking-tight md:text-4xl">
-                {L("Filing Partner", "Socio de trámites", lang)}
+              <h1
+                className={`mt-1 font-[family-name:var(--font-display)] font-medium tracking-tight ${
+                  inWorkspace ? "text-2xl" : "text-3xl md:text-4xl"
+                }`}
+              >
+                SmartPR Relay
               </h1>
-              {/* Compact the header once a run is active so the chat+browser
-                  workspace keeps the viewport — no dead blank page below. */}
-              {!run && (
+              {/* Compact the header in the workspace so the chat + browser
+                  keep the viewport — no dead blank page below. */}
+              {!inWorkspace && (
                 <p className="mt-2 max-w-3xl text-sm text-[#5a5a5a]">
                   {L(
                     "Tell me what you need — I'll handle the portal work and only ask when a human touch is needed. The browser is there if you want to watch.",
@@ -931,17 +947,22 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           </div>
         )}
 
+        {/* Workspace row. Flex (not grid): a grid row sizes to its content,
+            which let the chat grow past the viewport instead of scrolling.
+            Desktop: chat anchored left at a fixed width, browser fills the
+            rest. Mobile: browser strip on top (fixed height), chat below. */}
         <div
-          className={`relative mt-6 grid min-h-0 flex-1 gap-6 ${
-            browserOpen ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)]" : "lg:grid-cols-1"
+          className={`relative flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-5 ${
+            inWorkspace ? "mt-4" : "mt-6"
           }`}
         >
-          {/* Chat — the primary surface. Fills the viewport below the page
-              header; the message list scrolls internally so the body never
-              scrolls into blank space. */}
+          {/* Chat: the primary surface. Its message list is the only thing
+              that scrolls in the workspace. */}
           <section
-            className={`flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-200 bg-[#fbf8f2] shadow-sm shadow-slate-950/[0.02] ${
-              browserOpen ? "" : "lg:max-w-3xl"
+            className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[#fbf8f2] shadow-sm shadow-slate-950/[0.02] ${
+              showBrowserPanel
+                ? "lg:w-[28rem] lg:flex-none xl:w-[30rem]"
+                : "lg:mx-auto lg:w-full lg:max-w-3xl"
             }`}
             aria-label={L("Assistant chat", "Chat del asistente", lang)}
           >
@@ -950,18 +971,18 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 {L("Conversation", "Conversación", lang)}
               </h2>
               <div className="flex items-center gap-2">
-                {run && (
+                {inWorkspace && (
                   <button
                     type="button"
                     onClick={() => setBrowserHidden((h) => !h)}
                     className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                   >
-                    {browserOpen ? (
+                    {showBrowserPanel ? (
                       <EyeOff className="h-3 w-3" />
                     ) : (
                       <Eye className="h-3 w-3" />
                     )}
-                    {browserOpen
+                    {showBrowserPanel
                       ? L("Hide browser", "Ocultar navegador", lang)
                       : L("View browser", "Ver navegador", lang)}
                   </button>
@@ -1026,6 +1047,36 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               uploadMsg={uploadMsg}
               onUpload={(file) => void uploadToLocker(file)}
             />
+          )}
+
+          {/* Pre-run placeholder (desktop only; on mobile the chat keeps the room): holds the browser's place from the moment
+              Start is pressed, so the layout is already anchored and doesn't
+              jump when the run begins. */}
+          {!run && showBrowserPanel && (
+            <section
+              className="hidden min-h-0 flex-col lg:flex lg:min-w-0 lg:flex-1"
+              aria-label={L("Live browser", "Navegador en vivo", lang)}
+            >
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-6 text-center">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand/10">
+                  <Shield className="h-5 w-5 text-brand" />
+                </span>
+                <p className="max-w-sm text-sm font-semibold text-[#161616]">
+                  {L(
+                    "The agency portal opens here when you confirm.",
+                    "El portal de la agencia se abre aquí cuando confirmes.",
+                    lang
+                  )}
+                </p>
+                <p className="max-w-sm text-xs text-slate-500">
+                  {L(
+                    "You'll watch every field fill in. Nothing is submitted without your approval.",
+                    "Verás cada campo llenarse. Nada se envía sin tu aprobación.",
+                    lang
+                  )}
+                </p>
+              </div>
+            </section>
           )}
         </div>
       </main>
