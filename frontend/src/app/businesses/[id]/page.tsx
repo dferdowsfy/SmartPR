@@ -250,7 +250,14 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   // opens the destination in a new tab; the click is recorded server-side so
   // the row can nudge the user back and a 3-day bell reminder is scheduled.
   const [downloaded, setDownloaded] = useState(!!item.downloaded_at);
-  const dl = useMemo(() => getDocumentDownload(item.requirement_id), [item.requirement_id]);
+  // REG-PROFESSION-AGENCY-002: resolve the download destination through the
+  // obligation's own source rule when known, so the business page shows the
+  // same filing link as the intake card (e.g. Salud, not the shared
+  // Juntas/Didaxis default, for a tattoo-artist license).
+  const dl = useMemo(
+    () => getDocumentDownload(item.requirement_id, item.source_reference ?? undefined),
+    [item.requirement_id, item.source_reference]
+  );
   const recordDownload = useCallback(() => {
     setDownloaded(true);
     fetch(`/api/obligations/${item.id}/download`, { method: "POST" })

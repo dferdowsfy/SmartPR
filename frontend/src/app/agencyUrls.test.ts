@@ -185,6 +185,28 @@ describe("getDocumentDownload", () => {
     assert.equal(getDocumentDownload("DOC_DOES_NOT_EXIST"), null);
     assert.equal(getDocumentDownload(null), null);
   });
+
+  it("a rule-level download override wins over the shared document default (REG-PROFESSION-AGENCY-002)", async () => {
+    // 2026-09-24 live retest: the e7e7b64 engine fix was deployed and the
+    // intake card showed the Salud destination, but the business page's
+    // "File online" button still linked the Didaxis portal — the business
+    // page resolves downloads via getDocumentDownload(documentId) only,
+    // ignoring the obligation's source rule. The helper now accepts the
+    // source rule id; the rule's own destination wins.
+    const { getDocumentDownload } = await import("./kb");
+    const tattoo = getDocumentDownload("DOC_PROFESSIONAL_LICENSE", "RULE_0696");
+    assert.ok(tattoo, "tattoo-artist license must resolve a download destination");
+    assert.equal(tattoo.url, "https://www.salud.pr.gov/");
+    assert.equal(tattoo.kind, "guidance_page");
+    // Controls: no rule, unknown rule, or a rule without an override keep
+    // the document default (Didaxis/Juntas portal for genuine professions).
+    const def = getDocumentDownload("DOC_PROFESSIONAL_LICENSE");
+    assert.ok(def);
+    assert.equal(def.url, "https://www.didaxispr.com/dept/estado-juntas");
+    assert.equal(def.kind, "filing_portal");
+    const unknown = getDocumentDownload("DOC_PROFESSIONAL_LICENSE", "RULE_DOES_NOT_EXIST");
+    assert.deepEqual(unknown, def);
+  });
 });
 
 describe("REG-DOMICILIARY-CITATION-001: domiciliary-use permit cites a real OGPe regulation", () => {

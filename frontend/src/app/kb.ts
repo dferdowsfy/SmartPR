@@ -173,14 +173,30 @@ export interface DocumentDownload {
 /** Direct official download/filing destination for a KB document (form PDF,
  * filing portal, form page, or guidance page). Null when the document is
  * private, preparer-created, notarial, or municipality-specific — those carry
- * a how-to-obtain note instead. */
-export function getDocumentDownload(documentId: string | null | undefined): DocumentDownload | null {
+ * a how-to-obtain note instead.
+ *
+ * REG-PROFESSION-AGENCY-002: when the requirement's source rule is known
+ * (e.g. an obligation's source_reference) and that rule carries its own
+ * download destination, the rule's authority wins over the shared document
+ * default — the business page must show the same filing link as the intake
+ * card, never the document default alone. */
+export function getDocumentDownload(
+  documentId: string | null | undefined,
+  sourceRuleId?: string | null
+): DocumentDownload | null {
   if (!documentId) return null;
   const doc = (KB.documents as Array<{ id: string; download_url?: string | null; download_kind?: string }>).find(
     (d) => d.id === documentId
   );
-  if (!doc?.download_url) return null;
-  return { url: doc.download_url, kind: doc.download_kind || "guidance_page" };
+  const rule = sourceRuleId
+    ? (KB.rules as Array<{ id: string; download_url?: string | null; download_kind?: string | null }>).find(
+        (r) => r.id === sourceRuleId
+      )
+    : undefined;
+  const url = rule?.download_url ?? doc?.download_url ?? null;
+  if (!url) return null;
+  const kind = rule?.download_kind ?? doc?.download_kind ?? "guidance_page";
+  return { url, kind };
 }
 
 /** Kind-specific action label for a direct download/filing destination. */
