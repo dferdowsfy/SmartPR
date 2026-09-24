@@ -126,7 +126,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       ref={sectionRef}
       className={
         props.open
-          ? "flex min-h-0 flex-col overflow-hidden h-[clamp(240px,32dvh,380px)] lg:h-auto lg:flex-1"
+          ? "flex min-h-0 flex-col overflow-hidden h-[clamp(220px,34dvh,340px)] sm:h-[clamp(280px,46dvh,560px)] lg:h-auto lg:flex-1"
           : "hidden"
       }
       aria-label={L("Live browser", "Navegador en vivo", lang)}

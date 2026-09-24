@@ -965,7 +965,59 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       }`}
     >
       <TopNav active="businesses" />
-      <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-5 py-6">
+      <main
+        className={`mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col ${
+          inWorkspace ? "px-3 py-3 sm:px-5" : "px-5 py-6"
+        }`}
+      >
+        {inWorkspace ? (
+          // Workspace: one slim line of context so the chat + browser keep
+          // the viewport (the full header lives on the pre-run page).
+          <div className="flex min-w-0 shrink-0 items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-2 text-[13px]">
+              <Link
+                href={`/businesses/${businessId}`}
+                className="shrink-0 font-semibold text-[#cfc6b4] hover:text-white"
+                aria-label={L("Back to business profile", "Volver al perfil del negocio", lang)}
+              >
+                ←<span className="hidden sm:inline"> {L("Business profile", "Perfil del negocio", lang)}</span>
+              </Link>
+              <span className="shrink-0 text-[#5f584c]" aria-hidden="true">/</span>
+              <p className="min-w-0 truncate text-[#cfc6b4]">
+                {bizHeader && (
+                  <span className="font-bold uppercase tracking-[0.14em] text-[#9a917f]">
+                    {bizHeader.name}
+                    <span className="hidden md:inline">
+                      {bizHeader.municipality ? ` · ${bizHeader.municipality}` : ""}
+                    </span>
+                    {" · "}
+                  </span>
+                )}
+                <span className="text-[#f4efe2]">
+                  {activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang)}
+                </span>
+              </p>
+            </div>
+            <ol
+              className="hidden shrink-0 items-center gap-2.5 text-[13px] font-bold md:flex"
+              aria-label={L("Filing progress", "Progreso del trámite", lang)}
+            >
+              <li className="flex items-center gap-1.5 text-[#8f8674]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
+                Intake
+              </li>
+              <li className="flex items-center gap-1.5 text-[#8f8674]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
+                {L("Requirements", "Requisitos", lang)}
+              </li>
+              <li className="flex items-center gap-1.5 text-[#f4efe2]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1e4d38] text-[9px] font-black text-white">3</span>
+                {L("File", "Radicación", lang)}
+              </li>
+            </ol>
+          </div>
+        ) : (
+          <>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href={`/businesses/${businessId}`} className="text-[15px] font-semibold text-[#cfc6b4] hover:text-white">
             ← {L("Business profile", "Perfil del negocio", lang)}
@@ -1008,6 +1060,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
 
+          </>
+        )}
+
         {/* Mita hero — pre-run only. In the workspace it compacts to one
             slim row so the chat + browser keep the viewport. */}
         {!inWorkspace ? (
@@ -1030,12 +1085,12 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           // The chat window has no header bar of its own — Mita's identity,
           // run status, portal-field progress and the browser toggle live in
           // this one row above the window.
-          <div className="mt-3 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-lg text-white">
+          <div className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[15px] text-white">
                 M
               </span>
-              <p className="font-[family-name:var(--font-display)] text-xl text-[#f4efe2]">
+              <p className="font-[family-name:var(--font-display)] text-lg text-[#f4efe2]">
                 Mita
               </p>
               {run && <StatusPill status={run.status} lang={lang} />}
@@ -1090,7 +1145,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             single locked height, and only the chat's message list scrolls.
             Flex (not grid): a grid row sizes to its content, which let the
             chat grow past the viewport instead of scrolling. */}
-        <div className={`flex min-h-0 flex-col ${inWorkspace ? "mt-4 flex-1" : "mt-8"}`}>
+        <div className={`flex min-h-0 flex-col ${inWorkspace ? "mt-2.5 flex-1" : "mt-8"}`}>
           <div
             className={`flex min-h-0 flex-col overflow-hidden rounded-3xl bg-[#fbf8f2] shadow-2xl shadow-black/50 lg:flex-row ${
               inWorkspace ? "flex-1" : ""
@@ -1142,7 +1197,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               dead pane beside the chat (the chat section centers itself when
               the browser panel is absent). */}
           {(run || showBrowserPanel) && (
-          <div className="order-first flex min-h-0 min-w-0 flex-1 flex-col lg:order-none">
+          <div
+            className={`order-first min-h-0 min-w-0 flex-col lg:order-none lg:flex lg:flex-1 ${
+              run ? "flex flex-none" : "hidden"
+            }`}
+          >
           {run && (
             <AgencyBrowser
               lang={lang}
