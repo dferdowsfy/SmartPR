@@ -259,8 +259,13 @@ GOAL
 - Open and stay on the allowlisted domains only: ${config.domains.join(", ")} (start: ${config.startUrl})
 - Spanish UI is OK; follow on-screen Spanish labels.
 
-SPEED (the human is watching live)
-- Fill every field you can identify on a page in as few steps as possible, then submit once. Do not re-read or re-navigate pages you have already completed, and do not wait or scroll without a reason.
+SPEED (the human is watching live — every step costs seconds)
+- FAST FILL: on a page with several plain text inputs / selects / textareas, fill them ALL in ONE JavaScript step instead of typing field by field. For each control use the native value setter so React/Vue forms register it, then fire events:
+    const set = (el, v) => { const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : el instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, "value").set.call(el, v); el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); };
+  Find controls by their label text, id, or name. Dates in native date inputs take ISO values (YYYY-MM-DD). Click checkboxes / radios normally.
+- If a page rejects the JavaScript fill (values do not stick), fall back to typing — but type each value in one action, not character by character.
+- Verify ONCE per page, right before submitting: read all required values back in a single step. Do not read back after every field.
+- Do not re-read or re-navigate pages you have already completed, and do not wait or scroll without a reason.
 
 PREFILL — DO THIS AGGRESSIVELY
 - SEQUENCING (mandatory): on every page, FIRST fill ALL non-sensitive fields you can from the Business Passport JSON below. ONLY THEN pause for blanks the passport cannot satisfy (usually password / MFA / SSN / uploads).
@@ -279,7 +284,7 @@ HUMAN INPUT PATH (login / required text fields)
 - The Assistant panel shows EXACTLY the fields in your REQUIRED_FIELDS block, so that block must describe the blanks on the page you are on RIGHT NOW. Never list email / password / MFA unless the current page is a login or account-creation form; on an SSN step list only the SSN; on a form with one missing date list only that date.
 - Do NOT expect the human to type into the live browser for email/password/MFA or other required text fields.
 - Wait for resume with FIELDS FILL values; then type those exact values into the matching controls and continue.
-- FILL RELIABILITY (mandatory on every form): portal pages re-render while you type, which can drop keystrokes or scatter characters into the wrong fields. After typing into ANY text field, read that field's value back from the page and confirm it matches what you intended. If it is empty or wrong: click into the field, select all (Ctrl+A / Cmd+A), delete, type the full value again in one steady pass, then read back again. Repeat until the value reads back correctly.
+- FILL RELIABILITY: portal pages can re-render while you type and drop values. Before submitting a page, read all required values back in ONE step. For any that are empty or wrong: click the field, select all (Ctrl+A / Cmd+A), delete, and set the full value again, then re-check only those fields.
 - Never click Submit / Log in / Continue / Guardar while a required field still reads back empty or wrong — the page will silently reject the submit and you will look stuck. Verify every required field's value first, then click once.
 - After clicking submit, verify the page actually advanced (URL or heading changed). If you are still on the same form with no visible error message, re-read the field values before doing anything else — do not blindly re-click the button.
 - Keep emitting accurate REQUIRED_FIELDS for whatever is still empty after passport prefill (ids/labels/types/sensitivity/hints/errors only — never echo secrets). Use hint= for format guidance; on failed fills prefer error=<exact on-screen validation message>.

@@ -166,15 +166,16 @@ const liveUrlCache = new Map<string, string>();
 /**
  * Remote browser viewport. The live view scales the remote screen down to
  * fit the SmartPR panel, so a smaller viewport renders larger, legible text
- * in the embed (1920px shrinks to ~38% in a 730px panel; 1100px to ~66%).
+ * in the embed (1920px shrinks to ~40% in a 760px panel; 1024px to ~74%).
+ * 1024 is the floor: narrower pushes portals into their mobile layouts.
  * Override per environment with BROWSER_USE_SCREEN_WIDTH / _HEIGHT.
  */
 function screenSize(): { screenWidth: number; screenHeight: number } {
   const w = Number(process.env.BROWSER_USE_SCREEN_WIDTH);
   const h = Number(process.env.BROWSER_USE_SCREEN_HEIGHT);
   return {
-    screenWidth: Number.isFinite(w) && w >= 800 ? Math.round(w) : 1100,
-    screenHeight: Number.isFinite(h) && h >= 600 ? Math.round(h) : 820,
+    screenWidth: Number.isFinite(w) && w >= 800 ? Math.round(w) : 1024,
+    screenHeight: Number.isFinite(h) && h >= 600 ? Math.round(h) : 768,
   };
 }
 
