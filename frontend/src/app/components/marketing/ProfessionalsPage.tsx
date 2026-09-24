@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
 
@@ -14,7 +15,6 @@ const copy = {
       "SmartPR sits under your practice. You still talk to the client, review the package, and submit. The software removes the retyping, the missed requirement, and the “¿cómo va lo mío?” thread.",
     startPilot: "Start a pilot",
     bookDemo: "Book a demo",
-    pilotSubject: "I am interested in a pilot",
     demoSubject: "I'm interested in a demo",
     whoFor: "Gestores · CPAs · Permitting firms · Law firms · Consultants · Multi-entity operators",
     posKicker: "Positioning",
@@ -89,7 +89,6 @@ const copy = {
       "SmartPR trabaja bajo su práctica. Usted sigue hablando con el cliente, revisando el paquete y radicando. El software elimina la redigitación, el requisito que se escapa y el hilo de “¿cómo va lo mío?”.",
     startPilot: "Comenzar un piloto",
     bookDemo: "Agendar una demo",
-    pilotSubject: "Me interesa un piloto",
     demoSubject: "Me interesa una demo",
     whoFor: "Gestores · CPAs · Firmas de permisos · Bufetes · Consultores · Operadores con varias entidades",
     posKicker: "Posicionamiento",
@@ -160,13 +159,18 @@ const copy = {
 } as const;
 
 export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialLanguage?: Language }) {
+  const router = useRouter();
   const { language, handleLanguageChange } = useMarketingLanguage(initialLanguage);
   const c = copy[language];
   const home = language === "ES" ? "/es" : "/";
 
-  // Both CTAs open the visitor's email client with a pre-filled subject to
-  // contact@getsmartpr.com and an empty body — one click to send.
-  const pilotHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(c.pilotSubject)}`;
+  // "Start a pilot" enters the free platform directly — the existing guest
+  // intake entry the landing page uses. "Book a demo" opens the visitor's
+  // email client with a pre-filled subject to contact@getsmartpr.com and an
+  // empty body — one click to send.
+  function goToAssessment() {
+    router.push("/?entry=new-business");
+  }
   const demoHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
 
   useEffect(() => {
@@ -183,9 +187,9 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
           <h1>{c.heroTitle}</h1>
           <p className={styles.heroSub}>{c.heroSub}</p>
           <div className={styles.ctaRow}>
-            <a href={pilotHref} className={styles.primary}>
+            <button type="button" className={styles.primary} onClick={goToAssessment}>
               {c.startPilot}
-            </a>
+            </button>
             <a href={demoHref} className={styles.secondary}>
               {c.bookDemo}
             </a>
@@ -277,9 +281,9 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
             <h2>{c.closeTitle}</h2>
             <p className={styles.lead}>{c.closeSub}</p>
             <div className={styles.ctaRow}>
-              <a href={pilotHref} className={styles.primary}>
+              <button type="button" className={styles.primary} onClick={goToAssessment}>
                 {c.startPilot}
-              </a>
+              </button>
               <a href={demoHref} className={styles.secondary}>
                 {c.bookDemo}
               </a>
