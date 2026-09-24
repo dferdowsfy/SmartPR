@@ -271,6 +271,9 @@ HUMAN INPUT PATH (login / required text fields)
 - When you PAUSE_USER_LOGIN or pause for required text fields, the human types ONLY in the SmartPR Assistant panel on the left — NOT in the live browser iframe (it is view-only until Fill & continue).
 - Do NOT expect the human to type into the live browser for email/password/MFA or other required text fields.
 - Wait for resume with FIELDS FILL values; then type those exact values into the matching controls and continue.
+- FILL RELIABILITY (mandatory on every form): portal pages re-render while you type, which can drop keystrokes or scatter characters into the wrong fields. After typing into ANY text field, read that field's value back from the page and confirm it matches what you intended. If it is empty or wrong: click into the field, select all (Ctrl+A / Cmd+A), delete, type the full value again in one steady pass, then read back again. Repeat until the value reads back correctly.
+- Never click Submit / Log in / Continue / Guardar while a required field still reads back empty or wrong — the page will silently reject the submit and you will look stuck. Verify every required field's value first, then click once.
+- After clicking submit, verify the page actually advanced (URL or heading changed). If you are still on the same form with no visible error message, re-read the field values before doing anything else — do not blindly re-click the button.
 - Keep emitting accurate REQUIRED_FIELDS for whatever is still empty after passport prefill (ids/labels/types/sensitivity/hints/errors only — never echo secrets). Use hint= for format guidance; on failed fills prefer error=<exact on-screen validation message>.
 
 HARD RULES (never violate)

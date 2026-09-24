@@ -245,3 +245,14 @@ describe("buildAgencyTaskPrompt with playbooks", () => {
     assert.ok(task.includes(config.procedureEn[0]));
   });
 });
+
+describe("buildAgencyTaskPrompt fill reliability", () => {
+  it("instructs the agent to read back field values before submitting", () => {
+    const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("FILL RELIABILITY"));
+    assert.ok(task.includes("read that field's value back from the page"));
+    assert.ok(task.includes("Never click Submit / Log in / Continue / Guardar while a required field still reads back empty or wrong"));
+    assert.ok(task.includes("do not blindly re-click the button"));
+  });
+});
