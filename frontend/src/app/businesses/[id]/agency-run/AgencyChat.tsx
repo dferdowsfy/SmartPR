@@ -1330,17 +1330,46 @@ function filingBusyKey(filing: FilingOption): string {
 
 export function AgencyChat(props: AgencyChatProps) {
   const { lang } = props;
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const scrollBoxRef = useRef<HTMLDivElement>(null);
 
-  // Only auto-scroll when the human is already near the bottom — never
-  // yank the view away while they're reading earlier messages.
+  // Chat auto-scroll is always container-local: only the message list moves,
+  // never the window or an outer ancestor — so the browser panel and the
+  // field cards stay anchored while the human fills them out.
+  const scrollChatToBottom = (behavior: ScrollBehavior) => {
+    const box = scrollBoxRef.current;
+    if (!box) return;
+    box.scrollTo({ top: box.scrollHeight, behavior });
+  };
+
+  // Only auto-scroll new chatter when the human is already near the bottom —
+  // never yank the view away while they're reading earlier messages.
   useEffect(() => {
     const box = scrollBoxRef.current;
     if (!box) return;
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 160;
-    if (nearBottom) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (nearBottom) scrollChatToBottom("smooth");
   }, [props.scrollKey]);
+
+  // Actionable cards (fill fields / review / submitted) always scroll into
+  // view inside the chat list, even if the human scrolled up — the thing they
+  // must act on is never lost below the fold.
+  const actionableKey = props.intervention
+    ? `intervention:${props.intervention.run.id}:${props.intervention.pendingFields
+        .map((f) => f.id)
+        .join(",")}`
+    : props.review
+      ? `review:${props.run?.id ?? "noid"}`
+      : props.submitted
+        ? `submitted:${props.run?.id ?? "noid"}`
+        : null;
+  const seenActionableRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!actionableKey || seenActionableRef.current === actionableKey) return;
+    seenActionableRef.current = actionableKey;
+    // Let the card mount first, then bring it into view.
+    const t = window.setTimeout(() => scrollChatToBottom("smooth"), 60);
+    return () => window.clearTimeout(t);
+  }, [actionableKey]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -1495,8 +1524,6 @@ export function AgencyChat(props: AgencyChatProps) {
         {props.transientHistory.length > 0 && (
           <TransientHistory labels={props.transientHistory} />
         )}
-
-        <div ref={chatEndRef} />
       </div>
 
       <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3">

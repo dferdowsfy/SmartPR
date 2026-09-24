@@ -841,14 +841,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   return (
-    // When the browser panel is open the workspace locks to exactly the
-    // viewport: the chat column keeps a fixed height and its message list
-    // scrolls internally (new messages scroll up inside it), the browser
-    // panel stays fixed in view, and the body never grows a blank page
-    // below the frame. Browser closed → normal scrolling page.
+    // Once a run is active the workspace locks to exactly the viewport —
+    // whether or not the browser panel is visible: the chat column keeps a
+    // fixed height and its message list scrolls internally (new messages and
+    // field cards scroll up inside it), the browser panel stays fixed in
+    // view when shown, and the body never scrolls into blank space or loses
+    // the field cards below the fold. No run → normal scrolling page.
     <div
       className={`flex flex-col bg-[#f4f1ea] ${
-        browserOpen ? "h-dvh overflow-hidden" : "min-h-dvh"
+        run ? "h-dvh overflow-hidden" : "min-h-dvh"
       }`}
     >
       <TopNav active="businesses" />
