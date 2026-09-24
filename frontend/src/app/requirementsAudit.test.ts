@@ -3631,6 +3631,20 @@ test("CASE REG-PROFESSION-AGENCY-001: rule-level issuing-agency override — the
     "https://www.salud.pr.gov/",
     "the filing link must go to Salud, not the Didaxis Juntas portal"
   );
+  assert.equal(
+    lic.download_url,
+    "https://www.salud.pr.gov/",
+    "REG-PROFESSION-AGENCY-002: the 'File online' download destination must follow the rule's own authority, never the shared document default"
+  );
+  assert.equal(
+    lic.download_kind,
+    "guidance_page",
+    "no specific tattoo-license filing portal is verified — honest 'How to file' posture"
+  );
+  assert.ok(
+    /318-1999/.test(String(lic.download_note ?? "")),
+    "the download note must cite the statutory basis"
+  );
   assert.ok(
     /318-1999/.test(String(lic.agency_note ?? "")),
     "the agency note must cite the statutory basis"
@@ -3670,4 +3684,10 @@ test("CASE REG-PROFESSION-AGENCY-001: rule-level issuing-agency override — the
     "https://www.didaxispr.com/dept/estado-juntas",
     "without a rule override the engine resolves the document default URL"
   );
+  assert.equal(
+    barberLic.download_url,
+    "https://www.didaxispr.com/dept/estado-juntas",
+    "genuine Junta professions keep the document default download destination"
+  );
+  assert.equal(barberLic.download_kind, "filing_portal");
 });

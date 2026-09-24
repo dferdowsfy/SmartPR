@@ -133,6 +133,14 @@ export interface ClassifiedRequirement {
    */
   agency_url?: string | null;
   agency_note?: string | null;
+  /**
+   * Resolved download/filing destination carried from the engine
+   * (rule-level download override wins — REG-PROFESSION-AGENCY-002). The
+   * UI prefers these over the shared document's defaults.
+   */
+  download_url?: string | null;
+  download_kind?: string | null;
+  download_note?: string | null;
   acceptsOfficialUpload: boolean;
 }
 
@@ -578,6 +586,13 @@ export function classifyEngineRequirements(
     const agency = basisRule?.agency ?? row.agency;
     const basisAgencyUrl = basisRule?.agency_url ?? row.agency_url;
     const basisAgencyNote = basisRule?.agency_note ?? row.agency_note;
+    // REG-PROFESSION-AGENCY-002: the filing/download destination follows the
+    // same winning basis — the winning rule's own override wins, falling
+    // back to the row's resolved download destination (which already
+    // prefers its rule's override over the document default).
+    const basisDownloadUrl = basisRule?.download_url ?? row.download_url;
+    const basisDownloadKind = basisRule?.download_kind ?? row.download_kind;
+    const basisDownloadNote = basisRule?.download_note ?? row.download_note;
     const mandatory = applicability === "required" && !recommended;
     // Confidence bands (never false precision — UI renders bands, not decimals):
     // 0.9 verified winning basis + user-given facts; 0.7 verified + derived
@@ -604,6 +619,9 @@ export function classifyEngineRequirements(
       ...(row.trigger_summary ? { triggerSummary: row.trigger_summary } : {}),
       ...(basisAgencyUrl ? { agency_url: basisAgencyUrl } : {}),
       ...(basisAgencyNote ? { agency_note: basisAgencyNote } : {}),
+      ...(basisDownloadUrl ? { download_url: basisDownloadUrl } : {}),
+      ...(basisDownloadKind ? { download_kind: basisDownloadKind } : {}),
+      ...(basisDownloadNote ? { download_note: basisDownloadNote } : {}),
       acceptsOfficialUpload: kind !== "review_condition" && kind !== "informational_notice" && applicability === "required",
     };
 

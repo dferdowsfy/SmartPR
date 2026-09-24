@@ -8475,8 +8475,16 @@
     "date": "2026-09-23",
     "change": "rule-level issuing-agency override added (REG-PROFESSION-AGENCY-001)",
     "reason": "QA 2026-09-23 06:00 live audit (S156 Ponce tattoo): the card cited Ley 318-1999 correctly but the agency pill, \"Confirm with Department of State Examining Boards\" body, and Didaxis filing link pointed at the Juntas Examinadoras, contradicting the rule's own verified authority (Dept. de Salud, Arts. 3-6). The shared DOC_PROFESSIONAL_LICENSE node cannot carry a per-profession authority, so the rule now overrides agency/agency_url/agency_note."
+   },
+   {
+    "date": "2026-09-24",
+    "change": "download destination override added (REG-PROFESSION-AGENCY-002)",
+    "reason": "QA 2026-09-24 00:00 live audit (Ponce tattoo): after REG-PROFESSION-AGENCY-001 the agency pill and body named Dept. de Salud, but the \"File online\" link still pointed at the Juntas Examinadoras Didaxis portal because the download channel read only the shared document default. The rule override now governs the filing destination too."
    }
-  ]
+  ],
+  "download_url": "https://www.salud.pr.gov/",
+  "download_kind": "guidance_page",
+  "download_note": "Tattoo artist licenses are issued by the Department of Health under Ley 318-1999, Arts. 3-6 — the Juntas Examinadoras portal does not apply."
  },
  {
   "id": "RULE_0697",

@@ -24,6 +24,11 @@ export interface KBDocument {
   id: string; name: string; agency: string; category: string; requirement_guidance?: unknown;
   agency_url?: string | null;
   agency_note?: string | null;
+  /** Default filing/download destination — a rule-level download override
+   * (REG-PROFESSION-AGENCY-002) wins over these when present. */
+  download_url?: string | null;
+  download_kind?: string | null;
+  download_note?: string | null;
   /** Temporal validity, same semantics as KBRule (see temporal.ts). */
   effective_from?: string | null;
   effective_to?: string | null;
@@ -56,6 +61,20 @@ export interface KBRule {
   agency?: string | null;
   agency_url?: string | null;
   agency_note?: string | null;
+  /**
+   * Rule-level "where to file / download" override (REG-PROFESSION-AGENCY-002).
+   * When a rule overrides the issuing authority, its official filing or
+   * download destination must follow — the shared document's default
+   * download_url would otherwise keep pointing at the wrong portal (e.g.
+   * RULE_0696's tattoo-artist card kept linking the Juntas Examinadoras'
+   * Didaxis filing portal after the agency pill was corrected to the
+   * Dept. de Salud). When present, these win over the document default for
+   * the "File online / Download form" action. Data-driven — no per-case
+   * hardcoding.
+   */
+  download_url?: string | null;
+  download_kind?: string | null;
+  download_note?: string | null;
   /**
    * Project-first gate (data-driven): when true, the rule never fires for an
    * existing business, for a property/project with no business, or when the
@@ -358,6 +377,11 @@ export interface GeneratedRequirement {
   /** Resolved "where to file" metadata — rule-level override wins (see KBRule.agency). */
   agency_url?: string | null;
   agency_note?: string | null;
+  /** Resolved download/filing destination — rule-level download override
+   * wins over the document default (see KBRule.download_url). */
+  download_url?: string | null;
+  download_kind?: string | null;
+  download_note?: string | null;
   category: string;
   reason: string;
   source_rule_id: string;
@@ -770,6 +794,11 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       agency: rule.agency ?? d?.agency ?? "",
       agency_url: rule.agency_url ?? d?.agency_url ?? null,
       agency_note: rule.agency_note ?? d?.agency_note ?? null,
+      // REG-PROFESSION-AGENCY-002: the filing/download destination follows
+      // the rule's own issuing authority, not the shared document default.
+      download_url: rule.download_url ?? d?.download_url ?? null,
+      download_kind: rule.download_kind ?? d?.download_kind ?? null,
+      download_note: rule.download_note ?? d?.download_note ?? null,
       category: d ? d.category : "",
       reason,
       source_rule_id: rule.id,

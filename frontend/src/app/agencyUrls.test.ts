@@ -70,7 +70,7 @@ describe("REG-PROFESSION-AGENCY-001: rule-level issuing-agency override", () => 
       { physical_location: true },
       {},
       { projectIntent: "existing_business" as any }
-    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null; agencyNote?: string | null; source_rule?: string }>;
+    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null; agencyNote?: string | null; downloadUrl?: string | null; downloadKind?: string | null; downloadNote?: string | null; source_rule?: string }>;
   }
 
   it("tattoo artist professional license carries the Dept. de Salud authority end to end", () => {
@@ -82,6 +82,13 @@ describe("REG-PROFESSION-AGENCY-001: rule-level issuing-agency override", () => 
     assert.ok(/318-1999/.test(String(lic.agencyNote ?? "")));
     assert.ok(!/Junta|Examining Boards/i.test(String(lic.agency ?? "")), "the agency pill itself must not name the Juntas");
     assert.ok(/no las Juntas/i.test(String(lic.agencyNote ?? "")), "the note explicitly disambiguates against the Juntas Examinadoras");
+    // REG-PROFESSION-AGENCY-002 (2026-09-24 live audit): the "File online"
+    // destination must follow the rule's own authority — the shared
+    // document's Didaxis/Juntas portal must NOT be shown for tattoo artists.
+    assert.equal(lic.downloadUrl, "https://www.salud.pr.gov/");
+    assert.equal(lic.downloadKind, "guidance_page");
+    assert.ok(!/didaxis/i.test(String(lic.downloadUrl ?? "")), "no Didaxis portal for a Salud-issued license");
+    assert.ok(/318-1999/i.test(String(lic.downloadNote ?? "")));
   });
 
   it("a genuine Junta-licensed profession keeps the document default", () => {
@@ -90,11 +97,15 @@ describe("REG-PROFESSION-AGENCY-001: rule-level issuing-agency override", () => 
       { physical_location: true },
       {},
       { projectIntent: "existing_business" as any }
-    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null }>;
+    ) as Array<{ document_id: string; agency?: string; agencyUrl?: string | null; downloadUrl?: string | null; downloadKind?: string | null }>;
     const lic = reqs.find((r) => r.document_id === "DOC_PROFESSIONAL_LICENSE");
     assert.ok(lic, "professional license requirement must exist for an existing barbershop");
     assert.equal(lic.agency, "Department of State Examining Boards");
     assert.equal(lic.agencyUrl, "https://www.didaxispr.com/dept/estado-juntas");
+    // No rule-level override here: the "File online" destination stays the
+    // shared document default for genuine Junta professions.
+    assert.equal(lic.downloadUrl, "https://www.didaxispr.com/dept/estado-juntas");
+    assert.equal(lic.downloadKind, "filing_portal");
   });
 });
 

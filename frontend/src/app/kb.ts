@@ -948,9 +948,12 @@ function appendUnansweredTriggerConditionals(
       // may become required the moment the user answers Yes.
       agencyUrl: rule.agency_url ?? d.agency_url ?? null,
       agencyNote: rule.agency_note ?? d.agency_note ?? null,
-      downloadUrl: d.download_url ?? null,
-      downloadKind: d.download_kind ?? null,
-      downloadNote: d.download_note ?? null,
+      // REG-PROFESSION-AGENCY-002: a rule-level download destination wins
+      // over the shared document default — the filing link must follow the
+      // rule's own issuing authority (e.g. Salud, not the Juntas portal).
+      downloadUrl: (rule as { download_url?: string | null }).download_url ?? d.download_url ?? null,
+      downloadKind: (rule as { download_kind?: string | null }).download_kind ?? d.download_kind ?? null,
+      downloadNote: (rule as { download_note?: string | null }).download_note ?? d.download_note ?? null,
     });
     present.add(rule.requires_document_id);
   }
@@ -1066,9 +1069,12 @@ export function computeRequirementsFromSnapshot(
       acceptsOfficialUpload: r.acceptsOfficialUpload,
       agencyUrl: r.agency_url ?? docById.get(r.document_id)?.agency_url ?? null,
       agencyNote: r.agency_note ?? docById.get(r.document_id)?.agency_note ?? null,
-      downloadUrl: docById.get(r.document_id)?.download_url ?? null,
-      downloadKind: docById.get(r.document_id)?.download_kind ?? null,
-      downloadNote: docById.get(r.document_id)?.download_note ?? null,
+      // REG-PROFESSION-AGENCY-002: the filing/download destination follows
+      // the rule's own issuing authority (r carries the rule-level override
+      // via the classifier), never the shared document default alone.
+      downloadUrl: r.download_url ?? docById.get(r.document_id)?.download_url ?? null,
+      downloadKind: r.download_kind ?? docById.get(r.document_id)?.download_kind ?? null,
+      downloadNote: r.download_note ?? docById.get(r.document_id)?.download_note ?? null,
     }));
   // Curated unanswered-trigger conditionals (e.g. the lease question):
   // honest "more information needed" cards with an inline Yes/No, never
