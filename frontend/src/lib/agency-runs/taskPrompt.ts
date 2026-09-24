@@ -1,4 +1,4 @@
-import type { AgencyFilingConfig } from "./filingTypes";
+import type { AgencyFilingConfig, PlaybookChannel } from "./filingTypes";
 import {
   goalBriefToPromptBlock,
   stripSensitivePassport,
@@ -50,6 +50,65 @@ export type ResumeCredentials = {
 
 /** Unified ephemeral field map keyed by stable id (email, password, ssn, …). */
 export type ResumeFields = Record<string, string>;
+
+/**
+ * Render a filing playbook as the deterministic procedure block of the agent
+ * task prompt. Steps render in recorded order with their channel semantics
+ * so the agent knows, per step, whether to collect fields in the Assistant
+ * panel (INLINE), pull credentials from Secure Vault (VAULT), hand the step
+ * to the human in the live browser (IN_BROWSER), or drive it itself (AGENT).
+ * Sensitive fields are flagged — the agent must never invent them.
+ *
+ * Returns null when the config carries no playbook (or an empty one) so the
+ * caller can fall back to the goal-oriented `procedureEn` outline.
+ */
+export function renderPlaybookProcedure(
+  config: AgencyFilingConfig
+): string | null {
+  const playbook = config.playbook;
+  const steps = playbook?.steps;
+  if (!playbook || !Array.isArray(steps) || steps.length === 0) return null;
+
+  const CHANNEL_NOTES: Record<PlaybookChannel, string> = {
+    INLINE:
+      "the human provides these fields in the SmartPR Assistant panel — emit REQUIRED_FIELDS with exactly these ids, then WAIT for FIELDS FILL",
+    VAULT:
+      "credentials come from Secure Vault — never ask the human to type them in chat or the browser",
+    IN_BROWSER:
+      "the human handles this step directly in the live browser — pause and invite takeover",
+    AGENT: "drive this step yourself — no user input needed",
+  };
+
+  const lines = [
+    `PLAYBOOK PROCEDURE — ${playbook.scope_en}. Follow these steps IN ORDER. Adapt only when the portal's actual screens differ from what is recorded.`,
+  ];
+  steps.forEach((step, i) => {
+    lines.push(`${i + 1}. ${step.label_en} [${step.channel}: ${CHANNEL_NOTES[step.channel]}]`);
+    if (step.pageId) lines.push(`   Portal page: "${step.pageId}"`);
+    for (const f of step.fields ?? []) {
+      const parts = [`id=${f.id}`, `label=${f.label_en}`, `type=${f.type}`];
+      parts.push(f.required ? "required" : "optional");
+      if (f.sensitive) parts.push("sensitive=true");
+      if (f.repeatable) parts.push("repeatable");
+      if (f.passportPath) parts.push(`passport=${f.passportPath}`);
+      if (f.options && f.options.length > 0) {
+        parts.push(`options=${f.options.join(" | ")}`);
+      }
+      lines.push(`   - ${parts.join("; ")}`);
+    }
+    if (step.gate) lines.push(`   GATE: ${step.gate}`);
+    if (step.expectedState_en) lines.push(`   Continue when: ${step.expectedState_en}`);
+    if (step.notes_en) lines.push(`   Note: ${step.notes_en}`);
+  });
+  lines.push(
+    `CONFIRMATION — capture and report: ${playbook.confirmation.reference_en} (${playbook.confirmation.where_en})`
+  );
+  if (playbook.quirks_en.length > 0) {
+    lines.push("PORTAL QUIRKS (observed during the walkthrough — respect these):");
+    for (const q of playbook.quirks_en) lines.push(`   - ${q}`);
+  }
+  return lines.join("\n");
+}
 
 export function credentialsToFields(
   creds: ResumeCredentials | null | undefined
@@ -177,9 +236,13 @@ export function buildAgencyTaskPrompt(input: {
       : `\n\nRESUME CONTEXT: The human just handled the pause (${input.resumeHint}) directly in the live browser — assume they completed the login / typed the sensitive fields / uploaded the documents. Briefly VERIFY the current page state: if the previously blocking step is done (fields filled, gate cleared), CONTINUE forward toward pre-submit review — do NOT re-pause for the same reason. Only pause again if specific fields are still visibly empty or the gate is still literally blocking, and name exactly which fields are still missing via REQUIRED_FIELDS. The Business Passport JSON below is still your prefill source — keep filling every identified field from it.`
     : "";
 
-  const procedure = config.procedureEn
-    .map((step, i) => `${i + 1}. ${step}`)
-    .join("\n");
+  const playbookProcedure = renderPlaybookProcedure(config);
+  const procedure =
+    playbookProcedure ??
+    config.procedureEn.map((step, i) => `${i + 1}. ${step}`).join("\n");
+  const procedureHeading = playbookProcedure
+    ? "PLAYBOOK PROCEDURE (goal-oriented — adapt to what the portal actually shows; ordered from the recorded filing flow)"
+    : "PROCEDURE OUTLINE (goal-oriented — adapt to what the portal actually shows)";
 
   // Structured goal brief — so the agent is never sent in with just
   // "Go to SURI". Labels only, no values, no secrets.
@@ -269,7 +332,7 @@ BUSINESS PASSPORT JSON (prefill source)
 ${passportBlock}
 \`\`\`
 
-PROCEDURE OUTLINE (goal-oriented — adapt to what the portal actually shows)
+${procedureHeading}
 ${procedure}
 ${authorizeBlock}${resume}${fieldsBlock}
 

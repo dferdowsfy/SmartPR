@@ -224,3 +224,165 @@ describe("DEPT_STATE_CORPORATE_FILING playbook", () => {
     assert.ok(config.domains.includes("rcp.estado.pr.gov"), "config keeps domains");
   });
 });
+
+describe("playbook portal-identity and sensitivity invariants", () => {
+  it("playbooks never duplicate portal identity (domains/startUrl live on the config only)", () => {
+    for (const { id, playbook } of playbooks()) {
+      const config = AGENCY_FILING_CONFIGS.find((c) => c.id === id)!;
+      assert.ok(
+        !("domains" in playbook) && !("startUrl" in playbook),
+        `${id}: playbook must not carry portal identity fields`
+      );
+      const text = JSON.stringify(playbook);
+      for (const domain of config.domains) {
+        assert.ok(
+          !text.includes(domain),
+          `${id}: playbook text must not repeat domain ${domain}`
+        );
+      }
+      assert.ok(
+        !text.includes(config.startUrl),
+        `${id}: playbook text must not repeat startUrl`
+      );
+    }
+  });
+
+  it("sensitive playbook fields are always maskable types with bilingual labels", () => {
+    for (const { id, playbook } of playbooks()) {
+      for (const step of playbook.steps) {
+        for (const field of step.fields) {
+          if (field.sensitive) {
+            assert.ok(
+              field.type === "password" || field.type === "text",
+              `${id} field ${field.id}: sensitive fields must be password or text (maskable)`
+            );
+            assert.ok(
+              field.label_en.trim() && field.label_es.trim(),
+              `${id} field ${field.id}: sensitive fields need bilingual labels`
+            );
+          }
+        }
+      }
+    }
+  });
+
+  it("SURI marks every sensitive verification/credential field sensitive", () => {
+    const playbook = AGENCY_FILING_CONFIGS.find(
+      (c) => c.id === "SURI_REGISTER_TAXPAYER"
+    )!.playbook!;
+    const sensitiveIds = playbook.steps.flatMap((s) =>
+      s.fields.filter((f) => f.sensitive).map((f) => f.id)
+    );
+    for (const expected of [
+      "ssn",
+      "ssn_confirm",
+      "verification_amount",
+      "web_password",
+      "secret_answer",
+      "otp_code",
+    ]) {
+      assert.ok(
+        sensitiveIds.includes(expected),
+        `SURI field ${expected} must be marked sensitive`
+      );
+    }
+  });
+});
+
+describe("OGPE_PERMISO_UNICO playbook", () => {
+  const config = AGENCY_FILING_CONFIGS.find(
+    (c) => c.id === "OGPE_PERMISO_UNICO"
+  )!;
+  const playbook = config.playbook!;
+
+  it("has the documented step sequence in order", () => {
+    assert.deepEqual(
+      playbook.steps.map((s) => s.id),
+      [
+        "navigate",
+        "login",
+        "crear_solicitud",
+        "crear_proyecto",
+        "permiso_unico",
+        "anejos",
+        "juramento",
+        "payment",
+        "confirmation",
+      ]
+    );
+  });
+
+  it("gates legal certification and payment in the human's browser", () => {
+    const juramento = playbook.steps.find((s) => s.id === "juramento")!;
+    assert.equal(juramento.channel, "IN_BROWSER");
+    assert.equal(juramento.gate, "signature");
+    const payment = playbook.steps.find((s) => s.id === "payment")!;
+    assert.equal(payment.channel, "IN_BROWSER");
+    assert.equal(payment.gate, "payment");
+  });
+
+  it("flags post-login content as manual-sourced, not live-verified", () => {
+    assert.ok(
+      playbook.quirks_en.some(
+        (q) =>
+          q.includes("live-verified") && q.toLowerCase().includes("manual")
+      ),
+      "must disclose the post-login manual basis"
+    );
+  });
+});
+
+describe("SURI_REGISTER_TAXPAYER playbook", () => {
+  const config = AGENCY_FILING_CONFIGS.find(
+    (c) => c.id === "SURI_REGISTER_TAXPAYER"
+  )!;
+  const playbook = config.playbook!;
+
+  it("has the documented step sequence in order", () => {
+    assert.deepEqual(
+      playbook.steps.map((s) => s.id),
+      [
+        "navigate",
+        "id_type_ssn",
+        "taxpayer_verification",
+        "correspondence",
+        "merchant_info",
+        "web_user",
+        "review_submit",
+        "confirmation",
+        "first_login",
+        "otp",
+        "dashboard",
+      ]
+    );
+  });
+
+  it("keeps the legal account-creation act and phone call in the human's browser", () => {
+    const review = playbook.steps.find((s) => s.id === "review_submit")!;
+    assert.equal(review.channel, "IN_BROWSER");
+    assert.equal(review.gate, "signature");
+    const correspondence = playbook.steps.find(
+      (s) => s.id === "correspondence"
+    )!;
+    assert.equal(correspondence.channel, "IN_BROWSER");
+    assert.equal(correspondence.gate, "phone_call");
+  });
+
+  it("has no payment step and discloses the unverified live state", () => {
+    assert.ok(
+      !playbook.steps.some((s) => s.gate === "payment"),
+      "SURI registration is free — no payment gate"
+    );
+    assert.ok(
+      playbook.quirks_en.some((q) => q.includes("UNVERIFIED")),
+      "must disclose that live screens are unverified"
+    );
+  });
+
+  it('encodes that selecting "Dueño" determines Administrador Principal', () => {
+    const merchant = playbook.steps.find((s) => s.id === "merchant_info")!;
+    const role = merchant.fields.find((f) => f.id === "merchant_role")!;
+    assert.ok(role.options!.includes("Dueño"));
+    assert.ok(merchant.notes_en!.includes("Administrador Principal"));
+  });
+});

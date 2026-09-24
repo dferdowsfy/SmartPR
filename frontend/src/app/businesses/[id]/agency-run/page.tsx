@@ -44,6 +44,14 @@ import {
   DEFAULT_LOGIN_PENDING_FIELDS,
   askedAgainWithValues,
 } from "../../../../lib/agency-runs/pendingFields";
+import { sealSensitiveValue } from "../../../../lib/agency-runs/sensitiveCrypto";
+import {
+  fieldValuePresent,
+  isSensitiveField,
+  sealFieldEntries,
+  unsealFieldEntries,
+  type FieldValue,
+} from "../../../../lib/agency-runs/sensitiveFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, type SessionMsg } from "./AgencyChat";
@@ -106,14 +114,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [reconnectBusy, setReconnectBusy] = useState(false);
   const [takeover, setTakeover] = useState(false);
   /** Pending-field values (intervention card only — never mirrored into
-   * chat text or events; only POSTed to resume as `{ fields }`). */
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+   * chat text or events; only POSTed to resume as `{ fields }`).
+   * Sensitive values are sealed (AES-GCM, session key) the moment they rest
+   * here — plaintext exists only inside the input while typing. */
+  const [fieldValues, setFieldValues] = useState<Record<string, FieldValue>>({});
   const [revealedFields, setRevealedFields] = useState<Record<string, boolean>>({});
   /** Field values the human already submitted once, keyed by run id.
    * In-memory only (never persisted) — used to prefill the intervention
    * card when the agent asks for the same fields again, so the user
-   * confirms instead of re-typing. */
-  const lastSubmittedRef = useRef<{ runId: string | null; values: Record<string, string> }>({
+   * confirms instead of re-typing. Sensitive entries stay sealed. */
+  const lastSubmittedRef = useRef<{ runId: string | null; values: Record<string, FieldValue> }>({
     runId: null,
     values: {},
   });
@@ -344,6 +354,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     // Retain pre-flight field values in-memory (never persisted) so that a
     // later re-ask of the same fields pre-fills from this session and the
     // "asking again" banner only renders when a value was actually provided.
+    // Pre-flight answers are sensitive fields — seal them before retaining.
     if (answers.fields && typeof answers.fields === "object") {
       const prefilled: Record<string, string> = {};
       for (const [id, v] of Object.entries(answers.fields)) {
@@ -351,7 +362,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         if (id && val) prefilled[id] = val;
       }
       if (Object.keys(prefilled).length > 0) {
-        lastSubmittedRef.current = { runId: started.id, values: prefilled };
+        const sealed = await sealFieldEntries(prefilled, () => true);
+        lastSubmittedRef.current = { runId: started.id, values: sealed };
       }
     }
     if (brief) {
@@ -399,10 +411,15 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       if (hasFields) {
         // Remember what was submitted (in-memory only) so a later re-ask of
         // the same fields becomes a confirm card instead of blank re-entry.
+        // Sensitive entries are re-sealed — the retained map never holds
+        // sensitive plaintext.
         const mem = lastSubmittedRef.current;
+        const sealed = await sealFieldEntries(cleaned, (id) =>
+          sensitiveIds.has(id)
+        );
         lastSubmittedRef.current = {
           runId: run.id,
-          values: { ...(mem.runId === run.id ? mem.values : {}), ...cleaned },
+          values: { ...(mem.runId === run.id ? mem.values : {}), ...sealed },
         };
         setFieldValues({});
       }
@@ -414,8 +431,32 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  /**
+   * Store a field value. Sensitive fields are sealed (AES-GCM) before they
+   * rest in state — the await is guarded per field id so rapid typing keeps
+   * only the latest value.
+   */
+  const sealSeqRef = useRef<Record<string, number>>({});
   const setFieldValue = (id: string, value: string) => {
-    setFieldValues((prev) => ({ ...prev, [id]: value }));
+    if (!sensitiveIds.has(id)) {
+      setFieldValues((prev) => ({ ...prev, [id]: value }));
+      return;
+    }
+    const seq = (sealSeqRef.current[id] ?? 0) + 1;
+    sealSeqRef.current[id] = seq;
+    if (!value.trim()) {
+      setFieldValues((prev) => ({ ...prev, [id]: "" }));
+      return;
+    }
+    void sealSensitiveValue(value)
+      .then((sealed) => {
+        if (sealSeqRef.current[id] !== seq) return; // stale keystroke
+        setFieldValues((prev) => ({ ...prev, [id]: sealed }));
+      })
+      .catch(() => {
+        // Sealing failed (should not happen) — keep the previous value
+        // rather than storing sensitive plaintext.
+      });
   };
 
   const toggleRevealField = (id: string) => {
@@ -592,6 +633,13 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     return [];
   }, [run]);
 
+  /** Ids of pending fields treated as sensitive (masked + sealed). */
+  const sensitiveIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const f of pendingFields) if (isSensitiveField(f)) s.add(f.id);
+    return s;
+  }, [pendingFields]);
+
   /** Text-field pause: the chat card is the only place to type; live browser is view-only. */
   const fieldsPause =
     Boolean(run && run.status === "paused") &&
@@ -630,9 +678,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       let changed = false;
       const next = { ...prev };
       for (const f of pendingFields) {
-        if (supplied.has(f.id) && !(next[f.id] || "").trim()) {
+        if (supplied.has(f.id) && !fieldValuePresent(next[f.id])) {
           const v = mem.values[f.id];
-          if (v) {
+          if (v !== undefined) {
             next[f.id] = v;
             changed = true;
           }
@@ -645,9 +693,12 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
   const fillAndContinue = async () => {
     if (!run) return;
+    // Unseal sensitive entries transiently for this single fill POST — the
+    // plaintext map is dropped as soon as resume() resolves.
+    const plain = await unsealFieldEntries(fieldValues);
     const merged = mergeFieldsWithPassportPrefill(
       pendingFields,
-      fieldValues,
+      plain,
       run.passport_snapshot
     );
     await resume(merged);
@@ -656,8 +707,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const canFillFields =
     pendingFields.some((f) => {
       if (f.optional) return false;
-      return Boolean((fieldValues[f.id] || "").trim());
-    }) || pendingFields.some((f) => Boolean((fieldValues[f.id] || "").trim()));
+      return fieldValuePresent(fieldValues[f.id]);
+    }) || pendingFields.some((f) => fieldValuePresent(fieldValues[f.id]));
 
   // Detail line for the transient "waiting on you" status.
   const waitingDetail =

@@ -6,6 +6,10 @@ import {
   mergeSuppliedFieldIds,
   suppliedFieldIdsFrom,
 } from "./pendingFields";
+import {
+  __resetSensitiveKeyForTests,
+  sealSensitiveValue,
+} from "./sensitiveCrypto";
 import { createRun, peekRun, resumeRun } from "./store";
 import type { AgencyPendingField } from "./types";
 
@@ -106,6 +110,15 @@ describe("supplied_field_ids on runs (ids only — never values)", () => {
     // run may carry them.
     assert.ok(!JSON.stringify(after).includes("s3cret!"));
     assert.ok(!JSON.stringify(peekRun(pub.id)).includes("s3cret!"));
+    // No run event message may carry a submitted value either.
+    const stored = peekRun(pub.id);
+    assert.ok(stored, "stored run should exist");
+    for (const e of stored.events ?? []) {
+      assert.ok(
+        typeof e.message !== "string" || !e.message.includes("s3cret!"),
+        "event message leaked a sensitive value"
+      );
+    }
 
     // A later re-ask of the same ids is recognized as "asking again".
     const pending = [field("email"), field("password", true)];
@@ -153,5 +166,16 @@ describe("askedAgainWithValues (banner misfire guard)", () => {
       askedAgainWithValues([], ["registry_number"], { registry_number: "1" }),
       []
     );
+  });
+
+  it("counts a sealed sensitive envelope as a retained value (banner renders)", async () => {
+    __resetSensitiveKeyForTests();
+    const sealed = await sealSensitiveValue("123-45-6789");
+    const again = askedAgainWithValues([field("ssn", true)], ["ssn"], {
+      ssn: sealed,
+    });
+    assert.deepEqual(again.map((f) => f.id), ["ssn"]);
+    // ...without leaking the plaintext anywhere it checks
+    assert.ok(!JSON.stringify({ again }).includes("123-45-6789"));
   });
 });

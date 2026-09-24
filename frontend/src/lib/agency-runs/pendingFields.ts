@@ -7,6 +7,7 @@ import type {
   AgencyPendingField,
   AgencyPendingFieldType,
 } from "./types";
+import { isSealedSensitiveValue } from "./sensitiveCrypto";
 
 const FIELD_TYPES = new Set<AgencyPendingFieldType>([
   "text",
@@ -52,18 +53,25 @@ export function fieldsAskedAgain(
  * otherwise the card renders as the normal empty prompt. Guards against the
  * misfire where an id is marked supplied (e.g. seeded from pre-flight) but
  * no value was ever retained client-side.
+ *
+ * Retained values may be plaintext (non-sensitive) or sealed envelopes
+ * (sensitive) — a sealed envelope counts as a retained value.
  */
 export function askedAgainWithValues(
   pending: AgencyPendingField[],
   suppliedIds: readonly string[] | null | undefined,
-  valuesById: Record<string, string> | null | undefined
+  valuesById: Record<string, unknown> | null | undefined
 ): AgencyPendingField[] {
   if (!pending.length || !suppliedIds || suppliedIds.length === 0) return [];
   if (!valuesById || typeof valuesById !== "object") return [];
   const supplied = new Set(suppliedIds);
-  return pending.filter(
-    (f) => supplied.has(f.id) && Boolean((valuesById[f.id] || "").trim())
-  );
+  return pending.filter((f) => {
+    if (!supplied.has(f.id)) return false;
+    const v = (valuesById as Record<string, unknown>)[f.id];
+    // Sealed sensitive values count as retained without decrypting.
+    if (isSealedSensitiveValue(v)) return true;
+    return typeof v === "string" && v.trim() !== "";
+  });
 }
 
 /**

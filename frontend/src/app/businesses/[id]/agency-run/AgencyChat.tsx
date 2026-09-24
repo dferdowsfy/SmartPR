@@ -36,6 +36,15 @@ import {
   fieldHasValidationIssue,
   VALIDATION_HINT_RE,
 } from "../../../../lib/agency-runs/pendingFields";
+import {
+  isSealedSensitiveValue,
+  unsealSensitiveValue,
+} from "../../../../lib/agency-runs/sensitiveCrypto";
+import {
+  fieldValuePresent,
+  isSensitiveField,
+  type FieldValue,
+} from "../../../../lib/agency-runs/sensitiveFields";
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
 import {
   filingGateCopy,
@@ -667,7 +676,12 @@ export interface InterventionProps {
    * for these — never on an id alone.
    */
   askedAgainFields: AgencyPendingField[];
-  fieldValues: Record<string, string>;
+  /**
+   * Retained values: plaintext for non-sensitive fields, sealed envelopes
+   * for sensitive ones (the parent seals before they rest here). The card
+   * keeps ephemeral plaintext buffers for sensitive inputs while typing.
+   */
+  fieldValues: Record<string, FieldValue>;
   onFieldChange: (id: string, value: string) => void;
   revealedFields: Record<string, boolean>;
   onToggleReveal: (id: string) => void;
@@ -691,6 +705,57 @@ function InterventionCard(props: InterventionProps) {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const firstEmptyFieldRef = useRef<HTMLInputElement | null>(null);
   const seedKeyRef = useRef<string>("");
+
+  /**
+   * Ephemeral plaintext buffers for sensitive inputs while typing.
+   * Adopted once per field-set from retained sealed envelopes (e.g. the
+   * asked-again prefill); never persisted — the parent store keeps only
+   * sealed envelopes. The buffers die with this card.
+   */
+  const [sensitiveInputs, setSensitiveInputs] = useState<Record<string, string>>({});
+  const sensitiveSeedKeyRef = useRef<string>("");
+  const sensitiveTouchedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const key = `${run.id}:${pendingFields.map((f) => f.id).join(",")}`;
+    if (sensitiveSeedKeyRef.current !== key) {
+      sensitiveSeedKeyRef.current = key;
+      sensitiveTouchedRef.current.clear();
+      setSensitiveInputs({});
+    }
+    // Adopt retained sealed values the user hasn't touched (e.g. the
+    // asked-again prefill arriving after the first seed) by unsealing them
+    // into the ephemeral typing buffer only.
+    let cancelled = false;
+    (async () => {
+      const adopted: Record<string, string> = {};
+      for (const f of pendingFields) {
+        if (!isSensitiveField(f) || sensitiveTouchedRef.current.has(f.id)) continue;
+        const v = props.fieldValues[f.id];
+        if (!isSealedSensitiveValue(v)) continue;
+        try {
+          const plain = await unsealSensitiveValue(v);
+          if (!cancelled && plain && !sensitiveTouchedRef.current.has(f.id)) {
+            adopted[f.id] = plain;
+          }
+        } catch {
+          // Corrupt envelope — leave the input empty rather than blocking.
+        }
+      }
+      if (!cancelled && Object.keys(adopted).length > 0) {
+        setSensitiveInputs((prev) => {
+          const next = { ...prev };
+          for (const [id, p] of Object.entries(adopted)) {
+            if (!sensitiveTouchedRef.current.has(id) && !next[id]) next[id] = p;
+          }
+          return next;
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [run.id, pendingFields, props.fieldValues]);
 
   const pauseReason: AgencyPauseReason = run.pause_reason;
   /** Fields the human already supplied once that the agent is asking for
@@ -830,14 +895,26 @@ function InterventionCard(props: InterventionProps) {
                 )}
               </p>
               {pendingFields.map((field, index) => {
-                const isSensitive = field.sensitive || field.type === "password";
+                const isSensitive = isSensitiveField(field);
                 const revealed = Boolean(props.revealedFields[field.id]);
+                // Sensitive inputs type into the card's ephemeral buffer; the
+                // parent keeps only the sealed envelope. Never compare or
+                // render sealed envelopes as text.
+                const currentValue: FieldValue = isSensitive
+                  ? (sensitiveInputs[field.id] ?? "")
+                  : props.fieldValues[field.id];
                 const emptyRequired =
-                  !field.optional && !(props.fieldValues[field.id] || "").trim();
+                  !field.optional && !fieldValuePresent(currentValue);
                 const isFirstEmpty =
                   emptyRequired &&
                   pendingFields.findIndex(
-                    (f) => !f.optional && !(props.fieldValues[f.id] || "").trim()
+                    (f) =>
+                      !f.optional &&
+                      !fieldValuePresent(
+                        isSensitiveField(f)
+                          ? (sensitiveInputs[f.id] ?? "")
+                          : props.fieldValues[f.id]
+                      )
                   ) === index;
                 const inputType = isSensitive
                   ? revealed
@@ -876,8 +953,27 @@ function InterventionCard(props: InterventionProps) {
                             ? "numeric"
                             : undefined
                         }
-                        value={props.fieldValues[field.id] || ""}
-                        onChange={(e) => props.onFieldChange(field.id, e.target.value)}
+                        value={
+                          isSensitive
+                            ? (sensitiveInputs[field.id] ?? "")
+                            : typeof currentValue === "string"
+                              ? currentValue
+                              : ""
+                        }
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          if (isSensitive) {
+                            // Keep plaintext only in this card's ephemeral
+                            // buffer while typing; the parent seals it for
+                            // retention.
+                            sensitiveTouchedRef.current.add(field.id);
+                            setSensitiveInputs((prev) => ({
+                              ...prev,
+                              [field.id]: next,
+                            }));
+                          }
+                          props.onFieldChange(field.id, next);
+                        }}
                         placeholder={
                           field.optional
                             ? `${field.label}${L(" (optional)", " (opcional)", lang)}`

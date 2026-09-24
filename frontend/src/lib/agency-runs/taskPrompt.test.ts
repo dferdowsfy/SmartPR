@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildAgencyTaskPrompt, buildAuthorizeTaskPrompt, buildResumeTaskPrompt, submissionObjectivePromptBlock } from "./taskPrompt";
+import { buildAgencyTaskPrompt, buildAuthorizeTaskPrompt, buildResumeTaskPrompt, renderPlaybookProcedure, submissionObjectivePromptBlock } from "./taskPrompt";
 import { getFilingConfig } from "./filingTypes";
 import type { SubmissionObjective } from "./types";
 
@@ -127,5 +127,121 @@ describe("buildAgencyTaskPrompt final-submit permission", () => {
     });
     assert.ok(plain.includes("NEVER click the final Submit"));
     assert.ok(!plain.includes("SUBMITTED:"));
+  });
+});
+
+describe("renderPlaybookProcedure", () => {
+  it("returns null when the config has no playbook", () => {
+    const config = getFilingConfig("SURI_MERCHANT_REGISTRATION");
+    assert.equal(renderPlaybookProcedure(config), null);
+  });
+
+  it("returns null for a playbook with no steps", () => {
+    const config = getFilingConfig("SURI_MERCHANT_REGISTRATION");
+    assert.equal(
+      renderPlaybookProcedure({ ...config, playbook: { steps: [] } as never }),
+      null
+    );
+  });
+
+  it("renders Department of State steps in recorded order with channel semantics", () => {
+    const config = getFilingConfig("DEPT_STATE_CORPORATE_FILING");
+    const rendered = renderPlaybookProcedure(config);
+    assert.ok(rendered, "playbook should render");
+    const lines = rendered!.split("\n");
+    // Scope header first, then numbered steps in order.
+    assert.ok(lines[0].startsWith("PLAYBOOK PROCEDURE —"));
+    const stepLines = lines.filter((l) => /^\d+\. /.test(l));
+    const playbook = config.playbook!;
+    assert.equal(stepLines.length, playbook.steps.length);
+    stepLines.forEach((line, i) => {
+      const step = playbook.steps[i];
+      assert.ok(
+        line.startsWith(`${i + 1}. ${step.label_en} [${step.channel}:`),
+        `step ${i + 1} renders in order with its channel: ${line}`
+      );
+    });
+    // Channel notes spell out the inline-first behavior. (Dept. of State has
+    // no login step, so no VAULT note renders for it — VAULT rendering is
+    // covered below. The walkthrough observed no sensitive fields here, so
+    // no sensitive=true flag renders for it either.)
+    assert.ok(rendered!.includes("emit REQUIRED_FIELDS with exactly these ids"));
+    assert.ok(rendered!.includes("pause and invite takeover"));
+    assert.ok(rendered!.includes("drive this step yourself"));
+    assert.ok(rendered!.includes("CONFIRMATION — capture and report:"));
+    assert.ok(rendered!.includes(playbook.confirmation.reference_en));
+    // Quirks render verbatim (they are observed facts, not invented).
+    if (playbook.quirks_en.length > 0) {
+      assert.ok(rendered!.includes(playbook.quirks_en[0]));
+    }
+  });
+
+  it("is deterministic — same config renders identically", () => {
+    const config = getFilingConfig("DEPT_STATE_CORPORATE_FILING");
+    assert.equal(renderPlaybookProcedure(config), renderPlaybookProcedure(config));
+  });
+
+  it("renders the VAULT channel note for login steps", () => {
+    const config = getFilingConfig("SURI_REGISTER_TAXPAYER");
+    const rendered = renderPlaybookProcedure({
+      ...config,
+      playbook: {
+        scope_en: "test",
+        scope_es: "prueba",
+        steps: [
+          {
+            id: "login",
+            label_en: "Login",
+            label_es: "Iniciar sesión",
+            channel: "VAULT",
+            fields: [
+              {
+                id: "password",
+                label_en: "Password",
+                label_es: "Contraseña",
+                type: "password",
+                required: true,
+                sensitive: true,
+              },
+            ],
+            gate: "login",
+          },
+        ],
+        confirmation: {
+          reference_en: "code",
+          reference_es: "código",
+          where_en: "screen",
+          where_es: "pantalla",
+        },
+        quirks_en: [],
+        quirks_es: [],
+      },
+    });
+    assert.ok(rendered);
+    assert.ok(rendered.includes("[VAULT: credentials come from Secure Vault"));
+    assert.ok(rendered.includes("id=password; label=Password; type=password"));
+    assert.ok(rendered.includes("sensitive=true"));
+    assert.ok(rendered.includes("GATE: login"));
+  });
+});
+
+describe("buildAgencyTaskPrompt with playbooks", () => {
+  it("uses the playbook block when the config carries one", () => {
+    const config = getFilingConfig("DEPT_STATE_CORPORATE_FILING");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("PLAYBOOK PROCEDURE (goal-oriented"));
+    assert.ok(task.includes("[INLINE:"));
+    assert.ok(task.includes("sensitive=true"));
+    // Portal identity appears once — on the config lines, not duplicated
+    // inside playbook steps.
+    assert.ok(task.includes(config.startUrl));
+  });
+
+  it("falls back to the procedureEn outline when there is no playbook", () => {
+    const config = getFilingConfig("SURI_MERCHANT_REGISTRATION");
+    assert.equal(renderPlaybookProcedure(config), null);
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("PROCEDURE OUTLINE (goal-oriented"));
+    assert.ok(task.includes(config.procedureEn[0]));
   });
 });

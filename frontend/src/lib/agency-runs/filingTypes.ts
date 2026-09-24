@@ -239,6 +239,343 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // rule currently emits it (verified 2026-09-18 in data/rules.json) — this
     // join only fires when an obligation actually carries the id.
     requirementIds: ["DOC_SURI_REGISTRATION"],
+    /**
+     * Evidence basis: Hacienda's official registration guide. The live host
+     * timed out during the walkthrough — screens, selectors, CAPTCHA, and
+     * bot-wall behavior are UNVERIFIED and must be re-walked from a
+     * SURI-accepted network before being called live-verified.
+     */
+    playbook: {
+      scope_en:
+        "Register as Individual Taxpayer / create a SURI logon (based on Hacienda's official guide — not live-verified)",
+      scope_es:
+        "Registro como contribuyente individual / crear acceso SURI (según la guía oficial de Hacienda — no verificado en vivo)",
+      steps: [
+        {
+          id: "navigate",
+          label_en: "Portal navigation",
+          label_es: "Navegación del portal",
+          channel: "AGENT",
+          pageId: "SURI home",
+          fields: [],
+          expectedState_en: "Portal loaded on an allowlisted domain",
+          expectedState_es: "Portal cargado en un dominio permitido",
+        },
+        {
+          id: "id_type_ssn",
+          label_en: "ID type and SSN",
+          label_es: "Tipo de ID y SSN",
+          channel: "INLINE",
+          pageId: "Registration — taxpayer identification",
+          fields: [
+            {
+              id: "id_type",
+              label_en: "ID type",
+              label_es: "Tipo de identificación",
+              type: "select",
+              required: true,
+              options: ["SSN", "EIN"],
+            },
+            {
+              id: "ssn",
+              label_en: "SSN",
+              label_es: "Número de Seguro Social",
+              type: "text",
+              required: true,
+              sensitive: true,
+              hint_en: "9 digits — dashes or no dashes as shown on the portal",
+              hint_es: "9 dígitos — con o sin guiones según se muestre en el portal",
+            },
+            {
+              id: "ssn_confirm",
+              label_en: "Confirm SSN",
+              label_es: "Confirmar Seguro Social",
+              type: "text",
+              required: true,
+              sensitive: true,
+              hint_en: "Re-enter the same 9-digit SSN",
+              hint_es: "Vuelva a escribir el mismo SSN de 9 dígitos",
+            },
+          ],
+          expectedState_en: "ID type and SSN (entered twice) accepted",
+          expectedState_es: "Tipo de ID y SSN (ingresado dos veces) aceptados",
+          notes_en:
+            "Sensitive values stay encrypted at rest and masked in chat with an eye icon to reveal.",
+          notes_es:
+            "Los valores sensibles permanecen cifrados en reposo y enmascarados en el chat con un ícono de ojo para mostrarlos.",
+        },
+        {
+          id: "taxpayer_verification",
+          label_en: "Taxpayer verification",
+          label_es: "Verificación del contribuyente",
+          channel: "INLINE",
+          pageId: "Registration — taxpayer verification",
+          fields: [
+            {
+              id: "verification_amount",
+              label_en: "Verification amount",
+              label_es: "Cantidad de verificación",
+              type: "text",
+              required: true,
+              sensitive: true,
+              hint_en:
+                "Exact amount or value from a prior filing or notice, as the portal asks",
+              hint_es:
+                "Cantidad o valor exacto de una radicación o aviso previo, según lo pida el portal",
+            },
+          ],
+          expectedState_en: "Taxpayer identity verified",
+          expectedState_es: "Identidad del contribuyente verificada",
+          notes_en:
+            "Taxpayer identity and proof of account ownership are required to complete registration.",
+          notes_es:
+            "La identidad del contribuyente y la prueba de titularidad de la cuenta son requeridas para completar el registro.",
+        },
+        {
+          id: "correspondence",
+          label_en: "Correspondence ID",
+          label_es: "ID de correspondencia",
+          channel: "IN_BROWSER",
+          pageId: "Registration — correspondence",
+          gate: "phone_call",
+          fields: [],
+          expectedState_en: "Correspondence step resolved by the human",
+          expectedState_es: "Paso de correspondencia resuelto por el humano",
+          notes_en:
+            "Correspondence ID may require a phone call — human only. The agent stops and hands control to the human.",
+          notes_es:
+            "El ID de correspondencia puede requerir una llamada telefónica — solo el humano. El agente se detiene y cede el control.",
+        },
+        {
+          id: "merchant_info",
+          label_en: "Merchant information and authentication type",
+          label_es: "Información del comerciante y tipo de autenticación",
+          channel: "INLINE",
+          pageId: "Registration — merchant information",
+          fields: [
+            {
+              id: "merchant_role",
+              label_en: "Merchant role",
+              label_es: "Rol del comerciante",
+              type: "select",
+              required: true,
+              options: ["Dueño"],
+            },
+            {
+              id: "merchant_legal_name",
+              label_en: "Legal name",
+              label_es: "Nombre legal",
+              passportPath: "business.legalName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "merchant_trade_name",
+              label_en: "Trade name (DBA)",
+              label_es: "Nombre comercial (DBA)",
+              passportPath: "business.tradeName",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "merchant_street",
+              label_en: "Street address",
+              label_es: "Dirección física",
+              passportPath: "addresses.principalPhysical.line1",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "merchant_municipality",
+              label_en: "Municipality",
+              label_es: "Municipio",
+              passportPath: "addresses.municipality",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "merchant_postal",
+              label_en: "Postal code",
+              label_es: "Código postal",
+              passportPath: "addresses.principalPhysical.postalCode",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "merchant_contact_name",
+              label_en: "Contact name",
+              label_es: "Nombre de contacto",
+              passportPath: "contact.fullName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "merchant_contact_email",
+              label_en: "Contact email",
+              label_es: "Email de contacto",
+              passportPath: "contact.email",
+              type: "email",
+              required: true,
+            },
+            {
+              id: "merchant_contact_phone",
+              label_en: "Contact phone",
+              label_es: "Teléfono de contacto",
+              passportPath: "contact.phone",
+              type: "tel",
+              required: true,
+            },
+          ],
+          expectedState_en: "Merchant information accepted",
+          expectedState_es: "Información del comerciante aceptada",
+          notes_en:
+            'Selecting "Dueño" determines the Administrador Principal for the account.',
+          notes_es:
+            'Seleccionar "Dueño" determina el Administrador Principal de la cuenta.',
+        },
+        {
+          id: "web_user",
+          label_en: "Web user information",
+          label_es: "Información del usuario web",
+          channel: "INLINE",
+          pageId: "Registration — web user",
+          fields: [
+            {
+              id: "web_username",
+              label_en: "Username",
+              label_es: "Nombre de usuario",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "web_password",
+              label_en: "Password",
+              label_es: "Contraseña",
+              type: "password",
+              required: true,
+              sensitive: true,
+            },
+            {
+              id: "web_password_confirm",
+              label_en: "Confirm password",
+              label_es: "Confirmar contraseña",
+              type: "password",
+              required: true,
+              sensitive: true,
+            },
+            {
+              id: "secret_question",
+              label_en: "Secret question",
+              label_es: "Pregunta secreta",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "secret_answer",
+              label_en: "Secret answer",
+              label_es: "Respuesta secreta",
+              type: "text",
+              required: true,
+              sensitive: true,
+            },
+          ],
+          expectedState_en: "Web user credentials and secret Q&A accepted",
+          expectedState_es:
+            "Credenciales del usuario web y pregunta secreta aceptadas",
+          notes_en:
+            "Password and secret Q&A stay encrypted at rest and masked in chat with an eye icon to reveal.",
+          notes_es:
+            "La contraseña y la pregunta secreta permanecen cifradas en reposo y enmascaradas en el chat con un ícono de ojo para mostrarlas.",
+        },
+        {
+          id: "review_submit",
+          label_en: 'Review and "Someter"',
+          label_es: 'Revisión y "Someter"',
+          channel: "IN_BROWSER",
+          pageId: "Registration — review",
+          gate: "signature",
+          fields: [],
+          expectedState_en: '"Someter" clicked by the human; account created',
+          expectedState_es: '"Someter" presionado por el humano; cuenta creada',
+          notes_en:
+            '"Someter" IS the legal account-creation act — human only. The agent stops here and hands control to the human.',
+          notes_es:
+            '"Someter" ES el acto legal de creación de cuenta — solo el humano. El agente se detiene aquí y cede el control.',
+        },
+        {
+          id: "confirmation",
+          label_en: "Confirmation capture",
+          label_es: "Captura de confirmación",
+          channel: "AGENT",
+          pageId: "Confirmation screen",
+          fields: [],
+          expectedState_en: "Confirmation code captured and reported",
+          expectedState_es: "Código de confirmación capturado y reportado",
+        },
+        {
+          id: "first_login",
+          label_en: "First login",
+          label_es: "Primer inicio de sesión",
+          channel: "VAULT",
+          pageId: "SURI login",
+          gate: "login",
+          fields: [],
+          expectedState_en: "Authenticated into SURI",
+          expectedState_es: "Autenticado en SURI",
+          notes_en:
+            "First-login credentials come from Secure Vault — never ask the human to type them in chat or the browser.",
+          notes_es:
+            "Las credenciales del primer inicio de sesión vienen del Vault seguro — nunca pida al humano que las escriba en el chat ni en el navegador.",
+        },
+        {
+          id: "otp",
+          label_en: "One-time code (unrecognized device)",
+          label_es: "Código de un solo uso (dispositivo no reconocido)",
+          channel: "INLINE",
+          pageId: "SURI device verification",
+          fields: [
+            {
+              id: "otp_code",
+              label_en: "One-time code",
+              label_es: "Código de un solo uso",
+              type: "text",
+              required: true,
+              sensitive: true,
+              hint_en: "Code sent to the verified channel, as shown",
+              hint_es: "Código enviado al canal verificado, según se muestre",
+            },
+          ],
+          expectedState_en: "Device verified; login completes",
+          expectedState_es: "Dispositivo verificado; inicio de sesión completo",
+        },
+        {
+          id: "dashboard",
+          label_en: "Dashboard verification",
+          label_es: "Verificación del panel",
+          channel: "AGENT",
+          pageId: "SURI dashboard",
+          fields: [],
+          expectedState_en: "Authenticated SURI dashboard visible",
+          expectedState_es: "Panel de SURI autenticado visible",
+        },
+      ],
+      confirmation: {
+        reference_en: "Confirmation code",
+        reference_es: "Código de confirmación",
+        where_en: 'Confirmation screen shown after clicking "Someter"',
+        where_es: 'Pantalla de confirmación mostrada tras presionar "Someter"',
+      },
+      quirks_en: [
+        "The live host timed out during the walkthrough — screens, selectors, CAPTCHA, and bot-wall behavior are UNVERIFIED. Re-walk from a SURI-accepted network before treating any of this as live-verified.",
+        "Registration is free — there is no payment step.",
+        "Taxpayer identity and proof of account ownership are required to complete registration.",
+      ],
+      quirks_es: [
+        "El servidor no respondió durante el recorrido — las pantallas, selectores, CAPTCHA y comportamiento anti-bots NO están verificados. Repita el recorrido desde una red aceptada por SURI antes de tratar esto como verificado en vivo.",
+        "El registro es gratis — no hay paso de pago.",
+        "La identidad del contribuyente y la prueba de titularidad de la cuenta son requeridas para completar el registro.",
+      ],
+    },
   },
   {
     id: "SURI_MERCHANT_REGISTRATION",
@@ -372,7 +709,7 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
           label_en: "Open the Corporate Registry filing wizard",
           label_es: "Abrir el asistente de radicación del Registro de Corporaciones",
           channel: "AGENT",
-          pageId: "rcp.estado.pr.gov/en → Create / Authorize",
+          pageId: "Corporate Registry home → Create / Authorize",
           fields: [],
           expectedState_en: "The Name Availability screen is showing",
           expectedState_es: "Se muestra la pantalla de disponibilidad de nombre",
@@ -926,6 +1263,307 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     blockedBy: [],
     sensitiveNeeds: [],
     requirementIds: ["DOC_PERMISO_UNICO"],
+    /**
+     * Evidence basis: only pre-login screens were live-verified. Post-login
+     * steps come from OGPe's official 36-page Permiso Único manual — do not
+     * describe post-login behavior as live-verified.
+     */
+    playbook: {
+      scope_en:
+        "Permiso Único (single business permit) application via the Single Business Portal",
+      scope_es:
+        "Solicitud de Permiso Único por el Single Business Portal",
+      steps: [
+        {
+          id: "navigate",
+          label_en: "Portal navigation",
+          label_es: "Navegación del portal",
+          channel: "AGENT",
+          pageId: "Single Business Portal home",
+          fields: [],
+          expectedState_en: "Portal loaded on an allowlisted domain",
+          expectedState_es: "Portal cargado en un dominio permitido",
+        },
+        {
+          id: "login",
+          label_en: "Single Business Portal login",
+          label_es: "Inicio de sesión en el Single Business Portal",
+          channel: "VAULT",
+          pageId: "SBP login screen",
+          gate: "login",
+          fields: [],
+          expectedState_en: "Authenticated into the Single Business Portal",
+          expectedState_es: "Autenticado en el Single Business Portal",
+          notes_en:
+            "Hard login gate before any application step. Credentials come from Secure Vault; if none are stored the human intervenes — never type passwords in the live browser.",
+          notes_es:
+            "Muro de inicio de sesión antes de cualquier paso de solicitud. Las credenciales vienen del Vault seguro; si no hay ninguna guardada, interviene el humano — nunca escriba contraseñas en el navegador en vivo.",
+        },
+        {
+          id: "crear_solicitud",
+          label_en: "Crear Solicitud and project selection",
+          label_es: "Crear Solicitud y selección de proyecto",
+          channel: "INLINE",
+          pageId: "Crear Solicitud",
+          fields: [
+            {
+              id: "solicitud_type",
+              label_en: "Application type",
+              label_es: "Tipo de solicitud",
+              type: "select",
+              required: true,
+              options: ["Permiso Único"],
+            },
+          ],
+          expectedState_en:
+            "Draft solicitud created; project attached or created as the human chooses",
+          expectedState_es:
+            "Borrador de solicitud creado; proyecto adjuntado o creado según elija el humano",
+          notes_en:
+            "If the wizard asks whether to attach an existing project or create a new one, collect that choice inline as a follow-up field.",
+          notes_es:
+            "Si el asistente pregunta si adjuntar un proyecto existente o crear uno nuevo, recoja esa elección en línea como campo adicional.",
+        },
+        {
+          id: "crear_proyecto",
+          label_en: "Crear Proyecto wizard",
+          label_es: "Asistente Crear Proyecto",
+          channel: "INLINE",
+          pageId: "Crear Proyecto",
+          fields: [
+            {
+              id: "project_name",
+              label_en: "Project name",
+              label_es: "Nombre del proyecto",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_legal_name",
+              label_en: "Legal name",
+              label_es: "Nombre legal",
+              passportPath: "business.legalName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_trade_name",
+              label_en: "Trade name (DBA)",
+              label_es: "Nombre comercial (DBA)",
+              passportPath: "business.tradeName",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "project_entity_type",
+              label_en: "Entity type",
+              label_es: "Tipo de entidad",
+              passportPath: "business.entityType",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_street",
+              label_en: "Street address",
+              label_es: "Dirección física",
+              passportPath: "addresses.principalPhysical.line1",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_street2",
+              label_en: "Street address line 2",
+              label_es: "Dirección física línea 2",
+              passportPath: "addresses.principalPhysical.line2",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "project_municipality",
+              label_en: "Municipality",
+              label_es: "Municipio",
+              passportPath: "addresses.municipality",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_postal",
+              label_en: "Postal code",
+              label_es: "Código postal",
+              passportPath: "addresses.principalPhysical.postalCode",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_contact_name",
+              label_en: "Contact name",
+              label_es: "Nombre de contacto",
+              passportPath: "contact.fullName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "project_contact_email",
+              label_en: "Contact email",
+              label_es: "Email de contacto",
+              passportPath: "contact.email",
+              type: "email",
+              required: true,
+            },
+            {
+              id: "project_contact_phone",
+              label_en: "Contact phone",
+              label_es: "Teléfono de contacto",
+              passportPath: "contact.phone",
+              type: "tel",
+              required: true,
+            },
+          ],
+          expectedState_en: "Project saved and linked to the solicitud",
+          expectedState_es: "Proyecto guardado y vinculado a la solicitud",
+        },
+        {
+          id: "permiso_unico",
+          label_en: "Permiso Único wizard",
+          label_es: "Asistente Permiso Único",
+          channel: "INLINE",
+          pageId: "Permiso Único application",
+          fields: [
+            {
+              id: "permiso_legal_name",
+              label_en: "Legal name",
+              label_es: "Nombre legal",
+              passportPath: "business.legalName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "permiso_street",
+              label_en: "Physical location address",
+              label_es: "Dirección del local",
+              passportPath: "addresses.principalPhysical.line1",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "permiso_municipality",
+              label_en: "Municipality",
+              label_es: "Municipio",
+              passportPath: "addresses.municipality",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "permiso_postal",
+              label_en: "Postal code",
+              label_es: "Código postal",
+              passportPath: "addresses.principalPhysical.postalCode",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "permiso_contact_email",
+              label_en: "Contact email",
+              label_es: "Email de contacto",
+              passportPath: "contact.email",
+              type: "email",
+              required: true,
+            },
+            {
+              id: "permiso_contact_phone",
+              label_en: "Contact phone",
+              label_es: "Teléfono de contacto",
+              passportPath: "contact.phone",
+              type: "tel",
+              required: true,
+            },
+          ],
+          expectedState_en:
+            "All wizard sections complete; ready for required uploads",
+          expectedState_es:
+            "Todas las secciones del asistente completas; listo para los adjuntos requeridos",
+        },
+        {
+          id: "anejos",
+          label_en: "Anejos (required uploads)",
+          label_es: "Anejos (adjuntos requeridos)",
+          channel: "INLINE",
+          pageId: "Anejos",
+          gate: "upload",
+          fields: [],
+          expectedState_en:
+            "All required documents uploaded into the Evidence Locker and attached",
+          expectedState_es:
+            "Todos los documentos requeridos subidos al Casillero de evidencia y adjuntados",
+          notes_en:
+            "Required uploads block progress before payment. The human uploads files in the chat; the agent attaches them in the portal.",
+          notes_es:
+            "Los adjuntos requeridos bloquean el avance antes del pago. El humano sube los archivos en el chat; el agente los adjunta en el portal.",
+        },
+        {
+          id: "juramento",
+          label_en: '"Bajo juramento" certification',
+          label_es: 'Certificación "Bajo juramento"',
+          channel: "IN_BROWSER",
+          pageId: "Certification screen",
+          gate: "signature",
+          fields: [],
+          expectedState_en:
+            '"Bajo juramento" certification checked by the human',
+          expectedState_es:
+            'Certificación "Bajo juramento" marcada por el humano',
+          notes_en:
+            "This IS the legal certification act — human only. The agent stops here and hands control to the human.",
+          notes_es:
+            "Este ES el acto legal de certificación — solo el humano. El agente se detiene aquí y cede el control.",
+        },
+        {
+          id: "payment",
+          label_en: "Payment",
+          label_es: "Pago",
+          channel: "IN_BROWSER",
+          pageId: "Payment screen",
+          gate: "payment",
+          fields: [],
+          expectedState_en: "Payment completed; receipt issued",
+          expectedState_es: "Pago completado; recibo emitido",
+          notes_en:
+            "Card or ACH. Regular evaluation: 10% initially, remaining 90% after analyst validation. Ministerial: 100% initially. Payment is non-refundable. SmartPR never touches payment details.",
+          notes_es:
+            "Tarjeta o ACH. Evaluación regular: 10% inicial, 90% restante tras la validación del analista. Ministerial: 100% inicial. El pago no es reembolsable. SmartPR nunca toca los datos de pago.",
+        },
+        {
+          id: "confirmation",
+          label_en: "Confirmation capture",
+          label_es: "Captura de confirmación",
+          channel: "AGENT",
+          pageId: "Confirmation screen",
+          fields: [],
+          expectedState_en:
+            "Número de Trámite / Número de Permiso captured and reported",
+          expectedState_es:
+            "Número de Trámite / Número de Permiso capturado y reportado",
+        },
+      ],
+      confirmation: {
+        reference_en: "Número de Trámite / Número de Permiso",
+        reference_es: "Número de Trámite / Número de Permiso",
+        where_en: "Confirmation screen shown after payment",
+        where_es: "Pantalla de confirmación mostrada tras el pago",
+      },
+      quirks_en: [
+        "Only pre-login screens were live-verified; post-login steps come from OGPe's official Permiso Único manual — do not describe post-login behavior as live-verified.",
+        "Hard Single Business Portal login gate before any application step.",
+        "Required anejos (uploads) block progress before payment.",
+        "Payment is non-refundable: regular evaluation 10% initially and 90% after analyst validation; ministerial 100% initially; card or ACH.",
+      ],
+      quirks_es: [
+        "Solo las pantallas previas al inicio de sesión se verificaron en vivo; los pasos posteriores provienen del manual oficial de Permiso Único de OGPe — no describa el comportamiento posterior como verificado en vivo.",
+        "Muro de inicio de sesión del Single Business Portal antes de cualquier paso de solicitud.",
+        "Los anejos requeridos (adjuntos) bloquean el avance antes del pago.",
+        "El pago no es reembolsable: evaluación regular 10% inicial y 90% tras la validación del analista; ministerial 100% inicial; tarjeta o ACH.",
+      ],
+    },
   },
   {
     id: "DEMO_REHEARSAL_PORTAL",
