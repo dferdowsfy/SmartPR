@@ -418,7 +418,10 @@ const FILING_STATUS_RANK: Record<FilingStatus, number> = {
   unsupported: 5,
 };
 
-const OTHER_AGENCY_ID = "OTHER";
+/** Group id for obligations with no browser filing available. The run page
+ * is for conducting one filing, so the picker hides this group — it lists
+ * unsupported "other requirements", not something the human can start. */
+export const OTHER_AGENCY_ID = "OTHER";
 
 function filingStatusFor(
   obligationStatus: string,

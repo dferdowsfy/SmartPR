@@ -55,7 +55,7 @@ import {
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, type SessionMsg } from "./AgencyChat";
-import type { FilingOption } from "../../../../lib/agency-runs/agencyActions";
+import { OTHER_AGENCY_ID, type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import {
   buildChatMilestones,
   chatScrollKey,
@@ -188,7 +188,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         setMsgs((prev) =>
           prev.map((m) =>
             m.type === "filing-picker"
-              ? { ...m, loading: false, groups: result.groups ?? [] }
+              ? {
+                  ...m,
+                  loading: false,
+                  // The run page conducts one filing — hide the "other
+                  // requirements" group (obligations with no browser
+                  // filing), which is not something the human can start.
+                  groups: ((result.groups ?? []) as FilingGroup[]).filter(
+                    (g) => g.agency_id !== OTHER_AGENCY_ID
+                  ),
+                }
               : m
           )
         );
@@ -877,7 +886,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 {L("Agency assistant", "Asistente de agencia", lang)}
               </p>
               <h1 className="mt-1 font-[family-name:var(--font-display)] text-3xl font-medium tracking-tight md:text-4xl">
-                {L("Agency filing assistant", "Asistente de trámites", lang)}
+                {L("Filing Partner", "Socio de trámites", lang)}
               </h1>
               {/* Compact the header once a run is active so the chat+browser
                   workspace keeps the viewport — no dead blank page below. */}

@@ -120,9 +120,9 @@ export type SessionMsg =
 /* Small pieces                                                         */
 /* ------------------------------------------------------------------ */
 
-function AssistantBubble({ children }: { children: React.ReactNode }) {
+function AssistantBubble({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
-    <div className="flex items-start gap-2.5">
+    <div id={id} className="flex scroll-mt-4 items-start gap-2.5">
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand">
         <Bot className="h-4 w-4 text-white" />
       </span>
@@ -1350,9 +1350,20 @@ export function AgencyChat(props: AgencyChatProps) {
     if (nearBottom) scrollChatToBottom("smooth");
   }, [props.scrollKey]);
 
-  // Actionable cards (fill fields / review / submitted) always scroll into
-  // view inside the chat list, even if the human scrolled up — the thing they
-  // must act on is never lost below the fold.
+  // The newest pre-flight card is the human's next step after pressing
+  // Start. Pre-run the page itself (not the chat box) is the scroller, so
+  // without help the card lands below the fold and nothing appears to
+  // happen — track it so the effect below can bring it into view.
+  const lastPreflightId = useMemo(() => {
+    for (let i = props.msgs.length - 1; i >= 0; i--) {
+      if (props.msgs[i].type === "preflight") return props.msgs[i].id;
+    }
+    return null;
+  }, [props.msgs]);
+
+  // Actionable cards (pre-flight / fill fields / review / submitted) always
+  // scroll into view, even if the human scrolled up — the thing they must
+  // act on is never lost below the fold.
   const actionableKey = props.intervention
     ? `intervention:${props.intervention.run.id}:${props.intervention.pendingFields
         .map((f) => f.id)
@@ -1361,13 +1372,25 @@ export function AgencyChat(props: AgencyChatProps) {
       ? `review:${props.run?.id ?? "noid"}`
       : props.submitted
         ? `submitted:${props.run?.id ?? "noid"}`
-        : null;
+        : lastPreflightId
+          ? `preflight:${lastPreflightId}`
+          : null;
   const seenActionableRef = useRef<string | null>(null);
   useEffect(() => {
     if (!actionableKey || seenActionableRef.current === actionableKey) return;
     seenActionableRef.current = actionableKey;
     // Let the card mount first, then bring it into view.
-    const t = window.setTimeout(() => scrollChatToBottom("smooth"), 60);
+    const t = window.setTimeout(() => {
+      if (actionableKey.startsWith("preflight:")) {
+        // Scroll the card itself into view — whichever ancestor scrolls
+        // (the window pre-run, the chat box mid-run) is the one that moves.
+        document
+          .getElementById(`agency-msg-${actionableKey.slice("preflight:".length)}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        scrollChatToBottom("smooth");
+      }
+    }, 60);
     return () => window.clearTimeout(t);
   }, [actionableKey]);
 
@@ -1388,6 +1411,14 @@ export function AgencyChat(props: AgencyChatProps) {
                   </p>
                 ) : msg.error ? (
                   <p className="mt-3 text-sm font-medium text-rose-700">{msg.error}</p>
+                ) : msg.groups.length === 0 ? (
+                  <p className="mt-3 text-sm leading-snug text-slate-500">
+                    {L(
+                      "There's nothing I can file for this business yet.",
+                      "Todavía no hay nada que pueda tramitar para este negocio.",
+                      lang
+                    )}
+                  </p>
                 ) : (
                   <div className="mt-3 space-y-4">
                     {msg.groups.map((group) => (
@@ -1463,7 +1494,7 @@ export function AgencyChat(props: AgencyChatProps) {
           }
           if (msg.type === "preflight") {
             return (
-              <AssistantBubble key={msg.id}>
+              <AssistantBubble key={msg.id} id={`agency-msg-${msg.id}`}>
                 <PreflightCard
                   preflight={msg.preflight}
                   action={msg.action}
