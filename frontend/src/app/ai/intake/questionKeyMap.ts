@@ -115,7 +115,12 @@ const PROFILE_MIRROR: Record<string, string> = {
   healthcare_services: "healthcare_services",
   professional_licenses_required: "professional_licenses_required",
   commercial_vehicles: "vehicles_used",
-  vehicle_repair: "vehicles_used",
+  // NOTE (QA 2026-09-24, S170 live): vehicle_repair must NOT mirror to
+  // vehicles_used. Repairing vehicles is not operating commercial vehicles;
+  // the shared field made every auto-repair intake surface phantom
+  // Commercial Vehicle Registration + Transportation/PUC cards citing
+  // "Answer: Yes" for a never-asked question. Q_VEHICLE_REPAIR reads the
+  // answer keys directly (kb.ts), so nothing else needs the mirror.
   hazardous_materials: "hazardous_materials",
   hazardous_fluids: "hazardous_materials",
   chemicals_used: "hazardous_materials",

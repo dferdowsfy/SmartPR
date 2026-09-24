@@ -17,6 +17,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  mirrorAnswersToProfile,
   prefillKeysForPatch,
   questionIdForAnswerKey,
 } from "./questionKeyMap.ts";
@@ -106,4 +107,38 @@ test("answer-sourced prefill still renders 'Derived answer:' (a025d1d behavior p
   for (const reason of reasons) {
     assert.match(reason, /Derived answer: Yes/);
   }
+});
+
+// Regression: S170 live 2026-09-24 (Arecibo auto-repair). Repairing vehicles
+// is not operating commercial vehicles, but both wrote the shared
+// profile.vehicles_used field — so every auto-repair shop answering Yes to
+// "vehicles repaired" got phantom Commercial Vehicle Registration +
+// Transportation/PUC cards citing "Answer: Yes" for the never-asked
+// Q_COMMERCIAL_VEHICLES. Same class recurred live 2026-09-17 (Cataño,
+// Trujillo Alto); the interpreter-prefill half was fixed by 8242730, this
+// pins the mirror half.
+test("vehicle_repair does NOT mirror to vehicles_used", () => {
+  const mirrored = mirrorAnswersToProfile({ vehicle_repair: true });
+  assert.ok(
+    !("vehicles_used" in mirrored),
+    `vehicle_repair leaked into vehicles_used: ${JSON.stringify(mirrored)}`
+  );
+  // The genuine mapping is untouched: commercial_vehicles still mirrors.
+  assert.equal(mirrorAnswersToProfile({ commercial_vehicles: true }).vehicles_used, true);
+});
+
+test("end-to-end: vehicle_repair prefill produces no phantom vehicle cards", () => {
+  // Simulates applyInterpretedIntake: mirror the interpreted answers onto
+  // the profile, flag prefill keys, then run the engine as the checklist
+  // does. Before the fix this produced 2 vehicle cards with "Answer: Yes".
+  const answers = { vehicle_repair: true };
+  const mirrored = mirrorAnswersToProfile(answers);
+  const profile = { ...AUTO_REPAIR_PROFILE, ...mirrored };
+  const flags = prefillKeysForPatch(Object.keys(answers), Object.keys(mirrored));
+  const reqs = computeRequirementsFromKB(profile, answers, {}, {
+    projectIntent: "existing_business",
+    aiPrefilledKeys: flags,
+  }) as Array<{ document_id?: string; reason?: string }>;
+  const reasons = vehicleReasons(reqs);
+  assert.equal(reasons.length, 0, `phantom vehicle cards fired: ${JSON.stringify(reasons)}`);
 });

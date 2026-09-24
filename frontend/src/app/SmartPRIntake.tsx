@@ -2570,7 +2570,14 @@ export default function SmartPRIntake() {
     if (q.id === "import_export") updates.import_export = yes;
     if (q.id === "commercial_signage") updates.commercial_signage = yes;
     if (q.id === "short_term_rental") updates.short_term_rental = yes;
-    if (q.id === "commercial_vehicles" || q.id === "vehicles_repaired") updates.vehicles_used = yes;
+    if (q.id === "commercial_vehicles") updates.vehicles_used = yes;
+    // NOTE (QA 2026-09-24, S170 live): "vehicles_repaired" (the business
+    // REPAIRS vehicles) must NOT set vehicles_used (the business OPERATES
+    // commercial vehicles). The shared field previously conflated them, so
+    // every auto-repair shop got phantom Commercial Vehicle Registration +
+    // Transportation/PUC cards citing "Answer: Yes" for a never-asked
+    // question. Repairing customer vehicles is not operating commercial
+    // vehicles.
     if (q.id === "goods_stored") updates.physical_location = yes;
     if (q.id === "children_present" || q.id === "classes_on_site") updates.physical_location = yes;
     if (q.id === "food_served" || q.id === "food_products_sold") updates.food_prepared_or_sold = yes;
