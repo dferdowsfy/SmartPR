@@ -329,6 +329,24 @@ test("projectContextAnswerToFacts: a renovations Yes arms the project path (S150
   assert.ok(String(es[0].fact.evidence).includes("entrevista guiada"));
 });
 
+test("projectContextAnswerToFacts: an existing_lease No bridges property_tenure=owned (S174)", () => {
+  // 2026-09-24 06:00 QA cycle (S174 live audit): the bakery answered "No"
+  // to "Will the business lease its commercial space?" but no Property Deed
+  // card appeared — RULE_0649 reads project_fact property_tenure=owned and
+  // nothing on the confirmed wizard path established it. A "No" here is a
+  // direct user statement of ownership, so it bridges at confidence 1.
+  const en = "en" as const;
+  const facts = projectContextAnswerToFacts("existing_lease", false, en);
+  assert.equal(facts.length, 1);
+  assert.equal(facts[0].key, "property_tenure");
+  assert.equal(facts[0].fact.value, "owned");
+  assert.equal(facts[0].fact.confidence, 1);
+  assert.ok(String(facts[0].fact.evidence).includes("guided intake"));
+  // A "Yes" applies nothing — RULE_0037 already renders the lease card from
+  // the question answer; bridging "leased" would duplicate it via RULE_0648.
+  assert.deepEqual(projectContextAnswerToFacts("existing_lease", true, en), []);
+});
+
 test("mergeProjectContext: restated facts win, otherwise higher confidence wins", () => {
   const prev: ProjectContext = {
     renovation: { value: true, confidence: 0.9, evidence: "renovate" },
