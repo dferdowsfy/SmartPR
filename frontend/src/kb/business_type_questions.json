@@ -3489,6 +3489,10 @@
   },
   {
     "business_type_id": "BT_FOOD_MANUFACTURING",
+    "question_id": "Q_FOOD_PREPARED"
+  },
+  {
+    "business_type_id": "BT_FOOD_MANUFACTURING",
     "question_id": "Q_HAZARDOUS_MATERIALS"
   },
   {
@@ -3722,6 +3726,10 @@
   {
     "business_type_id": "BT_BEVERAGE_MANUFACTURING",
     "question_id": "Q_PRODUCTS_MANUFACTURED"
+  },
+  {
+    "business_type_id": "BT_BEVERAGE_MANUFACTURING",
+    "question_id": "Q_FOOD_PREPARED"
   },
   {
     "business_type_id": "BT_BEVERAGE_MANUFACTURING",

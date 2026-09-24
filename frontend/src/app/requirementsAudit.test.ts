@@ -23,7 +23,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { runRulesEngine, type KnowledgeBase, type EngineInput } from "./rulesEngine.ts";
-import { buildEngineInput } from "./kb.ts";
+import { buildEngineInput, discoveryQuestionsForBusinessType } from "./kb.ts";
 import {
   classifyEngineRequirements,
   applyEntityFormationExclusivity,
@@ -3790,5 +3790,79 @@ test("CASE AP: installer-trade BTs never get generator-side LUMA/net-metering ev
     byId(hotel, DOC_NETMETER)?.applicability,
     "required",
     "a hotel with its own renewable installation still gets the net metering agreement"
+  );
+});
+
+test("CASE AT: food/beverage manufacturing BTs route Q_FOOD_PREPARED so the health permit can fire live (REG-FOOD-HEALTH-001)", () => {
+  // 2026-09-24 18:00 QA cycle (S185, Toa Alta): the ENGINE eval showed the
+  // Health / Sanitary Permit (RULE_0009, Q_FOOD_PREPARED-triggered) as
+  // verify_existing for the 30-year food manufacturer, but the LIVE intake
+  // never rendered it — the browser task's 13 discovery questions included
+  // "manufactured on-site" (Q_PRODUCTS_MANUFACTURED) but no food-prep
+  // question. Root cause: BT_FOOD_MANUFACTURING's (and
+  // BT_BEVERAGE_MANUFACTURING's) discovery question list in
+  // business_type_questions.json never included Q_FOOD_PREPARED, and unlike
+  // BT_BAKERY / BT_RESTAURANT / BT_FAST_FOOD_RESTAURANT there is no
+  // BT->Q_FOOD_PREPARED definitional derivation either — so the rule could
+  // never fire through the real intake path. KB INCOMPLETE (question-
+  // routing gap). Fix: route Q_FOOD_PREPARED in discovery for both BTs
+  // (asked, user-confirmed — no BT-level answer inference, per the f992061
+  // lesson). Non-food manufacturing BTs (pharma, textile, chemical, ...)
+  // are untouched by design.
+  for (const btName of ["Food Manufacturing", "Beverage Manufacturing"] as const) {
+    const ids = (discoveryQuestionsForBusinessType(btName) ?? []).map((q) => q.id);
+    // NOTE: discovery defs carry the wizard writeKey, not the KB question
+    // id — Q_FOOD_PREPARED's writeKey is "food_prepared_on_site"
+    // (questionKeyMap.ts), which buildEngineInput reads back as
+    // Q_FOOD_PREPARED=true.
+    assert.ok(
+      ids.includes("food_prepared_on_site"),
+      `${btName}: discovery must ask the Q_FOOD_PREPARED question (writeKey food_prepared_on_site) so RULE_0009 (health permit) is reachable live`
+    );
+  }
+
+  // The routed answer reaches the rule: a NEW food manufacturer answering
+  // Yes gets the health permit REQUIRED; an EXISTING one (S185 posture)
+  // gets it verify_existing.
+  const healthDoc = docByName("health", "sanitary");
+  const fresh = classify(
+    {
+      municipalityName: "Toa Alta",
+      businessTypeName: "Food Manufacturing",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PRODUCTS_MANUFACTURED: true,
+        Q_FOOD_PREPARED: true,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(fresh, healthDoc)?.applicability,
+    "required",
+    "a new food manufacturer answering Q_FOOD_PREPARED=true gets the health permit REQUIRED (RULE_0009)"
+  );
+  const existing = classify(
+    {
+      municipalityName: "Toa Alta",
+      businessTypeName: "Food Manufacturing",
+      businessStatus: "existing",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PRODUCTS_MANUFACTURED: true,
+        Q_FOOD_PREPARED: true,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "existing"
+  ).classified;
+  assert.equal(
+    byId(existing, healthDoc)?.applicability,
+    "verify_existing",
+    "an existing food manufacturer answering Q_FOOD_PREPARED=true gets the health permit verify_existing (S185 posture)"
   );
 });
