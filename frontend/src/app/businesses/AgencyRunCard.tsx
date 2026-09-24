@@ -64,7 +64,7 @@ export function AgencyRunCard({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-bold text-[#161616]">
-                {L("File with agency assistant", "Tramitar con asistente de agencia", lang)}
+                {L("File with Mita", "Radicar con Mita", lang)}
               </h2>
               <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
                 {L("Live visual · pilot", "Visual en vivo · piloto", lang)}
@@ -84,7 +84,7 @@ export function AgencyRunCard({
           href={`/businesses/${businessId}/agency-run`}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea]"
         >
-          {L("Open assistant", "Abrir asistente", lang)}
+          {L("Open Mita", "Abrir Mita", lang)}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
