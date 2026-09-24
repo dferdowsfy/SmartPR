@@ -943,7 +943,8 @@ button.primary {
 }
 
 @media (max-width: 639px) {
-  .ctaRow .primary {
+  .ctaRow .primary,
+  .ctaRow .secondary {
     width: 100%;
   }
 
