@@ -1,4 +1,4 @@
-import type { AgencyFilingType } from "./types";
+import type { AgencyFilingType, AgencyPendingFieldType } from "./types";
 import { getSiteUrl } from "../siteUrl";
 
 /**
@@ -77,6 +77,96 @@ export interface AgencyFilingConfig {
    * SmartPR-generated obligations to the browser filing that fulfills them.
    */
   requirementIds?: string[];
+  /**
+   * Deterministic filing playbook (Phase 1: data model only — not yet consumed
+   * by taskPrompt.ts). When present, this is the authoritative ordered step
+   * list for the filing; procedureEn/Es remain as the fallback brief until the
+   * prompt builder is wired to playbooks. Portal identity (domains, startUrl,
+   * needsLogin) is NOT duplicated here — it stays on this config.
+   */
+  playbook?: FilingPlaybook;
+}
+
+/**
+ * Where a playbook step's data entry happens (inline-first model, 2026-09-24).
+ * - INLINE: user answers inline form fields in chat; the agent types them in.
+ * - VAULT: secret pulled from Secure Vault; never shown in chat.
+ * - IN_BROWSER: the human acts directly in the embedded browser (legal acts,
+ *   payment, phone calls). Never a fill step.
+ * - AGENT: the agent drives with no user input (navigation, capture).
+ */
+export type PlaybookChannel = "INLINE" | "VAULT" | "IN_BROWSER" | "AGENT";
+
+/** Human gate kinds that pause the run at a step. */
+export type PlaybookGateKind =
+  | "login"
+  | "captcha"
+  | "signature"
+  | "payment"
+  | "upload"
+  | "phone_call";
+
+/** Field input kinds. Extends the assistant-panel field types with portal
+ *  controls the inline renderer will support (select, checkbox). */
+export type PlaybookFieldType = AgencyPendingFieldType | "select" | "checkbox";
+
+export interface PlaybookField {
+  /** Stable id used in REQUIRED_FIELDS / FIELDS FILL. */
+  id: string;
+  label_en: string;
+  label_es: string;
+  /** Canonical passport dotted path used to pre-seed the value. Must exist
+   *  in CANONICAL_LABELS — never invent a path. Omit when the passport has
+   *  no such concept (user-supplied rows like officers). */
+  passportPath?: string;
+  type: PlaybookFieldType;
+  required: boolean;
+  /** Encrypted at rest; masked in chat with an eye icon to reveal. */
+  sensitive?: boolean;
+  /** Repeatable row group (e.g. incorporators, officers). */
+  repeatable?: boolean;
+  /** Visible option labels for select fields. */
+  options?: string[];
+  hint_en?: string;
+  hint_es?: string;
+}
+
+export interface PlaybookStep {
+  id: string;
+  label_en: string;
+  label_es: string;
+  channel: PlaybookChannel;
+  /** Portal page identity: URL hash fragment or recognizable heading. */
+  pageId?: string;
+  fields: PlaybookField[];
+  /** What must be true before advancing to the next step. */
+  expectedState_en?: string;
+  expectedState_es?: string;
+  /** Human gate at this step, if any. signature/payment/captcha gates imply
+   *  channel IN_BROWSER. */
+  gate?: PlaybookGateKind;
+  notes_en?: string;
+  notes_es?: string;
+}
+
+export interface PlaybookConfirmation {
+  /** What reference/receipt to capture. */
+  reference_en: string;
+  reference_es: string;
+  /** Where it appears in the portal. */
+  where_en: string;
+  where_es: string;
+}
+
+export interface FilingPlaybook {
+  /** Filing variant this playbook was recorded for (e.g. new-entity creation
+   *  vs annual report). */
+  scope_en: string;
+  scope_es: string;
+  steps: PlaybookStep[];
+  confirmation: PlaybookConfirmation;
+  quirks_en: string[];
+  quirks_es: string[];
 }
 
 export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
@@ -269,6 +359,516 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // DOC_ANNUAL_REPORT has no document entry and no rule: the annual-report
     // variant cannot be obligation-driven until the engine models it.
     requirementIds: ["DOC_CERT_INCORPORATION", "DOC_ARTICLES_ORGANIZATION"],
+    // Playbook recorded 2026-09-24 from a live read-only walkthrough of the
+    // creation wizard (stopped at Signatures; one fictional name lookup).
+    // Covers new-entity creation only — the annual-report flow is not recorded.
+    playbook: {
+      scope_en: "New-entity creation (corporation / LLC) via the online wizard",
+      scope_es:
+        "Creación de nueva entidad (corporación / LLC) vía el asistente en línea",
+      steps: [
+        {
+          id: "navigate",
+          label_en: "Open the Corporate Registry filing wizard",
+          label_es: "Abrir el asistente de radicación del Registro de Corporaciones",
+          channel: "AGENT",
+          pageId: "rcp.estado.pr.gov/en → Create / Authorize",
+          fields: [],
+          expectedState_en: "The Name Availability screen is showing",
+          expectedState_es: "Se muestra la pantalla de disponibilidad de nombre",
+        },
+        {
+          id: "name_availability",
+          label_en: "Name Availability",
+          label_es: "Disponibilidad de nombre",
+          channel: "INLINE",
+          pageId: "Name Availability screen",
+          fields: [
+            {
+              id: "entity_class",
+              label_en: "Entity class",
+              label_es: "Clase de entidad",
+              passportPath: "business.entityType",
+              type: "select",
+              required: true,
+              options: [
+                "Corporation",
+                "LLC",
+                "Close Corporation",
+                "Professional Corporation",
+                "Other",
+              ],
+            },
+            {
+              id: "entity_name",
+              label_en: "Entity name",
+              label_es: "Nombre de la entidad",
+              passportPath: "business.legalName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "name_designation",
+              label_en: "Name designation",
+              label_es: "Designación del nombre",
+              type: "select",
+              required: true,
+              options: [
+                "Corp.",
+                "Corporation",
+                "Incorporated",
+                "Inc.",
+                "LLC",
+                "Limited Liability Company",
+              ],
+            },
+          ],
+          expectedState_en:
+            "Inline result “The name … is available.”; acknowledgment checked; Next enabled",
+          expectedState_es:
+            "Resultado en línea “The name … is available.”; acuse marcado; Siguiente habilitado",
+          notes_en:
+            "Starting creation reserves the name. Optional paid reservation (RN-##########, valid 120 days) is a separate path.",
+          notes_es:
+            "Iniciar la creación reserva el nombre. La reserva pagada opcional (RN-##########, válida 120 días) es una ruta separada.",
+        },
+        {
+          id: "general_information",
+          label_en: "General Information",
+          label_es: "Información general",
+          channel: "INLINE",
+          pageId: "#generalinformation",
+          fields: [
+            {
+              id: "entity_type",
+              label_en: "Entity type",
+              label_es: "Tipo de entidad",
+              passportPath: "business.entityType",
+              type: "select",
+              required: true,
+              options: ["For Profit", "Non-Profit"],
+            },
+            {
+              id: "jurisdiction",
+              label_en: "Jurisdiction",
+              label_es: "Jurisdicción",
+              type: "select",
+              required: true,
+              options: ["Domestic", "Foreign", "Foreign – NON US"],
+            },
+            {
+              id: "purposes",
+              label_en: "Purposes",
+              label_es: "Propósitos",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "veteran_officer",
+              label_en: "Veteran officer",
+              label_es: "Oficial veterano",
+              type: "select",
+              required: false,
+              options: ["Yes", "No"],
+            },
+            {
+              id: "effective_from",
+              label_en: "Effective from",
+              label_es: "Efectivo desde",
+              type: "text",
+              required: false,
+              hint_en: "Date, portal format",
+              hint_es: "Fecha, formato del portal",
+            },
+            {
+              id: "effective_until",
+              label_en: "Effective until",
+              label_es: "Efectivo hasta",
+              type: "text",
+              required: false,
+            },
+          ],
+          expectedState_en: "Wizard advances to the Filer screen",
+          expectedState_es: "El asistente avanza a la pantalla del Radicante",
+        },
+        {
+          id: "filer",
+          label_en: "Filer",
+          label_es: "Radicante",
+          channel: "INLINE",
+          pageId: "#filer",
+          fields: [
+            {
+              id: "filer_type",
+              label_en: "Filer type",
+              label_es: "Tipo de radicante",
+              type: "select",
+              required: true,
+              options: ["Employee/Owner/Partner", "CPA or Attorney/Paralegal"],
+            },
+            {
+              id: "filer_name",
+              label_en: "Filer name",
+              label_es: "Nombre del radicante",
+              passportPath: "contact.fullName",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "filer_street",
+              label_en: "Street address",
+              label_es: "Dirección física",
+              passportPath: "addresses.principalPhysical.line1",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "filer_phone",
+              label_en: "Phone",
+              label_es: "Teléfono",
+              passportPath: "contact.phone",
+              type: "tel",
+              required: true,
+              hint_en: "Portal splits into 3 segments",
+              hint_es: "El portal lo divide en 3 segmentos",
+            },
+            {
+              id: "filer_email",
+              label_en: "Email",
+              label_es: "Correo electrónico",
+              passportPath: "contact.email",
+              type: "email",
+              required: true,
+            },
+            {
+              id: "filer_email_confirm",
+              label_en: "Confirm email",
+              label_es: "Confirmar correo electrónico",
+              type: "email",
+              required: true,
+              hint_en: "Retype + blur — confirm validation is flaky",
+              hint_es: "Reescriba y salga del campo — la validación falla a veces",
+            },
+          ],
+          expectedState_en: "Wizard advances to the Designated Office screen",
+          expectedState_es: "El asistente avanza a la pantalla de Oficina Designada",
+          notes_en:
+            "Server-side address validation rejects PO boxes and fake addresses — use a real street address.",
+          notes_es:
+            "La validación de dirección del servidor rechaza apartados postales y direcciones falsas — use una dirección física real.",
+        },
+        {
+          id: "designated_office",
+          label_en: "Designated Office",
+          label_es: "Oficina designada",
+          channel: "INLINE",
+          pageId: "Designated Office screen",
+          fields: [
+            {
+              id: "office_same_as_filer",
+              label_en: "Same as filer",
+              label_es: "Igual que el radicante",
+              type: "checkbox",
+              required: false,
+            },
+            {
+              id: "office_street",
+              label_en: "Office street address",
+              label_es: "Dirección física de la oficina",
+              passportPath: "addresses.principalPhysical.line1",
+              type: "text",
+              required: true,
+            },
+            {
+              id: "office_mailing",
+              label_en: "Mailing address",
+              label_es: "Dirección postal",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "office_phone",
+              label_en: "Office phone",
+              label_es: "Teléfono de la oficina",
+              passportPath: "contact.phone",
+              type: "tel",
+              required: true,
+              hint_en: "Re-enter even if pre-filled — portal flags it required",
+              hint_es: "Reingrese aunque aparezca lleno — el portal lo marca requerido",
+            },
+          ],
+          expectedState_en: "Wizard advances to the Resident Agent screen",
+          expectedState_es: "El asistente avanza a la pantalla del Agente Residente",
+        },
+        {
+          id: "resident_agent",
+          label_en: "Resident Agent",
+          label_es: "Agente residente",
+          channel: "INLINE",
+          pageId: "Resident Agent screen",
+          fields: [
+            {
+              id: "agent_same_as_filer",
+              label_en: "Resident agent is same as filer",
+              label_es: "El agente residente es el mismo radicante",
+              type: "checkbox",
+              required: false,
+              hint_en: "Locks the remaining tabs when checked",
+              hint_es: "Bloquea las demás pestañas al marcarse",
+            },
+            {
+              id: "agent_type",
+              label_en: "Agent type",
+              label_es: "Tipo de agente",
+              type: "select",
+              required: false,
+              options: ["Individual", "Entity"],
+            },
+            {
+              id: "agent_name",
+              label_en: "Agent name",
+              label_es: "Nombre del agente",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "agent_street",
+              label_en: "Agent street address",
+              label_es: "Dirección física del agente",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "agent_mailing",
+              label_en: "Agent mailing address",
+              label_es: "Dirección postal del agente",
+              type: "text",
+              required: false,
+            },
+            {
+              id: "agent_contact",
+              label_en: "Agent contact",
+              label_es: "Contacto del agente",
+              type: "text",
+              required: false,
+            },
+          ],
+          expectedState_en: "Wizard advances to the Incorporators screen",
+          expectedState_es: "El asistente avanza a la pantalla de Incorporadores",
+        },
+        {
+          id: "incorporators",
+          label_en: "Incorporators",
+          label_es: "Incorporadores",
+          channel: "INLINE",
+          pageId: "Incorporators screen",
+          fields: [
+            {
+              id: "incorporator_name",
+              label_en: "Incorporator name",
+              label_es: "Nombre del incorporador",
+              type: "text",
+              required: true,
+              repeatable: true,
+            },
+            {
+              id: "incorporator_address",
+              label_en: "Incorporator address",
+              label_es: "Dirección del incorporador",
+              type: "text",
+              required: true,
+              repeatable: true,
+            },
+            {
+              id: "incorporator_email",
+              label_en: "Incorporator email",
+              label_es: "Correo del incorporador",
+              type: "email",
+              required: false,
+              repeatable: true,
+            },
+          ],
+          expectedState_en: "Incorporator table shows all rows; wizard advances",
+          expectedState_es:
+            "La tabla muestra todas las filas; el asistente avanza",
+          notes_en: "Use “Copy from Existing Contact” or “Add New” per row.",
+          notes_es: "Use “Copiar de contacto existente” o “Añadir nuevo” por fila.",
+        },
+        {
+          id: "officers",
+          label_en: "Officers",
+          label_es: "Oficiales",
+          channel: "INLINE",
+          pageId: "Officers screen",
+          fields: [
+            {
+              id: "officer_name",
+              label_en: "Officer name",
+              label_es: "Nombre del oficial",
+              type: "text",
+              required: true,
+              repeatable: true,
+            },
+            {
+              id: "officer_title",
+              label_en: "Officer title",
+              label_es: "Título del oficial",
+              type: "select",
+              required: true,
+              repeatable: true,
+              options: ["President", "Secretary", "Vice President", "Treasurer"],
+            },
+          ],
+          expectedState_en: "Officer table shows all rows; wizard advances",
+          expectedState_es: "La tabla muestra todas las filas; el asistente avanza",
+          notes_en:
+            "Portal help says ≥2 officers required, but the wizard advanced with 1 — follow the wizard and flag the discrepancy.",
+          notes_es:
+            "La ayuda del portal exige ≥2 oficiales, pero el asistente avanzó con 1 — siga el asistente y reporte la discrepancia.",
+        },
+        {
+          id: "capital_stock",
+          label_en: "Capital Stock",
+          label_es: "Capital en acciones",
+          channel: "INLINE",
+          pageId: "Capital Stock screen",
+          fields: [
+            {
+              id: "stock_class",
+              label_en: "Stock class",
+              label_es: "Clase de acciones",
+              type: "select",
+              required: true,
+              options: ["Common", "Preferred"],
+            },
+            {
+              id: "shares_number",
+              label_en: "Number of shares",
+              label_es: "Número de acciones",
+              type: "number",
+              required: true,
+            },
+            {
+              id: "par_value",
+              label_en: "Par value",
+              label_es: "Valor nominal",
+              type: "text",
+              required: false,
+              hint_en: "Amount, or check No Par Value",
+              hint_es: "Cantidad, o marque Sin valor nominal",
+            },
+            {
+              id: "no_par_value",
+              label_en: "No par value",
+              label_es: "Sin valor nominal",
+              type: "checkbox",
+              required: false,
+            },
+            {
+              id: "stock_limitations",
+              label_en: "Limitations",
+              label_es: "Limitaciones",
+              type: "text",
+              required: false,
+            },
+          ],
+          expectedState_en:
+            "Fee panel computes minimum $140 + $10 certificate = $150.00 total",
+          expectedState_es:
+            "El panel de cargos calcula mínimo $140 + $10 certificado = $150.00 total",
+        },
+        {
+          id: "supporting_docs",
+          label_en: "Supporting Documentation",
+          label_es: "Documentación de apoyo",
+          channel: "INLINE",
+          pageId: "Supporting Documentation screen",
+          gate: "upload",
+          fields: [],
+          expectedState_en:
+            "Attached files are listed; wizard advances (step is optional)",
+          expectedState_es:
+            "Los archivos adjuntos aparecen listados; el asistente avanza (paso opcional)",
+          notes_en:
+            "User attaches files in chat; the agent uploads them. PDF/TIF only, under 7 MB, no SSN or tax ID data in files.",
+          notes_es:
+            "El usuario adjunta archivos en el chat; el agente los sube. Solo PDF/TIF, menos de 7 MB, sin SSN ni IDs contributivos en los archivos.",
+        },
+        {
+          id: "review",
+          label_en: "Review Filing",
+          label_es: "Revisar radicación",
+          channel: "INLINE",
+          pageId: "Review Filing screen",
+          fields: [],
+          expectedState_en:
+            "Read-only summary matches the passport; fees sidebar shows the computed total",
+          expectedState_es:
+            "El resumen de solo lectura coincide con el pasaporte; la barra de cargos muestra el total calculado",
+          notes_en:
+            "Verify only — do NOT check the perjury declaration. The human completes all legal checkboxes at Signatures.",
+          notes_es:
+            "Solo verificar — NO marque la declaración de perjurio. El humano completa las casillas legales en Firmas.",
+        },
+        {
+          id: "signatures",
+          label_en: "Signatures",
+          label_es: "Firmas",
+          channel: "IN_BROWSER",
+          pageId: "Signatures screen",
+          gate: "signature",
+          fields: [],
+          expectedState_en: "Signer checkboxes checked with the perjury statement",
+          expectedState_es:
+            "Casillas del firmante marcadas con la declaración de perjurio",
+          notes_en:
+            "This IS the legal filing act — human only. The agent stops here and hands control to the human.",
+          notes_es:
+            "Este ES el acto legal de radicación — solo el humano. El agente se detiene aquí y cede el control.",
+        },
+        {
+          id: "payment",
+          label_en: "Payment",
+          label_es: "Pago",
+          channel: "IN_BROWSER",
+          pageId: "Payment screen",
+          gate: "payment",
+          fields: [],
+          expectedState_en: "Payment completed; receipts issued",
+          expectedState_es: "Pago completado; recibos emitidos",
+          notes_en:
+            "Credit card only — MasterCard, Visa, AmEx. About $150 minimum. SmartPR never touches card details.",
+          notes_es:
+            "Solo tarjeta de crédito — MasterCard, Visa, AmEx. Mínimo aproximado $150. SmartPR nunca toca los datos de la tarjeta.",
+        },
+      ],
+      confirmation: {
+        reference_en:
+          "Certificate of Registry, Articles of Incorporation, and Payment Receipt",
+        reference_es:
+          "Certificado de Registro, Artículos de Incorporación y Recibo de Pago",
+        where_en:
+          "Emailed to the filer address after payment — no confirmation-number format was found on the portal",
+        where_es:
+          "Enviados por email a la dirección del radicante tras el pago — no se encontró formato de número de confirmación en el portal",
+      },
+      quirks_en: [
+        "No login required for the creation wizard itself (login only for authenticated transactions).",
+        "Single-page app with hash fragments (#generalinformation, #filer, …) — selectors must be hash-aware.",
+        "Server-side address validation rejects PO boxes and fake addresses.",
+        "Email-confirm validation is flaky — retype + blur.",
+        "Portal help says ≥2 officers required, but the wizard advanced with 1.",
+        "Name-availability search reserves the name once creation starts.",
+      ],
+      quirks_es: [
+        "No se requiere inicio de sesión para el asistente de creación (solo para transacciones autenticadas).",
+        "Aplicación de una sola página con fragmentos hash (#generalinformation, #filer, …) — los selectores deben considerarlos.",
+        "La validación de dirección del servidor rechaza apartados postales y direcciones falsas.",
+        "La validación de confirmación de email falla a veces — reescriba y salga del campo.",
+        "La ayuda del portal exige ≥2 oficiales, pero el asistente avanzó con 1.",
+        "La búsqueda de disponibilidad reserva el nombre al iniciar la creación.",
+      ],
+    },
   },
   {
     id: "OGPE_PERMISO_UNICO",
