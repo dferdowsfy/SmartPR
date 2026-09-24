@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertTriangle, ArrowLeft, CheckCircle2, CreditCard, EyeOff, FileUp, KeyRound,
-  Loader2, Maximize2, Minimize2, PauseCircle, Play, RefreshCw, Square, Upload,
+  Loader2, Lock, Maximize2, Minimize2, PauseCircle, Play, RefreshCw, Square, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import type {
@@ -79,21 +79,34 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       ref={sectionRef}
       className={
         props.open
-          ? "order-first flex min-h-0 shrink-0 flex-col bg-[#f4f1ea] h-[clamp(240px,32dvh,380px)] lg:order-none lg:h-auto"
+          ? "flex min-h-0 flex-col overflow-hidden h-[clamp(240px,32dvh,380px)] lg:h-auto lg:flex-1"
           : "hidden"
       }
       aria-label={L("Live browser", "Navegador en vivo", lang)}
     >
-      <div className="flex min-h-0 flex-1 flex-col rounded-none border-0 bg-white lg:rounded-2xl lg:border lg:border-slate-200 lg:shadow-sm lg:shadow-slate-950/[0.02]">
-        <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-          <h2 className="text-sm font-bold text-[#161616]">
-            {run.live_url
-              ? L("Assisted browser (live)", "Navegador asistido (en vivo)", lang)
-              : props.isMock
-                ? L("Assisted browser (mock)", "Navegador asistido (simulado)", lang)
-                : L("Assisted browser", "Navegador asistido", lang)}
-          </h2>
-          <div className="flex items-center gap-2">
+      <div className="flex min-h-0 flex-1 flex-col bg-white">
+        {/* Browser chrome — one window with the chat: traffic lights, the
+            portal address, and the demo badge. */}
+        <div className="flex shrink-0 items-center gap-3 border-b border-[#161616]/10 bg-[#f7f2e4] px-4 py-2.5">
+          <div className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#e0655f]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#e8b93e]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#5fc46a]" />
+          </div>
+          <div className="flex min-w-0 flex-1 items-center justify-center">
+            <span className="inline-flex max-w-full items-center gap-1.5 truncate rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[#6b675e] ring-1 ring-[#161616]/10">
+              <Lock className="h-3 w-3 shrink-0 text-[#1e4d38]" />
+              <span className="truncate">
+                {props.domainsLabel || run.live_url || props.portalName}
+              </span>
+              {props.isMock && (
+                <span className="shrink-0 rounded bg-amber-300 px-1 py-px text-[9px] font-extrabold uppercase tracking-wide text-black">
+                  Demo
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             {/* Mobile: the panel is static in-flow, so the hide control
                 lives in its own header (the chat header toggle sits below). */}
             <button
@@ -149,7 +162,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 type="button"
                 onClick={props.onHandBack}
                 disabled={props.busy}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d38] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#16382a] disabled:opacity-60"
               >
                 {props.busy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -197,7 +210,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                       className={
                         props.fieldsPause
                           ? "inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-500 hover:bg-slate-50"
-                          : "inline-flex items-center gap-1 rounded-md border border-brand/40 bg-brand/5 px-2 py-1 text-[11px] font-semibold text-brand hover:bg-brand/10"
+                          : "inline-flex items-center gap-1 rounded-md border border-[#1e4d38]/40 bg-[#1e4d38]/[.06] px-2 py-1 text-[11px] font-semibold text-[#1e4d38] hover:bg-[#1e4d38]/[.12]"
                       }
                     >
                       <KeyRound className="h-3 w-3" />
@@ -236,7 +249,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
           )}
           <div
             className={`relative w-full flex-1 overflow-hidden rounded-xl bg-slate-100 shadow-inner ${
-              isFullscreen ? "min-h-0" : "min-h-[16rem]"
+              isFullscreen ? "min-h-0" : "min-h-0 lg:min-h-[16rem]"
             } ${props.takeover ? "border-2 border-amber-400" : "border border-slate-200"}`}
           >
             {run.live_url ? (
@@ -265,7 +278,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                 )}
                 {!props.previewLoaded && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
-                    <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[#1e4d38]" />
                     <p className="text-sm font-semibold text-slate-600">
                       {L(
                         "Starting secure browser session…",
@@ -292,7 +305,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
               />
             ) : (
               <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-3 bg-white">
-                <Loader2 className="h-8 w-8 animate-spin text-brand" />
+                <Loader2 className="h-8 w-8 animate-spin text-[#1e4d38]" />
                 <div className="text-sm font-semibold text-slate-600">
                   {L("Waiting for first frame…", "Esperando el primer fotograma…", lang)}
                 </div>
@@ -341,7 +354,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                         <button
                           type="button"
                           onClick={props.onTakeover}
-                          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white"
+                          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2 text-xs font-bold text-white hover:bg-[#16382a]"
                         >
                           <KeyRound className="h-3.5 w-3.5" />
                           {L("Take over the browser to submit", "Tome el control del navegador para enviar", lang)}
@@ -514,7 +527,7 @@ function PauseOverlay({
               <button
                 type="button"
                 onClick={onTakeover}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2.5 text-xs font-semibold text-white"
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#16382a]"
               >
                 <KeyRound className="h-3.5 w-3.5" />
                 {L("Take over the browser", "Tomar el control del navegador", lang)}
@@ -525,7 +538,7 @@ function PauseOverlay({
               <button
                 type="button"
                 onClick={onTakeover}
-                className="mt-2 w-full text-center text-xs font-semibold text-brand underline underline-offset-2"
+                className="mt-2 w-full text-center text-xs font-semibold text-[#1e4d38] underline underline-offset-2"
               >
                 {L(
                   "Or take over the browser to attach files directly on the portal",
@@ -550,7 +563,7 @@ function PauseOverlay({
                 type="button"
                 disabled={busy}
                 onClick={onResume}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-4 py-2 text-xs font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
                 {L("Resume", "Reanudar", lang)}
