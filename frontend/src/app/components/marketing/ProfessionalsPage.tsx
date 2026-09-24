@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
-import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
-
-const CONTACT_EMAIL = "contact@getsmartpr.com";
+import { SiteHeader, SiteFooter, useMarketingLanguage, useMailtoWithFallback, MailtoFallback, type Language } from "./MarketingChrome";
 
 const copy = {
   EN: {
@@ -171,7 +169,9 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
   function goToAssessment() {
     router.push("/?entry=new-business");
   }
-  const demoHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
+  // "Book a demo" opens a pre-addressed draft; if the visitor has no email
+  // app, a fallback with the raw address appears instead of a dead click.
+  const demoMail = useMailtoWithFallback(c.demoSubject);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -190,10 +190,16 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
             <button type="button" className={styles.primary} onClick={goToAssessment}>
               {c.startPilot}
             </button>
-            <a href={demoHref} className={styles.secondary}>
+            <a href={demoMail.href} className={styles.secondary} onClick={demoMail.onClick}>
               {c.bookDemo}
             </a>
           </div>
+          <MailtoFallback
+            show={demoMail.showFallback}
+            copied={demoMail.copied}
+            onCopy={demoMail.copyEmail}
+            language={language}
+          />
           <p className={styles.escapeHatch}>{c.whoFor}</p>
         </section>
 
@@ -284,10 +290,16 @@ export default function ProfessionalsPage({ initialLanguage = "EN" }: { initialL
               <button type="button" className={styles.primary} onClick={goToAssessment}>
                 {c.startPilot}
               </button>
-              <a href={demoHref} className={styles.secondary}>
+              <a href={demoMail.href} className={styles.secondary} onClick={demoMail.onClick}>
                 {c.bookDemo}
               </a>
             </div>
+            <MailtoFallback
+              show={demoMail.showFallback}
+              copied={demoMail.copied}
+              onCopy={demoMail.copyEmail}
+              language={language}
+            />
           </div>
         </section>
       </main>

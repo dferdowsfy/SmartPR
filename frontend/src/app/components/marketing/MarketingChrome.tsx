@@ -223,3 +223,70 @@ export function useMarketingLanguage(initialLanguage: Language) {
 
   return { language, handleLanguageChange };
 }
+
+/** Mailto links silently do nothing when the visitor has no default email
+ * app (common in test browsers and for Gmail-in-browser users). This hook
+ * keeps the mailto as the primary action and reveals a fallback — the raw
+ * address plus a copy button — when no email client appears to have opened.
+ */
+export function useMailtoWithFallback(subject: string) {
+  const [showFallback, setShowFallback] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const href = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(subject)}`;
+
+  function onClick() {
+    setShowFallback(false);
+    setCopied(false);
+    let opened = false;
+    const onBlur = () => {
+      opened = true;
+    };
+    window.addEventListener("blur", onBlur);
+    window.setTimeout(() => {
+      window.removeEventListener("blur", onBlur);
+      if (!opened) setShowFallback(true);
+    }, 900);
+  }
+
+  async function copyEmail() {
+    try {
+      await navigator.clipboard.writeText(DEMO_EMAIL);
+      setCopied(true);
+    } catch {
+      // Clipboard unavailable — the address is still visible to copy manually.
+    }
+  }
+
+  return { href, onClick, showFallback, copied, copyEmail };
+}
+
+/** Inline fallback shown under a mailto CTA when no email client opened. */
+export function MailtoFallback({
+  show,
+  copied,
+  onCopy,
+  language,
+}: {
+  show: boolean;
+  copied: boolean;
+  onCopy: () => void;
+  language: Language;
+}) {
+  if (!show) return null;
+  return (
+    <p className={styles.mailtoFallback}>
+      {language === "ES" ? (
+        <>
+          ¿No se abrió su app de correo? Escríbanos a <strong>{DEMO_EMAIL}</strong>
+        </>
+      ) : (
+        <>
+          Didn&apos;t open your email app? Write to us at <strong>{DEMO_EMAIL}</strong>
+        </>
+      )}{" "}
+      <button type="button" className={styles.mailtoCopy} onClick={onCopy}>
+        {copied ? (language === "ES" ? "Copiado" : "Copied") : language === "ES" ? "Copiar" : "Copy"}
+      </button>
+    </p>
+  );
+}

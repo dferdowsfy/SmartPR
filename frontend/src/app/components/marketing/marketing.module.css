@@ -292,6 +292,25 @@ button.primary {
   font-weight: 600;
 }
 
+/* Shown under a mailto CTA when no email client opened. */
+.mailtoFallback {
+  margin: 0.85rem 0 0;
+  font-size: 0.95rem;
+  color: #5c574e;
+}
+
+.mailtoCopy {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid #d8d2c4;
+  border-radius: 999px;
+  background: transparent;
+  color: #1c1915;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* Legacy bordered hero kept for the About page. */
 .showcase {
   display: grid;
