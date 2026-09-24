@@ -1044,9 +1044,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
           {/* Chat: the primary surface. Its message list is the only thing
               that scrolls in the workspace. */}
           <section
-            className={`flex min-h-0 min-w-0 flex-col lg:border-r lg:border-[#161616]/10 ${
+            className={`flex min-h-0 min-w-0 flex-col ${
               showBrowserPanel
-                ? "lg:basis-[40%] lg:flex-none"
+                ? "lg:basis-[40%] lg:flex-none lg:border-r lg:border-[#161616]/10"
                 : "lg:mx-auto lg:w-full lg:max-w-3xl"
             }`}
             aria-label={L("Mita chat", "Chat de Mita", lang)}
@@ -1131,7 +1131,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
           {/* Browser — fills the rest of the window at the same locked height
               (above the chat on mobile, beside it on desktop). The panel stays
-              mounted (hidden via CSS) so the session survives view switches. */}
+              mounted (hidden via CSS) so the session survives view switches.
+              Not rendered at all before Start: an empty wrapper would paint a
+              dead pane beside the chat (the chat section centers itself when
+              the browser panel is absent). */}
+          {(run || showBrowserPanel) && (
           <div className="order-first flex min-h-0 min-w-0 flex-1 flex-col lg:order-none">
           {run && (
             <AgencyBrowser
@@ -1189,6 +1193,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             </div>
           )}
           </div>
+          )}
           </div>
         </div>
       </main>
