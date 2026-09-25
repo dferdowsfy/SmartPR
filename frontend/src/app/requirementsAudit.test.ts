@@ -3923,3 +3923,204 @@ test("CASE AQ: RULE_0689's missing-fact key is established KB vocabulary, never 
     "the orphan key physical_operating_location must never resurface"
   );
 });
+
+test("CASE AR: a car dealership with no stated commercial vehicles gets vehicle registration as needs_more_information, never REQUIRED (REG-VEHICLE-DEALERSHIP-001)", () => {
+  // 2026-09-25 09:00 QA cycle (S197, Bayamón used-car dealership): RULE_0216
+  // (business_type = BT_CAR_DEALERSHIP -> DOC_VEHICLE_REGISTRATION) fired on
+  // the BT alone and rendered REQUIRED for a dealership with no stated
+  // commercial vehicles. Auction inventory is merchandise, not a company
+  // fleet — and the posture contradicts Darius-validated G12/G24/G25 ground
+  // truth ("Only require commercial vehicle registration if this business
+  // actually owns/operates regulated road vehicles"). Same honest posture as
+  // the question-trigger family (RULE_0021): heuristic + vehicle_ownership
+  // missing-fact key -> needs_more_information until ownership is confirmed.
+  const DOC_VEHICLE = docByName("commercial vehicle registration");
+  const dealer = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Car Dealership",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_EXISTING_LEASE: false,
+      },
+    },
+    "new"
+  ).classified;
+  const card = byId(dealer, DOC_VEHICLE);
+  assert.ok(card, "vehicle-registration card must still render for a car dealership");
+  assert.equal(
+    card.source_rule_id,
+    "RULE_0216",
+    "the dealership BT rule must remain the winning basis"
+  );
+  assert.equal(
+    card.applicability,
+    "needs_more_information",
+    "no commercial vehicles stated -> needs_more_information, never REQUIRED"
+  );
+  assert.ok(
+    (card.missingFacts ?? []).includes("vehicle_ownership"),
+    "the card must name vehicle_ownership as the controlling fact"
+  );
+  assert.ok(
+    !card.mandatory,
+    "an unresolved-ownership vehicle card must not be mandatory"
+  );
+
+  // Control: sibling BT rules that genuinely imply road-vehicle operation
+  // keep their posture (a new trucking company still gets the card).
+  const DOC_EIN_UNUSED = docByName("ein confirmation");
+  assert.ok(DOC_EIN_UNUSED, "docByName sanity check");
+  const trucker = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Trucking Company",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  const truckCard = byId(trucker, DOC_VEHICLE);
+  assert.ok(truckCard, "vehicle-registration card must still render for a trucking company");
+  assert.equal(
+    truckCard.source_rule_id,
+    "RULE_0178",
+    "the trucking BT rule is untouched by the dealership fix"
+  );
+});
+
+test("CASE AS: a car dealership gets the DACO dealer license — REQUIRED when new, verify_existing when existing (REG-DEALER-DACO-001)", () => {
+  // 2026-09-25 09:00 QA cycle (S197, Bayamón used-car dealership): the KB
+  // had NO dealer-license rule for car dealerships — a HIGH-severity false
+  // negative. Primary source (daco.pr.gov/consumidores, verified 2026-09-25):
+  // "A través del Registro único de dealers, el DACO y el DTOP colaboran..."
+  // / "verifica en el Registro Único los concesionarios que tienen licencia
+  // para operar". RULE_0698 keys the new DOC_DACO_DEALER_LICENSE on
+  // BT_CAR_DEALERSHIP with only verified fields (application form/fee/
+  // reglamento number intentionally unmodeled — see CONTENT_REQUIRES_RESEARCH).
+  const DOC_DEALER = docByName("daco dealer license");
+  const fresh = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Car Dealership",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  const card = byId(fresh, DOC_DEALER);
+  assert.ok(card, "DACO dealer-license card must render for a new car dealership");
+  assert.equal(card.source_rule_id, "RULE_0698");
+  assert.equal(
+    card.applicability,
+    "required",
+    "a new dealership must obtain the dealer license"
+  );
+  assert.ok(card.mandatory, "the dealer license is mandatory for a new dealership");
+  assert.equal(
+    card.agency,
+    "Departamento de Asuntos del Consumidor (DACO)",
+    "the issuing authority is DACO"
+  );
+  assert.ok(
+    /daco\.pr\.gov/.test(String(card.agency_url ?? "")),
+    "the agency link must go to the verified DACO domain, never an invented URL"
+  );
+  assert.ok(
+    /daco\.pr\.gov\/consumidores/.test(String(card.download_note ?? "")),
+    "the how-to-obtain note must point at the verified Registro Único page"
+  );
+
+  // Existing dealership: verify_existing posture (the deliberate 2026-09-18
+  // posture for operating businesses).
+  const operating = classify(
+    {
+      municipalityName: "Bayamón",
+      businessTypeName: "Car Dealership",
+      businessStatus: "existing",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "existing"
+  ).classified;
+  const existingCard = byId(operating, DOC_DEALER);
+  assert.ok(existingCard, "DACO dealer-license card must render for an existing dealership");
+  assert.equal(
+    existingCard.applicability,
+    "verify_existing",
+    "an existing dealership verifies its dealer license"
+  );
+
+  // Negative control: a non-dealership never gets the dealer license.
+  const vet = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Veterinary Clinic",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.ok(
+    !byId(vet, DOC_DEALER),
+    "a veterinary clinic must never receive the DACO dealer license"
+  );
+});
+
+test("CASE AT: REG-PROFESSION-AGENCY-003 — the veterinarian license names Departamento de Salud, never the Juntas Examinadoras", () => {
+  // 2026-09-25 09:00 QA cycle (S196, Ponce vet clinic; live-confirmed): the
+  // professional-license card rendered the "Department of State Examining
+  // Boards" pill, but RULE_0103's own statute-confidence citation places the
+  // Junta Examinadora de Médicos Veterinarios under ORCPS / Departamento de
+  // Salud (Ley 194-1979, Arts. 5, 6 y 18). Same fix class as 2f74e7f
+  // (tattoo/RULE_0696): the rule now carries the agency/agency_url/
+  // agency_note override and the engine prefers it over the shared
+  // DOC_PROFESSIONAL_LICENSE default. Extends the agencyUrls sweep (which
+  // covered insurance/law/notary/translator/staffing/credit/mortgage but
+  // missed vet).
+  const DOC_PROFLIC = docByName("professional license");
+  const vet = classify(
+    {
+      municipalityName: "Ponce",
+      businessTypeName: "Veterinary Clinic",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  const lic = byId(vet, DOC_PROFLIC);
+  assert.ok(lic, "professional license row must exist for a new vet clinic");
+  assert.equal(
+    lic.source_rule_id,
+    "RULE_0103",
+    "the veterinarian board rule must win the card"
+  );
+  assert.equal(
+    lic.applicability,
+    "required",
+    "posture is untouched — a new clinic applies for the license"
+  );
+  assert.equal(
+    lic.agency,
+    "Departamento de Salud",
+    "the agency pill must name the actual licensing authority"
+  );
+  assert.equal(
+    lic.agency_url,
+    "https://www.salud.pr.gov/CMS/133",
+    "the filing link must go to Salud's veterinary board page, not the Didaxis Juntas portal"
+  );
+  assert.ok(
+    /194-1979/.test(String(lic.agency_note ?? "")),
+    "the agency note must cite the statutory basis"
+  );
+  assert.ok(
+    !/Junta|Examining Boards/i.test(String(lic.agency ?? "")),
+    "the agency pill itself must not name the Juntas"
+  );
+  assert.ok(
+    /no las Juntas/i.test(String(lic.agency_note ?? "")),
+    "the note explicitly disambiguates against the Juntas Examinadoras"
+  );
+});

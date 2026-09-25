@@ -111,11 +111,18 @@ const HOA_GATED = new Set(["DOC_HOA_AUTHORIZATION"]);
 // (REG-GUIDE-ENTERTAINMENT-001, 2026-09-22).
 const ENTERTAINMENT_GATED = new Set(["DOC_ENTERTAINMENT_PERMIT"]);
 
-test("same Bayamón bar: all forty-two source-backed explanations are distinct and actionable in EN/ES", () => {
+// Dealer-gated: the DACO dealer license applies only to car dealerships
+// (RULE_0698); the bar profile answers no dealership question, so the
+// validated concept stays provisional for it (correct — MATCH_TRACE_MISSING,
+// not a placeholder). Added with the daco.pr.gov-validated dealer-license
+// concept (REG-DEALER-DACO-001, 2026-09-25).
+const DEALER_GATED = new Set(["DOC_DACO_DEALER_LICENSE"]);
+
+test("same Bayamón bar: all forty-three source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -131,7 +138,7 @@ test("same Bayamón bar: all forty-two source-backed explanations are distinct a
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 42);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 43);
   }
 });
 

@@ -225,6 +225,10 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_EIN: { en: ["ein", "federal tax identifier"], es: ["ein", "identificador contributivo"] },
   DOC_SAM_REGISTRATION: { en: ["sam.gov", "federal registration", "federal contractor"], es: ["sam.gov", "registro federal", "contratista federal"] },
   DOC_CONTRACTOR_LICENSE: { en: ["DACO", "contractor registry", "urbanizador", "constructor"], es: ["DACO", "registro de contratistas", "urbanizador", "constructor"] },
+  // REG-DEALER-DACO-001 (2026-09-25 QA): subject terms for the DACO
+  // dealer-license concept (daco.pr.gov/consumidores — Registro Único de
+  // Dealers; dealers must hold a DACO license to operate).
+  DOC_DACO_DEALER_LICENSE: { en: ["DACO", "dealer license", "car dealer", "dealership", "concesionario"], es: ["DACO", "licencia de dealer", "dealer", "concesionario", "vehículos de motor"] },
   DOC_MERCHANT_REGISTRATION: { en: ["merchant", "suri", "ivu"], es: ["comerciante", "suri", "ivu"] },
   DOC_PERMISO_UNICO: { en: ["permit"], es: ["permiso", "solicitud en sbp"] },
   DOC_PATENTE_MUNICIPAL: { en: ["patent", "municipal tax"], es: ["patente", "contributivo municipal"] },
@@ -430,6 +434,20 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Manufacturing or textile-recycling alone does not trigger DACO contractor registration — only when the business also offers contracting services to others.", "Manufactura o reciclaje textil por sí solos no activan el registro de contratistas de DACO — solo cuando el negocio también ofrece servicios de contratación a terceros."),
     text("SmartPR prepares the official DACOUC01 application (page-1 fields) and a supporting-documents checklist for the filing package.", "SmartPR prepara la solicitud oficial DACOUC01 (campos de la página 1) y una lista de documentos de apoyo para el paquete de radicación."),
     text("Inscription is renewed annually under Ley 146-1995; keep the bond and DACO certification current.", "La inscripción se renueva anualmente bajo la Ley 146-1995; mantén la fianza y la certificación de DACO al día."),
+  ]),
+  // REG-DEALER-DACO-001 (2026-09-25 QA): DACO dealer-license concept for
+  // car dealerships. Existence verified on daco.pr.gov/consumidores
+  // (Registro Único de Dealers, DACO + DTOP; dealers must hold a DACO
+  // license to operate). Application form/fee/reglamento number NOT yet
+  // verified — the concept stays at what the primary source confirms and
+  // points at the registry page; see CONTENT_REQUIRES_RESEARCH follow-up.
+  DOC_DACO_DEALER_LICENSE: concept("DOC_DACO_DEALER_LICENSE", [
+    [condition("businessType", "Car dealership", "Dealer de autos", "BT_CAR_DEALERSHIP")],
+  ], [PR_GUIDANCE_SOURCES.daco], [
+    text("Motor-vehicle dealers in Puerto Rico must hold a DACO license to operate; DACO and DTOP share the Registro Único de Dealers.", "Los dealers de vehículos de motor en Puerto Rico deben tener licencia de DACO para operar; DACO y DTOP comparten el Registro Único de Dealers."),
+    text("This is the dealership's operating license — distinct from registering individual vehicles (marbete) or forming the business entity.", "Esta es la licencia de operación del dealer — distinta del registro de vehículos individuales (marbete) o de la constitución de la entidad."),
+    text("The Registro Único lists each dealer's surety-bond company and policy number; have bond documentation ready when applying for the DACO license.", "El Registro Único lista la afianzadora y el número de póliza de cada dealer; ten lista la documentación de fianza al solicitar la licencia de DACO."),
+    text("Confirm the dealership's license appears in the Registro Único before opening for sales.", "Confirma que la licencia del dealer aparezca en el Registro Único antes de abrir para ventas."),
   ]),
   DOC_MERCHANT_REGISTRATION: concept("DOC_MERCHANT_REGISTRATION", [[business]], [PR_GUIDANCE_SOURCES.merchant, PR_GUIDANCE_SOURCES.merchantLaw], [
     text("Puerto Rico's merchant-registration process identifies commercial locations and their sales-tax treatment with Hacienda.", "El registro de comerciantes de Puerto Rico identifica los locales comerciales y su tratamiento del IVU ante Hacienda."),

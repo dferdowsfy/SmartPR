@@ -135,6 +135,12 @@ describe("REG-PROFESSION-AGENCY-001 (sweep): every professional-license rule who
     ["Staffing Agency", "RULE_0122", "Departamento del Trabajo y Recursos Humanos (DTRH)", "https://www.trabajo.pr.gov/", "417-1947"],
     ["Credit Services Company", "RULE_0229", "Departamento de Asuntos del Consumidor (DACO)", "https://www.daco.pr.gov/", "64A"],
     ["Mortgage Broker", "RULE_0225", "Oficina del Comisionado de Instituciones Financieras (OCIF)", "https://www.ocif.pr.gov/", "24-2010"],
+    // REG-PROFESSION-AGENCY-003 (2026-09-25 QA, S196 Ponce vet clinic):
+    // RULE_0103's own citation places the Junta Examinadora de Médicos
+    // Veterinarios under ORCPS / Departamento de Salud (Ley 194-1979),
+    // but the card rendered the Department of State Examining Boards pill
+    // until the rule carried the agency override. Live-confirmed.
+    ["Veterinary Clinic", "RULE_0103", "Departamento de Salud", "https://www.salud.pr.gov/CMS/133", "194-1979"],
   ];
 
   for (const [bt, rule, agency, url, noteFragment] of cases) {
