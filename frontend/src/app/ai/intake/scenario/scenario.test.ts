@@ -261,6 +261,37 @@ describe("the model's reading is checked, not trusted", () => {
     assert.equal(scenario.project.possibleChangeOfUse?.source, "inferred");
   });
 
+  it("downgrades an 'explicit' renovation the text describes only as painting and signage", () => {
+    const text = "We'll lease a commercial space downtown, no construction beyond painting and signage.";
+    const { scenario, report } = normalizeScenario(
+      { project: { renovation: { value: true, source: "explicit", confidence: 0.95, evidenceText: "painting and signage" } } },
+      text
+    );
+    assert.equal(scenario.project.renovation?.source, "inferred");
+    assert.ok((scenario.project.renovation?.confidence ?? 1) <= 0.72);
+    assert.ok(report.some((r) => r.path === "project.renovation" && r.action === "downgraded"));
+  });
+
+  it("downgrades a project_type of renovation without renovation language", () => {
+    const text = "We'll lease a commercial space downtown, no construction beyond painting and signage.";
+    const { scenario } = normalizeScenario(
+      { project: { type: { value: "renovation", source: "explicit", confidence: 0.92, evidenceText: "painting and signage" } } },
+      text
+    );
+    assert.equal(scenario.project.type?.source, "inferred");
+    assert.ok((scenario.project.type?.confidence ?? 1) <= 0.72);
+  });
+
+  it("keeps an 'explicit' renovation when the text states remodeling", () => {
+    const text = "We're remodeling the interior of the leased space in Ponce.";
+    const { scenario } = normalizeScenario(
+      { project: { renovation: { value: true, source: "explicit", confidence: 0.95, evidenceText: "remodeling the interior" } } },
+      text
+    );
+    assert.equal(scenario.project.renovation?.source, "explicit");
+    assert.equal(v(scenario.project.renovation), true);
+  });
+
   it("the deterministic reading wins guarded facts when combined", () => {
     const base = interpretScenario("Our existing company leased a warehouse in Guaynabo for a new operation.");
     const model = normalizeScenario(

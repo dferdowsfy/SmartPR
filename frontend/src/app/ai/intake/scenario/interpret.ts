@@ -92,9 +92,22 @@ function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-// ---------------------------------------------------------------------------
-// Fact constructors
-// ---------------------------------------------------------------------------
+// Renovation language: remodeling, rehabilitation, build-outs, alterations,
+// interior work, tenant improvements, conversions, refurbishment. Cosmetic
+// work alone (painting, signage, cleaning) is NOT renovation.
+const RENOVATION_RE =
+  /\b(?:renovat\w*|remodel\w*|rehabilitat\w*|build[\s-]?outs?|fit[\s-]?outs?|alterations?|interior\s+(?:work|improvements?)|tenant\s+improvements?|convert\w*|conversion|refurbish\w*)\b/i;
+
+/**
+ * True when the text states renovation work that is not negated.
+ * "we're remodeling the space" counts; "no renovations, just painting"
+ * does not. Used to check model renovation claims: the model may turn a
+ * noun phrase like "painting and signage" into a renovation conclusion,
+ * so an "explicit" renovation needs renovation language in the text itself.
+ */
+export function renovationStated(text: string): boolean {
+  return findAll(text, RENOVATION_RE).some((hit) => !negatedAt(text, hit.index));
+}
 
 function fact<T>(value: T, source: FactSource, confidence: number, evidenceText: string): ScenarioFact<T> {
   return { value, source, confidence, evidenceText };
@@ -356,10 +369,7 @@ function flag(text: string, re: RegExp): ScenarioFact<boolean> | undefined {
 
 function readProjectScope(text: string, ctx: ScenarioContext): void {
   const types: string[] = [];
-  const reno = find(
-    text,
-    /\b(?:renovat\w*|remodel\w*|rehabilitat\w*|build[\s-]?outs?|fit[\s-]?outs?|alterations?|interior\s+(?:work|improvements?)|tenant\s+improvements?|convert\w*|conversion|refurbish\w*)\b/i
-  );
+  const reno = find(text, RENOVATION_RE);
   if (reno && !negatedAt(text, reno.index)) {
     ctx.project.renovation = said(true, text, reno, 0.95);
     types.push("renovation");

@@ -71,9 +71,10 @@ type Status = "idle" | "loading" | "done" | "error";
  */
 function attachProjectContext(
   validated: ValidatedInterpretation,
-  data: { projectContext?: unknown } | null | undefined
+  data: { projectContext?: unknown } | null | undefined,
+  description: string
 ): void {
-  const { context } = validateProjectContext(data?.projectContext);
+  const { context } = validateProjectContext(data?.projectContext, description);
   if (Object.keys(context).length > 0) validated.projectContext = context;
 }
 
@@ -227,7 +228,7 @@ export function NaturalLanguageIntake({
           allowedIndustries,
           allowedLocationTypes,
         });
-        attachProjectContext(raw, data);
+        attachProjectContext(raw, data, description);
         // The whole-scenario reading governs intent and project facts.
         const validated = applyScenarioToInterpretation(raw, scenarioFor(description, data));
         // The KB lets toIntakePatch reconcile contradictory model answers and
@@ -336,7 +337,7 @@ export function NaturalLanguageIntake({
           allowedIndustries,
           allowedLocationTypes,
         });
-        attachProjectContext(raw, data);
+        attachProjectContext(raw, data, transcript);
         const validated = applyScenarioToInterpretation(raw, scenarioFor(transcript, data));
         const patch = toIntakePatch(validated, { kb, allowedIndustries });
         const nothingFound = !hasAnyFact(patch, validated);

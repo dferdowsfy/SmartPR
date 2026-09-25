@@ -25,6 +25,7 @@ import {
   EXISTING_BUSINESS_RE,
   NEW_ENTITY_RE,
   OPEN_INTENT_RE,
+  renovationStated,
 } from "./interpret";
 import {
   SCENARIO_PATHS,
@@ -189,6 +190,25 @@ export function normalizeScenario(
         source = "inferred";
         confidence = Math.min(confidence, 0.72);
         report.push({ path, action: "downgraded", reason: "a possible change of use is not a confirmed one" });
+      }
+    }
+    // Guarded conclusion: the model turns cosmetic work ("painting and
+    // signage") into a renovation conclusion. An "explicit" renovation needs
+    // renovation language in the text itself; otherwise it is an inference
+    // and stays in the needs-confirmation band.
+    if (path === "project.renovation" && value === true && source === "explicit") {
+      if (!renovationStated(description)) {
+        source = "inferred";
+        confidence = Math.min(confidence, 0.72);
+        report.push({ path, action: "downgraded", reason: "cosmetic work is not a renovation" });
+      }
+    }
+    if (path === "project.type" && Array.isArray(value) && source === "explicit") {
+      const types = value as string[];
+      if (types.some((t) => t.toLowerCase().includes("renovation")) && !renovationStated(description)) {
+        source = "inferred";
+        confidence = Math.min(confidence, 0.72);
+        report.push({ path, action: "downgraded", reason: "cosmetic work is not a renovation" });
       }
     }
     if ((path === "property.proposedUse" || path === "operations.activity") && typeof value === "string") {
