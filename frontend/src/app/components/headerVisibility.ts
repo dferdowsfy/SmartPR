@@ -28,11 +28,20 @@ const ADMIN_HEADER_PREFIXES = [
   "/admin/requirements",
 ];
 
+// Route patterns (not prefixes) that stay headerless.
+const HEADERLESS_PATTERNS: RegExp[] = [
+  // The agency-run workspace is a full-viewport filing environment with its
+  // own compact header; the global nav is removed there so the embedded
+  // browser and the chat panes get the full height.
+  /\/agency-run(\/|$)/,
+];
+
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(prefix + "/");
 }
 
 export function shouldShowHeader(pathname: string, search: string): boolean {
+  if (HEADERLESS_PATTERNS.some((re) => re.test(pathname))) return false;
   // "/" is the marketing landing EXCEPT when it carries intake params.
   if (pathname === "/") {
     const query = search.startsWith("?") ? search.slice(1) : search;

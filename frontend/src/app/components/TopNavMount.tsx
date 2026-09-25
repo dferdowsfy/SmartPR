@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { TopNav } from "../history/ui";
 import { shouldShowHeader } from "./headerVisibility";
@@ -27,6 +28,16 @@ export function TopNavMount({
   const pathname = usePathname() ?? initialPathname;
   const searchParams = useSearchParams();
   const search = searchParams ? `?${searchParams.toString()}` : initialSearch;
-  if (!shouldShowHeader(pathname, search)) return null;
+  const show = shouldShowHeader(pathname, search);
+  // Viewport-locked pages size to viewport-minus-header via --topnav-h.
+  // When the header is hidden, publish 0 so those pages take the full
+  // viewport instead of the 64px fallback. When it shows, TopNav's own
+  // ResizeObserver publishes the real height.
+  useEffect(() => {
+    if (!show && typeof document !== "undefined") {
+      document.documentElement.style.setProperty("--topnav-h", "0px");
+    }
+  }, [show, pathname, search]);
+  if (!show) return null;
   return <TopNav />;
 }

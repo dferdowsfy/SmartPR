@@ -31,7 +31,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Eye, EyeOff, KeyRound, Shield,
 } from "lucide-react";
-import { useLang } from "../../../useLang";
+import { useLang, setLang } from "../../../useLang";
 import type { Lang } from "../../../forms/engine/types";
 import type {
   AgencyPendingField,
@@ -1115,13 +1115,14 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const workflowLabel = activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang);
 
   return (
-    // The persistent app header lives in the root layout above this page, so
-    // the workspace locks to viewport-minus-header. The h-* class is the
-    // fallback; the inline 100dvh wins where supported (some webviews ignore
-    // dvh). overscroll-none stops rubber-band chaining.
+    // No global app header on this route (see headerVisibility.ts) — the
+    // workspace takes the full viewport height. TopNavMount publishes
+    // --topnav-h as 0px here, so the calc below resolves to 100dvh; the
+    // h-* class is the fallback where dvh is unsupported (some webviews
+    // ignore dvh). overscroll-none stops rubber-band chaining.
     <div
-      className="flex h-[calc(100vh-var(--topnav-h,64px))] flex-col overflow-hidden overscroll-none bg-[#161616]"
-      style={{ height: "calc(100dvh - var(--topnav-h, 64px))" }}
+      className="flex h-[calc(100vh-var(--topnav-h,0px))] flex-col overflow-hidden overscroll-none bg-[#161616]"
+      style={{ height: "calc(100dvh - var(--topnav-h, 0px))" }}
     >
       <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-3 pb-3 pt-2.5 sm:px-5">
         {/* Compact persistent workspace header */}
@@ -1194,6 +1195,29 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 {L("File", "Radicación", lang)}
               </li>
             </ol>
+            {/* Language toggle lives here now that the global nav (which
+                used to carry it) is removed on this route. */}
+            <div
+              className="hidden shrink-0 items-center gap-0.5 rounded-full border border-white/15 bg-white/5 p-1 lg:inline-flex"
+              role="group"
+              aria-label={L("Language", "Idioma", lang)}
+            >
+              {(["en", "es"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={lang === l}
+                  onClick={() => setLang(l)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
+                    lang === l
+                      ? "bg-[#fbf8f2] text-[#161616]"
+                      : "text-[#b9b0a0] hover:text-white"
+                  }`}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <button
               type="button"
               onClick={() => setBrowserHidden((h) => !h)}
