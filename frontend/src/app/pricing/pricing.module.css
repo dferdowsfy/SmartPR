@@ -11,9 +11,9 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in oklab, #f4f1ea 92%, transparent);
+  background: color-mix(in oklab, #f4efe6 94%, transparent);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid color-mix(in oklab, #161616 8%, transparent);
+  border-bottom: 1px solid #ddd4c4;
 }
 
 .headerInner {
@@ -54,17 +54,16 @@
 
 .nav a {
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #161616;
+  color: #1c1915;
   text-decoration: none;
 }
 
 .nav a:hover {
-  color: #245c5c;
+  color: #2a4a3c;
 }
 
 .navActive {
-  color: #245c5c !important;
+  color: #2a4a3c !important;
 }
 
 .headerActions {
