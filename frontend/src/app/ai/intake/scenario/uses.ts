@@ -38,7 +38,7 @@ export interface UseTerm {
 // Order matters: longer / more specific phrases first.
 export const USE_TERMS: UseTerm[] = [
   { pattern: "day[\\s-]?care(?: center)?|child[\\s-]?care(?: center)?|pre-?school", label: "daycare", family: "childcare", display: "Daycare" },
-  { pattern: "warehouse(?:s)?|storage facility|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
+  { pattern: "warehous(?:e|es|ing)|storage facility|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
   { pattern: "offices?", label: "office", family: "office", display: "Office" },
   { pattern: "manufacturing(?: plant| facility)?|factory|industrial(?: facility| building| plant)?|plant", label: "manufacturing", family: "industrial", display: "Manufacturing" },
   { pattern: "auto(?:motive)? repair(?: shop)?|body shop|car wash|dealership", label: "automotive", family: "automotive", display: "Automotive" },
@@ -90,6 +90,13 @@ export function familiesOf(label: string): UseFamily[] {
     .filter((f): f is UseFamily => !!f);
 }
 
+/** "manufacturing_and_warehouse_and_office" → "Manufacturing, warehouse and office". */
+export function listLabelOfUse(label: string): string {
+  const parts = label.split("_and_").map((p) => (USE_TERMS.find((t) => t.label === p)?.display ?? p.replace(/_/g, " ")).toLowerCase());
+  const text = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : parts[0] ?? "";
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function displayOfUse(label: string): string {
   return label
     .split("_and_")
@@ -103,13 +110,16 @@ export function displayOfUse(label: string): string {
  * (generic proposed use).
  */
 export function usesDiffer(existing: string, proposed: string): boolean | null {
-  const p = findUseByLabel(proposed);
-  if (!p || p.generic) return null;
+  const parts = proposed.split("_and_").map((p) => findUseByLabel(p) ?? matchUse(p.replace(/_/g, " ")));
+  if (parts.length === 0 || parts.some((p) => !p || p.generic)) return null;
   const ex = familiesOf(existing);
   if (ex.length === 0) return null;
-  // Office accessory to storage/industrial is part of the same occupancy.
-  const pf = p.family;
-  if (ex.includes(pf)) return false;
-  if (pf === "office" && ex.some((f) => f === "storage" || f === "industrial")) return false;
-  return true;
+  // A mixed use changes the use if ANY part falls outside the authorized
+  // families. Office accessory to storage/industrial is the same occupancy.
+  return parts.some((p) => {
+    const pf = p!.family;
+    if (ex.includes(pf)) return false;
+    if (pf === "office" && ex.some((f) => f === "storage" || f === "industrial")) return false;
+    return true;
+  });
 }

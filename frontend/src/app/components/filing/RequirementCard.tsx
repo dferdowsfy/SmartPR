@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload } from "lucide-react";
+import { useRef, type ReactNode } from "react";
+import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
@@ -66,6 +66,28 @@ export interface RequirementAnswerPrompt {
   onNo: () => void;
 }
 
+/** One line of the card's fact strip: source, evidence, readiness, … */
+export interface RequirementFact {
+  label: string;
+  value: string;
+}
+
+/**
+ * How this requirement gets filed. Clara-first: "File with Clara" (supported),
+ * "Prepare with Clara" + agency site (partially supported), or "View filing
+ * instructions" + agency site (unsupported). Replaces the old "File online"
+ * link as the filing action.
+ */
+export interface RequirementFiling {
+  kind: "file" | "prepare" | "instructions";
+  label: string;
+  /** Opens Clara / a sign-in page. Instructions without a URL open the card's details. */
+  onClick?: () => void;
+  href?: string;
+  hint?: string;
+  agencySite?: { label: string; url: string } | null;
+}
+
 export interface RequirementCardProps {
   index: number;
   icon: ReactNode;
@@ -90,6 +112,8 @@ export interface RequirementCardProps {
    * column — the direct official destination for this requirement, never
    * hidden inside the "Why do I need this?" disclosure. */
   download?: RequirementDownload;
+  facts?: RequirementFact[];
+  filing?: RequirementFiling | null;
   /** "More information needed" inline Yes/No — rendered in the action
    * column when the requirement is conditional only because the triggering
    * answer is still unknown. Answering writes a real discovery answer and
@@ -160,7 +184,16 @@ export function RequirementCard({
   id,
   contextLabel,
   secondaryOnCompleted,
+  facts,
+  filing,
 }: RequirementCardProps) {
+  const whyRef = useRef<HTMLDetailsElement>(null);
+  const openInstructions = () => {
+    if (whyRef.current) {
+      whyRef.current.open = true;
+      whyRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  };
   return (
     <div id={id} className="rq-card">
       <div className="rq-card-row">
@@ -177,6 +210,16 @@ export function RequirementCard({
           </div>
           {contextLabel && <div className="rq-context-label">{contextLabel}</div>}
           <p className="rq-card-desc">{description}</p>
+          {facts && facts.length > 0 && (
+            <dl className="rq-facts">
+              {facts.map((f) => (
+                <div key={f.label} className="rq-fact">
+                  <dt>{f.label}</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
 
         <div className="rq-card-right">
@@ -194,7 +237,38 @@ export function RequirementCard({
               </div>
             </div>
           )}
-          {download && action.kind !== "completed" && (
+          {filing && action.kind !== "completed" && (
+            <div className="rq-filing" data-filing={filing.kind}>
+              {filing.href ? (
+                <a
+                  className={`rq-filing-btn rq-filing-${filing.kind}`}
+                  href={filing.href}
+                  onClick={filing.onClick}
+                  target={filing.kind === "instructions" ? "_blank" : undefined}
+                  rel={filing.kind === "instructions" ? "noopener noreferrer" : undefined}
+                >
+                  {filing.kind === "instructions" ? <FileText size={15} /> : <Sparkles size={15} />}
+                  <span>{filing.label}</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  className={`rq-filing-btn rq-filing-${filing.kind}`}
+                  onClick={filing.onClick ?? (filing.kind === "instructions" ? openInstructions : undefined)}
+                >
+                  {filing.kind === "instructions" ? <FileText size={15} /> : <Sparkles size={15} />}
+                  <span>{filing.label}</span>
+                </button>
+              )}
+              {filing.hint && <span className="rq-cta-helper">{filing.hint}</span>}
+              {filing.agencySite && (
+                <a className="rq-agency-site" href={filing.agencySite.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink size={13} /> {filing.agencySite.label}
+                </a>
+              )}
+            </div>
+          )}
+          {!filing && download && action.kind !== "completed" && (
             <>
               <a
                 href={download.url}
@@ -226,7 +300,7 @@ export function RequirementCard({
         </div>
       </div>
 
-      <details className="rq-why">
+      <details className="rq-why" ref={whyRef}>
         <summary>
           {whyLabel} <ChevronDown size={13} className="rq-why-chevron" />
         </summary>

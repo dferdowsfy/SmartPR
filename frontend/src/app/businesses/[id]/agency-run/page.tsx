@@ -55,6 +55,7 @@ import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import { filingReadinessKey, type FilingReadinessSummary } from "../../../../lib/agency-runs/filingReadiness";
+import { CLARA_HANDOFF_INTRO_EN, CLARA_HANDOFF_INTRO_ES, planClaraHandoff } from "./claraHandoff";
 import {
   buildChatMilestones,
   chatScrollKey,
@@ -564,6 +565,27 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       setFilingBusyId(null);
     }
   };
+
+  // Requirements → Clara handoff (?requirement=<DOC_ID>): once the filings
+  // load, open that requirement's filing — Clara says what she already has
+  // and shows the pre-flight card; nothing starts until the user confirms.
+  const handoffDoneRef = useRef(false);
+  const pickerState = msgs.find((m) => m.type === "filing-picker");
+  useEffect(() => {
+    if (handoffDoneRef.current || !pickerState || pickerState.type !== "filing-picker" || pickerState.loading) return;
+    const requirementId = new URLSearchParams(window.location.search).get("requirement");
+    if (!requirementId) return;
+    handoffDoneRef.current = true;
+    const plan = planClaraHandoff(pickerState.groups, requirementId);
+    if (plan.kind === "start" || plan.kind === "resume") {
+      pushMsg({ id: `handoff-${Date.now()}`, type: "text", textEn: CLARA_HANDOFF_INTRO_EN, textEs: CLARA_HANDOFF_INTRO_ES, tone: "info" });
+      if (plan.kind === "start") void startFiling(plan.filing);
+      else void resumeFiling(plan.filing);
+    } else {
+      pushMsg({ id: `handoff-${Date.now()}`, type: "text", textEn: plan.textEn, textEs: plan.textEs, tone: plan.kind === "missing" ? "warn" : "info" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot, when the filings first load
+  }, [pickerState]);
 
   /**
    * Step 2 of start: the human confirmed the pre-flight card. Launch the run

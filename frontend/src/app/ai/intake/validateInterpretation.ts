@@ -541,7 +541,10 @@ function profileChipLabel(pv: ValidatedProfileValue): string {
   if (pv.key === "number_of_vehicles") return `${pv.value} ${n === 1 ? "vehicle" : "vehicles"}`;
   if (pv.key === "number_of_rental_units") return `${pv.value} ${n === 1 ? "rental unit" : "rental units"}`;
   if (pv.key === "business_structure") {
-    return String(pv.value).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return String(pv.value)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .replace(/\b(Llc|Llp|Csp|Psc)\b/g, (m) => m.toUpperCase());
   }
   // Official identifiers: confirm capture without flashing the full value.
   if (pv.key === "ein") return `EIN ••••${String(pv.value).slice(-4)}`;

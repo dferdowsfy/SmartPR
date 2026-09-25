@@ -42,6 +42,14 @@ export function applyScenarioToInterpretation(
   };
   dropNew("applied");
   dropNew("suggested");
+  // Suggested (unconfirmed) question answers are the model's guesses about
+  // facts the description never states ("commercial vehicles" for a furniture
+  // shop). With a scenario, the graph asks what actually controls the path —
+  // a guess never reaches the checklist.
+  for (const ans of out.suggested.answers) {
+    out.discarded.push({ field: `answers.${ans.questionId}(suggested)`, reason: "not stated; the knowledge graph asks controlling facts itself" });
+  }
+  out.suggested.answers = [];
   // "I want to open a daycare": the scenario only infers a new business, so
   // the model's intent is a suggestion to confirm, never an applied fact.
   if (out.projectIntent && scenario.business.status && !isConfirmed(scenario.business.status)) {

@@ -148,7 +148,7 @@ export function passportDeltas(ctx: ScenarioContext, snap: PassportSnapshot | nu
   if (projectMuni && snap.municipality && projectMuni.toLowerCase() !== snap.municipality.toLowerCase()) {
     out.push({
       kind: "new_location",
-      message: `New project location: ${projectMuni} (Passport business address: ${snap.municipality}). Your Passport stays as is.`,
+      message: `Project location: ${projectMuni} · Registered business location: ${snap.municipality}. Both are kept — the project does not change your Passport.`,
     });
   }
   const activity = ctx.operations.activity?.value;
@@ -163,4 +163,24 @@ export function passportDeltas(ctx: ScenarioContext, snap: PassportSnapshot | nu
     }
   }
   return out;
+}
+
+const NEW_PREMISES_RE =
+  /\b(?:expand\w*\s+(?:in)?to|mov(?:e|es|ed|ing)\s+(?:in)?to|relocat\w*|new\s+(?:location|site|facility|premises|space|warehouse|plant|store|branch)|second\s+(?:location|site|facility|store)|additional\s+(?:location|site|facility)|open\w*\s+(?:a|an)\s+(?:new\s+)?(?:location|branch))\b/i;
+
+/**
+ * An existing business taking on premises it does not operate yet: the
+ * project is in another municipality than the Passport's registered
+ * location, or the description says so ("expanding into a leased
+ * warehouse", "a new location"). Premises-bound permits are then new
+ * filings, not renewals.
+ */
+export function isNewPremises(ctx: ScenarioContext | null, snap: PassportSnapshot | null): boolean {
+  if (!ctx || !snap) return false;
+  const project = ctx.property.municipality?.value;
+  if (project && snap.municipality && project.toLowerCase() !== snap.municipality.toLowerCase()) return true;
+  const said = [ctx.property.ownershipStatus, ctx.property.existingUse, ctx.property.existingBuilding, ctx.property.municipality]
+    .map((f) => (f && f.source !== "inferred" ? f.evidenceText : ""))
+    .join(" ");
+  return NEW_PREMISES_RE.test(said);
 }

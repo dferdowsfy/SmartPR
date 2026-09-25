@@ -130,7 +130,8 @@ export const NEW_ENTITY_RE = new RegExp(
 export const EXISTING_BUSINESS_RE = new RegExp(
   [
     `\\b(?:our|my)\\s+(?:existing\\s+|current\\s+|established\\s+|family\\s+)?(?:company|business|firm|corporation|corp|llc|organization|store|restaurant|shop|clinic|practice|brand|group|bakery|operations)\\b`,
-    `\\bexisting\\s+(?:company|business|firm|corporation|llc|entity|client\\s+company)\\b`,
+    `\\bexisting\\s+(?:[A-Za-z-]+\\s+){0,3}(?:company|business|firm|corporation|llc|entity|client\\s+company)\\b`,
+    `\\b(?:is|are)\\s+expanding\\s+(?:into|to)\\b`,
     `\\bwe\\s+(?:already\\s+|currently\\s+)?(?:operate|run|own\\s+and\\s+operate)\\b`,
     `\\balready\\s+(?:operating|in\\s+business|established|registered|incorporated)\\b`,
     `\\b(?:relocat|expand|mov)\\w*\\s+(?:our|my)\\s+(?:business|company|operations?)\\b`,
@@ -157,6 +158,47 @@ function readBusinessStatus(text: string, ctx: ScenarioContext): void {
   if (neu) ctx.business.status = said("new", text, neu, 0.93);
   else if (old) ctx.business.status = said("existing", text, old, 0.92);
   else if (open) ctx.business.status = implied("new", text, open, 0.72);
+}
+
+// ---------------------------------------------------------------------------
+// Business identity: legal name, entity type, industry
+// ---------------------------------------------------------------------------
+
+const ENTITY_SUFFIXES: [RegExp, string][] = [
+  [/^(?:llc|l\.l\.c\.?)$/i, "llc"],
+  [/^(?:inc\.?|incorporated|corp\.?|corporation)$/i, "corporation"],
+  [/^(?:llp|l\.l\.p\.?)$/i, "limited_liability_partnership"],
+  [/^(?:csp|psc|p\.s\.c\.?)$/i, "professional_corporation"],
+];
+const entityTypeOf = (suffix: string) => ENTITY_SUFFIXES.find(([re]) => re.test(suffix))?.[1] ?? null;
+const NAME_STOP = /^(?:the|a|an|our|my|this|that|puerto|rico)$/i;
+// "Caribe Precision Manufacturing, LLC": capitalized words ending in an entity suffix.
+const LEGAL_NAME =
+  /\b((?:[A-Z][A-Za-z0-9&'.-]*\s+){0,6}[A-Z][A-Za-z0-9&'.-]*),?\s+(LLC|L\.L\.C\.?|Inc\.?|Corp\.?|Corporation|LLP|CSP|PSC)(?![A-Za-z])/;
+
+function readBusinessIdentity(text: string, ctx: ScenarioContext): void {
+  const m = LEGAL_NAME.exec(text);
+  if (m) {
+    const words = m[1].trim().split(/\s+/);
+    while (words.length && NAME_STOP.test(words[0])) words.shift();
+    if (words.length) {
+      const suffix = m[2].replace(/\.$/, "");
+      const hit: Hit = { index: m.index, text: m[0], groups: [] };
+      ctx.business.name = said(`${words.join(" ")} ${suffix.toUpperCase() === "L.L.C" ? "LLC" : suffix}`, text, hit, 0.94);
+      const type = entityTypeOf(suffix);
+      if (type) ctx.business.entityType = said(type, text, hit, 0.93);
+    }
+  }
+  if (!ctx.business.entityType) {
+    const isA = find(text, /\b(?:is|as)\s+an?\s+(llc|l\.l\.c\.?|corporation|corp\.?|partnership|nonprofit)\b/i);
+    const type = isA?.groups[0] ? entityTypeOf(isA.groups[0]) ?? (/partnership/i.test(isA.groups[0]) ? "partnership" : /nonprofit/i.test(isA.groups[0]) ? "nonprofit_nonstock_corporation" : null) : null;
+    if (isA && type) ctx.business.entityType = said(type, text, isA, 0.92);
+  }
+  const industry = find(text, /\bin\s+the\s+([a-z][a-z &-]{2,40}?)\s+(?:industry|sector)\b/i);
+  if (industry?.groups[0]) {
+    const words = industry.groups[0].trim().replace(/\s+/g, " ");
+    ctx.business.industry = said(words.replace(/\b\w/g, (c) => c.toUpperCase()), text, industry, 0.92);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -342,7 +384,16 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
     if (!use) continue;
     // "leased a warehouse for …" — the object of the lease is not the proposed use.
     setProposed(ctx, use, "explicit", use.generic ? 0.9 : 0.93, clauseAt(text, hit.index), phrase);
-    if (!use.generic) break;
+    if (!use.generic) {
+      // "used for furniture manufacturing, warehousing, and administrative
+      // offices": a mixed use — every listed use, in order.
+      const list = text.slice(hit.index).split(/[.;!?]/)[0];
+      const all = matchUses(list).filter((u) => !u.generic).slice(0, 3);
+      if (all.length > 1 && all[0].label === use.label) {
+        ctx.property.proposedUse = fact(all.map((u) => u.label).join("_and_"), "explicit", 0.93, clauseAt(text, hit.index));
+      }
+      break;
+    }
   }
 }
 
@@ -362,19 +413,8 @@ function readChangeOfUse(text: string, ctx: ScenarioContext): void {
     ctx.project.possibleChangeOfUse = implied(true, text, modified, 0.72);
     return;
   }
-  const existing = ctx.property.existingUse?.value;
-  const proposed = ctx.property.proposedUse?.value;
-  if (existing && proposed) {
-    const differ = usesDiffer(existing, proposed);
-    if (differ !== null) {
-      ctx.project.possibleChangeOfUse = fact(
-        differ,
-        "inferred",
-        differ ? 0.78 : 0.7,
-        ctx.property.proposedUse!.evidenceText
-      );
-    }
-  }
+  // Existing vs. proposed use alone does NOT establish a change of use: what
+  // matters is the use the property is AUTHORIZED for, which the graph asks.
 }
 
 // ---------------------------------------------------------------------------
@@ -420,7 +460,8 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
   ctx.project.mechanicalWork = flag(text, /\b(?:mechanical|hvac|air[\s-]conditioning)\b/i);
   ctx.project.structuralWork = flag(text, /\bstructural\b/i);
   ctx.project.exteriorWork = flag(text, /\b(?:exterior|fa[cç]ade|roof(?:ing)?)\b/i);
-  ctx.project.layoutChanges = flag(text, /\b(?:office\s+)?build[\s-]?outs?\b|\blayout\b|\bpartitions?\b|\bnew\s+walls\b|\breconfigur\w*|\bfloor\s+plan\b/i);
+  ctx.project.layoutChanges = flag(text, /\blayout\b|\bpartitions?\b|\bnew\s+walls\b|\breconfigur\w*|\bfloor\s+plan\b|\b(?:office\s+)?build[\s-]?outs?\b/i);
+  ctx.project.officeBuildout = flag(text, /\boffice\s+build[\s-]?outs?\b|\bbuild[\s-]?out\s+(?:of\s+)?(?:the\s+|new\s+)?offices?\b/i);
   ctx.project.siteCirculationChanges = flag(text, /\b(?:parking|loading\s+(?:dock|zone|area)s?|driveway|site\s+circulation|access\s+road|curb\s+cut)\b/i);
   if (!ctx.project.footprintChange) ctx.project.footprintChange = flag(text, /\bfootprint\b/i);
 
@@ -476,9 +517,12 @@ export function interpretScenario(description: string): ScenarioContext {
   const ctx = emptyScenario();
   if (!text) return ctx;
   readBusinessStatus(text, ctx);
+  readBusinessIdentity(text, ctx);
   readMunicipality(text, ctx);
   readAddress(text, ctx);
   readProperty(text, ctx);
+  const existingBuilding = find(text, /\b(?:the|an?)\s+existing\s+(?:building|facility|structure)\b|\bcurrently\s+(?:configured|built\s+out|used)\s+as\b/i);
+  if (existingBuilding && ctx.property.existingBuilding?.value !== false) ctx.property.existingBuilding = said(true, text, existingBuilding, 0.94);
   readSize(text, ctx);
   readOwnership(text, ctx);
   readProposedUse(text, ctx);

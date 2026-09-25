@@ -403,6 +403,12 @@ async function captureSubmission(
   e: SubmissionEvent,
   ctx: CaptureContext
 ): Promise<void> {
+  // A linked business arrives by its short public id (e.g. ?business=abc123);
+  // the columns are UUID-typed, so resolve before writing — otherwise the
+  // whole capture fails and no obligations are projected for the project.
+  if (e.business_id && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(e.business_id)) {
+    e = { ...e, business_id: (await resolveBusinessUuid(c, e.business_id)) ?? null };
+  }
   // Header row (idempotent on re-capture of the same submission id).
   await c.query(
     `INSERT INTO submissions (id, municipality, industry, business_type, business_structure,
@@ -456,13 +462,16 @@ async function captureSubmission(
     );
     if (access.rows[0]) {
       await c.query(
+        // Fill gaps only: a requirements capture describes a PROJECT. For an
+        // existing business the Passport is the record — a project in another
+        // municipality must never rewrite the registered location.
         `UPDATE businesses SET
-           name = COALESCE(NULLIF($3,''), name),
-           legal_name = COALESCE(NULLIF($3,''), legal_name, name),
-           municipality = COALESCE(NULLIF($4,''), municipality),
-           industry = COALESCE(NULLIF($5,''), industry),
-           business_type = COALESCE(NULLIF($6,''), business_type),
-           business_structure = COALESCE(NULLIF($7,''), business_structure),
+           name = CASE WHEN COALESCE(name,'') IN ('', 'Untitled business') THEN COALESCE(NULLIF($3,''), name) ELSE name END,
+           legal_name = CASE WHEN COALESCE(legal_name,'') IN ('', 'Untitled business') THEN COALESCE(NULLIF($3,''), legal_name, name) ELSE legal_name END,
+           municipality = COALESCE(NULLIF(municipality,''), NULLIF($4,'')),
+           industry = COALESCE(NULLIF(industry,''), NULLIF($5,'')),
+           business_type = COALESCE(NULLIF(business_type,''), NULLIF($6,'')),
+           business_structure = COALESCE(NULLIF(business_structure,''), NULLIF($7,'')),
            updated_at = now()
          WHERE id = $1 AND user_id = $2`,
         [e.business_id, ctx.userId, e.business_name ?? "", e.municipality ?? "", e.industry ?? "", e.business_type ?? "", e.business_structure ?? ""]

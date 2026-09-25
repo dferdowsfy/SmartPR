@@ -14,7 +14,7 @@ export type {
 export { interpretScenario, clauseAt } from "./interpret";
 export { normalizeScenario, combineScenario, evidenceInText } from "./normalize";
 export {
-  identityFieldsKnown, mergePassportIntoScenario, passportDeltas, passportKnownItems, passportSnapshotFromApi,
+  identityFieldsKnown, isNewPremises, mergePassportIntoScenario, passportDeltas, passportKnownItems, passportSnapshotFromApi,
 } from "./passport";
 export type { PassportDelta, PassportKnownItem, PassportSnapshot } from "./passport";
 export { applyScenarioAnswer, evaluateScenario, resolveBusinessTypes } from "./graph";

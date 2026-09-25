@@ -86,6 +86,16 @@ By branch:
 
 Clara (`lib/agency-runs/filingFacts.ts`): the Passport snapshot a run uses carries this project's confirmed facts under `project_facts` (municipality, property address, parcel, square footage, uses, tenure). They fill Passport gaps only — the Passport wins for business identity — and inferences are never carried into a form.
 
+## From narrative to filing (the Caribe demo path)
+
+Regression: `src/app/ai/intake/caribeDemo.test.ts` (no demo-specific code anywhere).
+
+1. **Reading.** Identity (legal name + entity type from a suffix, "in the X industry"), a mixed proposed use ("used for furniture manufacturing, warehousing, and administrative offices" → `manufacturing_and_warehouse_and_office`), `project.officeBuildout`. Existing vs. proposed use never establishes a change of use; the model's inferred change of use is dropped and its use values are canonicalized.
+2. **Passport.** A named existing business is linked when exactly one of the account's Passports matches (`matchBusinessByName`); otherwise the picker shows. Registered location and project location stay separate.
+3. **Questions.** Only the scenario's controlling facts are asked (authorized use → address/catastro → structural/exterior → environmental when the KB has rules). After the authorized use is answered, the graph compares it with the proposed use itself. The business type's discovery questions are deferred: the engine reruns each with "Yes" (`deferredQuestions`) and lists only the documents a Yes would add, as *needs more information* with the question inline. Model-suggested (unstated) answers never reach the checklist.
+4. **Requirements.** An existing business at new premises files location-bound obligations (`LOCATION_SCOPED_DOCUMENTS`; the patente when the municipality differs) instead of verifying them. The page groups the path — Required now · Conditional / needs information · Waiting on prerequisites (KB `depends_on_document_ids`) · Supporting documents · Registrations / licenses · Completed — and each card shows source, evidence, readiness, prerequisites, filing and Clara support.
+5. **Clara.** "File with Clara" (launchable flow) / "Prepare with Clara" + agency site (flow not launchable yet) / "View filing instructions" + agency site. The link opens `/businesses/<id>/agency-run?requirement=<DOC>`; Clara loads that filing's pre-flight (Passport + project facts), asks only for what is missing, and nothing starts until the user confirms. Intake uploads also go to the Evidence Locker, tagged with the requirement, so Clara's readiness sees them.
+
 ## Compatibility
 
 The legacy flat `projectContext` still feeds `project_fact` rules through `scenario/adapter.ts`:

@@ -138,6 +138,8 @@ export interface UIRequirement {
    * has not been given yet.
    */
   unansweredTriggerQuestionId?: string;
+  /** Answer key an inline answer to `unansweredTriggerQuestionId` is written to. */
+  unansweredTriggerWriteKey?: string;
   // Document enrichment (agency/download links) — populated by the shared
   // pipeline from the snapshot's own documents.
   agencyUrl?: string | null;
@@ -811,6 +813,11 @@ export function buildEngineInput(
   }
   if (projectFacts) {
     for (const k of Object.keys(projectFacts)) {
+      // A key that is also a business fact (the municipality) keeps its
+      // business stamp: the municipality baseline rules (patente, merchant
+      // registration, annual report) are business rules and would otherwise
+      // be silently dropped whenever the description names the municipality.
+      if (factMeta[k]?.scope === "business") continue;
       const fact = extra?.projectContext?.[k as keyof ProjectContext];
       const confidence =
         fact && typeof fact === "object" && "confidence" in fact && typeof fact.confidence === "number"
@@ -988,6 +995,20 @@ export function computeRequirementsFromSnapshot(
     potentialDecisions?: Record<string, PotentialDecision>;
     recommendedIds?: Set<string>;
     legacyCode?: Record<string, string>;
+    /**
+     * Discovery questions the intake has not asked yet (the user can see
+     * requirements before answering them). Each is checked counterfactually:
+     * a document that a "Yes" would add is listed as needs-more-information
+     * with the question inline; a question that adds nothing is not
+     * controlling and stays unasked.
+     */
+    deferredQuestions?: Array<{ questionId: string; writeKey: string }>;
+    /**
+     * An existing business opening this project at premises it does not
+     * operate yet. Obligations tied to the premises are new filings here,
+     * not "verify existing" (see LOCATION_SCOPED_DOCUMENTS).
+     */
+    newPremises?: { registeredMunicipality?: string | null } | null;
     projectIntent?: ProjectIntent | null;
     projectContext?: ProjectContext | null;
     /** Fact provenance for the engine's hard rule (see buildEngineInput). */
@@ -1095,9 +1116,89 @@ export function computeRequirementsFromSnapshot(
   // Curated unanswered-trigger conditionals (e.g. the lease question):
   // honest "more information needed" cards with an inline Yes/No, never
   // an invented answer.
-  return appendUnansweredTriggerConditionals(enriched, snapshot, input, legacyCodeMap)
+  const withCurated = appendUnansweredTriggerConditionals(enriched, snapshot, input, legacyCodeMap);
+  const withDeferred = appendDeferredQuestionConditionals(withCurated, snapshot, profile, answers, resolved, options);
+  return applyNewPremisesPosture(withDeferred, options?.newPremises ?? null, (profile as { municipality?: string | null }).municipality ?? null)
     .sort((a, b) => orderIndex(a.document_id!) - orderIndex(b.document_id!));
-  return enriched;
+}
+
+/**
+ * Obligations issued for a specific premises (operating/use permit, fire and
+ * health certifications) or municipality (patente). An existing business
+ * already holds them for the places it operates — not for a new one.
+ * Curated like UNANSWERED_TRIGGER_QUESTIONS: only documents whose issuance is
+ * tied to the location.
+ */
+export const LOCATION_SCOPED_DOCUMENTS = new Set(["DOC_PERMISO_UNICO", "DOC_FIRE_CERT", "DOC_HEALTH_PERMIT", "DOC_OCCUPANCY"]);
+export const MUNICIPALITY_SCOPED_DOCUMENTS = new Set(["DOC_PATENTE_MUNICIPAL"]);
+
+function applyNewPremisesPosture(
+  reqs: UIRequirement[],
+  newPremises: { registeredMunicipality?: string | null } | null,
+  projectMunicipality: string | null,
+): UIRequirement[] {
+  if (!newPremises) return reqs;
+  const registered = (newPremises.registeredMunicipality ?? "").trim().toLowerCase();
+  const project = (projectMunicipality ?? "").trim().toLowerCase();
+  const otherMunicipality = !!registered && !!project && registered !== project;
+  return reqs.map((r) => {
+    if (r.applicability !== "verify_existing" || !r.document_id) return r;
+    const byLocation = LOCATION_SCOPED_DOCUMENTS.has(r.document_id);
+    const byMunicipality = MUNICIPALITY_SCOPED_DOCUMENTS.has(r.document_id) && otherMunicipality;
+    if (!byLocation && !byMunicipality) return r;
+    return {
+      ...r,
+      applicability: "required",
+      mandatory: true,
+      triggerFacts: [...(r.triggerFacts ?? []), byMunicipality ? "new_premises:other_municipality" : "new_premises"],
+    };
+  });
+}
+
+/**
+ * Deferred discovery questions, checked against the same engine: rerun with
+ * the answer "Yes" and list only the documents that answer would add. The
+ * rules decide — nothing is listed that a Yes would not actually require.
+ */
+function appendDeferredQuestionConditionals(
+  reqs: UIRequirement[],
+  snapshot: KnowledgeBase,
+  profile: ProfileLike,
+  answers: Record<string, unknown>,
+  resolved: Record<string, boolean | string>,
+  options: Parameters<typeof computeRequirementsFromSnapshot>[4],
+): UIRequirement[] {
+  const deferred = options?.deferredQuestions ?? [];
+  if (deferred.length === 0) return reqs;
+  const present = new Set(reqs.map((r) => r.document_id));
+  const out = [...reqs];
+  for (const { questionId, writeKey } of deferred) {
+    if (answers[writeKey] != null || answers[questionId] != null) continue;
+    // The hypothetical "Yes" counts as confirmed inside this counterfactual
+    // run only — the provenance gate must not block the very answer tested.
+    const withYes = computeRequirementsFromSnapshot(snapshot, profile, { ...answers, [writeKey]: true }, resolved, {
+      ...options,
+      confirmedKeys: [...(options?.confirmedKeys ?? []), writeKey, questionId],
+      deferredQuestions: [],
+    });
+    for (const r of withYes) {
+      if (present.has(r.document_id) || r.applicability === "not_applicable") continue;
+      present.add(r.document_id);
+      out.push({
+        ...r,
+        mandatory: false,
+        status: "pending",
+        // Machine-readable marker; the UI renders the KB question inline.
+        reason: `UNANSWERED_QUESTION:${questionId}`,
+        applicability: "needs_more_information",
+        triggerFacts: [...(r.triggerFacts ?? []), `unanswered:${questionId}`],
+        acceptsOfficialUpload: false,
+        unansweredTriggerQuestionId: questionId,
+        unansweredTriggerWriteKey: writeKey,
+      });
+    }
+  }
+  return out;
 }
 
 // Drop-in replacement for the old hardcoded computeRequirements().
@@ -1121,9 +1222,13 @@ export function computeRequirementsFromKB(
      * computeRequirementsFromSnapshot for honest trigger labeling.
      */
     aiPrefilledKeys?: Iterable<string>;
+    deferredQuestions?: Array<{ questionId: string; writeKey: string }>;
+    newPremises?: { registeredMunicipality?: string | null } | null;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
+    deferredQuestions: options.deferredQuestions,
+    newPremises: options.newPremises,
     entityType: options.entityType,
     potentialDecisions: options.potentialDecisions,
     projectIntent: options.projectIntent,

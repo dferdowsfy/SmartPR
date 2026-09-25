@@ -76,6 +76,8 @@ export interface ScenarioContext {
     exteriorWork?: F<boolean>;
     footprintChange?: F<boolean>;
     layoutChanges?: F<boolean>;
+    /** New offices built inside the space (walls, finishes, egress). */
+    officeBuildout?: F<boolean>;
     /**
      * Change of use / occupancy. explicit true = the user said the use changes
      * ("converting a warehouse into a daycare"); inferred true = possible but
@@ -132,6 +134,7 @@ export const SCENARIO_PATHS = [
   "project.exteriorWork",
   "project.footprintChange",
   "project.layoutChanges",
+  "project.officeBuildout",
   "project.possibleChangeOfUse",
   "project.siteCirculationChanges",
   "operations.activity",

@@ -322,3 +322,16 @@ export function prefillKeysForPatch(answerKeys: Iterable<string>, profileKeys: I
   }
   return [...out];
 }
+
+/**
+ * KB question id for any discovery-answer key, including write keys the
+ * wizard table does not list ("renewable_install" → "Q_RENEWABLE_INSTALL").
+ */
+export function kbQuestionIdFor(answerKey: string, questions: ReadonlyArray<{ id: string }>): string {
+  const direct = questionIdForAnswerKey(answerKey);
+  if (direct) return direct;
+  const bound = Object.entries(QUESTION_KEY_MAP).find(([, b]) => b.writeKey === answerKey || (b.aliases ?? []).includes(answerKey));
+  if (bound) return bound[0];
+  const upper = `Q_${answerKey.toUpperCase()}`;
+  return questions.some((q) => q.id === upper) ? upper : answerKey;
+}

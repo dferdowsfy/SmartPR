@@ -67,10 +67,8 @@ export function describeScenario(ctx: ScenarioContext, opts: { includePassport?:
   yesNo("project.electricalWork", pr.electricalWork, "Electrical work", "No electrical work");
   yesNo("project.plumbingWork", pr.plumbingWork, "Plumbing work", "No plumbing work");
   yesNo("project.mechanicalWork", pr.mechanicalWork, "Mechanical / HVAC work", "No mechanical work");
-  if (pr.layoutChanges) {
-    const buildout = /\boffice\s+build[\s-]?out/i.test(pr.layoutChanges.evidenceText);
-    yesNo("project.layoutChanges", pr.layoutChanges, buildout ? "Office build-out" : "Layout changes", "No layout changes");
-  }
+  yesNo("project.officeBuildout", pr.officeBuildout, "Office build-out", "No office build-out");
+  yesNo("project.layoutChanges", pr.layoutChanges, "Layout changes", "No layout changes");
   yesNo("project.structuralWork", pr.structuralWork, "Structural work", "No structural work");
   yesNo("project.exteriorWork", pr.exteriorWork, "Exterior work", "No exterior work");
   yesNo("project.footprintChange", pr.footprintChange, "Footprint changes", "Footprint unchanged");

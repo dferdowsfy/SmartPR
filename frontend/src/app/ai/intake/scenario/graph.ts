@@ -28,7 +28,7 @@ import {
   type ScenarioFact,
   type ScenarioPath,
 } from "./types";
-import { familiesOf, matchUse, matchUses, findUseByLabel, displayOfUse, usesDiffer, type UseFamily } from "./uses";
+import { familiesOf, matchUse, matchUses, findUseByLabel, displayOfUse, usesDiffer, listLabelOfUse, type UseFamily } from "./uses";
 
 /** Occupancy families of an activity (a use label or the user's own words). */
 export function activityFamilies(value: string): UseFamily[] {
@@ -442,8 +442,8 @@ export function evaluateScenario(
         text: "What is the property's currently authorized use?",
         whyWeAsk: "The use the property is authorized for today, compared with the new activity, decides whether a change-of-use authorization is needed.",
         options: [
-          ...(ex ? [{ value: ex, label: displayOfUse(ex) }] : []),
-          { value: "other", label: "Something else" },
+          ...(ex ? [{ value: ex, label: listLabelOfUse(ex) }] : []),
+          { value: "other", label: "Another authorized use" },
           { value: "unknown", label: "Not sure" },
         ],
       });
@@ -451,7 +451,9 @@ export function evaluateScenario(
   }
   if (change === "possible" || (change === "unknown" && existingBuilding)) {
     controlling.push({ id: "change_of_use", label: "Whether the use or occupancy changes", paths: ["project.possibleChangeOfUse"], branch: "use_authorization" });
-    if (tier2 && !authorizedUseMatters) {
+    // When the authorized use is stated, the graph compares it with the
+    // proposed use itself — the agency, not the user, confirms the change.
+    if (tier2 && !authorizedUseMatters && !ctx.property.authorizedUse) {
       ask({
         id: "sq_change_of_use",
         controls: "change_of_use",
@@ -605,12 +607,15 @@ export function applyScenarioAnswer(
     case "sq_authorized_use": {
       const v = String(answer);
       if (v === "unknown" || v === "other" || !v) return out;
-      out.property.authorizedUse = answered(v, displayOfUse(v));
-      const activity = out.operations.activity?.value;
-      if (activity && !isConfirmed(out.project.possibleChangeOfUse)) {
-        const differ = usesDiffer(v, activity);
+      out.property.authorizedUse = answered(v, listLabelOfUse(v));
+      // Compare the whole proposed use (a mixed use changes the use if any
+      // part falls outside the authorization), else the activity.
+      const proposed = out.property.proposedUseSpecificity?.value === "specific" ? out.property.proposedUse?.value : undefined;
+      const target = proposed ?? out.operations.activity?.value;
+      if (target && !isConfirmed(out.project.possibleChangeOfUse)) {
+        const differ = usesDiffer(v, target);
         if (differ !== null) {
-          out.project.possibleChangeOfUse = { value: differ, source: "inferred", confidence: 0.8, evidenceText: `Authorized for ${displayOfUse(v)}; proposed ${displayOfUse(activity)}` };
+          out.project.possibleChangeOfUse = { value: differ, source: "inferred", confidence: 0.8, evidenceText: `Authorized for ${listLabelOfUse(v).toLowerCase()}; proposed ${listLabelOfUse(target).toLowerCase()}` };
         }
       }
       return out;

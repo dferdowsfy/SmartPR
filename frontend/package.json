@@ -28,7 +28,7 @@
     "test:agency": "tsx --test src/lib/agency-runs/*.test.ts src/lib/agency-runs/flows/*.test.ts 'src/app/businesses/[id]/agency-run/chatContracts.test.ts'",
     "test:dos:e2e": "tsx tests/dept-state-corporation.e2e.mts",
     "test:billing": "tsx --test src/lib/billing/*.test.ts",
-    "test:intake:scenario": "tsx --test src/app/ai/intake/scenario/*.test.ts src/app/ai/intake/infoNeeds.test.ts",
+    "test:intake:scenario": "tsx --test src/app/ai/intake/scenario/*.test.ts src/app/ai/intake/infoNeeds.test.ts src/app/ai/intake/caribeDemo.test.ts src/app/ai/intake/linkBusiness.test.ts",
     "billing:verify": "tsx scripts/verify-stripe-prices.mts"
   },
   "dependencies": {

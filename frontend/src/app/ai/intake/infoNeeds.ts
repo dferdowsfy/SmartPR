@@ -94,14 +94,17 @@ const ORDER: IntakeFieldKey[] = [
  *
  * `passportKnown` — fields the linked Business Passport answers (existing
  * business only). `descriptionKnown` — fields the description established.
- * A known field is hidden when it came from the Passport; a description fact
- * stays visible (prefilled) so it can be corrected, but is never re-asked.
+ * A field already resolved — from the Passport or the description — is
+ * hidden (never asked again). `revealResolved` shows description facts so the
+ * user can correct them; Passport facts stay hidden (the Passport is edited
+ * in the Passport, not in a project intake).
  */
 export function planIntake(input: {
   intent: ProjectIntent | null;
   profile: IntakeProfileLike;
   passportKnown?: ReadonlySet<string>;
   descriptionKnown?: ReadonlySet<string>;
+  revealResolved?: boolean;
 }): IntakePlan {
   const { intent, profile } = input;
   const passportKnown = input.passportKnown ?? new Set<string>();
@@ -114,7 +117,8 @@ export function planIntake(input: {
     const fromPassport = passportKnown.has(key);
     const known = fromPassport || has(value);
     const knownFrom: KnownFrom | null = fromPassport ? "passport" : !has(value) ? null : descriptionKnown.has(key) ? "description" : "user";
-    fields.push({ key, tier, known, knownFrom, show: !fromPassport });
+    const show = !fromPassport && (knownFrom !== "description" || !!input.revealResolved);
+    fields.push({ key, tier, known, knownFrom, show });
   }
   const missingRequired = fields.filter((f) => f.tier === "required_now" && !f.known).map((f) => f.key);
   return { fields, missingRequired, ready: missingRequired.length === 0 };

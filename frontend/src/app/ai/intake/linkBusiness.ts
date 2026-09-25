@@ -48,3 +48,42 @@ export function normalizeLinkableBusinesses(data: unknown): LinkableBusiness[] {
   }
   return out;
 }
+
+const ENTITY_TOKENS = new Set(["llc", "l", "c", "inc", "incorporated", "corp", "corporation", "co", "company", "csp", "psc", "llp", "ltd", "the"]);
+
+/** "Caribe Precision Manufacturing, L.L.C." → ["caribe", "precision", "manufacturing"]. */
+export function businessNameTokens(name: string | null | undefined): string[] {
+  return (name ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t && !ENTITY_TOKENS.has(t));
+}
+
+function nameMatches(named: string[], candidate: string | null | undefined): boolean {
+  const c = businessNameTokens(candidate);
+  if (!named.length || !c.length) return false;
+  if (named.join(" ") === c.join(" ")) return true;
+  // Every distinctive word of the shorter name appears in the longer one
+  // ("Caribe Precision" ↔ "Caribe Precision Manufacturing"), with at least
+  // two words in common so a single shared word ("Caribe") is never enough.
+  const [short, long] = named.length <= c.length ? [named, c] : [c, named];
+  return short.length >= 2 && short.every((t) => long.includes(t));
+}
+
+/**
+ * The account's business the narrative names, when exactly one matches
+ * confidently. Null when no name was given, nothing matches, or several
+ * businesses match — then the intake shows the picker instead.
+ */
+export function matchBusinessByName(
+  businesses: readonly LinkableBusiness[],
+  name: string | null | undefined
+): LinkableBusiness | null {
+  const named = businessNameTokens(name);
+  if (!named.length) return null;
+  const hits = businesses.filter((b) => nameMatches(named, b.legal_name) || nameMatches(named, b.name));
+  return hits.length === 1 ? hits[0] : null;
+}

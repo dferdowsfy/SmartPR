@@ -49,6 +49,7 @@ export function scenarioToProjectContext(ctx: ScenarioContext): ProjectContext {
   set("structural_work", pr.structuralWork);
   set("exterior_work", pr.exteriorWork);
   set("layout_changes", pr.layoutChanges);
+  set("new_walls", pr.officeBuildout);
   set("parking_changes", pr.siteCirculationChanges);
   const change = changeOfUseStatus(ctx);
   if (change === "confirmed" || change === "none") {
