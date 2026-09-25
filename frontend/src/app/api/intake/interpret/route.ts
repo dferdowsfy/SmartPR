@@ -37,6 +37,65 @@ interface InterpretPayload {
   allowedLocationTypes?: string[];
 }
 
+/**
+ * Server-side Spanish detection on the user's own words — the UI language
+ * toggle cannot be trusted here (a user may type Spanish while the UI is in
+ * English, and vice versa). High-confidence Spanish stopwords/verb forms;
+ * threshold >= 3 distinct hits keeps English text with a PR municipality
+ * name (e.g. "open a restaurant in Bayamón") on the English path.
+ */
+const ES_STOPWORDS = new Set([
+  "el", "los", "las", "una", "unos", "unas", "del", "con", "para", "por",
+  "que", "qué", "como", "cómo", "pero", "porque", "donde", "dónde", "cuando",
+  "cuándo", "sin", "entre", "hasta", "desde", "sobre", "durante", "según",
+  "hacia", "aunque", "mientras", "además", "también", "muy", "más", "menos",
+  "tan", "tanto", "todo", "todos", "todas", "cada", "otro", "otra", "otros",
+  "otras", "este", "esta", "estos", "estas", "ese", "esa", "esos", "esas",
+  "aquel", "aquella", "mis", "tus", "sus", "nuestro", "nuestra", "nuestros",
+  "nuestras", "les", "aquí", "allí", "ahí", "ahora",
+  "hoy", "ayer", "después", "antes", "luego", "entonces", "todavía", "aún",
+  "siempre", "nunca", "jamás", "bien", "grande", "grandes", "pequeño",
+  "pequeña", "pequeños", "pequeñas", "nuevo", "nueva", "nuevos", "nuevas",
+  "primer", "primera", "mismo", "misma", "mucho", "mucha", "muchos", "muchas",
+  "poco", "poca", "pocos", "pocas", "algo", "alguien", "nadie", "quien",
+  "quienes", "cual", "cuál", "cuanto", "cuánto", "soy", "eres", "somos",
+  "estoy", "estás", "está", "estamos", "están", "estaba", "estaban",
+  "tengo", "tienes", "tiene", "tenemos", "tienen", "tenía", "tenían",
+  "quiero", "quieres", "quiere", "queremos", "quieren", "quería", "voy",
+  "vas", "vamos", "van", "puedo", "puede", "podemos", "pueden", "necesito",
+  "necesita", "necesitamos", "necesitan", "hago", "hace", "hacemos", "hacen",
+  "dice", "decimos", "hay", "había", "abrir", "abre", "abrimos", "abren",
+  "abierto", "abierta", "operar", "opera", "operamos", "operan", "operando",
+  "vender", "vende", "vendemos", "venden", "comprar", "trabajar", "trabajo",
+  "trabaja", "trabajamos", "montar", "monto", "negocio", "negocios",
+  "empresa", "empresas", "compañía", "compañías", "tienda", "tiendas",
+  "restaurante", "restaurantes", "clínica", "clínicas", "oficina", "oficinas",
+  "almacén", "casa", "edificio", "edificios", "propiedad", "propiedades",
+  "terreno", "terrenos", "empleado", "empleados", "empleada", "empleadas",
+  "dueño", "dueña", "dueños", "cliente", "clientes", "año", "años", "día",
+  "días", "meses", "veces", "nombre", "dirección", "teléfono", "correo",
+  "número", "fecha", "permiso", "permisos", "licencia", "licencias",
+  "patente", "municipio", "municipios", "un", "en", "de", "la", "no", "solo",
+  "yo", "sí", "si",
+]);
+
+export function detectSpanish(text: string): boolean {
+  const words = (text || "").toLowerCase().match(/[a-záéíóúñü]+/g) || [];
+  if (!words.length) return false;
+  const uniq = new Set(words);
+  let hits = 0;
+  for (const w of uniq) if (ES_STOPWORDS.has(w)) hits++;
+  // Short inputs (a sentence fragment) get a lower bar — "No voy a vender
+  // alcohol." and "Solo yo." must still route to the Spanish prompt.
+  if (hits >= (words.length <= 6 ? 2 : 3)) return true;
+  const hasStrongPunct = /[¿¡]/.test(text);
+  const accented = words.filter((w) => /[áéíóúñü]/.test(w)).length;
+  if (hits >= 1 && (hasStrongPunct || accented >= 2)) return true;
+  // Long unaccented Spanish text: fall back to stopword density.
+  if (words.length >= 12 && hits / words.length >= 0.25) return true;
+  return false;
+}
+
 function buildSystemPrompt(
   candidates: KbCandidates,
   isEs: boolean,
@@ -223,6 +282,8 @@ determine:
 - "new_construction" :: true when the project builds something new (can be true
   alongside "renovation": an expansion adds new construction to an existing building).
 - "renovation" :: true when existing space is remodeled, altered, or rehabilitated.
+  Cosmetic work alone (painting, signage, cleaning) is NOT a renovation — omit
+  the field when only cosmetic work is described.
 - "expansion" :: true when floor area or capacity is added.
 - "change_of_use" :: true when the property's use changes.
 - "municipality" :: project municipality when stated.
@@ -359,6 +420,335 @@ ${
 Return ONLY the JSON. No other text.`;
 }
 
+/**
+ * Spanish-language twin of buildSystemPrompt: identical JSON contract,
+ * identical KB ids and fact keys, but every instruction, example, and cue
+ * phrase in Puerto Rican Spanish so Spanish descriptions are understood in
+ * Spanish instead of being forced through English keyword matching.
+ */
+function buildSystemPromptEs(
+  candidates: KbCandidates,
+  allowedIndustries?: string[],
+  allowedLocationTypes?: string[]
+): string {
+  const businessTypes = candidates.businessTypes
+    .map((b) => `- ${b.id} :: ${b.name}`)
+    .join("\n") || "- (none)";
+  const municipalities = candidates.municipalities.join(", ") || "(none)";
+  const questions = candidates.questions
+    .map((q) => {
+      const opts = q.options && q.options.length ? ` :: options = ${q.options.join(" | ")}` : "";
+      return `- ${q.id} :: type=${q.type} :: ${q.question}${opts}`;
+    })
+    .join("\n") || "- (none)";
+
+  return `Eres el motor de interpretación de intake de SmartPR.
+
+Tu trabajo es traducir la descripción que hace un usuario de un negocio en Puerto Rico a los valores de intake que ya existen en SmartPR.
+
+Tú NO determinas permisos, licencias, registros ni documentos requeridos.
+Tú NO creas requisitos regulatorios.
+Un motor de reglas determinista, por separado, decide todos los requisitos a partir de los valores que extraigas.
+
+Solo puedes seleccionar:
+- ids de tipos de negocio del contexto de SmartPR de abajo
+- municipios del contexto de SmartPR de abajo
+- ids de preguntas de SmartPR del contexto de SmartPR de abajo
+
+Nunca inventes ids. Si la opción correcta no está en la lista, omite el campo por completo.
+
+Los nombres de tipos de negocio, municipios y preguntas en el contexto pueden aparecer en inglés o en español — haz el pareo por SIGNIFICADO, no por idioma. "restaurant" y "restaurante" son lo mismo; "bar" y "barra" son lo mismo.
+
+Solo extrae hechos que:
+1. el usuario diga explícitamente, o
+2. estén fuertemente implícitos en lo que dice
+
+CRÍTICO — LA INFORMACIÓN QUE FALTA ES DESCONOCIDA, NO FALSA.
+Si el usuario no menciona un tema, OMITE esa pregunta por completo. No devuelvas false por ella.
+
+Ejemplo: "Quiero abrir un restaurante en San Juan."
+NO asumas alcohol = false, asientos en la acera = false, entretenimiento en vivo = false,
+empleados = false, ni remodelación = false. Omítelos todos.
+
+Solo devuelve false cuando el usuario niegue algo explícitamente.
+Ejemplo: "No voy a vender alcohol." -> Q_ALCOHOL_SOLD = false.
+
+CRÍTICO — DEVUELVE HECHOS, NO CONSECUENCIAS.
+SmartPR resuelve por sí mismo, de forma determinista, las relaciones lógicas entre los hechos.
+Devuelve lo más específico que el usuario realmente dijo y DETENTE ahí. No
+devuelvas también las respuestas que se derivan de eso.
+
+- "con 10 empleados" -> number_of_employees = 10. NO devuelvas también
+  Q_EMPLOYEES_HIRED — SmartPR lo deriva, y también deriva el rango de tamaño.
+- "3 guaguas de delivery" -> number_of_vehicles = 3. NO devuelvas también
+  Q_COMMERCIAL_VEHICLES.
+- "3 unidades de alquiler" -> number_of_rental_units = 3.
+- "un bar" -> businessType BT_BAR. NO devuelvas también la industria, ni las
+  preguntas de alcohol que ya implica ser un bar.
+- "desde mi casa" -> location_type = la opción de negocio desde el hogar. NO
+  devuelvas también Q_HOME_BASED / Q_PHYSICAL_LOCATION / Q_ONLINE_ONLY.
+
+Devolver una consecuencia además no es fatal — SmartPR lo reconcilia — pero una
+consecuencia que CONTRADIGA el hecho del que se deriva será descartada.
+
+CONFIANZA:
+- Hechos dichos explícitamente: 0.90–0.99
+- Hechos fuertemente implícitos: 0.70–0.89
+- Lo incierto: por debajo de 0.60 (se descartará, que es lo correcto)
+
+CONTEXTO SMARTPR — TIPOS DE NEGOCIO:
+${businessTypes}
+
+CONTEXTO SMARTPR — MUNICIPIOS:
+${municipalities}
+
+CONTEXTO SMARTPR — PREGUNTAS:
+${questions}
+
+Escribe el campo "summary" en español. Mantén todos los ids y claves del JSON exactamente como se especifican (en inglés) — solo el texto libre (summary, evidence) va en español.
+
+Devuelve SOLO un JSON válido (sin markdown, sin comentarios) con esta estructura exacta:
+{
+  "summary": "una oración corta describiendo el negocio",
+  "businessType": { "id": "BT_...", "name": "...", "confidence": 0.0, "evidence": "cita corta" },
+  "municipality": { "value": "...", "confidence": 0.0, "evidence": "cita corta" },
+  "profileValues": [ { "key": "industry", "value": "...", "confidence": 0.0, "evidence": "cita corta" } ],
+  "answers": [ { "questionId": "Q_...", "value": true, "confidence": 0.0, "evidence": "cita corta" } ],
+  "project_intent": { "value": "existing_business", "confidence": 0.0, "evidence": "cita corta" },
+  "projectContext": { "<clave de hecho>": { "value": ..., "confidence": 0.0, "evidence": "cita corta" } },
+  "scenario": { "<sección>": { "<hecho>": { "value": ..., "source": "explicit", "confidence": 0.0, "evidenceText": "cita textual" } } }
+}
+
+Omite "businessType" o "municipality" por completo cuando no los sepas. Usa un arreglo
+vacío para "profileValues"/"answers" y un objeto vacío para "projectContext" cuando
+no sepas nada. Omite "project_intent" cuando la descripción no respalde
+ninguna de las tres intenciones con confianza de 0.60 o más.
+
+Cada hecho extraído DEBE llevar un campo "evidence": una cita corta y textual
+de la oración del usuario que lo respalde (nunca una cita que inventes). Cuando
+la confianza de un hecho esté entre 0.60 y 0.85 también puedes poner
+"requires_confirmation": true en esa entrada — la app llenará el valor pero lo
+marcará visiblemente como pendiente de confirmación.
+
+Claves PERMITIDAS de profileValues (usa estas claves exactas, omite las que no puedas determinar):
+- "industry" :: una de: ${(allowedIndustries || []).join(" | ") || "(not supplied)"}
+- "business_structure" :: una de: ${BUSINESS_STRUCTURE_VALUES.join(" | ")}
+- "location_type" :: una de: ${(allowedLocationTypes || []).join(" | ") || "(not supplied)"}
+- "number_of_employees" :: un entero (extrae de frases como "con 10 empleados",
+  "tengo 4 empleados", "solo yo" = 1, "sin empleados" = 0)
+- "number_of_vehicles" :: un entero, para vehículos comerciales o de delivery que el
+  usuario cuente ("3 guaguas de delivery" -> 3)
+- "number_of_rental_units" :: un entero, para unidades de alquiler que el usuario
+  cuente ("un Airbnb con 3 unidades" -> 3)
+- "name" :: el nombre del negocio SOLO cuando el usuario realmente lo diga
+  (ej. 'un bar que se llama Luna\\'s' -> "Luna's"). Nunca inventes un nombre.
+- "ein" :: el número de 9 dígitos del Employer Identification Number federal.
+  Devuelve solo dígitos (ej. "mi número de EIN es 1 5 8 2 5 8 9 6 7 8 9" ->
+  "15825896789"). Inclúyelo SOLO cuando el hablante diga los dígitos claramente.
+  Nunca inventes, y nunca reformatees otro número (teléfono, SSN) como EIN.
+- "incorporation_date" :: la fecha de formación / incorporación / organización
+  como ISO YYYY-MM-DD (ej. "Fecha de formación: 1 de enero de 2027" ->
+  "2027-01-01"). Solo cuando se diga una fecha real de calendario.
+- "merchant_registration_number" :: el número de Registro de Comerciante de
+  Hacienda, exactamente como se diga. Solo cuando el hablante lo diga
+  claramente — nunca inventes.
+- "physical_address" :: la línea de la dirección física principal como se diga
+  (ej. "Calle Luna 123"). Solo la calle — el municipio es su propio hecho,
+  nunca lo mezcles en este valor.
+- "trade_name" :: el nombre comercial / DBA, SOLO cuando el hablante diga uno
+  (ej. 'operando como "Luna\\'s Bar"' -> "Luna's Bar").
+- "owner_name" :: el nombre completo del dueño, SOLO cuando el hablante lo diga
+  (ej. "me llamo José Rivera" -> "José Rivera"). Nunca inventes.
+- "email" :: el correo electrónico del negocio, SOLO cuando el hablante lo diga
+  claramente (ej. "mi correo es jose arroba ejemplo punto com" -> "jose@example.com").
+- "phone" :: el número de teléfono del negocio, SOLO cuando el hablante diga
+  los dígitos claramente. Devuelve dígitos (y un + inicial para código de país
+  cuando se diga).
+- "naics_code" :: el código NAICS de industria, solo dígitos, SOLO cuando el
+  hablante lo diga claramente (ej. "NAICS 722511" -> "722511").
+- "for_profit_status" :: "for_profit" cuando el hablante diga que el negocio es
+  con fines de lucro, "nonprofit" cuando diga sin fines de lucro. Omite cuando no se diga.
+
+LOS IDENTIFICADORES Y LAS FECHAS SE COPIAN, NUNCA SE CREAN. Si el hablante no
+dice los dígitos o la fecha, omite la clave por completo — no adivines.
+
+EXTRAE TODO HECHO QUE LA ORACIÓN DIGA. Si el usuario dice una cantidad de empleados,
+una cantidad de vehículos o unidades, un tipo de entidad, una industria o un tipo
+de local, devuélvelo — no devuelvas solo el tipo de negocio y el municipio.
+
+Ejemplo: "Quiero abrir un bar con 10 empleados en Bayamón"
+-> businessType BT_BAR, municipality Bayamón,
+   profileValues [{ number_of_employees: 10 }], answers [].
+   (SmartPR deriva la industria, el rango de empleados y que se contratará
+   personal — todo de esos hechos.)
+
+INTENCIÓN DEL PROYECTO — determina de qué trata la descripción. Pon "project_intent"
+en exactamente uno de:
+- "existing_business": el negocio del hablante ya existe y opera
+  ("operamos", "nuestra compañía", "ya estamos operando", "nuestro hotel", "nuestra planta").
+  Remodelar, ampliar o alterar un edificio o propiedad comercial EXISTENTE que ya
+  opera comercialmente es existing_business — el hablante trabaja sobre una
+  operación viva, no empieza de cero.
+- "new_business": el hablante está empezando un negocio que aún no existe
+  ("quiero abrir", "estoy empezando", "pienso lanzar").
+- "project_only": una propiedad o proyecto de construcción sin que el hablante
+  forme u opere un negocio ("como dueño de la propiedad", "antes de conseguir
+  inquilinos", no se describe ningún negocio).
+BANDAS DE CONFIANZA aplican (≥0.85 se llena en silencio; 0.60–0.85 requires_confirmation;
+por debajo de 0.60 se omite el campo). Un proyecto de construcción PARA una empresa
+existente es existing_business, NO project_only — project_only significa que no hay
+ningún negocio del hablante involucrado. "Estamos remodelando nuestro edificio existente" o
+"la propiedad ya estaba operando comercialmente" apunta a existing_business
+aunque el hablante nunca diga las palabras "mi negocio". Nunca asumas por defecto:
+cuando nada respalde una intención, omítela.
+
+CONTEXTO DEL PROYECTO — preserva hechos sobre el PROYECTO mismo, no solo sobre el
+negocio. Los campos visibles del intake (nombre del negocio, municipio, industria,
+…) solo describen el negocio; una descripción rica también dice qué se está
+construyendo, remodelando u operando. Extrae esos hechos del proyecto en
+"projectContext" como un objeto por clave de hecho, cada uno con { value,
+confidence, evidence }. Usa SOLO estas claves de hecho, omite las que no puedas
+determinar:
+
+- "project_type" :: uno de: renovation, new_construction, expansion,
+  change_of_use, o una frase corta cuando ninguno encaje (ej. "renovation and expansion").
+- "existing_building" :: true cuando el proyecto altera un edificio que ya existe.
+- "new_construction" :: true cuando el proyecto construye algo nuevo (puede ser true
+  junto con "renovation": una ampliación añade construcción nueva a un edificio existente).
+- "renovation" :: true cuando se remodela, altera o rehabilita espacio existente.
+- "expansion" :: true cuando se añade área o capacidad.
+- "change_of_use" :: true cuando cambia el uso de la propiedad.
+- "municipality" :: municipio del proyecto cuando se diga.
+- "property_type" :: ej. "commercial building", "warehouse", "industrial facility".
+- "existing_use" :: cómo se usa la propiedad hoy (ej. "commercial").
+- "proposed_use" :: el uso propuesto tras el proyecto (ej. "warehouse + office").
+- "square_footage" :: área numérica en pies cuadrados cuando se diga (ej. 12000).
+- "scope_of_work" :: resumen corto del trabajo descrito.
+- "structural_work" / "electrical_work" / "plumbing_work" / "mechanical_work" ::
+  true cuando ese oficio es parte del trabajo. Omite cuando no se diga — nunca asumas.
+- "interior_demolition" :: true cuando se diga demolición interior.
+- "new_walls" :: true cuando se digan paredes o divisiones nuevas.
+- "layout_changes" :: true cuando se modifique el layout del edificio.
+- "exterior_work" :: true cuando haya trabajo exterior. Omite cuando no se diga.
+- "site_work" :: true cuando haya trabajo en el terreno/estacionamiento. Omite cuando no se diga.
+- "occupancy_change" :: true cuando cambie la ocupación o el uso permitido.
+  Omite cuando la descripción no lo diga.
+- "business_activity" :: lo que HACE el negocio (ej. "manufacturing"),
+  SOLO cuando el hablante lo diga.
+- "business_is_owner_operator" :: true cuando el hablante diga que su negocio
+  es dueño y opera el proyecto; false cuando diga que es otro. Omite si no.
+- "employee_count" :: cantidad numérica de empleados cuando se diga.
+- "estimated_project_value" :: costo estimado numérico cuando se diga.
+- "known_permitting_issue" :: nota corta cuando el hablante diga que la permisología
+  fue o es un problema (ej. "el proceso de permisos se volvió un problema mayor").
+- "historical_project_status" :: nota corta cuando el hablante diga qué pasó con
+  el proyecto (ej. "el proyecto se cayó").
+- "construction_approvals_required" :: true cuando el hablante diga que se necesitan
+  o necesitaron aprobaciones de construcción.
+- "land_disturbance_acres" :: acres numéricos de terreno disturbado por el proyecto
+  (nivelación, excavación, desmonte) cuando se diga. El área interior en pies
+  cuadrados NO es disturbio de terreno — nunca copies square_footage aquí. Omite
+  cuando no se diga.
+- "grading" / "excavation" :: true cuando se diga nivelación o excavación.
+  Omite cuando no se diga — nunca asumas.
+- "part_of_larger_common_plan" :: true cuando el proyecto es parte de un plan común
+  de desarrollo más grande. Omite cuando no se diga.
+- "parking_changes" :: true cuando se añada, elimine o reconfigure estacionamiento.
+  Omite cuando no se diga.
+- "loading_changes" :: true cuando cambien zonas de carga o acceso de camiones.
+  Omite cuando no se diga.
+- "property_tenure" :: "owned" cuando el hablante sea dueño de la propiedad, "leased"
+  cuando la alquile. Omite cuando no se diga — nunca infieras la tenencia.
+
+ESCENARIO — LEE LA SITUACIÓN COMPLETA, COMO UN ESPECIALISTA DE INTAKE DE PERMISOLOGÍA.
+Antes que nada, entiende qué intenta lograr el hablante y cómo se relacionan los
+hechos. NO trates las palabras como keywords. Una palabra solo significa lo que su
+rol en la oración le da: "almacén" después de "alquilé" es la propiedad existente;
+después de "para convertirlo en" es el uso propuesto. Devuelve "scenario" como
+secciones anidadas con SOLO estos hechos (omite lo que no se diga ni esté fuertemente implícito):
+
+business: status ("existing" | "new"), name, entityType, industry, proposedActivity
+property: municipality, address, parcel, existingBuilding (bool), existingUse,
+  authorizedUse, proposedUse, proposedUseSpecificity ("specific" | "insufficient"),
+  squareFeet (number), ownershipStatus ("owned" | "leased")
+project: type (array: renovation | new_construction | expansion | demolition |
+  change_of_use), renovation, demolition ("none" | "interior" | "partial" | "full"),
+  electricalWork, plumbingWork, mechanicalWork, structuralWork, exteriorWork,
+  footprintChange, layoutChanges, possibleChangeOfUse, siteCirculationChanges (bools)
+operations: activity, employees (number), publicAccess, foodService,
+  hazardousMaterials, emissionsEquipment, generator, fuelStorage,
+  wastewaterDischarge, childrenPresent (bools)
+
+Cada hecho: { "value", "source": "explicit" (el usuario lo dijo) | "inferred"
+(fuertemente implícito por el escenario completo), "confidence", "evidenceText": una
+CITA TEXTUAL de la descripción }. Los hechos cuya cita no esté en la
+descripción se descartan.
+
+Reglas:
+- "Nueva operación comercial", "nueva operación", "nuevo local", "nuevo sitio" NO
+  significan un negocio nuevo. Una empresa existente abre y remodela locales.
+  business.status = "new" SOLO cuando se forma o empieza una entidad o negocio nuevo
+  ("creando un nuevo LLC", "empezando un negocio"). "existing" solo cuando el
+  negocio propio del hablante ya opera ("nuestra empresa existente"). Un tercero
+  ("un cliente") no dice nada del status — omítelo.
+- Un uso propuesto vago ("una nueva operación comercial") es proposedUse
+  "commercial operation" con proposedUseSpecificity "insufficient". Nunca
+  inventes la actividad.
+- Cambio de uso: "convertir X en Y" (Y distinto) → possibleChangeOfUse true,
+  explicit. "seguir usándolo como X" → false, explicit. "modificaciones al uso
+  existente" → true pero "inferred" (posible, NO confirmado).
+- Lo desconocido sigue desconocido. No llenes structuralWork, exteriorWork, business
+  status, employees, ni nada más con lo que sea típico.
+
+Ejemplo: "Un cliente alquiló un almacén existente de 12,000 pies cuadrados con oficinas
+en Guaynabo. Piensan remodelar el interior para una nueva operación comercial, incluyendo
+demolición interior, trabajo eléctrico y de plomería, construcción de oficinas y
+modificaciones al uso existente."
+-> scenario: property { municipality Guaynabo, existingBuilding true,
+   existingUse "warehouse and office", squareFeet 12000, ownershipStatus leased,
+   proposedUse "commercial operation", proposedUseSpecificity insufficient },
+   project { type [renovation, demolition], renovation true, demolition interior,
+   electricalWork true, plumbingWork true, layoutChanges true,
+   possibleChangeOfUse true (source "inferred") }; business.status OMITIDO.
+
+NEGOCIO vs PROYECTO. Nunca infieras la industria del negocio del trabajo de
+construcción. "Tenemos un almacén y lo estamos remodelando" NO significa que la
+industria sea Construcción — el negocio puede ser manufactura, distribución al por
+mayor, bienes raíces, o quedar sin resolver, mientras la construcción es solo el
+dominio regulatorio del proyecto. Solo pon una industria (o businessType/business_activity)
+cuando el hablante diga lo que hace el negocio.
+
+BANDAS DE CONFIANZA. >= 0.85: el hecho se dice claramente. 0.60–0.85: el hecho
+está fuertemente implícito pero no dicho del todo — pon requires_confirmation true
+en esa entrada. Por debajo de 0.60: omite el hecho por completo. Lo desconocido sigue
+desconocido: nunca llenes un hecho de projectContext adivinando, y nunca copies un
+hecho del negocio a projectContext (o viceversa) a menos que la oración lo respalde.
+
+Ejemplo: "Estábamos planeando remodelar un edificio comercial existente en
+Guaynabo para añadir un área nueva de almacén y oficinas de 12,000 pies cuadrados. El
+proyecto incluía demolición interior, paredes nuevas, trabajo eléctrico y de plomería,
+y algunos cambios al layout del edificio. La propiedad ya estaba operando comercialmente.
+Necesitábamos construcción y aprobaciones relacionadas, pero el proceso de permisos se
+volvió un problema mayor y el proyecto eventualmente se cayó."
+-> municipality Guaynabo; project_intent existing_business (confianza 0.80,
+   requires_confirmation true — "La propiedad ya estaba operando
+   comercialmente": una operación comercial viva que se remodela, no un negocio
+   nuevo); projectContext: project_type "renovation and
+   expansion", existing_building true, renovation true, expansion true,
+   new_construction true, property_type "commercial building",
+   existing_use "commercial", proposed_use "warehouse + office",
+   square_footage 12000, scope_of_work "demolición interior, paredes nuevas,
+   trabajo eléctrico y de plomería, cambios al layout", interior_demolition true,
+   new_walls true, layout_changes true, electrical_work true,
+   plumbing_work true, construction_approvals_required true,
+   known_permitting_issue "el proceso de permisos se volvió un problema mayor",
+   historical_project_status "el proyecto se cayó"; structural_work,
+   exterior_work, site_work, occupancy_change OMITIDOS (no se dijeron);
+   industry NO puesta en Construcción.
+
+Devuelve SOLO el JSON. Ningún otro texto.`;
+}
+
 function parseInterpretation(raw: string): Record<string, unknown> | null {
   const cleaned = (raw || "").replace(/```json|```/g, "").trim();
   try {
@@ -437,8 +827,14 @@ export async function POST(request: Request) {
   const candidates = clampCandidates(
     payload.candidates ?? { businessTypes: [], municipalities: [], questions: [] }
   );
-  const isEs = payload.lang === "es";
-  const discoveryPrompt = buildSystemPrompt(candidates, isEs, payload.allowedIndustries, payload.allowedLocationTypes);
+  // Spanish is detected from the user's own words, not just the UI toggle: a
+  // user may type Spanish while the UI is in English (and vice versa). When
+  // Spanish is detected the full Spanish prompt is used so context/keyword
+  // understanding happens in Spanish and fields populate correctly.
+  const isEs = payload.lang === "es" || detectSpanish(description);
+  const discoveryPrompt = isEs
+    ? buildSystemPromptEs(candidates, payload.allowedIndustries, payload.allowedLocationTypes)
+    : buildSystemPrompt(candidates, false, payload.allowedIndustries, payload.allowedLocationTypes);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30000);
@@ -472,12 +868,12 @@ export async function POST(request: Request) {
       if (Array.isArray(discovery.profileValues)) {
         discovery.profileValues = discovery.profileValues.filter((p) => p && ["industry", "location_type", "number_of_vehicles", "number_of_rental_units"].includes(p.key));
       }
-      return Response.json({ interpretation: discovery, proposals: validatePassportProposals(parsed.proposals, description, isEs ? "es" : "en"), ai_model: XAI_MODEL });
+      return Response.json({ interpretation: discovery, proposals: validatePassportProposals(parsed.proposals, description, isEs ? "es" : "en"), ai_model: XAI_MODEL, detected_lang: isEs ? "es" : "en" });
     }
     const stripped = stripUnknownIds(parsed, candidates);
     // Project-context facts are validated defensively: malformed entries are
     // dropped individually and never destroy the rest of the interpretation.
-    const { context: projectContext } = validateProjectContext(parsed.projectContext);
+    const { context: projectContext } = validateProjectContext(parsed.projectContext, description);
     // The model's scenario reading is checked against the text (quotes must
     // be real; guarded conclusions need the right language) and combined
     // with the deterministic reading. Never trusted as-is.
@@ -489,6 +885,7 @@ export async function POST(request: Request) {
       scenario,
       scenario_report: scenarioReport,
       ai_model: XAI_MODEL,
+      detected_lang: isEs ? "es" : "en",
     });
   } catch (e) {
     if (e instanceof XaiApiError) {
