@@ -1666,6 +1666,14 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/* Prominent "enter once" value line under the business-details block. */
+.spr-enter-once {
+  margin: 10px 0 0;
+  color: var(--spr-copy);
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.45;
+}
 .spr-profile-done {
   justify-self: start;
   padding: 12px 28px;
