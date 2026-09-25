@@ -1733,6 +1733,10 @@ export function AgencyChat(props: AgencyChatProps) {
             const openable = cards.filter((f) => f.supported && f.filing_status !== "submitted");
             const other = cards.filter((f) => !openable.includes(f));
             const hasDocs = (readiness?.documents.length ?? 0) > 0;
+            // Empty picker: the intro must not claim filings were found — the
+            // empty-state line below is the honest copy. (Deep links with
+            // ?filing= for an unsaved/local business land here too.)
+            const empty = !msg.loading && !msg.error && cards.length === 0;
             const card = (filing: FilingOption) => (
               <FilingCard
                 key={`${filing.id}:${filing.obligation_id}`}
@@ -1753,13 +1757,19 @@ export function AgencyChat(props: AgencyChatProps) {
                 )}
                 <AssistantBubble>
                   <p className="text-[15px] leading-snug text-slate-800">
-                    {hasDocs
+                    {empty
                       ? L(
-                          "Based on the documents you've completed, you're ready to start submissions with the following agencies. I've mapped each filing to the required documents we have on file.",
-                          "Según los documentos que completaste, puedes empezar a radicar con las siguientes agencias. Relacioné cada trámite con los documentos requeridos que tenemos en archivo.",
+                          "There's nothing I can file for this business yet.",
+                          "Todavía no hay nada que pueda tramitar para este negocio.",
                           lang
                         )
-                      : filingPickerIntro(lang)}
+                      : hasDocs
+                        ? L(
+                            "Based on the documents you've completed, you're ready to start submissions with the following agencies. I've mapped each filing to the required documents we have on file.",
+                            "Según los documentos que completaste, puedes empezar a radicar con las siguientes agencias. Relacioné cada trámite con los documentos requeridos que tenemos en archivo.",
+                            lang
+                          )
+                        : filingPickerIntro(lang)}
                   </p>
                   {readiness && <DocumentsOnFile docs={readiness.documents} lang={lang} />}
                   {!msg.loading && !msg.error && openable.length > 0 && (
@@ -1779,15 +1789,7 @@ export function AgencyChat(props: AgencyChatProps) {
                   </p>
                 ) : msg.error ? (
                   <p className="pl-11 text-[15px] font-medium text-rose-700">{msg.error}</p>
-                ) : cards.length === 0 ? (
-                  <p className="pl-11 text-[15px] leading-snug text-slate-500">
-                    {L(
-                      "There's nothing I can file for this business yet.",
-                      "Todavía no hay nada que pueda tramitar para este negocio.",
-                      lang
-                    )}
-                  </p>
-                ) : (
+                ) : empty ? null : (
                   <>
                     <div className="space-y-2">{openable.map(card)}</div>
                     {other.length > 0 && (
