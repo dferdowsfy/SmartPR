@@ -152,11 +152,13 @@ function PricingPageInner() {
             <SmartPRLogo />
           </Link>
           <nav className={styles.nav} aria-label="Primary">
+            <Link href="/#what-you-get">What you get</Link>
             <Link href="/#how-it-works">How it works</Link>
+            <Link href="/professionals">For professionals</Link>
             <Link href="/pricing" className={styles.navActive}>
               Pricing
             </Link>
-            <Link href="/professionals">For professionals</Link>
+            <Link href="/#security">Security</Link>
           </nav>
           <div className={styles.headerActions}>
             <Link href="/auth/login" className={styles.loginLink}>
