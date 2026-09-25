@@ -54,6 +54,7 @@ import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/pref
 import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
+import { filingReadinessKey, type FilingReadinessSummary } from "../../../../lib/agency-runs/filingReadiness";
 import {
   buildChatMilestones,
   chatScrollKey,
@@ -232,6 +233,97 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setMsgs((prev) => [...prev, msg]);
   }, []);
 
+  /* Chat input → SmartPR's general assistant (/api/chat). It answers
+     questions about requirements; it never drives the browser. */
+  const [askBusy, setAskBusy] = useState(false);
+  const askHistory = useRef<{ role: "user" | "assistant"; content: string }[]>([]);
+  const onAsk = useCallback(
+    async (text: string) => {
+      const stamp = Date.now();
+      pushMsg({ id: `user-${stamp}`, type: "user", text });
+      askHistory.current = [...askHistory.current, { role: "user" as const, content: text }].slice(-12);
+      setAskBusy(true);
+      const picker = msgs.find((m) => m.type === "filing-picker");
+      const filings = picker?.type === "filing-picker" ? picker.groups.flatMap((g) => g.filings) : [];
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: askHistory.current,
+            context: {
+              profile: { name: bizHeader?.name ?? null, municipality: bizHeader?.municipality ?? null },
+              requirements: filings.slice(0, 25).map((f) => ({
+                code: f.requirement_id ?? f.obligation_id,
+                name: `${f.obligation_name} — ${f.title_en}`,
+                agency: f.agency_en,
+                mandatory: true,
+                status: f.filing_status === "submitted" ? "passed" : "pending",
+              })),
+              language: lang,
+            },
+          }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { reply?: string };
+        const reply =
+          data.reply ||
+          L(
+            "I couldn't answer that right now. Try again in a moment.",
+            "No pude responder en este momento. Inténtalo de nuevo en un momento.",
+            lang
+          );
+        askHistory.current = [...askHistory.current, { role: "assistant" as const, content: reply }].slice(-12);
+        pushMsg({ id: `reply-${stamp}`, type: "text", textEn: reply, textEs: reply, tone: "info" });
+      } catch {
+        pushMsg({
+          id: `reply-${stamp}`,
+          type: "text",
+          textEn: "I couldn't reach the SmartPR assistant. Check your connection and try again.",
+          textEs: "No pude conectar con el asistente de SmartPR. Revisa tu conexión e inténtalo de nuevo.",
+          tone: "warn",
+        });
+      } finally {
+        setAskBusy(false);
+      }
+    },
+    [msgs, bizHeader, lang, pushMsg]
+  );
+
+  /** "Show missing items": what each openable filing still needs (from real records). */
+  const onShowMissing = useCallback(() => {
+    const picker = msgs.find((m) => m.type === "filing-picker");
+    if (picker?.type !== "filing-picker") return;
+    const lines: { en: string; es: string }[] = [];
+    for (const f of picker.groups.flatMap((g) => g.filings)) {
+      if (!f.supported) continue;
+      const r = picker.readiness?.filings.find((x) => x.key === filingReadinessKey(f));
+      const missing = r ? r.items.filter((i) => !i.ready) : (f.action?.missing_items ?? []).filter((m) => !m.sensitive);
+      if (missing.length === 0) continue;
+      lines.push({
+        en: `${f.agency_en} — ${f.title_en}: ${missing.map((m) => m.label_en).join(", ")}`,
+        es: `${f.agency_es} — ${f.title_es}: ${missing.map((m) => m.label_es).join(", ")}`,
+      });
+    }
+    const stamp = Date.now();
+    pushMsg(
+      lines.length === 0
+        ? {
+            id: `missing-${stamp}`,
+            type: "text",
+            textEn: "Nothing is missing for the filings you can open here — everything SmartPR tracks for them is in place.",
+            textEs: "No falta nada para los trámites que puedes abrir aquí — todo lo que SmartPR controla está listo.",
+            tone: "success",
+          }
+        : {
+            id: `missing-${stamp}`,
+            type: "text",
+            textEn: `Still needed before you submit:\n${lines.map((l) => `• ${l.en}`).join("\n")}`,
+            textEs: `Falta antes de radicar:\n${lines.map((l) => `• ${l.es}`).join("\n")}`,
+            tone: "warn",
+          }
+    );
+  }, [msgs, pushMsg]);
+
   /**
    * Load the filing picker: every SmartPR obligation for this business
    * joined to its browser filing (when one exists). The picker's
@@ -263,6 +355,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   // variants that can't start yet. Only supported filings
                   // get a Start button (the run API enforces the same).
                   groups: (result.groups ?? []) as FilingGroup[],
+                  readiness: (result.readiness ?? null) as FilingReadinessSummary | null,
                 }
               : m
           )
@@ -1190,6 +1283,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               stoppedOrFailed={Boolean(run && (run.status === "stopped" || run.status === "failed"))}
               onNewRun={newRun}
               runFailed={run?.status === "failed"}
+              projectName={bizHeader?.name ?? null}
+              onAsk={onAsk}
+              askBusy={askBusy}
+              onShowMissing={onShowMissing}
+              prepareHref={`/businesses/${businessId}#all-requirements`}
             />
           </section>
 

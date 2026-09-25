@@ -269,3 +269,19 @@ export function chatScrollKey(args: {
     args.msgCount,
   ].join("|");
 }
+
+/**
+ * The chat input goes to SmartPR's general assistant — never to a portal.
+ * Refuse anything that looks like a credential or a full ID number so
+ * passwords, MFA codes and SSNs are never collected in chat.
+ */
+export function looksLikeSecret(text: string): boolean {
+  const t = text.toLowerCase();
+  if (/\b(password|passcode|pwd|contraseña|clave)\b\s*(is|es|:|=)/.test(t)) return true;
+  if (/\b\d{3}-\d{2}-\d{4}\b/.test(t)) return true; // SSN / ITIN
+  if (/(^|\s)\d{9}(\s|$)/.test(t)) return true; // bare 9-digit ID
+  if (/\b(code|código|codigo|otp|mfa|2fa)\b\D{0,20}\d{4,8}\b/.test(t)) return true;
+  if (/^\s*\d{4,8}\s*$/.test(t)) return true; // a lone verification code
+  if (/\b(?:\d[ -]?){13,19}\b/.test(t)) return true; // card number
+  return false;
+}

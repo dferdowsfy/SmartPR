@@ -81,7 +81,7 @@ const mobile = W < 1024;
 const showChat = async () => { if (mobile) { await page.getByRole("tab", { name: "Conversation" }).click(); await page.waitForTimeout(300); } };
 
 await page.goto(`${base}/businesses/b1/agency-run?demo=1`, { waitUntil: "networkidle" });
-await page.getByRole("button", { name: "Start", exact: true }).click();
+await page.getByRole("button", { name: "Submit", exact: true }).click();
 await page.waitForTimeout(900);
 await page.getByRole("button", { name: "Start filing" }).click();
 await page.waitForTimeout(2200);

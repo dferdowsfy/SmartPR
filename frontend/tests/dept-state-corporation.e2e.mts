@@ -136,6 +136,7 @@ async function assertMatches(page: Page, f: Frame, label: string) {
 const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
 const ctx = await browser.newContext({ viewport: { width: W, height: H } });
 const page = await ctx.newPage();
+const asked: unknown[] = [];
 await page.route("**/api/**", async (route) => {
   const p = new URL(route.request().url()).pathname;
   const m = route.request().method();
@@ -143,7 +144,14 @@ await page.route("**/api/**", async (route) => {
   if (p === "/api/admin/me") return j({ admin: false });
   if (p === "/api/businesses/b1/payment-settings") return j({ filingFeeCard: { brand: "visa", last4: "4242", expMonth: 12, expYear: 2031, consentedAt: "2026-09-01T00:00:00Z", expired: false } });
   if (p.startsWith("/api/businesses/")) return j({ business: { legal_name: "Brisa Tropical Corp.", municipality: "San Juan" } });
-  if (p === "/api/agency-actions/filings") return j({ groups: filingGroups() });
+  if (p === "/api/agency-actions/filings") return j({ groups: filingGroups(), readiness: {
+    documents: [
+      { id: "DOC_EIN", label_en: "EIN Confirmation Letter", label_es: "Carta de confirmación del EIN", status: "verified" },
+      { id: "business_passport", label_en: "Business Passport", label_es: "Pasaporte comercial", status: "verified" },
+    ],
+    filings: [],
+  } });
+  if (p === "/api/chat") { asked.push(route.request().postDataJSON()); return j({ reply: "The Certificate of Incorporation is filed with the Department of State." }); }
   if (p === "/api/agency-actions/preflight") return j({ preflight: { passport_items: [{ label_en: "Legal business name", label_es: "x" }], questions: [], portal_name_en: "Corporate & Entities Registry", portal_name_es: "x", evidence_tags: [] }, filing_label_en: "Dept. of State — Form a corporation", filing_label_es: "x" });
   if (p === "/api/agency-actions" && m === "POST") return j({ run, brief });
   if (p === "/api/agency-runs/r1/resume") { resumes.push(route.request().postData() || ""); onResume(); return j({ run }); }
@@ -156,22 +164,35 @@ await page.route("**/api/**", async (route) => {
 // 1 — launch switch off: visible, not startable; LLC and annual report non-launchable; others visible.
 await page.goto(`${base}/businesses/b1/agency-run`, { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
-const corpCard = page.locator("div.rounded-2xl", { hasText: "Dept. of State — Form a corporation" }).last();
+const corpCard = page.locator("[data-testid=filing-card]", { hasText: "Form a corporation" });
 check("switch off: corporation filing is visible", await corpCard.isVisible());
-check("switch off: shows 'Not yet available' with no Start", /Not yet available/.test(await corpCard.innerText()) && (await corpCard.getByRole("button", { name: "Start", exact: true }).count()) === 0);
+check("switch off: shows 'Not yet available' with no Submit", /Not yet available/.test(await corpCard.innerText()) && (await corpCard.getByRole("button", { name: "Submit", exact: true }).count()) === 0);
 const pickerText = await page.locator("[aria-label='Mita chat']").innerText();
 check("LLC routes to its own variant, not the corporation", /Form an LLC \(Certificate of Organization\)/.test(pickerText));
 check("annual report routes to its own variant", /Annual report \/ annual fee/.test(pickerText));
 check("unsupported requirements stay visible", /Health \/ Sanitary Permit/.test(pickerText) && /Not yet supported/.test(pickerText));
-check("no Start anywhere while the switch is off", (await page.getByRole("button", { name: "Start", exact: true }).count()) === 0);
+check("no Submit anywhere while the switch is off", (await page.getByRole("button", { name: "Submit", exact: true }).count()) === 0);
+const docs = await page.locator("[data-testid=documents-on-file]").innerText();
+check("picker: documents on file listed with Complete", /EIN Confirmation Letter/.test(docs) && /Complete/.test(docs));
+check("picker: assistance quick actions present", (await page.locator("[data-testid=assist-panel]").innerText()).includes("Show missing items"));
+if (W < 1024) { /* composer lives in the chat pane on mobile too */ }
+const composer = page.getByRole("textbox", { name: "Message SmartPR" });
+await composer.fill("my password is hunter2");
+await composer.press("Enter");
+await page.waitForTimeout(300);
+check("composer: refuses a password and sends nothing", asked.length === 0 && /Don't share passwords/.test(await page.locator("[data-testid=chat-composer]").innerText()));
+await composer.fill("What does the Department of State need?");
+await composer.press("Enter");
+await page.waitForTimeout(800);
+check("composer: question goes to the SmartPR assistant", asked.length === 1 && /Certificate of Incorporation is filed/.test(await page.locator("[aria-label='Mita chat']").innerText()));
 await page.screenshot({ path: `${OUT}/dos-${TAG}-0-picker-off.png` });
 
 // 2 — pilot switch on: startable.
 launchEnv = { MITA_FLOW_DEPT_STATE_CORPORATION: "on" };
 await page.reload({ waitUntil: "networkidle" });
 await page.waitForTimeout(800);
-check("switch on: only the corporation filing gets Start", (await page.getByRole("button", { name: "Start", exact: true }).count()) === 1);
-await page.getByRole("button", { name: "Start", exact: true }).click();
+check("switch on: only the corporation filing gets Submit", (await page.getByRole("button", { name: "Submit", exact: true }).count()) === 1);
+await page.getByRole("button", { name: "Submit", exact: true }).click();
 await page.waitForTimeout(900);
 await page.getByRole("button", { name: "Start filing" }).click();
 await page.waitForTimeout(1500);

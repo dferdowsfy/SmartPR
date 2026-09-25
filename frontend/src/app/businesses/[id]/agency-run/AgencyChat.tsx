@@ -16,8 +16,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, Building2, CheckCircle2, ChevronDown, ClipboardList, Eye, EyeOff,
-  Hand, KeyRound, Landmark, Loader2, Play, Square, Stamp, Upload,
+  AlertTriangle, ArrowRight, ArrowUp, Building2, CheckCircle2, ChevronDown, ChevronRight, ClipboardList,
+  Eye, EyeOff, FileText, Flame, Hand, KeyRound, Landmark, ListChecks, Loader2, Play, Sparkles, Square,
+  Stamp, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import type {
@@ -48,6 +49,12 @@ import {
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
 import { INLINE_STEPS, type PortalStepKind } from "../../../../lib/agency-runs/portalStep";
 import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
+import {
+  filingReadinessKey,
+  type FilingReadiness,
+  type FilingReadinessSummary,
+} from "../../../../lib/agency-runs/filingReadiness";
+import { looksLikeSecret } from "./chatContracts";
 import { cardDisplayName, cardExpiryLabel } from "../../../../lib/billing/filingFeeCard";
 import { saveCardHref, useFilingFeeCard } from "../../FilingFeeCardSettings";
 import {
@@ -79,6 +86,8 @@ export interface FilingPickerMsg {
   id: string;
   type: "filing-picker";
   groups: FilingGroup[];
+  /** Documents on file + per-filing readiness (null = unavailable / signed out). */
+  readiness?: FilingReadinessSummary | null;
   loading: boolean;
   error: string | null;
 }
@@ -112,11 +121,18 @@ export interface TextMsg {
   textEs: string;
   tone: "info" | "warn" | "success";
 }
+/** Something the human typed into the chat input. */
+export interface UserTextMsg {
+  id: string;
+  type: "user";
+  text: string;
+}
 export type SessionMsg =
   | FilingPickerMsg
   | GoalBriefMsg
   | PreflightMsg
-  | TextMsg;
+  | TextMsg
+  | UserTextMsg;
 
 /* ------------------------------------------------------------------ */
 /* Small pieces                                                         */
@@ -245,31 +261,50 @@ function TransientHistory({ labels }: { labels: string[] }) {
   );
 }
 
-function agencyIcon(id: string) {
-  if (id === "HACIENDA_SURI") return <Landmark className="h-5 w-5 text-[#1e4d38]" />;
-  if (id === "DEPT_STATE") return <Building2 className="h-5 w-5 text-[#1e4d38]" />;
-  return <Stamp className="h-5 w-5 text-[#1e4d38]" />;
-}
-
 const FILING_CHIP_STYLES: Record<FilingStatus, string> = {
-  ready_to_start: "border-[#1e4d38]/30 bg-[#1e4d38]/[.07] text-[#1e4d38]",
+  ready_to_start: "border-blue-200 bg-blue-50 text-blue-800",
   missing_information: "border-amber-200 bg-amber-50 text-amber-900",
   in_progress: "border-sky-200 bg-sky-50 text-sky-800",
-  submitted: "border-slate-200 bg-slate-100 text-slate-600",
+  submitted: "border-emerald-200 bg-emerald-50 text-emerald-800",
   blocked: "border-amber-200 bg-amber-50 text-amber-900",
   not_available: "border-slate-200 bg-slate-100 text-slate-500",
   unsupported: "border-slate-200 bg-slate-100 text-slate-500",
 };
 
+/** Agency icon tile — colour-coded so agencies are recognisable at a glance. */
+function AgencyTile({ agencyId, agencyName }: { agencyId: string; agencyName: string }) {
+  const name = agencyName.toLowerCase();
+  const [Icon, cls] =
+    agencyId === "HACIENDA_SURI"
+      ? [Landmark, "bg-emerald-50 text-emerald-700"]
+      : agencyId === "DEPT_STATE"
+        ? [Building2, "bg-sky-50 text-sky-700"]
+        : agencyId === "OGPE"
+          ? [Stamp, "bg-violet-50 text-violet-700"]
+          : agencyId === "DEMO_REHEARSAL"
+            ? [Sparkles, "bg-amber-50 text-amber-700"]
+            : /fire|bombero/.test(name)
+              ? [Flame, "bg-rose-50 text-rose-600"]
+              : /municip/.test(name)
+                ? [Landmark, "bg-teal-50 text-teal-700"]
+                : [FileText, "bg-slate-100 text-slate-600"];
+  return (
+    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${cls}`} aria-hidden="true">
+      <Icon className="h-5 w-5" />
+    </span>
+  );
+}
+
 /**
- * One filing option card. SmartPR decided this filing needs to happen;
- * the card only lets the human start it when SmartPR has everything it
- * needs. Unsupported options render disabled — never a launch button.
- * Missing-information options link to the Business Passport where the
- * missing facts get filled in — a card with no action is a dead end.
+ * One agency submission card. The whole card opens the filing's browser-
+ * assisted workflow (pre-flight first); the human still reviews and submits
+ * on the portal. Fully ready filings get the strong primary "Submit";
+ * filings with gaps keep a softer button and say what's still needed.
+ * Filings that can't launch show why — never a button.
  */
 function FilingCard({
   filing,
+  readiness,
   lang,
   onStart,
   onResume,
@@ -278,6 +313,7 @@ function FilingCard({
   passportHref,
 }: {
   filing: FilingOption;
+  readiness: FilingReadiness | null;
   lang: Lang;
   onStart: () => void;
   onResume: () => void;
@@ -286,16 +322,10 @@ function FilingCard({
   passportHref: string | null;
 }) {
   const action = filing.action;
-  // Informational count: passport fields still missing. The human can
-  // start anyway — the assistant asks for these during the run.
   const gate = action ? nonSensitiveMissingItems(action).length : 0;
   const verification = action
     ? AGENCY_FILING_CONFIGS.find((c) => c.id === action.filing_type)?.verification
     : undefined;
-  // Supported + ready or missing-information filings get the Start button.
-  // In-progress filings with a live run get Resume instead — an
-  // in-progress card with no action is a dead end. Unsupported, blocked,
-  // and submitted filings never get a button.
   const canStart =
     filing.supported &&
     (filing.filing_status === "ready_to_start" ||
@@ -304,95 +334,160 @@ function FilingCard({
     filing.supported &&
     filing.filing_status === "in_progress" &&
     Boolean(filing.active_run_id);
+  const fullyReady = canStart && readiness !== null && readiness.ready === readiness.total && gate === 0;
+  const stillNeeded = readiness ? readiness.items.filter((i) => !i.ready) : [];
+  const actionable = (canStart || canResume) && !disabled && !busy;
+  const open = canResume ? onResume : onStart;
+  const agency = L(filing.agency_en, filing.agency_es, lang);
+  // Titles carry an agency prefix ("Dept. of State — Form a corporation");
+  // the card already names the agency, so show just the filing.
+  const title = L(filing.title_en, filing.title_es, lang).replace(/^[^—]{2,40}\s—\s/, "");
+  const earlyAccess =
+    filing.supported && verification && verification.status !== "verified" && action?.agency_id !== "DEMO_REHEARSAL";
+
   return (
-    <div className="rounded-2xl border border-[#161616]/10 bg-white p-4 shadow-sm shadow-slate-950/[0.03]">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-[family-name:var(--font-display)] text-lg font-medium text-[#23211c]">
-          {L(filing.title_en, filing.title_es, lang)}
-        </p>
-        <span
-          className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[13px] font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
-        >
-          {filingStatusChipLabel(filing, lang)}
-        </span>
+    <div
+      data-testid="filing-card"
+      data-ready={fullyReady ? "true" : "false"}
+      role={actionable ? "button" : undefined}
+      tabIndex={actionable ? 0 : undefined}
+      aria-label={actionable ? L(`${agency}: ${title} — open in the browser`, `${agency}: ${title} — abrir en el navegador`, lang) : undefined}
+      onClick={(e) => {
+        if (!actionable || (e.target as HTMLElement).closest("a,button")) return;
+        open();
+      }}
+      onKeyDown={(e) => {
+        if (!actionable || e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      }}
+      className={`group rounded-2xl border bg-white p-3.5 transition-colors ${
+        fullyReady
+          ? "border-blue-300 bg-blue-50/40 shadow-sm shadow-blue-900/[0.05]"
+          : "border-slate-200"
+      } ${actionable ? "cursor-pointer hover:border-blue-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500" : ""}`}
+    >
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <AgencyTile agencyId={filing.agency_id} agencyName={filing.agency_en} />
+        <div className="min-w-[10rem] flex-1">
+          <p className="text-[15px] font-bold leading-snug text-[#161616]">{agency}</p>
+          <p className="text-[14px] leading-snug text-slate-600">{title}</p>
+          {readiness ? (
+            <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-slate-500" data-testid="filing-readiness">
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              {L(
+                `${readiness.ready} of ${readiness.total} ${readiness.total === 1 ? "item" : "items"} ready`,
+                `${readiness.ready} de ${readiness.total} listos`,
+                lang
+              )}
+            </p>
+          ) : action ? (
+            <p className="mt-0.5 flex items-center gap-1.5 text-[13px] text-slate-500">
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              {L(`${action.known} of ${action.total} ready from your Passport`, `${action.known} de ${action.total} listas en tu Pasaporte`, lang)}
+            </p>
+          ) : null}
+        </div>
+        {canStart || canResume ? (
+          <div className="ml-auto flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              disabled={busy || disabled}
+              onClick={open}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[14px] font-bold disabled:opacity-50 ${
+                fullyReady || canResume
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+              }`}
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+              {busy
+                ? L("Opening…", "Abriendo…", lang)
+                : canResume
+                  ? L("Resume", "Continuar", lang)
+                  : L("Submit", "Enviar", lang)}
+              {!busy && <ArrowRight className="h-3.5 w-3.5" />}
+            </button>
+            <ChevronRight className="h-4 w-4 text-slate-300 transition-colors group-hover:text-slate-500" aria-hidden="true" />
+          </div>
+        ) : (
+          <span
+            className={`ml-auto shrink-0 rounded-full border px-2.5 py-0.5 text-[12px] font-bold ${FILING_CHIP_STYLES[filing.filing_status]}`}
+          >
+            {filingStatusChipLabel(filing, lang)}
+          </span>
+        )}
       </div>
-      {filing.supported && (
-        <p className="mt-1 text-[15px] text-slate-500">
-          <span className="font-semibold">{L("SmartPR requirement: ", "Requisito de SmartPR: ", lang)}</span>
-          {filing.obligation_name}
-        </p>
-      )}
+
       {!filing.supported && (
-        <p className="mt-1 text-[15px] text-slate-500">
-          {filing.filing_status === "not_available"
-            ? filingNotAvailableCopy(lang)
-            : filingUnsupportedCopy(lang)}
+        <p className="mt-2 pl-14 text-[13px] leading-snug text-slate-500">
+          {filing.filing_status === "not_available" ? filingNotAvailableCopy(lang) : filingUnsupportedCopy(lang)}
         </p>
       )}
-      {action && (
-        <p className="mt-1 text-[15px] text-slate-500">
-          {L(
-            `${action.known} of ${action.total} ready from your Passport`,
-            `${action.known} de ${action.total} listas en tu Pasaporte`,
-            lang
+      {canStart && stillNeeded.length > 0 && (
+        <p className="mt-2 pl-14 text-[13px] leading-snug text-amber-800" data-testid="filing-still-needed">
+          <span className="font-semibold">{L("Still needed: ", "Falta: ", lang)}</span>
+          {stillNeeded.map((i) => L(i.label_en, i.label_es, lang)).join(", ")}
+          {gate > 0 && passportHref && (
+            <>
+              {" · "}
+              <a href={passportHref} className="font-semibold text-blue-700 hover:underline">
+                {filingPassportCtaCopy(lang)}
+              </a>
+            </>
           )}
-        </p>
-      )}
-      {filing.supported && verification && verification.status !== "verified" && action?.agency_id !== "DEMO_REHEARSAL" && (
-        <p className="mt-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[13px] leading-snug text-slate-600">
-          <span className="font-semibold text-slate-700">{L("Early access: ", "Acceso anticipado: ", lang)}</span>
-          {L(
-            "this portal's online steps haven't been verified end to end yet. Mita pauses and hands over whenever the portal differs from what it expects.",
-            "los pasos en línea de este portal aún no se han verificado de principio a fin. Mita se detiene y te pasa el control cuando el portal no coincide con lo esperado.",
-            lang
-          )}
-        </p>
-      )}
-      {filing.filing_status === "missing_information" && gate > 0 && (
-        <p className="mt-1.5 text-[15px] font-semibold text-amber-800">
-          {filingGateCopy(gate, lang)}
         </p>
       )}
       {action && action.blocked_by.length > 0 && (
-        <p className="mt-1 text-[15px] text-slate-500">
+        <p className="mt-1 pl-14 text-[13px] text-slate-500">
           {L("Waiting on: ", "Esperando: ", lang)}
           {action.blocked_by.join(", ")}
         </p>
       )}
-      {canStart && (
-        <button
-          type="button"
-          disabled={busy || disabled}
-          onClick={onStart}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
-        </button>
-      )}
-      {canResume && (
-        <button
-          type="button"
-          disabled={busy || disabled}
-          onClick={onResume}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {busy ? L("Resuming…", "Continuando…", lang) : L("Resume", "Continuar", lang)}
-        </button>
-      )}
-      {/* Passport completion stays available as a secondary action —
-          filling the passport up front means fewer interruptions mid-run. */}
-      {filing.filing_status === "missing_information" && gate > 0 && passportHref && (
-        <a
-          href={passportHref}
-          className="ml-2 mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#1e4d38]/40 bg-[#1e4d38]/[.06] px-4 py-2 text-[15px] font-semibold text-[#1e4d38] hover:bg-[#1e4d38]/[.12]"
-        >
-          <ClipboardList className="h-3.5 w-3.5" />
-          {filingPassportCtaCopy(lang)}
-        </a>
+      {earlyAccess && (
+        <p className="mt-1.5 pl-14 text-[12px] leading-snug text-slate-500">
+          <span className="font-semibold text-slate-600">{L("Early access: ", "Acceso anticipado: ", lang)}</span>
+          {L(
+            "Mita pauses and hands over whenever the portal differs from what it expects.",
+            "Mita se detiene y te pasa el control cuando el portal no coincide con lo esperado.",
+            lang
+          )}
+        </p>
       )}
     </div>
+  );
+}
+
+const DOC_STATUS_LABEL: Record<string, [string, string]> = {
+  verified: ["Complete", "Completo"],
+  on_file: ["On file", "En archivo"],
+  needs_attention: ["Needs attention", "Requiere atención"],
+};
+
+/** Supporting documents SmartPR has on file (Evidence Locker + Passport). */
+function DocumentsOnFile({ docs, lang }: { docs: FilingReadinessSummary["documents"]; lang: Lang }) {
+  if (docs.length === 0) return null;
+  return (
+    <ul className="mt-3 space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/50 px-3 py-2.5" data-testid="documents-on-file">
+      {docs.map((d) => {
+        const done = d.status !== "needs_attention";
+        return (
+          <li key={d.id} className="flex items-center gap-2.5 text-[14px]">
+            {done ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+            )}
+            <span className="min-w-0 flex-1 leading-snug text-slate-800">{L(d.label_en, d.label_es, lang)}</span>
+            <span className={`shrink-0 text-[13px] font-semibold ${done ? "text-emerald-700" : "text-amber-700"}`}>
+              {L(DOC_STATUS_LABEL[d.status][0], DOC_STATUS_LABEL[d.status][1], lang)}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -1436,7 +1531,19 @@ export interface AgencyChatProps {
   stoppedOrFailed: boolean;
   onNewRun: () => void;
   runFailed: boolean;
+  /** Business / project name shown above the filing list. */
+  projectName?: string | null;
+  /** Free-text question from the chat input (general SmartPR assistant, not the browser agent). */
+  onAsk: (text: string) => void;
+  askBusy: boolean;
+  /** "Show missing items" quick action. */
+  onShowMissing: () => void;
+  /** "Prepare documents" quick action target. */
+  prepareHref: string;
 }
+
+const QUICK_ACTION =
+  "inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50";
 
 /**
  * Stable busy key for a filing card. Dept. of State can surface two
@@ -1449,6 +1556,20 @@ export function filingBusyKey(filing: FilingOption): string {
 
 export function AgencyChat(props: AgencyChatProps) {
   const { lang } = props;
+  const [draft, setDraftState] = useState("");
+  const [composerNote, setComposerNote] = useState<string | null>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const setDraft = (text: string) => {
+    setDraftState(text);
+    if (composerNote) setComposerNote(null);
+    requestAnimationFrame(() => {
+      const el = composerRef.current;
+      if (el && document.activeElement !== el && text) {
+        el.focus();
+        el.setSelectionRange(text.length, text.length);
+      }
+    });
+  };
   const scrollBoxRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -1604,29 +1725,62 @@ export function AgencyChat(props: AgencyChatProps) {
         <div ref={contentRef} className="space-y-4">
         {props.msgs.map((msg) => {
           if (msg.type === "filing-picker") {
+            const readiness = msg.readiness ?? null;
+            const readinessFor = (f: FilingOption) =>
+              readiness?.filings.find((r) => r.key === filingReadinessKey(f)) ?? null;
+            const cards = msg.groups.flatMap((g) => g.filings);
+            // Filings that can open come first; ones that can't stay visible below.
+            const openable = cards.filter((f) => f.supported && f.filing_status !== "submitted");
+            const other = cards.filter((f) => !openable.includes(f));
+            const hasDocs = (readiness?.documents.length ?? 0) > 0;
+            const card = (filing: FilingOption) => (
+              <FilingCard
+                key={`${filing.id}:${filing.obligation_id}`}
+                filing={filing}
+                readiness={readinessFor(filing)}
+                lang={lang}
+                busy={props.filingBusyId === filingBusyKey(filing)}
+                disabled={props.runActive || props.filingBusyId !== null}
+                onStart={() => props.onStartFiling(filing)}
+                onResume={() => props.onResumeFiling(filing)}
+                passportHref={`/businesses/${props.businessId}#business-passport`}
+              />
+            );
             return (
-              <AssistantBubble key={msg.id}>
-                <p className="text-[15px] leading-snug text-slate-700">
-                  {filingPickerIntro(lang)}
-                </p>
-                {!props.run && (
-                  <p className="mt-1.5 text-[13px] leading-snug text-slate-500">
-                    {L(
-                      "I open the agency portal, fill it from your Business Passport and ask you for anything missing. You review and submit — nothing is sent without your approval.",
-                      "Abro el portal de la agencia, lo lleno desde tu Pasaporte de Negocio y te pido lo que falte. Tú revisas y envías — nada se envía sin tu aprobación.",
-                      lang
-                    )}
-                  </p>
+              <div key={msg.id} className="space-y-3" data-testid="filing-picker">
+                {props.projectName && (
+                  <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400">{props.projectName}</p>
                 )}
+                <AssistantBubble>
+                  <p className="text-[15px] leading-snug text-slate-800">
+                    {hasDocs
+                      ? L(
+                          "Based on the documents you've completed, you're ready to start submissions with the following agencies. I've mapped each filing to the required documents we have on file.",
+                          "Según los documentos que completaste, puedes empezar a radicar con las siguientes agencias. Relacioné cada trámite con los documentos requeridos que tenemos en archivo.",
+                          lang
+                        )
+                      : filingPickerIntro(lang)}
+                  </p>
+                  {readiness && <DocumentsOnFile docs={readiness.documents} lang={lang} />}
+                  {!msg.loading && !msg.error && openable.length > 0 && (
+                    <p className="mt-3 text-[15px] leading-snug text-slate-700">
+                      {L(
+                        "You can submit to the agencies below. Select one to open it in the browser. SmartPR will guide you through the process and use your information to help complete the filing — you review and submit on the portal.",
+                        "Puedes radicar con las agencias de abajo. Elige una para abrirla en el navegador. SmartPR te guía y usa tu información para ayudarte a completar el trámite — tú revisas y envías en el portal.",
+                        lang
+                      )}
+                    </p>
+                  )}
+                </AssistantBubble>
                 {msg.loading ? (
-                  <p className="mt-3 flex items-center gap-2 text-[15px] text-slate-500">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#1e4d38]" />
+                  <p className="flex items-center gap-2 pl-11 text-[15px] text-slate-500">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                     {L("Finding your filings…", "Buscando tus trámites…", lang)}
                   </p>
                 ) : msg.error ? (
-                  <p className="mt-3 text-[15px] font-medium text-rose-700">{msg.error}</p>
-                ) : msg.groups.length === 0 ? (
-                  <p className="mt-3 text-[15px] leading-snug text-slate-500">
+                  <p className="pl-11 text-[15px] font-medium text-rose-700">{msg.error}</p>
+                ) : cards.length === 0 ? (
+                  <p className="pl-11 text-[15px] leading-snug text-slate-500">
                     {L(
                       "There's nothing I can file for this business yet.",
                       "Todavía no hay nada que pueda tramitar para este negocio.",
@@ -1634,39 +1788,67 @@ export function AgencyChat(props: AgencyChatProps) {
                     )}
                   </p>
                 ) : (
-                  <div className="mt-3 space-y-4">
-                    {msg.groups.map((group) => (
-                      <div key={group.agency_id}>
-                        <div className="flex items-center gap-2">
-                          {agencyIcon(group.agency_id)}
-                          <p className="text-[15px] font-extrabold uppercase tracking-wider text-slate-500">
-                            {L(group.agency_name_en, group.agency_name_es, lang)}
-                          </p>
-                          {group.demo && (
-                            <span className="rounded-md bg-amber-300 px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide text-black">
-                              Demo
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-2 space-y-2">
-                          {group.filings.map((filing) => (
-                            <FilingCard
-                              key={`${filing.id}:${filing.obligation_id}`}
-                              filing={filing}
-                              lang={lang}
-                              busy={props.filingBusyId === filingBusyKey(filing)}
-                              disabled={props.runActive || props.filingBusyId !== null}
-                              onStart={() => props.onStartFiling(filing)}
-                              onResume={() => props.onResumeFiling(filing)}
-                              passportHref={`/businesses/${props.businessId}#business-passport`}
-                            />
-                          ))}
-                        </div>
+                  <>
+                    <div className="space-y-2">{openable.map(card)}</div>
+                    {other.length > 0 && (
+                      <div data-testid="filings-unavailable">
+                        <p className="mb-2 mt-1 pl-1 text-[12px] font-bold uppercase tracking-wider text-slate-400">
+                          {L("Not available for browser filing yet", "Aún no disponibles para radicar en el navegador", lang)}
+                        </p>
+                        <div className="space-y-2">{other.map(card)}</div>
                       </div>
-                    ))}
+                    )}
+                  </>
+                )}
+                {!props.run && !msg.loading && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3.5" data-testid="assist-panel">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600" aria-hidden="true">
+                        <ClipboardList className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <p className="text-[14px] font-bold text-[#161616]">
+                          {L("Need to prepare more documents?", "¿Necesitas preparar más documentos?", lang)}
+                        </p>
+                        <p className="text-[13px] leading-snug text-slate-600">
+                          {L(
+                            "I can help identify missing items, explain any requirement, or help prepare supporting materials before you submit.",
+                            "Puedo ayudarte a identificar lo que falta, explicar cualquier requisito o preparar documentos de apoyo antes de radicar.",
+                            lang
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={props.onShowMissing} className={QUICK_ACTION}>
+                        <ListChecks className="h-4 w-4" />
+                        {L("Show missing items", "Ver lo que falta", lang)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDraft(L("Explain the requirement for ", "Explícame el requisito de ", lang))}
+                        className={QUICK_ACTION}
+                      >
+                        <FileText className="h-4 w-4" />
+                        {L("Explain a requirement", "Explicar un requisito", lang)}
+                      </button>
+                      <a href={props.prepareHref} className={QUICK_ACTION}>
+                        <Sparkles className="h-4 w-4" />
+                        {L("Prepare documents", "Preparar documentos", lang)}
+                      </a>
+                    </div>
                   </div>
                 )}
-              </AssistantBubble>
+              </div>
+            );
+          }
+          if (msg.type === "user") {
+            return (
+              <div key={msg.id} className="flex justify-end">
+                <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-snug text-white">
+                  {msg.text}
+                </p>
+              </div>
             );
           }
           if (msg.type === "goal-brief") {
@@ -1736,7 +1918,7 @@ export function AgencyChat(props: AgencyChatProps) {
                     M
                   </span>
                 )}
-                <p className="text-[15px] leading-snug text-slate-700">
+                <p className="whitespace-pre-line text-[15px] leading-snug text-slate-700">
                   {L(msg.textEn, msg.textEs, lang)}
                 </p>
               </div>
@@ -1774,7 +1956,72 @@ export function AgencyChat(props: AgencyChatProps) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3">
+      {!props.runActive && (
+        <form
+          className="border-t border-slate-100 px-4 pt-3"
+          data-testid="chat-composer"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const text = draft.trim();
+            if (!text || props.askBusy) return;
+            if (looksLikeSecret(text)) {
+              setComposerNote(
+                L(
+                  "Don't share passwords, verification codes or full ID numbers here. Enter those only in the agency portal.",
+                  "No compartas contraseñas, códigos de verificación ni números de identificación completos aquí. Escríbelos solo en el portal de la agencia.",
+                  lang
+                )
+              );
+              return;
+            }
+            setComposerNote(null);
+            setDraftState("");
+            stickRef.current = true;
+            props.onAsk(text);
+          }}
+        >
+          <div className="flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 focus-within:border-blue-400">
+            <textarea
+              ref={composerRef}
+              value={draft}
+              rows={1}
+              onChange={(e) => {
+                setDraftState(e.target.value);
+                if (composerNote) setComposerNote(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
+              placeholder={L("Ask a question or tell me what you'd like to do…", "Haz una pregunta o dime qué quieres hacer…", lang)}
+              aria-label={L("Message SmartPR", "Mensaje a SmartPR", lang)}
+              autoComplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              className="max-h-32 min-h-[1.75rem] flex-1 resize-none bg-transparent py-1 text-[15px] leading-snug text-slate-800 outline-none placeholder:text-slate-400"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim() || props.askBusy}
+              aria-label={L("Send", "Enviar", lang)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400"
+            >
+              {props.askBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
+            </button>
+          </div>
+          {composerNote && (
+            <p className="mt-1.5 text-[13px] font-medium text-amber-800" role="alert">
+              {composerNote}
+            </p>
+          )}
+        </form>
+      )}
+
+      <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3 empty:hidden">
         {props.stoppedOrFailed ? (
           <button
             type="button"
