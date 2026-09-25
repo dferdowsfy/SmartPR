@@ -37,6 +37,9 @@ ALTER TABLE businesses ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS public_id TEXT;
 -- Business Passport: enter-once canonical facts that stamp every applicable form.
 ALTER TABLE businesses ADD COLUMN IF NOT EXISTS passport_json JSONB NOT NULL DEFAULT '{}'::jsonb;
+-- Payment settings (filing-fee card reminder): Stripe reference + brand/last 4 only.
+-- Separate from passport_json so passport saves and agent prompts never touch it.
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS payment_settings JSONB NOT NULL DEFAULT '{}'::jsonb;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_public_id ON businesses (public_id);
 UPDATE businesses SET legal_name = name WHERE legal_name IS NULL;
 CREATE INDEX IF NOT EXISTS idx_businesses_workspace ON businesses (workspace_id);

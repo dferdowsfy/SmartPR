@@ -48,6 +48,8 @@ import {
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
 import { INLINE_STEPS, type PortalStepKind } from "../../../../lib/agency-runs/portalStep";
 import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
+import { cardDisplayName, cardExpiryLabel } from "../../../../lib/billing/filingFeeCard";
+import { saveCardHref, useFilingFeeCard } from "../../FilingFeeCardSettings";
 import {
   filingGateCopy,
   filingPassportCtaCopy,
@@ -636,6 +638,9 @@ function PaymentHandoff({ run, lang }: { run: AgencyRunPublic; lang: Lang }) {
   const config = AGENCY_FILING_CONFIGS.find((c) => c.id === run.filing_type);
   const flowPayee = config?.agencyEn;
   const amount = run.portal_step?.amount ?? null;
+  const { state: cardState } = useFilingFeeCard(run.business_id);
+  const savedCard = cardState.status === "ready" ? cardState.card : null;
+  const expiry = savedCard ? cardExpiryLabel(savedCard) : null;
   const rows: [string, string][] = [
     [L("Payee", "Beneficiario", lang), (lang === "es" ? config?.agencyEs : flowPayee) ?? L("The agency", "La agencia", lang)],
     [
@@ -648,8 +653,8 @@ function PaymentHandoff({ run, lang }: { run: AgencyRunPublic; lang: Lang }) {
     [
       L("How you pay", "Cómo pagas", lang),
       L(
-        "Directly in the agency portal. SmartPR never sees your card.",
-        "Directamente en el portal de la agencia. SmartPR nunca ve tu tarjeta.",
+        "You enter the card directly in the agency portal. Mita doesn't type card details and SmartPR doesn't charge this fee.",
+        "Tú escribes la tarjeta directamente en el portal de la agencia. Mita no escribe datos de tarjeta y SmartPR no cobra este cargo.",
         lang
       ),
     ],
@@ -664,13 +669,44 @@ function PaymentHandoff({ run, lang }: { run: AgencyRunPublic; lang: Lang }) {
           </div>
         ))}
       </dl>
+      {savedCard ? (
+        <div
+          className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[13px] text-slate-800"
+          data-testid="payment-handoff-card"
+        >
+          <span className="font-semibold">
+            {L(`Use your ${cardDisplayName(savedCard)}`, `Usa tu ${cardDisplayName(savedCard)}`, lang)}
+          </span>
+          {expiry && (
+            <span className={savedCard.expired ? " text-rose-700" : " text-slate-500"}>
+              {savedCard.expired
+                ? L(` — expired ${expiry}, use another card`, ` — venció ${expiry}, usa otra tarjeta`, lang)
+                : L(` (exp. ${expiry})`, ` (vence ${expiry})`, lang)}
+            </span>
+          )}
+          <span className="block text-xs text-slate-500">
+            {L(
+              "Saved in your Business Passport as your filing-fee card. Type it into the portal's payment form yourself.",
+              "Guardada en tu Pasaporte comercial como tarjeta para cargos de radicación. Escríbela tú en el formulario de pago del portal.",
+              lang
+            )}
+          </span>
+        </div>
+      ) : cardState.status === "ready" ? (
+        <p className="mt-1.5 text-xs text-slate-500">
+          {L("No filing-fee card saved. ", "No hay tarjeta guardada para cargos. ", lang)}
+          <a href={saveCardHref(run.business_id)} target="_blank" rel="noopener" className="font-semibold text-brand hover:underline">
+            {L("Save one for next time", "Guarda una para la próxima", lang)}
+          </a>
+        </p>
+      ) : null}
       {config?.payment.feeNote && (
         <p className="mt-1.5 text-xs text-slate-500">{config.payment.feeNote}</p>
       )}
       <p className="mt-1.5 text-xs text-slate-500">
         {L(
-          "Saved SmartPR payment methods and SmartPR credit can't be used for this government fee — the agency only accepts payment in its own portal.",
-          "Los métodos de pago guardados y el crédito de SmartPR no sirven para este cargo del gobierno — la agencia solo acepta pagos en su propio portal.",
+          "The agency only accepts payment in its own portal, so SmartPR can't charge your saved card or apply SmartPR credit to this government fee.",
+          "La agencia solo acepta pagos en su propio portal, así que SmartPR no puede cobrar tu tarjeta guardada ni aplicar crédito de SmartPR a este cargo del gobierno.",
           lang
         )}
       </p>

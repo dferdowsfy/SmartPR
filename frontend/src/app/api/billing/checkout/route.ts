@@ -6,6 +6,11 @@ import {
   type PlanId,
 } from "@/lib/billing/catalog";
 import { appUrl, getStripe } from "@/lib/billing/stripe";
+import {
+  FILING_FEE_CARD_CONSENT_EN,
+  FILING_FEE_CARD_CONSENT_VERSION,
+} from "@/lib/billing/filingFeeCard";
+import { accessibleBusinessUuid } from "@/lib/billing/filingFeeCardStore";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getPool } from "../../../graph/db";
 
@@ -14,6 +19,9 @@ export const runtime = "nodejs";
 type CheckoutBody = {
   planId?: string;
   period?: string;
+  /** Opt-in: remember this card as the filing-fee reminder for a business. */
+  saveCardForFilingFees?: boolean;
+  businessId?: string;
 };
 
 function parsePeriod(raw: string | undefined): BillingPeriod | null {
@@ -119,6 +127,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
+  // Filing-fee card reminder: explicit opt-in, for a business this user can
+  // edit. Consent is recorded in the session metadata and only acted on by
+  // the signed webhook once the payment succeeds.
+  let filingFeeMeta: Record<string, string> = {};
+  if (body.saveCardForFilingFees === true) {
+    const pool = getPool();
+    const businessId = typeof body.businessId === "string" ? body.businessId.trim() : "";
+    if (!businessId) {
+      return NextResponse.json(
+        { error: "Choose which business the filing-fee card is for." },
+        { status: 400 }
+      );
+    }
+    const businessUuid = pool ? await accessibleBusinessUuid(pool, businessId, user.id) : null;
+    if (!businessUuid) {
+      return NextResponse.json(
+        { error: "You don't have access to that business." },
+        { status: 403 }
+      );
+    }
+    filingFeeMeta = {
+      filing_fee_card: "reminder_only",
+      filing_fee_card_business_id: businessUuid,
+      filing_fee_card_consent_version: FILING_FEE_CARD_CONSENT_VERSION,
+      filing_fee_card_consented_at: new Date().toISOString(),
+    };
+  }
+  const saveCard = Object.keys(filingFeeMeta).length > 0;
+
   const base = appUrl();
   const mode = period === "one_time" ? "payment" : "subscription";
   const meta = {
@@ -126,18 +163,22 @@ export async function POST(req: NextRequest) {
     period,
     workspace_id: workspaceId,
     user_id: user.id,
+    ...filingFeeMeta,
   };
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${base}/pricing?success=1`,
+      success_url: `${base}/pricing?success=1${saveCard ? "&card=1" : ""}`,
       cancel_url: `${base}/pricing?cancel=1`,
       allow_promotion_codes: true,
       client_reference_id: workspaceId,
       customer_email: user.email || undefined,
       metadata: meta,
+      ...(saveCard
+        ? { custom_text: { submit: { message: FILING_FEE_CARD_CONSENT_EN } } }
+        : {}),
       ...(mode === "subscription"
         ? {
             subscription_data: {

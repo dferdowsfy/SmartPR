@@ -149,6 +149,19 @@ explicit confirmation before any charge. Only Stripe IDs and non-sensitive displ
 last 4) may be stored in payment settings — never card numbers, CVV, or portal credentials, and
 nothing payment-related in the Business Passport.
 
+**Filing-fee card reminder (shipped).** The pricing page has an opt-in toggle, "Use this card for
+filing fees", plus a business picker. When it is on, checkout checks that the user can edit that
+business and records consent (user, business, consent version, timestamp) in the session
+metadata. The signed `checkout.session.completed` webhook checks access again and stores only
+the Stripe `pm_…` reference, brand, last 4 and expiry, with `use: "reminder_only"`. It goes in
+`businesses.payment_settings`, a separate column. `passport_json` would be the wrong place: passport
+saves replace it and the agent prompt embeds it. The Business Passport panel shows it under
+"Payment settings" with a Remove button that withdraws consent. At Mita's payment step the handoff
+shows "Use your Visa •••• 4242" next to the payee and the portal amount. The human still enters
+the card in the agency portal. SmartPR never charges this card for government fees, Mita never
+types card details, and the browser API never returns the Stripe reference. Tests:
+`npm run test:billing`, plus the payment assertions in `npm run test:dos:e2e`.
+
 ## 6. Next filing variants (priority order)
 
 1. **Dept. of State corporation — live pilot** (phases 1–5 above; human participation required).

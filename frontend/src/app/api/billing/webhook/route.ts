@@ -3,6 +3,11 @@ import type Stripe from "stripe";
 import { resolvePlanId } from "@/lib/billing/entitlements";
 import { getStripe } from "@/lib/billing/stripe";
 import { getPool } from "../../../graph/db";
+import { saveFilingFeeCardFromCheckout } from "@/lib/billing/filingFeeCardWebhook";
+import {
+  accessibleBusinessUuid,
+  saveFilingFeeCard,
+} from "@/lib/billing/filingFeeCardStore";
 
 export const runtime = "nodejs";
 
@@ -103,7 +108,53 @@ function periodEnd(sub: Stripe.Subscription): Date | null {
   return new Date(end * 1000);
 }
 
+/**
+ * Opt-in filing-fee card reminder. Stores the payment-method reference and
+ * brand/last 4 only; never throws, so it can't fail the subscription write.
+ */
+async function rememberFilingFeeCard(session: Stripe.Checkout.Session): Promise<void> {
+  const pool = getPool();
+  if (!pool || session.metadata?.filing_fee_card !== "reminder_only") return;
+  const stripe = getStripe();
+  try {
+    const outcome = await saveFilingFeeCardFromCheckout(
+      {
+        id: session.id,
+        mode: session.mode,
+        payment_status: session.payment_status,
+        metadata: session.metadata,
+        subscription: session.subscription as string | { id: string } | null,
+        payment_intent: session.payment_intent as string | { id: string } | null,
+      },
+      {
+        subscriptionPaymentMethod: async (id) =>
+          (await stripe.subscriptions.retrieve(id)).default_payment_method as string | { id: string } | null,
+        paymentIntentPaymentMethod: async (id) =>
+          (await stripe.paymentIntents.retrieve(id)).payment_method as string | { id: string } | null,
+        retrievePaymentMethod: async (id) => {
+          const pm = await stripe.paymentMethods.retrieve(id);
+          return { id: pm.id, type: pm.type, card: pm.card ?? null };
+        },
+        accessibleBusiness: (businessId, userId) => accessibleBusinessUuid(pool, businessId, userId),
+        save: (businessUuid, card) => saveFilingFeeCard(pool, businessUuid, card),
+      }
+    );
+    if (!outcome.saved) {
+      console.info("[billing/webhook] filing-fee card not saved", { reason: outcome.reason });
+    }
+  } catch (err) {
+    console.error("[billing/webhook] filing-fee card save failed", (err as Error).message);
+  }
+}
+
 async function handleCheckoutCompleted(
+  session: Stripe.Checkout.Session
+): Promise<void> {
+  await handleCheckoutCompletedPlan(session);
+  await rememberFilingFeeCard(session);
+}
+
+async function handleCheckoutCompletedPlan(
   session: Stripe.Checkout.Session
 ): Promise<void> {
   const planFromMeta = session.metadata?.planId ?? null;
