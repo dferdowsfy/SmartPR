@@ -471,13 +471,33 @@ export function classifyEngineRequirements(
     const winIdx = (() => {
       for (const s of ["required", "likely_required", "conditional"] as const) {
         const i = basisStates.indexOf(s);
-        if (i >= 0) return i;
+        if (i < 0) continue;
+        // A basis asserting a NEW filing beats a standing-obligation
+        // verification basis: e.g. change_of_use → Permiso Único (new use
+        // authorization, no compliance_mode) must not be demoted to
+        // verify_existing by the physical-location basis (RULE_0007) merely
+        // because the business already holds a Permiso Único for its old
+        // use. The new filing is a distinct obligation arising from the
+        // current project. Scoped to "required" only — likely_required and
+        // conditional keep first-wins ordering.
+        if (s === "required") {
+          const newFiling = basisStates.findIndex(
+            (st, bi) =>
+              st === "required" &&
+              basisRules[bi]?.compliance_mode !== "verify_existing"
+          );
+          if (newFiling >= 0) return newFiling;
+        }
+        return i;
       }
       return 0;
     })();
     const winAsserted =
       basisStates[winIdx] === "required" || basisStates[winIdx] === "likely_required";
-    const winCompliance = basisRules[winIdx]?.compliance_mode ?? row.compliance_mode ?? null;
+    // The winning basis alone decides posture. (row.compliance_mode is the
+    // first-matched basis's mode — identical to basisRules[0]'s — so it is
+    // never a meaningful fallback once the winning basis is selected.)
+    const winCompliance = basisRules[winIdx]?.compliance_mode ?? null;
     if (winCompliance === "verify_existing" && winAsserted && applicability !== "not_applicable") {
       if (options.businessStatus === "existing") applicability = "verify_existing";
       else if (options.businessStatus === "new") applicability = recommended ? "recommended" : "required";
@@ -562,8 +582,15 @@ export function classifyEngineRequirements(
     // is untouched: this only selects which winning basis supplies
     // reason/source_rule. All other orderings keep the existing array-order
     // behavior.
+    // REG-PROVENANCE-SPECIFICITY-002 (2026-09-25): a project_fact basis is
+    // likewise more specific than a generic question trigger — it names the
+    // current project's own driver. E.g. Permiso Único fired by RULE_0007
+    // (physical location, question_trigger) and RULE_0699 (change_of_use,
+    // project_fact): the card is REQUIRED because of the change of use, so
+    // the reason must say "Change of use", not "physical location".
     const isBusinessTypeBasis = (i: number) =>
-      basisRules[i]?.rule_type === "business_type";
+      basisRules[i]?.rule_type === "business_type" ||
+      basisRules[i]?.rule_type === "project_fact";
     const winningIndependent = basisStates
       .map((state, i) => i)
       .filter((i) => flags[i] === null && basisStates[i] === selectedState);

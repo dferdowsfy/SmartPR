@@ -81,6 +81,9 @@ const PROJECT_FACT_LABELS: Record<string, Record<string, { en: string; es: strin
     leased: { en: "Leased property", es: "Propiedad arrendada" },
     owned: { en: "Owned property", es: "Propiedad propia" },
   },
+  change_of_use: {
+    true: { en: "Change of use", es: "Cambio de uso" },
+  },
 };
 
 /**

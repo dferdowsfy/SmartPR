@@ -7383,6 +7383,28 @@
   ]
  },
  {
+  "id": "RULE_0699",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PERMISO_UNICO",
+  "citation": "Art. 8.4A, Ley 161-2009 (23 L.P.R.A. § 9018c-1), añadido por Ley 19-2017",
+  "citation_url": "https://www.permisos.pr.gov/",
+  "citation_confidence": "page",
+  "citation_inherited_from": "DOC_PERMISO_UNICO",
+  "citation_source": "document",
+  "fact_key": "change_of_use",
+  "change_log": [
+   {
+    "date": "2026-09-25",
+    "change": "New rule: a confirmed change of use routes the project through a use authorization (Permiso Único) in addition to any construction permit.",
+    "reason": "Live 2026-09-25: Guaynabo furniture manufacturer converting warehouse/office to manufacturing surfaced only the OGPe Construction Permit — change_of_use is captured by intake (projectContext) but no rule consumed it, so the use-authorization dimension produced zero requirements. The scenario graph's own copy states a change of use 'routes the project through a use authorization in addition to the construction work'. No compliance_mode: a change of use asserts a NEW filing even for an existing business (it must not demote to verify_existing)."
+   }
+  ]
+ },
+ {
   "id": "RULE_0650",
   "rule_type": "question_trigger",
   "business_type_id": null,

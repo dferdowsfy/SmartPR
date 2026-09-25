@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload } from "lucide-react";
+import { Bot, CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
@@ -42,6 +42,22 @@ export interface RequirementDownload {
    * finished document when you're back." */
   downloadedHint: string;
   onDownload: () => void;
+}
+/** Clara-first filing: for requirements filed at an external portal, the
+ * card launches the Clara filing workspace (in-app) instead of kicking the
+ * user out to a government website in a new tab. The workspace lists the
+ * filings Clara can work through with the user — the user approves every
+ * step and sensitive/human-only steps stay in their hands. */
+export interface RequirementPortalFiling {
+  /** Visible button label, already localized by the caller
+   * (e.g. "File with Clara" / "Radicar con Clara"). */
+  label: string;
+  /** In-app route to the Clara filing workspace for this business,
+   * e.g. `/businesses/{id}/agency-run`. Same-tab navigation. */
+  href: string;
+  /** Localized caption under the button, e.g. "Work through this filing
+   * with Clara — you stay in control of every step." */
+  hint: string;
 }
 /** Inline Yes/No prompt for an unanswered trigger question — rendered in
  * the action column when a requirement is conditional only because the
@@ -88,8 +104,13 @@ export interface RequirementCardProps {
   secondaryOnCompleted?: boolean;
   /** Visible "Download form / File online" button rendered in the action
    * column — the direct official destination for this requirement, never
-   * hidden inside the "Why do I need this?" disclosure. */
+   * hidden inside the "Why do I need this?" disclosure. Omitted when
+   * `portalFiling` is set: portal filings launch Clara instead of opening
+   * the government site in a new tab. */
   download?: RequirementDownload;
+  /** Clara-first portal filing — rendered in place of `download` for
+   * requirements filed at an external portal. */
+  portalFiling?: RequirementPortalFiling;
   /** "More information needed" inline Yes/No — rendered in the action
    * column when the requirement is conditional only because the triggering
    * answer is still unknown. Answering writes a real discovery answer and
@@ -156,6 +177,7 @@ export function RequirementCard({
   answerPrompt,
   secondary,
   download,
+  portalFiling,
   extra,
   id,
   contextLabel,
@@ -194,7 +216,16 @@ export function RequirementCard({
               </div>
             </div>
           )}
-          {download && action.kind !== "completed" && (
+          {portalFiling && action.kind !== "completed" && (
+            <>
+              <a href={portalFiling.href} className="rq-download-btn rq-clara-btn">
+                <Bot size={15} />
+                <span>{portalFiling.label}</span>
+              </a>
+              <span className="rq-downloaded-hint">{portalFiling.hint}</span>
+            </>
+          )}
+          {download && !portalFiling && action.kind !== "completed" && (
             <>
               <a
                 href={download.url}

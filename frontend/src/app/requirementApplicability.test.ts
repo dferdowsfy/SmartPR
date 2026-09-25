@@ -291,3 +291,69 @@ test("REG-MFK-ANSWERED-001 v2: an engine default-false is not an answered questi
       JSON.stringify(license.missingFacts)
   );
 });
+
+// ---------------------------------------------------------------------------
+// REG-CHANGE-OF-USE-001 (2026-09-25): an existing business converting its
+// premises to a new use (Guaynabo furniture manufacturer: warehouse/office
+// -> manufacturing) must surface the use authorization (Permiso Único) as a
+// REQUIRED new filing — not just the construction permit, and not demoted
+// to verify_existing by the standing physical-location basis (RULE_0007).
+// Without a change of use the standing posture is preserved.
+// ---------------------------------------------------------------------------
+function classifyChangeOfUse(changeOfUse: boolean) {
+  const generated = runRulesEngine(KB, {
+    municipalityName: "Guaynabo",
+    businessTypeName: "Furniture Manufacturing",
+    answers: { Q_PHYSICAL_LOCATION: true, Q_EMPLOYEES_HIRED: true },
+    projectFacts: { change_of_use: changeOfUse, project_type: "renovation" },
+    businessStatus: "existing",
+  }).requirements;
+  return classifyEngineRequirements(generated, {
+    kb: KB,
+    entityType: "limited_liability_company",
+    businessStatus: "existing",
+    answers: { Q_PHYSICAL_LOCATION: true, Q_EMPLOYEES_HIRED: true },
+  });
+}
+
+test("change of use: Permiso Único is a REQUIRED new filing for an existing business", () => {
+  const classified = classifyChangeOfUse(true);
+  const unico = classified.find((r) => r.document_id === "DOC_PERMISO_UNICO");
+  assert.ok(unico, "DOC_PERMISO_UNICO should surface");
+  assert.equal(
+    unico.applicability,
+    "required",
+    "a confirmed change of use asserts a new use-authorization filing; " +
+      "RULE_0007's verify_existing posture must not demote it"
+  );
+  assert.equal(
+    unico.source_rule_id,
+    "RULE_0699",
+    "the card's legal basis must be the change-of-use rule, not the physical-location rule"
+  );
+  assert.ok(
+    /^Project fact: change_of_use = true$/.test(unico.reason),
+    "the card reason must name the change of use: " + unico.reason
+  );
+  const construction = classified.find(
+    (r) => r.document_id === "DOC_OGPE_CONSTRUCTION_PERMIT"
+  );
+  assert.ok(construction, "the renovation still needs its construction permit");
+  assert.equal(construction.applicability, "required");
+});
+
+test("no change of use: Permiso Único stays verify_existing for an existing business", () => {
+  const classified = classifyChangeOfUse(false);
+  const unico = classified.find((r) => r.document_id === "DOC_PERMISO_UNICO");
+  assert.ok(unico, "DOC_PERMISO_UNICO should surface");
+  assert.equal(
+    unico.applicability,
+    "verify_existing",
+    "without a change of use the existing business verifies its standing permit"
+  );
+  const construction = classified.find(
+    (r) => r.document_id === "DOC_OGPE_CONSTRUCTION_PERMIT"
+  );
+  assert.ok(construction, "the renovation still needs its construction permit");
+  assert.equal(construction.applicability, "required");
+});

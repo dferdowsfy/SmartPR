@@ -866,6 +866,13 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 }
 .rq-download-btn:hover { background: var(--accent-soft); }
 
+/* Clara-first portal filing: the recommended path — solid brand treatment
+   distinguishes it from the plain external "File online" bridge. */
+.rq-download-btn.rq-clara-btn {
+  background: var(--brand); border-color: var(--brand); color: #fff;
+}
+.rq-download-btn.rq-clara-btn:hover { background: #1c4a4a; }
+
 /* Inline "more information needed" answer prompt. The requirement is only on
    the list because the triggering answer is unknown; the Yes/No writes a
    real discovery answer and reruns the engine — it never invents one. */

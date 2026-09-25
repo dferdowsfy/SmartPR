@@ -5239,6 +5239,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       onDownload: () => handleDownloadClick(req.code),
     } : undefined;
 
+    // Clara-first filing (2026-09-25): requirements filed at an external
+    // portal launch the Clara filing workspace in-app instead of kicking
+    // the user out to a government website in a new tab. Clara works
+    // through the filing with the user — approvals and sensitive/human-only
+    // steps stay in their hands. Needs a business to file for; without one
+    // (anonymous intake) the external link stays as the fallback.
+    const filingBusinessId = businessIdRef.current ?? businessId;
+    const portalFiling = req.downloadUrl && req.downloadKind === "filing_portal" && filingBusinessId
+      ? {
+          label: L('File with Clara', language),
+          href: `/businesses/${filingBusinessId}/agency-run`,
+          hint: L('Work through this filing with Clara — you stay in control of every step.', language),
+        }
+      : undefined;
+
     // Inline answer control for the "more information needed" card. Writing
     // the answer is a REAL discovery answer: the engine reruns immediately
     // and the card becomes REQUIRED with "Answer: Yes" (or disappears on
@@ -5268,6 +5283,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       secondary,
       secondaryOnCompleted,
       download,
+      portalFiling,
       extra: hasExtra ? extra : undefined,
       contextLabel: req.incentiveLabel ?? null,
     };
@@ -6271,6 +6287,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 secondary={c.secondary}
                 secondaryOnCompleted={c.secondaryOnCompleted}
                 download={c.download}
+                portalFiling={c.portalFiling}
                 extra={c.extra}
                 contextLabel={c.contextLabel}
               />
@@ -6307,6 +6324,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       secondary={c.secondary}
                       secondaryOnCompleted={c.secondaryOnCompleted}
                       download={c.download}
+                      portalFiling={c.portalFiling}
                       extra={c.extra}
                       contextLabel={c.contextLabel}
                     />

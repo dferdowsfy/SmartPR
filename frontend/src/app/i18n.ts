@@ -736,6 +736,8 @@ export const ES: Record<string, string> = {
   "This is filed directly with the agency — upload the issued document here to keep your package complete.": "Esto se radica directamente con la agencia; sube el documento emitido aquí para mantener tu paquete completo.",
   "Download form": "Descargar formulario",
   "File online": "Radicar en línea",
+  "File with Clara": "Radicar con Clara",
+  "Work through this filing with Clara — you stay in control of every step.": "Completa esta radicación con Clara — tú mantienes el control de cada paso.",
   "Get the form": "Obtener el formulario",
   "How to file": "Cómo radicar",
   "Open again": "Abrir de nuevo",
