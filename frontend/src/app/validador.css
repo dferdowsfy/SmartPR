@@ -1945,6 +1945,9 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   background: var(--accent-soft, #e8f5ee); color: var(--accent, #0ea371);
   font-size: 12px; font-weight: 600;
 }
+/* Uncertain conclusions: never styled like confirmed facts. */
+.spr-nl-needs { flex-basis: 100%; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.spr-nl-chip-needs { background: #fdf5e6; color: #8a5a0b; border: 1px dashed #e8c07a; }
 .spr-nl-edit {
   background: none; border: none; padding: 0 4px; cursor: pointer;
   color: var(--brand-2, #4f46e5); font-size: 12px; font-weight: 600; text-decoration: underline;
@@ -2493,3 +2496,35 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   text-decoration: underline; text-underline-offset: 2px;
 }
 .spr-link:hover { color: #0b7a55; }
+
+/* ---- Semantic scenario: existing-business Passport + project questions --- */
+.spr-scn-passport { margin-top: 4px; padding: 14px 16px; border: 1px solid #dbe7f0; border-radius: 12px; background: #f7fafc; }
+.spr-scn-passport-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spr-scn-passport-name { font-size: 15px; font-weight: 700; color: #0f2332; }
+.spr-scn-passport-ok { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--accent, #0ea371); }
+.spr-scn-project { margin-top: 6px; font-size: 13.5px; color: #40515e; }
+.spr-scn-project b { color: #0f2332; }
+.spr-scn-known { margin-top: 10px; font-size: 13px; color: #40515e; }
+.spr-scn-known summary { cursor: pointer; font-weight: 600; color: #5b6b78; }
+.spr-scn-known dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; }
+.spr-scn-known dt { color: #7a8a96; }
+.spr-scn-known dd { margin: 0; color: #0f2332; font-weight: 500; }
+.spr-scn-deltas { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: #8a5a0b; }
+.spr-scn-questions { margin-top: 16px; padding: 14px 16px; border: 1px solid #e4e0f5; border-radius: 12px; background: #faf9ff; }
+.spr-scn-questions h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #0f2332; }
+.spr-scn-q-text { margin: 8px 0 2px; font-size: 15px; font-weight: 600; color: #0f2332; }
+.spr-scn-q-why { margin: 0 0 10px; font-size: 12.5px; color: #60717e; }
+.spr-scn-q-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.spr-scn-q-row input[type="text"] { flex: 1 1 240px; min-width: 0; padding: 9px 12px; border: 1px solid #d5dde3; border-radius: 10px; font: inherit; font-size: 14px; }
+.spr-scn-q-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid #d5dde3; background: #fff; font-size: 13.5px; font-weight: 600; color: #0f2332; cursor: pointer; }
+.spr-scn-q-btn.primary { background: var(--spr-ink, #0f2332); color: #fff; border-color: transparent; }
+.spr-scn-q-btn[aria-pressed="true"] { border-color: var(--brand-2, #4f46e5); background: #eef0ff; }
+.spr-scn-q-btn:disabled { opacity: .45; cursor: default; }
+.spr-scn-q-progress { font-size: 12px; color: #7a8a96; }
+.spr-scn-later { margin: 10px 0 0; font-size: 12.5px; color: #7a8a96; }
+@media (max-width: 640px) {
+  .spr-scn-known dl { grid-template-columns: 1fr; }
+}
+
+.spr-live-subhead { margin: 6px 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #7a8a96; }
+.spr-live-agency { color: #7a8a96; font-weight: 500; }

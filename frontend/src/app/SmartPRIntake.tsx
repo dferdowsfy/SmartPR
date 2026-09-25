@@ -35,6 +35,7 @@ import { CoreApplicationDetails } from './forms/engine/CoreApplicationDetails';
 // Optional AI-assisted natural-language intake shortcut. The interpreter only
 // fills EXISTING intake fields — the rules engine still decides requirements.
 import { NaturalLanguageIntake } from './components/NaturalLanguageIntake';
+import { ExistingPassportCard, ScenarioQuestions } from './components/intake/ScenarioPanel';
 import { mirrorAnswersToProfile, prefillKeysForPatch, questionIdForAnswerKey, QUESTION_KEY_MAP, WIZARD_KEY_TO_QUESTION } from './ai/intake/questionKeyMap';
 // Intake is a connected fact model: the resolver derives every fact that is
 // logically certain from what the user already told us, so SmartPR never asks a
@@ -52,6 +53,24 @@ import {
   validateProjectContext,
   type ProjectContext,
 } from './ai/intake/projectContext';
+import {
+  applyScenarioAnswer,
+  combineScenario,
+  describeScenario,
+  emptyScenario,
+  evaluateScenario,
+  identityFieldsKnown,
+  liveFactLines,
+  mergePassportIntoScenario,
+  passportDeltas,
+  passportKnownItems,
+  passportSnapshotFromApi,
+  reconcileProjectContext,
+  scenarioTitle,
+  type PassportSnapshot,
+  type ScenarioContext,
+  type ScenarioQuestion,
+} from './ai/intake/scenario';
 import {
   normalizeProjectIntent,
   projectIntentLabel,
@@ -1903,6 +1922,47 @@ export default function SmartPRIntake() {
   // scope, square footage, …). Preserved alongside the intake so requirements
   // reasoning, Agency Assist briefs, and the passport can use them.
   const [projectContext, setProjectContext] = useState<ProjectContext>({});
+  // Semantic scenario: SmartPR's factual model of the described situation
+  // (ai/intake/scenario). The rules engine still decides requirements; the
+  // scenario drives what is understood, what is uncertain, and which
+  // controlling facts to ask about next.
+  const [scenario, setScenario] = useState<ScenarioContext | null>(null);
+  const scenarioRef = useRef<ScenarioContext | null>(null);
+  scenarioRef.current = scenario;
+  // Scenario questions the user answered "Not sure" — not asked again.
+  const [scenarioSkipped, setScenarioSkipped] = useState<string[]>([]);
+  // Linked existing business's Passport (identity + registration facts).
+  const [passportSnapshot, setPassportSnapshot] = useState<PassportSnapshot | null>(null);
+  const scenarioActive = !!scenario && Object.values(scenario).some((section) => Object.keys(section).length > 0);
+  // The Passport only counts for the existing-business branch.
+  const scenarioPassport = projectIntent === 'existing_business' ? passportSnapshot : null;
+  const mergedScenario = useMemo(
+    () => (scenarioActive || scenarioPassport ? mergePassportIntoScenario(scenario ?? emptyScenario(), scenarioPassport) : null),
+    [scenario, scenarioActive, scenarioPassport]
+  );
+  // Knowledge-graph applicability of the scenario: likely vs potential
+  // paths, controlling unknowns, and the next questions.
+  const scenarioEval = useMemo(
+    () => (mergedScenario && scenarioActive ? evaluateScenario(mergedScenario, KB, { passport: scenarioPassport, skip: scenarioSkipped }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
+    [mergedScenario, scenarioActive, scenarioPassport, scenarioSkipped, kbReady]
+  );
+  const scenarioSummary = useMemo(() => (mergedScenario && scenarioActive ? describeScenario(mergedScenario) : null), [mergedScenario, scenarioActive]);
+  // Identity fields the linked Passport already answers are not asked again.
+  const passportKnownFields = useMemo(() => identityFieldsKnown(scenarioPassport), [scenarioPassport]);
+  const answerScenarioQuestion = (q: ScenarioQuestion, answer: string | boolean | string[]) => {
+    const next = applyScenarioAnswer(scenarioRef.current ?? emptyScenario(), q.id, answer);
+    if (JSON.stringify(next) === JSON.stringify(scenarioRef.current)) {
+      // Nothing the graph can use ("Something else") — don't ask it again.
+      setScenarioSkipped((prev) => [...prev, q.id]);
+      return;
+    }
+    setScenario(next);
+    // Answered facts are stated by the user: they reach the rules engine at
+    // full confidence through the same flat project facts as before.
+    setProjectContext((prev) => reconcileProjectContext(prev, next));
+  };
+  const skipScenarioQuestion = (q: ScenarioQuestion) => setScenarioSkipped((prev) => [...prev, q.id]);
   // (projectIntent / projectIntentConfirmed are declared above the
   // entry/creation effects, which read them in their dependency arrays.)
   // The Project Passport: project/property facts for the active intent,
@@ -1940,6 +2000,14 @@ export default function SmartPRIntake() {
       cancelled = true;
     };
   }, [me, projectIntent, businessId]);
+
+  // Existing business with exactly one business on the account: load its
+  // Passport immediately instead of asking the user to pick it.
+  useEffect(() => {
+    if (projectIntent !== "existing_business" || businessId) return;
+    if (linkableBusinesses && linkableBusinesses.length === 1) linkExistingBusiness(linkableBusinesses[0].public_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the list arrives
+  }, [linkableBusinesses, projectIntent, businessId]);
 
   /** Link the picked existing business: updates the URL + state so the
    *  passport-prefill effect picks it up exactly like a ?business= landing. */
@@ -2300,9 +2368,13 @@ export default function SmartPRIntake() {
     // The owner/operator question is suppressed only when the description
     // already established that relationship; a business name alone does not
     // answer "what company or entity owns or operates the project?".
-    const projectFollowUps: DiscoveryQuestion[] = projectContextFollowUps(projectContext, {
-      ownerKnown: projectFactKnown(projectContext, "business_is_owner_operator"),
-    });
+    // With a semantic scenario, project questions come from the knowledge
+    // graph (scenario panel) — only the unknowns a reachable rule reads.
+    const projectFollowUps: DiscoveryQuestion[] = scenarioActive
+      ? []
+      : projectContextFollowUps(projectContext, {
+          ownerKnown: projectFactKnown(projectContext, "business_is_owner_operator"),
+        });
     // project_only: no business type is ever set, and even if one leaked in,
     // a property/project with no business asks zero business-formation
     // questions — only the deterministic project follow-ups.
@@ -2359,7 +2431,7 @@ export default function SmartPRIntake() {
       setQuestionList([]);
       setCurrentQuestionIndex(0);
     }
-  }, [profile.business_type, profile.location_type, kbReady, projectContext, projectIntent, existingBizFormed]);
+  }, [profile.business_type, profile.location_type, kbReady, projectContext, projectIntent, existingBizFormed, scenarioActive]);
 
   // Project-first branching.
   //
@@ -2393,6 +2465,7 @@ export default function SmartPRIntake() {
         if (!res.ok) return;
         const data = await res.json();
         const b = data?.business;
+        setPassportSnapshot(passportSnapshotFromApi(businessId, data));
         if (b) {
           // Record exactly which keys the passport filled: they are persistent
           // business-level facts (admissible for business rules when the
@@ -2709,6 +2782,8 @@ export default function SmartPRIntake() {
    */
   const handleNarrativeEdit = () => {
     quarantineNarrativeFacts();
+    setScenario(null);
+    setScenarioSkipped([]);
   };
 
   const applyInterpretedIntake = (patch: IntakePatch, validated?: ValidatedInterpretation, opts?: { fresh?: boolean }) => {
@@ -2881,6 +2956,14 @@ export default function SmartPRIntake() {
       if (suggestedIntent && !appliedIntent) {
         setConfirmationsNeeded((prev) => ({ ...prev, project_intent: true }));
       }
+    }
+
+    // Semantic scenario: a fresh description replaces it; a follow-up refines
+    // it (stated facts fill gaps and replace inferences; see combineScenario).
+    if (validated?.scenario) {
+      const incomingScenario = validated.scenario;
+      if (opts?.fresh) setScenarioSkipped([]);
+      setScenario((prev) => (opts?.fresh || !prev ? incomingScenario : combineScenario(prev, incomingScenario)));
     }
 
     // Project context: merge follow-up extractions into the retained facts.
@@ -5506,7 +5589,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // once the user has given SmartPR something to work with.
   const liveBlank = intakeDone === 0;
   const stageIntelligence: SmartPRLiveData = view === 'intake' ? {
-    statusText: liveBlank
+    statusText: scenarioEval
+      ? (scenarioEval.questions.length
+          ? (language === 'es' ? 'Entendí la situación. Faltan algunos hechos que cambian qué aplica.' : 'Situation understood. A few facts still change what applies.')
+          : (language === 'es' ? 'Situación entendida.' : 'Situation understood.'))
+      : liveBlank
       ? (language === 'es' ? 'Creando tu perfil de cumplimiento…' : 'Building your compliance profile…')
       : intakeQuestionsComplete
         ? (language === 'es' ? 'Perfil inicial listo para evaluar.' : 'Initial profile ready for rules evaluation.')
@@ -5514,7 +5601,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     progress: intakeDone > 0 ? intakePct : null,
     progressLabel: language === 'es' ? 'Contexto del negocio' : 'Business context',
     readiness: null,
-    metrics: [
+    metrics: scenarioEval && mergedScenario ? [
+      { value: describeScenario(mergedScenario).understood.length, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: true },
+      { value: scenarioEval.likely.length, label: language === 'es' ? 'Probablemente aplican' : 'Likely paths', emphasis: scenarioEval.likely.length > 0 },
+      { value: scenarioEval.potential.length, label: language === 'es' ? 'Por verificar' : 'Need more information' },
+      { value: scenarioEval.controlling.length, label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
+    ] : [
       { value: liveBlank ? 0 : liveFacts, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: !liveBlank && liveFacts > 0 },
       { value: liveBlank ? 0 : liveRequired, label: language === 'es' ? 'Requisitos por reglas' : 'Determined by rules', emphasis: !liveBlank && liveRequired > 0 },
       { value: liveBlank ? 0 : liveConditional, label: language === 'es' ? 'Por verificar' : 'Need verification' },
@@ -5525,8 +5617,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     potentialRequirements: potentialItems
       .filter((item) => !potentialDecisions[item.flag])
       .map((item) => language === 'es' ? L(item.document, language) : item.document),
-    nextAction: nextIntakeAction,
-    whyAsking,
+    nextAction: scenarioEval?.questions[0] ? L(scenarioEval.questions[0].text, language) : nextIntakeAction,
+    whyAsking: scenarioEval?.questions[0] ? L(scenarioEval.questions[0].whyWeAsk, language) : whyAsking,
+    // Driven by the scenario and knowledge-graph applicability — not by
+    // keyword matches in the description.
+    scenario: scenarioEval && mergedScenario ? {
+      facts: liveFactLines(mergedScenario),
+      stillNeeds: scenarioEval.controlling.map((c) => c.label),
+      likely: scenarioEval.likely.map((p) => ({ name: p.name, agency: p.agency })),
+      potential: scenarioEval.potential.map((p) => ({ name: p.name, agency: p.agency, needs: p.needs })),
+    } : null,
   } : view === 'requirements' ? {
     statusText: processingDocumentCount > 0
       ? (language === 'es' ? 'SmartPR está analizando evidencia…' : 'SmartPR is analyzing evidence…')
@@ -5666,6 +5766,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   allowedLocationTypes={LOCATION_TYPES}
                   onApply={applyInterpretedIntake}
                   onEdit={handleNarrativeEdit}
+                  scenarioSummary={scenarioSummary}
                   passport={passportModeActive ? {
                     canonical: canonicalApplication,
                     unconfirmedDefaults: canonicalOverride ? [] : ['formationStatus', ...(profile.business_structure ? [] : ['entityType'])],
@@ -5770,6 +5871,41 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </div>
                 )}
 
+                {/* Existing business: the Passport is loaded — identity is
+                    known and never asked again; the description is a new
+                    project of that business. */}
+                {projectIntent === 'existing_business' && passportSnapshot && (
+                  <div className="spr-field full">
+                    <ExistingPassportCard
+                      name={passportSnapshot.name ?? profile.name ?? L('Linked business', language)}
+                      projectTitle={mergedScenario ? scenarioTitle(mergedScenario) : null}
+                      known={passportKnownItems(passportSnapshot)}
+                      deltas={mergedScenario ? passportDeltas(mergedScenario, passportSnapshot) : []}
+                      lang={language}
+                    />
+                  </div>
+                )}
+
+                {/* Relational questions from the knowledge graph: only the
+                    controlling unknowns of branches this scenario reaches,
+                    one at a time, in dependency order. */}
+                {scenarioEval && (
+                  <div className="spr-field full">
+                    <ScenarioQuestions
+                      evaluation={scenarioEval}
+                      heading={
+                        projectIntent === 'existing_business' && passportSnapshot
+                          ? (language === 'es' ? 'Aún necesitamos para este proyecto' : 'We still need for this project')
+                          : (language === 'es' ? 'Lo que SmartPR aún necesita' : 'What SmartPR still needs')
+                      }
+                      lang={language}
+                      onAnswer={answerScenarioQuestion}
+                      onSkip={skipScenarioQuestion}
+                    />
+                  </div>
+                )}
+
+                {!passportKnownFields.has('name') && (
                 <div className="spr-field full">
                   <label htmlFor="spr-business-name">
                     {isProjectOnly ? L('Project name', language) : t('businessName')}
@@ -5783,7 +5919,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     required
                   />
                 </div>
+                )}
 
+                {!passportKnownFields.has('municipality') && (
                 <div className="spr-field">
                   <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
                   <select
@@ -5799,11 +5937,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     {municipalityOptions.map((m: string) => <option key={m} value={m}>{m}</option>)}
                   </select>
                 </div>
+                )}
                 {/* project_only asks zero business-formation questions: industry,
                     business type, location type, entity type, and headcount
                     are business fields and never appear for a property-only
                     project. */}
                 {!isProjectOnly && (<>
+                {!passportKnownFields.has('industry') && (
                 <div className="spr-field">
                   <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
@@ -5815,7 +5955,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                   </select>
                 </div>
+                )}
 
+                {!passportKnownFields.has('business_type') && (
                 <div className="spr-field">
                   <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
@@ -5836,6 +5978,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     ))}
                   </select>
                 </div>
+                )}
                 <div className="spr-field">
                   <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
                   <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
@@ -5846,6 +5989,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
 
+                {!passportKnownFields.has('business_structure') && (
                 <div className="spr-field spr-field-static">
                   <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
@@ -5867,6 +6011,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     <option value="other">{L('Other / not sure', language)}</option>
                   </select>
                 </div>
+                )}
                 <div className="spr-field">
                   <label htmlFor="spr-employees">{t('numEmployees')}{confirmationBadge('number_of_employees')}</label>
                   <input

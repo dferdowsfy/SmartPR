@@ -98,6 +98,9 @@ export interface ValidatedInterpretation {
    *  caller after validateInterpretation — the server validates it defensively
    *  and the client re-validates here, never trusting the raw model output. */
   projectContext?: ProjectContext;
+  /** Semantic reading of the whole description (scenario/). Attached by the
+   *  caller; the model's version is validated against the text first. */
+  scenario?: import("./scenario/types").ScenarioContext;
   /** Same shapes as above but needing user confirmation (0.60–0.84). */
   suggested: {
     businessType?: { id: string; name: string } & ValidatedFact;

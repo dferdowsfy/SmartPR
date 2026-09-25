@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 import { clampCandidates, type KbCandidates } from "../../../ai/intake/kbCandidates";
 import { BUSINESS_STRUCTURE_VALUES } from "../../../ai/intake/validateInterpretation";
 import { validateProjectContext } from "../../../ai/intake/projectContext";
+import { combineScenario, interpretScenario, normalizeScenario } from "../../../ai/intake/scenario";
 import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 import {
   isXaiConfigured,
@@ -122,7 +123,8 @@ Return ONLY valid JSON (no markdown, no commentary) with this exact structure:
   "profileValues": [ { "key": "industry", "value": "...", "confidence": 0.0, "evidence": "short quote" } ],
   "answers": [ { "questionId": "Q_...", "value": true, "confidence": 0.0, "evidence": "short quote" } ],
   "project_intent": { "value": "existing_business", "confidence": 0.0, "evidence": "short quote" },
-  "projectContext": { "<fact key>": { "value": ..., "confidence": 0.0, "evidence": "short quote" } }
+  "projectContext": { "<fact key>": { "value": ..., "confidence": 0.0, "evidence": "short quote" } },
+  "scenario": { "<section>": { "<fact>": { "value": ..., "source": "explicit", "confidence": 0.0, "evidenceText": "verbatim quote" } } }
 }
 
 Omit "businessType" or "municipality" entirely when unknown. Use an empty array
@@ -264,6 +266,57 @@ determine:
 - "property_tenure" :: "owned" when the speaker owns the property, "leased"
   when they lease it. Omit when not stated — never infer tenure.
 
+SCENARIO — READ THE SITUATION AS A WHOLE, LIKE A PERMITTING INTAKE SPECIALIST.
+Before anything else, understand what the speaker is trying to accomplish and
+how the facts relate. Do NOT treat words as keywords. A word only means what
+its role in the sentence gives it: "warehouse" after "leased" is the existing
+property; after "into" it is the proposed use. Return "scenario" as nested
+sections with ONLY these facts (omit anything not stated or strongly implied):
+
+business: status ("existing" | "new"), name, entityType, industry, proposedActivity
+property: municipality, address, parcel, existingBuilding (bool), existingUse,
+  authorizedUse, proposedUse, proposedUseSpecificity ("specific" | "insufficient"),
+  squareFeet (number), ownershipStatus ("owned" | "leased")
+project: type (array: renovation | new_construction | expansion | demolition |
+  change_of_use), renovation, demolition ("none" | "interior" | "partial" | "full"),
+  electricalWork, plumbingWork, mechanicalWork, structuralWork, exteriorWork,
+  footprintChange, layoutChanges, possibleChangeOfUse, siteCirculationChanges (bools)
+operations: activity, employees (number), publicAccess, foodService,
+  hazardousMaterials, emissionsEquipment, generator, fuelStorage,
+  wastewaterDischarge, childrenPresent (bools)
+
+Each fact: { "value", "source": "explicit" (the user said it) | "inferred"
+(strongly implied by the whole scenario), "confidence", "evidenceText": a
+VERBATIM quote from the description }. Facts whose quote is not in the
+description are discarded.
+
+Rules:
+- "New commercial operation", "new operation", "new location", "new site" do
+  NOT mean a new business. An existing company opens and renovates locations.
+  business.status = "new" ONLY when a new entity or business is being formed or
+  started ("creating a new LLC", "starting a business"). "existing" only when the
+  speaker's own business already operates ("our existing company"). A third
+  party ("a client") says nothing about status — omit it.
+- A vague proposed use ("a new commercial operation") is proposedUse
+  "commercial operation" with proposedUseSpecificity "insufficient". Never
+  invent the activity.
+- Change of use: "converting X into Y" (Y different) → possibleChangeOfUse true,
+  explicit. "continue using it as X" → false, explicit. "modifications to the
+  existing use" → true but "inferred" (possible, NOT confirmed).
+- Unknown remains unknown. Do not fill structuralWork, exteriorWork, business
+  status, employees, or anything else from what is typical.
+
+Example: "A client has leased an existing 12,000-square-foot warehouse and office
+facility in Guaynabo. They plan to renovate the interior for a new commercial
+operation, including interior demolition, electrical and plumbing work, office
+build-out, and modifications to the existing use."
+-> scenario: property { municipality Guaynabo, existingBuilding true,
+   existingUse "warehouse and office", squareFeet 12000, ownershipStatus leased,
+   proposedUse "commercial operation", proposedUseSpecificity insufficient },
+   project { type [renovation, demolition], renovation true, demolition interior,
+   electricalWork true, plumbingWork true, layoutChanges true,
+   possibleChangeOfUse true (source "inferred") }; business.status OMITTED.
+
 BUSINESS vs PROJECT. Never infer the business's Industry from construction
 work. "We own a warehouse and are renovating it" does NOT mean the industry
 is Construction — the business may be manufacturing, wholesale distribution,
@@ -401,7 +454,7 @@ export async function POST(request: Request) {
         },
         { role: "user", content: description },
       ],
-      maxOutputTokens: passportMode ? 6500 : 1600,
+      maxOutputTokens: passportMode ? 6500 : 2600,
       temperature: 0.1,
       signal: controller.signal,
     });
@@ -425,9 +478,16 @@ export async function POST(request: Request) {
     // Project-context facts are validated defensively: malformed entries are
     // dropped individually and never destroy the rest of the interpretation.
     const { context: projectContext } = validateProjectContext(parsed.projectContext);
+    // The model's scenario reading is checked against the text (quotes must
+    // be real; guarded conclusions need the right language) and combined
+    // with the deterministic reading. Never trusted as-is.
+    const { scenario: modelScenario, report: scenarioReport } = normalizeScenario(parsed.scenario, description);
+    const scenario = combineScenario(interpretScenario(description), modelScenario);
     return Response.json({
       interpretation: stripped,
       projectContext,
+      scenario,
+      scenario_report: scenarioReport,
       ai_model: XAI_MODEL,
     });
   } catch (e) {

@@ -125,8 +125,8 @@ test("prompt: projectContext schema, evidence, and business-vs-project rule", ()
 test("prompt: non-passport output budget raised for the larger schema", () => {
   const source = readFileSync(join(here, "..", "..", "api", "intake", "interpret", "route.ts"), "utf8");
   assert.ok(
-    source.includes("maxOutputTokens: passportMode ? 6500 : 1600"),
-    "non-passport budget must be 1600 tokens for projectContext + evidence"
+    source.includes("maxOutputTokens: passportMode ? 6500 : 2600"),
+    "non-passport budget must be 2600 tokens: projectContext + evidence + the nested semantic scenario"
   );
 });
 

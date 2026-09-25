@@ -1,0 +1,70 @@
+# Semantic intake
+
+The intake reads the free-text description as **one scenario**: who is doing what, where, to which property, and how those facts relate. It no longer treats the text as a list of keywords. The model builds a factual model; the knowledge graph decides what applies.
+
+```
+description
+  → ScenarioContext            (ai/intake/scenario/interpret.ts + the model's reading, checked by normalize.ts)
+  → merge Business Passport    (scenario/passport.ts — existing business only)
+  → KB applicability           (scenario/graph.ts — rules.json documents, likely vs potential)
+  → controlling unknowns       (scenario/graph.ts)
+  → next question              (one at a time, in dependency order)
+  → answer → graph again → requirements (unchanged rules engine)
+```
+
+## ScenarioContext
+
+Sections are `business`, `property`, `project` and `operations` (see `scenario/types.ts`). Every fact is `{ value, source, confidence, evidenceText }`:
+
+| source | meaning | shown as |
+| --- | --- | --- |
+| `explicit` | the user said it (or answered a question) | **We understood** |
+| `inferred` | strongly implied by the whole scenario | **Needs confirmation**, never a confirmed chip |
+| `existing_passport` | on file in the linked Business Passport | "Already known from your Business Passport" |
+
+An absent fact is unknown. Nothing is defaulted. `possibleChangeOfUse` separates a confirmed change of use ("converting a warehouse into a daycare") from a possible one ("modifications to the existing use").
+
+## Reading rules that matter
+
+- A word counts only in the role the sentence gives it. "warehouse" after *leased* is the existing property; after *into* it is the proposed use.
+- "A new commercial operation / location / operation" is **not** a new business. `business.status = new` needs entity-formation wording ("creating a new LLC", "starting a business"). "I want to open a restaurant" is at most an inference.
+- The model's reading is checked against the text. Every quote must appear in the description. Guarded conclusions (new business, confirmed change of use) need the right wording, or they are dropped or downgraded to inferences. The deterministic reading wins guarded facts.
+- If the AI is unavailable, the deterministic reading still produces the scenario.
+
+## Graph applicability
+
+`evaluateScenario` returns only KB rule documents (name and agency from `documents.json`):
+
+- **Likely involved**: the rule's trigger is met by stated or on-file facts.
+- **Potential — more information required**: the rule is reachable but hinges on an unknown or an unconfirmed inference. The path names what it needs.
+
+The branches it evaluates:
+
+- **Project-fact rules** (construction permit, lease or deed) from project scope and tenure.
+- **Question-trigger rules** the scenario establishes (e.g. a daycare means children on site).
+- **Business-type rules** for the resolved activity. A broad activity that matches many business types makes the exact activity controlling.
+- **Business-wide obligations**, by business status:
+  - new business: formation, EIN, merchant registration, municipal license (patente);
+  - existing business: none, except a patente when the project is in another municipality;
+  - unknown status: none listed, and "existing or new" becomes a controlling fact.
+
+## Questions
+
+Questions are generated only from controlling unknowns of reachable branches:
+
+1. The activity comes first, because it selects the business-type branch.
+2. Once the activity is known: the current authorized use and whether the use or occupancy changes, the physical property location, structural or exterior work, footprint change, and site circulation (only for outward changes or a new occupancy). The environmental question is asked only when the KB has air, water or hazardous-waste rules for that activity.
+
+## Existing business
+
+Selecting **Existing business** loads the Passport. It is auto-linked when the account has one business. Identity fields the Passport answers (name, entity type, industry, business type, municipality) are hidden. The description becomes a **new project** of that business. A project location that differs from the Passport address is a new location, not a Passport correction.
+
+## Compatibility
+
+The legacy flat `projectContext` still feeds `project_fact` rules through `scenario/adapter.ts`:
+
+- stated facts are sent at 0.90 or higher confidence;
+- inferences are sent in the 0.60–0.84 needs-confirmation band, which the engine keeps inert;
+- a *possible* change of use is never sent as a change of use.
+
+Tests: `npm run test:intake:scenario`.

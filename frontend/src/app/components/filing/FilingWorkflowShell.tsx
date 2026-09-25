@@ -37,6 +37,25 @@ export interface SmartPRLiveData {
   potentialRequirements?: string[];
   nextAction: string;
   whyAsking?: string | null;
+  /**
+   * Scenario-driven view (semantic intake). When present it replaces the
+   * keyword-era signals / agencies / potential lists: facts come from the
+   * scenario, paths from knowledge-graph applicability.
+   */
+  scenario?: LiveScenario | null;
+}
+
+export interface LiveScenarioPath {
+  name: string;
+  agency: string;
+  needs?: string[];
+}
+
+export interface LiveScenario {
+  facts: string[];
+  stillNeeds: string[];
+  likely: LiveScenarioPath[];
+  potential: LiveScenarioPath[];
 }
 
 interface FilingWorkflowShellProps {
@@ -128,6 +147,12 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
     potential: "Potencial — requiere información",
     why: "Por qué preguntamos",
     next: "Próxima acción",
+    facts: "Hechos entendidos",
+    stillNeeds: "Lo que SmartPR aún necesita",
+    paths: "Posibles rutas regulatorias",
+    likely: "Probablemente involucradas",
+    potentialMore: "Potencial — se requiere más información",
+    noneYet: "Aún no hay rutas con el contexto actual.",
   } : {
     live: "SmartPR Live",
     readiness: "Launch readiness",
@@ -136,7 +161,14 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
     potential: "Potential — needs information",
     why: "Why we're asking",
     next: "Next action",
+    facts: "Facts understood",
+    stillNeeds: "What SmartPR still needs",
+    paths: "Potential regulatory paths",
+    likely: "Likely involved",
+    potentialMore: "Potential — more information required",
+    noneYet: "No paths are supported by the current context yet.",
   };
+  const sc = data.scenario ?? null;
 
   return (
     <aside className={`spr-smartpr-live ${expanded ? "expanded" : "collapsed"}`} aria-label="SmartPR live intelligence">
@@ -170,14 +202,78 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
           ))}
         </div>
 
-        {!!data.agencies?.length && (
+        {sc && (
+          <>
+            {sc.facts.length > 0 && (
+              <section className="spr-live-section" data-testid="live-facts">
+                <h2>{copy.facts}</h2>
+                <ul className="spr-live-signals">
+                  {sc.facts.map((f) => (
+                    <li className="confirmed" key={f}>
+                      <SignalIcon state="confirmed" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            {sc.stillNeeds.length > 0 && (
+              <section className="spr-live-section" data-testid="live-still-needs">
+                <h2>{copy.stillNeeds}</h2>
+                <ul className="spr-live-signals">
+                  {sc.stillNeeds.map((f) => (
+                    <li className="needs-info" key={f}>
+                      <SignalIcon state="needs-info" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+            <section className="spr-live-section" data-testid="live-paths">
+              <h2>{copy.paths}</h2>
+              {sc.likely.length === 0 && sc.potential.length === 0 && <p className="spr-live-status">{copy.noneYet}</p>}
+              {sc.likely.length > 0 && (
+                <>
+                  <p className="spr-live-subhead">{copy.likely}</p>
+                  <ul className="spr-live-signals">
+                    {sc.likely.slice(0, 8).map((p) => (
+                      <li className="confirmed" key={`l-${p.name}`}>
+                        <SignalIcon state="confirmed" />
+                        <span>
+                          {p.name}
+                          <small className="spr-live-agency"> · {p.agency}</small>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {sc.potential.length > 0 && (
+                <>
+                  <p className="spr-live-subhead">{copy.potentialMore}</p>
+                  <ul className="spr-live-potential">
+                    {sc.potential.slice(0, 6).map((p) => (
+                      <li key={`p-${p.name}`}>
+                        <AlertTriangle size={14} /> {p.name}
+                        <small className="spr-live-agency"> · {p.agency}{p.needs?.length ? ` — ${p.needs.join(", ")}` : ""}</small>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </section>
+          </>
+        )}
+
+        {!sc && !!data.agencies?.length && (
           <section className="spr-live-section">
             <h2>{copy.agencies}</h2>
             <div className="spr-live-agencies">{data.agencies.slice(0, 6).map((agency) => <span key={agency}>{agency}</span>)}</div>
           </section>
         )}
 
-        {!!data.signals?.length && (
+        {!sc && !!data.signals?.length && (
           <section className="spr-live-section">
             <h2>{copy.knows}</h2>
             <ul className="spr-live-signals">
@@ -191,7 +287,7 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
           </section>
         )}
 
-        {!!data.potentialRequirements?.length && (
+        {!sc && !!data.potentialRequirements?.length && (
           <section className="spr-live-section">
             <h2>{copy.potential}</h2>
             <ul className="spr-live-potential">

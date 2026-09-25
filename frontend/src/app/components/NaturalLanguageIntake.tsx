@@ -21,11 +21,16 @@ import {
   type IntakePatch,
   type ValidatedInterpretation,
 } from "../ai/intake/validateInterpretation";
+import { validateProjectContext } from "../ai/intake/projectContext";
 import {
-  validateProjectContext,
-  projectContextChips,
-  type ProjectContext,
-} from "../ai/intake/projectContext";
+  applyScenarioToInterpretation,
+  combineScenario,
+  describeScenario,
+  interpretScenario,
+  normalizeScenario,
+  type ScenarioContext,
+  type ScenarioSummary,
+} from "../ai/intake/scenario";
 import { projectIntentLabel } from "../ai/intake/projectIntent";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
 import { PassportVoiceReview, usePassportVoiceInput, type PassportInputTarget } from "./voice/PassportVoiceReview";
@@ -49,6 +54,12 @@ export interface NaturalLanguageIntakeProps {
   showVoiceOrb?: boolean;
   /** Enabled only once discovery is complete; writes the existing canonical state. */
   passport?: PassportInputTarget;
+  /**
+   * The parent's live scenario summary (after Passport merge and answered
+   * questions). When supplied it replaces this component's own reading so the
+   * strip never goes stale.
+   */
+  scenarioSummary?: ScenarioSummary | null;
 }
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -66,11 +77,26 @@ function attachProjectContext(
   if (Object.keys(context).length > 0) validated.projectContext = context;
 }
 
+function scenarioHasFacts(s: ScenarioContext | undefined): boolean {
+  return !!s && Object.values(s).some((section) => Object.keys(section).length > 0);
+}
+
+/**
+ * The scenario for a description: the deterministic reading, combined with
+ * the server's reading after re-validating it against the text. Works with
+ * no server reading at all (AI unavailable).
+ */
+function scenarioFor(description: string, data: { scenario?: unknown } | null | undefined): ScenarioContext {
+  const model = data?.scenario ? normalizeScenario(data.scenario, description).scenario : null;
+  return combineScenario(interpretScenario(description), model);
+}
+
 /** True when the interpretation produced any usable fact — visible fields (at
  *  any confidence band), suggested facts, project context, or project intent. */
 function hasAnyFact(patch: IntakePatch, validated: ValidatedInterpretation): boolean {
   const suggested = validated.suggested;
   return (
+    scenarioHasFacts(validated.scenario) ||
     Object.keys(patch.profile).length > 0 ||
     Object.keys(patch.answers).length > 0 ||
     suggested.profileValues.length > 0 ||
@@ -92,6 +118,7 @@ export function NaturalLanguageIntake({
   onEdit,
   showVoiceOrb = true,
   passport,
+  scenarioSummary,
 }: NaturalLanguageIntakeProps) {
   const passportReview = usePassportVoiceInput(passport, lang);
   const receivePassport = passportReview.receive;
@@ -99,6 +126,11 @@ export function NaturalLanguageIntake({
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [chips, setChips] = useState<{ label: string }[]>([]);
+  // Uncertain conclusions live apart from confirmed facts — never as ordinary chips.
+  const [needsChips, setNeedsChips] = useState<{ label: string }[]>([]);
+  // Business-level chips (KB business type, profile values) from the model.
+  const [businessChips, setBusinessChips] = useState<{ label: string }[]>([]);
+  const [businessNeeds, setBusinessNeeds] = useState<{ label: string }[]>([]);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const loadingRef = useRef(false);
   // Tracks whether the description box already has content, so the first
@@ -115,44 +147,39 @@ export function NaturalLanguageIntake({
     el.style.height = `${Math.min(el.scrollHeight, 190)}px`;
   }, [text]);
 
-  /**
-   * Chips for project-context facts (the semantic/context extraction, not
-   * just keyword-level business fields). 0.60–0.85 facts are filled but
-   * visibly marked as needing confirmation, mirroring the business fields.
-   */
-  const buildProjectContextChips = useCallback(
-    (validated: ValidatedInterpretation) => {
-      const marker = L("needs confirmation", "necesita confirmación");
-      return projectContextChips(validated.projectContext).map((c) => ({
-        label: c.needsConfirmation ? `${c.label} (${marker})` : c.label,
-      }));
-    },
-    [L]
-  );
+  /** Scenario chips: stated facts vs. facts that need confirmation. */
+  const scenarioChips = useCallback((validated: ValidatedInterpretation) => {
+    const d = validated.scenario ? describeScenario(validated.scenario) : { understood: [], needsConfirmation: [] };
+    return { understood: d.understood.map((c) => ({ label: c.label })), needs: d.needsConfirmation.map((c) => ({ label: c.label })) };
+  }, []);
 
   /**
-   * Chips for 0.60–0.85 "suggested" facts. They are filled by onApply and
-   * visibly marked as needing confirmation — no separate "Also apply?" step.
+   * 0.60–0.85 "suggested" business facts. They are filled by onApply and
+   * listed under "Needs confirmation" — no separate "Also apply?" step.
    */
   const buildSuggestedChips = useCallback(
     (validated: ValidatedInterpretation) => {
       const promoted = toIntakePatch(promoteSuggested(validated), { kb, allowedIndustries });
-      const marker = L("needs confirmation", "necesita confirmación");
-      const chips = promoted.chips.map((c) => ({ ...c, label: `${c.label} (${marker})` }));
-      // The intent card is the confirmation surface for project intent — add
-      // a chip here too so the interpretation summary reads complete.
-      const intent = validated.suggested.projectIntent ?? validated.projectIntent;
+      const chips = promoted.chips.map((c) => ({ ...c }));
+      const intent = validated.suggested.projectIntent;
       if (intent) {
-        chips.push({
-          label: `${L("Project intent", "Tipo de proyecto")}: ${projectIntentLabel(intent.value, lang)}${
-            intent.requiresConfirmation ? ` (${marker})` : ""
-          }`,
-        });
+        chips.push({ label: `${L("Project intent", "Tipo de proyecto")}: ${projectIntentLabel(intent.value, lang)}` });
       }
       return chips;
     },
     [kb, lang, allowedIndustries]
   );
+
+  /** Merge business chips and scenario chips, dropping duplicates (e.g. the municipality). */
+  const dedupe = (list: { label: string }[]) => {
+    const seen = new Set<string>();
+    return list.filter((c) => {
+      const k = c.label.toLowerCase().replace(/^(municipality|municipio):\s*/, "");
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  };
 
   const interpretDescription = useCallback(
     async (descriptionRaw: string) => {
@@ -196,11 +223,13 @@ export function NaturalLanguageIntake({
         const data = await res.json();
 
         // Never trust returned ids — validate against the active KB.
-        const validated = validateInterpretation(data?.interpretation, kb, {
+        const raw = validateInterpretation(data?.interpretation, kb, {
           allowedIndustries,
           allowedLocationTypes,
         });
-        attachProjectContext(validated, data);
+        attachProjectContext(raw, data);
+        // The whole-scenario reading governs intent and project facts.
+        const validated = applyScenarioToInterpretation(raw, scenarioFor(description, data));
         // The KB lets toIntakePatch reconcile contradictory model answers and
         // hide chips that merely restate a fact another chip already implies.
         const patch = toIntakePatch(validated, { kb, allowedIndustries });
@@ -218,19 +247,50 @@ export function NaturalLanguageIntake({
         // a new provenance session — facts the previous description
         // established are quarantined, never silently inherited.
         onApply(patch, validated, { fresh: true });
-        // Suggested (0.60–0.85) facts are filled by onApply; show them in the
-        // strip visibly marked as needing confirmation. Project-context chips
-        // prove the semantic extraction ran — not just keyword-level fields.
-        setChips([...patch.chips, ...buildSuggestedChips(validated), ...buildProjectContextChips(validated)]);
+        // Stated facts under "We understood"; suggested (0.60–0.85) business
+        // facts and scenario inferences under "Needs confirmation".
+        const sc = scenarioChips(validated);
+        const suggestedChips = buildSuggestedChips(validated);
+        setChips(dedupe([...sc.understood, ...patch.chips]));
+        setNeedsChips(dedupe([...sc.needs, ...suggestedChips]));
+        setBusinessChips(patch.chips);
+        setBusinessNeeds(suggestedChips);
         setStatus("done");
       } catch {
-        setStatus("error");
+        // The AI reading failed — the deterministic scenario reading still
+        // understands the situation; only the KB-id fields wait for the
+        // guided questions.
+        const offline = applyScenarioToInterpretation(
+          validateInterpretation(null, kb, { allowedIndustries, allowedLocationTypes }),
+          scenarioFor(description, null)
+        );
+        if (scenarioHasFacts(offline.scenario)) {
+          const patch = toIntakePatch(offline, { kb, allowedIndustries });
+          onApply(patch, offline, { fresh: true });
+          const sc = scenarioChips(offline);
+          setChips(sc.understood);
+          setNeedsChips(sc.needs);
+          setBusinessChips([]);
+          setBusinessNeeds([]);
+          setStatus("done");
+        } else {
+          setStatus("error");
+        }
       } finally {
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips, buildProjectContextChips]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips, scenarioChips]
   );
+
+  // The parent's live summary (Passport merged, questions answered) wins;
+  // business-level chips from this reading stay alongside it.
+  const shownUnderstood = scenarioSummary
+    ? dedupe([...scenarioSummary.understood.map((c) => ({ label: c.label })), ...businessChips])
+    : chips;
+  const shownNeeds = scenarioSummary
+    ? dedupe([...scenarioSummary.needsConfirmation.map((c) => ({ label: c.label })), ...businessNeeds])
+    : needsChips;
 
   const interpret = () => {
     void interpretDescription(text);
@@ -272,11 +332,12 @@ export function NaturalLanguageIntake({
         });
         if (!res.ok) throw new Error(`interpret ${res.status}`);
         const data = await res.json();
-        const validated = validateInterpretation(data?.interpretation, kb, {
+        const raw = validateInterpretation(data?.interpretation, kb, {
           allowedIndustries,
           allowedLocationTypes,
         });
-        attachProjectContext(validated, data);
+        attachProjectContext(raw, data);
+        const validated = applyScenarioToInterpretation(raw, scenarioFor(transcript, data));
         const patch = toIntakePatch(validated, { kb, allowedIndustries });
         const nothingFound = !hasAnyFact(patch, validated);
         if (nothingFound) {
@@ -284,7 +345,12 @@ export function NaturalLanguageIntake({
           return;
         }
         onApply(patch, validated);
-        mergeChips([...patch.chips, ...buildSuggestedChips(validated), ...buildProjectContextChips(validated)]);
+        const sc = scenarioChips(validated);
+        const suggestedChips = buildSuggestedChips(validated);
+        mergeChips(dedupe([...sc.understood, ...patch.chips]));
+        setNeedsChips((cur) => dedupe([...cur, ...sc.needs, ...suggestedChips]));
+        setBusinessChips((cur) => dedupe([...cur, ...patch.chips]));
+        setBusinessNeeds((cur) => dedupe([...cur, ...suggestedChips]));
         setStatus("done");
       } catch {
         setStatus("error");
@@ -292,7 +358,7 @@ export function NaturalLanguageIntake({
         loadingRef.current = false;
       }
     },
-    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips, buildSuggestedChips, buildProjectContextChips]
+    [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips, buildSuggestedChips, scenarioChips]
   );
 
   const handleVoiceTranscript = useCallback(
@@ -368,21 +434,40 @@ export function NaturalLanguageIntake({
         )}
       </p>
 
-      {status === "done" && chips.length > 0 && (
-        <div className="spr-nl-result">
-          <span className="spr-nl-result-label">{L("We understood:", "Entendimos:")}</span>
-          <div className="spr-nl-chips">
-            {chips.map((chip, i) => (
-              <span key={`${chip.label}-${i}`} className="spr-nl-chip">
-                {chip.label}
-              </span>
-            ))}
-          </div>
+      {status === "done" && (shownUnderstood.length > 0 || shownNeeds.length > 0) && (
+        <div className="spr-nl-result" data-testid="scenario-understood">
+          {shownUnderstood.length > 0 && (
+            <>
+              <span className="spr-nl-result-label">{L("We understood", "Entendimos")}</span>
+              <div className="spr-nl-chips">
+                {shownUnderstood.map((chip, i) => (
+                  <span key={`${chip.label}-${i}`} className="spr-nl-chip">
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+          {shownNeeds.length > 0 && (
+            <div className="spr-nl-needs" data-testid="scenario-needs-confirmation">
+              <span className="spr-nl-result-label">{L("Needs confirmation", "Necesita confirmación")}</span>
+              <div className="spr-nl-chips">
+                {shownNeeds.map((chip, i) => (
+                  <span key={`${chip.label}-${i}`} className="spr-nl-chip spr-nl-chip-needs">
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <button
             type="button"
             className="spr-nl-edit"
             onClick={() => {
               setChips([]);
+              setNeedsChips([]);
+              setBusinessChips([]);
+              setBusinessNeeds([]);
               setStatus("idle");
               // Tell the parent now: it quarantines the narrative-derived
               // facts immediately so nothing stale keeps driving requirements
@@ -395,7 +480,7 @@ export function NaturalLanguageIntake({
         </div>
       )}
 
-      {status === "done" && chips.length === 0 && (
+      {status === "done" && shownUnderstood.length === 0 && shownNeeds.length === 0 && (
         <p className="spr-nl-kept" role="status">
           {L(
             "Got it — I kept the project details you mentioned. A few follow-up questions will help pin down the rest.",
