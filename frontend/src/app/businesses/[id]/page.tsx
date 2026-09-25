@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2,
-  ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, ShieldAlert, Upload,
+  ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, Scale, ShieldAlert, Upload,
 } from "lucide-react";
 import { useDeliverablesAccess } from "../../../lib/billing/useDeliverablesAccess";
 import { ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
@@ -18,7 +18,8 @@ import { BusinessPassportPanel } from "../BusinessPassportPanel";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
 import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
-import { getDocumentDownload, downloadKindLabel } from "../../kb";
+import { getDocumentDownload, downloadKindLabel, KB } from "../../kb";
+import { legalBasisFor } from "../../requirementGuidance";
 import { L } from "../../i18n";
 import { useLang } from "../../useLang";
 import type { Lang, FormData as GovFormData } from "../../forms/engine/types";
@@ -198,6 +199,50 @@ function DetailField({ label, value, lang }: { label: string; value: string | nu
   );
 }
 
+function LegalBasisDisclosure({ item, lang }: { item: Obligation; lang: Lang }) {
+  const [open, setOpen] = useState(false);
+  // Provision-level legal basis straight from the regulatory knowledge graph
+  // (triggering rule's citation, else the required document's). Never rendered
+  // when the graph has no citation — the absence is honest, not filled in.
+  const basis = useMemo(
+    () => legalBasisFor(item.source_reference, item.requirement_id, KB),
+    [item.source_reference, item.requirement_id]
+  );
+  if (!basis) return null;
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+      >
+        <Scale className="h-3 w-3" />
+        {L("Legal basis", lang)}
+        <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="mt-1.5 max-w-xl rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
+          <div className="font-semibold text-[#161616]">
+            {basis.url ? (
+              <a href={basis.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
+                {basis.citation}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ) : basis.citation}
+          </div>
+          {item.agency && (
+            <div className="mt-0.5">{L("Issuing agency", lang)}: {item.agency}</div>
+          )}
+          <div className="mt-0.5 text-slate-500">
+            {L("This is the law SmartPR tied to the decision that this requirement applies to this business.", lang)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
   item: Obligation; business: BusinessRecord; evidence: Evidence[]; reload: () => void; onMarkComplete?: (id: string) => void;
 }) {
@@ -370,6 +415,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
           <div className="min-w-0">
             <div className="font-semibold text-[#161616]">{item.name}</div>
             <div className="text-xs text-slate-500">{item.agency || L("Agency not recorded", lang)}{item.matter_title ? ` · ${item.matter_title}` : ""}</div>
+            <LegalBasisDisclosure item={item} lang={lang} />
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">

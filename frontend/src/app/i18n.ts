@@ -60,6 +60,8 @@ export const ES: Record<string, string> = {
   "SmartPR identified this because:": "SmartPR identificó esto porque:",
   "Verified": "Verificado",
   "Legal basis": "Base legal",
+  "Issuing agency": "Agencia emisora",
+  "This is the law SmartPR tied to the decision that this requirement applies to this business.": "Esta es la ley que SmartPR vinculó a la decisión de que este requisito aplica a este negocio.",
   "Why we ask": "Por qué lo preguntamos",
   "Needs Action": "Necesita acción",
   "Why do I need this?": "¿Por qué necesito esto?",
