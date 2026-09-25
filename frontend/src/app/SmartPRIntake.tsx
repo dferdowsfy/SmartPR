@@ -123,7 +123,7 @@ import {
   CheckCircle, AlertTriangle, Info, FileText,
   ArrowRight, RefreshCw, Download, Building2, Archive, ExternalLink,
   ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, Eye,
-  Star, ChevronDown, Sparkles,
+  Star, Sparkles,
 } from 'lucide-react';
 
 // SmartPR
@@ -4581,7 +4581,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Requirements list filter (All / To Do / To Fill Out / Completed).
   const [reqFilter, setReqFilter] = useState<'all' | 'needs_action' | 'in_progress' | 'completed'>('all');
-  const [otherReqExpanded, setOtherReqExpanded] = useState(false);
 
   // Live rules-engine output while the user is still in intake, so the
   // intelligence panel and progress stats update as they answer.
@@ -4882,14 +4881,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // document may not even be needed.
       action = { kind: 'none', label: '' };
       bucket = 'needs_action';
-    } else if (isConditional || isReviewCondition
-      || req.applicability === 'verify_existing'
-      || req.applicability === 'needs_more_information'
-      || req.applicability === 'supporting_evidence'
-      || req.applicability === 'likely_required') {
-      // Not a confirmed new filing: verify-existing items need a records
-      // check (not a new application), heuristic/conditional items need
-      // facts first, and evidence items ride along with their parent filing.
+    } else if (req.applicability === 'verify_existing'
+      || req.applicability === 'supporting_evidence') {
+      // Not a new filing: verify-existing items need a records check (not
+      // a new application), and evidence items ride along with their parent
+      // filing. Offering a fresh application here would risk a duplicate
+      // filing, so these never surface a form action.
       action = { kind: 'none', label: '' };
       bucket = 'none';
     } else if (isFormPackage) {
@@ -4931,6 +4928,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       action = { kind: 'form', label: L(primaryStartLabelFor(name), language), onClick: () => openSampleApplication(req.code) };
       secondary = secondaryUpload();
       bucket = 'needs_action';
+    } else if (isConditional || isReviewCondition
+      || req.applicability === 'needs_more_information'
+      || req.applicability === 'likely_required') {
+      // No fillable form and not a confirmed new filing: heuristic/
+      // conditional items need facts first. (Likely/conditional items WITH
+      // a fillable official form or worksheet are handled above — the user
+      // can start preparing while confirming applicability.)
+      action = { kind: 'none', label: '' };
+      bucket = 'none';
     } else if (!canUpload) {
       action = { kind: 'none', label: '' };
       bucket = 'none';
@@ -6245,7 +6251,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </div>
                   <button onClick={() => {
                     const f = reviewItems[0];
-                    setOtherReqExpanded(true);
                     setReviewingCode(f.code);
                     requestAnimationFrame(() => {
                       document.getElementById(`req-row-${f.code}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -6297,43 +6302,31 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </div>
 
           {otherCards.length > 0 && (
-            <>
-              <button
-                type="button"
-                className={`rq-other-toggle ${otherReqExpanded ? 'expanded' : ''}`}
-                onClick={() => setOtherReqExpanded((value) => !value)}
-                aria-expanded={otherReqExpanded}
-              >
-                {L('OTHER REQUIREMENTS', language)} ({otherCards.length}) <ChevronDown size={15} />
-              </button>
-              {otherReqExpanded && (
-                <div className="rq-list">
-                  {otherCards.map((c, i) => (
-                    <RequirementCard
-                      key={c.req.code}
-                      id={`req-row-${c.req.code}`}
-                      index={criticalPathCards.length + i + 1}
-                      icon={c.icon}
-                      iconTone={c.iconTone}
-                      name={c.name}
-                      agency={c.agency}
-                      description={c.description}
-                      badge={c.badge}
-                      whyLabel={L('Why do I need this?', language)}
-                      why={c.why}
-                      action={c.action}
-                      answerPrompt={c.answerPrompt}
-                      secondary={c.secondary}
-                      secondaryOnCompleted={c.secondaryOnCompleted}
-                      download={c.download}
-                      portalFiling={c.portalFiling}
-                      extra={c.extra}
-                      contextLabel={c.contextLabel}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
+            <div className="rq-list">
+              {otherCards.map((c, i) => (
+                <RequirementCard
+                  key={c.req.code}
+                  id={`req-row-${c.req.code}`}
+                  index={criticalPathCards.length + i + 1}
+                  icon={c.icon}
+                  iconTone={c.iconTone}
+                  name={c.name}
+                  agency={c.agency}
+                  description={c.description}
+                  badge={c.badge}
+                  whyLabel={L('Why do I need this?', language)}
+                  why={c.why}
+                  action={c.action}
+                  answerPrompt={c.answerPrompt}
+                  secondary={c.secondary}
+                  secondaryOnCompleted={c.secondaryOnCompleted}
+                  download={c.download}
+                  portalFiling={c.portalFiling}
+                  extra={c.extra}
+                  contextLabel={c.contextLabel}
+                />
+              ))}
+            </div>
           )}
 
           {/* Recommendation panel — advisory historical insights (never mandatory) */}

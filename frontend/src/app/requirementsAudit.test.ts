@@ -4124,3 +4124,58 @@ test("CASE AT: REG-PROFESSION-AGENCY-003 — the veterinarian license names Depa
     "the note explicitly disambiguates against the Juntas Examinadoras"
   );
 });
+
+test("CASE AU: a project_fact change-of-use basis outranks the business-type basis for the card's legal basis (REG-PROVENANCE-SPECIFICITY-003)", () => {
+  // 2026-09-25 15:00 QA cycle (S204, Arecibo): an existing restaurant
+  // converting to a new use fires RULE_0049 (BT_RESTAURANT, standing
+  // verify-existing Permiso Único obligation) AND RULE_0699 (change_of_use,
+  // new filing). The card is REQUIRED because of the change of use, so the
+  // reason/source_rule must cite RULE_0699 ("Change of use") — the
+  // SPECIFICITY-002 tiebreak only handled the question_trigger competitor
+  // and let array order pick the business-type basis. Fix: project_fact
+  // ranks above business_type in the specificity tiebreak.
+  const DOC_UNICO = docByName("permiso", "único");
+  const classifyChange = (changeOfUse: boolean) =>
+    classify(
+      {
+        municipalityName: "Arecibo",
+        businessTypeName: "Restaurant",
+        businessStatus: "existing",
+        answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+        projectFacts: changeOfUse ? { change_of_use: true } : {},
+      } as EngineInput,
+      "existing"
+    ).classified;
+  const withChange = classifyChange(true);
+  const unico = byId(withChange, DOC_UNICO);
+  assert.ok(unico, "Permiso Único must surface for the converting restaurant");
+  assert.equal(
+    unico.applicability,
+    "required",
+    "the change of use asserts a new use-authorization filing"
+  );
+  assert.equal(
+    unico.source_rule_id,
+    "RULE_0699",
+    "the card's legal basis must be the change-of-use rule, not the standing business-type rule"
+  );
+  assert.ok(
+    /change_of_use/.test(String(unico.reason ?? "")),
+    "the card reason must name the change of use: " + String(unico.reason)
+  );
+  // Control: without a change of use the standing business-type basis wins
+  // and the posture is verify_existing.
+  const noChange = classifyChange(false);
+  const standing = byId(noChange, DOC_UNICO);
+  assert.ok(standing, "Permiso Único must surface for the existing restaurant");
+  assert.equal(
+    standing.applicability,
+    "verify_existing",
+    "no change of use -> standing obligation posture"
+  );
+  assert.equal(
+    standing.source_rule_id,
+    "RULE_0049",
+    "without a project_fact basis the business-type rule keeps the card"
+  );
+});

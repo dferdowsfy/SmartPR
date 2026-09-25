@@ -588,13 +588,25 @@ export function classifyEngineRequirements(
     // (physical location, question_trigger) and RULE_0699 (change_of_use,
     // project_fact): the card is REQUIRED because of the change of use, so
     // the reason must say "Change of use", not "physical location".
-    const isBusinessTypeBasis = (i: number) =>
-      basisRules[i]?.rule_type === "business_type" ||
-      basisRules[i]?.rule_type === "project_fact";
+    // REG-PROVENANCE-SPECIFICITY-003 (2026-09-25, QA S204): project_fact
+    // outranks business_type as well — the current project's own driver is
+    // the most specific basis for the card's reason. E.g. Permiso Único
+    // fired by RULE_0049 (BT_RESTAURANT, standing verify-existing
+    // obligation) and RULE_0699 (change_of_use, new filing): the card is
+    // REQUIRED because of the change of use, so the reason must cite
+    // RULE_0699 ("Change of use"), not the business type. business_type
+    // keeps outranking generic question_trigger fallbacks (SPECIFICITY-001).
+    const specificityRank = (i: number) =>
+      basisRules[i]?.rule_type === "project_fact" ? 2
+      : basisRules[i]?.rule_type === "business_type" ? 1
+      : 0;
     const winningIndependent = basisStates
       .map((state, i) => i)
       .filter((i) => flags[i] === null && basisStates[i] === selectedState);
-    const specificFirst = winningIndependent.find(isBusinessTypeBasis);
+    const bestRank = Math.max(0, ...winningIndependent.map(specificityRank));
+    const specificFirst = bestRank > 0
+      ? winningIndependent.find((i) => specificityRank(i) === bestRank)
+      : undefined;
     const basisIdx =
       specificFirst !== undefined
         ? specificFirst

@@ -109,6 +109,24 @@ export function renovationStated(text: string): boolean {
   return findAll(text, RENOVATION_RE).some((hit) => !negatedAt(text, hit.index));
 }
 
+// Ownership language: the speaker says they rent/lease or own the property
+// (EN + ES). Home-location language ("home kitchen", "home office", "my
+// house") is NOT ownership language — a home may be owned or rented.
+const OWNERSHIP_RE =
+  /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|tenants?|own\w*|purchased|bought|acquired|owners?\s+of\s+the\s+(?:property|building)|dueños?|propietari\w*|alquil\w*|rent\w*|compr\w*|soy\s+(?:el\s+)?dueño|mi\s+propia\s+casa)\b/i;
+
+/**
+ * True when the text states property tenure (owned or leased) in the
+ * speaker's own words, not negated. "we own the building" / "alquilé el
+ * local" count; "run the bakery from my home kitchen" does not. Used to
+ * check model ownership claims: the model may turn a home location into an
+ * ownership conclusion, so an "explicit" ownershipStatus needs ownership
+ * language in the text itself.
+ */
+export function ownershipStated(text: string): boolean {
+  return findAll(text, OWNERSHIP_RE).some((hit) => !negatedAt(text, hit.index));
+}
+
 function fact<T>(value: T, source: FactSource, confidence: number, evidenceText: string): ScenarioFact<T> {
   return { value, source, confidence, evidenceText };
 }
