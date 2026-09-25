@@ -2509,6 +2509,12 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-scn-known dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; }
 .spr-scn-known dt { color: #7a8a96; }
 .spr-scn-known dd { margin: 0; color: #0f2332; font-weight: 500; }
+
+/* Useful-later and filing-specific facts: optional, collapsed. */
+.spr-later { margin-top: 22px; border-top: 1px solid #e6eaee; padding-top: 14px; }
+.spr-later > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: #40515e; }
+.spr-later > .spr-form { margin-top: 16px; }
+.spr-later-note { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: #6b7c88; }
 .spr-scn-deltas { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: #8a5a0b; }
 .spr-scn-questions { margin-top: 16px; padding: 14px 16px; border: 1px solid #e4e0f5; border-radius: 12px; background: #faf9ff; }
 .spr-scn-questions h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #0f2332; }

@@ -12,6 +12,7 @@
  *   change of use; a vague proposed use is not a proposed use).
  */
 import type { ValidatedInterpretation } from "../validateInterpretation";
+import { isConfirmed } from "./types";
 import { reconcileProjectContext, scenarioProjectIntent } from "./adapter";
 import type { ScenarioContext } from "./types";
 
@@ -41,6 +42,12 @@ export function applyScenarioToInterpretation(
   };
   dropNew("applied");
   dropNew("suggested");
+  // "I want to open a daycare": the scenario only infers a new business, so
+  // the model's intent is a suggestion to confirm, never an applied fact.
+  if (out.projectIntent && scenario.business.status && !isConfirmed(scenario.business.status)) {
+    out.suggested.projectIntent = { ...out.projectIntent, requiresConfirmation: true };
+    delete out.projectIntent;
+  }
   const si = scenarioProjectIntent(scenario);
   if (si && !out.projectIntent && !out.suggested.projectIntent) {
     const s = scenario.business.status!;

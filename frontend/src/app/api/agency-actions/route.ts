@@ -31,7 +31,7 @@ import {
 } from "../../../lib/agency-runs/agencyActions";
 import { getFilingConfig } from "../../../lib/agency-runs/filingTypes";
 import { buildGoalBrief } from "../../../lib/agency-runs/goalBrief";
-import { loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
+import { loadFilingFactsForBusiness } from "../../../lib/agency-runs/passportLoader";
 import { loadProjectContextForBusiness, loadProjectIntentForBusiness } from "../../../lib/agency-runs/projectContextLoader";
 import { parseAccountStatusAnswer } from "../../../lib/agency-runs/preflight";
 import {
@@ -51,7 +51,7 @@ export async function actionsFor(
   agencyId: string,
   userId: string | null
 ): Promise<AgencyAction[]> {
-  const passport = await loadPassportForBusiness(businessId, userId);
+  const passport = await loadFilingFactsForBusiness(businessId, userId);
   const priorRuns = listRunsForBusiness(businessId);
   return resolveAgencyActions({
     business_id: businessId,
@@ -256,7 +256,7 @@ export async function POST(request: Request) {
     ready_to_start: true,
   };
 
-  const passport = await loadPassportForBusiness(businessId, user?.id ?? null);
+  const passport = await loadFilingFactsForBusiness(businessId, user?.id ?? null);
   const run = await createRun({
     business_id: businessId,
     filing_type: action.filing_type,

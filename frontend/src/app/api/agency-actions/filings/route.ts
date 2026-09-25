@@ -17,7 +17,7 @@ import {
   resolveFilingOptions,
   type FilingGroup,
 } from "../../../../lib/agency-runs/agencyActions";
-import { loadPassportForBusiness } from "../../../../lib/agency-runs/passportLoader";
+import { loadFilingFactsForBusiness } from "../../../../lib/agency-runs/passportLoader";
 import { getBusinessObligations } from "../../voice/_business";
 import { getPool, isEnabled } from "../../../graph/db";
 import { resolveBusinessUuid } from "../../../graph/store";
@@ -56,7 +56,7 @@ export async function filingsFor(
   if (!businessUuid) return [];
   const [obligations, passport, priorRuns] = await Promise.all([
     getBusinessObligations(pool, businessUuid),
-    loadPassportForBusiness(businessId, userId),
+    loadFilingFactsForBusiness(businessId, userId),
     Promise.resolve(listRunsForBusiness(businessId)),
   ]);
   return resolveFilingOptions({
@@ -82,7 +82,7 @@ async function readinessFor(
   try {
     const businessUuid = await resolveBusinessUuid(pool, businessId);
     if (!businessUuid) return null;
-    const passport = await loadPassportForBusiness(businessId, userId);
+    const passport = await loadFilingFactsForBusiness(businessId, userId);
     if (!passport) return null; // null = no access (or no DB) — show nothing
     const [evidence, obligations] = await Promise.all([
       pool.query(

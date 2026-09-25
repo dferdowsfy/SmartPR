@@ -220,6 +220,11 @@ function readProperty(text: string, ctx: ScenarioContext): void {
       const label = uses.slice(0, 2).map((u) => u.label).join("_and_");
       ctx.property.existingUse = said(label, text, verb, 0.93);
     }
+    // A vacant lot has no building on it.
+    if (uses.some((u) => u.family === "vacant")) {
+      ctx.property.existingBuilding = said(false, text, verb, 0.95);
+      continue;
+    }
     if (!ctx.property.existingBuilding) {
       const existingWord = find(object, /\b(?:existing|vacant|former|current|old|empty)\b/i);
       if (existingWord) {
@@ -244,13 +249,17 @@ function readSize(text: string, ctx: ScenarioContext): void {
   if (Number.isFinite(n) && n > 0) ctx.property.squareFeet = said(n, text, sq, 0.96);
 }
 
+/** Leasing OUT ("for lease to tenants", "rent it out") says what the owner will do, not the tenure. */
+const LEASE_OUT = /\bfor\s+(?:lease|rent)\b|\b(?:leas|rent)\w*\s+(?:it|them|the\s+\w+|space|units?|suites?)?\s*(?:out\s+)?to\s+(?:tenants?|others|third[\s-]part\w*|businesses)\b|\brent\w*\s+(?:it|them)\s+out\b/gi;
+
 function readOwnership(text: string, ctx: ScenarioContext): void {
-  const lease = find(text, /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|as\s+(?:a\s+)?tenants?)\b/i);
+  const tenureText = text.replace(LEASE_OUT, (m) => " ".repeat(m.length));
+  const lease = find(tenureText, /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|as\s+(?:a\s+)?tenants?)\b/i);
   const own = find(
     text,
     /\b(?:we|i|they|the\s+client|the\s+company|client)\s+(?:own|owns|purchased|bought|acquired)\b|\b(?:purchased|bought|acquired)\s+(?:an?|the)\s+\w+|\bowners?\s+of\s+the\s+(?:property|building)\b/i
   );
-  if (lease && !negatedAt(text, lease.index)) ctx.property.ownershipStatus = said("leased", text, lease, 0.94);
+  if (lease && !negatedAt(text, lease.index)) ctx.property.ownershipStatus = said("leased", text, { ...lease, text: text.slice(lease.index, lease.index + lease.text.length) }, 0.94);
   else if (own && !negatedAt(text, own.index)) ctx.property.ownershipStatus = said("owned", text, own, 0.93);
 }
 
@@ -266,9 +275,33 @@ const FOR_USE =
 const CHANGE_OF_USE_STATED = /\bchang\w*\s+(?:of|the|in)\s+(?:the\s+)?(?:use|occupancy)\b|\bchang\w*\s+the\s+(?:property's\s+|building's\s+)?(?:use|occupancy)\b/i;
 const USE_MODIFIED = /\b(?:modif\w*|alter\w*|adjust\w*)\s+(?:to\s+|of\s+|in\s+)?(?:the\s+)?(?:existing\s+|current\s+)?(?:use|occupancy)\b/i;
 
-function setProposed(ctx: ScenarioContext, use: UseTerm, source: FactSource, confidence: number, evidence: string): void {
+function setProposed(ctx: ScenarioContext, use: UseTerm, source: FactSource, confidence: number, evidence: string, phrase?: string): void {
   ctx.property.proposedUse = fact(use.label, source, confidence, evidence);
   ctx.property.proposedUseSpecificity = fact(use.generic ? "insufficient" : "specific", source, confidence, evidence) as ScenarioFact<"specific" | "insufficient">;
+  // The use label is the occupancy class; the activity keeps the user's own
+  // qualifier ("furniture manufacturing"), so the graph never asks for the
+  // exact activity the description already gave.
+  const words = activityPhrase(phrase, use);
+  if (!use.generic && words) {
+    ctx.operations.activity = fact(words, source, confidence, evidence);
+    ctx.business.proposedActivity = fact(words, source, confidence, evidence);
+  }
+}
+
+/** "a new furniture manufacturing" → "furniture manufacturing"; null when it adds nothing to the use term. */
+function activityPhrase(phrase: string | undefined, use: UseTerm): string | null {
+  if (!phrase) return null;
+  const cleaned = phrase
+    .toLowerCase()
+    .replace(/\b(?:an?|the|our|its|their|new|small|light|proposed)\b/g, " ")
+    .replace(/[^a-z0-9\s&/-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const m = new RegExp(`\\b(?:${use.pattern})\\b`, "i").exec(cleaned);
+  if (!m) return null;
+  const qualified = cleaned.slice(0, m.index + m[0].length).trim();
+  const n = qualified.split(" ").length;
+  return n >= 2 && n <= 4 ? qualified : null;
 }
 
 function readProposedUse(text: string, ctx: ScenarioContext): void {
@@ -279,7 +312,7 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
   if (conv?.groups[0]) {
     const use = matchUse(conv.groups[0]);
     if (use) {
-      setProposed(ctx, use, "explicit", 0.95, clauseAt(text, conv.index));
+      setProposed(ctx, use, "explicit", 0.95, clauseAt(text, conv.index), conv.groups[0]);
       if (!use.generic) {
         const differ = existing ? usesDiffer(existing, use.label) : true;
         ctx.project.possibleChangeOfUse = fact(differ !== false, "explicit", 0.93, clauseAt(text, conv.index));
@@ -308,7 +341,7 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
     const use = matchUse(phrase);
     if (!use) continue;
     // "leased a warehouse for …" — the object of the lease is not the proposed use.
-    setProposed(ctx, use, "explicit", use.generic ? 0.9 : 0.93, clauseAt(text, hit.index));
+    setProposed(ctx, use, "explicit", use.generic ? 0.9 : 0.93, clauseAt(text, hit.index), phrase);
     if (!use.generic) break;
   }
 }
@@ -409,7 +442,7 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
 
 function readOperations(text: string, ctx: ScenarioContext): void {
   const proposed = ctx.property.proposedUse;
-  if (proposed && ctx.property.proposedUseSpecificity?.value === "specific") {
+  if (proposed && ctx.property.proposedUseSpecificity?.value === "specific" && !ctx.operations.activity) {
     ctx.operations.activity = { ...proposed };
     ctx.business.proposedActivity = { ...proposed };
   }

@@ -1016,6 +1016,15 @@ export const ES: Record<string, string> = {
   "What type of property will you rent?": "¿Qué tipo de propiedad alquilarás?",
   "Will you directly employ anyone to operate or maintain the rental?": "¿Emplearás directamente a alguien para operar o mantener el alquiler?",
   "Will you rent this property to guests for stays of 90 days or less?": "¿Alquilarás esta propiedad a huéspedes por estadías de 90 días o menos?",
+  "Project municipality": "Municipio del proyecto",
+  "Your project": "Tu proyecto",
+  "Your business": "Tu negocio",
+  "Optional: name this project": "Opcional: nombra este proyecto",
+  "Optional now: business details": "Opcional por ahora: datos del negocio",
+  "Requirements come from the property and project. Business details are asked only if a filing needs them.": "Los requisitos salen de la propiedad y el proyecto. Los datos del negocio se piden solo si una radicación los necesita.",
+  "Not needed to see your requirements. Anything you add is saved to your Business Passport and reused. Filing details (EIN, authorized representative, contact) are asked only when a filing needs them.": "No hace falta para ver tus requisitos. Lo que añadas se guarda en tu Pasaporte comercial y se reutiliza. Los datos de radicación (EIN, representante autorizado, contacto) se piden solo cuando una radicación los necesita.",
+  "Filing details (optional now)": "Datos de radicación (opcional por ahora)",
+  "Clara uses these when preparing a filing. Anything you leave blank is asked only when a filing needs it.": "Clara los usa al preparar una radicación. Lo que dejes en blanco se pide solo cuando una radicación lo necesite.",
 };
 
 export function L(text: string | undefined | null, lang: Lang): string {

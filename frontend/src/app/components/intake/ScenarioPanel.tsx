@@ -108,6 +108,7 @@ function QuestionInput({
             {o.label}
           </button>
         ))}
+        {!(q.options ?? []).some((o) => o.value === "unknown") && notSure}
       </div>
     );
   }

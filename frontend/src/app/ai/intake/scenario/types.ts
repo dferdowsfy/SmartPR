@@ -193,3 +193,52 @@ export function cloneScenario(ctx: ScenarioContext): ScenarioContext {
     operations: { ...ctx.operations },
   };
 }
+
+const NUMBER_PATHS = new Set<string>(["property.squareFeet", "operations.employees"]);
+const LIST_PATHS = new Set<string>(["project.type"]);
+const BOOLEAN_PATHS = new Set<string>([
+  "property.existingBuilding",
+  ...SCENARIO_PATHS.filter((p) => p.startsWith("project.") && p !== "project.type" && p !== "project.demolition"),
+  ...SCENARIO_PATHS.filter((p) => p.startsWith("operations.") && p !== "operations.activity" && p !== "operations.employees"),
+]);
+const ENUM_PATHS: Record<string, readonly string[]> = {
+  "business.status": ["existing", "new"],
+  "property.ownershipStatus": ["owned", "leased"],
+  "property.proposedUseSpecificity": ["specific", "insufficient"],
+  "project.demolition": ["none", "interior", "partial", "full"],
+};
+const SOURCES: readonly string[] = ["explicit", "inferred", "existing_passport"];
+
+/**
+ * A scenario from a saved snapshot (untrusted). Keeps only well-formed facts
+ * on known paths, so resuming never re-asks what the user already said and a
+ * malformed snapshot can never corrupt the session. Null when nothing is left.
+ */
+export function restoreScenario(raw: unknown): ScenarioContext | null {
+  if (!raw || typeof raw !== "object") return null;
+  const out = emptyScenario();
+  let kept = 0;
+  for (const path of SCENARIO_PATHS) {
+    const [section, key] = path.split(".");
+    const bucket = (raw as Record<string, unknown>)[section];
+    const f = bucket && typeof bucket === "object" ? (bucket as Record<string, unknown>)[key] : undefined;
+    if (!f || typeof f !== "object") continue;
+    const { value, source, confidence, evidenceText } = f as Record<string, unknown>;
+    if (typeof source !== "string" || !SOURCES.includes(source)) continue;
+    if (typeof confidence !== "number" || !(confidence >= 0 && confidence <= 1)) continue;
+    if (typeof evidenceText !== "string") continue;
+    const ok = NUMBER_PATHS.has(path)
+      ? typeof value === "number" && Number.isFinite(value) && value >= 0
+      : LIST_PATHS.has(path)
+        ? Array.isArray(value) && value.length <= 8 && value.every((v) => typeof v === "string" && v.length <= 40)
+        : BOOLEAN_PATHS.has(path)
+          ? typeof value === "boolean"
+          : ENUM_PATHS[path]
+            ? typeof value === "string" && ENUM_PATHS[path].includes(value)
+            : typeof value === "string" && value.trim() !== "" && value.length <= 200;
+    if (!ok) continue;
+    setFact(out, path, { value, source: source as FactSource, confidence, evidenceText: evidenceText.slice(0, 500) });
+    kept++;
+  }
+  return kept > 0 ? out : null;
+}

@@ -39,6 +39,20 @@ function outputText(payload: XaiResponse): string {
     .join("");
 }
 
+type ReasoningEffort = "none" | "low";
+
+// Reasoning models (e.g. grok-4.6) reject effort "none" and count reasoning
+// tokens against max_output_tokens. Learned once per process from the API's
+// own 400, so models that accept "none" keep behaving exactly as before.
+let reasoningEffort: ReasoningEffort = process.env.XAI_REASONING_EFFORT === "low" ? "low" : "none";
+/** Output headroom for reasoning tokens when the model must reason. */
+const REASONING_HEADROOM = 2000;
+
+/** True when a 400 says the model does not accept the reasoning effort we sent. */
+export function rejectsReasoningEffort(status: number, detail: string): boolean {
+  return status === 400 && /reasoning[_ ]effort/i.test(detail);
+}
+
 export async function requestXaiText(options: {
   input: XaiInputMessage[];
   maxOutputTokens: number;
@@ -47,23 +61,32 @@ export async function requestXaiText(options: {
 }): Promise<string> {
   if (!XAI_API_KEY) throw new Error("XAI_API_KEY is not configured on the server.");
 
-  const response = await fetch(`${XAI_BASE_URL}/responses`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${XAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: XAI_MODEL,
-      input: options.input,
-      reasoning: { effort: "none" },
-      max_output_tokens: options.maxOutputTokens,
-      temperature: options.temperature,
-      // Uploaded business documents should not be retained by the model provider.
-      store: false,
-    }),
-    signal: options.signal,
-  });
+  const send = (effort: ReasoningEffort) =>
+    fetch(`${XAI_BASE_URL}/responses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${XAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: XAI_MODEL,
+        input: options.input,
+        reasoning: { effort },
+        max_output_tokens: options.maxOutputTokens + (effort === "none" ? 0 : REASONING_HEADROOM),
+        temperature: options.temperature,
+        // Uploaded business documents should not be retained by the model provider.
+        store: false,
+      }),
+      signal: options.signal,
+    });
+
+  let response = await send(reasoningEffort);
+  if (!response.ok && reasoningEffort === "none") {
+    const detail = (await response.text()).slice(0, 500);
+    if (!rejectsReasoningEffort(response.status, detail)) throw new XaiApiError(response.status, detail);
+    reasoningEffort = "low";
+    response = await send(reasoningEffort);
+  }
 
   if (!response.ok) {
     const detail = (await response.text()).slice(0, 500);

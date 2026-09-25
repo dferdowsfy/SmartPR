@@ -129,7 +129,7 @@ export function NaturalLanguageIntake({
   // Uncertain conclusions live apart from confirmed facts — never as ordinary chips.
   const [needsChips, setNeedsChips] = useState<{ label: string }[]>([]);
   // Business-level chips (KB business type, profile values) from the model.
-  const [businessChips, setBusinessChips] = useState<{ label: string }[]>([]);
+  const [businessChips, setBusinessChips] = useState<{ label: string; questionId?: string; field?: string }[]>([]);
   const [businessNeeds, setBusinessNeeds] = useState<{ label: string }[]>([]);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const loadingRef = useRef(false);
@@ -169,6 +169,16 @@ export function NaturalLanguageIntake({
     },
     [kb, lang, allowedIndustries]
   );
+
+  /**
+   * With a scenario, answered questions are not chips: the scenario states the
+   * fact ("Owned property") and the intake lists the answer with its value.
+   */
+  // Industry and location type restate scenario facts ("Manufacturing",
+  // "Warehouse" — the property's old use, not the new location type).
+  const SCENARIO_COVERED = new Set(["industry", "location_type"]);
+  const factChips = <T extends { label: string; questionId?: string; field?: string }>(list: T[]) =>
+    list.filter((c) => !c.questionId && !(c.field && SCENARIO_COVERED.has(c.field)));
 
   /** Merge business chips and scenario chips, dropping duplicates (e.g. the municipality). */
   const dedupe = (list: { label: string }[]) => {
@@ -251,7 +261,7 @@ export function NaturalLanguageIntake({
         // facts and scenario inferences under "Needs confirmation".
         const sc = scenarioChips(validated);
         const suggestedChips = buildSuggestedChips(validated);
-        setChips(dedupe([...sc.understood, ...patch.chips]));
+        setChips(dedupe([...sc.understood, ...(validated.scenario ? factChips(patch.chips) : patch.chips)]));
         setNeedsChips(dedupe([...sc.needs, ...suggestedChips]));
         setBusinessChips(patch.chips);
         setBusinessNeeds(suggestedChips);
@@ -286,7 +296,7 @@ export function NaturalLanguageIntake({
   // The parent's live summary (Passport merged, questions answered) wins;
   // business-level chips from this reading stay alongside it.
   const shownUnderstood = scenarioSummary
-    ? dedupe([...scenarioSummary.understood.map((c) => ({ label: c.label })), ...businessChips])
+    ? dedupe([...scenarioSummary.understood.map((c) => ({ label: c.label })), ...factChips(businessChips)])
     : chips;
   const shownNeeds = scenarioSummary
     ? dedupe([...scenarioSummary.needsConfirmation.map((c) => ({ label: c.label })), ...businessNeeds])
@@ -347,7 +357,7 @@ export function NaturalLanguageIntake({
         onApply(patch, validated);
         const sc = scenarioChips(validated);
         const suggestedChips = buildSuggestedChips(validated);
-        mergeChips(dedupe([...sc.understood, ...patch.chips]));
+        mergeChips(dedupe([...sc.understood, ...(validated.scenario ? factChips(patch.chips) : patch.chips)]));
         setNeedsChips((cur) => dedupe([...cur, ...sc.needs, ...suggestedChips]));
         setBusinessChips((cur) => dedupe([...cur, ...patch.chips]));
         setBusinessNeeds((cur) => dedupe([...cur, ...suggestedChips]));

@@ -503,7 +503,8 @@ export interface IntakePatch {
    */
   answers: Record<string, boolean | string>;
   /** Short confirmation chips for the "We understood:" strip. */
-  chips: { label: string; detail?: string; questionId?: string }[];
+  /** `field`: the profile key a chip came from (e.g. "industry"). */
+  chips: { label: string; detail?: string; questionId?: string; field?: string }[];
   /**
    * Model answers dropped because a stronger extracted fact makes them
    * impossible (e.g. "10 employees" + "no employees will be hired").
@@ -636,7 +637,7 @@ export function toIntakePatch(
   }
   for (const pv of validated.profileValues) {
     patch.profile[pv.key] = pv.value;
-    patch.chips.push({ label: profileChipLabel(pv) });
+    patch.chips.push({ label: profileChipLabel(pv), field: pv.key });
   }
 
   const derived = derivableFromExtractedFacts(validated, options);

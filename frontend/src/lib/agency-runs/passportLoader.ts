@@ -47,3 +47,22 @@ export async function loadPassportForBusiness(
     return null;
   }
 }
+
+/**
+ * The Passport plus this business's confirmed project facts (filling Passport
+ * gaps only) — what Clara checks before asking the user for anything.
+ */
+export async function loadFilingFactsForBusiness(
+  businessId: string,
+  userId: string | null
+): Promise<Record<string, unknown> | null> {
+  const [{ withProjectFacts }, { loadProjectFilingFactsForBusiness }] = await Promise.all([
+    import("./filingFacts"),
+    import("./projectContextLoader"),
+  ]);
+  const [passport, facts] = await Promise.all([
+    loadPassportForBusiness(businessId, userId),
+    loadProjectFilingFactsForBusiness(businessId, userId),
+  ]);
+  return withProjectFacts(passport, facts);
+}

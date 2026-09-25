@@ -70,7 +70,9 @@ import {
   type PassportSnapshot,
   type ScenarioContext,
   type ScenarioQuestion,
+  restoreScenario,
 } from './ai/intake/scenario';
+import { businessTypeFromScenario, locationTypeFromScenario, planIntake, scenarioStatedAnswers, withFormFacts, type IntakeFieldKey } from './ai/intake/infoNeeds';
 import {
   normalizeProjectIntent,
   projectIntentLabel,
@@ -433,6 +435,16 @@ function businessTypeOptionsFor(industry: string | undefined): string[] {
   const seen = new Set(hardcoded.map((n) => n.toLowerCase()));
   const kbNames = businessTypeNamesForIndustry(industry) ?? [];
   return [...hardcoded, ...kbNames.filter((n) => !seen.has(n.toLowerCase()))];
+}
+
+/** The intake industry whose business-type list contains this type. */
+function industryForBusinessType(businessType: string): string | null {
+  const bt = businessType.trim().toLowerCase();
+  if (!bt) return null;
+  for (const industry of INDUSTRIES) {
+    if (businessTypeOptionsFor(industry).some((o) => o.toLowerCase() === bt)) return industry;
+  }
+  return null;
 }
 
 // The lease question — every physical-location business gets it unless the
@@ -1582,14 +1594,17 @@ export default function SmartPRIntake() {
   // not-yet-pursued result can still be reviewed in full.
   const [activeIncentiveResult, setActiveIncentiveResult] = useState<IncentiveEligibilityResult | null>(null);
 
+  // Drafts are keyed by the business record when there is one, so a business
+  // that has not given its name yet still keeps its drafts.
+  const draftsOwner = businessId || profile.name;
   const sampleFormsStorageKey = useMemo(() => {
-    const business = (profile.name || 'business').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const business = (draftsOwner || 'business').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const municipality = (profile.municipality || 'pr').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     return `smartpr-sample-forms-${business}-${municipality}`;
-  }, [profile.name, profile.municipality]);
+  }, [draftsOwner, profile.municipality]);
 
   useEffect(() => {
-    if (!profile.name || !profile.municipality) return;
+    if (!draftsOwner || !profile.municipality) return;
     try {
       const saved = localStorage.getItem(sampleFormsStorageKey);
       if (!saved) return;
@@ -1597,13 +1612,13 @@ export default function SmartPRIntake() {
       setSampleFormDrafts((current) => Object.keys(current).length ? current : (parsed.drafts || {}));
       setPreparedSampleApplications((current) => Object.keys(current).length ? current : (parsed.prepared || {}));
     } catch { /* browser storage is best-effort */ }
-  }, [sampleFormsStorageKey, profile.name, profile.municipality]);
+  }, [sampleFormsStorageKey, draftsOwner, profile.municipality]);
 
   // Government-form engine persistence (structured data is the durable source —
   // previews regenerate from it; we never store a Blob URL as the only record).
   const govFormsStorageKey = useMemo(() => `${sampleFormsStorageKey}-gov`, [sampleFormsStorageKey]);
   useEffect(() => {
-    if (!profile.name || !profile.municipality) return;
+    if (!draftsOwner || !profile.municipality) return;
     try {
       const saved = localStorage.getItem(govFormsStorageKey);
       if (!saved) return;
@@ -1612,14 +1627,14 @@ export default function SmartPRIntake() {
       setPreparedGovApplications((current) => Object.keys(current).length ? current : (parsed.prepared || {}));
       if (parsed.canonical) setCanonicalOverride((current) => current ?? parsed.canonical);
     } catch { /* best-effort */ }
-  }, [govFormsStorageKey, profile.name, profile.municipality]);
+  }, [govFormsStorageKey, draftsOwner, profile.municipality]);
   useEffect(() => {
-    if (!profile.name || !profile.municipality) return;
+    if (!draftsOwner || !profile.municipality) return;
     if (!Object.keys(govFormDrafts).length && !Object.keys(preparedGovApplications).length) return;
     try {
       localStorage.setItem(govFormsStorageKey, JSON.stringify({ drafts: govFormDrafts, prepared: preparedGovApplications, canonical: canonicalOverride }));
     } catch { /* best-effort */ }
-  }, [govFormsStorageKey, govFormDrafts, preparedGovApplications, canonicalOverride, profile.name, profile.municipality]);
+  }, [govFormsStorageKey, govFormDrafts, preparedGovApplications, canonicalOverride, draftsOwner, profile.municipality]);
 
   // ==========================================================================
   // Intake fact model.
@@ -1671,6 +1686,8 @@ export default function SmartPRIntake() {
   // it in the intent card — never defaulted. Declared up here because the
   // entry/creation effects below read it in their dependency arrays.
   const [projectIntent, setProjectIntent] = useState<ProjectIntent | null>(null);
+  // Semantic scenario (declared early: session resume restores it).
+  const [scenario, setScenario] = useState<ScenarioContext | null>(null);
   // Whether the current intent is settled (user-picked, interpreter-applied
   // at high confidence, or proceeded-past). The ?entry=new-business default
   // alone does NOT confirm: the user may still switch to project_only, and a
@@ -1838,6 +1855,8 @@ export default function SmartPRIntake() {
           }
           const restoredPassport = validateProjectPassport(st.projectPassport);
           if (restoredPassport) setProjectPassport(restoredPassport);
+          const restoredScenario = restoreScenario(st.scenario);
+          if (restoredScenario) setScenario(restoredScenario);
           if (snap.business_id) {
             businessIdRef.current = snap.business_id;
             setBusinessId(snap.business_id);
@@ -1926,19 +1945,38 @@ export default function SmartPRIntake() {
   // (ai/intake/scenario). The rules engine still decides requirements; the
   // scenario drives what is understood, what is uncertain, and which
   // controlling facts to ask about next.
-  const [scenario, setScenario] = useState<ScenarioContext | null>(null);
   const scenarioRef = useRef<ScenarioContext | null>(null);
   scenarioRef.current = scenario;
+  // Profile fields the user set by hand — facts from the description or the
+  // Passport never overwrite these.
+  const userEditedRef = useRef<Set<string>>(new Set());
+  // Profile keys filled from the linked business's Passport.
+  const passportFilledKeysRef = useRef<Set<string>>(new Set());
   // Scenario questions the user answered "Not sure" — not asked again.
   const [scenarioSkipped, setScenarioSkipped] = useState<string[]>([]);
   // Linked existing business's Passport (identity + registration facts).
   const [passportSnapshot, setPassportSnapshot] = useState<PassportSnapshot | null>(null);
+  const passportSnapshotRef = useRef<PassportSnapshot | null>(null);
+  useEffect(() => { passportSnapshotRef.current = passportSnapshot; }, [passportSnapshot]);
   const scenarioActive = !!scenario && Object.values(scenario).some((section) => Object.keys(section).length > 0);
   // The Passport only counts for the existing-business branch.
   const scenarioPassport = projectIntent === 'existing_business' ? passportSnapshot : null;
+  // Form facts flow back into the scenario, so a business type picked in the
+  // form (or on file in the Passport) answers "what operation?" and is never
+  // asked again. A Passport municipality is the business address, not the
+  // project's location, so only a municipality the user chose is carried.
+  const formBusinessType = profile.business_type;
+  const formMunicipality = projectIntent === 'existing_business' && passportSnapshot?.municipality === profile.municipality
+    ? ''
+    : profile.municipality;
   const mergedScenario = useMemo(
-    () => (scenarioActive || scenarioPassport ? mergePassportIntoScenario(scenario ?? emptyScenario(), scenarioPassport) : null),
-    [scenario, scenarioActive, scenarioPassport]
+    () => {
+      if (!scenarioActive && !scenarioPassport) return null;
+      const merged = mergePassportIntoScenario(scenario ?? emptyScenario(), scenarioPassport);
+      return scenarioActive ? withFormFacts(merged, { business_type: formBusinessType, municipality: formMunicipality }, KB) : merged;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
+    [scenario, scenarioActive, scenarioPassport, formBusinessType, formMunicipality, kbReady]
   );
   // Knowledge-graph applicability of the scenario: likely vs potential
   // paths, controlling unknowns, and the next questions.
@@ -1949,7 +1987,13 @@ export default function SmartPRIntake() {
   );
   const scenarioSummary = useMemo(() => (mergedScenario && scenarioActive ? describeScenario(mergedScenario) : null), [mergedScenario, scenarioActive]);
   // Identity fields the linked Passport already answers are not asked again.
-  const passportKnownFields = useMemo(() => identityFieldsKnown(scenarioPassport), [scenarioPassport]);
+  // The Passport's municipality is the business address; the project's
+  // location stays a (prefilled) project fact, so it is not hidden.
+  const passportKnownFields = useMemo(() => {
+    const known = identityFieldsKnown(scenarioPassport);
+    known.delete('municipality');
+    return known;
+  }, [scenarioPassport]);
   const answerScenarioQuestion = (q: ScenarioQuestion, answer: string | boolean | string[]) => {
     const next = applyScenarioAnswer(scenarioRef.current ?? emptyScenario(), q.id, answer);
     if (JSON.stringify(next) === JSON.stringify(scenarioRef.current)) {
@@ -1963,6 +2007,86 @@ export default function SmartPRIntake() {
     setProjectContext((prev) => reconcileProjectContext(prev, next));
   };
   const skipScenarioQuestion = (q: ScenarioQuestion) => setScenarioSkipped((prev) => [...prev, q.id]);
+
+  // Ask once: what the description (or an answer to a scenario question)
+  // established fills the form, so the same fact is never asked again in a
+  // different form. Only empty fields the user has not set by hand are
+  // filled; a project municipality replaces a Passport business address.
+  const scenarioProfileFill = useMemo(() => {
+    if (!mergedScenario || !scenarioActive || projectIntent === 'project_only') {
+      return mergedScenario && scenarioActive ? { municipality: mergedScenario.property.municipality?.value ?? null } : null;
+    }
+    const businessType = businessTypeFromScenario(mergedScenario, KB);
+    return {
+      municipality: mergedScenario.property.municipality?.value ?? null,
+      business_type: businessType,
+      location_type: locationTypeFromScenario(mergedScenario, LOCATION_TYPES_BY_BUSINESS_TYPE[businessType ?? profile.business_type] || LOCATION_TYPES),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
+  }, [mergedScenario, scenarioActive, projectIntent, profile.business_type, kbReady]);
+  useEffect(() => {
+    if (!scenarioProfileFill) return;
+    const edited = userEditedRef.current;
+    const fromPassport = passportFilledKeysRef.current;
+    setProfile((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      const fill = (key: 'municipality' | 'business_type' | 'location_type', value: string | null | undefined) => {
+        if (!value || edited.has(key)) return;
+        const current = next[key];
+        // A location type the business type does not offer (the property's
+        // old use, e.g. "Warehouse" for a furniture factory) is not an answer.
+        const invalidLocation = key === 'location_type' && !!current
+          && !(LOCATION_TYPES_BY_BUSINESS_TYPE[next.business_type] || LOCATION_TYPES).includes(current);
+        const replaceable = !current || invalidLocation || (key === 'municipality' && fromPassport.has('municipality'));
+        if (!replaceable || current === value) return;
+        next[key] = value;
+        changed = true;
+      };
+      fill('municipality', scenarioProfileFill.municipality);
+      if ('business_type' in scenarioProfileFill) {
+        fill('business_type', scenarioProfileFill.business_type);
+        fill('location_type', scenarioProfileFill.location_type);
+      }
+      if (next.business_type && !next.industry && !edited.has('industry')) {
+        const industry = industryForBusinessType(next.business_type);
+        if (industry) {
+          next.industry = industry;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    // Re-applied when a later profile update (e.g. the interpreter's patch)
+    // clears a field the description had already answered.
+  }, [scenarioProfileFill, profile.municipality, profile.business_type, profile.location_type, profile.industry]);
+
+  // Guided questions the description already answers (stated facts only —
+  // "12 employees" answers "Will employees be hired?").
+  const scenarioAnswers = useMemo(() => (scenarioActive ? scenarioStatedAnswers(mergedScenario) : {}), [mergedScenario, scenarioActive]);
+  useEffect(() => {
+    const fresh = Object.entries(scenarioAnswers).filter(([key]) => discoveryAnswersRef.current[key] === undefined && !userEditedRef.current.has(key));
+    if (fresh.length === 0) return;
+    const patch = Object.fromEntries(fresh);
+    setDiscoveryAnswers((prev) => ({ ...patch, ...prev }));
+    setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...prefillKeysForPatch(Object.keys(patch))])));
+  }, [scenarioAnswers]);
+
+  // What must be known before requirements (required now), what the Passport
+  // can collect progressively (useful later), and what only a filing needs
+  // (filing specific — Clara asks, after checking Passport + project facts).
+  const intakePlan = useMemo(() => planIntake({
+    intent: projectIntent,
+    profile,
+    passportKnown: passportKnownFields,
+    descriptionKnown: new Set(
+      Object.entries(scenarioProfileFill ?? {})
+        .filter(([key, value]) => !!value && (profile as unknown as Record<string, unknown>)[key] === value)
+        .map(([key]) => key)
+    ),
+  }), [projectIntent, profile, passportKnownFields, scenarioProfileFill]);
+  const fieldPlan = (key: IntakeFieldKey) => intakePlan.fields.find((f) => f.key === key);
+  const showField = (key: IntakeFieldKey) => !!fieldPlan(key)?.show;
   // (projectIntent / projectIntentConfirmed are declared above the
   // entry/creation effects, which read them in their dependency arrays.)
   // The Project Passport: project/property facts for the active intent,
@@ -2073,6 +2197,7 @@ export default function SmartPRIntake() {
    * description never quarantines a fact the user explicitly set.
    */
   const markUserTouched = (key: string) => {
+    userEditedRef.current.add(key);
     for (const k of relatedIntakeKeys(key)) interpretedKeysRef.current.delete(k);
     clearConfirmation(key);
   };
@@ -2360,7 +2485,6 @@ export default function SmartPRIntake() {
   const intakeSessionIdRef = useRef<string>(crypto.randomUUID());
   const interpretedKeysRef = useRef<Set<string>>(new Set());
   const interpretedContextKeysRef = useRef<Set<string>>(new Set());
-  const passportFilledKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     // Project-context follow-ups: deterministic questions for meaningful
     // project unknowns (renovation scope, occupancy change, …). Generated
@@ -3211,6 +3335,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               // session.
               projectIntent,
               projectPassport,
+              // The scenario read from the description (and answered
+              // scenario questions): resuming never re-asks those facts.
+              scenario,
             },
           }),
         })];
@@ -3226,6 +3353,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           industry: profile.industry || undefined,
           municipality: profile.municipality || undefined,
         };
+        // Existing business: the Passport is the record. This project's facts
+        // (e.g. a project in another municipality) fill Passport gaps only —
+        // they never overwrite what is already on file.
+        if (projectIntentRef.current === "existing_business" && passportSnapshotRef.current) {
+          const onFile = passportSnapshotRef.current;
+          const known: Record<string, unknown> = {
+            legal_name: onFile.name,
+            business_structure: onFile.entityType,
+            business_type: onFile.businessType,
+            industry: onFile.industry,
+            municipality: onFile.municipality,
+          };
+          for (const [key, value] of Object.entries(known)) if (value) delete businessPatch[key];
+        }
         // Persist the full Business Passport when the user has edited core facts
         // (canonicalOverride) so regenerated artifacts pick up the same values.
         if (canonicalOverride && !skipBusinessWrites) {
@@ -3307,7 +3448,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   }, [
     me, businessId, profile, discoveryAnswers, requirements, potentialDecisions, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives,
     sampleFormDrafts, preparedSampleApplications, govFormDrafts,
-    preparedGovApplications, canonicalOverride, currentStep, readinessScore,
+    preparedGovApplications, canonicalOverride, currentStep, readinessScore, scenario,
   ]);
 
   // Typing and voice enter the same canonical state. Keep the existing intake
@@ -4596,25 +4737,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // project_only collects only the project name and municipality as base
   // profile fields — industry, business type, and location type are never
   // asked, so they must not inflate the progress denominator either.
-  const intakeFieldsDone = (isProjectOnly
-    ? [profile.name, profile.municipality]
-    : [profile.name, profile.municipality, profile.industry, profile.business_type, profile.location_type]
-  ).filter(Boolean).length;
+  // Only required-now facts count: useful-later Passport facts and
+  // filing-specific details never hold back the requirements.
+  const requiredNowFields = intakePlan.fields.filter((f) => f.tier === 'required_now');
+  const intakeFieldsDone = requiredNowFields.filter((f) => f.known).length;
   const answeredPotentialCount = potentialItems.filter((item) => potentialDecisions[item.flag]).length;
   // Totals count only questions SmartPR still needs. A question it can already
   // answer is not work the user has to do, so it must not inflate the progress
   // denominator either.
   const intakeQuestionTotal = guidedQuestions.length + potentialItems.length;
-  const intakeTotal = (isProjectOnly ? 2 : 5) + intakeQuestionTotal;
+  const intakeTotal = requiredNowFields.length + intakeQuestionTotal;
   const intakeDone = intakeFieldsDone + guidedQuestionsAnswered + answeredPotentialCount;
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
-  // project_only readiness is the project name + municipality: without this
-  // branch the "See my requirements" button could never enable for a
-  // property-only project, because the business fields are never collected.
-  const baseProfileReady = isProjectOnly
-    ? Boolean(profile.name && profile.municipality)
-    : Boolean(profile.name && profile.municipality && profile.industry && profile.business_type && profile.location_type);
-  const intakeDisplayTotal = isProjectOnly ? intakeTotal : Math.max(7, intakeTotal);
+  const baseProfileReady = intakePlan.ready;
+  const intakeDisplayTotal = intakeTotal;
   const intakeDisplayDone = intakeDone + (
     baseProfileReady && intakeDone === intakeTotal
       ? Math.max(0, intakeDisplayTotal - intakeTotal)
@@ -5905,25 +6041,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </div>
                 )}
 
-                {!passportKnownFields.has('name') && (
-                <div className="spr-field full">
-                  <label htmlFor="spr-business-name">
-                    {isProjectOnly ? L('Project name', language) : t('businessName')}
-                    {confirmationBadge('name')}
-                  </label>
-                  <input
-                    id="spr-business-name"
-                    placeholder={isProjectOnly ? L('e.g. Guaynabo warehouse expansion', language) : L('Your business name', language)}
-                    value={profile.name}
-                    onChange={e => { setProfile({ ...profile, name: e.target.value }); markUserTouched('name'); }}
-                    required
-                  />
-                </div>
-                )}
 
-                {!passportKnownFields.has('municipality') && (
+                {showField('municipality') && (
                 <div className="spr-field">
-                  <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
+                  <label htmlFor="spr-municipality">{projectIntent === 'existing_business' ? L('Project municipality', language) : t('municipality')}{confirmationBadge('municipality')}</label>
                   <select
                     id="spr-municipality"
                     value={profile.municipality}
@@ -5943,7 +6064,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     are business fields and never appear for a property-only
                     project. */}
                 {!isProjectOnly && (<>
-                {!passportKnownFields.has('industry') && (
+                {showField('business_type') && (
                 <div className="spr-field">
                   <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
@@ -5957,7 +6078,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('business_type') && (
+                {showField('business_type') && (
                 <div className="spr-field">
                   <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
@@ -5979,6 +6100,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
+                {showField('location_type') && (
                 <div className="spr-field">
                   <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
                   <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
@@ -5988,8 +6110,42 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     ))}
                   </select>
                 </div>
+                )}
+                </>)}
+              </div>
 
-                {!passportKnownFields.has('business_structure') && (
+              {/* Useful later + filing-specific: never required to see the
+                  requirements. Saved to the Business Passport as provided;
+                  filing details are asked by Clara only when a filing needs
+                  them, after checking the Passport and this project. */}
+              {intakePlan.fields.some((f) => f.show && f.tier !== 'required_now') && (
+                <details className="spr-later" data-testid="intake-later">
+                  <summary>
+                    {isProjectOnly
+                      ? L('Optional: name this project', language)
+                      : L('Optional now: business details', language)}
+                  </summary>
+                  <p className="spr-later-note">
+                    {isProjectOnly
+                      ? L('Requirements come from the property and project. Business details are asked only if a filing needs them.', language)
+                      : L('Not needed to see your requirements. Anything you add is saved to your Business Passport and reused. Filing details (EIN, authorized representative, contact) are asked only when a filing needs them.', language)}
+                  </p>
+                  <div className="spr-form">
+                {showField('name') && (
+                <div className="spr-field full">
+                  <label htmlFor="spr-business-name">
+                    {isProjectOnly ? L('Project name', language) : t('businessName')}
+                    {confirmationBadge('name')}
+                  </label>
+                  <input
+                    id="spr-business-name"
+                    placeholder={isProjectOnly ? L('e.g. Guaynabo warehouse expansion', language) : L('Your business name', language)}
+                    value={profile.name}
+                    onChange={e => { setProfile({ ...profile, name: e.target.value }); markUserTouched('name'); }}
+                  />
+                </div>
+                )}
+                {showField('business_structure') && (
                 <div className="spr-field spr-field-static">
                   <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
@@ -6012,6 +6168,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
+                {showField('number_of_employees') && (
                 <div className="spr-field">
                   <label htmlFor="spr-employees">{t('numEmployees')}{confirmationBadge('number_of_employees')}</label>
                   <input
@@ -6036,8 +6193,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     }}
                   />
                 </div>
-                </>)}
-              </div>
+                )}
+                  </div>
+                </details>
+              )}
 
               {/* Questions already answered from the description — shown as
                   completed so the user can see what was understood (and change
@@ -6118,15 +6277,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
 
             {passportModeActive && (
-              <div style={{ margin: '4px 0 8px', borderTop: '1px solid var(--border, #e2e8f0)', paddingTop: 12 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>{L('Core Application Details', language)}</h3>
+              <details className="spr-later" data-testid="filing-details" style={{ margin: '4px 0 8px' }}>
+                <summary>{L('Filing details (optional now)', language)}</summary>
+                <p className="spr-later-note">{L('Clara uses these when preparing a filing. Anything you leave blank is asked only when a filing needs it.', language)}</p>
                 <CoreApplicationDetails
                   passportMode
                   canonical={canonicalApplication}
                   lang={language}
                   onChange={updatePassport}
                 />
-              </div>
+              </details>
             )}
 
             <div className="spr-form-footer">
@@ -6412,7 +6572,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
             <div className="headline">
               <div className="eyebrow">{L('Readiness Score', language)}</div>
-              <h1>{profile.name || '—'}</h1>
+              <h1>{profile.name || (mergedScenario ? scenarioTitle(mergedScenario) : null) || L(isProjectOnly ? 'Your project' : 'Your business', language)}</h1>
               <p>{completedMandatory} {L('of', language)} {totalMandatory} {L('Required Documents Validated', language)}{findings.filter(f => f.severity === 'critical').length === 0 && missingCount === 0 ? ` · ${L('No Critical Issues Found', language)}` : missingCount > 0 ? ` · ${missingCount} ${L('still missing', language)}` : ''}</p>
             </div>
             <div className="banner-stat">

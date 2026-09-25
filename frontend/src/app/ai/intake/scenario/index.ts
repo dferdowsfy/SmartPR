@@ -6,7 +6,7 @@
  * decides what applies. Nothing in this folder names a permit on its own.
  */
 export {
-  SCENARIO_PATHS, businessStatus, changeOfUseStatus, cloneScenario, emptyScenario, getFact, isConfirmed, ownershipStatus, setFact, valueOf,
+  SCENARIO_PATHS, businessStatus, changeOfUseStatus, cloneScenario, emptyScenario, getFact, restoreScenario, isConfirmed, ownershipStatus, setFact, valueOf,
 } from "./types";
 export type {
   BusinessStatus, DemolitionScope, F, FactSource, OwnershipStatus, ScenarioContext, ScenarioFact, ScenarioPath, ScenarioSection, UseSpecificity,
