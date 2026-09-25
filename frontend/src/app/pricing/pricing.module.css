@@ -17,13 +17,14 @@
 }
 
 .headerInner {
-  max-width: 1120px;
+  width: min(100%, 94rem);
   margin: 0 auto;
-  padding: 0.85rem 1.25rem;
+  padding: 0.9rem clamp(1rem, 2.6vw, 2.5rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  position: relative;
 }
 
 .logoLink {
@@ -36,17 +37,23 @@
 .nav {
   display: none;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2.5rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .nav {
     display: flex;
+    /* Center on the header bar itself so the menu never shifts sideways
+       between pages, matching the shared marketing header. */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
   }
 }
 
 .nav a {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: #161616;
   text-decoration: none;

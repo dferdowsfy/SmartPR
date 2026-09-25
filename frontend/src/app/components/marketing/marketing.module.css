@@ -29,6 +29,7 @@
   width: min(100%, 94rem);
   margin: 0 auto;
   padding: 0.9rem clamp(1rem, 2.6vw, 2.5rem);
+  position: relative;
 }
 
 .logo {
@@ -934,6 +935,16 @@ button.primary {
   .desktopNav,
   .desktopActions {
     display: flex;
+  }
+
+  /* Center the nav on the header bar itself, not between the logo and the
+     action cluster — pages with different actions (e.g. the professionals
+     "Book a demo" button) must never shift the menu sideways. */
+  .desktopNav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
   }
 
   .menuButton,

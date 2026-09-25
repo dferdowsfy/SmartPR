@@ -14,6 +14,13 @@
   --color-brand: var(--brand-primary);
 }
 
+html {
+  /* Reserve vertical-scrollbar space on every page so centered content
+     (including the header) never shifts sideways when navigating between
+     pages of different heights. */
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   min-height: 100%;
