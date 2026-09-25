@@ -53,7 +53,7 @@ import {
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
-import { OTHER_AGENCY_ID, type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
+import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import {
   buildChatMilestones,
   chatScrollKey,
@@ -258,12 +258,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               ? {
                   ...m,
                   loading: false,
-                  // The run page conducts one filing — hide the "other
-                  // requirements" group (obligations with no browser
-                  // filing), which is not something the human can start.
-                  groups: ((result.groups ?? []) as FilingGroup[]).filter(
-                    (g) => g.agency_id !== OTHER_AGENCY_ID
-                  ),
+                  // Every SmartPR requirement stays visible — including ones
+                  // with no browser filing ("Other SmartPR requirements") and
+                  // variants that can't start yet. Only supported filings
+                  // get a Start button (the run API enforces the same).
+                  groups: (result.groups ?? []) as FilingGroup[],
                 }
               : m
           )

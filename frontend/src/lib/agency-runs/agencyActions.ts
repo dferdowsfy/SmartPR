@@ -6,7 +6,7 @@
  * flow through here — never field values, never secrets.
  */
 import type { AgencyFilingType } from "./types";
-import { AGENCY_FILING_CONFIGS, type AgencyFilingConfig } from "./filingTypes";
+import { AGENCY_FILING_CONFIGS, isFilingLaunchable, type AgencyFilingConfig } from "./filingTypes";
 import { flattenPassportValues } from "./prefillFromPassport";
 import { CANONICAL_LABELS } from "./canonicalFields";
 
@@ -58,138 +58,30 @@ export interface AgencyAction {
 const COMPLETED_STATUSES = new Set(["review", "completed"]);
 
 /* ------------------------------------------------------------------ */
-/* Dept. of State objective resolution                                  */
+/* Dept. of State objective                                            */
 /*                                                                     */
-/* DEPT_STATE_CORPORATE_FILING covers two distinct portal workflows:   */
-/* creating a new juridical entity vs filing the annual report of an    */
-/* existing one. Sending the agent in with "do either" makes it guess. */
-/* Resolve the concrete objective from passport formation signals; when */
-/* the signals are inconclusive, surface both variants as separate     */
-/* action cards so the human picks — never let the agent guess.        */
+/* One config = one agency + one filing variant. Corporation formation, */
+/* LLC formation and the annual report are separate configs, each      */
+/* reached only from its own rule-emitted requirement                  */
+/* (DOC_CERT_INCORPORATION / DOC_CERT_ORGANIZATION / DOC_ANNUAL_REPORT). */
+/* The old passport-heuristic split of one config into "new entity or  */
+/* annual report" is gone: it sent LLC owners through corporation      */
+/* screens and let the agent's objective depend on passport guesses.   */
 /* ------------------------------------------------------------------ */
 
-type DeptStateObjective = "annual_report" | "new_entity" | "ambiguous";
-
-const FORMED_STATUSES = new Set([
-  "formed_in_puerto_rico",
-  "formed_outside_puerto_rico",
-]);
-
-const OBJECTIVES: Record<
-  Exclude<DeptStateObjective, "ambiguous">,
-  { title_en: string; title_es: string; objective_en: string; objective_es: string }
-> = {
-  new_entity: {
-    title_en: "Dept. of State — Create a new entity",
-    title_es: "Departamento de Estado — Crear una nueva entidad",
-    objective_en:
-      "Create and file a NEW juridical entity (corporation or LLC) in the Corporate & Entities Registry. Do NOT file an annual report.",
-    objective_es:
-      "Crear y radicar una NUEVA entidad jurídica (corporación o LLC) en el Registro de Corporaciones y Entidades. NO radique un informe anual.",
-  },
-  annual_report: {
-    title_en: "Dept. of State — File the annual report",
-    title_es: "Departamento de Estado — Radicar el informe anual",
-    objective_en:
-      "File the ANNUAL REPORT (informe anual) for the EXISTING entity in the Corporate & Entities Registry. Do NOT create a new entity.",
-    objective_es:
-      "Radicar el INFORME ANUAL de la entidad EXISTENTE en el Registro de Corporaciones y Entidades. NO cree una nueva entidad.",
-  },
+const CORPORATION_OBJECTIVE = {
+  title_en: "Dept. of State — Form a corporation",
+  title_es: "Departamento de Estado — Crear una corporación",
+  objective_en:
+    "Form a NEW corporation by filing its Certificate of Incorporation in the Corporate & Entities Registry creation wizard. Do NOT form an LLC and do NOT file an annual report.",
+  objective_es:
+    "Crear una NUEVA corporación radicando su Certificado de Incorporación en el asistente de creación del Registro de Corporaciones y Entidades. NO cree una LLC ni radique un informe anual.",
 };
 
-function flatGet(flat: Map<string, string>, ...keys: string[]): string {
-  for (const key of keys) {
-    const v = flat.get(key);
-    if (v && v.trim()) return v.trim();
-  }
-  return "";
-}
-
-function resolveDeptStateObjective(flat: Map<string, string>): DeptStateObjective {
-  // Keys are lowercased by flattenPassportValues; check dotted + snake + leaf.
-  const registryNumber = flatGet(
-    flat,
-    "business.registrynumber",
-    "business.registry_number",
-    "registrynumber",
-    "registry_number",
-    "entity_number"
-  );
-  const incorporationDate = flatGet(
-    flat,
-    "business.incorporationdate",
-    "business.incorporation_date",
-    "incorporationdate",
-    "incorporation_date"
-  );
-  const formationStatus = flatGet(
-    flat,
-    "business.formationstatus",
-    "business.formation_status",
-    "formationstatus",
-    "formation_status"
-  ).toLowerCase();
-  const formed =
-    Boolean(registryNumber || incorporationDate) ||
-    FORMED_STATUSES.has(formationStatus);
-  const notFormed = formationStatus === "not_formed";
-  if (formed && !notFormed) return "annual_report";
-  if (notFormed && !formed) return "new_entity";
-  return "ambiguous";
-}
-
-/**
- * Split (or annotate) the Dept. of State corporate filing action with its
- * resolved concrete objective. Returns one action when the passport signals
- * are conclusive, or two clearly-labeled variants when they are not.
- *
- * When the SmartPR obligation names the requirement (requirement_id), the
- * requirement decides the variant — never the passport heuristics:
- *   DOC_CERT_INCORPORATION / DOC_ARTICLES_ORGANIZATION / DOC_DBA_REGISTRATION
- *     → new_entity (SmartPR determined a formation filing is needed)
- *   DOC_ANNUAL_REPORT → annual_report (not yet modeled by the engine)
- * Otherwise the existing passport-signal resolution applies.
- */
-function withDeptStateObjective(
-  action: AgencyAction,
-  flat: Map<string, string>,
-  forced?: "new_entity" | "annual_report"
-): AgencyAction[] {
-  const resolved = forced ?? resolveDeptStateObjective(flat);
-  if (resolved === "ambiguous") {
-    return (["new_entity", "annual_report"] as const).map((variant) => ({
-      ...action,
-      title_en: OBJECTIVES[variant].title_en,
-      title_es: OBJECTIVES[variant].title_es,
-      objective_en: OBJECTIVES[variant].objective_en,
-      objective_es: OBJECTIVES[variant].objective_es,
-    }));
-  }
-  const o = OBJECTIVES[resolved];
-  return [
-    {
-      ...action,
-      title_en: o.title_en,
-      title_es: o.title_es,
-      objective_en: o.objective_en,
-      objective_es: o.objective_es,
-    },
-  ];
-}
-
-/** Requirement-driven Dept. of State variant. Null → fall back to passport signals. */
-function deptStateVariantForRequirement(
-  requirementId: string | null | undefined
-): "new_entity" | "annual_report" | null {
-  if (
-    requirementId === "DOC_CERT_INCORPORATION" ||
-    requirementId === "DOC_ARTICLES_ORGANIZATION" ||
-    requirementId === "DOC_DBA_REGISTRATION"
-  ) {
-    return "new_entity";
-  }
-  if (requirementId === "DOC_ANNUAL_REPORT") return "annual_report";
-  return null;
+/** Attach the concrete objective for filings whose config names one variant. */
+function withObjective(action: AgencyAction): AgencyAction {
+  if (action.filing_type !== "DEPT_STATE_CORPORATE_FILING") return action;
+  return { ...action, ...CORPORATION_OBJECTIVE };
 }
 
 /**
@@ -304,7 +196,7 @@ export async function resolveAgencyActions(input: {
   // objective so the agent never has to guess between them.
   return actions.flatMap((action) =>
     action.filing_type === "DEPT_STATE_CORPORATE_FILING"
-      ? withDeptStateObjective(action, flat)
+      ? [withObjective(action)]
       : [action]
   );
 }
@@ -341,6 +233,9 @@ export interface ObligationLike {
  *   missing_information— non-sensitive SmartPR data still missing; the user
  *                        goes back to SmartPR fields instead of the browser
  *   blocked            — waiting on another filing (config.blockedBy)
+ *   not_available      — a filing variant exists for the requirement but is
+ *                        not launchable (disabled, or its launch switch is
+ *                        off) — visible, never startable
  *   unsupported        — SmartPR identified the requirement but no browser
  *                        filing exists for it yet (disabled entry, no launch)
  */
@@ -350,6 +245,7 @@ export type FilingStatus =
   | "in_progress"
   | "submitted"
   | "blocked"
+  | "not_available"
   | "unsupported";
 
 export interface FilingOption {
@@ -421,12 +317,13 @@ const FILING_STATUS_RANK: Record<FilingStatus, number> = {
   missing_information: 2,
   blocked: 3,
   submitted: 4,
-  unsupported: 5,
+  not_available: 5,
+  unsupported: 6,
 };
 
-/** Group id for obligations with no browser filing available. The run page
- * is for conducting one filing, so the picker hides this group — it lists
- * unsupported "other requirements", not something the human can start. */
+/** Group id for obligations with no browser filing available. The picker
+ * shows this group (every requirement stays visible) but none of its
+ * entries can start. */
 export const OTHER_AGENCY_ID = "OTHER";
 
 function filingStatusFor(
@@ -460,8 +357,11 @@ export function resolveFilingOptions(input: {
   obligations: ObligationLike[];
   /** Include the fictional rehearsal portal (admin / ?demo=1 only). */
   includeDemo?: boolean;
+  /** Launch-switch environment (tests pass their own; defaults to process.env). */
+  env?: Record<string, string | undefined>;
 }): FilingGroup[] {
   const { passport, priorRuns, includeDemo } = input;
+  const env = input.env ?? (typeof process !== "undefined" ? process.env : {});
   void input.business_id; // reserved for future per-business tuning
 
   const flat = flattenPassportValues(passport);
@@ -478,12 +378,13 @@ export function resolveFilingOptions(input: {
     }
   }
 
-  // Only enabled registry entries can fulfill an obligation — a disabled
-  // config (e.g. SURI_MERCHANT_REGISTRATION) leaves its obligations honestly
-  // "unsupported" rather than launching a filing that isn't actually built.
+  // Every registry entry joins its requirements — including disabled ones —
+  // so the human sees WHICH filing a requirement maps to. Whether it can
+  // start is decided separately by isFilingLaunchable (enabled + launch
+  // switch): non-launchable variants render as "not_available" and the run
+  // API refuses them.
   const configByRequirementId = new Map<string, AgencyFilingConfig>();
   for (const config of AGENCY_FILING_CONFIGS) {
-    if (!config.enabled) continue;
     for (const reqId of config.requirementIds ?? []) {
       if (!configByRequirementId.has(reqId)) configByRequirementId.set(reqId, config);
     }
@@ -524,25 +425,18 @@ export function resolveFilingOptions(input: {
     base.obligation_id = obligation.id;
     base.requirement_id = obligation.requirement_id;
 
-    // Dept. of State covers two distinct workflows. The SmartPR requirement
-    // decides the variant when it names one; otherwise the existing
-    // passport-signal resolution applies — the agent never guesses.
-    const variants =
-      base.filing_type === "DEPT_STATE_CORPORATE_FILING"
-        ? withDeptStateObjective(
-            base,
-            flat,
-            deptStateVariantForRequirement(obligation.requirement_id) ?? undefined
-          )
-        : [base];
+    // Each config names exactly one variant; its requirement already chose it.
+    const variants = [withObjective(base)];
+    const launchable = isFilingLaunchable(config, env);
 
     for (const action of variants) {
-      const filing_status = filingStatusFor(
-        obligation.status,
-        action,
-        completed,
-        active
-      );
+      const computed = filingStatusFor(obligation.status, action, completed, active);
+      // Never offer Start for a non-launchable variant — but keep submitted /
+      // in-progress truth (an existing run can still be resumed).
+      const filing_status: FilingStatus =
+        launchable || computed === "submitted" || computed === "in_progress"
+          ? computed
+          : "not_available";
       options.push({
         id: action.filing_type,
         action,
@@ -551,7 +445,7 @@ export function resolveFilingOptions(input: {
         obligation_name: obligation.name,
         obligation_status: obligation.status,
         filing_status,
-        supported: filing_status !== "unsupported",
+        supported: filing_status !== "unsupported" && filing_status !== "not_available",
         demo: config.agencyId === "DEMO_REHEARSAL" ? true : undefined,
         active_run_id: activeRunId.get(action.filing_type),
         title_en: action.title_en,

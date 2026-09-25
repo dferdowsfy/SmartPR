@@ -53,6 +53,7 @@ import {
   filingPassportCtaCopy,
   filingPickerIntro,
   filingStatusChipLabel,
+  filingNotAvailableCopy,
   filingUnsupportedCopy,
   type AgencyAction,
   type ChatMilestone,
@@ -254,6 +255,7 @@ const FILING_CHIP_STYLES: Record<FilingStatus, string> = {
   in_progress: "border-sky-200 bg-sky-50 text-sky-800",
   submitted: "border-slate-200 bg-slate-100 text-slate-600",
   blocked: "border-amber-200 bg-amber-50 text-amber-900",
+  not_available: "border-slate-200 bg-slate-100 text-slate-500",
   unsupported: "border-slate-200 bg-slate-100 text-slate-500",
 };
 
@@ -319,7 +321,11 @@ function FilingCard({
         </p>
       )}
       {!filing.supported && (
-        <p className="mt-1 text-[15px] text-slate-500">{filingUnsupportedCopy(lang)}</p>
+        <p className="mt-1 text-[15px] text-slate-500">
+          {filing.filing_status === "not_available"
+            ? filingNotAvailableCopy(lang)
+            : filingUnsupportedCopy(lang)}
+        </p>
       )}
       {action && (
         <p className="mt-1 text-[15px] text-slate-500">
@@ -330,7 +336,7 @@ function FilingCard({
           )}
         </p>
       )}
-      {verification && (verification.status === "documented" || verification.status === "partial") && (
+      {filing.supported && verification && verification.status !== "verified" && action?.agency_id !== "DEMO_REHEARSAL" && (
         <p className="mt-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[13px] leading-snug text-slate-600">
           <span className="font-semibold text-slate-700">{L("Early access: ", "Acceso anticipado: ", lang)}</span>
           {L(
@@ -619,6 +625,59 @@ export interface InterventionProps {
   busy: boolean;
 }
 
+/**
+ * Payment handoff. No agency has an authorized SmartPR payment integration,
+ * so the human pays the agency directly in its portal. Before they do, show
+ * who is paid, the amount the portal shows, that SmartPR charges nothing
+ * here, and where the card goes — and say plainly that SmartPR payment
+ * methods or credit cannot be used in a government checkout.
+ */
+function PaymentHandoff({ run, lang }: { run: AgencyRunPublic; lang: Lang }) {
+  const config = AGENCY_FILING_CONFIGS.find((c) => c.id === run.filing_type);
+  const flowPayee = config?.agencyEn;
+  const amount = run.portal_step?.amount ?? null;
+  const rows: [string, string][] = [
+    [L("Payee", "Beneficiario", lang), (lang === "es" ? config?.agencyEs : flowPayee) ?? L("The agency", "La agencia", lang)],
+    [
+      L("Amount", "Monto", lang),
+      amount
+        ? `${amount} ${L("(as shown by the portal — check it there)", "(según el portal — verifícalo allí)", lang)}`
+        : L("Shown on the portal's payment page", "Aparece en la página de pago del portal", lang),
+    ],
+    [L("SmartPR fee for this step", "Cargo de SmartPR por este paso", lang), L("None", "Ninguno", lang)],
+    [
+      L("How you pay", "Cómo pagas", lang),
+      L(
+        "Directly in the agency portal. SmartPR never sees your card.",
+        "Directamente en el portal de la agencia. SmartPR nunca ve tu tarjeta.",
+        lang
+      ),
+    ],
+  ];
+  return (
+    <div className="mt-2 rounded-lg border border-rose-200 bg-white/80 px-3 py-2" data-testid="payment-handoff">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
+        {rows.map(([k, v]) => (
+          <div key={k} className="contents">
+            <dt className="font-semibold text-slate-700">{k}</dt>
+            <dd className="text-slate-800">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      {config?.payment.feeNote && (
+        <p className="mt-1.5 text-xs text-slate-500">{config.payment.feeNote}</p>
+      )}
+      <p className="mt-1.5 text-xs text-slate-500">
+        {L(
+          "Saved SmartPR payment methods and SmartPR credit can't be used for this government fee — the agency only accepts payment in its own portal.",
+          "Los métodos de pago guardados y el crédito de SmartPR no sirven para este cargo del gobierno — la agencia solo acepta pagos en su propio portal.",
+          lang
+        )}
+      </p>
+    </div>
+  );
+}
+
 /** Title + instruction for a human-only portal step (no chat inputs). */
 function humanStepCopy(kind: PortalStepKind, lang: Lang): { title: string; body: string } {
   switch (kind) {
@@ -795,7 +854,11 @@ function InterventionCard(props: InterventionProps) {
     const seedKey = `${run.id}:${pauseReason || ""}:${pendingFields.map((f) => f.id).join(",")}`;
     if (seedKeyRef.current === seedKey) return;
     seedKeyRef.current = seedKey;
-    const seeded = prefillFromPassport(pendingFields, run.passport_snapshot);
+    // Never seed a field the portal just rejected: the passport value is
+    // exactly what failed validation (e.g. a PO box on a street-address
+    // field), so re-offering it would loop.
+    const seedable = pendingFields.filter((f) => !f.error);
+    const seeded = prefillFromPassport(seedable, run.passport_snapshot);
     for (const [id, value] of Object.entries(seeded)) {
       if (value) props.onFieldChange(id, value);
     }
@@ -887,6 +950,7 @@ function InterventionCard(props: InterventionProps) {
           {humanCopy && (
             <>
               <p className="mt-1.5 text-[15px] leading-snug text-slate-700">{humanCopy.body}</p>
+              {stepKind === "payment" && <PaymentHandoff run={run} lang={lang} />}
               {stepMissing.length > 0 && (
                 <div className="mt-2 rounded-lg border border-rose-200 bg-white/70 px-3 py-2">
                   <p className="text-[13px] font-semibold text-slate-800">

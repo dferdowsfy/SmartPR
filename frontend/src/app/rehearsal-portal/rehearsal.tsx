@@ -82,12 +82,21 @@ export function DemoBanner() {
  * rehearsal's step detection deterministic and testable.
  */
 export type RehearsalStep =
-  | "landing" | "login" | "form" | "identity" | "certification"
-  | "payment" | "review" | "submission";
+  | "landing" | "login" | "form" | "identity" | "certification" | "signature"
+  | "upload" | "payment" | "review" | "submission" | "unknown";
 
-export function PortalCard({ children, step }: { children: ReactNode; step?: RehearsalStep }) {
+export function PortalCard({
+  children,
+  step,
+  flowStep,
+}: {
+  children: ReactNode;
+  step?: RehearsalStep;
+  /** Catalog step id this fixture screen clones (flow fixtures only). */
+  flowStep?: string;
+}) {
   return (
-    <main data-smartpr-step={step} className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8">
+    <main data-smartpr-step={step} data-flow-step={flowStep} className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8">
       <div className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm md:p-8">
         {children}
       </div>

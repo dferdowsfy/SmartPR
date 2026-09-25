@@ -6,6 +6,7 @@ import {
   type GoalBrief,
 } from "./goalBrief";
 import type { SubmissionObjective } from "./types";
+import { flowFor, renderFlowForPrompt } from "./flows";
 
 /**
  * Render the structured submission objective as the first block of the
@@ -238,6 +239,10 @@ export function buildAgencyTaskPrompt(input: {
     : "";
 
   const playbookProcedure = renderPlaybookProcedure(config);
+  // Real flows with a definition get the step catalog, passport field map
+  // and recovery rules (values from the sensitive-stripped passport only).
+  const flow = flowFor(config.id);
+  const flowBlock = flow ? `\n\n${renderFlowForPrompt(flow, safePassport)}` : "";
   const procedure =
     playbookProcedure ??
     config.procedureEn.map((step, i) => `${i + 1}. ${step}`).join("\n");
@@ -286,7 +291,8 @@ HUMAN-ONLY STEPS (the human does these in the live browser — never you)
 
 PORTAL STEP REPORTING (mandatory on EVERY pause)
 - Before pausing, identify the step the browser is showing RIGHT NOW from its heading, URL and controls. If the page declares a data-smartpr-step attribute (SmartPR rehearsal portal), use it.
-- Emit one line: PORTAL_STEP: kind=<kind>; title=<the visible page heading>; missing=<labels of still-empty required items, comma-separated, or none>
+- Emit one line: PORTAL_STEP: kind=<kind>; title=<the visible page heading>; url=<path or #hash, if visible>; missing=<labels of still-empty required items, comma-separated, or none>
+- On a payment step also add amount=<the total the portal shows, e.g. $150.00> so SmartPR can show the human the payee and amount before they pay.
 - kind is one of: login | mfa | captcha | form | identity | upload | certification | signature | payment | review | submission | unknown
   - form = ordinary data blanks the passport cannot fill (e.g. a date); identity = SSN / ITIN / ID number entry.
   - If you cannot tell confidently what the page is asking for, use kind=unknown — never guess. SmartPR will ask the human to take over.
@@ -349,7 +355,7 @@ ${passportBlock}
 \`\`\`
 
 ${procedureHeading}
-${procedure}
+${procedure}${flowBlock}
 ${authorizeBlock}${resume}${fieldsBlock}
 
 When finished or paused, end with a short status line containing exactly one marker: ${pauseMarkers}

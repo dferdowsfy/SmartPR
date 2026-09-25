@@ -164,6 +164,22 @@ export async function POST(request: Request) {
     }
   }
   if (candidates.length === 0) {
+    // The filing exists for this requirement but cannot start (disabled or
+    // its launch switch is off) — say so instead of "not found".
+    const notAvailable = groups.some((g) =>
+      g.filings.some(
+        (f) =>
+          f.filing_status === "not_available" &&
+          f.action?.filing_type === actionId &&
+          f.obligation_id === obligationId
+      )
+    );
+    if (notAvailable) {
+      return Response.json(
+        { error: "This filing is not available to start yet.", code: "filing_not_available" },
+        { status: 409 }
+      );
+    }
     return Response.json(
       { error: "obligation not found for this filing." },
       { status: 404 }

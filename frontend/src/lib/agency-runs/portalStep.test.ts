@@ -17,6 +17,8 @@ describe("parsePortalStep", () => {
       title: "Certification (rehearsal)",
       missing: ["Signature (printed name)", "Certify checkbox"],
       declared: true,
+      url: null,
+      amount: null,
     });
   });
 

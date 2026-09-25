@@ -146,11 +146,15 @@ describe("resolveAgencyActions", () => {
       passport: fullPassport,
       priorRuns: [],
     });
-    assert.equal(ds.length, 1);
-    assert.equal(ds[0].filing_type, "DEPT_STATE_CORPORATE_FILING");
-    assert.equal(ds[0].status, "ready");
-    assert.equal(ds[0].agency_id, "DEPT_STATE");
-    assert.ok(ds[0].agency_es.includes("Estado"));
+    // Legacy registry listing: one entry per Dept. of State variant.
+    assert.deepEqual(
+      ds.map((a) => a.filing_type).sort(),
+      ["DEPT_STATE_ANNUAL_REPORT", "DEPT_STATE_CORPORATE_FILING", "DEPT_STATE_LLC_FORMATION"]
+    );
+    const corp = ds.find((a) => a.filing_type === "DEPT_STATE_CORPORATE_FILING")!;
+    assert.equal(corp.status, "ready");
+    assert.equal(corp.agency_id, "DEPT_STATE");
+    assert.ok(corp.agency_es.includes("Estado"));
 
     const ogpe = await resolveAgencyActions({
       business_id: "biz-1",
@@ -207,49 +211,28 @@ describe("isAgencyId", () => {
   });
 });
 
-describe("Dept. of State objective resolution", () => {
-  async function deptActions(passport: unknown) {
-    return resolveAgencyActions({
-      business_id: "biz-1",
-      agency_id: "DEPT_STATE",
-      passport: passport as Record<string, unknown>,
-      priorRuns: [],
+describe("Dept. of State corporation objective", () => {
+  // One config = one variant. Passport formation signals no longer switch
+  // the corporation filing into an annual report (or an LLC).
+  for (const [label, passport] of [
+    ["registry number present", fullPassport],
+    ["not formed", { business: { legalName: "New Co", formationStatus: "not_formed" } }],
+    ["no signals", thinPassport],
+  ] as const) {
+    it(`${label} → corporation formation objective only`, async () => {
+      const actions = await resolveAgencyActions({
+        business_id: "biz-1",
+        agency_id: "DEPT_STATE",
+        passport: passport as Record<string, unknown>,
+        priorRuns: [],
+      });
+      const corp = actions.filter((a) => a.filing_type === "DEPT_STATE_CORPORATE_FILING");
+      assert.equal(corp.length, 1);
+      assert.ok(corp[0].objective_en?.includes("NEW corporation"));
+      assert.ok(corp[0].objective_en?.includes("Do NOT form an LLC"));
+      assert.ok(!/ANNUAL REPORT \(informe/.test(corp[0].objective_en ?? ""));
     });
   }
-
-  it("registry number present → single annual-report action", async () => {
-    const actions = await deptActions(fullPassport);
-    assert.equal(actions.length, 1);
-    assert.ok(actions[0].objective_en?.includes("ANNUAL REPORT"));
-    assert.ok(actions[0].title_en.includes("annual report"));
-  });
-
-  it("formationStatus not_formed → single new-entity action", async () => {
-    const actions = await deptActions({
-      business: { legalName: "New Co LLC", formationStatus: "not_formed" },
-    });
-    assert.equal(actions.length, 1);
-    assert.ok(actions[0].objective_en?.includes("NEW juridical entity"));
-    assert.ok(actions[0].title_en.includes("new entity"));
-  });
-
-  it("no formation signals → both variants as separate cards", async () => {
-    const actions = await deptActions(thinPassport);
-    assert.equal(actions.length, 2);
-    const objectives = actions.map((a) => a.objective_en ?? "");
-    assert.ok(objectives.some((o) => o.includes("NEW juridical entity")));
-    assert.ok(objectives.some((o) => o.includes("ANNUAL REPORT")));
-    // Same filing type — the chosen card's objective travels via the POST body.
-    assert.ok(actions.every((a) => a.filing_type === "DEPT_STATE_CORPORATE_FILING"));
-  });
-
-  it("incorporation date alone signals an existing entity", async () => {
-    const actions = await deptActions({
-      business: { legalName: "Old Co Inc.", incorporationDate: "2020-03-15" },
-    });
-    assert.equal(actions.length, 1);
-    assert.ok(actions[0].objective_en?.includes("ANNUAL REPORT"));
-  });
 });
 
 describe("resolveFilingOptions", () => {
@@ -286,15 +269,54 @@ describe("resolveFilingOptions", () => {
     assert.equal(permiso.agency_id, "OGPE");
   });
 
-  it("lets the SmartPR requirement decide the Dept. of State variant over passport signals", () => {
-    // fullPassport carries a registry number → passport signals alone say
-    // annual_report; the DOC_CERT_INCORPORATION requirement forces new_entity.
-    const filings = all(resolveFilingOptions({ ...base, obligations }));
+  it("routes the corporation requirement to corporation formation — off by default", () => {
+    const filings = all(resolveFilingOptions({ ...base, obligations, env: {} }));
     const ds = filings.find((f) => f.obligation_id === "obl-ds");
     assert.ok(ds);
     assert.equal(ds.action?.filing_type, "DEPT_STATE_CORPORATE_FILING");
-    assert.equal(ds.title_en, "Dept. of State — Create a new entity");
-    assert.ok(ds.action?.objective_en?.includes("NEW juridical entity"));
+    assert.equal(ds.title_en, "Dept. of State — Form a corporation");
+    assert.ok(ds.action?.objective_en?.includes("NEW corporation"));
+    // Launch switch off by default: visible, never startable.
+    assert.equal(ds.filing_status, "not_available");
+    assert.equal(ds.supported, false);
+  });
+
+  it("the corporation launch switch makes it startable", () => {
+    const filings = all(
+      resolveFilingOptions({ ...base, obligations, env: { MITA_FLOW_DEPT_STATE_CORPORATION: "on" } })
+    );
+    const ds = filings.find((f) => f.obligation_id === "obl-ds")!;
+    assert.equal(ds.supported, true);
+    assert.equal(ds.filing_status, "ready_to_start");
+  });
+
+  it("routes each rule-emitted Dept. of State requirement to its own variant", () => {
+    const dosObligations: ObligationLike[] = [
+      { id: "obl-llc", name: "Certificate of Organization", requirement_id: "DOC_CERT_ORGANIZATION", agency: "Department of State", status: "MISSING" },
+      { id: "obl-articles", name: "Articles of Organization", requirement_id: "DOC_ARTICLES_ORGANIZATION", agency: "Department of State", status: "MISSING" },
+      { id: "obl-annual", name: "Annual report", requirement_id: "DOC_ANNUAL_REPORT", agency: "Department of State", status: "MISSING" },
+      { id: "obl-dba", name: "DBA", requirement_id: "DOC_DBA_REGISTRATION", agency: "Department of State", status: "MISSING" },
+    ];
+    // Even with every launch switch on, only real, enabled flows could start.
+    const env = {
+      MITA_FLOW_DEPT_STATE_CORPORATION: "on",
+      MITA_FLOW_DEPT_STATE_LLC: "on",
+      MITA_FLOW_DEPT_STATE_ANNUAL_REPORT: "on",
+    };
+    const filings = all(resolveFilingOptions({ ...base, obligations: dosObligations, env }));
+    const byId = (id: string) => filings.find((f) => f.obligation_id === id)!;
+    for (const id of ["obl-llc", "obl-articles"]) {
+      assert.equal(byId(id).action?.filing_type, "DEPT_STATE_LLC_FORMATION", `${id} is an LLC filing`);
+      assert.notEqual(byId(id).action?.filing_type, "DEPT_STATE_CORPORATE_FILING");
+      assert.equal(byId(id).filing_status, "not_available");
+      assert.equal(byId(id).supported, false);
+      assert.equal(byId(id).agency_id, "DEPT_STATE", "visible under its agency");
+    }
+    assert.equal(byId("obl-annual").action?.filing_type, "DEPT_STATE_ANNUAL_REPORT");
+    assert.equal(byId("obl-annual").filing_status, "not_available");
+    // A trade name is not an entity formation.
+    assert.equal(byId("obl-dba").action, null);
+    assert.equal(byId("obl-dba").filing_status, "unsupported");
   });
 
   it("never matches by requirement name — unmapped ids surface as disabled", () => {
@@ -307,12 +329,13 @@ describe("resolveFilingOptions", () => {
       assert.equal(f.action, null);
       assert.equal(f.filing_status, "unsupported");
     }
-    // Disabled registry entries (merchant registration) also surface as
-    // unsupported rather than launching a filing that isn't actually built.
+    // Disabled registry entries (merchant registration) stay visible under
+    // their agency as "not available" — never a launchable card.
     const merchant = filings.find((x) => x.obligation_id === "obl-merchant");
     assert.ok(merchant);
     assert.equal(merchant.supported, false);
-    assert.equal(merchant.filing_status, "unsupported");
+    assert.equal(merchant.filing_status, "not_available");
+    assert.equal(merchant.agency_id, "HACIENDA_SURI");
     // Unsupported options trail in their own group — never mixed into an
     // agency's filings as a launchable card.
     const other = groups[groups.length - 1];

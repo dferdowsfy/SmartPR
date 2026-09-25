@@ -102,6 +102,8 @@ export function filingStatusChipLabel(
       return L("Submitted", "Enviada", lang);
     case "blocked":
       return L("Blocked", "Bloqueada", lang);
+    case "not_available":
+      return L("Not yet available", "Aún no disponible", lang);
     case "unsupported":
       return L("Not yet supported", "Aún no soportado", lang);
   }
@@ -137,6 +139,18 @@ export function filingGateCopy(count: number, lang: Lang): string {
 }
 
 /** Copy for an obligation SmartPR identified but no browser filing covers yet. */
+/**
+ * Body line for a filing variant that exists but cannot start yet (disabled,
+ * or its launch switch is off) — the portal steps are not proven.
+ */
+export function filingNotAvailableCopy(lang: Lang): string {
+  return L(
+    "Mita knows which filing this is, but its portal steps haven't been proven yet, so it can't start here. You can file it directly with the agency.",
+    "Mita sabe qué trámite es, pero sus pasos en el portal aún no están comprobados, así que no puede empezar aquí. Puedes radicarlo directamente con la agencia.",
+    lang
+  );
+}
+
 export function filingUnsupportedCopy(lang: Lang): string {
   return L(
     "SmartPR identified this requirement, but a browser filing isn't available for it yet.",

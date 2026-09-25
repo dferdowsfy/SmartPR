@@ -19,6 +19,23 @@ const objective: SubmissionObjective = {
 };
 
 describe("createRun submission-objective gate", () => {
+  it("refuses a filing whose launch switch is off (Dept. of State corporation by default)", async () => {
+    const prev = process.env.MITA_FLOW_DEPT_STATE_CORPORATION;
+    delete process.env.MITA_FLOW_DEPT_STATE_CORPORATION;
+    try {
+      await assert.rejects(
+        () => createRun({ business_id: "biz-1", filing_type: "DEPT_STATE_CORPORATE_FILING", submissionObjective: { ...objective, transaction_type: "DEPT_STATE_CORPORATE_FILING" } }),
+        /not available to launch/
+      );
+      await assert.rejects(
+        () => createRun({ business_id: "biz-1", filing_type: "DEPT_STATE_LLC_FORMATION", submissionObjective: objective }),
+        /not available to launch/
+      );
+    } finally {
+      if (prev !== undefined) process.env.MITA_FLOW_DEPT_STATE_CORPORATION = prev;
+    }
+  });
+
   it("refuses to create a run when the objective is not ready to start", async () => {
     await assert.rejects(
       () =>

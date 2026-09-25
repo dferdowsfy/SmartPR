@@ -23,7 +23,7 @@ import {
   type BuRun,
 } from "./browserUseClient";
 import { timelineFor, type MockBeat } from "./mockTimeline";
-import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
+import { getFilingConfig, AGENCY_FILING_CONFIGS, isFilingLaunchable } from "./filingTypes";
 import { PLACEHOLDER_SHOTS } from "./placeholders";
 import {
   displayMessagesForAgentText,
@@ -41,7 +41,8 @@ import {
 import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
 import type { GoalBrief } from "./goalBrief";
 import { setPortalAccountStatus } from "./portalAccounts";
-import { resolvePauseState, stepPauseMessage } from "./portalStep";
+import { stepPauseMessage } from "./portalStep";
+import { resolvePauseForFiling } from "./flows";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -140,14 +141,18 @@ function applyPendingFields(
   text: string,
   reason: AgencyPauseReason
 ): void {
-  const state = resolvePauseState(text, reason);
+  const state = resolvePauseForFiling(text, reason, run.filing_type);
   run.pending_fields = state.fields;
   run.portal_step = state.step;
 }
 
 /** Human-readable chat copy for a pause, derived from the resolved step. */
-function pauseDisplay(text: string, reason: AgencyPauseReason): { message: string; message_es: string } {
-  const state = resolvePauseState(text, reason);
+function pauseDisplay(
+  text: string,
+  reason: AgencyPauseReason,
+  filingType: string
+): { message: string; message_es: string } {
+  const state = resolvePauseForFiling(text, reason, filingType);
   return stepPauseMessage(state.step, state.fields);
 }
 
@@ -473,7 +478,7 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
     // REQUIRED_FIELDS spam in the Assistant panel).
     const display =
       marker.status === "paused"
-        ? pauseDisplay(fieldsText, marker.pause_reason ?? null)
+        ? pauseDisplay(fieldsText, marker.pause_reason ?? null, run.filing_type)
         : displayMessagesForAgentText(latestText, null, []);
     pushEvent(run, {
       message: display.message,
@@ -519,7 +524,7 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
       const marker = detectMarker(out);
       if (marker.status === "paused") {
         trackPause(run, marker.pause_reason ?? null, shot, fieldsText);
-        const display = pauseDisplay(fieldsText, marker.pause_reason ?? null);
+        const display = pauseDisplay(fieldsText, marker.pause_reason ?? null, run.filing_type);
         pushEvent(run, {
           message: display.message,
           message_es: display.message_es,
@@ -699,6 +704,13 @@ export async function createRun(input: {
    */
   fields?: ResumeFields | null;
 }): Promise<AgencyRunPublic> {
+  // Hard gate: a filing variant that is disabled or whose launch switch is
+  // off can never start a browser session, whoever calls this.
+  if (!isFilingLaunchable(getFilingConfig(input.filing_type))) {
+    throw new Error(
+      `Filing ${input.filing_type} is not available to launch (disabled or launch switch off).`
+    );
+  }
   // Hard gate: never create a run for an objective that isn't ready to
   // start (already submitted, or blocking SmartPR information missing).
   if (input.submissionObjective && !input.submissionObjective.ready_to_start) {

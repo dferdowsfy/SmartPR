@@ -45,6 +45,12 @@ export interface PortalStep {
   missing: string[];
   /** True when the agent (or the page itself) declared the step; false when inferred. */
   declared: boolean;
+  /** URL path/hash the agent reported (corroborates detection). */
+  url?: string | null;
+  /** Total the portal shows on a payment step (display only, e.g. "$150.00"). */
+  amount?: string | null;
+  /** Catalog step id when the filing has a flow definition. */
+  flowStepId?: string | null;
 }
 
 const KINDS = new Set<PortalStepKind>([
@@ -95,7 +101,12 @@ export function parsePortalStep(text: string): PortalStep | null {
     .slice(0, 8)
     .map((s) => s.slice(0, 120));
   const title = map.title?.trim() ? map.title.trim().slice(0, 160) : null;
-  return { kind, title, missing, declared: true };
+  const url = map.url?.trim() && /^[\w\-./#?=&%:]+$/.test(map.url.trim()) ? map.url.trim().slice(0, 200) : null;
+  // Display-only currency amount; anything else is dropped rather than shown.
+  const amount = map.amount?.trim() && /^(US)?\$?\s?\d{1,6}(,\d{3})*(\.\d{2})?$/i.test(map.amount.trim())
+    ? map.amount.trim()
+    : null;
+  return { kind, title, missing, declared: true, url, amount };
 }
 
 /** Best-effort step when the agent did not declare one (older prompts, mock). */
@@ -151,6 +162,8 @@ export function resolvePauseState(text: string, reason: AgencyPauseReason): Paus
       title: declared?.title ?? null,
       missing: [...missing],
       declared: Boolean(declared),
+      url: declared?.url ?? null,
+      amount: kind === "payment" ? (declared?.amount ?? null) : null,
     },
     fields: INLINE_STEPS.has(kind) ? dataFields : [],
   };

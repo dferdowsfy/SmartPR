@@ -29,26 +29,103 @@ function demoPortalHost(): string {
 /**
  * How much of a filing's live government workflow has actually been proven.
  * A requirement mapped to a filing is NOT evidence that the workflow works.
- * - "rehearsal": SmartPR's fictional portal, covered by the end-to-end test.
- * - "documented": built from official guides/manuals; no live walkthrough.
- * - "partial": some live screens walked (read-only); the rest is documented.
- * - "verified": a real filing ran start → human submission → confirmation,
- *   with the evidence recorded (see docs/agency-rollout-plan.md).
+ * - "mapped": a rule-emitted requirement routes here; no flow content yet.
+ * - "documented": step content from official guides/manuals; nothing observed live.
+ * - "partially_observed": some live screens walked read-only; the rest is documented.
+ * - "rehearsed": the observed screens are cloned into a rehearsal fixture and a
+ *   browser test proves every Mita request matches the visible step. Still
+ *   NOT a live filing.
+ * - "verified": an authorized human completed an actual filing through Mita
+ *   and the portal confirmation was recorded (see docs/agency-rollout-plan.md).
  */
-export type FilingVerificationStatus = "rehearsal" | "documented" | "partial" | "verified";
+export type FilingVerificationStatus =
+  | "mapped"
+  | "documented"
+  | "partially_observed"
+  | "rehearsed"
+  | "verified";
 
 export interface FilingVerification {
   status: FilingVerificationStatus;
   /** What was actually observed, and where the evidence lives. */
   evidence: string;
-  /** ISO date of the last live check (required for "partial" and "verified"). */
+  /** ISO date of the last live observation (required for partially_observed, rehearsed, verified). */
   checkedAt?: string;
+  /** Rehearsal fixture route + browser test proving it (required for "rehearsed"). */
+  fixture?: { route: string; test: string };
+  /** Recorded portal confirmation of a real filing (required for "verified"). */
+  confirmation?: { reference: string; recordedAt: string; recordedBy: string };
+}
+
+/**
+ * Can SmartPR take part in paying this filing's government fee? Researched
+ * per agency; never assumed. A saved Stripe payment method and SmartPR
+ * credit are SmartPR-side instruments — neither can be entered into a
+ * third-party government checkout unless the agency offers an authorized
+ * integration that accepts payment initiated through SmartPR.
+ */
+export type PaymentIntegration =
+  /** No public/partner integration found: card entry happens only inside the agency portal. */
+  | "none_known"
+  /** An authorized agency integration exists and was verified (agreement on file). */
+  | "authorized_integration"
+  /** The filing charges no government fee. */
+  | "not_applicable"
+  /** Not researched yet. */
+  | "unknown";
+
+export interface PaymentFeasibility {
+  /** Does the portal charge a government fee for this filing? */
+  governmentFee: "yes" | "no" | "unknown";
+  /** Amount / basis as observed or documented (display only). */
+  feeNote: string;
+  /** Who collects the fee and where the card is entered. */
+  collector: string;
+  /** Accepted methods as observed or documented. */
+  methods: string;
+  integration: PaymentIntegration;
+  /** What was checked to reach that conclusion, with dates. */
+  integrationEvidence: string;
+  /**
+   * What Mita does at the payment screen. Without an authorized integration
+   * it is always "user_pays_in_portal": pause, show payee + amount, and let
+   * the human pay directly in the portal. Mita never improvises a payment
+   * route and never charges automatically.
+   */
+  smartprPath: "user_pays_in_portal" | "no_payment_step";
+}
+
+/**
+ * Launch switch for a real government flow. Resolved server-side from the
+ * environment: "on"/"1"/"true" enables, "off"/"0"/"false" disables, unset
+ * falls back to defaultEnabled. A flow that is not launchable stays visible
+ * in the picker as "Not yet available" and the run API refuses it.
+ */
+export interface LaunchSwitch {
+  envFlag: string;
+  defaultEnabled: boolean;
+}
+
+/** Official entry point evidence: where the start URL comes from. */
+export interface EntryPointEvidence {
+  /** Official agency page that points users to the online service. */
+  officialSource: string;
+  /** Route of the filing inside the portal, as found in the portal's own app. */
+  portalRoute?: string;
+  checkedAt: string;
+  note: string;
 }
 
 export interface AgencyFilingConfig {
   id: AgencyFilingType;
   /** Live-workflow evidence — never inferred from requirement mappings. */
   verification: FilingVerification;
+  /** Government-fee payment feasibility — researched, never assumed. */
+  payment: PaymentFeasibility;
+  /** Disabled-by-default switch for real flows (absent = launchable when enabled). */
+  launch?: LaunchSwitch;
+  /** Evidence for startUrl / domains. */
+  entry?: EntryPointEvidence;
   /** Filing picker label. */
   labelEn: string;
   labelEs: string;
@@ -259,6 +336,17 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // DOC_SURI_REGISTRATION exists in the document catalog but no engine
     // rule currently emits it (verified 2026-09-18 in data/rules.json) — this
     // join only fires when an obligation actually carries the id.
+    payment: {
+      governmentFee: "no",
+      feeNote: "Creating a SURI account carries no government fee (Hacienda registration guide).",
+      collector: "None",
+      methods: "None",
+      integration: "not_applicable",
+      integrationEvidence: "No payment step in the documented registration flow; live host unreachable from SmartPR's network 2026-09-25 (redirect loop).",
+      smartprPath: "no_payment_step",
+    },
+    // Preserves today's behavior (no emitting rule, so unreachable anyway).
+    launch: { envFlag: "MITA_FLOW_SURI_REGISTER_TAXPAYER", defaultEnabled: true },
     verification: {
       status: "documented",
       evidence:
@@ -615,8 +703,17 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: ["SURI_REGISTER_TAXPAYER"],
     sensitiveNeeds: [],
+    payment: {
+      governmentFee: "unknown",
+      feeNote: "Not researched — confirm whether Registro de Comerciante charges a fee before building this flow.",
+      collector: "Unknown",
+      methods: "Unknown",
+      integration: "unknown",
+      integrationEvidence: "Not researched. SURI host unreachable from SmartPR's network 2026-09-25 (redirect loop).",
+      smartprPath: "user_pays_in_portal",
+    },
     verification: {
-      status: "documented",
+      status: "mapped",
       evidence:
         "No playbook and disabled. DOC_MERCHANT_REGISTRATION is emitted by engine rules, so users see it as 'not yet supported'.",
     },
@@ -624,41 +721,60 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
   },
   {
     id: "DEPT_STATE_CORPORATE_FILING",
-    labelEn: "Dept. of State — Corporate / entity filing",
-    labelEs: "Departamento de Estado — Trámite corporativo / entidad",
+    // Corporation formation ONLY. LLC formation (DOC_CERT_ORGANIZATION) and
+    // the annual report (DOC_ANNUAL_REPORT) are separate variants below —
+    // the recorded walkthrough and its wizard screens (Incorporators,
+    // Officers, Capital Stock, $150 corporation fee) are corporation screens.
+    labelEn: "Dept. of State — Form a corporation (Certificate of Incorporation)",
+    labelEs: "Departamento de Estado — Crear una corporación (Certificado de Incorporación)",
     agencyEn: "Puerto Rico Department of State",
     agencyEs: "Departamento de Estado de Puerto Rico",
     portalEn: "Corporate & Entities Registry",
     portalEs: "Registro de Corporaciones y Entidades",
-    domains: ["rcp.estado.pr.gov"],
+    // rcp = the registry web app; rceapi = its API host (XHR only, never a
+    // navigation target). Both are *.estado.pr.gov.
+    domains: ["rcp.estado.pr.gov", "rceapi.estado.pr.gov"],
     startUrl: "https://rcp.estado.pr.gov/en",
-    goalEn: "Create/file a juridical entity (corporation or LLC), or file an annual report",
-    goalEs: "Crear/radicar una entidad jurídica (corporación o LLC), o radicar un informe anual",
+    entry: {
+      officialSource:
+        "https://www.statedepartment.pr.gov/registration-of-legal-entities (names rceweb.estado.pr.gov/en/law-entity); https://estado.pr.gov/en/services/services-corporations (names rceweb.f1hst.com)",
+      portalRoute: "/en/creationfilings/wizard (thank-you: /en/creationfilings/thank-you)",
+      checkedAt: "2026-09-25",
+      note:
+        "The official pages name rceweb.estado.pr.gov and the vendor host rceweb.f1hst.com; rceweb returned HTTP 503 to SmartPR's network. rcp.estado.pr.gov serves the live registry app: its public bundle routes /en/creationfilings/wizard, calls rceapi.estado.pr.gov, and redirects maintenance to maint.f1hst.com (same vendor). The 2026-09-24 walkthrough ran on rcp. Reconfirm with the Dept. of State (registropersonasjuridicas@estado.pr.gov) before the live pilot.",
+    },
+    // Disabled by default: set MITA_FLOW_DEPT_STATE_CORPORATION=on only for
+    // the supervised pilot.
+    launch: { envFlag: "MITA_FLOW_DEPT_STATE_CORPORATION", defaultEnabled: false },
+    goalEn:
+      "Form a NEW corporation by filing its Certificate of Incorporation in the Corporate & Entities Registry creation wizard. Stop at Signatures — the human signs, pays and submits.",
+    goalEs:
+      "Crear una NUEVA corporación radicando su Certificado de Incorporación en el asistente de creación del Registro de Corporaciones y Entidades. Deténgase en Firmas — la persona firma, paga y envía.",
     procedureEn: [
-      "Follow the OBJECTIVE named in the goal brief above exactly — it names ONE transaction (new-entity creation OR annual report filing). Do that one only; never do both, never pick the other one.",
-      "From the registry homepage, open the online services for the transaction named in the objective",
-      "If login is required: PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS — the human signs in in the browser via Take over",
-      "Prefill entity name, entity type, organizers/members, registered agent, and addresses from the Business Passport",
-      "Pause for document uploads, captcha, or payment as the portal requires; stop at pre-submit review",
+      "Follow the OBJECTIVE named in the goal brief exactly: corporation formation only. Never file an annual report and never form an LLC in this run.",
+      "From the registry home, open the creation wizard (route /en/creationfilings/wizard). If login is required: PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS — the human signs in in the browser via Take over.",
+      "Walk the wizard screens in the STEP CATALOG order; identify every screen by its heading before acting, and report PORTAL_STEP with the catalog's step on every pause.",
+      "Prefill every mapped field from the Business Passport (see FIELD MAP); ask the human only for catalog fields the passport cannot fill.",
+      "On Review Filing verify only — never check the perjury declaration. Stop at Signatures and at Payment for the human; never sign, pay or submit.",
     ],
     procedureEs: [
-      "Siga EXACTAMENTE el OBJETIVO indicado en el resumen de objetivo anterior — nombra UNA transacción (creación de nueva entidad O radicación de informe anual). Haga solo esa; nunca ambas, nunca la otra.",
-      "Desde la página del registro, abra los servicios en línea para la transacción nombrada en el objetivo",
-      "Si se requiere inicio de sesión: PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS — la persona inicia sesión en el navegador con Tomar el control",
-      "Rellene nombre de la entidad, tipo de entidad, organizadores/miembros, agente residente y direcciones desde el Pasaporte de Negocio",
-      "Pause para adjuntos, captcha o pago según lo pida el portal; deténgase en la revisión previa al envío",
+      "Siga EXACTAMENTE el OBJETIVO del resumen: solo creación de corporación. Nunca radique un informe anual ni cree una LLC en esta ejecución.",
+      "Desde la portada del registro, abra el asistente de creación (ruta /en/creationfilings/wizard). Si se requiere inicio de sesión: PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS — la persona inicia sesión con Tomar el control.",
+      "Recorra las pantallas en el orden del CATÁLOGO DE PASOS; identifique cada pantalla por su encabezado antes de actuar y reporte PORTAL_STEP con el paso del catálogo en cada pausa.",
+      "Rellene cada campo mapeado desde el Pasaporte de Negocio (MAPA DE CAMPOS); pida a la persona solo campos del catálogo que el pasaporte no cubra.",
+      "En Revisar radicación solo verifique — nunca marque la declaración de perjurio. Deténgase en Firmas y en Pago para la persona; nunca firme, pague ni envíe.",
     ],
-    uploadsEn: "Formation documents and organizer photo ID (max 5 MB each)",
-    uploadsEs: "Documentos de formación e ID con foto del organizador (máx. 5 MB c/u)",
+    uploadsEn: "Optional supporting documents — PDF/TIF, under 7 MB, no SSN or tax ID data",
+    uploadsEs: "Documentos de apoyo opcionales — PDF/TIF, menos de 7 MB, sin SSN ni IDs contributivos",
     hintsEn: [
-      "Attachments max 5.00 MB per file.",
-      "Have entity name options and organizer details ready in the Business Passport.",
-      "If the portal requires an account, enter login in the Assistant panel (Fill & continue) — Take over is only for captcha or odd UI.",
+      "Server-side address validation rejects PO boxes and fake addresses — use the passport's physical street address.",
+      "The confirm-email field validates on blur; retype it and leave the field.",
+      "The human signs in, signs, pays and submits in the browser via Take over — never in SmartPR chat.",
     ],
     hintsEs: [
-      "Adjuntos máx. 5.00 MB por archivo.",
-      "Tenga las opciones de nombre de la entidad y los datos del organizador listos en el Pasaporte de Negocio.",
-      "Si el portal requiere una cuenta, ingrese el inicio de sesión en el panel Asistente (Llenar y continuar) — Tomar control solo para captcha o UI rara.",
+      "La validación de dirección del servidor rechaza apartados postales y direcciones falsas — use la dirección física del pasaporte.",
+      "El campo de confirmar correo valida al salir; vuelva a escribirlo y salga del campo.",
+      "La persona inicia sesión, firma, paga y envía en el navegador con Tomar el control — nunca en el chat de SmartPR.",
     ],
     evidenceTags: [],
     needsLogin: true,
@@ -667,31 +783,45 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     agencyId: "DEPT_STATE",
     passportCoverageKeys: [
       "business.legalName",
-      "business.tradeName",
       "business.entityType",
-      "business.ein",
-      "business.registryNumber",
       "contact.fullName",
       "contact.email",
       "contact.phone",
       "addresses.principalPhysical.line1",
       "addresses.municipality",
       "addresses.principalPhysical.postalCode",
-      "addresses.state",
     ],
     blockedBy: [],
     sensitiveNeeds: [],
-    // DOC_CERT_INCORPORATION is emitted by engine rules; DOC_ARTICLES_ORGANIZATION
-    // exists in the document catalog (no rule emits it yet — future-proof).
-    // DOC_ANNUAL_REPORT has no document entry and no rule: the annual-report
-    // variant cannot be obligation-driven until the engine models it.
+    payment: {
+      governmentFee: "yes",
+      feeNote:
+        "Fee panel observed 2026-09-24: minimum $140 + $10 certificate = $150.00 for a corporation (varies with authorized capital stock).",
+      collector:
+        "PR Department of State registry — card is entered in the wizard's own Payments step (rcp.estado.pr.gov) and posted to rceapi.estado.pr.gov/api/transaction/submit/creationfiling",
+      methods: "Credit card — Visa, MasterCard, AmEx (walkthrough notes); agency-issued vouchers exist for registry staff only",
+      integration: "none_known",
+      integrationEvidence:
+        "2026-09-25: public registry bundle holds card number / expiry / CVV in the portal's own form and submits them to rceapi; no hosted third-party checkout, no public or partner payment API, no documented way to pay a SmartPR-initiated charge. Official service pages list no integrations.",
+      smartprPath: "user_pays_in_portal",
+    },
+    // Engine routing: RULE_0001 emits DOC_CERT_INCORPORATION for new,
+    // unformed businesses and EXCLUDES LLCs/sole props/partnerships — this is
+    // the corporation requirement. LLCs arrive via DOC_CERT_ORGANIZATION.
     verification: {
-      status: "partial",
+      // Rehearsed = the observed screens are cloned and the browser test
+      // proves every Mita request matches the visible step. NOT a live
+      // filing: "verified" needs a real, human-submitted filing + confirmation.
+      status: "rehearsed",
+      fixture: {
+        route: "/rehearsal-portal/dept-state",
+        test: "frontend/tests/dept-state-corporation.e2e.mts",
+      },
       evidence:
-        "Read-only live walkthrough of the new-entity creation wizard, stopped at Signatures (one fictional name lookup). Payment, human signature, submission and confirmation never observed. Annual-report variant not recorded. Start URL rcp.estado.pr.gov differs from the rceweb.estado.pr.gov named in the 2026-09-15 URL note — reconfirm.",
+        "Read-only live walkthrough of the corporation creation wizard on rcp.estado.pr.gov, 2026-09-24, stopped at Signatures (one fictional name lookup). Encoded as the playbook below; no screenshots or DOM captures are in the repo. The registry's public bundle (2026-09-25) confirms the same wizard components in the same order. Never observed: login screen, validation-error screens, Signatures, Payment, submission, confirmation.",
       checkedAt: "2026-09-24",
     },
-    requirementIds: ["DOC_CERT_INCORPORATION", "DOC_ARTICLES_ORGANIZATION"],
+    requirementIds: ["DOC_CERT_INCORPORATION"],
     // Playbook recorded 2026-09-24 from a live read-only walkthrough of the
     // creation wizard (stopped at Signatures; one fictional name lookup).
     // Covers new-entity creation only — the annual-report flow is not recorded.
@@ -1258,8 +1388,20 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: [],
     sensitiveNeeds: [],
+    payment: {
+      governmentFee: "yes",
+      feeNote: "Non-refundable. Regular evaluation: 10% initially, 90% after analyst validation; ministerial: 100% initially (OGPe Permiso Único manual).",
+      collector: "OGPe Single Business Portal (in-portal checkout)",
+      methods: "Card or ACH, per the OGPe manual — not observed live",
+      integration: "none_known",
+      integrationEvidence: "Manual describes in-portal payment only; no public or partner payment API found. Portal returned HTTP 503 to SmartPR's network 2026-09-25.",
+      smartprPath: "user_pays_in_portal",
+    },
+    // Preserves today's behavior; recommended to default off until its own
+    // fixture + browser test exist (see docs/agency-rollout-plan.md).
+    launch: { envFlag: "MITA_FLOW_OGPE_PERMISO_UNICO", defaultEnabled: true },
     verification: {
-      status: "partial",
+      status: "partially_observed",
       evidence:
         "Only pre-login Single Business Portal screens were live-verified; every post-login step comes from OGPe's official Permiso Único manual. Uploads, payment and submission never observed.",
       checkedAt: "2026-09-15",
@@ -1569,6 +1711,117 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     },
   },
   {
+    id: "DEPT_STATE_LLC_FORMATION",
+    // Visible, never launchable until its own screens are observed. The
+    // registry serves the wizard's step list per entity class
+    // (/api/nav/wizard/...), and no LLC wizard screen has been walked —
+    // the corporation playbook must not be reused for LLCs.
+    labelEn: "Dept. of State — Form an LLC (Certificate of Organization)",
+    labelEs: "Departamento de Estado — Crear una LLC (Certificado de Organización)",
+    agencyEn: "Puerto Rico Department of State",
+    agencyEs: "Departamento de Estado de Puerto Rico",
+    portalEn: "Corporate & Entities Registry",
+    portalEs: "Registro de Corporaciones y Entidades",
+    domains: ["rcp.estado.pr.gov", "rceapi.estado.pr.gov"],
+    startUrl: "https://rcp.estado.pr.gov/en",
+    entry: {
+      officialSource: "https://www.statedepartment.pr.gov/registration-of-legal-entities",
+      portalRoute: "/en/creationfilings/wizard (shared creation wizard; LLC step list not observed)",
+      checkedAt: "2026-09-25",
+      note: "Same host evidence as corporation formation. LLC-specific screens unobserved.",
+    },
+    launch: { envFlag: "MITA_FLOW_DEPT_STATE_LLC", defaultEnabled: false },
+    goalEn: "Form a NEW LLC by filing its Certificate of Organization in the Corporate & Entities Registry.",
+    goalEs: "Crear una NUEVA LLC radicando su Certificado de Organización en el Registro de Corporaciones y Entidades.",
+    procedureEn: ["Not implemented — LLC wizard screens have not been observed."],
+    procedureEs: ["No implementado — no se han observado las pantallas del asistente para LLC."],
+    uploadsEn: "Not yet documented",
+    uploadsEs: "Aún no documentado",
+    hintsEn: [],
+    hintsEs: [],
+    evidenceTags: [],
+    needsLogin: true,
+    enabled: false,
+    requiresExistingAccount: false,
+    agencyId: "DEPT_STATE",
+    passportCoverageKeys: ["business.legalName", "contact.fullName", "contact.email", "contact.phone"],
+    blockedBy: [],
+    sensitiveNeeds: [],
+    payment: {
+      governmentFee: "yes",
+      feeNote: "Not observed for LLCs. Public sources cite a formation fee; confirm on the fee panel during the read-only walk.",
+      collector:
+        "PR Department of State registry — card entered inside the registry's own wizard (rcp.estado.pr.gov → rceapi.estado.pr.gov)",
+      methods: "Credit card per the corporation walkthrough; not observed for this variant",
+      integration: "none_known",
+      integrationEvidence:
+        "Same registry payment module as corporation formation (2026-09-25 bundle review): in-portal card entry, no public or partner payment API.",
+      smartprPath: "user_pays_in_portal",
+    },
+    verification: {
+      status: "mapped",
+      evidence:
+        "RULE_0651 emits DOC_CERT_ORGANIZATION for new, unformed LLCs (excludes every corporation type). The registry app has one creation wizard whose step list is served per entity class; no LLC screen has been walked, so there is no playbook.",
+    },
+    // RULE_0651 → DOC_CERT_ORGANIZATION is the rule-emitted LLC requirement.
+    // DOC_ARTICLES_ORGANIZATION (catalog only, no emitting rule) is the same
+    // filing under another name and routes here too — never to corporations.
+    requirementIds: ["DOC_CERT_ORGANIZATION", "DOC_ARTICLES_ORGANIZATION"],
+  },
+  {
+    id: "DEPT_STATE_ANNUAL_REPORT",
+    // Visible, never launchable. Two sub-variants exist in law: corporations
+    // file the Informe Anual; LLCs pay the annual fee. Neither is observed.
+    labelEn: "Dept. of State — Annual report / annual fee",
+    labelEs: "Departamento de Estado — Informe anual / derecho anual",
+    agencyEn: "Puerto Rico Department of State",
+    agencyEs: "Departamento de Estado de Puerto Rico",
+    portalEn: "Corporate & Entities Registry",
+    portalEs: "Registro de Corporaciones y Entidades",
+    domains: ["rcp.estado.pr.gov", "rceapi.estado.pr.gov"],
+    startUrl: "https://rcp.estado.pr.gov/en",
+    entry: {
+      officialSource: "https://estado.pr.gov/en/services/services-corporations",
+      portalRoute: "/en/annualfiling/wizard (thank-you: /en/annualfiling/thank-you)",
+      checkedAt: "2026-09-25",
+      note: "Route found in the registry's public bundle; no screen observed.",
+    },
+    launch: { envFlag: "MITA_FLOW_DEPT_STATE_ANNUAL_REPORT", defaultEnabled: false },
+    goalEn: "File the ANNUAL REPORT (or pay the LLC annual fee) for an EXISTING entity.",
+    goalEs: "Radicar el INFORME ANUAL (o pagar el derecho anual de la LLC) de una entidad EXISTENTE.",
+    procedureEn: ["Not implemented — annual-report screens have not been observed."],
+    procedureEs: ["No implementado — no se han observado las pantallas del informe anual."],
+    uploadsEn: "Financial statements when required (not yet documented)",
+    uploadsEs: "Estados financieros cuando se requieran (aún no documentado)",
+    hintsEn: [],
+    hintsEs: [],
+    evidenceTags: [],
+    needsLogin: true,
+    enabled: false,
+    requiresExistingAccount: true,
+    agencyId: "DEPT_STATE",
+    passportCoverageKeys: ["business.legalName", "business.registryNumber"],
+    blockedBy: [],
+    sensitiveNeeds: [],
+    payment: {
+      governmentFee: "yes",
+      feeNote: "Estado services page: LLC annual fee $150, due April 15. Corporation annual-report fees not observed.",
+      collector:
+        "PR Department of State registry — card entered inside the registry's own wizard (rcp.estado.pr.gov → rceapi.estado.pr.gov)",
+      methods: "Credit card per the corporation walkthrough; not observed for this variant",
+      integration: "none_known",
+      integrationEvidence:
+        "Same registry payment module as corporation formation (2026-09-25 bundle review): in-portal card entry, no public or partner payment API.",
+      smartprPath: "user_pays_in_portal",
+    },
+    verification: {
+      status: "mapped",
+      evidence:
+        "RULE_0636 emits DOC_ANNUAL_REPORT for existing entities. The registry bundle exposes an annual-filing wizard and fee/prepay APIs; nothing walked, no playbook.",
+    },
+    requirementIds: ["DOC_ANNUAL_REPORT"],
+  },
+  {
     id: "DEMO_REHEARSAL_PORTAL",
     labelEn: "Demo rehearsal portal — practice filing",
     labelEs: "Portal de ensayo (demo) — radicación de práctica",
@@ -1654,14 +1907,41 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // Synthetic requirement id — the demo portal has no real obligation, so
     // the server synthesizes a demo obligation carrying this id and routes it
     // through the identical structured-objective code path as real agencies.
+    payment: {
+      governmentFee: "no",
+      feeNote: "Fictional payment page — nothing is charged.",
+      collector: "None (fictional rehearsal portal)",
+      methods: "None",
+      integration: "not_applicable",
+      integrationEvidence: "SmartPR-owned fictional portal.",
+      smartprPath: "user_pays_in_portal",
+    },
     verification: {
-      status: "rehearsal",
+      status: "rehearsed",
+      fixture: { route: "/rehearsal-portal", test: "frontend/tests/mita-rehearsal.e2e.mjs" },
       evidence:
         "Fictional SmartPR portal; each page declares data-smartpr-step. Walked end to end (login takeover → form → SSN → certification takeover → unknown-state pause → human submission → confirmation) by the Mita rehearsal browser test.",
     },
     requirementIds: ["demo:rehearsal-filing"],
   },
 ];
+
+/**
+ * Can a new run start for this filing right now? Server-side only (reads
+ * the environment). Disabled configs never launch; configs with a launch
+ * switch follow its env flag, falling back to defaultEnabled.
+ */
+export function isFilingLaunchable(
+  config: AgencyFilingConfig,
+  env: Record<string, string | undefined> = typeof process !== "undefined" ? process.env : {}
+): boolean {
+  if (!config.enabled) return false;
+  if (!config.launch) return true;
+  const raw = (env[config.launch.envFlag] ?? "").trim().toLowerCase();
+  if (["on", "1", "true", "yes"].includes(raw)) return true;
+  if (["off", "0", "false", "no"].includes(raw)) return false;
+  return config.launch.defaultEnabled;
+}
 
 export function getFilingConfig(id: AgencyFilingType): AgencyFilingConfig {
   const found = AGENCY_FILING_CONFIGS.find((c) => c.id === id);

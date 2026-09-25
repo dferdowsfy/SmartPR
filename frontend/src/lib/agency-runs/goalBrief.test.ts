@@ -135,8 +135,10 @@ describe("objective override", () => {
       passport,
       priorRuns: [],
     });
-    // `passport` fixture has no formation signals → both variants offered.
-    assert.equal(actions.length, 2);
+    // One variant per config: the corporation filing carries its objective.
+    const corp = actions.filter((a) => a.filing_type === "DEPT_STATE_CORPORATE_FILING");
+    assert.equal(corp.length, 1);
+    actions.splice(0, actions.length, ...corp);
     const config = getFilingConfig("DEPT_STATE_CORPORATE_FILING");
     const brief = buildGoalBrief({
       config,
