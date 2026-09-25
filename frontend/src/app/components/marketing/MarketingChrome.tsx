@@ -22,16 +22,14 @@ const LANG_PAIRS: Array<[string, string]> = [
 
 const copy = {
   EN: {
-    homeNav: [
+    // One shared menu for every marketing page: the same options everywhere,
+    // including Pricing.
+    mainNav: [
       { label: "What you get", href: "#what-you-get" },
       { label: "How it works", href: "#how-it-works" },
       { label: "For professionals", href: "/professionals" },
+      { label: "Pricing", href: "/pricing" },
       { label: "Security", href: "#security" },
-    ],
-    proNav: [
-      { label: "Product", href: "/" },
-      { label: "Professionals", href: "/professionals" },
-      { label: "Security", href: "/#security" },
     ],
     bookDemo: "Book a demo",
     demoSubject: "I'm interested in a demo",
@@ -52,16 +50,14 @@ const copy = {
     ],
   },
   ES: {
-    homeNav: [
+    // One shared menu for every marketing page: the same options everywhere,
+    // including Pricing.
+    mainNav: [
       { label: "Lo que incluye", href: "#what-you-get" },
       { label: "Cómo funciona", href: "#how-it-works" },
       { label: "Para profesionales", href: "/es/profesionales" },
+      { label: "Planes", href: "/pricing" },
       { label: "Seguridad", href: "#security" },
-    ],
-    proNav: [
-      { label: "Producto", href: "/es" },
-      { label: "Profesionales", href: "/es/profesionales" },
-      { label: "Seguridad", href: "/es#security" },
     ],
     bookDemo: "Agendar una demo",
     demoSubject: "Me interesa una demo",
@@ -102,9 +98,10 @@ export function LanguageToggle({ language, onChange }: { language: Language; onC
   );
 }
 
-/** Shared marketing header. `variant` selects the homepage or the
- * professionals-page navigation. `home` is the language-appropriate homepage
- * path ("/" or "/es"); same-page anchors are prefixed with it. */
+/** Shared marketing header. The navigation is identical on every marketing
+ * page; `variant` only controls the professionals-page "Book a demo" action.
+ * `home` is the language-appropriate homepage path ("/" or "/es");
+ * same-page anchors are prefixed with it. */
 export function SiteHeader({
   language,
   home,
@@ -118,7 +115,7 @@ export function SiteHeader({
 }) {
   const c = copy[language];
   const [navOpen, setNavOpen] = useState(false);
-  const nav = variant === "home" ? c.homeNav : c.proNav;
+  const nav = c.mainNav;
   // "Book a demo" opens the visitor's email client with a pre-filled subject
   // to contact@getsmartpr.com and an empty body — one click to send.
   const demoHref = `mailto:${DEMO_EMAIL}?subject=${encodeURIComponent(c.demoSubject)}`;
@@ -131,7 +128,7 @@ export function SiteHeader({
         </Link>
         <nav className={styles.desktopNav} aria-label="Main navigation">
           {nav.map((item) => (
-            <a key={item.label} href={variant === "home" && item.href.startsWith("#") ? `${home}${item.href}` : item.href}>
+            <a key={item.label} href={item.href.startsWith("#") ? `${home}${item.href}` : item.href}>
               {item.label}
             </a>
           ))}
@@ -157,7 +154,7 @@ export function SiteHeader({
           {nav.map((item) => (
             <a
               key={item.label}
-              href={variant === "home" && item.href.startsWith("#") ? `${home}${item.href}` : item.href}
+              href={item.href.startsWith("#") ? `${home}${item.href}` : item.href}
               onClick={() => setNavOpen(false)}
             >
               {item.label}
