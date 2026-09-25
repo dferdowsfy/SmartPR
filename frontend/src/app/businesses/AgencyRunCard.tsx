@@ -40,30 +40,32 @@ export function AgencyRunCard({
     // No third-party provider branding — the agent is part of SmartPR.
     // Only the dev-facing mock notice remains.
     provider === "mock" ? (
-      <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-bold text-slate-600">
+      <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] font-bold text-slate-300">
         <FlaskConical className="h-3 w-3" />
         {L("Mock preview — agent not connected", "Vista simulada — agente no conectado", lang)}
       </span>
     ) : null;
 
+  // Dark card in the Mita workspace's own palette (#161616) so the entry
+  // point reads as the same unique feature as the workspace it opens.
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]">
+    <section className="rounded-2xl border border-white/10 bg-[#161616] p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#245c5c]">
             <Bot className="h-4 w-4 text-white" />
           </span>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-bold text-[#161616]">
+              <h2 className="font-bold text-[#f6f3ea]">
                 {L("File with Mita", "Radicar con Mita", lang)}
               </h2>
-              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
+              <span className="inline-flex items-center rounded-full border border-amber-200/30 bg-amber-300/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-200">
                 {L("Live visual · pilot", "Visual en vivo · piloto", lang)}
               </span>
               {providerBadge}
             </div>
-            <p className="mt-0.5 max-w-xl text-sm text-slate-500">
+            <p className="mt-0.5 max-w-xl text-sm text-[#b9b0a0]">
               {L(
                 "Prefill from Business Passport, pause for uploads and login, stop at review — never final-submit. Runs on allowlisted government portals.",
                 "Relleno desde el Pasaporte de Negocio, pausa para adjuntos e inicio de sesión, detener en revisión — nunca envía. Corre en portales de gobierno permitidos.",
@@ -74,7 +76,7 @@ export function AgencyRunCard({
         </div>
         <Link
           href={`/businesses/${businessId}/agency-run`}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea]"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#f6f3ea] px-5 py-2.5 text-sm font-semibold text-[#161616] transition hover:bg-white"
         >
           {L("Open Mita", "Abrir Mita", lang)}
           <ArrowRight className="h-4 w-4" />

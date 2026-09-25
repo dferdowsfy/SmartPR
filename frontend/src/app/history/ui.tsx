@@ -188,11 +188,15 @@ export function TopNav() {
         setPill(null);
         return;
       }
+      // On mobile the tab strip scrolls horizontally. The pill is absolutely
+      // positioned inside the scrollable nav, so its offset must be relative
+      // to the scroll content origin — getBoundingClientRect alone is blind
+      // to scrollLeft and misplaces the pill once the strip is scrolled.
       const n = nav.getBoundingClientRect();
       const r = el.getBoundingClientRect();
       setPill({
-        left: r.left - n.left,
-        top: r.top - n.top,
+        left: r.left - n.left + nav.scrollLeft,
+        top: r.top - n.top + nav.scrollTop,
         width: r.width,
         height: r.height,
         animate,
@@ -209,6 +213,11 @@ export function TopNav() {
     lastPillTab.current = pillTab;
     didMount.current = true;
     measure(animate);
+    if (animate && pillTab) {
+      // On mobile the selected tab may be scrolled out of view — bring the
+      // strip to it. block:"nearest" never moves the page itself.
+      tabRefs.current[pillTab]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
   }, [pillTab, hasEnterprise, lang, measure]);
 
   useEffect(() => {
