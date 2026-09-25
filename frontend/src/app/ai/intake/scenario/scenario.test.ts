@@ -292,6 +292,46 @@ describe("the model's reading is checked, not trusted", () => {
     assert.equal(v(scenario.project.renovation), true);
   });
 
+  it("downgrades an 'explicit' ownership claim the text only describes as a home kitchen (REG-PHANTOM-OWNERSHIP-001)", () => {
+    // 2026-09-25 15:00 QA carry-over: semantic intake turned "home kitchen"
+    // into "Owned property — Needs confirmation". A home location is not
+    // ownership evidence — a home may be owned or rented — so the conclusion
+    // drops into the needs-confirmation band.
+    const text = "I run the bakery from my home kitchen in Bayamón.";
+    const { scenario, report } = normalizeScenario(
+      { property: { ownershipStatus: { value: "owned", source: "explicit", confidence: 0.93, evidenceText: "home kitchen" } } },
+      text
+    );
+    assert.equal(scenario.property.ownershipStatus?.source, "inferred");
+    assert.ok((scenario.property.ownershipStatus?.confidence ?? 1) <= 0.72);
+    assert.ok(report.some((r) => r.path === "property.ownershipStatus" && r.action === "downgraded"));
+  });
+
+  it("downgrades an 'explicit' ownership claim from Spanish home language too", () => {
+    const text = "Monto un negocio de repostería desde la cocina de mi casa en Bayamón.";
+    const { scenario } = normalizeScenario(
+      { property: { ownershipStatus: { value: "owned", source: "explicit", confidence: 0.91, evidenceText: "cocina de mi casa" } } },
+      text
+    );
+    assert.equal(scenario.property.ownershipStatus?.source, "inferred");
+    assert.ok((scenario.property.ownershipStatus?.confidence ?? 1) <= 0.72);
+  });
+
+  it("keeps an 'explicit' ownership claim when the text states tenure", () => {
+    for (const text of [
+      "We own the building in Caguas.",
+      "We lease a commercial space downtown.",
+      "Alquilé el local en Caguas para el negocio.",
+      "Soy dueño del edificio donde está el negocio.",
+    ]) {
+      const { scenario } = normalizeScenario(
+        { property: { ownershipStatus: { value: "owned", source: "explicit", confidence: 0.95, evidenceText: text.slice(0, 40) } } },
+        text
+      );
+      assert.equal(scenario.property.ownershipStatus?.source, "explicit", text);
+    }
+  });
+
   it("the deterministic reading wins guarded facts when combined", () => {
     const base = interpretScenario("Our existing company leased a warehouse in Guaynabo for a new operation.");
     const model = normalizeScenario(

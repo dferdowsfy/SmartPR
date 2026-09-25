@@ -25,6 +25,7 @@ import {
   EXISTING_BUSINESS_RE,
   NEW_ENTITY_RE,
   OPEN_INTENT_RE,
+  ownershipStated,
   renovationStated,
 } from "./interpret";
 import {
@@ -209,6 +210,22 @@ export function normalizeScenario(
         source = "inferred";
         confidence = Math.min(confidence, 0.72);
         report.push({ path, action: "downgraded", reason: "cosmetic work is not a renovation" });
+      }
+    }
+    // Guarded conclusion: the model turns home-location language ("home
+    // kitchen", "home office") into an ownership conclusion. An "explicit"
+    // ownershipStatus needs ownership language in the text itself — renting
+    // or owning said about the property — otherwise it is an inference and
+    // stays in the needs-confirmation band. A home may be owned or rented.
+    if (path === "property.ownershipStatus" && source === "explicit") {
+      if (!ownershipStated(description)) {
+        source = "inferred";
+        confidence = Math.min(confidence, 0.72);
+        report.push({
+          path,
+          action: "downgraded",
+          reason: "a home location is not ownership evidence — the text states no tenure",
+        });
       }
     }
     if ((path === "property.proposedUse" || path === "operations.activity") && typeof value === "string") {
