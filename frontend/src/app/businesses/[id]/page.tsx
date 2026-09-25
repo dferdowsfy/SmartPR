@@ -20,6 +20,7 @@ import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
 import { getDocumentDownload, downloadKindLabel, KB } from "../../kb";
 import { legalBasisFor } from "../../requirementGuidance";
+import { PR_REQUIREMENT_GUIDANCE } from "../../guidance/pr";
 import { L } from "../../i18n";
 import { useLang } from "../../useLang";
 import type { Lang, FormData as GovFormData } from "../../forms/engine/types";
@@ -204,10 +205,14 @@ function LegalBasisDisclosure({ item, lang }: { item: Obligation; lang: Lang }) 
   // Provision-level legal basis straight from the regulatory knowledge graph
   // (triggering rule's citation, else the required document's). Never rendered
   // when the graph has no citation — the absence is honest, not filled in.
-  const basis = useMemo(
-    () => legalBasisFor(item.source_reference, item.requirement_id, KB),
-    [item.source_reference, item.requirement_id]
-  );
+  // Review-provenance citations ("Validated review …") are suppressed for
+  // unvalidated concepts, mirroring the assessment flow: provenance is not a
+  // legal basis.
+  const basis = useMemo(() => {
+    const concept = item.requirement_id ? PR_REQUIREMENT_GUIDANCE[item.requirement_id] : undefined;
+    const status = concept?.validationStatus === "validated" ? "VALIDATED" : "GUIDANCE_NEEDS_REVIEW";
+    return legalBasisFor(item.source_reference, item.requirement_id, KB, status);
+  }, [item.source_reference, item.requirement_id]);
   if (!basis) return null;
   return (
     <div className="mt-1">
