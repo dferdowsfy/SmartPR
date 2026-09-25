@@ -1618,8 +1618,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-spin { animation: vspin .7s linear infinite; }
 
 /* ---- Consolidated intake: minimized business-details block ---- */
-.spr-anchor { display: block; height: 0; width: 0; overflow: hidden; }
-.spr-profile-summary-label {
+.spr-anchor { display: block; height: 0; width: 0; overflow: hidden; }.spr-profile-summary-label {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   text-transform: uppercase;
   letter-spacing: .075em;
@@ -1699,6 +1698,12 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   50% { filter: brightness(1.18); }
 }
 .spr-primary.spr-submit-pulse { animation: spr-submit-pulse .45s ease-in-out 2; }
+
+/* ---- Consolidated questions: guided/municipality questions share the pink
+   "what we still need" box — one question UI in the top area, never two
+   stacked question sets. The follow-up's own top divider is dropped inside
+   the box. */
+.spr-scn-questions .spr-follow-up { margin-top: 10px; padding-top: 0; border-top: 0; }
 
 .spr-review-panel {
   min-width: 0;

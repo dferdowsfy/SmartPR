@@ -1,6 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Bot, CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 
@@ -58,6 +59,11 @@ export interface RequirementPortalFiling {
   /** Localized caption under the button, e.g. "Work through this filing
    * with Clara — you stay in control of every step." */
   hint: string;
+  /** Optional async hook that runs before navigating into Clara — e.g.
+   * syncing intake-computed requirements into persisted obligations so the
+   * filing picker has something to show. Navigation proceeds after it
+   * settles; a failure never blocks entry. */
+  onBeforeNavigate?: () => Promise<void>;
 }
 /** Inline Yes/No prompt for an unanswered trigger question — rendered in
  * the action column when a requirement is conditional only because the
@@ -183,6 +189,21 @@ export function RequirementCard({
   contextLabel,
   secondaryOnCompleted,
 }: RequirementCardProps) {
+  const router = useRouter();
+  /** Busy while the pre-navigation hook (e.g. obligation sync) runs. */
+  const [claraBusy, setClaraBusy] = useState(false);
+  const handleClaraClick = portalFiling?.onBeforeNavigate
+    ? (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (claraBusy) return;
+        setClaraBusy(true);
+        const href = portalFiling.href;
+        const go = () => router.push(href);
+        // Never trap the user on a hung sync: enter Clara after 8s regardless.
+        const timeout = new Promise((resolve) => setTimeout(resolve, 8000));
+        void Promise.race([portalFiling.onBeforeNavigate!(), timeout]).then(go, go);
+      }
+    : undefined;
   return (
     <div id={id} className="rq-card">
       <div className="rq-card-row">
@@ -218,7 +239,13 @@ export function RequirementCard({
           )}
           {portalFiling && action.kind !== "completed" && (
             <>
-              <a href={portalFiling.href} className="rq-download-btn rq-clara-btn">
+              <a
+                href={portalFiling.href}
+                className="rq-download-btn rq-clara-btn"
+                onClick={handleClaraClick}
+                aria-disabled={claraBusy || undefined}
+                style={claraBusy ? { opacity: 0.6, pointerEvents: "none" } : undefined}
+              >
                 <Bot size={15} />
                 <span>{portalFiling.label}</span>
               </a>

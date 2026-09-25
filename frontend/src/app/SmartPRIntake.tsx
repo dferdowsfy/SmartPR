@@ -5331,6 +5331,32 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             ? `/businesses/${filingBusinessId}/agency-run?filing=${encodeURIComponent(req.document_id)}`
             : `/businesses/${filingBusinessId}/agency-run`,
           hint: L('Work through this filing with Clara — you stay in control of every step.', language),
+          // Clara's filing picker reads persisted obligations. The intake
+          // computes requirements client-side, so sync them first — without
+          // this Clara lands on the empty "nothing I can file" state even
+          // though the business just went through intake. Intake-local ids
+          // (local-*) are not persisted businesses: nothing to sync.
+          onBeforeNavigate: async () => {
+            if (filingBusinessId.startsWith('local-')) return;
+            try {
+              await fetch(`/api/businesses/${encodeURIComponent(filingBusinessId)}/obligations/sync`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  requirements: requirements.map((r) => ({
+                    document_id: r.document_id ?? null,
+                    name: r.name,
+                    agency: r.agency ?? null,
+                    mandatory: r.mandatory,
+                    source_rule: r.source_rule ?? null,
+                  })),
+                }),
+              });
+            } catch {
+              // A failed sync never blocks entering Clara — the workspace
+              // falls back to its empty state, same as before.
+            }
+          },
         }
       : undefined;
 
@@ -5428,6 +5454,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : -1;
   const intakeQuestionsComplete = activeQuestionIndex >= questionList.length
     && answeredPotentialCount === potentialItems.length;
+  // One question UI at a time in the consolidated top area: the knowledge
+  // graph's controlling question first, then the guided question, then the
+  // municipality follow-up — never two question sets stacked. When the
+  // scenario has no pending question but still exists, its idle panel
+  // ("nothing else to ask right now") keeps the informational state.
+  const scenarioNextQuestion = scenarioEval?.questions[0] ?? null;
+  const topQuestionKind: 'scenario' | 'guided' | 'potential' | null =
+    scenarioNextQuestion ? 'scenario'
+    : currentQuestion ? 'guided'
+    : currentPotentialQuestion ? 'potential'
+    : scenarioEval ? 'scenario'
+    : null;
+  const questionsHeading =
+    projectIntent === 'existing_business' && passportSnapshot
+      ? (language === 'es' ? 'Aún necesitamos para este proyecto' : 'We still need for this project')
+      : (language === 'es' ? 'Lo que SmartPR aún necesita' : 'What SmartPR still needs');
   // Attention target after an incomplete submit tap (questions half).
   const questionsNeedAttention = submitAttempted && baseProfileReady && !intakeQuestionsComplete;
   // Once everything's complete, the incomplete-submit state retires: the
@@ -6004,52 +6046,53 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 )}
 
                 {/* Consolidated questions: the knowledge-graph question, the
-                    guided yes/no questions, and the municipality follow-ups
-                    all live in this one region at the top — one at a time, in
-                    dependency order — instead of split between the top panel
-                    and the bottom of the form. Renders only when a question
-                    exists, so it never leaves blank grid space. */}
-                {(scenarioEval || currentQuestion || currentPotentialQuestion) && (
+                    guided questions, and the municipality follow-ups share
+                    this one region at the top — exactly one question UI at a
+                    time, in the pink "what we still need" box, before the
+                    text fields. */}
+                {topQuestionKind && (
                 <div
                   className={`spr-field full${questionsNeedAttention ? ' spr-attention' : ''}`}
                   ref={questionsPanelRef}
                 >
-                  {scenarioEval && (
-                    <ScenarioQuestions
-                      evaluation={scenarioEval}
-                      heading={
-                        projectIntent === 'existing_business' && passportSnapshot
-                          ? (language === 'es' ? 'Aún necesitamos para este proyecto' : 'We still need for this project')
-                          : (language === 'es' ? 'Lo que SmartPR aún necesita' : 'What SmartPR still needs')
-                      }
-                      lang={language}
-                      onAnswer={answerScenarioQuestion}
-                      onSkip={skipScenarioQuestion}
-                    />
-                  )}
-                  {currentQuestion && (
-                    <IntakeQuestion
-                      language={language}
-                      questionNumber={activeGuidedQuestionNumber}
-                      questionTotal={intakeQuestionTotal}
-                      title={L(currentQuestion.text, language)}
-                      contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
-                      contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
-                      options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
-                      onAnswer={(value) => handleQuestionAnswer(value)}
-                    />
-                  )}
-                  {currentPotentialQuestion && (
-                    <IntakeQuestion
-                      language={language}
-                      questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
-                      questionTotal={intakeQuestionTotal}
-                      title={L(currentPotentialQuestion.followUp, language)}
-                      contextTitle={L(currentPotentialQuestion.document, language)}
-                      contextBody={L(currentPotentialQuestion.why, language)}
-                      onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
-                      onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
-                    />
+                  {(topQuestionKind === 'guided' || topQuestionKind === 'potential') ? (
+                    <section className="spr-scn-questions" aria-live="polite">
+                      <h3>{questionsHeading}</h3>
+                      {topQuestionKind === 'guided' && currentQuestion && (
+                        <IntakeQuestion
+                          language={language}
+                          questionNumber={activeGuidedQuestionNumber}
+                          questionTotal={intakeQuestionTotal}
+                          title={L(currentQuestion.text, language)}
+                          contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
+                          contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
+                          options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
+                          onAnswer={(value) => handleQuestionAnswer(value)}
+                        />
+                      )}
+                      {topQuestionKind === 'potential' && currentPotentialQuestion && (
+                        <IntakeQuestion
+                          language={language}
+                          questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
+                          questionTotal={intakeQuestionTotal}
+                          title={L(currentPotentialQuestion.followUp, language)}
+                          contextTitle={L(currentPotentialQuestion.document, language)}
+                          contextBody={L(currentPotentialQuestion.why, language)}
+                          onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
+                          onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
+                        />
+                      )}
+                    </section>
+                  ) : (
+                    scenarioEval && (
+                      <ScenarioQuestions
+                        evaluation={scenarioEval}
+                        heading={questionsHeading}
+                        lang={language}
+                        onAnswer={answerScenarioQuestion}
+                        onSkip={skipScenarioQuestion}
+                      />
+                    )
                   )}
                 </div>
                 )}
@@ -6214,7 +6257,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   <button
                     type="button"
                     className="spr-profile-done"
-                    onClick={() => setProfileFormExpanded(false)}
+                    onClick={() => {
+                      // Done collapses the block AND retires the incomplete-
+                      // submit attention state — otherwise the highlight keeps
+                      // the fields expanded and the tap looks like a no-op.
+                      setProfileFormExpanded(false);
+                      setSubmitAttempted(false);
+                    }}
                   >
                     {L('Done', language)}
                   </button>
