@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [businesses, setBusinesses] = useState<BusinessRow[]>([]);
   const [prefsBusy, setPrefsBusy] = useState(false);
   const [perBusinessOpen, setPerBusinessOpen] = useState(false);
+  const [billing, setBilling] = useState<{ plan: string; planName: string; status: string; currentPeriodEnd: string | null } | null>(null);
 
   useEffect(() => {
     fetch("/api/me")
@@ -57,6 +58,10 @@ export default function SettingsPage() {
     fetch("/api/businesses")
       .then((r) => r.json())
       .then((d) => setBusinesses(Array.isArray(d.businesses) ? d.businesses : []))
+      .catch(() => {});
+    fetch("/api/billing/status")
+      .then((r) => r.json())
+      .then((d) => { if (d && !d.error) setBilling(d); })
       .catch(() => {});
   }, [router]);
 
@@ -149,7 +154,7 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#161616]">Account settings</h1>
           <p className="mt-1 text-sm text-[#161616]/60">
-            Manage your profile, password, and sign-in for SmartPR.
+            Manage your profile, billing, password, and sign-in for SmartPR.
           </p>
         </div>
 
@@ -232,6 +237,39 @@ export default function SettingsPage() {
                   {saving ? "Saving…" : "Save profile"}
                 </button>
               </form>
+
+              <div className="border-t border-slate-200 pt-6">
+                <h2 className="text-sm font-semibold text-[#161616]">Billing</h2>
+                <p className="mt-1 text-sm text-[#161616]/60">
+                  Your SmartPR plan and what it includes.
+                </p>
+                <div className="mt-4 rounded-xl border border-slate-200 px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-[#161616]">
+                        {billing ? billing.planName : "Loading plan…"}
+                      </div>
+                      {billing && (
+                        <div className="mt-0.5 text-xs text-[#161616]/50">
+                          Status: {billing.status}
+                          {billing.currentPeriodEnd ? ` · Renews ${new Date(billing.currentPeriodEnd).toLocaleDateString()}` : ""}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/pricing")}
+                      className="rounded-lg bg-[#161616] px-4 py-2 text-sm font-medium text-white"
+                    >
+                      {billing && billing.plan !== "free" ? "Change plan" : "View plans"}
+                    </button>
+                  </div>
+                  <p className="mt-3 text-xs text-[#161616]/50">
+                    Paid plans unlock filled government documents, deliverables, and compliance
+                    reminders for your businesses.
+                  </p>
+                </div>
+              </div>
 
               <div className="border-t border-slate-200 pt-6">
                 <h2 className="text-sm font-semibold text-[#161616]">Notifications</h2>
