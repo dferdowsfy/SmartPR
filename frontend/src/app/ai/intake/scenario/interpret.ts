@@ -92,9 +92,40 @@ function stripAccents(s: string): string {
   return s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-// ---------------------------------------------------------------------------
-// Fact constructors
-// ---------------------------------------------------------------------------
+// Renovation language: remodeling, rehabilitation, build-outs, alterations,
+// interior work, tenant improvements, conversions, refurbishment. Cosmetic
+// work alone (painting, signage, cleaning) is NOT renovation.
+const RENOVATION_RE =
+  /\b(?:renovat\w*|remodel\w*|rehabilitat\w*|build[\s-]?outs?|fit[\s-]?outs?|alterations?|interior\s+(?:work|improvements?)|tenant\s+improvements?|convert\w*|conversion|refurbish\w*)\b/i;
+
+/**
+ * True when the text states renovation work that is not negated.
+ * "we're remodeling the space" counts; "no renovations, just painting"
+ * does not. Used to check model renovation claims: the model may turn a
+ * noun phrase like "painting and signage" into a renovation conclusion,
+ * so an "explicit" renovation needs renovation language in the text itself.
+ */
+export function renovationStated(text: string): boolean {
+  return findAll(text, RENOVATION_RE).some((hit) => !negatedAt(text, hit.index));
+}
+
+// Ownership language: the speaker says they rent/lease or own the property
+// (EN + ES). Home-location language ("home kitchen", "home office", "my
+// house") is NOT ownership language — a home may be owned or rented.
+const OWNERSHIP_RE =
+  /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|tenants?|own\w*|purchased|bought|acquired|owners?\s+of\s+the\s+(?:property|building)|dueños?|propietari\w*|alquil\w*|rent\w*|compr\w*|soy\s+(?:el\s+)?dueño|mi\s+propia\s+casa)\b/i;
+
+/**
+ * True when the text states property tenure (owned or leased) in the
+ * speaker's own words, not negated. "we own the building" / "alquilé el
+ * local" count; "run the bakery from my home kitchen" does not. Used to
+ * check model ownership claims: the model may turn a home location into an
+ * ownership conclusion, so an "explicit" ownershipStatus needs ownership
+ * language in the text itself.
+ */
+export function ownershipStated(text: string): boolean {
+  return findAll(text, OWNERSHIP_RE).some((hit) => !negatedAt(text, hit.index));
+}
 
 function fact<T>(value: T, source: FactSource, confidence: number, evidenceText: string): ScenarioFact<T> {
   return { value, source, confidence, evidenceText };
@@ -429,10 +460,7 @@ function flag(text: string, re: RegExp): ScenarioFact<boolean> | undefined {
 
 function readProjectScope(text: string, ctx: ScenarioContext): void {
   const types: string[] = [];
-  const reno = find(
-    text,
-    /\b(?:renovat\w*|remodel\w*|rehabilitat\w*|build[\s-]?outs?|fit[\s-]?outs?|alterations?|interior\s+(?:work|improvements?)|tenant\s+improvements?|convert\w*|conversion|refurbish\w*)\b/i
-  );
+  const reno = find(text, RENOVATION_RE);
   if (reno && !negatedAt(text, reno.index)) {
     ctx.project.renovation = said(true, text, reno, 0.95);
     types.push("renovation");
@@ -445,7 +473,7 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
     ctx.project.footprintChange = said(true, text, expand, 0.9);
   }
 
-  const interior = find(text, /\binterior\s+demo(?:lition)?\b|\bdemolish\w*\s+(?:the\s+)?interior\b|\bgut\w*\s+the\s+interior\b|\bselective\s+demolition\b/i);
+  const interior = find(text, /\binterior\s+demo(?:lition)?\b|\binterior\s+(?:work|scope|renovation)\s+(?:includes?|including|will\s+include)\b[^.;]{0,60}\bdemolition\b|\bdemolish\w*\s+(?:the\s+)?interior\b|\bgut\w*\s+the\s+interior\b|\bselective\s+demolition\b/i);
   const full = find(text, /\b(?:demolish\w*|tear\w*\s+down|raz\w*)\s+(?:the\s+)?(?:entire\s+|whole\s+|existing\s+)?(?:building|structure|warehouse|facility)\b/i);
   const partial = find(text, /\bpartial\s+demolition\b/i);
   const noDemo = find(text, /\bno\s+demolition\b|\bwithout\s+(?:any\s+)?demolition\b/i);
@@ -529,5 +557,11 @@ export function interpretScenario(description: string): ScenarioContext {
   readChangeOfUse(text, ctx);
   readProjectScope(text, ctx);
   readOperations(text, ctx);
+  // "Caribe Precision Manufacturing, LLC, a … business with 28 employees":
+  // a named legal entity that already has staff is most likely operating —
+  // an inference to confirm, never a statement.
+  if (!ctx.business.status && ctx.business.name && typeof ctx.operations.employees?.value === "number" && ctx.operations.employees.value > 0) {
+    ctx.business.status = fact("existing", "inferred", 0.8, ctx.business.name.evidenceText);
+  }
   return ctx;
 }

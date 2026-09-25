@@ -38,7 +38,7 @@ export interface UseTerm {
 // Order matters: longer / more specific phrases first.
 export const USE_TERMS: UseTerm[] = [
   { pattern: "day[\\s-]?care(?: center)?|child[\\s-]?care(?: center)?|pre-?school", label: "daycare", family: "childcare", display: "Daycare" },
-  { pattern: "warehous(?:e|es|ing)|storage facility|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
+  { pattern: "warehous(?:e|es|ing)|storage(?: facility)?|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
   { pattern: "offices?", label: "office", family: "office", display: "Office" },
   { pattern: "manufacturing(?: plant| facility)?|factory|industrial(?: facility| building| plant)?|plant", label: "manufacturing", family: "industrial", display: "Manufacturing" },
   { pattern: "auto(?:motive)? repair(?: shop)?|body shop|car wash|dealership", label: "automotive", family: "automotive", display: "Automotive" },

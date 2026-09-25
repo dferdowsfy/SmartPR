@@ -27,7 +27,7 @@
  * - Mock provider timelines flow through the same chat components.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Eye, EyeOff, KeyRound, Shield,
 } from "lucide-react";
@@ -125,6 +125,18 @@ function SegmentedBar({ known, total }: { known: number; total: number }) {
 export default function AgencyRunPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: businessId } = use(params);
   const lang = useLang();
+  const router = useRouter();
+  /** Back returns to the previous screen (intake, requirements, business
+   * page) with its state intact via the router history — never a hard jump
+   * to /businesses that drops the user's work. Direct arrivals with no
+   * history fall back to the businesses list. */
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/businesses");
+    }
+  }, [router]);
 
   const [run, setRun] = useState<AgencyRunPublic | null>(null);
   const [busy, setBusy] = useState(false);
@@ -188,6 +200,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [bizHeader, setBizHeader] = useState<{ name: string; municipality: string } | null>(null);
   useEffect(() => {
     let cancelled = false;
+    // A local intake draft id is not a saved business — nothing to load.
+    if (businessId.startsWith("local-")) return;
     fetch(`/api/businesses/${businessId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
@@ -385,6 +399,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     };
   }, [businessId, demoVisible, lang]);
 
+
   const poll = useCallback(async (runId: string) => {
     const response = await fetch(`/api/agency-runs/${runId}`);
     const result = await response.json().catch(() => ({}));
@@ -573,7 +588,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const pickerState = msgs.find((m) => m.type === "filing-picker");
   useEffect(() => {
     if (handoffDoneRef.current || !pickerState || pickerState.type !== "filing-picker" || pickerState.loading) return;
-    const requirementId = new URLSearchParams(window.location.search).get("requirement");
+    // ?filing=<document_id> (requirement cards) or ?requirement=<document_id>.
+    const params = new URLSearchParams(window.location.search);
+    const requirementId = params.get("filing") ?? params.get("requirement");
     if (!requirementId) return;
     handoffDoneRef.current = true;
     const plan = planClaraHandoff(pickerState.groups, requirementId);
@@ -1150,9 +1167,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         {/* Compact persistent workspace header */}
         <header className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href="/businesses"
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
+            <button
+              type="button"
+              onClick={goBack}
+              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
               title={
                 run && !terminal
                   ? L(
@@ -1164,8 +1182,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               }
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{L("My Businesses", "Mis Negocios", lang)}</span>
-            </Link>
+              <span className="hidden sm:inline">{L("Back", "Atrás", lang)}</span>
+            </button>
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[15px] text-white">
               M
             </span>

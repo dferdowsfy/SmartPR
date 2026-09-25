@@ -184,6 +184,44 @@ test("validateProjectContext: confidence is clamped to 0..1", () => {
   assert.equal(context.renovation?.confidence, 1);
 });
 
+test("validateProjectContext: painting-and-signage is not a renovation (live 2026-09-25)", () => {
+  const description =
+    "I want to open a veterinary clinic in Ponce. We'll lease a commercial space downtown, no construction beyond painting and signage.";
+  const { context, discarded } = validateProjectContext(
+    {
+      project_type: { value: "renovation", confidence: 0.92, evidence: "painting and signage" },
+      renovation: { value: true, confidence: 0.9, evidence: "painting and signage" },
+    },
+    description
+  );
+  // Capped into the needs-confirmation band — never auto-applies.
+  assert.equal(context.project_type?.confidence, 0.72);
+  assert.equal(context.renovation?.confidence, 0.72);
+  assert.ok(
+    discarded.some((d) => d.field === "projectContext.project_type" && d.reason.includes("renovation claim capped"))
+  );
+});
+
+test("validateProjectContext: a stated remodeling keeps its confidence", () => {
+  const description = "We're remodeling the interior of the leased space in Ponce.";
+  const { context } = validateProjectContext(
+    { renovation: { value: true, confidence: 0.93, evidence: "remodeling the interior" } },
+    description
+  );
+  assert.equal(context.renovation?.confidence, 0.93);
+});
+
+test("validateProjectContext: fabricated evidence is dropped when the description is given", () => {
+  const { context, discarded } = validateProjectContext(
+    { renovation: { value: true, confidence: 0.9, evidence: "gutting the entire building" } },
+    "We'll lease a commercial space, no construction beyond painting and signage."
+  );
+  assert.equal(context.renovation, undefined);
+  assert.ok(
+    discarded.some((d) => d.field === "projectContext.renovation" && d.reason.includes("not a quote"))
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Confidence bands + evidence on the visible-field path
 // ---------------------------------------------------------------------------

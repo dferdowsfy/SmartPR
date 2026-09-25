@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle, ArrowRight, Bell, Building2, CalendarDays, CheckCircle2,
+  AlertTriangle, ArrowRight, Bell, Bot, Building2, CalendarDays, CheckCircle2,
   ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, Scale, ShieldAlert, Upload,
 } from "lucide-react";
 import { useDeliverablesAccess } from "../../../lib/billing/useDeliverablesAccess";
@@ -251,8 +251,8 @@ function LegalBasisDisclosure({ item, lang }: { item: Obligation; lang: Lang }) 
   );
 }
 
-function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
-  item: Obligation; business: BusinessRecord; evidence: Evidence[]; reload: () => void; onMarkComplete?: (id: string) => void;
+function ObligationRow({ item, business, businessId, evidence, reload, onMarkComplete }: {
+  item: Obligation; business: BusinessRecord; businessId: string; evidence: Evidence[]; reload: () => void; onMarkComplete?: (id: string) => void;
 }) {
   const { canUseDeliverables, paywallCode } = useDeliverablesAccess();
   const deliverablesLocked = canUseDeliverables === false;
@@ -455,7 +455,21 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
               busy={uploading || busy}
               onAttach={(evidenceId) => void attachFromLocker(evidenceId)}
             />
-            {dl && (
+            {dl?.kind === "filing_portal" ? (
+              /* Clara-first filing: portal filings launch the in-app Clara
+                 filing workspace instead of kicking the user out to the
+                 government site in a new tab. */
+              <Link
+                href={item.requirement_id
+                  ? `/businesses/${businessId}/agency-run?filing=${encodeURIComponent(item.requirement_id)}`
+                  : `/businesses/${businessId}/agency-run`}
+                title={L("Work through this filing with Clara — you stay in control of every step.", lang)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white"
+              >
+                <Bot className="h-3.5 w-3.5" />
+                {L("File with Clara", lang)}
+              </Link>
+            ) : dl ? (
               <a
                 href={dl.url} target="_blank" rel="noopener noreferrer" onClick={recordDownload}
                 className="inline-flex items-center gap-1.5 rounded-full border-2 border-brand px-3 py-1 text-xs font-bold text-brand"
@@ -463,7 +477,7 @@ function ObligationRow({ item, business, evidence, reload, onMarkComplete }: {
                 {downloaded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
                 {downloaded ? L("Open again", lang) : L(downloadKindLabel(dl.kind), lang)}
               </a>
-            )}
+            ) : null}
             <input
               ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
               onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadFile(file); }}
@@ -937,7 +951,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             <div className="space-y-3 p-5">
               {outstandingDisplay.length ? outstandingDisplay.map((item) => (
                 <ObligationRow
-                  key={item.id} item={item} business={business} evidence={evidence} reload={load} onMarkComplete={markRecentlyCompleted}
+                  key={item.id} item={item} business={business} businessId={shortId} evidence={evidence} reload={load} onMarkComplete={markRecentlyCompleted}
                 />
               )) : <Empty text={L("No outstanding requirements.", lang)} />}
               {otherCompleted.length > 0 && (
@@ -945,7 +959,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Completed", lang)}</div>
                   {otherCompleted.map((item) => (
                     <ObligationRow
-                      key={item.id} item={item} business={business} evidence={evidence} reload={load}
+                      key={item.id} item={item} business={business} businessId={shortId} evidence={evidence} reload={load}
                     />
                   ))}
                 </>

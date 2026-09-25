@@ -110,7 +110,8 @@ export interface RequirementCardProps {
   secondaryOnCompleted?: boolean;
   /** Visible "Download form / File online" button rendered in the action
    * column — the direct official destination for this requirement, never
-   * hidden inside the "Why do I need this?" disclosure. */
+   * hidden inside the "Why do I need this?" disclosure. Not rendered when
+   * `filing` is set (Clara-first filing action). */
   download?: RequirementDownload;
   facts?: RequirementFact[];
   filing?: RequirementFiling | null;

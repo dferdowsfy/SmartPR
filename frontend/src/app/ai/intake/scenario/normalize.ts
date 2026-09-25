@@ -25,6 +25,8 @@ import {
   EXISTING_BUSINESS_RE,
   NEW_ENTITY_RE,
   OPEN_INTENT_RE,
+  ownershipStated,
+  renovationStated,
 } from "./interpret";
 import {
   SCENARIO_PATHS,
@@ -197,6 +199,41 @@ export function normalizeScenario(
       // SmartPR asks — never guessed from how the building is used today.
       report.push({ path, action: "dropped", reason: "a change of use is not inferred; the authorized use decides it" });
       continue;
+    }
+    // Guarded conclusion: the model turns cosmetic work ("painting and
+    // signage") into a renovation conclusion. An "explicit" renovation needs
+    // renovation language in the text itself; otherwise it is an inference
+    // and stays in the needs-confirmation band.
+    if (path === "project.renovation" && value === true && source === "explicit") {
+      if (!renovationStated(description)) {
+        source = "inferred";
+        confidence = Math.min(confidence, 0.72);
+        report.push({ path, action: "downgraded", reason: "cosmetic work is not a renovation" });
+      }
+    }
+    if (path === "project.type" && Array.isArray(value) && source === "explicit") {
+      const types = value as string[];
+      if (types.some((t) => t.toLowerCase().includes("renovation")) && !renovationStated(description)) {
+        source = "inferred";
+        confidence = Math.min(confidence, 0.72);
+        report.push({ path, action: "downgraded", reason: "cosmetic work is not a renovation" });
+      }
+    }
+    // Guarded conclusion: the model turns home-location language ("home
+    // kitchen", "home office") into an ownership conclusion. An "explicit"
+    // ownershipStatus needs ownership language in the text itself — renting
+    // or owning said about the property — otherwise it is an inference and
+    // stays in the needs-confirmation band. A home may be owned or rented.
+    if (path === "property.ownershipStatus" && source === "explicit") {
+      if (!ownershipStated(description)) {
+        source = "inferred";
+        confidence = Math.min(confidence, 0.72);
+        report.push({
+          path,
+          action: "downgraded",
+          reason: "a home location is not ownership evidence — the text states no tenure",
+        });
+      }
     }
     if ((path === "property.proposedUse" || path === "operations.activity") && typeof value === "string") {
       // Normalize to the use vocabulary when it matches; a generic phrase is

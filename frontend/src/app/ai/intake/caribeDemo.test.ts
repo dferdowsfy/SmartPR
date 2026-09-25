@@ -287,3 +287,17 @@ describe("6. Clara filing handoff", () => {
     assert.equal(out.fiscal_year_end, undefined, "a genuinely missing field is left for the user");
   });
 });
+
+describe("the same business, described without saying 'existing'", () => {
+  const text = "Caribe Precision Manufacturing, LLC, a Puerto Rico furniture-manufacturing business with 28 employees, is leasing a 12,000-square-foot warehouse and office facility in Guaynabo. We plan to use it for furniture manufacturing, storage, and administrative offices. Interior work includes demolition, office build-out, electrical and plumbing work, and layout changes, without building-footprint expansion.";
+  const ctx = interpretScenario(text);
+  it("a named LLC with staff is an existing business to confirm, not a stated fact", () => {
+    assert.equal(ctx.business.status?.value, "existing");
+    assert.equal(ctx.business.status?.source, "inferred");
+  });
+  it("reads storage as warehouse use and 'interior work includes demolition'", () => {
+    assert.equal(v(ctx.property.proposedUse), "manufacturing_and_warehouse_and_office");
+    assert.equal(v(ctx.project.demolition), "interior");
+    assert.equal(v(ctx.project.footprintChange), false);
+  });
+});

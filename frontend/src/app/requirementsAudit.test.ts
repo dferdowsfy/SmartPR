@@ -4124,3 +4124,123 @@ test("CASE AT: REG-PROFESSION-AGENCY-003 — the veterinarian license names Depa
     "the note explicitly disambiguates against the Juntas Examinadoras"
   );
 });
+
+test("CASE AU: a project_fact change-of-use basis outranks the business-type basis for the card's legal basis (REG-PROVENANCE-SPECIFICITY-003)", () => {
+  // 2026-09-25 15:00 QA cycle (S204, Arecibo): an existing restaurant
+  // converting to a new use fires RULE_0049 (BT_RESTAURANT, standing
+  // verify-existing Permiso Único obligation) AND RULE_0699 (change_of_use,
+  // new filing). The card is REQUIRED because of the change of use, so the
+  // reason/source_rule must cite RULE_0699 ("Change of use") — the
+  // SPECIFICITY-002 tiebreak only handled the question_trigger competitor
+  // and let array order pick the business-type basis. Fix: project_fact
+  // ranks above business_type in the specificity tiebreak.
+  const DOC_UNICO = docByName("permiso", "único");
+  const classifyChange = (changeOfUse: boolean) =>
+    classify(
+      {
+        municipalityName: "Arecibo",
+        businessTypeName: "Restaurant",
+        businessStatus: "existing",
+        answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+        projectFacts: changeOfUse ? { change_of_use: true } : {},
+      } as EngineInput,
+      "existing"
+    ).classified;
+  const withChange = classifyChange(true);
+  const unico = byId(withChange, DOC_UNICO);
+  assert.ok(unico, "Permiso Único must surface for the converting restaurant");
+  assert.equal(
+    unico.applicability,
+    "required",
+    "the change of use asserts a new use-authorization filing"
+  );
+  assert.equal(
+    unico.source_rule_id,
+    "RULE_0699",
+    "the card's legal basis must be the change-of-use rule, not the standing business-type rule"
+  );
+  assert.ok(
+    /change_of_use/.test(String(unico.reason ?? "")),
+    "the card reason must name the change of use: " + String(unico.reason)
+  );
+  // Control: without a change of use the standing business-type basis wins
+  // and the posture is verify_existing.
+  const noChange = classifyChange(false);
+  const standing = byId(noChange, DOC_UNICO);
+  assert.ok(standing, "Permiso Único must surface for the existing restaurant");
+  assert.equal(
+    standing.applicability,
+    "verify_existing",
+    "no change of use -> standing obligation posture"
+  );
+  assert.equal(
+    standing.source_rule_id,
+    "RULE_0049",
+    "without a project_fact basis the business-type rule keeps the card"
+  );
+});
+
+test("REG-PROFESSION-AGENCY-004: every agency-override rule routes its filing destination to the same agency", () => {
+  // 2026-09-25 15:00 QA cycle (S203, Caguas, live): the insurance agency's
+  // Professional License card named OCS and linked ocs.pr.gov, but the
+  // adjacent guidance note described the Department of State's Didaxis
+  // examining-boards portal. RULE_0224 overrode the agency without
+  // overriding the filing destination, so the document default (Didaxis)
+  // bled through — the same class as REG-PROFESSION-AGENCY-002 (RULE_0696).
+  // Invariant: a rule whose agency differs from its document's agency must
+  // carry its own download_url (the filing destination follows the agency).
+  const docs = new Map(
+    (KB.documents as Array<{ id: string; agency?: string; download_url?: string }>).map((d) => [d.id, d])
+  );
+  const offenders: string[] = [];
+  for (const r of KB.rules as Array<{
+    id: string; agency?: string | null; download_url?: string | null; requires_document_id?: string;
+  }>) {
+    if (!r.agency) continue;
+    const doc = docs.get(r.requires_document_id ?? "");
+    const docAgency = doc?.agency ?? "";
+    if (docAgency && r.agency.toLowerCase() !== docAgency.toLowerCase() && !r.download_url) {
+      offenders.push(`${r.id} (agency ${r.agency}, doc ${docAgency})`);
+    }
+  }
+  assert.deepEqual(offenders, [], "agency-override rules missing a download_url override");
+});
+
+test("CASE AV: the OCS professional-license card's filing destination follows OCS, not the Didaxis portal (REG-PROFESSION-AGENCY-004)", () => {
+  // Live S203 showed the OCS license row with a Didaxis examining-boards
+  // guidance note. The card must route both the link and the note to OCS.
+  const DOC_PROFLIC = docByName("professional license");
+  const { classified } = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Insurance Agency",
+      businessStatus: "new",
+      answers: {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_PROFESSIONAL_LICENSES: true,
+      },
+    },
+    "new"
+  );
+  const lic = byId(classified, DOC_PROFLIC);
+  assert.ok(lic, "professional license row must exist for Insurance Agency");
+  const dl = String((lic as { download_url?: string }).download_url ?? "");
+  assert.ok(
+    /ocs\.pr\.gov/.test(dl),
+    `the filing destination must point at OCS, got: ${dl}`
+  );
+  assert.ok(
+    !/Didaxis|didaxis/i.test(dl),
+    "the filing destination must not be the examining-boards portal"
+  );
+  const note = String((lic as { download_note?: string }).download_note ?? "");
+  assert.ok(
+    /OCS|Comisionado de Seguros/i.test(note),
+    `the guidance note must describe OCS filing, got: ${note}`
+  );
+  assert.ok(
+    !/Didaxis/i.test(note),
+    "the guidance note must not name the examining-boards portal as the destination"
+  );
+});

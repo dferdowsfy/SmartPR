@@ -79,17 +79,45 @@ const NUMERIC_KEYS: ReadonlySet<string> = new Set([
 // Validation (defensive: one malformed entry never destroys the rest)
 // ---------------------------------------------------------------------------
 
+import { evidenceInText } from "./scenario/normalize.ts";
+import { renovationStated } from "./scenario/interpret.ts";
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
 export interface DiscardedProjectFact {
   field: string;
   reason: string;
 }
 
 /**
+ * Renovation-type claims need renovation language in the text itself.
+ * Cosmetic work alone ("painting and signage") is not a renovation: a
+ * high-confidence model claim without that language is capped into the
+ * needs-confirmation band instead of auto-applying.
+ */
+function renovationClaimed(key: string, value: unknown): boolean {
+  if (key === "renovation" && value === true) return true;
+  if (key === "project_type" && typeof value === "string") {
+    return value.toLowerCase().includes("renovation");
+  }
+  return false;
+}
+
+/**
  * Validate a raw `projectContext` object from the model. Unknown keys and
  * malformed entries are discarded individually and reported; valid entries
  * pass through with normalized confidence (0–1) and trimmed evidence.
+ *
+ * When `description` is provided, two extra checks apply (mirroring the
+ * scenario reader's "checked, not trusted" rule):
+ * - a fact whose evidence quote does not appear in the description is
+ *   dropped — the model may not invent grounding;
+ * - a renovation claim without renovation language in the text is capped at
+ *   0.72 (needs confirmation) instead of auto-applying.
  */
-export function validateProjectContext(raw: unknown): {
+export function validateProjectContext(raw: unknown, description?: string): {
   context: ProjectContext;
   discarded: DiscardedProjectFact[];
 } {
@@ -143,6 +171,24 @@ export function validateProjectContext(raw: unknown): {
       typeof rawEvidence === "string" && rawEvidence.trim()
         ? rawEvidence.trim().slice(0, 300)
         : undefined;
+    if (description) {
+      // The model's evidence must be a real quote from the description.
+      if (!evidence || !evidenceInText(evidence, description)) {
+        discarded.push({ field, reason: "evidence is not a quote from the description" });
+        continue;
+      }
+      // Cosmetic work is not a renovation: cap the claim into the
+      // needs-confirmation band instead of auto-applying it.
+      if (confidence >= 0.85 && renovationClaimed(key, value) && !renovationStated(description)) {
+        discarded.push({ field, reason: "renovation claim capped: no renovation language in the description" });
+        (context as Record<string, ProjectContextFact>)[key] = {
+          value: value as string | number | boolean,
+          confidence: 0.72,
+          evidence,
+        };
+        continue;
+      }
+    }
     const fact: ProjectContextFact = { value: value as string | number | boolean, confidence };
     if (evidence) fact.evidence = evidence;
     (context as Record<string, ProjectContextFact>)[key] = fact;

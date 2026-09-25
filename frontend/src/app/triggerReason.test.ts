@@ -121,3 +121,14 @@ test("REG-TRIGGER-LABEL-003: municipality-baseline trigger labels render in user
     assert.doesNotMatch(label, /=/);
   }
 });
+
+test("REG-PROVENANCE-SPECIFICITY-002: change_of_use project-fact label renders in user vocabulary (EN/ES)", () => {
+  assert.equal(
+    translateTriggerReason("Project fact: change_of_use = true", "Guaynabo", "en"),
+    "Change of use",
+  );
+  assert.equal(
+    translateTriggerReason("Project fact: change_of_use = true", "Guaynabo", "es"),
+    "Cambio de uso",
+  );
+});

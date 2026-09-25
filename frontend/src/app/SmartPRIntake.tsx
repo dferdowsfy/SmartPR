@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
 import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
@@ -73,7 +73,7 @@ import {
   type ScenarioQuestion,
   restoreScenario,
 } from './ai/intake/scenario';
-import { businessTypeFromScenario, locationTypeFromScenario, planIntake, scenarioStatedAnswers, withFormFacts, type IntakeFieldKey } from './ai/intake/infoNeeds';
+import { businessTypeFromScenario, locationTypeFromScenario, planIntake, scenarioStatedAnswers, withFormFacts } from './ai/intake/infoNeeds';
 import {
   normalizeProjectIntent,
   projectIntentLabel,
@@ -129,7 +129,7 @@ import {
   CheckCircle, AlertTriangle, Info, FileText,
   ArrowRight, RefreshCw, Download, Building2, Archive, ExternalLink,
   ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, Eye,
-  Star, ChevronDown, Sparkles,
+  Star, Sparkles,
 } from 'lucide-react';
 
 // SmartPR
@@ -787,6 +787,17 @@ const HOME_BASED_NOT_APPLICABLE = new Set<string>([
   "outdoor_seating",
   "live_entertainment",
   "patients_visit",
+  // QA 2026-09-25 12:00 (live S198, REG-TENURE-HOMEBASED-001): asking
+  // "Will the business lease its commercial space?" to a home-based user is
+  // inapplicable — the premises are a home, not a commercial space. A "No"
+  // carries no home-ownership information, yet the existing_lease bridge
+  // (projectContextAnswerToFacts) turns it into property_tenure=owned at
+  // confidence 1, so RULE_0649 rendered a Property Deed card with an
+  // "Owned property" trigger the user never stated — an unsupported
+  // inference presented as fact (provenance hard rule 2026-09-19). Mirror
+  // the online-only path (PHYSICAL_PRESENCE_QUESTIONS), which already
+  // filters this question.
+  "existing_lease",
 ]);
 
 interface DiscoveryQuestionOption { value: string; label: string }
@@ -1598,6 +1609,19 @@ export default function SmartPRIntake() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  // Business-details block: filled fields minimize to a compact summary and
+  // only fields still needing input render as inputs. Expands fully when the
+  // user taps Edit (or when submit finds profile fields missing).
+  const [profileFormExpanded, setProfileFormExpanded] = useState(false);
+  // Set when "See my requirements" is tapped while incomplete — drives the
+  // loading pulse plus scroll/highlight to what's missing.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  // Brief loading animation on the submit button after an incomplete tap —
+  // the button is never dead, even when the form isn't ready.
+  const [submitPulse, setSubmitPulse] = useState(false);
+  const submitPulseTimer = useRef<number | null>(null);
+  const questionsPanelRef = useRef<HTMLDivElement>(null);
+  const profileFieldsRef = useRef<HTMLDivElement>(null);
   // Correlation id tying every capture event for this scenario together.
   const submissionIdRef = useRef<string>('');
   // The business this assessment belongs to (when signed in + /?business=<id>).
@@ -1813,6 +1837,50 @@ export default function SmartPRIntake() {
   // branch is determined, and the ?entry=new-business default alone does not
   // confirm the branch — the user may still switch to project_only before
   // anything is created (see shouldCreateBusinessRecord).
+  //
+  // The creation itself is extracted so late callers ("See my requirements",
+  // Clara entry) can ensure a persisted business on demand: the one-shot
+  // effect above can miss (e.g. a failed fetch during a deploy), and without
+  // a persisted id Clara's filing picker and ?filing= deep link cannot
+  // resolve. Concurrent calls share one in-flight request.
+  const ensureBusinessInFlightRef = useRef<Promise<string | null> | null>(null);
+  const ensurePersistedBusiness = useCallback(async (): Promise<string | null> => {
+    if (businessIdRef.current && !businessIdRef.current.startsWith('local-')) {
+      return businessIdRef.current;
+    }
+    if (!me) return null;
+    if (ensureBusinessInFlightRef.current) return ensureBusinessInFlightRef.current;
+    const attempt = (async (): Promise<string | null> => {
+      try {
+        const response = await fetch('/api/matters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            create_business: true,
+            matter_type: 'NEW_BUSINESS_FORMATION',
+            title: 'New business formation',
+          }),
+        });
+        if (!response.ok) return null;
+        const created = await response.json();
+        if (!created?.business_id) return null;
+        businessIdRef.current = created.business_id;
+        matterIdRef.current = created.matter_id ?? matterIdRef.current;
+        setBusinessId(created.business_id);
+        const params = new URLSearchParams(window.location.search);
+        params.set('business', created.business_id);
+        if (created.matter_id) params.set('matter', created.matter_id);
+        window.history.replaceState(null, '', `/?${params.toString()}`);
+        return created.business_id as string;
+      } catch {
+        return null;
+      } finally {
+        ensureBusinessInFlightRef.current = null;
+      }
+    })();
+    ensureBusinessInFlightRef.current = attempt;
+    return attempt;
+  }, [me]);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const decision = shouldCreateBusinessRecord({
@@ -1825,30 +1893,12 @@ export default function SmartPRIntake() {
     });
     if (!decision) return;
     formationStartAttemptedRef.current = true;
-    void (async () => {
-      try {
-        const response = await fetch('/api/matters', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            create_business: true,
-            matter_type: 'NEW_BUSINESS_FORMATION',
-            title: 'New business formation',
-          }),
-        });
-        if (!response.ok) return;
-        const created = await response.json();
-        businessIdRef.current = created.business_id;
-        matterIdRef.current = created.matter_id;
-        setBusinessId(created.business_id);
-        params.set('business', created.business_id);
-        params.set('matter', created.matter_id);
-        window.history.replaceState(null, '', `/?${params.toString()}`);
-      } catch {
-        // Intake remains usable and matter creation will be attempted again on
-        // the next fresh entry; guest progress continues saving on-device.
-      }
-    })();
+    // Best-effort: intake remains usable and creation is retried on demand
+    // by "See my requirements" and Clara entry; guest progress continues
+    // saving on-device.
+    void ensurePersistedBusiness();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- gated effect; the
+    // creation callback is stable for a signed-in user.
   }, [me, projectIntent, projectIntentConfirmed]);
 
   // Load the published knowledge-base snapshot (admin-controlled rules); the
@@ -1858,6 +1908,53 @@ export default function SmartPRIntake() {
     initKbFromServer().finally(() => setKbReady(true));
   }, []);
   const municipalityOptions = useMemo(() => KB.municipalities.map((m) => m.name), [kbReady]);
+
+  // Restores a full workflow snapshot into state: profile, answers,
+  // requirements, drafts, the project-first branch, and business/matter
+  // linkage. Shared by ?resume= and by the back-navigation return restore
+  // below — one hydration path, validated the same way.
+  const hydrateFromSnapshot = useCallback((st: Record<string, any>, snap: { business_id?: string | null; matter_id?: string | null }) => {
+    if (st.profile) setProfile(p => ({ ...p, ...st.profile }));
+    if (st.discoveryAnswers) setDiscoveryAnswers(st.discoveryAnswers);
+    if (Array.isArray(st.requirements) && st.requirements.length) setRequirements(st.requirements);
+    if (st.potentialDecisions) setPotentialDecisions(st.potentialDecisions);
+    if (st.incentiveFacts) setIncentiveFacts(st.incentiveFacts);
+    if (Array.isArray(st.incentiveAssessmentHistory)) setIncentiveAssessmentHistory(st.incentiveAssessmentHistory);
+    if (Array.isArray(st.pursuedIncentives)) setPursuedIncentives(st.pursuedIncentives);
+    if (st.sampleFormDrafts) setSampleFormDrafts(st.sampleFormDrafts);
+    if (st.preparedSampleApplications) setPreparedSampleApplications(st.preparedSampleApplications);
+    // Government-form engine state (canonical profile + drafts + prepared
+    // applications) persists in the same Supabase-backed snapshot.
+    if (st.govFormDrafts) setGovFormDrafts(st.govFormDrafts);
+    if (st.preparedGovApplications) setPreparedGovApplications(st.preparedGovApplications);
+    if (st.canonicalApplication) setCanonicalOverride(st.canonicalApplication);
+    if (typeof st.readinessScore === 'number') setReadinessScore(st.readinessScore);
+    if (typeof st.currentStep === 'number' && st.currentStep >= 1 && st.currentStep <= 9) {
+      setCurrentStep(st.currentStep as Step);
+    }
+    // Project-context facts persist with the intake state; validate on
+    // restore so a malformed snapshot can never corrupt the session.
+    if (st.projectContext && typeof st.projectContext === 'object') {
+      const { context } = validateProjectContext(st.projectContext);
+      if (Object.keys(context).length > 0) setProjectContext(context);
+    }
+    // Project-first state: intent is a closed set; the Project Passport
+    // is revalidated against its schema version.
+    if (normalizeProjectIntent(st.projectIntent)) {
+      setProjectIntent(normalizeProjectIntent(st.projectIntent));
+      // A restored session was settled before it was saved.
+      setProjectIntentConfirmed(true);
+    }
+    const restoredPassport = validateProjectPassport(st.projectPassport);
+    if (restoredPassport) setProjectPassport(restoredPassport);
+    const restoredScenario = restoreScenario(st.scenario);
+    if (restoredScenario) setScenario(restoredScenario);
+    if (snap.business_id) {
+      businessIdRef.current = snap.business_id;
+      setBusinessId(snap.business_id);
+    }
+    if (snap.matter_id) matterIdRef.current = snap.matter_id;
+  }, []);
 
   // Resume a prior submission from History (?resume=<submissionId>): restore
   // the core profile and jump back to the requirements step.
@@ -1872,45 +1969,7 @@ export default function SmartPRIntake() {
         const snapRes = await fetch(`/api/snapshots/${resumeId}`);
         if (snapRes.ok) {
           const snap = await snapRes.json();
-          const st = snap.state || {};
-          if (st.profile) setProfile(p => ({ ...p, ...st.profile }));
-          if (st.discoveryAnswers) setDiscoveryAnswers(st.discoveryAnswers);
-          if (Array.isArray(st.requirements) && st.requirements.length) setRequirements(st.requirements);
-          if (st.potentialDecisions) setPotentialDecisions(st.potentialDecisions);
-          if (st.incentiveFacts) setIncentiveFacts(st.incentiveFacts);
-          if (Array.isArray(st.incentiveAssessmentHistory)) setIncentiveAssessmentHistory(st.incentiveAssessmentHistory);
-          if (Array.isArray(st.pursuedIncentives)) setPursuedIncentives(st.pursuedIncentives);
-          if (st.sampleFormDrafts) setSampleFormDrafts(st.sampleFormDrafts);
-          if (st.preparedSampleApplications) setPreparedSampleApplications(st.preparedSampleApplications);
-          // Government-form engine state (canonical profile + drafts + prepared
-          // applications) persists in the same Supabase-backed snapshot.
-          if (st.govFormDrafts) setGovFormDrafts(st.govFormDrafts);
-          if (st.preparedGovApplications) setPreparedGovApplications(st.preparedGovApplications);
-          if (st.canonicalApplication) setCanonicalOverride(st.canonicalApplication);
-          if (typeof st.readinessScore === 'number') setReadinessScore(st.readinessScore);
-          if (typeof st.currentStep === 'number') setCurrentStep(st.currentStep);
-          // Project-context facts persist with the intake state; validate on
-          // restore so a malformed snapshot can never corrupt the session.
-          if (st.projectContext && typeof st.projectContext === 'object') {
-            const { context } = validateProjectContext(st.projectContext);
-            if (Object.keys(context).length > 0) setProjectContext(context);
-          }
-          // Project-first state: intent is a closed set; the Project Passport
-          // is revalidated against its schema version.
-          if (normalizeProjectIntent(st.projectIntent)) {
-            setProjectIntent(normalizeProjectIntent(st.projectIntent));
-            // A restored session was settled before it was saved.
-            setProjectIntentConfirmed(true);
-          }
-          const restoredPassport = validateProjectPassport(st.projectPassport);
-          if (restoredPassport) setProjectPassport(restoredPassport);
-          const restoredScenario = restoreScenario(st.scenario);
-          if (restoredScenario) setScenario(restoredScenario);
-          if (snap.business_id) {
-            businessIdRef.current = snap.business_id;
-            setBusinessId(snap.business_id);
-          }
-          if (snap.matter_id) matterIdRef.current = snap.matter_id;
+          hydrateFromSnapshot(snap.state || {}, snap);
           return;
         }
       } catch { /* fall through */ }
@@ -1938,6 +1997,36 @@ export default function SmartPRIntake() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Returning from Clara (Back) lands here with ?business=<id>&matter=<id>
+  // but no ?resume=, and the component remounts with empty state. Restore
+  // the latest workflow snapshot for that business/matter so the completed
+  // intake and requirements come back exactly. Fresh mounts only — this
+  // never clobbers state the user has already started entering.
+  useEffect(() => {
+    if (!me) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('resume')) return; // the ?resume= effect owns that case
+    const businessParam = params.get('business');
+    const matterParam = params.get('matter');
+    if (!businessParam || businessParam.startsWith('local-')) return;
+    if (requirements.length || profile.name || currentStep !== 1) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const q = new URLSearchParams({ business_id: businessParam });
+        if (matterParam && !matterParam.startsWith('local-')) q.set('matter_id', matterParam);
+        const res = await fetch(`/api/snapshots/latest?${q.toString()}`);
+        if (!res.ok || cancelled) return;
+        const snap = await res.json();
+        if (!snap?.state || cancelled) return;
+        if (snap.submission_id) submissionIdRef.current = snap.submission_id;
+        hydrateFromSnapshot(snap.state, snap);
+      } catch { /* stay on the fresh intake */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me]);
 
   useEffect(() => {
     if (!requirements.length || !profile.business_type) { setAdvisory(null); return; }
@@ -2124,9 +2213,6 @@ export default function SmartPRIntake() {
   // What must be known before requirements (required now), what the Passport
   // can collect progressively (useful later), and what only a filing needs
   // (filing specific — Clara asks, after checking Passport + project facts).
-  // Facts the description resolved are hidden, not re-asked; "Review" shows
-  // them for correction.
-  const [revealResolved, setRevealResolved] = useState(false);
   const descriptionKnownFields = useMemo(() => {
     const known = new Set(
       Object.entries(scenarioProfileFill ?? {})
@@ -2146,11 +2232,7 @@ export default function SmartPRIntake() {
     profile,
     passportKnown: passportKnownFields,
     descriptionKnown: descriptionKnownFields,
-    revealResolved,
-  }), [projectIntent, profile, passportKnownFields, descriptionKnownFields, revealResolved]);
-  const hiddenResolvedCount = intakePlan.fields.filter((f) => f.knownFrom === 'description' && !f.show).length;
-  const fieldPlan = (key: IntakeFieldKey) => intakePlan.fields.find((f) => f.key === key);
-  const showField = (key: IntakeFieldKey) => !!fieldPlan(key)?.show;
+  }), [projectIntent, profile, passportKnownFields, descriptionKnownFields]);
   // (projectIntent / projectIntentConfirmed are declared above the
   // entry/creation effects, which read them in their dependency arrays.)
   // The Project Passport: project/property facts for the active intent,
@@ -2665,7 +2747,8 @@ export default function SmartPRIntake() {
         })
       );
     }
-    if (projectIntent !== "existing_business" || !businessId || existingBizPrefillRef.current) return;
+    // A local draft id is not a saved business: there is no Passport to load.
+    if (projectIntent !== "existing_business" || !businessId || businessId.startsWith("local-") || existingBizPrefillRef.current) return;
     existingBizPrefillRef.current = true;
     (async () => {
       try {
@@ -3256,6 +3339,27 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 };
 
   // Step 1: Save profile + compute discovery requirements (client-side)
+  // "See my requirements" is never a dead button: it only disables while a
+  // real submission is in flight. Tapped while incomplete, it plays a short
+  // loading pulse, expands the business-details block, and scrolls to the
+  // first thing missing — profile fields first, then the questions panel.
+  const handleSubmitTap = () => {
+    if (isLoading) return;
+    if (baseProfileReady && intakeQuestionsComplete) {
+      handleStartDiscovery();
+      return;
+    }
+    setSubmitAttempted(true);
+    setSubmitPulse(true);
+    setProfileFormExpanded(true);
+    if (submitPulseTimer.current) window.clearTimeout(submitPulseTimer.current);
+    submitPulseTimer.current = window.setTimeout(() => {
+      setSubmitPulse(false);
+      const target = !baseProfileReady ? profileFieldsRef.current : questionsPanelRef.current;
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 900);
+  };
+
   const handleStartDiscovery = async () => {
     // The user proceeds with the shown intent — the branch is settled.
     if (projectIntent) setProjectIntentConfirmed(true);
@@ -3288,10 +3392,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       ...discoveryAnswers,
     };
 
-    // Discovery + requirements are computed entirely client-side.
-    // A local id only when no real business is attached — a linked Passport
-    // keeps its id so filings (Clara) and autosave reach the right record.
-    if (!businessIdRef.current && !businessId) setBusinessId('local-' + Date.now());
+    // Discovery + requirements are computed entirely client-side. Keep the
+    // persisted business id when one is already known — replacing it with a
+    // throwaway local id orphans the business that Clara entry (filing
+    // picker, ?filing= deep link) and back-navigation restore depend on.
+    // Guests keep a stable local draft id.
+    if (!businessIdRef.current) {
+      const draftId = 'local-' + Date.now();
+      businessIdRef.current = draftId;
+      setBusinessId(draftId);
+    }
+    // Signed-in new-business intake: make sure the persisted business exists
+    // before the requirement cards render, so "File with Clara" points at the
+    // real business even when the one-shot creation effect missed earlier.
+    if (me && projectIntent === 'new_business') {
+      await ensurePersistedBusiness();
+    }
     setDiscoveryAnswers(answers);
     const baseRequirements = computeRequirements(profile, answers, potentialDecisions, requirementOptions());
     const merged = mergeConfirmedPotentialRequirements(
@@ -4877,7 +4993,49 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const intakeTotal = requiredNowFields.length + intakeQuestionTotal;
   const intakeDone = intakeFieldsDone + (scenarioActive ? 0 : guidedQuestionsAnswered + answeredPotentialCount);
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
+  // project_only readiness is the project name + municipality: without this
+  // branch the "See my requirements" button could never enable for a
+  // property-only project, because the business fields are never collected.
+  // Only required-now facts gate requirements (ai/intake/infoNeeds.ts).
   const baseProfileReady = intakePlan.ready;
+  // Compact one-line summary of the business details for the minimized
+  // block. The block stays minimized by default — fields expand only via
+  // Add/Edit or the incomplete-submit attention path.
+  const STRUCTURE_SHORT_LABEL: Record<string, string> = {
+    llc: 'LLC',
+    corporation: 'Corporation',
+    nonprofit_nonstock_corporation: 'Nonprofit',
+    close_corporation: 'Close corp.',
+    professional_corporation: 'Prof. corp.',
+    foreign_corporation: 'Foreign corp.',
+    limited_liability_partnership: 'LLP',
+    sole_proprietorship: 'Sole prop.',
+    partnership: 'Partnership',
+    other: 'Other',
+  };
+  const profileSummaryParts = [
+    profile.name || null,
+    profile.municipality || null,
+    [profile.industry, profile.business_type].filter(Boolean).join(' · ') || null,
+    profile.location_type || null,
+    (profile.business_structure ? (STRUCTURE_SHORT_LABEL[profile.business_structure] ?? profile.business_structure) : null),
+    (profile.number_of_employees != null
+      ? (language === 'es' ? `${profile.number_of_employees} empleados` : `${profile.number_of_employees} employees`)
+      : null),
+  ].filter(Boolean) as string[];
+  const profileSummary = profileSummaryParts.join(' · ');
+  const anyProfileValue = profileSummaryParts.length > 0;
+  // Attention target after an incomplete submit tap (profile half).
+  const profileNeedsAttention = submitAttempted && !baseProfileReady;
+  // Minimized business-details (passport) block: the compact summary bar is
+  // the default view and the fields expand only when the user taps Add/Edit
+  // or when an incomplete submit flags missing fields. Questions are asked
+  // when needed — the top question box handles them one at a time, and the
+  // submit-attention path expands this block for whatever's still missing.
+  const showProfileSummary = !profileFormExpanded && !profileNeedsAttention;
+  const profileFieldVisible = () => !showProfileSummary;
+  // Highlight ring on the fields after an incomplete submit tap.
+  const profileAttentionCls = profileNeedsAttention ? ' spr-attention' : '';
   const intakeDisplayTotal = intakeTotal;
   const intakeDisplayDone = intakeDone + (
     baseProfileReady && intakeDone === intakeTotal
@@ -5071,13 +5229,42 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     return set;
   }, []);
 
-  // Clara-first filing action. Clara needs a real business record (the run is
-  // tied to its obligations) and a signed-in owner.
-  const claraBusinessId = me && businessId && !businessId.startsWith('local-') ? businessId : null;
+  // Clara-first filing action. Clara needs a persisted business (the run is
+  // tied to its obligations) and a signed-in owner — never a local draft id.
+  const persistedBusinessId = businessId && !businessId.startsWith('local-') ? businessId : null;
+  const claraBusinessId = me ? (persistedBusinessId ?? 'pending') : null;
   const openClara = async (documentId: string) => {
-    if (!claraBusinessId) return;
+    if (!me) return;
+    // An existing business links its Passport; any other signed-in intake
+    // gets its business record now (ensurePersistedBusiness).
+    // Only a new business gets a record created here — an existing one is
+    // linked through its Passport, and unknown intent never creates one.
+    const id = persistedBusinessId
+      ?? (projectIntent === 'new_business' ? await ensurePersistedBusiness() : null);
+    if (!id) {
+      window.alert(L('Link your business (existing business → pick it above) so Clara can file for it.', language));
+      return;
+    }
     await saveProgress().catch(() => false);
-    window.location.href = `/businesses/${encodeURIComponent(claraBusinessId)}/agency-run?requirement=${encodeURIComponent(documentId)}`;
+    // Clara's filing list reads persisted obligations: sync this intake's
+    // requirements first. A failed sync never blocks entry.
+    await Promise.race([
+      fetch(`/api/businesses/${encodeURIComponent(id)}/obligations/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requirements: requirements.map((r) => ({
+            document_id: r.document_id ?? null,
+            name: r.name,
+            agency: r.agency ?? null,
+            mandatory: r.mandatory,
+            source_rule: r.source_rule ?? null,
+          })),
+        }),
+      }).catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 8000)),
+    ]);
+    window.location.href = `/businesses/${encodeURIComponent(id)}/agency-run?filing=${encodeURIComponent(documentId)}`;
   };
   const filingFor = (req: Requirement): RequirementFiling | null => {
     const { support } = claraSupportFor(req.document_id);
@@ -5189,14 +5376,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // document may not even be needed.
       action = { kind: 'none', label: '' };
       bucket = 'needs_action';
-    } else if (isConditional || isReviewCondition
-      || req.applicability === 'verify_existing'
-      || req.applicability === 'needs_more_information'
-      || req.applicability === 'supporting_evidence'
-      || req.applicability === 'likely_required') {
-      // Not a confirmed new filing: verify-existing items need a records
-      // check (not a new application), heuristic/conditional items need
-      // facts first, and evidence items ride along with their parent filing.
+    } else if (req.applicability === 'supporting_evidence'
+      || (req.applicability === 'verify_existing' && !govEntry && !sampleDef && !isFormPackage)) {
+      // No fillable form on the platform for this one: verify-existing items
+      // need a records check (not a new application), and evidence items ride
+      // along with their parent filing. These surface no standalone action.
+      // A verify-existing item WITH a built-in fillable form falls through to
+      // the form branches below — the platform's form is the "don't have it
+      // yet" path, alongside the upload for the document they already hold.
       action = { kind: 'none', label: '' };
       bucket = 'none';
     } else if (isFormPackage) {
@@ -5238,6 +5425,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       action = { kind: 'form', label: L(primaryStartLabelFor(name), language), onClick: () => openSampleApplication(req.code) };
       secondary = secondaryUpload();
       bucket = 'needs_action';
+    } else if (isConditional || isReviewCondition
+      || req.applicability === 'needs_more_information'
+      || req.applicability === 'likely_required') {
+      // No fillable form and not a confirmed new filing: heuristic/
+      // conditional items need facts first. (Likely/conditional items WITH
+      // a fillable official form or worksheet are handled above — the user
+      // can start preparing while confirming applicability.)
+      action = { kind: 'none', label: '' };
+      bucket = 'none';
     } else if (!canUpload) {
       action = { kind: 'none', label: '' };
       bucket = 'none';
@@ -5549,6 +5745,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       onDownload: () => handleDownloadClick(req.code),
     } : undefined;
 
+
     // Inline answer control for the "more information needed" card. Writing
     // the answer is a REAL discovery answer: the engine reruns immediately
     // and the card becomes REQUIRED with "Answer: Yes" (or disappears on
@@ -5681,6 +5878,32 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const deferGuidedQuestions = scenarioActive;
   const intakeQuestionsComplete = deferGuidedQuestions || activeQuestionIndex >= questionList.length
     && answeredPotentialCount === potentialItems.length;
+  // One question UI at a time in the consolidated top area: the knowledge
+  // graph's controlling question first, then the guided question, then the
+  // municipality follow-up — never two question sets stacked. When the
+  // scenario has no pending question but still exists, its idle panel
+  // ("nothing else to ask right now") keeps the informational state.
+  const scenarioNextQuestion = scenarioEval?.questions[0] ?? null;
+  const topQuestionKind: 'scenario' | 'guided' | 'potential' | null =
+    scenarioNextQuestion ? 'scenario'
+    : currentQuestion && !deferGuidedQuestions ? 'guided'
+    : currentPotentialQuestion && !deferGuidedQuestions ? 'potential'
+    : scenarioEval ? 'scenario'
+    : null;
+  const questionsHeading =
+    projectIntent === 'existing_business' && passportSnapshot
+      ? (language === 'es' ? 'Aún necesitamos para este proyecto' : 'We still need for this project')
+      : (language === 'es' ? 'Lo que SmartPR aún necesita' : 'What SmartPR still needs');
+  // Attention target after an incomplete submit tap (questions half).
+  const questionsNeedAttention = submitAttempted && baseProfileReady && !intakeQuestionsComplete;
+  // Once everything's complete, the incomplete-submit state retires: the
+  // highlight clears and the block settles back to its minimized summary.
+  useEffect(() => {
+    if (submitAttempted && baseProfileReady && intakeQuestionsComplete) {
+      setSubmitAttempted(false);
+      setProfileFormExpanded(false);
+    }
+  }, [submitAttempted, baseProfileReady, intakeQuestionsComplete]);
   const passportReadyNow = baseProfileReady && intakeQuestionsComplete;
   const passportModeActive = passportPhaseStarted || passportReadyNow;
   const canGoBackInIntake = guidedQuestionsAnswered > 0 || answeredPotentialCount > 0;
@@ -6246,41 +6469,104 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </div>
                 )}
 
-                {/* Relational questions from the knowledge graph: only the
-                    controlling unknowns of branches this scenario reaches,
-                    one at a time, in dependency order. */}
-                {scenarioEval && (
-                  <div className="spr-field full">
-                    <ScenarioQuestions
-                      evaluation={scenarioEval}
-                      heading={
-                        projectIntent === 'existing_business' && passportSnapshot
-                          ? (language === 'es' ? 'Aún necesitamos para este proyecto' : 'We still need for this project')
-                          : (language === 'es' ? 'Lo que SmartPR aún necesita' : 'What SmartPR still needs')
-                      }
-                      lang={language}
-                      onAnswer={answerScenarioQuestion}
-                      onSkip={skipScenarioQuestion}
-                    />
-                  </div>
+                {/* Consolidated questions: the knowledge-graph question, the
+                    guided questions, and the municipality follow-ups share
+                    this one region at the top — exactly one question UI at a
+                    time, in the pink "what we still need" box, before the
+                    text fields. */}
+                {topQuestionKind && (
+                <div
+                  className={`spr-field full${questionsNeedAttention ? ' spr-attention' : ''}`}
+                  ref={questionsPanelRef}
+                >
+                  {(topQuestionKind === 'guided' || topQuestionKind === 'potential') ? (
+                    <section className="spr-scn-questions" aria-live="polite">
+                      <h3>{questionsHeading}</h3>
+                      {topQuestionKind === 'guided' && currentQuestion && (
+                        <IntakeQuestion
+                          language={language}
+                          questionNumber={activeGuidedQuestionNumber}
+                          questionTotal={intakeQuestionTotal}
+                          title={L(currentQuestion.text, language)}
+                          contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
+                          contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
+                          options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
+                          onAnswer={(value) => handleQuestionAnswer(value)}
+                        />
+                      )}
+                      {topQuestionKind === 'potential' && currentPotentialQuestion && (
+                        <IntakeQuestion
+                          language={language}
+                          questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
+                          questionTotal={intakeQuestionTotal}
+                          title={L(currentPotentialQuestion.followUp, language)}
+                          contextTitle={L(currentPotentialQuestion.document, language)}
+                          contextBody={L(currentPotentialQuestion.why, language)}
+                          onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
+                          onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
+                        />
+                      )}
+                    </section>
+                  ) : (
+                    scenarioEval && (
+                      <ScenarioQuestions
+                        evaluation={scenarioEval}
+                        heading={questionsHeading}
+                        lang={language}
+                        onAnswer={answerScenarioQuestion}
+                        onSkip={skipScenarioQuestion}
+                      />
+                    )
+                  )}
+                </div>
                 )}
 
-
-                {(hiddenResolvedCount > 0 || revealResolved) && (
-                  <div className="spr-field full spr-resolved-note" data-testid="resolved-from-description">
-                    <span>
-                      {revealResolved
-                        ? L('Showing details from your description so you can correct them.', language)
-                        : `${hiddenResolvedCount} ${L(hiddenResolvedCount === 1 ? 'detail already known from your description' : 'details already known from your description', language)}`}
+                {/* Business-details block: filled fields minimize into the
+                    compact summary (tap to edit); fields still needing input
+                    stay visible. An incomplete submit expands everything and
+                    scrolls here. */}
+                <span ref={profileFieldsRef} aria-hidden="true" className="spr-anchor" />
+                {showProfileSummary && (
+                <div className="spr-field full">
+                  <span className="spr-profile-summary-label">{L('Business details', language)}</span>
+                  <button
+                    type="button"
+                    className="spr-profile-summary"
+                    onClick={() => setProfileFormExpanded(true)}
+                    aria-expanded="false"
+                  >
+                    <span className="spr-profile-summary-text">
+                      {anyProfileValue ? profileSummary : L('Add your business details', language)}
                     </span>
-                    <button type="button" className="spr-link" onClick={() => setRevealResolved((v) => !v)}>
-                      {revealResolved ? L('Hide', language) : L('Review', language)}
-                    </button>
-                  </div>
+                    <span className="spr-profile-summary-edit">
+                      {anyProfileValue ? L('Edit', language) : L('Add', language)}
+                    </span>
+                  </button>
+                </div>
                 )}
-                {showField('municipality') && (
-                <div className="spr-field">
-                  <label htmlFor="spr-municipality">{projectIntent === 'existing_business' ? L('Project municipality', language) : t('municipality')}{confirmationBadge('municipality')}</label>
+                <p className="spr-enter-once">
+                  {L('Enter it once — SmartPR carries it to every requirement.', language)}
+                </p>
+
+                {!passportKnownFields.has('name') && profileFieldVisible() && (
+                <div className={`spr-field full${profileAttentionCls}`}>
+                  <label htmlFor="spr-business-name">
+                    {isProjectOnly ? L('Project name', language) : t('businessName')}
+                    {confirmationBadge('name')}
+                  </label>
+                  <input
+                    id="spr-business-name"
+                    placeholder={isProjectOnly ? L('e.g. Guaynabo warehouse expansion', language) : L('Your business name', language)}
+                    value={profile.name}
+                    onChange={e => { setProfile({ ...profile, name: e.target.value }); markUserTouched('name'); }}
+                    required
+                  />
+                </div>
+                )}
+
+                {!passportKnownFields.has('municipality') && profileFieldVisible() && (
+                <div className={`spr-field${profileAttentionCls}`}>
+                  <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
                   <select
                     id="spr-municipality"
                     value={profile.municipality}
@@ -6300,8 +6586,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     are business fields and never appear for a property-only
                     project. */}
                 {!isProjectOnly && (<>
-                {showField('business_type') && (
-                <div className="spr-field">
+                {!passportKnownFields.has('industry') && profileFieldVisible() && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
                     id="spr-industry"
@@ -6314,8 +6600,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {showField('business_type') && (
-                <div className="spr-field">
+                {!passportKnownFields.has('business_type') && profileFieldVisible() && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
                     id="spr-business-type"
@@ -6336,8 +6622,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                {showField('location_type') && (
-                <div className="spr-field">
+                {profileFieldVisible() && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
                   <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
                     <option value="">{t('selectLocationType')}</option>
@@ -6347,42 +6633,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                </>)}
-              </div>
 
-              {/* Useful later + filing-specific: never required to see the
-                  requirements. Saved to the Business Passport as provided;
-                  filing details are asked by Clara only when a filing needs
-                  them, after checking the Passport and this project. */}
-              {intakePlan.fields.some((f) => f.show && f.tier !== 'required_now') && (
-                <details className="spr-later" data-testid="intake-later">
-                  <summary>
-                    {isProjectOnly
-                      ? L('Optional: name this project', language)
-                      : L('Optional now: business details', language)}
-                  </summary>
-                  <p className="spr-later-note">
-                    {isProjectOnly
-                      ? L('Requirements come from the property and project. Business details are asked only if a filing needs them.', language)
-                      : L('Not needed to see your requirements. Anything you add is saved to your Business Passport and reused. Filing details (EIN, authorized representative, contact) are asked only when a filing needs them.', language)}
-                  </p>
-                  <div className="spr-form">
-                {showField('name') && (
-                <div className="spr-field full">
-                  <label htmlFor="spr-business-name">
-                    {isProjectOnly ? L('Project name', language) : t('businessName')}
-                    {confirmationBadge('name')}
-                  </label>
-                  <input
-                    id="spr-business-name"
-                    placeholder={isProjectOnly ? L('e.g. Guaynabo warehouse expansion', language) : L('Your business name', language)}
-                    value={profile.name}
-                    onChange={e => { setProfile({ ...profile, name: e.target.value }); markUserTouched('name'); }}
-                  />
-                </div>
-                )}
-                {showField('business_structure') && (
-                <div className="spr-field spr-field-static">
+                {!passportKnownFields.has('business_structure') && profileFieldVisible() && (
+                <div className={`spr-field spr-field-static${profileAttentionCls}`}>
                   <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
                     const structure = e.target.value;
@@ -6404,8 +6657,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                {showField('number_of_employees') && (
-                <div className="spr-field">
+                {profileFieldVisible() && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-employees">{t('numEmployees')}{confirmationBadge('number_of_employees')}</label>
                   <input
                     id="spr-employees"
@@ -6430,9 +6683,25 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   />
                 </div>
                 )}
-                  </div>
-                </details>
-              )}
+                {profileFormExpanded && (
+                <div className="spr-field full">
+                  <button
+                    type="button"
+                    className="spr-profile-done"
+                    onClick={() => {
+                      // Done collapses the block AND retires the incomplete-
+                      // submit attention state — otherwise the highlight keeps
+                      // the fields expanded and the tap looks like a no-op.
+                      setProfileFormExpanded(false);
+                      setSubmitAttempted(false);
+                    }}
+                  >
+                    {L('Done', language)}
+                  </button>
+                </div>
+                )}
+                </>)}
+              </div>
 
               {/* Questions already answered from the description — shown as
                   completed so the user can see what was understood (and change
@@ -6485,31 +6754,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
               )}
 
-              {currentQuestion && !deferGuidedQuestions && (
-                <IntakeQuestion
-                  language={language}
-                  questionNumber={activeGuidedQuestionNumber}
-                  questionTotal={intakeQuestionTotal}
-                  title={L(currentQuestion.text, language)}
-                  contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
-                  contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
-                  options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
-                  onAnswer={(value) => handleQuestionAnswer(value)}
-                />
-              )}
-
-              {currentPotentialQuestion && !deferGuidedQuestions && (
-                <IntakeQuestion
-                  language={language}
-                  questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
-                  questionTotal={intakeQuestionTotal}
-                  title={L(currentPotentialQuestion.followUp, language)}
-                  contextTitle={L(currentPotentialQuestion.document, language)}
-                  contextBody={L(currentPotentialQuestion.why, language)}
-                  onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
-                  onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
-                />
-              )}
             </div>
 
             {passportModeActive && (
@@ -6532,12 +6776,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   <button className="spr-back" onClick={handleIntakeBack}>{L('Back', language)}</button>
                 )}
                 <button
-                  className="spr-primary"
-                  onClick={handleStartDiscovery}
-                  disabled={!baseProfileReady || !intakeQuestionsComplete || isLoading}
+                  className={`spr-primary${submitPulse ? ' spr-submit-pulse' : ''}`}
+                  onClick={handleSubmitTap}
+                  disabled={isLoading}
                 >
                   {L('See my requirements', language)}
-                  {isLoading ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
+                  {isLoading || submitPulse ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
                 </button>
               </div>
             </div>
