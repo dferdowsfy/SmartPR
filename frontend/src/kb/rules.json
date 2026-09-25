@@ -2203,6 +2203,8 @@
   ],
   "agency": "Departamento de Salud",
   "agency_url": "https://www.salud.pr.gov/CMS/133",
+  "download_url": "https://www.salud.pr.gov/CMS/133",
+  "download_note": "Veterinary licenses are issued by the Department of Health (Junta Examinadora de Médicos Veterinarios) — the Department of State examining-boards portal does not apply.",
   "agency_note": "La licencia de médico veterinario la expide la Junta Examinadora de Médicos Veterinarios, adscrita a la ORCPS del Departamento de Salud (Ley Núm. 194-1979, Arts. 5, 6 y 18) — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -2458,6 +2460,8 @@
   ],
   "agency": "Tribunal Supremo de Puerto Rico",
   "agency_url": "https://www.poderjudicial.pr/",
+  "download_url": "https://www.poderjudicial.pr/",
+  "download_note": "Admission to practice law is granted by the Supreme Court of Puerto Rico — the Department of State examining-boards portal does not apply.",
   "agency_note": "La admisión al ejercicio de la abogacía la otorga el Tribunal Supremo de Puerto Rico — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -2600,6 +2604,8 @@
   ],
   "agency": "Tribunal Supremo de Puerto Rico",
   "agency_url": "https://www.poderjudicial.pr/",
+  "download_url": "https://www.poderjudicial.pr/",
+  "download_note": "Notary admission is granted by the Supreme Court of Puerto Rico — the Department of State examining-boards portal does not apply.",
   "agency_note": "La admisión al ejercicio de la notaría la otorga el Tribunal Supremo de Puerto Rico — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -2638,6 +2644,8 @@
   ],
   "agency": "Tribunal Supremo de Puerto Rico",
   "agency_url": "https://www.poderjudicial.pr/",
+  "download_url": "https://www.poderjudicial.pr/",
+  "download_note": "Sworn translator-interpreter credentials are issued by the Supreme Court of Puerto Rico — the Department of State examining-boards portal does not apply.",
   "agency_note": "La credencial de traductor-intérprete jurado la expide el Tribunal Supremo de Puerto Rico — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -2676,6 +2684,8 @@
   ],
   "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)",
   "agency_url": "https://www.trabajo.pr.gov/",
+  "download_url": "https://www.trabajo.pr.gov/",
+  "download_note": "Employment agency authorization is issued by the Department of Labor and Human Resources (DTRH) under Ley 417-1947 — the Department of State examining-boards portal does not apply.",
   "agency_note": "Las agencias de empleo se registran ante el Departamento del Trabajo y Recursos Humanos (DTRH) — Ley 417-1947 — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -4796,6 +4806,8 @@
   ],
   "agency": "Oficina del Comisionado de Seguros (OCS)",
   "agency_url": "https://www.ocs.pr.gov/",
+  "download_url": "https://www.ocs.pr.gov/",
+  "download_note": "Insurance producer/agent licenses are issued by the Office of the Commissioner of Insurance (OCS) under the Insurance Code of Puerto Rico — the Department of State examining-boards portal does not apply.",
   "agency_note": "Las licencias de productor/agente de seguros las expide la Oficina del Comisionado de Seguros (OCS) — Código de Seguros de PR, Ley 77-1957 — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -4834,6 +4846,8 @@
   ],
   "agency": "Oficina del Comisionado de Instituciones Financieras (OCIF)",
   "agency_url": "https://www.ocif.pr.gov/",
+  "download_url": "https://www.ocif.pr.gov/",
+  "download_note": "Mortgage institution licensing is handled by the Office of the Commissioner of Financial Institutions (OCIF) under Ley 24-2010 — the Department of State examining-boards portal does not apply.",
   "agency_note": "Las instituciones hipotecarias se licencian ante OCIF (Ley 24-2010) con registro NMLS — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
@@ -4972,6 +4986,8 @@
   ],
   "agency": "Departamento de Asuntos del Consumidor (DACO)",
   "agency_url": "https://www.daco.pr.gov/",
+  "download_url": "https://www.daco.pr.gov/",
+  "download_note": "Credit-services company licensing is handled by the Department of Consumer Affairs (DACO) under 7 LPRA Cap. 64A — the Department of State examining-boards portal does not apply.",
   "agency_note": "Las agencias rectificadoras de crédito se registran ante DACO (Ley de Agencias Rectificadoras de Crédito, 7 LPRA Cap. 64A) — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
