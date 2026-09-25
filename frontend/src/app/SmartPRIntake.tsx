@@ -4881,12 +4881,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // document may not even be needed.
       action = { kind: 'none', label: '' };
       bucket = 'needs_action';
-    } else if (req.applicability === 'verify_existing'
-      || req.applicability === 'supporting_evidence') {
-      // Not a new filing: verify-existing items need a records check (not
-      // a new application), and evidence items ride along with their parent
-      // filing. Offering a fresh application here would risk a duplicate
-      // filing, so these never surface a form action.
+    } else if (req.applicability === 'supporting_evidence'
+      || (req.applicability === 'verify_existing' && !govEntry && !sampleDef && !isFormPackage)) {
+      // No fillable form on the platform for this one: verify-existing items
+      // need a records check (not a new application), and evidence items ride
+      // along with their parent filing. These surface no standalone action.
+      // A verify-existing item WITH a built-in fillable form falls through to
+      // the form branches below — the platform's form is the "don't have it
+      // yet" path, alongside the upload for the document they already hold.
       action = { kind: 'none', label: '' };
       bucket = 'none';
     } else if (isFormPackage) {
