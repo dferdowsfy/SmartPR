@@ -214,6 +214,9 @@ function LegalBasisDisclosure({ item, lang }: { item: Obligation; lang: Lang }) 
     return legalBasisFor(item.source_reference, item.requirement_id, KB, status);
   }, [item.source_reference, item.requirement_id]);
   if (!basis) return null;
+  // Some graph citations are bare URLs with no separate citation_url — never
+  // render those as dead text; the citation itself becomes the link.
+  const linkUrl = basis.url || (/^https?:\/\/\S+$/i.test(basis.citation.trim()) ? basis.citation.trim() : null);
   return (
     <div className="mt-1">
       <button
@@ -229,8 +232,8 @@ function LegalBasisDisclosure({ item, lang }: { item: Obligation; lang: Lang }) 
       {open && (
         <div className="mt-1.5 max-w-xl rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-600">
           <div className="font-semibold text-[#161616]">
-            {basis.url ? (
-              <a href={basis.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
+            {linkUrl ? (
+              <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-brand hover:underline">
                 {basis.citation}
                 <ExternalLink className="h-3 w-3" />
               </a>
