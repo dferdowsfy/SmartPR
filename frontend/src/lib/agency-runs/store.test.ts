@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { authorizeFiling, createRun, peekRun } from "./store";
+import { authorizeFiling, createRun, listRunsForBusiness, peekRun } from "./store";
 import type { SubmissionObjective } from "./types";
 
 const objective: SubmissionObjective = {
@@ -51,6 +51,21 @@ describe("createRun submission-objective gate", () => {
     });
     assert.equal(run.filing_authorized, false);
     assert.equal(run.filing_confirmation, null);
+  });
+});
+
+describe("listRunsForBusiness", () => {
+  it("returns the run id so in-progress filings can offer Resume", async () => {
+    const run = await createRun({
+      business_id: "biz-resume",
+      filing_type: "SURI_REGISTER_TAXPAYER",
+      submissionObjective: { ...objective, business_id: "biz-resume" },
+    });
+    const listed = listRunsForBusiness("biz-resume");
+    const entry = listed.find((r) => r.filing_type === "SURI_REGISTER_TAXPAYER");
+    assert.ok(entry);
+    assert.equal(entry.id, run.id);
+    assert.equal(entry.status, run.status);
   });
 });
 

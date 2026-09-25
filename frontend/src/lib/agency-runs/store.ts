@@ -811,11 +811,11 @@ export function peekRun(id: string): AgencyRun | null {
  */
 export function listRunsForBusiness(
   businessId: string
-): { filing_type: AgencyFilingType; status: AgencyRunStatus }[] {
-  const out: { filing_type: AgencyFilingType; status: AgencyRunStatus }[] = [];
+): { filing_type: AgencyFilingType; status: AgencyRunStatus; id: string }[] {
+  const out: { filing_type: AgencyFilingType; status: AgencyRunStatus; id: string }[] = [];
   for (const run of runs().values()) {
     if (run.business_id !== businessId) continue;
-    out.push({ filing_type: run.filing_type, status: run.status });
+    out.push({ filing_type: run.filing_type, status: run.status, id: run.id });
   }
   return out;
 }

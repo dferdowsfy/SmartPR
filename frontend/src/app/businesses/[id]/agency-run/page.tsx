@@ -54,7 +54,7 @@ import {
 } from "../../../../lib/agency-runs/sensitiveFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
-import { AgencyChat, type SessionMsg } from "./AgencyChat";
+import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { OTHER_AGENCY_ID, type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import {
   buildChatMilestones,
@@ -383,6 +383,23 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         uploadsEn,
         uploadsEs,
       });
+    } finally {
+      setFilingBusyId(null);
+    }
+  };
+
+  /**
+   * Resume an in-progress filing: reopen its existing run in the workspace
+   * instead of starting over. poll() loads the run and the existing poll
+   * loop keeps it syncing while queued/running/paused.
+   */
+  const resumeFiling = async (filing: FilingOption) => {
+    const runId = filing.active_run_id;
+    if (!runId) return;
+    setFilingBusyId(filingBusyKey(filing));
+    setError(null);
+    try {
+      await poll(runId);
     } finally {
       setFilingBusyId(null);
     }
@@ -1174,6 +1191,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               scrollKey={scrollKey}
               scrollToLatestSignal={scrollToLatest}
               onStartFiling={(filing) => void startFiling(filing)}
+              onResumeFiling={(filing) => void resumeFiling(filing)}
               filingBusyId={filingBusyId}
               onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}
               onUploadEvidence={(file, tags) => void uploadToLocker(file, tags)}

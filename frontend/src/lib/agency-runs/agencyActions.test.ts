@@ -348,6 +348,36 @@ describe("resolveFilingOptions", () => {
     assert.equal(filings[0].filing_status, "in_progress");
   });
 
+  it("exposes the active run id on in-progress filings for Resume", () => {
+    const filings = all(
+      resolveFilingOptions({
+        ...base,
+        priorRuns: [{ filing_type: "OGPE_PERMISO_UNICO", status: "running", id: "run-123" }],
+        obligations: [
+          { id: "obl-p", name: "Permiso Único", requirement_id: "DOC_PERMISO_UNICO", agency: "OGPe", status: "MISSING" },
+        ],
+      })
+    );
+    assert.equal(filings.length, 1);
+    assert.equal(filings[0].filing_status, "in_progress");
+    assert.equal(filings[0].active_run_id, "run-123");
+  });
+
+  it("leaves active_run_id absent when in-progress comes from the obligation alone", () => {
+    const filings = all(
+      resolveFilingOptions({
+        ...base,
+        priorRuns: [],
+        obligations: [
+          { id: "obl-p", name: "Permiso Único", requirement_id: "DOC_PERMISO_UNICO", agency: "OGPe", status: "IN_PROGRESS" },
+        ],
+      })
+    );
+    assert.equal(filings.length, 1);
+    assert.equal(filings[0].filing_status, "in_progress");
+    assert.equal(filings[0].active_run_id, undefined);
+  });
+
   it("flags missing SmartPR information instead of ready", () => {
     const filings = all(
       resolveFilingOptions({

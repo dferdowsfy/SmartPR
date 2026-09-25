@@ -368,6 +368,12 @@ export interface FilingOption {
   supported: boolean;
   /** Fictional rehearsal portal entry (synthetic obligation). */
   demo?: boolean;
+  /**
+   * Id of the active run behind an `in_progress` filing — powers the
+   * Resume button so a filing is never a dead end. Absent when the
+   * in-progress state comes from the obligation alone (no run to reopen).
+   */
+  active_run_id?: string;
   // Convenience copies for grouped rendering.
   title_en: string;
   title_es: string;
@@ -450,7 +456,7 @@ function filingStatusFor(
 export function resolveFilingOptions(input: {
   business_id: string;
   passport: Record<string, unknown> | null;
-  priorRuns: { filing_type: AgencyFilingType; status: string }[];
+  priorRuns: { filing_type: AgencyFilingType; status: string; id?: string }[];
   obligations: ObligationLike[];
   /** Include the fictional rehearsal portal (admin / ?demo=1 only). */
   includeDemo?: boolean;
@@ -462,9 +468,14 @@ export function resolveFilingOptions(input: {
 
   const completed = new Set<AgencyFilingType>();
   const active = new Set<AgencyFilingType>();
+  /** Newest active run id per filing type — the Resume target. */
+  const activeRunId = new Map<AgencyFilingType, string>();
   for (const run of priorRuns ?? []) {
     if (COMPLETED_STATUSES.has(String(run.status))) completed.add(run.filing_type);
-    else if (ACTIVE_RUN_STATUSES.has(String(run.status))) active.add(run.filing_type);
+    else if (ACTIVE_RUN_STATUSES.has(String(run.status))) {
+      active.add(run.filing_type);
+      if (run.id) activeRunId.set(run.filing_type, run.id);
+    }
   }
 
   // Only enabled registry entries can fulfill an obligation — a disabled
@@ -542,6 +553,7 @@ export function resolveFilingOptions(input: {
         filing_status,
         supported: filing_status !== "unsupported",
         demo: config.agencyId === "DEMO_REHEARSAL" ? true : undefined,
+        active_run_id: activeRunId.get(action.filing_type),
         title_en: action.title_en,
         title_es: action.title_es,
         agency_id: config.agencyId,

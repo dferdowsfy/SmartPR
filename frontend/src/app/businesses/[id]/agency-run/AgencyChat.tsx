@@ -268,6 +268,7 @@ function FilingCard({
   filing,
   lang,
   onStart,
+  onResume,
   busy,
   disabled,
   passportHref,
@@ -275,6 +276,7 @@ function FilingCard({
   filing: FilingOption;
   lang: Lang;
   onStart: () => void;
+  onResume: () => void;
   busy: boolean;
   disabled: boolean;
   passportHref: string | null;
@@ -284,11 +286,17 @@ function FilingCard({
   // start anyway — the assistant asks for these during the run.
   const gate = action ? nonSensitiveMissingItems(action).length : 0;
   // Supported + ready or missing-information filings get the Start button.
-  // Unsupported, blocked, submitted, and in-progress filings never do.
+  // In-progress filings with a live run get Resume instead — an
+  // in-progress card with no action is a dead end. Unsupported, blocked,
+  // and submitted filings never get a button.
   const canStart =
     filing.supported &&
     (filing.filing_status === "ready_to_start" ||
       filing.filing_status === "missing_information");
+  const canResume =
+    filing.supported &&
+    filing.filing_status === "in_progress" &&
+    Boolean(filing.active_run_id);
   return (
     <div className="rounded-2xl border border-[#161616]/10 bg-white p-4 shadow-sm shadow-slate-950/[0.03]">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -339,6 +347,17 @@ function FilingCard({
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           {busy ? L("Starting…", "Iniciando…", lang) : L("Start", "Empezar", lang)}
+        </button>
+      )}
+      {canResume && (
+        <button
+          type="button"
+          disabled={busy || disabled}
+          onClick={onResume}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#1e4d38] px-5 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+          {busy ? L("Resuming…", "Continuando…", lang) : L("Resume", "Continuar", lang)}
         </button>
       )}
       {/* Passport completion stays available as a secondary action —
@@ -1196,6 +1215,8 @@ export interface AgencyChatProps {
   scrollToLatestSignal?: number;
   /** Start pre-flight for a specific SmartPR filing (obligation-joined option). */
   onStartFiling: (filing: FilingOption) => void;
+  /** Reopen the existing run behind an in-progress filing (never starts over). */
+  onResumeFiling: (filing: FilingOption) => void;
   filingBusyId: string | null;
   /** Pre-flight confirm → POST /api/agency-actions with the answers. */
   onConfirmPreflight: (msg: PreflightMsg, answers: PreflightAnswers) => Promise<void>;
@@ -1230,7 +1251,7 @@ export interface AgencyChatProps {
  * objective variants for the same obligation — the objective distinguishes
  * them so the spinner lands on the right card.
  */
-function filingBusyKey(filing: FilingOption): string {
+export function filingBusyKey(filing: FilingOption): string {
   return `${filing.id}:${filing.obligation_id}:${filing.action?.objective_en ?? ""}`;
 }
 
@@ -1414,6 +1435,7 @@ export function AgencyChat(props: AgencyChatProps) {
                               busy={props.filingBusyId === filingBusyKey(filing)}
                               disabled={props.runActive || props.filingBusyId !== null}
                               onStart={() => props.onStartFiling(filing)}
+                              onResume={() => props.onResumeFiling(filing)}
                               passportHref={`/businesses/${props.businessId}#business-passport`}
                             />
                           ))}
