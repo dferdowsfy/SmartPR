@@ -460,7 +460,9 @@ function ObligationRow({ item, business, businessId, evidence, reload, onMarkCom
                  filing workspace instead of kicking the user out to the
                  government site in a new tab. */
               <Link
-                href={`/businesses/${businessId}/agency-run`}
+                href={item.requirement_id
+                  ? `/businesses/${businessId}/agency-run?filing=${encodeURIComponent(item.requirement_id)}`
+                  : `/businesses/${businessId}/agency-run`}
                 title={L("Work through this filing with Clara — you stay in control of every step.", lang)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white"
               >

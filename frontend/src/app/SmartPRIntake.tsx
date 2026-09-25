@@ -5249,7 +5249,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const portalFiling = req.downloadUrl && req.downloadKind === "filing_portal" && filingBusinessId
       ? {
           label: L('File with Clara', language),
-          href: `/businesses/${filingBusinessId}/agency-run`,
+          href: req.document_id
+            ? `/businesses/${filingBusinessId}/agency-run?filing=${encodeURIComponent(req.document_id)}`
+            : `/businesses/${filingBusinessId}/agency-run`,
           hint: L('Work through this filing with Clara — you stay in control of every step.', language),
         }
       : undefined;
