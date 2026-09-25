@@ -13,7 +13,7 @@ import {
 /**
  * FICTIONAL clone of the Dept. of State registry login, for the
  * corporation-formation flow fixture. Accepts anything; stores nothing.
- * The human signs in here during takeover — Mita never does.
+ * The human signs in here during takeover — Clara never does.
  */
 export default function DeptStateRehearsalLogin() {
   const { t, data, setField } = useRehearsal();

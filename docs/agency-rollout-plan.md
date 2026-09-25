@@ -1,4 +1,4 @@
-# Mita agency rollout — working inventory
+# Clara agency rollout — working inventory
 
 _Last updated 2026-09-25. This is a working inventory, **not** proof that any government filing
 works. Source of truth: `verification`, `payment`, `launch` and `entry` on each config in
@@ -8,7 +8,7 @@ works. Source of truth: `verification`, `payment`, `launch` and `entry` on each 
 
 - One flow = one agency × one filing variant, reached only from its own **rule-emitted** requirement.
 - A mapped requirement is not a working workflow.
-- **Verified** = an authorized human completed an actual filing through Mita and the portal
+- **Verified** = an authorized human completed an actual filing through Clara and the portal
   confirmation is recorded on the config. No flow is verified today.
 - Real flows ship behind a launch switch; non-launchable variants stay visible as
   "Not yet available". Requirements with no flow stay visible as "Not yet supported".
@@ -140,7 +140,7 @@ record (the agency, or SmartPR acting as payment agent, which raises money-trans
 licensing questions); fee separation (government fee vs SmartPR fee as separate line items and
 receipts); refund rules (e.g. OGPe fees are non-refundable); daily reconciliation against agency
 receipts; and PCI scope review. Until an agreement exists, the only supported path is: pause at
-the agency's payment screen, show payee and portal amount, and let the human pay directly. Mita
+the agency's payment screen, show payee and portal amount, and let the human pay directly. Clara
 never improvises a payment route and never charges.
 
 If an integration is ever authorized, the payment step must show the payee, amount, government fee,
@@ -157,9 +157,9 @@ the consent text above the pay button. The signed `checkout.session.completed` w
 pick, checks access again, and stores only the Stripe `pm_…` reference, brand, last 4 and expiry
 (`use: "reminder_only"`) in `businesses.payment_settings`. That column is separate from
 `passport_json`: passport saves replace `passport_json` and the agent prompt embeds it. The
-Business Passport shows the card under "Payment settings", with Remove. At Mita's payment step the
+Business Passport shows the card under "Payment settings", with Remove. At Clara's payment step the
 handoff shows "Use your Visa •••• 4242" and the portal amount. The human still enters the card in
-the agency portal. SmartPR never charges it for government fees and Mita never types card details.
+the agency portal. SmartPR never charges it for government fees and Clara never types card details.
 Tests: `npm run test:billing` and `npm run test:dos:e2e`.
 
 ## 6. Next filing variants (priority order)

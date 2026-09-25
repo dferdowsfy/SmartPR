@@ -33,9 +33,9 @@ function demoPortalHost(): string {
  * - "documented": step content from official guides/manuals; nothing observed live.
  * - "partially_observed": some live screens walked read-only; the rest is documented.
  * - "rehearsed": the observed screens are cloned into a rehearsal fixture and a
- *   browser test proves every Mita request matches the visible step. Still
+ *   browser test proves every Clara request matches the visible step. Still
  *   NOT a live filing.
- * - "verified": an authorized human completed an actual filing through Mita
+ * - "verified": an authorized human completed an actual filing through Clara
  *   and the portal confirmation was recorded (see docs/agency-rollout-plan.md).
  */
 export type FilingVerificationStatus =
@@ -87,9 +87,9 @@ export interface PaymentFeasibility {
   /** What was checked to reach that conclusion, with dates. */
   integrationEvidence: string;
   /**
-   * What Mita does at the payment screen. Without an authorized integration
+   * What Clara does at the payment screen. Without an authorized integration
    * it is always "user_pays_in_portal": pause, show payee + amount, and let
-   * the human pay directly in the portal. Mita never improvises a payment
+   * the human pay directly in the portal. Clara never improvises a payment
    * route and never charges automatically.
    */
   smartprPath: "user_pays_in_portal" | "no_payment_step";
@@ -810,7 +810,7 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // the corporation requirement. LLCs arrive via DOC_CERT_ORGANIZATION.
     verification: {
       // Rehearsed = the observed screens are cloned and the browser test
-      // proves every Mita request matches the visible step. NOT a live
+      // proves every Clara request matches the visible step. NOT a live
       // filing: "verified" needs a real, human-submitted filing + confirmation.
       status: "rehearsed",
       fixture: {
@@ -1918,9 +1918,9 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     },
     verification: {
       status: "rehearsed",
-      fixture: { route: "/rehearsal-portal", test: "frontend/tests/mita-rehearsal.e2e.mjs" },
+      fixture: { route: "/rehearsal-portal", test: "frontend/tests/clara-rehearsal.e2e.mjs" },
       evidence:
-        "Fictional SmartPR portal; each page declares data-smartpr-step. Walked end to end (login takeover → form → SSN → certification takeover → unknown-state pause → human submission → confirmation) by the Mita rehearsal browser test.",
+        "Fictional SmartPR portal; each page declares data-smartpr-step. Walked end to end (login takeover → form → SSN → certification takeover → unknown-state pause → human submission → confirmation) by the Clara rehearsal browser test.",
     },
     requirementIds: ["demo:rehearsal-filing"],
   },

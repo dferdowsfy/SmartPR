@@ -65,7 +65,7 @@ describe("payment feasibility", () => {
     }
   });
 
-  it("without an authorized integration Mita only hands payment to the human", () => {
+  it("without an authorized integration Clara only hands payment to the human", () => {
     for (const c of AGENCY_FILING_CONFIGS) {
       if (c.payment.integration !== "authorized_integration") {
         assert.notEqual(c.payment.smartprPath as string, "smartpr_initiated", c.id);

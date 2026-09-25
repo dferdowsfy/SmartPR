@@ -3,14 +3,14 @@
  *
  * When the owner opts in at SmartPR checkout, the card they paid with is
  * remembered as a REFERENCE: the Stripe payment-method id plus display-only
- * details (brand, last 4, expiry). At an agency's payment step Mita shows it
+ * details (brand, last 4, expiry). At an agency's payment step Clara shows it
  * ("Use your Visa •••• 4242") so the owner knows which card to enter.
  *
  * What this is not:
  * - Not a way to pay the agency. Stripe never returns a raw card number and
  *   agency portals only accept card entry in their own checkout, so the owner
  *   still types the card there. SmartPR never charges this card for
- *   government fees and Mita never enters it.
+ *   government fees and Clara never enters it.
  * - Not storage for card numbers, CVV, or portal credentials. The record is
  *   built from a whitelist; anything else Stripe returns is dropped.
  */
@@ -19,9 +19,9 @@
 export const FILING_FEE_CARD_CONSENT_VERSION = "2026-09-reminder-only-v1";
 
 export const FILING_FEE_CARD_CONSENT_EN =
-  "Also show this card as a reminder when Mita reaches a government filing fee. You still enter the card in the agency's portal — SmartPR never charges it for government fees and keeps only the card brand and last 4 digits.";
+  "Also show this card as a reminder when Clara reaches a government filing fee. You still enter the card in the agency's portal — SmartPR never charges it for government fees and keeps only the card brand and last 4 digits.";
 export const FILING_FEE_CARD_CONSENT_ES =
-  "Mostrar también esta tarjeta como recordatorio cuando Mita llegue a un cargo de radicación del gobierno. Tú sigues escribiendo la tarjeta en el portal de la agencia — SmartPR nunca la cobra por cargos del gobierno y solo guarda la marca y los últimos 4 dígitos.";
+  "Mostrar también esta tarjeta como recordatorio cuando Clara llegue a un cargo de radicación del gobierno. Tú sigues escribiendo la tarjeta en el portal de la agencia — SmartPR nunca la cobra por cargos del gobierno y solo guarda la marca y los últimos 4 dígitos.";
 
 export interface FilingFeeCard {
   /** Stripe PaymentMethod id (pm_…) — a reference, not a card number. */

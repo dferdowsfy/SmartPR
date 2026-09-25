@@ -14,7 +14,7 @@
  * - Human-only steps (login, MFA, captcha, certification, signature,
  *   payment, review, submission) render a "do this in the browser" card
  *   with Take over — SmartPR never collects government credentials and
- *   Mita never certifies, signs, pays or submits.
+ *   Clara never certifies, signs, pays or submits.
  * - Anything inconsistent or unidentified resolves to "unknown", which
  *   pauses safely and offers Take over instead of guessing.
  *

@@ -46,7 +46,7 @@ function PricingPageInner() {
   const searchParams = useSearchParams();
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("cancel") === "1";
-  // Arriving from Mita / the passport ("Save one for next time"): list that
+  // Arriving from Clara / the passport ("Save one for next time"): list that
   // business first in the checkout page's filing-fee choice.
   const requestedBusiness = searchParams.get("business");
   const fromSaveCard = searchParams.get("saveCard") === "1";
@@ -215,7 +215,7 @@ function PricingPageInner() {
         {fromSaveCard ? (
           <p className={styles.banner} role="status">
             Pick a plan. On the checkout page, choose &ldquo;Use this card for
-            filing fees&rdquo; to have Mita remind you which card to use.
+            filing fees&rdquo; to have Clara remind you which card to use.
           </p>
         ) : null}
 

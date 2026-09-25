@@ -141,7 +141,7 @@ export type SessionMsg =
 /**
  * Criticality tones for chat bubbles. Background carries the level; text
  * stays near-black on every tone so each notification reads at a glance.
- * - action (hand — Mita needs you): strongest, rose
+ * - action (hand — Clara needs you): strongest, rose
  * - warn (yield sign): light yellow
  * - success / info (check marks): light green
  */
@@ -450,8 +450,8 @@ function FilingCard({
         <p className="mt-1.5 pl-14 text-[12px] leading-snug text-slate-500">
           <span className="font-semibold text-slate-600">{L("Early access: ", "Acceso anticipado: ", lang)}</span>
           {L(
-            "Mita pauses and hands over whenever the portal differs from what it expects.",
-            "Mita se detiene y te pasa el control cuando el portal no coincide con lo esperado.",
+            "Clara pauses and hands over whenever the portal differs from what it expects.",
+            "Clara se detiene y te pasa el control cuando el portal no coincide con lo esperado.",
             lang
           )}
         </p>
@@ -748,8 +748,8 @@ function PaymentHandoff({ run, lang }: { run: AgencyRunPublic; lang: Lang }) {
     [
       L("How you pay", "Cómo pagas", lang),
       L(
-        "You enter the card directly in the agency portal. Mita doesn't type card details and SmartPR doesn't charge this fee.",
-        "Tú escribes la tarjeta directamente en el portal de la agencia. Mita no escribe datos de tarjeta y SmartPR no cobra este cargo.",
+        "You enter the card directly in the agency portal. Clara doesn't type card details and SmartPR doesn't charge this fee.",
+        "Tú escribes la tarjeta directamente en el portal de la agencia. Clara no escribe datos de tarjeta y SmartPR no cobra este cargo.",
         lang
       ),
     ],
@@ -1580,7 +1580,7 @@ export function AgencyChat(props: AgencyChatProps) {
    * Programmatic smooth scrolls never release it, which is what broke the
    * old "only when already near the bottom" check after a click.
    */
-  // Off at entry: opening Mita shows the thread from its first message.
+  // Off at entry: opening Clara shows the thread from its first message.
   // It arms once the user acts in the chat, a run's cards arrive, or a
   // restored session asks to jump to the newest activity.
   const stickRef = useRef(false);

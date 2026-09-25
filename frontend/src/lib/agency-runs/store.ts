@@ -1036,7 +1036,7 @@ export async function resumeRun(
  * Returns the public run; null when the run does not exist.
  */
 /**
- * Final submission is a human-only step: Mita never certifies, signs, pays
+ * Final submission is a human-only step: Clara never certifies, signs, pays
  * or submits on the user's behalf. The "File it for me" path is disabled —
  * the human submits in the browser (Take over) and the agent only reports
  * the confirmation it observes. Kept as a switch so the capability cannot

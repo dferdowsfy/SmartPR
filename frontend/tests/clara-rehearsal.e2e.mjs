@@ -1,15 +1,15 @@
 /**
- * Mita rehearsal — end-to-end acceptance walkthrough.
+ * Clara rehearsal — end-to-end acceptance walkthrough.
  *
  * Drives the real run page against a stubbed run API while the embedded
  * browser shows the actual /rehearsal-portal pages (the test acts as the
  * human inside them during takeover). Checks that every chat request
  * matches the visible portal step, human-only steps never show inputs,
  * no password inputs appear, unknown states pause safely, the chat stays
- * pinned to the newest activity, and the human — not Mita — submits.
+ * pinned to the newest activity, and the human — not Clara — submits.
  *
  * Usage (dev server running):
- *   BASE_URL=http://localhost:3000 node tests/mita-rehearsal.e2e.mjs [outDir] [width] [height] [tag]
+ *   BASE_URL=http://localhost:3000 node tests/clara-rehearsal.e2e.mjs [outDir] [width] [height] [tag]
  * Exits non-zero on any failed check.
  */
 import { chromium } from "playwright";
@@ -65,10 +65,10 @@ await page.route("**/api/**", async (route) => {
 });
 const results = [];
 const check = (name, ok, detail = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? " — " + detail : ""}`);
-const chat = () => page.locator("[aria-label='Mita chat']");
+const chat = () => page.locator("[aria-label='Clara chat']");
 const card = () => page.locator("#agency-intervention");
 const chatMetrics = () => page.evaluate(() => {
-  const box = document.querySelector("[aria-label='Mita chat'] .overflow-y-auto");
+  const box = document.querySelector("[aria-label='Clara chat'] .overflow-y-auto");
   const content = box.firstElementChild; const last = content.lastElementChild;
   const b = box.getBoundingClientRect(), l = last.getBoundingClientRect();
   return { fromBottom: Math.round(box.scrollHeight - box.scrollTop - box.clientHeight), lastVisible: l.bottom <= b.bottom + 2 && l.top >= b.top - 2 || (l.top < b.bottom && l.bottom <= b.bottom + 2), docScroll: document.documentElement.scrollHeight - innerHeight };

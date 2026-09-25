@@ -46,7 +46,7 @@ export function AgencyRunCard({
       </span>
     ) : null;
 
-  // Dark card in the Mita workspace's own palette (#161616) so the entry
+  // Dark card in the Clara workspace's own palette (#161616) so the entry
   // point reads as the same unique feature as the workspace it opens.
   return (
     <section className="rounded-2xl border border-white/10 bg-[#161616] p-5 shadow-sm">
@@ -58,7 +58,7 @@ export function AgencyRunCard({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-bold text-[#f6f3ea]">
-                {L("File with Mita", "Radicar con Mita", lang)}
+                {L("File with Clara", "Radicar con Clara", lang)}
               </h2>
               <span className="inline-flex items-center rounded-full border border-amber-200/30 bg-amber-300/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-200">
                 {L("Live visual · pilot", "Visual en vivo · piloto", lang)}
@@ -78,7 +78,7 @@ export function AgencyRunCard({
           href={`/businesses/${businessId}/agency-run`}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[#f6f3ea] px-5 py-2.5 text-sm font-semibold text-[#161616] transition hover:bg-white"
         >
-          {L("Open Mita", "Abrir Mita", lang)}
+          {L("Open Clara", "Abrir Clara", lang)}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

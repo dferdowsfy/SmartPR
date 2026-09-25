@@ -133,7 +133,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
     >
       <div className="flex min-h-0 flex-1 flex-col bg-white">
         {/* Panel header — SmartPR's own chrome (no fake browser window):
-            what Mita is working in, the portal address, and live state. */}
+            what Clara is working in, the portal address, and live state. */}
         <div className="flex shrink-0 items-center gap-3 border-b border-[#161616]/10 bg-[#f7f2e4] px-4 py-2">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
@@ -149,7 +149,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
             <span className="hidden shrink-0 text-[13px] font-bold text-[#23211c] sm:inline">
               {props.takeover
                 ? L("You're in control", "Tienes el control", lang)
-                : L("Mita's browser", "Navegador de Mita", lang)}
+                : L("Clara's browser", "Navegador de Clara", lang)}
             </span>
             <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-full bg-white px-2.5 py-0.5 text-[13px] font-medium text-[#6b675e] ring-1 ring-[#161616]/10">
               <Lock className="h-3 w-3 shrink-0 text-[#1e4d38]" />
@@ -297,8 +297,8 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
               <KeyRound className="h-3.5 w-3.5 shrink-0 text-amber-700" />
               <span>
                 {L(
-                  "You're in control — click and type in the page below, then press “I'm done” to hand it back to Mita.",
-                  "Tienes el control — haz clic y escribe en la página, luego pulsa “Terminé” para devolvérselo a Mita.",
+                  "You're in control — click and type in the page below, then press “I'm done” to hand it back to Clara.",
+                  "Tienes el control — haz clic y escribe en la página, luego pulsa “Terminé” para devolvérselo a Clara.",
                   lang
                 )}
               </span>
@@ -318,7 +318,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
           >
             {run.live_url ? (
               <>
-                {/* Read-only while Mita waits on chat fields: `inert` blocks
+                {/* Read-only while Clara waits on chat fields: `inert` blocks
                     focus, keys and clicks while the stream keeps playing. */}
                 <div
                   inert={props.fieldsPause && !props.takeover}
@@ -327,7 +327,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                   <iframe
                     key={props.previewKey}
                     src={embedLiveUrl(run.live_url)}
-                    title={L("Mita's live browser", "Navegador en vivo de Mita", lang)}
+                    title={L("Clara's live browser", "Navegador en vivo de Clara", lang)}
                     className={`h-full w-full border-0 bg-white ${
                       props.fieldsPause && !props.takeover ? "pointer-events-none" : ""
                     }`}
@@ -340,8 +340,8 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                   <div className="pointer-events-none sticky inset-x-0 bottom-0 z-10 -mt-12 flex justify-center p-2">
                     <div className="rounded-full bg-[#1e4d38] px-3 py-1.5 text-[13px] font-semibold text-white shadow-md">
                       {L(
-                        "Answer in the chat — Mita will type it here",
-                        "Responde en el chat — Mita lo escribirá aquí",
+                        "Answer in the chat — Clara will type it here",
+                        "Responde en el chat — Clara lo escribirá aquí",
                         lang
                       )}
                     </div>
@@ -355,8 +355,8 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
                     </p>
                     <p className="max-w-xs text-center text-[13px] text-[#6b675e]">
                       {L(
-                        "Mita is connecting to a secure browser — usually a few seconds.",
-                        "Mita se está conectando a un navegador seguro — suele tardar unos segundos.",
+                        "Clara is connecting to a secure browser — usually a few seconds.",
+                        "Clara se está conectando a un navegador seguro — suele tardar unos segundos.",
                         lang
                       )}
                     </p>
@@ -450,7 +450,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
               <div className="flex items-center gap-3 rounded-full bg-[#161616] py-1.5 pl-4 pr-1.5 text-[13px] font-semibold text-white shadow-lg">
                 <span>
                   {run.portal_step?.kind === "unknown"
-                    ? L("Mita can't identify this step — your turn", "Mita no identifica este paso — te toca", lang)
+                    ? L("Clara can't identify this step — your turn", "Clara no identifica este paso — te toca", lang)
                     : L("Your turn on this step", "Te toca en este paso", lang)}
                 </span>
                 {run.live_url && (

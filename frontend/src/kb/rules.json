@@ -2194,8 +2194,16 @@
     "date": "2026-09-21",
     "change": "citation corrected: veterinary licensing authority is the Junta Examinadora de Médicos Veterinarios (ORCPS, Dept. de Salud) under Ley 194-1979 — never the Dept. of State's Juntas Examinadoras; citation_source rule (no longer inherited from document)",
     "reason": "QA 2026-09-21 21:00 cycle (S120, Mayagüez): REG-CITATION-VET-001. Primary source: salud.pr.gov/CMS/133. Same defect class as REG-CITATION-INSURANCE-001 (RULE_0224)."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "agency/agency_url/agency_note override added",
+    "reason": "QA 2026-09-25 09:00 cycle (S196, Ponce vet clinic): the professional-license card rendered the 'Department of State Examining Boards' pill, but the rule's own statute-confidence citation places the Junta Examinadora de Médicos Veterinarios under ORCPS/Departamento de Salud. Same fix class as 2f74e7f (tattoo/RULE_0696). Live-confirmed: production card showed the wrong pill on 2026-09-25."
    }
-  ]
+  ],
+  "agency": "Departamento de Salud",
+  "agency_url": "https://www.salud.pr.gov/CMS/133",
+  "agency_note": "La licencia de médico veterinario la expide la Junta Examinadora de Médicos Veterinarios, adscrita a la ORCPS del Departamento de Salud (Ley Núm. 194-1979, Arts. 5, 6 y 18) — no las Juntas Examinadoras del Departamento de Estado."
  },
  {
   "id": "RULE_0104",
@@ -4587,13 +4595,21 @@
   "citation_confidence": "statute",
   "citation_inherited_from": "DOC_VEHICLE_REGISTRATION",
   "citation_source": "document",
-  "compliance_mode": "verify_existing",
   "change_log": [
    {
     "date": "2026-09-17",
     "change": "compliance_mode set to verify_existing",
     "reason": "QA 2026-09-17 15:00 cycle (S17, Cataño existing food truck): an operating food truck was shown DTOP commercial vehicle registration (DOC_VEHICLE_REGISTRATION) as REQUIRED — as if registering for the first time. Same defect class as the health (257f7b6), fire/CFPM (d23e9a4), and tourism/room-tax (3348c4d) sweeps: commercial-vehicle registration is an operating obligation; existing operators verify what they hold, new businesses register. New businesses still see REQUIRED via the classifier businessStatus mapping. All swept rules have no missing_fact_keys (the RULE_0664 lesson: never set compliance_mode on heuristic rules with unresolved missing facts). Deliberately excluded: RULE_0021 (heuristic question-trigger with missing_fact_keys=[vehicle_ownership]) and RULE_0186/RULE_0188 (heuristic logistics/warehouse associations with missing_fact_keys=[commercial_vehicles]). Remaining unswept family with the same gap: DOC_PROFESSIONAL_LICENSE (31 rules, incl. RULE_0227 heuristic on licensed_profession_type)."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "verification set to heuristic; compliance_mode removed; missing_fact_keys=['vehicle_ownership']",
+    "reason": "QA 2026-09-25 09:00 cycle (S197, Bayamón used-car dealership): the BT-keyed rule rendered DOC_VEHICLE_REGISTRATION REQUIRED for a dealership with no stated commercial vehicles. Contradicts Darius-validated G12/G24/G25 ground truth ('Only require commercial vehicle registration if this business actually owns/operates regulated road vehicles'). Auction inventory is merchandise, not a company fleet. Same honest posture as the question-trigger family (RULE_0021): needs_more_information until vehicle ownership is confirmed. Sibling BT rules (trucking/courier/taxi/moving/freight/food-truck) untouched — those BTs inherently imply road-vehicle operation; a dealership does not."
    }
+  ],
+  "verification": "heuristic",
+  "missing_fact_keys": [
+   "vehicle_ownership"
   ]
  },
  {
@@ -8536,6 +8552,29 @@
     "date": "2026-09-22",
     "change": "new rule added (REG-BIOHAZARD-ORPHAN-001)",
     "reason": "QA 2026-09-22 21:00 cycle (S144): Q_BIOHAZARD_WASTE is asked by 7 personal-care/body-art BTs (beauty salon, barbershop, nail salon, spa, massage therapy, tattoo shop, esthetics studio) but NO rule keyed on it — answering 'yes' (e.g. tattoo sharps) produced zero requirement. Biohazard waste (sharps/infectious) is a subset of medical waste; this rule mirrors RULE_0683's validated heuristic structure (stays heuristic by design per the 2026-09-21 deep-research verdict — waste stream, quantity, and vendor-manifest facts still needed via missing_fact_keys=[biomedical_waste_types]). Generalizes across all 7 BTs."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0698",
+  "rule_type": "business_type",
+  "business_type_id": "BT_CAR_DEALERSHIP",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DACO_DEALER_LICENSE",
+  "citation": "Registro Único de Dealers (DACO + DTOP): los concesionarios de vehículos de motor deben tener licencia de DACO para operar.",
+  "citation_url": "https://www.daco.pr.gov/consumidores",
+  "citation_confidence": "official",
+  "citation_source": "rule",
+  "requires_business": true,
+  "compliance_mode": "verify_existing",
+  "verification": "verified",
+  "change_log": [
+   {
+    "date": "2026-09-25",
+    "change": "New rule: BT_CAR_DEALERSHIP requires the DACO dealer license.",
+    "reason": "QA 2026-09-25 09:00 cycle (S197, Bayamón used-car dealership): the KB had no dealer-license rule for car dealerships — a HIGH-severity false negative. Primary source (daco.pr.gov/consumidores, verified 2026-09-25): 'A través del Registro único de dealers, el DACO y el DTOP colaboran...' / 'verifica en el Registro Único los concesionarios que tienen licencia para operar'. Only verified fields modeled; application form/fee/reglamento number NOT yet verified — see CONTENT_REQUIRES_RESEARCH follow-up."
    }
   ]
  }

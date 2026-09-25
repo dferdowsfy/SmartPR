@@ -66,7 +66,7 @@ export function filingFeeCheckoutParts(
   const options = ordered.map((b, i) => {
     const base = clip(
       single
-        ? `Yes — remind me at Mita's filing-fee step (${b.name})`
+        ? `Yes — remind me at Clara's filing-fee step (${b.name})`
         : `Yes, for ${b.name}`,
       96
     );

@@ -31,7 +31,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   // Final submission stays with the human (Take over → submit in the
-  // browser). Mita never submits on the user's behalf.
+  // browser). Clara never submits on the user's behalf.
   if (!AGENT_FINAL_SUBMIT_ENABLED) {
     return Response.json({ error: "human_submission_only" }, { status: 403 });
   }

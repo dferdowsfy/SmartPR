@@ -1,5 +1,5 @@
 /**
- * Filing readiness for the Mita chat: which supporting documents SmartPR has
+ * Filing readiness for the Clara chat: which supporting documents SmartPR has
  * on file, and for each filing how many of its readiness items are in place.
  *
  * Built only from real records — Evidence Locker rows, the Business Passport

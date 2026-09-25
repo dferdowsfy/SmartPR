@@ -1,7 +1,7 @@
 /**
  * Filing flow definitions — one agency × one filing variant.
  *
- * A flow is the executable contract Mita follows for a real portal:
+ * A flow is the executable contract Clara follows for a real portal:
  * every screen in order with the signals that identify it, the Business
  * Passport field map for its inputs, which steps are human-only, and how to
  * recover from known validation errors. It complements the playbook on the

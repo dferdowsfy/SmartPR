@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Mita (agency assistant) — CHAT-PRIMARY run page.
+ * Clara (agency assistant) — CHAT-PRIMARY run page.
  *
  * The chat thread (AgencyChat) is the primary surface for the whole run:
  * filing picker → pre-flight card → goal brief → milestone messages → one
@@ -102,7 +102,7 @@ function StatusPill({ status, lang }: { status: AgencyRunStatus; lang: Lang }) {
 }
 
 /**
- * Segmented passport-progress bar from the Mita design: filled segments in
+ * Segmented passport-progress bar from the Clara design: filled segments in
  * deep forest green, remaining segments in gold.
  */
 function SegmentedBar({ known, total }: { known: number; total: number }) {
@@ -201,7 +201,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     };
   }, [businessId]);
 
-  /** Portal-fields progress for the Mita chat header ("Portal fields 11 of 12"). */
+  /** Portal-fields progress for the Clara chat header ("Portal fields 11 of 12"). */
   const portalFieldsProgress = useMemo(() => {
     for (let i = msgs.length - 1; i >= 0; i--) {
       const m = msgs[i];
@@ -395,7 +395,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   }, [lang]);
 
   /**
-   * Session continuity: leaving for the dashboard never discards a Mita
+   * Session continuity: leaving for the dashboard never discards a Clara
    * session. The active run id (never field values) is remembered per
    * business, and reopening the route restores that run and jumps the
    * conversation to where the user left off. The run itself lives
@@ -1069,7 +1069,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         }
       : null;
 
-  // Small screens: when Mita needs the user (fields, review, done), bring
+  // Small screens: when Clara needs the user (fields, review, done), bring
   // the conversation forward — unless they are driving the browser.
   const needsChatKey =
     run && (run.status === "paused" || run.status === "review" || run.status === "submitted")
@@ -1103,7 +1103,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   /**
-   * The Mita route is always a viewport-locked workspace: one compact
+   * The Clara route is always a viewport-locked workspace: one compact
    * persistent header, then the conversation and the agency browser filling
    * the rest of the screen. Every flex ancestor between the page and each
    * panel's own scroller carries min-h-0, so the panels — never the page —
@@ -1134,8 +1134,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               title={
                 run && !terminal
                   ? L(
-                      "Mita keeps your place — reopen this filing to pick up where you left off.",
-                      "Mita guarda tu lugar — vuelve a abrir este trámite para seguir donde lo dejaste.",
+                      "Clara keeps your place — reopen this filing to pick up where you left off.",
+                      "Clara guarda tu lugar — vuelve a abrir este trámite para seguir donde lo dejaste.",
                       lang
                     )
                   : undefined
@@ -1153,7 +1153,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                   ? bizHeader.municipality
                     ? `${bizHeader.name} · ${bizHeader.municipality}`
                     : bizHeader.name
-                  : L("Mita · Assisted filing", "Mita · Radicación asistida", lang)}
+                  : L("Clara · Assisted filing", "Clara · Radicación asistida", lang)}
               </p>
               <p className="truncate font-[family-name:var(--font-display)] text-[17px] leading-tight text-[#f4efe2]">
                 {workflowLabel}
@@ -1168,7 +1168,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 </span>
               )}
             </div>
-            {/* Filing progress: portal fields (what Mita still needs) on
+            {/* Filing progress: portal fields (what Clara still needs) on
                 md+, the SmartPR workflow step on xl. */}
             {portalFieldsProgress && (
               <span
@@ -1280,7 +1280,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 ? "lg:w-[38%] lg:min-w-[360px] lg:max-w-[480px] lg:flex-none lg:border-r lg:border-[#161616]/10"
                 : "lg:mx-auto lg:w-full lg:max-w-3xl"
             }`}
-            aria-label={L("Mita chat", "Chat de Mita", lang)}
+            aria-label={L("Clara chat", "Chat de Clara", lang)}
           >
             <AgencyChat
               lang={lang}
@@ -1368,8 +1368,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 </p>
                 <p className="max-w-sm text-[13px] text-[#6b675e]">
                   {L(
-                    "You'll watch Mita fill every field. You review and submit — nothing is sent without your approval.",
-                    "Verás a Mita llenar cada campo. Tú revisas y envías — nada se envía sin tu aprobación.",
+                    "You'll watch Clara fill every field. You review and submit — nothing is sent without your approval.",
+                    "Verás a Clara llenar cada campo. Tú revisas y envías — nada se envía sin tu aprobación.",
                     lang
                   )}
                 </p>
@@ -1394,7 +1394,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
               id="mita-stuck-title"
               className="mt-3 font-[family-name:var(--font-display)] text-xl text-[#23211c]"
             >
-              {L("Mita is stuck on this step", "Mita se trancó en este paso", lang)}
+              {L("Clara is stuck on this step", "Clara se trancó en este paso", lang)}
             </h2>
             <p className="mt-2 text-[15px] leading-relaxed text-[#6b675e]">
               {L(

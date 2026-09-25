@@ -145,8 +145,8 @@ export function filingGateCopy(count: number, lang: Lang): string {
  */
 export function filingNotAvailableCopy(lang: Lang): string {
   return L(
-    "Mita knows which filing this is, but its portal steps haven't been proven yet, so it can't start here. You can file it directly with the agency.",
-    "Mita sabe qué trámite es, pero sus pasos en el portal aún no están comprobados, así que no puede empezar aquí. Puedes radicarlo directamente con la agencia.",
+    "Clara knows which filing this is, but its portal steps haven't been proven yet, so it can't start here. You can file it directly with the agency.",
+    "Clara sabe qué trámite es, pero sus pasos en el portal aún no están comprobados, así que no puede empezar aquí. Puedes radicarlo directamente con la agencia.",
     lang
   );
 }

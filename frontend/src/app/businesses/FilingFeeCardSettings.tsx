@@ -106,8 +106,8 @@ export function FilingFeeCardSettings({ businessId, lang }: { businessId: string
       )}
       <p className="mt-2 text-[11px] text-slate-500">
         {L(
-          "A reminder only: Mita shows this card at an agency's payment step and you enter it in the agency portal yourself. SmartPR keeps only the brand and last 4 digits and never charges it for government fees. Removing it here doesn't change your SmartPR subscription.",
-          "Solo un recordatorio: Mita muestra esta tarjeta en el paso de pago de la agencia y tú la escribes en el portal. SmartPR solo guarda la marca y los últimos 4 dígitos y nunca la cobra por cargos del gobierno. Quitarla aquí no cambia tu suscripción de SmartPR.",
+          "A reminder only: Clara shows this card at an agency's payment step and you enter it in the agency portal yourself. SmartPR keeps only the brand and last 4 digits and never charges it for government fees. Removing it here doesn't change your SmartPR subscription.",
+          "Solo un recordatorio: Clara muestra esta tarjeta en el paso de pago de la agencia y tú la escribes en el portal. SmartPR solo guarda la marca y los últimos 4 dígitos y nunca la cobra por cargos del gobierno. Quitarla aquí no cambia tu suscripción de SmartPR.",
           lang
         )}
       </p>

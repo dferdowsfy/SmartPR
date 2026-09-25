@@ -1,7 +1,7 @@
 /**
  * Dept. of State corporation formation — rehearsal browser test.
  *
- * Drives the real Mita run page against the fictional clone of the
+ * Drives the real Clara run page against the fictional clone of the
  * recorded registry wizard (/rehearsal-portal/dept-state). The run API is
  * stubbed, but every state it serves is produced by the real code under
  * test:
@@ -106,7 +106,7 @@ const card = (page: Page) => page.locator("#agency-intervention");
 const pwInputs = (page: Page) => page.evaluate(() => document.querySelectorAll("input[type=password]").length);
 const chatPinned = (page: Page) =>
   page.evaluate(() => {
-    const box = document.querySelector("[aria-label='Mita chat'] .overflow-y-auto") as HTMLElement;
+    const box = document.querySelector("[aria-label='Clara chat'] .overflow-y-auto") as HTMLElement;
     return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
   });
 const mobile = W < 1024;
@@ -167,7 +167,7 @@ await page.waitForTimeout(800);
 const corpCard = page.locator("[data-testid=filing-card]", { hasText: "Form a corporation" });
 check("switch off: corporation filing is visible", await corpCard.isVisible());
 check("switch off: shows 'Not yet available' with no Submit", /Not yet available/.test(await corpCard.innerText()) && (await corpCard.getByRole("button", { name: "Submit", exact: true }).count()) === 0);
-const pickerText = await page.locator("[aria-label='Mita chat']").innerText();
+const pickerText = await page.locator("[aria-label='Clara chat']").innerText();
 check("LLC routes to its own variant, not the corporation", /Form an LLC \(Certificate of Organization\)/.test(pickerText));
 check("annual report routes to its own variant", /Annual report \/ annual fee/.test(pickerText));
 check("unsupported requirements stay visible", /Health \/ Sanitary Permit/.test(pickerText) && /Not yet supported/.test(pickerText));
@@ -184,7 +184,7 @@ check("composer: refuses a password and sends nothing", asked.length === 0 && /D
 await composer.fill("What does the Department of State need?");
 await composer.press("Enter");
 await page.waitForTimeout(800);
-check("composer: question goes to the SmartPR assistant", asked.length === 1 && /Certificate of Incorporation is filed/.test(await page.locator("[aria-label='Mita chat']").innerText()));
+check("composer: question goes to the SmartPR assistant", asked.length === 1 && /Certificate of Incorporation is filed/.test(await page.locator("[aria-label='Clara chat']").innerText()));
 await page.screenshot({ path: `${OUT}/dos-${TAG}-0-picker-off.png` });
 
 // 2 — pilot switch on: startable.
@@ -256,7 +256,7 @@ v = await visible(f);
 agentPauses(`PAUSE_USER_LOGIN\nPORTAL_STEP: kind=signature; title=${v.heading}\nREQUIRED_FIELDS:\n- id=email; label=Email; type=email; sensitive=false\n- id=password; label=Password; type=password; sensitive=true`, "USER_LOGIN");
 await showChat(page); await waitCard(page);
 await assertMatches(page, f, "signatures (contradictory report)");
-check("signatures: human signs — Mita never does", /never certify or sign for you/.test(await card(page).innerText()));
+check("signatures: human signs — Clara never does", /never certify or sign for you/.test(await card(page).innerText()));
 await page.screenshot({ path: `${OUT}/dos-${TAG}-2-signatures.png` });
 await card(page).getByRole("button", { name: "Take over the browser" }).click();
 await page.waitForTimeout(600);
@@ -315,7 +315,7 @@ const conf = (await f.locator("[data-testid=dos-confirmation]").innerText()).mat
 await page.getByRole("button", { name: "I'm done" }).click();
 await page.waitForTimeout(1800);
 await showChat(page);
-const finalChat = await page.locator("[aria-label='Mita chat']").innerText();
+const finalChat = await page.locator("[aria-label='Clara chat']").innerText();
 check("confirmation recorded after the human submitted", Boolean(conf) && finalChat.includes(conf!) && /You submitted this filing/.test(finalChat), conf);
 await page.screenshot({ path: `${OUT}/dos-${TAG}-5-confirmation.png` });
 

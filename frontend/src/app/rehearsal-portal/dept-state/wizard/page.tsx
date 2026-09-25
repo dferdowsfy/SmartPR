@@ -6,11 +6,11 @@
  * heading, distinctive control and fields recorded in the 2026-09-24
  * read-only walkthrough (see lib/agency-runs/flows/deptStateCorporation.ts),
  * and declares data-smartpr-step / data-flow-step so the browser test can
- * prove every Mita request matches the visible screen.
+ * prove every Clara request matches the visible screen.
  *
  * Screens never observed live (Signatures, Payment, Thank You) are clearly
  * approximations. The "survey" screen is NOT in the recorded flow — it
- * simulates the portal changing, which Mita must treat as unknown.
+ * simulates the portal changing, which Clara must treat as unknown.
  * Nothing is stored or sent anywhere.
  */
 import { Suspense, useState } from "react";
