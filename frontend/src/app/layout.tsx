@@ -1,22 +1,33 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { IBM_Plex_Sans, Newsreader } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import "./validador.css";
 import { AuthRecoveryRedirect } from "./components/AuthRecoveryRedirect";
 import { BrandProvider } from "./components/brand/BrandProvider";
 import { TopNavMount } from "./components/TopNavMount";
 
-const sans = IBM_Plex_Sans({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
+// Self-hosted (fonts/, from @fontsource, OFL): next/font/google downloads
+// at build time and broke Railway builds when that fetch failed. The latin
+// subset covers English and Spanish (á, é, ñ, ü, ¿, ¡).
+const sans = localFont({
+  src: [
+    { path: "./fonts/ibm-plex-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ibm-plex-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/ibm-plex-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-sans",
+  display: "swap",
 });
 
-const display = Newsreader({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
+const display = localFont({
+  src: [
+    { path: "./fonts/newsreader-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/newsreader-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/newsreader-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-display",
+  display: "swap",
 });
 
 const SITE_URL = "https://www.getsmartpr.com/";
