@@ -4,7 +4,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FileCheck2 } from "lucide-react";
-import { TopNav } from "../history/ui";
 import { StatusBadge } from "../components/compliance/StatusBadge";
 import { L } from "../i18n";
 import { useLang } from "../useLang";
@@ -39,8 +38,8 @@ function FilingsContent() {
   const groups = useMemo(() => groupAnnualFilings(filings), [filings]);
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="filings" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <main className="mx-auto max-w-5xl px-5 py-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
@@ -136,7 +135,7 @@ function FilingsContent() {
 
 function FilingsFallback() {
   const lang = useLang();
-  return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="filings" /><div className="p-12 text-center text-slate-500">{L("Loading filings…", lang)}</div></div>;
+  return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-slate-500">{L("Loading filings…", lang)}</div></div>;
 }
 
 export default function FilingsPage() {

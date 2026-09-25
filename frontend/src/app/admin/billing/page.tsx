@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "../../history/ui";
 
 type Row = {
   user_id: string;
@@ -129,8 +128,8 @@ export default function AdminBillingPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f4f1ea", color: "#1a1a1a" }}>
-      <TopNav active="admin" />
+    <div style={{ minHeight: "calc(100dvh - var(--topnav-h, 64px))", background: "#f4f1ea", color: "#1a1a1a" }}>
+      
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px 64px" }}>
         <p style={{ marginBottom: 8 }}>
           <Link href="/admin/requirements">← Admin</Link>

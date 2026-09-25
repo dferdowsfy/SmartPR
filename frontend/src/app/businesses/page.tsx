@@ -6,7 +6,6 @@ import {
   ArrowRight, BriefcaseBusiness, Building2, FlaskConical, HardHat, Martini,
   MoreVertical, Plus, Search, Store, Utensils,
 } from "lucide-react";
-import { TopNav } from "../history/ui";
 import { useLang } from "../useLang";
 
 interface Business {
@@ -182,8 +181,8 @@ export default function BusinessesPage() {
   const paged = shown.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
-      <TopNav active="businesses" />
+    <div className="page-viewport bg-[#f4f1ea] text-[#161616]">
+      
       <main className="mx-auto max-w-[1140px] px-5 py-10 sm:px-6">
         <h1 className="text-[36px] font-bold tracking-tight sm:text-[42px]">{es ? "Mis negocios" : "My businesses"}</h1>
         <p className="mt-2 max-w-xl text-[#5a5a5a]">{es ? "Perfiles permanentes para los negocios y clientes para los que radicas en Puerto Rico." : "Permanent profiles for the businesses and clients you file for in Puerto Rico."}</p>

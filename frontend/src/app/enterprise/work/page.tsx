@@ -7,7 +7,6 @@
 // -> Status -> Readiness impact chain.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { TopNav } from "../../history/ui";
 import { EnterpriseSubNav } from "../_nav";
 
 interface EvidenceSummary {
@@ -900,7 +899,7 @@ export default function EnterpriseWorkPage() {
   if (bootError) {
     return (
       <>
-        <TopNav active="enterprise" />
+        
         <main className="mx-auto max-w-7xl px-4 py-10">
           <div role="alert" className="rounded border border-red-200 bg-red-50 px-4 py-3 text-red-800">{bootError}</div>
         </main>
@@ -910,7 +909,7 @@ export default function EnterpriseWorkPage() {
 
   return (
     <>
-      <TopNav active="enterprise" />
+      
       <main className="mx-auto max-w-[1400px] px-4 py-6">
       <EnterpriseSubNav active="/enterprise/work" />
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

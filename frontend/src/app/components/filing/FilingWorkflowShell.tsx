@@ -12,7 +12,6 @@ import {
   CircleHelp,
   Sparkles,
 } from "lucide-react";
-import { TopNav } from "../../history/ui";
 
 export type FilingStage = "intake" | "requirements" | "deliverables";
 
@@ -40,8 +39,6 @@ export interface SmartPRLiveData {
   whyAsking?: string | null;
 }
 
-type TopNavActive = "start" | "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings" | "enterprise";
-
 interface FilingWorkflowShellProps {
   businessName?: string | null;
   businessId?: string | null;
@@ -54,8 +51,6 @@ interface FilingWorkflowShellProps {
   onLanguageChange: (language: "en" | "es") => void;
   onStageChange: (stage: FilingStage) => void;
   intelligence: SmartPRLiveData;
-  /** Which top-nav tab should appear active. Defaults to start (intake is the only caller). */
-  navActive?: TopNavActive;
   /** Overrides the default SmartPR Live sidebar when provided. Pass `null`
    * (not `undefined`) to render no sidebar at all and let the main content
    * take the full width — used by the Requirements page, which surfaces its
@@ -233,7 +228,6 @@ export function FilingWorkflowShell({
   onLanguageChange,
   onStageChange,
   intelligence,
-  navActive = "start",
   sidebar,
   stepperRight,
   stickyHeader = true,
@@ -300,7 +294,7 @@ export function FilingWorkflowShell({
       <div className={stickyClass}>
         {/* Keep account nav outside the collapsing overflow region so the
             avatar menu is never clipped by matter chrome / compact collapse. */}
-        <TopNav active={navActive} />
+        
         <div className="spr-filing-chrome">
           <div className="spr-matter-header-collapse" inert={collapseInert ? true : undefined} aria-hidden={collapseInert}>
             <header className="spr-matter-header">

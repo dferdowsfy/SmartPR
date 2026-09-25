@@ -11,7 +11,6 @@
 // ============================================================================
 
 import { useCallback, useEffect, useState } from "react";
-import { TopNav } from "../../history/ui";
 
 interface TemplateRow {
   formCode: string;
@@ -81,8 +80,8 @@ export default function FormMappingsAdminPage() {
 
   if (forbidden) {
     return (
-      <div className="min-h-screen bg-[#f4f1ea]">
-        <TopNav active="admin" />
+      <div className="page-viewport bg-[#f4f1ea]">
+        
         <div className="mx-auto max-w-5xl px-5 py-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
             <h1 className="text-xl font-bold text-[#161616]">Not authorized</h1>
@@ -97,8 +96,8 @@ export default function FormMappingsAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="admin" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <div className="mx-auto max-w-6xl px-5 py-8">
         <h1 className="text-2xl font-bold text-[#161616]">Government template library</h1>
         <p className="mt-1 text-sm text-[#161616]/60">

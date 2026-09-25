@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TopNav } from "../history/ui";
 import { createSupabaseBrowser } from "../../lib/supabase/client";
 import { passwordResetRedirectUrl } from "../../lib/siteUrl";
 import PhoneAccessSection from "./phone-access";
@@ -144,8 +143,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="settings" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <main className="mx-auto max-w-2xl px-5 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[#161616]">Account settings</h1>

@@ -31,7 +31,6 @@ import Link from "next/link";
 import {
   ArrowLeft, Eye, EyeOff, KeyRound, Shield,
 } from "lucide-react";
-import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
 import type { Lang } from "../../../forms/engine/types";
 import type {
@@ -1024,13 +1023,14 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const workflowLabel = activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang);
 
   return (
-    // h-screen is the fallback; the inline 100dvh wins where supported (some
-    // webviews ignore dvh). overscroll-none stops rubber-band chaining.
+    // The persistent app header lives in the root layout above this page, so
+    // the workspace locks to viewport-minus-header. The h-* class is the
+    // fallback; the inline 100dvh wins where supported (some webviews ignore
+    // dvh). overscroll-none stops rubber-band chaining.
     <div
-      className="flex h-screen flex-col overflow-hidden overscroll-none bg-[#161616]"
-      style={{ height: "100dvh" }}
+      className="flex h-[calc(100vh-var(--topnav-h,64px))] flex-col overflow-hidden overscroll-none bg-[#161616]"
+      style={{ height: "calc(100dvh - var(--topnav-h, 64px))" }}
     >
-      <TopNav active="businesses" />
       <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-3 pb-3 pt-2.5 sm:px-5">
         {/* Compact persistent workspace header */}
         <header className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:px-4">

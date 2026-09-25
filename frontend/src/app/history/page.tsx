@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TopNav, fmtDate, statusLabel, ScorePill, NotConnected } from "./ui";
+import { fmtDate, statusLabel, ScorePill, NotConnected } from "./ui";
 
 interface Row {
   id: string;
@@ -34,8 +34,8 @@ export default function HistoryPage() {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : [prev[1], id]));
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="history" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <div className="max-w-6xl mx-auto px-5 py-8">
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-2xl font-bold text-[#161616]">Submission History</h1>

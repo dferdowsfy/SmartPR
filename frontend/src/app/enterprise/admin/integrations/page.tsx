@@ -7,7 +7,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { TopNav } from "../../../history/ui";
 import { EnterpriseSubNav } from "../../_nav";
 import { readJson } from "@/lib/safe-json";
 
@@ -305,14 +304,14 @@ export default function IntegrationsPage() {
   if (loading)
     return (
       <>
-        <TopNav active="enterprise" />
+        
         <main className="p-8 text-sm text-[#5a5a5a]">Loading integrations…</main>
       </>
     );
   if (denied)
     return (
       <>
-        <TopNav active="enterprise" />
+        
         <main className="p-8">
           <h1 className="text-xl font-semibold">Integrations</h1>
           <p className="mt-2 text-sm text-[#5a5a5a]">
@@ -329,7 +328,7 @@ export default function IntegrationsPage() {
 
   return (
     <>
-      <TopNav active="enterprise" />
+      
       <main className="mx-auto max-w-6xl space-y-6 p-6">
         <EnterpriseSubNav active="/enterprise/admin/integrations" />
       <header className="flex items-center justify-between">

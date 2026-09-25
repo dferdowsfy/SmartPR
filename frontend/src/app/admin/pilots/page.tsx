@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "../../history/ui";
 
 type Member = {
   user_id: string;
@@ -52,8 +51,8 @@ export default function AdminPilotsPage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f4f1ea] text-[#161616]">
-      <TopNav active="admin" />
+    <div className="flex page-viewport flex-col bg-[#f4f1ea] text-[#161616]">
+      
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>

@@ -22,6 +22,16 @@ function isApexHost(req: NextRequest): boolean {
   return hostOf(req) === APEX_HOST;
 }
 
+function forwardedHeaders(req: NextRequest, pathname?: string): Headers {
+  // Surface the request path to server components (the root layout uses
+  // these to decide whether the persistent app header renders on first
+  // paint, e.g. marketing `/` vs intake `/?entry=new-business`).
+  const headers = new Headers(req.headers);
+  headers.set("x-pathname", pathname ?? req.nextUrl.pathname);
+  headers.set("x-search", req.nextUrl.search);
+  return headers;
+}
+
 export async function middleware(req: NextRequest) {
   // Bare apex domain: canonicalize to www, preserving the full path.
   // (e.g. getsmartpr.com/es -> www.getsmartpr.com/es)
@@ -39,18 +49,20 @@ export async function middleware(req: NextRequest) {
     if (path === "/" || path === "") {
       const url = req.nextUrl.clone();
       url.pathname = "/trust";
-      return NextResponse.rewrite(url);
+      return NextResponse.rewrite(url, {
+        request: { headers: forwardedHeaders(req, "/trust") },
+      });
     }
     // Trust Center host is fully public (page + PDF under /trust/*).
-    return NextResponse.next();
+    return NextResponse.next({ request: { headers: forwardedHeaders(req) } });
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   // Auth not configured -> all routes are open, no-op middleware.
-  if (!url || !key) return NextResponse.next();
+  if (!url || !key) return NextResponse.next({ request: { headers: forwardedHeaders(req) } });
 
-  let res = NextResponse.next({ request: req });
+  let res = NextResponse.next({ request: { headers: forwardedHeaders(req) } });
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
@@ -58,7 +70,7 @@ export async function middleware(req: NextRequest) {
       },
       setAll(toSet) {
         toSet.forEach(({ name, value }) => req.cookies.set(name, value));
-        res = NextResponse.next({ request: req });
+        res = NextResponse.next({ request: { headers: forwardedHeaders(req) } });
         toSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
       },
     },

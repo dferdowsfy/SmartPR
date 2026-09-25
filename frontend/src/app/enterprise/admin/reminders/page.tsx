@@ -4,7 +4,6 @@
 // approve_evidence for is_verified=true).
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { TopNav } from "../../../history/ui";
 import { EnterpriseSubNav } from "../../_nav";
 import { readJson } from "@/lib/safe-json";
 import { L } from "../../../i18n";
@@ -150,7 +149,7 @@ function Page() {
   if (!workspaceId) {
     return (
       <>
-        <TopNav active="enterprise" />
+        
         <main className="p-8">
           <p>{L("Loading…", lang)}</p>
         </main>
@@ -685,7 +684,7 @@ function Editor({
 export default function RemindersAdminPage() {
   return (
     <>
-      <TopNav active="enterprise" />
+      
       <Suspense fallback={<main className="p-8">Loading…</main>}>
         <Page />
       </Suspense>

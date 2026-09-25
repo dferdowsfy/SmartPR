@@ -8,7 +8,6 @@
 
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "../../../history/ui";
 import { EnterpriseSubNav } from "../../_nav";
 import { readJson } from "@/lib/safe-json";
 import {
@@ -305,8 +304,8 @@ export default function RegulatoryEventDetailPage({
   );
 
   return (
-    <div className="min-h-screen bg-[#f6f3ea] text-[#161616]">
-      <TopNav active="enterprise" />
+    <div className="page-viewport bg-[#f6f3ea] text-[#161616]">
+      
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
         <Link
           href={`/enterprise/regulatory${workspaceId ? `?workspace_id=${workspaceId}` : ""}`}

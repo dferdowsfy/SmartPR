@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, ArrowRight, CheckCircle2, FileSearch, FileUp, ShieldCheck, X } from "lucide-react";
-import { TopNav } from "../../history/ui";
 import { initKbFromServer, KB } from "../../kb";
 import type { DueDateSource, ImportedEvidence, ObligationBlueprint } from "../../compliance/types";
 
@@ -178,8 +177,8 @@ export default function ExistingBusinessImportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="businesses" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <main className="mx-auto max-w-5xl px-5 py-8">
         <Link href="/dashboard" className="text-sm font-semibold text-brand">← Portfolio dashboard</Link>
         <div className="mt-4 flex items-center gap-3"><span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${step === 1 ? "bg-[#161616] text-white" : "bg-emerald-100 text-emerald-700"}`}>{step === 1 ? "1" : "✓"}</span><span className="text-sm font-semibold text-[#161616]">Business profile</span><div className="h-px flex-1 bg-slate-200" /><span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${step === 2 ? "bg-[#161616] text-white" : "bg-slate-200 text-slate-500"}`}>2</span><span className="text-sm font-semibold text-[#161616]">Compliance reconstruction</span></div>

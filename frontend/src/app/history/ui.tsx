@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw, FileText } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
@@ -13,33 +13,28 @@ import { readLang, setLang } from "../useLang";
 interface MeUser { id: string; email: string | null; name: string | null; avatar: string | null; isAdmin?: boolean }
 
 /**
- * Nav-pill geometry survives client-side navigation (every page mounts its
- * own TopNav), so the selected pill can glide from the previous tab to the
- * new one instead of snapping. The Enterprise-tab probe result is cached the
- * same way so the tab labels never shift when it resolves.
+ * The app header is mounted once in the root layout and stays mounted
+ * across route changes, so the segmented-menu pill glides between tabs
+ * without remounting. The selected tab is derived from the route on the
+ * very first render — there is never a temporary default selection.
  */
-type NavPillRect = { left: number; top: number; width: number; height: number };
-let lastNavPill: NavPillRect | null = null;
-/** The glide in flight, so a page that mounts mid-glide continues it. */
-let navGlide: { from: NavPillRect; to: NavPillRect; startedAt: number } | null = null;
-const NAV_GLIDE_MS = 380;
+type TopNavTab = "start" | "businesses" | "enterprise";
 
-/** Where the pill visually is right now (ease-out approximation of the CSS curve). */
-function currentNavPill(): NavPillRect | null {
-  if (!navGlide || !lastNavPill) return lastNavPill;
-  const p = Math.min(1, (performance.now() - navGlide.startedAt) / NAV_GLIDE_MS);
-  if (p >= 1) return lastNavPill;
-  const e = 1 - Math.pow(1 - p, 4);
-  const mix = (a: number, b: number) => a + (b - a) * e;
-  const { from, to } = navGlide;
-  return {
-    left: mix(from.left, to.left),
-    top: mix(from.top, to.top),
-    width: mix(from.width, to.width),
-    height: mix(from.height, to.height),
-  };
+const BUSINESSES_PREFIXES = ["/businesses", "/dashboard", "/calendar", "/filings", "/filing-package", "/history", "/settings"];
+
+/** Which tab a route belongs to, or null when the header shows no selection. */
+function routeTabFor(pathname: string | null): TopNavTab | null {
+  if (!pathname) return null;
+  if (pathname === "/") return "start";
+  if (pathname === "/enterprise" || pathname.startsWith("/enterprise/")) return "enterprise";
+  if (BUSINESSES_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) return "businesses";
+  return null;
 }
-let cachedHasEnterprise = false;
+
+// Enterprise-tab probe result. Unknown until the first probe resolves; while
+// unknown the tab renders as an invisible placeholder so the tab row never
+// changes width when access resolves.
+let cachedHasEnterprise: boolean | null = null;
 
 function signOutNow() {
   try {
@@ -50,7 +45,7 @@ function signOutNow() {
   window.location.assign("/auth/signout");
 }
 
-export function TopNav({ active, extraActions }: { active: "start" | "dashboard" | "businesses" | "calendar" | "filings" | "history" | "graph" | "admin" | "settings" | "enterprise"; extraActions?: ReactNode }) {
+export function TopNav() {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
   const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLangState] = useState<"en" | "es">(() => readLang());
@@ -59,7 +54,7 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   const menuPanelRef = useRef<HTMLDivElement | null>(null);
   const avatarBtnRef = useRef<HTMLButtonElement | null>(null);
   // Enterprise section: visible only when the user holds view_records in a workspace.
-  const [hasEnterprise, setHasEnterprise] = useState(() => cachedHasEnterprise);
+  const [hasEnterprise, setHasEnterprise] = useState<boolean | null>(() => cachedHasEnterprise);
 
   const placeMenu = useCallback(() => {
     const btn = avatarBtnRef.current;
@@ -155,100 +150,72 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   const navMyBiz = lang === "es" ? "Mis Negocios" : "My Businesses";
   const es = lang === "es";
 
-  // Harden Start highlight: prop from FilingWorkflowShell + URL fallback so
-  // intake paths never leave My Businesses selected by accident.
+  // The selected tab is derived from the route on the very first render —
+  // there is never a temporary default selection. `pendingTab` moves the
+  // pill the instant a tab is clicked, before the next page has painted, so
+  // the glide starts immediately.
   const pathname = usePathname();
-  // Compute synchronously on first render (lazy useState initializer) so the
-  // active tab pill never flashes from the wrong tab after mount/navigation.
-  const readIntakeRoute = useCallback(() => {
-    try {
-      if (typeof window === "undefined") return false;
-      const u = new URL(window.location.href);
-      const onHome = u.pathname === "/" || pathname === "/";
-      return (
-        onHome &&
-        (u.searchParams.get("entry") === "new-business" ||
-          u.searchParams.has("resume") ||
-          u.searchParams.has("debug"))
-      );
-    } catch {
-      return false;
-    }
-  }, [pathname]);
-  const [intakeRoute, setIntakeRoute] = useState(readIntakeRoute);
+  const routeTab = routeTabFor(pathname);
+  const [pendingTab, setPendingTab] = useState<TopNavTab | null>(null);
   useEffect(() => {
-    const sync = () => setIntakeRoute(readIntakeRoute());
-    sync();
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
-  }, [pathname, active, readIntakeRoute]);
-  const startActive = active === "start" || intakeRoute;
-  const businessesActive =
-    !startActive &&
-    (active === "businesses" ||
-      active === "calendar" ||
-      active === "filings" ||
-      active === "history" ||
-      active === "settings");
-
-  // Sliding selected-tab pill. The labels stay put; only the pill moves.
-  // `pendingTab` moves it the moment a tab is clicked, before the next page
-  // has mounted, so the glide starts immediately.
-  const activeTab = startActive
-    ? "start"
-    : businessesActive
-      ? "businesses"
-      : active === "enterprise"
-        ? "enterprise"
-        : null;
-  const [pendingTab, setPendingTab] = useState<string | null>(null);
-  const [prevActiveTab, setPrevActiveTab] = useState(activeTab);
-  if (prevActiveTab !== activeTab) {
-    setPrevActiveTab(activeTab);
     setPendingTab(null);
-  }
-  const pillTab = pendingTab ?? activeTab;
+  }, [pathname]);
+  const selectedTab = pendingTab ?? routeTab;
+  // If the route is enterprise but the probe says no access, the enterprise
+  // page itself handles the denial — keep My Businesses lit.
+  const pillTab: TopNavTab | null =
+    selectedTab === "enterprise" && hasEnterprise === false ? "businesses" : selectedTab;
+
+  // Sliding selected-tab pill. Only the pill's position animates; the tabs
+  // themselves never move, resize, or repaint.
   const navRef = useRef<HTMLElement | null>(null);
-  const [pill, setPill] = useState<(NavPillRect & { animate: boolean }) | null>(() => {
-    const start = typeof window === "undefined" ? null : currentNavPill();
-    return start ? { ...start, animate: false } : null;
+  const headerRef = useRef<HTMLElement | null>(null);
+  const tabRefs = useRef<Record<TopNavTab, HTMLElement | null>>({
+    start: null,
+    businesses: null,
+    enterprise: null,
   });
-  useEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    const measure = (animate: boolean) => {
-      const el = pillTab
-        ? (nav.querySelector(`[data-tab="${pillTab}"]`) as HTMLElement | null)
-        : null;
-      if (!el) {
-        lastNavPill = null;
+  type PillRect = { left: number; top: number; width: number; height: number; animate: boolean };
+  const [pill, setPill] = useState<PillRect | null>(null);
+  const lastPillTab = useRef<TopNavTab | null>(null);
+  const didMount = useRef(false);
+
+  const measure = useCallback(
+    (animate: boolean) => {
+      const nav = navRef.current;
+      const el = pillTab ? tabRefs.current[pillTab] : null;
+      if (!nav || !el) {
         setPill(null);
         return;
       }
       const n = nav.getBoundingClientRect();
       const r = el.getBoundingClientRect();
-      const next: NavPillRect = {
-        left: r.left - n.left - nav.clientLeft + nav.scrollLeft,
-        top: r.top - n.top - nav.clientTop,
+      setPill({
+        left: r.left - n.left,
+        top: r.top - n.top,
         width: r.width,
         height: r.height,
-      };
-      if (animate) {
-        const from = currentNavPill();
-        const moved =
-          from && (from.left !== next.left || from.width !== next.width || from.top !== next.top);
-        navGlide = moved ? { from, to: next, startedAt: performance.now() } : navGlide;
-      } else {
-        navGlide = null;
-      }
-      lastNavPill = next;
-      setPill({ ...next, animate });
-    };
-    // Paint the previous position first (initial state), then glide.
-    const raf = window.requestAnimationFrame(() => measure(true));
-    // Later resizes (fonts, language, window) snap without animating. The
-    // observer's initial callback lands in the same frame as the glide —
-    // skip it, or it would cancel the transition.
+        animate,
+      });
+    },
+    [pillTab],
+  );
+
+  // Measure after paint so the pill lands exactly on the selected tab on
+  // first render. It animates only when the selected tab actually changed;
+  // resizes (fonts, language, window) re-measure without animating.
+  useLayoutEffect(() => {
+    const animate = didMount.current && lastPillTab.current !== pillTab;
+    lastPillTab.current = pillTab;
+    didMount.current = true;
+    measure(animate);
+  }, [pillTab, hasEnterprise, lang, measure]);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    // The observer fires once on observe — skip it so it can't cancel a
+    // glide in flight.
     let primed = false;
     const ro = new ResizeObserver(() => {
       if (!primed) {
@@ -258,11 +225,22 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
       measure(false);
     });
     ro.observe(nav);
-    return () => {
-      window.cancelAnimationFrame(raf);
-      ro.disconnect();
+    return () => ro.disconnect();
+  }, [measure]);
+
+  // Publish the header height for viewport-locked pages (the agency-run
+  // workspace) so they can size to exactly viewport minus header.
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el || typeof document === "undefined") return;
+    const set = () => {
+      document.documentElement.style.setProperty("--topnav-h", `${Math.round(el.offsetHeight)}px`);
     };
-  }, [pillTab, hasEnterprise, lang]);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const langToggle = (
     <div className="spr-context-language" aria-label={lang === "es" ? "Idioma" : "Language"}>
@@ -272,7 +250,7 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
   );
 
   return (
-    <header className="appbar">
+    <header ref={headerRef} className="appbar">
       <div className="appbar-inner">
         <div className="appbar-left">
           <Link href={user ? "/businesses" : "/"} className="brand" aria-label="SmartPR home">
@@ -295,9 +273,10 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
           <Link
             href="/?entry=new-business"
             data-tab="start"
+            ref={(el) => { tabRefs.current.start = el; }}
             onClick={() => setPendingTab("start")}
             className={`nav-tab${pillTab === "start" ? " active" : ""}`}
-            aria-current={startActive ? "page" : undefined}
+            aria-current={routeTab === "start" ? "page" : undefined}
             data-active={pillTab === "start" ? "true" : undefined}
           >
             {navStart}
@@ -305,21 +284,34 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
           <Link
             href="/businesses"
             data-tab="businesses"
+            ref={(el) => { tabRefs.current.businesses = el; }}
             onClick={() => setPendingTab("businesses")}
             className={`nav-tab${pillTab === "businesses" ? " active" : ""}`}
-            aria-current={businessesActive ? "page" : undefined}
+            aria-current={routeTab === "businesses" ? "page" : undefined}
             data-active={pillTab === "businesses" ? "true" : undefined}
           >
             {navMyBiz}
           </Link>
-          {hasEnterprise && (
+          {hasEnterprise === null ? (
+            // Access probe still pending: reserve the tab's exact slot so
+            // the row never changes width when access resolves.
+            <span
+              aria-hidden="true"
+              data-tab="enterprise"
+              ref={(el) => { tabRefs.current.enterprise = el; }}
+              className="nav-tab nav-tab-ghost"
+            >
+              {es ? "Empresarial" : "Enterprise"}
+            </span>
+          ) : hasEnterprise ? (
             <div className="nav-dropdown">
               <Link
                 href="/enterprise"
                 data-tab="enterprise"
+                ref={(el) => { tabRefs.current.enterprise = el; }}
                 onClick={() => setPendingTab("enterprise")}
                 className={`nav-tab${pillTab === "enterprise" ? " active" : ""}`}
-                aria-current={active === "enterprise" ? "page" : undefined}
+                aria-current={routeTab === "enterprise" ? "page" : undefined}
                 data-active={pillTab === "enterprise" ? "true" : undefined}
               >
                 {es ? "Empresarial" : "Enterprise"}
@@ -347,12 +339,11 @@ export function TopNav({ active, extraActions }: { active: "start" | "dashboard"
                 </Link>
               </div>
             </div>
-          )}
+          ) : null}
         </nav>
 
         <div className="appbar-actions">
           {langToggle}
-          {extraActions}
           {user === undefined ? null : user ? (
             <>
             <NotificationBell />

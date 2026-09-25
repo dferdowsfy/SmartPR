@@ -8,7 +8,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "../../history/ui";
 import { EnterpriseSubNav } from "../_nav";
 import { readJson } from "@/lib/safe-json";
 import { REGULATORY_LIFECYCLES, LIFECYCLE_LABELS } from "../../../lib/enterprise-regulatory";
@@ -189,8 +188,8 @@ export default function RegulatoryQueuePage() {
     `/enterprise/regulatory/${id}?workspace_id=${workspaceId}`;
 
   return (
-    <div className="min-h-screen bg-[#f6f3ea] text-[#161616]">
-      <TopNav active="enterprise" />
+    <div className="page-viewport bg-[#f6f3ea] text-[#161616]">
+      
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

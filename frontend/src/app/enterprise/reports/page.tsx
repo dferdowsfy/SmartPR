@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TopNav } from "../../history/ui";
 import { EnterpriseSubNav } from "../_nav";
 import { readJson } from "@/lib/safe-json";
 
@@ -227,8 +226,8 @@ export default function EnterpriseReportsPage() {
   const noAccess = workspaces !== null && availableReports.length === 0;
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
-      <TopNav active="enterprise" />
+    <div className="page-viewport bg-[#f4f1ea] text-[#161616]">
+      
       <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Enterprise</p>
         <h1 className="mt-2 text-3xl font-medium tracking-tight sm:text-4xl">Executive reports</h1>

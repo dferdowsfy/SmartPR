@@ -181,6 +181,17 @@ button { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .nav-tab-pill { transition: none; }
 }
+/* Invisible placeholder that reserves the Enterprise tab's exact slot while
+   the access probe is pending, so the tab row never changes width when
+   access resolves. */
+.nav-tab-ghost { visibility: hidden; pointer-events: none; cursor: default; }
+/* Page root that fills the viewport below the persistent app header (which
+   lives in the root layout). Pages previously sized min-h-screen with their
+   own header inside; subtract the header height (published as --topnav-h). */
+.page-viewport {
+  min-height: 100vh;
+  min-height: calc(100dvh - var(--topnav-h, 64px));
+}
 .nav-tab .tab-icon { width: 14px; height: 14px; opacity: 0.85; }
 .nav-tab[disabled] { opacity: 0.4; cursor: not-allowed; }
 
@@ -1971,6 +1982,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   --spr-shell-navy: #161616;
   --spr-shell-teal: #245c5c;
   min-height: 100vh;
+  min-height: calc(100dvh - var(--topnav-h, 64px));
   background: #f4f1ea;
   color: #161616;
 }

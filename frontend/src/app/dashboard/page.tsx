@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "../history/ui";
 
 interface PortfolioBusiness {
   id: string;
@@ -31,8 +30,8 @@ export default function DashboardPage() {
   const businesses = data?.businesses ?? [];
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
-      <TopNav active="businesses" />
+    <div className="page-viewport bg-[#f4f1ea] text-[#161616]">
+      
       <main className="mx-auto max-w-3xl px-5 py-12 sm:px-6">
         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-brand">Workspace</p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight sm:text-5xl">

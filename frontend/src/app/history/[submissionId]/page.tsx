@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
-import { TopNav, fmtDate, fmtDateTime, statusLabel, ScorePill, NotConnected } from "../ui";
+import { fmtDate, fmtDateTime, statusLabel, ScorePill, NotConnected } from "../ui";
 import { KB } from "../../kb";
 
 interface Detail {
@@ -49,9 +49,9 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
       .catch(() => setD({ enabled: true, error: "fetch_failed" }));
   }, [submissionId]);
 
-  if (!d) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="history" /><div className="p-10 text-center text-[#161616]/50">Loading…</div></div>;
-  if (!d.enabled) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="history" /><NotConnected /></div>;
-  if (d.error || !d.summary) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="history" /><div className="p-10 text-center text-[#161616]/50">Submission not found.</div></div>;
+  if (!d) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-10 text-center text-[#161616]/50">Loading…</div></div>;
+  if (!d.enabled) return <div className="page-viewport bg-[#f4f1ea]"><NotConnected /></div>;
+  if (d.error || !d.summary) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-10 text-center text-[#161616]/50">Submission not found.</div></div>;
 
   const s = d.summary;
   const score = s.readiness_score as number | null;
@@ -59,8 +59,8 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ sub
   const insights = d.insights || {};
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="history" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <div className="max-w-6xl mx-auto px-5 py-8">
         <Link href="/history" className="text-sm text-brand font-medium">← Back to History</Link>
 

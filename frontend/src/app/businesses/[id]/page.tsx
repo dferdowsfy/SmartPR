@@ -8,7 +8,7 @@ import {
   ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, ShieldAlert, Upload,
 } from "lucide-react";
 import { useDeliverablesAccess } from "../../../lib/billing/useDeliverablesAccess";
-import { TopNav, ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
+import { ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
 import { StatusBadge } from "../../components/compliance/StatusBadge";
 import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } from "../../compliance/types";
 import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
@@ -592,9 +592,9 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     return { totalApplicable, completed: completed.length, readiness, missing, calendar, activeMatters, history };
   }, [data]);
 
-  if (loadError) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-sm text-rose-700">{L("Couldn't load this business right now.", lang)} <button type="button" onClick={() => void load()} className="font-semibold underline">{L("Try again", lang)}</button></div></div>;
-  if (!data) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">{L("Loading compliance profile…", lang)}</div></div>;
-  if (data.error || !data.business) return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="businesses" /><div className="p-12 text-center text-slate-500">{L("Business not found.", lang)}</div></div>;
+  if (loadError) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-sm text-rose-700">{L("Couldn't load this business right now.", lang)} <button type="button" onClick={() => void load()} className="font-semibold underline">{L("Try again", lang)}</button></div></div>;
+  if (!data) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-slate-500">{L("Loading compliance profile…", lang)}</div></div>;
+  if (data.error || !data.business) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-slate-500">{L("Business not found.", lang)}</div></div>;
 
   const business = data.business;
   const evidence = data.evidence ?? [];
@@ -619,8 +619,8 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const otherCompleted = allObligations.filter((item) => (item.status === "COMPLETED" || item.status === "CURRENT") && !recentlyCompletedIds.has(item.id));
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="businesses" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <main className="mx-auto max-w-7xl px-5 py-8">
         <div className="flex items-center justify-between">
           <Link href="/businesses" className="text-sm font-semibold text-brand">← Back</Link>

@@ -4,7 +4,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CalendarDays } from "lucide-react";
-import { TopNav } from "../history/ui";
 import { StatusBadge } from "../components/compliance/StatusBadge";
 import { L } from "../i18n";
 import { useLang } from "../useLang";
@@ -88,8 +87,8 @@ function CalendarContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="calendar" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <main className="mx-auto max-w-5xl px-5 py-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-brand">{L("Due dates", lang)}</p><h1 className="mt-1 text-3xl font-bold text-[#161616]">{L("Compliance calendar", lang)}</h1><p className="mt-1 text-sm text-slate-500">{L("Portfolio-level deadlines linked to the relevant business and obligation.", lang)}</p></div>
@@ -136,7 +135,7 @@ function CalendarContent() {
 
 function CalendarFallback() {
   const lang = useLang();
-  return <div className="min-h-screen bg-[#f4f1ea]"><TopNav active="calendar" /><div className="p-12 text-center text-slate-500">{L("Loading calendar…", lang)}</div></div>;
+  return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-slate-500">{L("Loading calendar…", lang)}</div></div>;
 }
 
 export default function CalendarPage() {

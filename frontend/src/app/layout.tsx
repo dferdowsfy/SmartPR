@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { IBM_Plex_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 import "./validador.css";
 import { AuthRecoveryRedirect } from "./components/AuthRecoveryRedirect";
 import { BrandProvider } from "./components/brand/BrandProvider";
+import { TopNavMount } from "./components/TopNavMount";
 
 const sans = IBM_Plex_Sans({
   subsets: ["latin", "latin-ext"],
@@ -52,14 +54,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Seed the persistent header's first paint from the request path
+  // (set by middleware). The client takes over after hydration and keeps
+  // the same header mounted across route changes.
+  const h = await headers();
+  const initialPathname = h.get("x-pathname") ?? "/";
+  const initialSearch = h.get("x-search") ?? "";
   return (
     <html lang="en" className={`${sans.variable} ${display.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col"><BrandProvider><AuthRecoveryRedirect />{children}</BrandProvider></body>
+      <body className="min-h-full flex flex-col"><BrandProvider><AuthRecoveryRedirect /><TopNavMount initialPathname={initialPathname} initialSearch={initialSearch} />{children}</BrandProvider></body>
     </html>
   );
 }

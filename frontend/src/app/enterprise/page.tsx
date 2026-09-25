@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "../history/ui";
 import { EnterpriseSubNav } from "./_nav";
 import { readJson } from "@/lib/safe-json";
 
@@ -289,8 +288,8 @@ export default function EnterprisePortfolioPage() {
     "rounded-md border border-[#161616]/15 bg-white px-2 py-1.5 text-sm text-[#161616]";
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
-      <TopNav active="enterprise" />
+    <div className="page-viewport bg-[#f4f1ea] text-[#161616]">
+      
       <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

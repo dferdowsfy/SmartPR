@@ -12,7 +12,6 @@
 // ============================================================================
 
 import { useCallback, useMemo, useState } from "react";
-import { TopNav } from "../history/ui";
 import type { FilingPackage, FilingPackageItem } from "../forms/artifacts/filingPackage";
 import type { OutstandingQuestion } from "../forms/artifacts/intakeExtraction";
 import { STATUS_COPY } from "../forms/artifacts/statusVocabulary";
@@ -176,8 +175,8 @@ export default function FilingPackagePage() {
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="dashboard" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <div className="mx-auto max-w-5xl px-5 py-8">
         <h1 className="text-2xl font-bold text-[#161616]">Filing package</h1>
         <p className="mt-1 text-sm text-[#161616]/60">

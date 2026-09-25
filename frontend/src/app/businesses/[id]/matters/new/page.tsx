@@ -3,7 +3,6 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TopNav } from "../../../../history/ui";
 import { MATTER_TYPES, type DueDateSource, type MatterType } from "../../../../compliance/types";
 import { L } from "../../../../i18n";
 import { useLang } from "../../../../useLang";
@@ -61,8 +60,8 @@ export default function NewMatterPage({ params }: { params: Promise<{ id: string
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="businesses" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <main className="mx-auto max-w-2xl px-5 py-8">
         <Link href={`/businesses/${id}`} className="text-sm font-semibold text-brand">← {L("Business profile", lang)}</Link>
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">

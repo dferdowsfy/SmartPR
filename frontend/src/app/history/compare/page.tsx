@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { TopNav, ScorePill, NotConnected } from "../ui";
+import { ScorePill, NotConnected } from "../ui";
 
 interface Side {
   id: string;
@@ -105,8 +105,8 @@ function CompareInner() {
 
 export default function ComparePage() {
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="history" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       <Suspense fallback={<div className="p-10 text-center text-[#161616]/50">Loading…</div>}>
         <CompareInner />
       </Suspense>

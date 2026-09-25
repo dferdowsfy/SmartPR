@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { TopNav } from "../../../history/ui";
 import { EnterpriseSubNav } from "../../_nav";
 import { readJson } from "@/lib/safe-json";
 import { useEnterpriseWorkspaces } from "../../_lib/useEnterpriseWorkspaces";
@@ -479,8 +478,8 @@ function TeamInner() {
 
 export default function EnterpriseTeamPage() {
   return (
-    <div className="min-h-screen bg-[#f4f1ea] text-[#161616]">
-      <TopNav active="enterprise" />
+    <div className="page-viewport bg-[#f4f1ea] text-[#161616]">
+      
       <Suspense fallback={<p className="px-6 py-8 text-sm">Loading…</p>}>
         <TeamInner />
       </Suspense>

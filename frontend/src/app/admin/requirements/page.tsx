@@ -9,7 +9,6 @@
 // ============================================================================
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { TopNav } from "../../history/ui";
 
 interface ReviewItem {
   item_kind: "rule" | "document" | "template" | "change_event";
@@ -197,8 +196,8 @@ export default function AdminRequirementsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1ea]">
-      <TopNav active="admin" />
+    <div className="page-viewport bg-[#f4f1ea]">
+      
       {isAdmin === false ? (
         <div className="mx-auto max-w-5xl px-5 py-8">
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
