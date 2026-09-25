@@ -49,16 +49,36 @@ export function filingFeeCheckoutParts(
   preferredBusinessId?: string | null
 ): FilingFeeCheckoutParts | null {
   if (businesses.length === 0) return null;
-  const ordered = [...businesses].sort((a, b) =>
+  // Defensive: one entry per business id even if the caller passes dup rows.
+  const seenIds = new Set<string>();
+  const deduped = businesses.filter((b) =>
+    seenIds.has(b.id) ? false : (seenIds.add(b.id), true)
+  );
+  if (deduped.length === 0) return null;
+  const ordered = [...deduped].sort((a, b) =>
     a.id === preferredBusinessId ? -1 : b.id === preferredBusinessId ? 1 : 0
   ).slice(0, MAX_BUSINESSES);
   const single = ordered.length === 1;
-  const options = ordered.map((b, i) => ({
-    label: single
-      ? clip(`Yes — remind me at Mita's filing-fee step (${b.name})`, 100)
-      : clip(`Yes, for ${b.name}`, 100),
-    value: optionValue(i),
-  }));
+  // Stripe rejects a dropdown whose option labels are not unique. Two
+  // businesses can share a display name (e.g. an accidental duplicate), so
+  // disambiguate after clipping — the values stay opaque and unique.
+  const usedLabels = new Set<string>(["No"]);
+  const options = ordered.map((b, i) => {
+    const base = clip(
+      single
+        ? `Yes — remind me at Mita's filing-fee step (${b.name})`
+        : `Yes, for ${b.name}`,
+      96
+    );
+    let label = base;
+    let n = 1;
+    while (usedLabels.has(label)) {
+      n += 1;
+      label = clip(`${base} (${n})`, 100);
+    }
+    usedLabels.add(label);
+    return { label, value: optionValue(i) };
+  });
   options.push({ label: "No", value: FILING_FEE_NO });
   const metadata: Record<string, string> = {
     filing_fee_card: "offered",

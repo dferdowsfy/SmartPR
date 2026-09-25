@@ -92,6 +92,19 @@ describe("filing-fee choice on the Stripe checkout page", () => {
   it("is not offered without a business", () => {
     assert.equal(filingFeeCheckoutParts([]), null);
   });
+  it("keeps dropdown labels unique when businesses share a name", () => {
+    const dupes = [
+      { id: "11111111-aaaa", name: "Dar's Restaurant" },
+      { id: "22222222-bbbb", name: "Dar's Restaurant" },
+      { id: "11111111-aaaa", name: "Dar's Restaurant" },
+    ];
+    const parts = filingFeeCheckoutParts(dupes)!;
+    const labels = parts.custom_fields[0].dropdown.options.map((o) => o.label);
+    assert.equal(new Set(labels).size, labels.length, "every label unique");
+    assert.deepEqual(labels, ["Yes, for Dar's Restaurant", "Yes, for Dar's Restaurant (2)", "No"]);
+    assert.deepEqual(parts.custom_fields[0].dropdown.options.map((o) => o.value), ["b0", "b1", "no"]);
+    assert.equal(parts.metadata.filing_fee_card_b1, "22222222-bbbb");
+  });
   it("reads the payer's pick back", () => {
     const { metadata } = filingFeeCheckoutParts(biz)!;
     assert.equal(filingFeeChoiceFromSession({ metadata, custom_fields: [{ key: "filingfeecard", dropdown: { value: "b1" } }] }), "22222222-bbbb");
