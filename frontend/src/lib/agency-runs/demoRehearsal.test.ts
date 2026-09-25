@@ -28,13 +28,11 @@ describe("DEMO_REHEARSAL_PORTAL filing config", () => {
     );
   });
 
-  it("brief is goal-oriented and names every pause gate", () => {
+  it("brief is goal-oriented and names every remaining pause gate", () => {
     const proc = config.procedureEn.join("\n").toLowerCase();
+    // Login/password gates are self-service on the demo portal (the run must
+    // not stall on them); the brief must name the gates that still pause.
     for (const gate of [
-      "pause_user_login",
-      "pause at password creation",
-      "never invent a password",
-      "never type credentials unprompted",
       "pause for the human",
       "social security number",
       "never check legal certifications",
@@ -42,6 +40,17 @@ describe("DEMO_REHEARSAL_PORTAL filing config", () => {
       "never click the final submit",
     ]) {
       assert.ok(proc.includes(gate), `procedure missing gate: ${gate}`);
+    }
+    for (const retired of [
+      "pause_user_login",
+      "pause at password creation",
+      "never invent a password",
+      "never type credentials unprompted",
+    ]) {
+      assert.ok(
+        !proc.includes(retired),
+        `procedure must not pause for demo credentials anymore: ${retired}`
+      );
     }
     assert.ok(
       config.goalEn.includes("REHEARSAL") && config.goalEn.includes("fictional"),
@@ -120,5 +129,61 @@ describe("DEMO_REHEARSAL_PORTAL registration-path hardening", () => {
     const task = buildAgencyTaskPrompt({ config, passport: null, goalBrief: null });
     assert.ok(task.includes("NEVER click Log in"));
     assert.ok(task.includes("NEVER ask the human for a registry number"));
+  });
+});
+
+describe("DEMO_REHEARSAL_PORTAL credential self-service (no login stall)", () => {
+  const config = getFilingConfig("DEMO_REHEARSAL_PORTAL");
+  const proc = config.procedureEn.join("\n");
+  const hints = (config.hintsEn ?? []).join("\n");
+
+  it("procedure never pauses for demo login credentials", () => {
+    assert.ok(
+      proc.includes("NEVER pause for login credentials on the demo portal"),
+      "demo login must be self-service — the run must not stall on a password prompt"
+    );
+    assert.ok(
+      proc.includes("NEVER emit REQUIRED_FIELDS for the demo login"),
+      "no REQUIRED_FIELDS for demo login either"
+    );
+  });
+
+  it("procedure self-serves a fictional password on both paths", () => {
+    assert.ok(
+      proc.includes("invent a clearly-fictional password yourself"),
+      "agent invents the demo password itself"
+    );
+    assert.ok(
+      proc.includes("NEVER pause for password creation on the demo portal"),
+      "create-account path must not pause at password creation"
+    );
+  });
+
+  it("hints keep SSN/attestation/payment/review as human gates", () => {
+    assert.ok(
+      hints.includes("Still pause for the human at SSN, attestation, payment, and final review"),
+      "only credential gates are automated; the meaningful human gates stay"
+    );
+  });
+
+  it("task prompt carries the demo-only credential carve-out", () => {
+    const task = buildAgencyTaskPrompt({ config, passport: null, goalBrief: null });
+    assert.ok(task.includes("DEMO PORTAL CREDENTIALS"));
+    assert.ok(
+      task.includes("NEVER pause for email/password on the demo portal"),
+      "prompt must forbid the demo login pause explicitly"
+    );
+  });
+
+  it("real portals keep the never-invent-passwords rule (no carve-out)", () => {
+    const real = getFilingConfig("SURI_REGISTER_TAXPAYER");
+    const task = buildAgencyTaskPrompt({ config: real, passport: null, goalBrief: null });
+    assert.ok(!task.includes("DEMO PORTAL CREDENTIALS"));
+    assert.ok(
+      task.includes(
+        "Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them blank for the human and pause with the right marker below."
+      ),
+      "real portals must keep the strict sensitive-fields rule with no exception"
+    );
   });
 });

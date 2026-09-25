@@ -184,6 +184,11 @@ export function buildAgencyTaskPrompt(input: {
   authorizeResume?: boolean;
 }): string {
   const { config } = input;
+  // Fictional rehearsal portal ONLY: its login explicitly accepts any
+  // credentials and stores nothing, so the agent clears that gate itself
+  // with obviously-fictional placeholders instead of stalling the run on
+  // a human password prompt. Never extends to real portals.
+  const isDemoPortal = config.id === "DEMO_REHEARSAL_PORTAL";
   // SECURITY: strip sensitive leaves (SSN, passwords, MFA, …) before the
   // passport is embedded in the prompt — the agent must never see values
   // the passport cannot fill.
@@ -277,8 +282,8 @@ ${renderPortalFieldMapping(config.agencyId)}
 - For checkboxes/radios that clearly correspond to passport facts, set them.
 - If a field has no passport match and is not sensitive, use visible page context. If it is REQUIRED (asterisk, "required", or the browser blocks submit with "Please fill out this field") and still unknown: do NOT retry submit and do NOT guess — pause right away with PAUSE_USER_LOGIN and a REQUIRED_FIELDS line for exactly that field (e.g. id=fiscal_year_end; label=Fiscal year end; type=text; sensitive=false; hint=MM/DD/YYYY). Optional unknown fields stay blank.
 - DATE FIELDS: native date inputs (mm/dd/yyyy with a calendar icon) ignore pasted text with slashes. Click the month segment and type the digits only, in order, with no separators (e.g. 12312025 for 12/31/2025), then read the value back. If it still reads empty, set it via JavaScript (input.value = "2025-12-31" — ISO format — then dispatch "input" and "change" events) and read back again. Never click submit while a required date reads empty.
-- Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them blank for the human and pause with the right marker below.
-
+- Sensitive fields (SSN, ITIN, passwords, MFA codes): NEVER invent — leave them blank for the human and pause with the right marker below.${isDemoPortal ? " EXCEPTION — demo portal only: its login accepts ANY credentials and stores nothing, so invent a clearly-fictional password yourself (e.g. rehearsal-demo-0000), click Log in / Create account, and CONTINUE — NEVER pause for demo login credentials and NEVER emit REQUIRED_FIELDS for them. SSN still always pauses for the human." : ""}
+${isDemoPortal ? "\nDEMO PORTAL CREDENTIALS (fictional rehearsal portal ONLY — this exception NEVER applies to real government portals)\n- The demo login page states ANY credentials are accepted; nothing is verified or stored.\n- NEVER pause for email/password on the demo portal and NEVER emit REQUIRED_FIELDS for demo login credentials.\n- Fill the email from the Business Passport (or demo@example.com), invent a clearly-fictional password yourself (e.g. rehearsal-demo-0000), click Log in / Create account, and CONTINUE toward pre-submit review.\n- SSN, attestations, payment, and final review STILL pause for the human.\n" : ""}
 HUMAN INPUT PATH (login / required text fields)
 - When you PAUSE_USER_LOGIN or pause for required text fields, the human types ONLY in the SmartPR Assistant panel on the left — NOT in the live browser iframe (it is view-only until Fill & continue).
 - The Assistant panel shows EXACTLY the fields in your REQUIRED_FIELDS block, so that block must describe the blanks on the page you are on RIGHT NOW. Never list email / password / MFA unless the current page is a login or account-creation form; on an SSN step list only the SSN; on a form with one missing date list only that date.
@@ -292,7 +297,7 @@ HUMAN INPUT PATH (login / required text fields)
 HARD RULES (never violate)
 ${submitRule}
 2. Domain allowlist: only ${config.domains.join(", ")} (and necessary redirects on those hosts). Do not visit other sites.
-3. Do NOT invent SSN, ITIN, passwords, MFA codes, or other sensitive IDs. Leave those for the human (unless FIELDS FILL below supplies exact values for this turn only).
+3. Do NOT invent SSN, ITIN, passwords, MFA codes, or other sensitive IDs. Leave those for the human (unless FIELDS FILL below supplies exact values for this turn only).${isDemoPortal ? " Demo-portal passwords excepted — see DEMO PORTAL CREDENTIALS." : ""}
 4. When you hit an upload wall, login/MFA wall, captcha, payment gate, or any page with required blanks the passport cannot fill: STOP immediately, do not loop, and end your message with BOTH:
    (a) exactly one pause/status marker, and
    (b) a machine-parseable REQUIRED_FIELDS block listing ONLY fields the human must provide (never list passport-fillable blanks).

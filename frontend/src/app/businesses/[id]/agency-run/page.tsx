@@ -976,10 +976,16 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     // list carries min-h-0, so the list, not the page, is what scrolls, and
     // the browser panel stays anchored beside it. Before Start, the page
     // scrolls normally.
+    // Workspace lock: the page is exactly the viewport — the chat's message
+    // list is the only scroller, so the user can never scroll past the two
+    // windows. h-screen is the fallback; the inline 100dvh wins where the
+    // unit is supported (some webviews ignore dvh and would collapse the
+    // lock). overscroll-none kills rubber-band chaining past the windows.
     <div
-      className={`flex flex-col bg-[#2b2721] ${
-        inWorkspace ? "h-dvh overflow-hidden" : "min-h-dvh"
+      className={`flex flex-col overscroll-none bg-[#2b2721] ${
+        inWorkspace ? "h-screen overflow-hidden" : "min-h-dvh"
       }`}
+      style={inWorkspace ? { height: "100dvh" } : undefined}
     >
       <TopNav active="businesses" />
       <main

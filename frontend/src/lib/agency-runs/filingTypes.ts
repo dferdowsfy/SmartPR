@@ -1580,8 +1580,8 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEs:
       "Completar una radicación de informe anual de ENSAYO en el portal demo de SmartPR — un portal ficticio. No se radica nada real, no se usan credenciales ni datos reales.",
     procedureEn: [
-      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, click Create account on the landing — NEVER click Log in and NEVER pause for login credentials on the create-account path. Fill name and email from the passport, then PAUSE at password creation. Never invent a password and never type credentials unprompted.",
-      "If a login form appears: prefill the email from the passport when available, then PAUSE_USER_LOGIN once with REQUIRED_FIELDS (email if still empty, password, MFA if shown). Prefer Assistant-fill — do not loop on login and do not expect the human to type in the live browser.",
+      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, click Create account on the landing — NEVER click Log in and NEVER pause for login credentials on the create-account path. Fill name and email from the passport, then invent a clearly-fictional password yourself (e.g. rehearsal-demo-0000) and continue — NEVER pause for password creation on the demo portal: it accepts any credentials and stores nothing.",
+      "If a login form appears: fill the email from the passport (or demo@example.com), invent a clearly-fictional password yourself (e.g. rehearsal-demo-0000) — the demo accepts ANY credentials and stores nothing — click Log in and CONTINUE. NEVER pause for login credentials on the demo portal and NEVER emit REQUIRED_FIELDS for the demo login. Do not loop on login.",
       "After demo registration completes, the portal shows a fictional registry number and a Continue button — go DIRECTLY to the filing form. Never visit the entity search page on the registration path.",
       "On the entity search page (login path only): enter any 6+ digits yourself (e.g. 482916) — demo numbers are fictional, any number works — then select the DEMO ENTITY LLC result and Continue. NEVER ask the human for a registry number on the demo portal.",
       "On the filing form: prefill EVERY non-sensitive field from the Business Passport first — contact name, email, phone, street, city, postal code, entity type, business activity — matching the dropdown, checkboxes, and radio buttons. Leave SSN, passwords, payment, and attestations blank.",
@@ -1593,8 +1593,8 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
       "On the final review page: stop at pre-submit review and summarize for the human — never click the final Submit button yourself.",
     ],
     procedureEs: [
-      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, pulse Crear cuenta en la portada — NUNCA pulse Iniciar sesión ni pause por credenciales en la ruta de crear cuenta. Llene nombre y correo desde el pasaporte, luego PAUSE en la creación de contraseña. Nunca invente una contraseña ni escriba credenciales sin que se lo pidan.",
-      "Si aparece un formulario de inicio de sesión: rellene el correo desde el pasaporte si está disponible, luego PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS (correo si sigue vacío, contraseña, MFA si se muestra). Prefiera Asistente — no cicle en el login ni espere que el humano escriba en el navegador en vivo.",
+      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, pulse Crear cuenta en la portada — NUNCA pulse Iniciar sesión ni pause por credenciales en la ruta de crear cuenta. Llene nombre y correo desde el pasaporte, luego invente usted mismo una contraseña claramente ficticia (p. ej. rehearsal-demo-0000) y continúe — NUNCA pause por la creación de contraseña en el portal demo: acepta cualquier credencial y no guarda nada.",
+      "Si aparece un formulario de inicio de sesión: llene el correo desde el pasaporte (o demo@example.com), invente usted mismo una contraseña claramente ficticia (p. ej. rehearsal-demo-0000) — el demo acepta CUALQUIER credencial y no guarda nada — pulse Iniciar sesión y CONTINÚE. NUNCA pause por credenciales de inicio de sesión en el portal demo ni emita REQUIRED_FIELDS para el login demo. No cicle en el login.",
       "Tras completar el registro demo, el portal muestra un número de registro ficticio y un botón Continuar — vaya DIRECTO al formulario de radicación. Nunca visite la página de búsqueda de entidad en la ruta de registro.",
       "En la página de búsqueda de entidad (solo ruta de inicio de sesión): escriba usted mismo cualquier número de 6+ dígitos (p. ej. 482916) — los números demo son ficticios, cualquiera funciona — luego seleccione el resultado DEMO ENTITY LLC y pulse Continuar. NUNCA le pida a la persona un número de registro en el portal demo.",
       "En el formulario de radicación: rellene PRIMERO todos los campos no sensibles desde el Pasaporte de Negocio — nombre del contacto, correo, teléfono, dirección, ciudad, código postal, tipo de entidad, actividad del negocio — incluyendo el dropdown, los checkboxes y los botones de radio. Deje el Seguro Social, contraseñas, pago y certificaciones en blanco.",
@@ -1609,13 +1609,13 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     uploadsEs: "El ensayo no requiere adjuntos",
     hintsEn: [
       "The demo portal is fictional — rehearse freely; nothing here touches a government system.",
-      "The demo accepts any credentials, but you must still pause for the human at every gate: login, password creation, SSN, attestation, payment, final review.",
+      "The demo accepts any credentials — NEVER pause for login or password creation on the demo portal; use obviously-fictional placeholders yourself and continue. Still pause for the human at SSN, attestation, payment, and final review.",
       "Demo registry numbers are fictional — entering any 6+ digits on the demo search page is expected. Never ask the human for a registry number.",
       "The first form submit always fails on phone format — expect the inline error and handle it through the humanized-error path.",
     ],
     hintsEs: [
       "El portal demo es ficticio — ensaye con libertad; nada aquí toca un sistema del gobierno.",
-      "El demo acepta cualquier credencial, pero igual debe pausar para la persona en cada puerta: login, creación de contraseña, Seguro Social, certificación, pago y revisión final.",
+      "El demo acepta cualquier credencial — NUNCA pause por el inicio de sesión ni por la creación de contraseña en el portal demo; use usted mismo marcadores obviamente ficticios y continúe. Siga pausando para la persona en Seguro Social, certificación, pago y revisión final.",
       "Los números de registro demo son ficticios — escribir cualquier número de 6+ dígitos en la búsqueda demo es lo esperado. Nunca le pida a la persona un número de registro.",
       "El primer envío del formulario siempre falla en el formato del teléfono — espere el error en línea y manéjelo por la vía de error humanizado.",
     ],

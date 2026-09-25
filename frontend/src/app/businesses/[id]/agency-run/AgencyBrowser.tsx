@@ -304,10 +304,15 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
               </span>
             </div>
           )}
+          {/* Live view box: the Browser Use hosted viewer renders its canvas
+              at 16:9 — locking the iframe to the same aspect removes the
+              black letterbox that a stretched flex-1 box produced. The
+              panel column (white) fills any remainder. Fullscreen keeps
+              flex-1 so the view fills the screen. */}
           <div
-            className={`relative w-full flex-1 rounded-xl bg-white shadow-sm ${
+            className={`relative w-full rounded-xl bg-white shadow-sm ${
               zoom > 1 ? "overflow-auto" : "overflow-hidden"
-            } ${isFullscreen ? "min-h-0" : "min-h-0 lg:min-h-[16rem]"} ${
+            } ${isFullscreen ? "min-h-0 flex-1" : "aspect-video"} ${
               props.takeover ? "ring-2 ring-amber-400" : "ring-1 ring-[#161616]/10"
             }`}
           >
