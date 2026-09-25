@@ -96,7 +96,7 @@ export function detectSpanish(text: string): boolean {
   return false;
 }
 
-function buildSystemPrompt(
+export function buildSystemPrompt(
   candidates: KbCandidates,
   isEs: boolean,
   allowedIndustries?: string[],
@@ -426,7 +426,7 @@ Return ONLY the JSON. No other text.`;
  * phrase in Puerto Rican Spanish so Spanish descriptions are understood in
  * Spanish instead of being forced through English keyword matching.
  */
-function buildSystemPromptEs(
+export function buildSystemPromptEs(
   candidates: KbCandidates,
   allowedIndustries?: string[],
   allowedLocationTypes?: string[]
