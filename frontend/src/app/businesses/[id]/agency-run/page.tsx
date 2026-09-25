@@ -982,7 +982,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     // unit is supported (some webviews ignore dvh and would collapse the
     // lock). overscroll-none kills rubber-band chaining past the windows.
     <div
-      className={`flex flex-col overscroll-none bg-[#2b2721] ${
+      className={`flex flex-col overscroll-none bg-[#161616] ${
         inWorkspace ? "h-screen overflow-hidden" : "min-h-dvh"
       }`}
       style={inWorkspace ? { height: "100dvh" } : undefined}
