@@ -40,3 +40,19 @@ test("normalizeLinkableBusinesses: malformed payloads never throw", () => {
   assert.deepEqual(normalizeLinkableBusinesses({ businesses: "nope" }), []);
   assert.deepEqual(normalizeLinkableBusinesses({ businesses: null }), []);
 });
+
+import { matchBusinessByName } from "./linkBusiness.ts";
+
+test("the narrative's business name links its Passport when exactly one matches", () => {
+  const list = [
+    { public_id: "b1", name: "Caribe Precision", legal_name: "Caribe Precision Manufacturing LLC", municipality: "Bayamón" },
+    { public_id: "b2", name: "Hotel Vista", legal_name: "Hotel Vista Inc.", municipality: "San Juan" },
+  ];
+  assert.equal(matchBusinessByName(list, "Caribe Precision Manufacturing, LLC")?.public_id, "b1");
+  assert.equal(matchBusinessByName(list, "caribe precision manufacturing l.l.c.")?.public_id, "b1");
+  assert.equal(matchBusinessByName(list, "Caribe"), null, "one shared word is not a confident match");
+  assert.equal(matchBusinessByName(list, "Isla Metalworks LLC"), null);
+  assert.equal(matchBusinessByName(list, null), null);
+  const twins = [...list, { public_id: "b3", name: "Caribe Precision Manufacturing (Ponce)", legal_name: null }];
+  assert.equal(matchBusinessByName(twins, "Caribe Precision Manufacturing LLC"), null, "two plausible matches → the picker decides");
+});

@@ -36,7 +36,7 @@ import { CoreApplicationDetails } from './forms/engine/CoreApplicationDetails';
 // fills EXISTING intake fields — the rules engine still decides requirements.
 import { NaturalLanguageIntake } from './components/NaturalLanguageIntake';
 import { ExistingPassportCard, ScenarioQuestions } from './components/intake/ScenarioPanel';
-import { mirrorAnswersToProfile, prefillKeysForPatch, questionIdForAnswerKey, QUESTION_KEY_MAP, WIZARD_KEY_TO_QUESTION } from './ai/intake/questionKeyMap';
+import { kbQuestionIdFor, mirrorAnswersToProfile, prefillKeysForPatch, questionIdForAnswerKey, QUESTION_KEY_MAP, WIZARD_KEY_TO_QUESTION } from './ai/intake/questionKeyMap';
 // Intake is a connected fact model: the resolver derives every fact that is
 // logically certain from what the user already told us, so SmartPR never asks a
 // question it can answer. It produces facts only — requirements still come
@@ -60,6 +60,7 @@ import {
   emptyScenario,
   evaluateScenario,
   identityFieldsKnown,
+  isNewPremises,
   liveFactLines,
   mergePassportIntoScenario,
   passportDeltas,
@@ -70,7 +71,9 @@ import {
   type PassportSnapshot,
   type ScenarioContext,
   type ScenarioQuestion,
+  restoreScenario,
 } from './ai/intake/scenario';
+import { businessTypeFromScenario, locationTypeFromScenario, planIntake, scenarioStatedAnswers, withFormFacts } from './ai/intake/infoNeeds';
 import {
   normalizeProjectIntent,
   projectIntentLabel,
@@ -82,6 +85,7 @@ import {
 } from './ai/intake/projectIntent';
 import {
   normalizeLinkableBusinesses,
+  matchBusinessByName,
   type LinkableBusiness,
 } from './ai/intake/linkBusiness';
 import {
@@ -105,7 +109,9 @@ import {
   type FilingStage,
   type SmartPRLiveData,
 } from './components/filing/FilingWorkflowShell';
-import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction } from './components/filing/RequirementCard';
+import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
+import { claraSupportFor, groupRequirements, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
+import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
@@ -224,6 +230,36 @@ interface Requirement {
    * question instead of asking for an upload. Mirrors UIRequirement in kb.ts.
    */
   unansweredTriggerQuestionId?: string;
+  /** Answer key the inline answer is written to (deferred questions). */
+  unansweredTriggerWriteKey?: string;
+}
+
+const REQUIREMENT_GROUP_COPY: Record<RequirementGroupId, { title: string; sub: string }> = {
+  required_now: { title: 'REQUIRED NOW', sub: 'File or obtain these for this project. Critical-path items come first.' },
+  conditional: { title: 'CONDITIONAL / NEEDS INFORMATION', sub: 'May apply. Each one says which fact decides it — answer it here and the path updates.' },
+  prerequisites: { title: 'WAITING ON PREREQUISITES', sub: 'Required, but each can be filed only after the prerequisite it names.' },
+  supporting: { title: 'SUPPORTING DOCUMENTS', sub: 'Documents the filings above rely on.' },
+  registrations: { title: 'REGISTRATIONS / LICENSES', sub: 'Business registrations and licenses.' },
+  completed: { title: 'COMPLETED', sub: 'Issued and on file.' },
+};
+
+/** Environmental review: undetermined until the operation's equipment and waste facts are known. */
+function EnvironmentalOpenItem({ language }: { language: 'en' | 'es' }) {
+  return (
+    <div className="rq-card rq-open-item" data-testid="env-open-item">
+      <div className="rq-card-row">
+        <div className="rq-card-center">
+          <div className="rq-card-title-row">
+            <h3>{L('Environmental review', language)}</h3>
+            <span className="rq-badge rq-badge-gray">{L('Potential — needs more information', language)}</span>
+          </div>
+          <p className="rq-card-desc">
+            {L('Applicability depends on equipment, emissions, fuel, wastewater, or hazardous materials. No environmental permit follows from the facts given so far; SmartPR re-checks the knowledge graph once these are known.', language)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function potentialItemsForProfile(
@@ -433,6 +469,16 @@ function businessTypeOptionsFor(industry: string | undefined): string[] {
   const seen = new Set(hardcoded.map((n) => n.toLowerCase()));
   const kbNames = businessTypeNamesForIndustry(industry) ?? [];
   return [...hardcoded, ...kbNames.filter((n) => !seen.has(n.toLowerCase()))];
+}
+
+/** The intake industry whose business-type list contains this type. */
+function industryForBusinessType(businessType: string): string | null {
+  const bt = businessType.trim().toLowerCase();
+  if (!bt) return null;
+  for (const industry of INDUSTRIES) {
+    if (businessTypeOptionsFor(industry).some((o) => o.toLowerCase() === bt)) return industry;
+  }
+  return null;
 }
 
 // The lease question — every physical-location business gets it unless the
@@ -1230,9 +1276,22 @@ function computeRequirements(
      * honest "Derived answer:" label instead of "Answer:" for them.
      */
     aiPrefilledKeys?: Iterable<string>;
+    /**
+     * Discovery questions not yet answered are checked counterfactually by
+     * the engine ("would a Yes add a requirement?") instead of being read as
+     * No: controlling ones surface as needs-more-information.
+     */
+    deferUnanswered?: boolean;
+    /** Existing business at premises it does not operate yet. */
+    newPremises?: { registeredMunicipality?: string | null } | null;
   } = {}
 ): Requirement[] {
   const entityType = entityTypeFromLegacyStructure(profile.business_structure);
+  const deferredQuestions = project.deferUnanswered && profile.business_type
+    ? getQuestionsForBusinessType(profile.business_type)
+        .filter((q) => answers[q.id] == null)
+        .map((q) => ({ questionId: kbQuestionIdFor(q.id, KB.questions), writeKey: q.id }))
+    : undefined;
   const fromKb = computeRequirementsFromKB(
     profile as any,
     answers,
@@ -1250,6 +1309,8 @@ function computeRequirements(
       confirmedKeys: project.provenance?.confirmedKeys,
       passportKeys: project.provenance?.passportKeys,
       aiPrefilledKeys: project.aiPrefilledKeys,
+      deferredQuestions,
+      newPremises: project.newPremises ?? null,
     }
   ) as Requirement[];
 
@@ -1610,14 +1671,17 @@ export default function SmartPRIntake() {
   // not-yet-pursued result can still be reviewed in full.
   const [activeIncentiveResult, setActiveIncentiveResult] = useState<IncentiveEligibilityResult | null>(null);
 
+  // Drafts are keyed by the business record when there is one, so a business
+  // that has not given its name yet still keeps its drafts.
+  const draftsOwner = businessId || profile.name;
   const sampleFormsStorageKey = useMemo(() => {
-    const business = (profile.name || 'business').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const business = (draftsOwner || 'business').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const municipality = (profile.municipality || 'pr').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     return `smartpr-sample-forms-${business}-${municipality}`;
-  }, [profile.name, profile.municipality]);
+  }, [draftsOwner, profile.municipality]);
 
   useEffect(() => {
-    if (!profile.name || !profile.municipality) return;
+    if (!draftsOwner || !profile.municipality) return;
     try {
       const saved = localStorage.getItem(sampleFormsStorageKey);
       if (!saved) return;
@@ -1625,13 +1689,13 @@ export default function SmartPRIntake() {
       setSampleFormDrafts((current) => Object.keys(current).length ? current : (parsed.drafts || {}));
       setPreparedSampleApplications((current) => Object.keys(current).length ? current : (parsed.prepared || {}));
     } catch { /* browser storage is best-effort */ }
-  }, [sampleFormsStorageKey, profile.name, profile.municipality]);
+  }, [sampleFormsStorageKey, draftsOwner, profile.municipality]);
 
   // Government-form engine persistence (structured data is the durable source —
   // previews regenerate from it; we never store a Blob URL as the only record).
   const govFormsStorageKey = useMemo(() => `${sampleFormsStorageKey}-gov`, [sampleFormsStorageKey]);
   useEffect(() => {
-    if (!profile.name || !profile.municipality) return;
+    if (!draftsOwner || !profile.municipality) return;
     try {
       const saved = localStorage.getItem(govFormsStorageKey);
       if (!saved) return;
@@ -1640,14 +1704,14 @@ export default function SmartPRIntake() {
       setPreparedGovApplications((current) => Object.keys(current).length ? current : (parsed.prepared || {}));
       if (parsed.canonical) setCanonicalOverride((current) => current ?? parsed.canonical);
     } catch { /* best-effort */ }
-  }, [govFormsStorageKey, profile.name, profile.municipality]);
+  }, [govFormsStorageKey, draftsOwner, profile.municipality]);
   useEffect(() => {
-    if (!profile.name || !profile.municipality) return;
+    if (!draftsOwner || !profile.municipality) return;
     if (!Object.keys(govFormDrafts).length && !Object.keys(preparedGovApplications).length) return;
     try {
       localStorage.setItem(govFormsStorageKey, JSON.stringify({ drafts: govFormDrafts, prepared: preparedGovApplications, canonical: canonicalOverride }));
     } catch { /* best-effort */ }
-  }, [govFormsStorageKey, govFormDrafts, preparedGovApplications, canonicalOverride, profile.name, profile.municipality]);
+  }, [govFormsStorageKey, govFormDrafts, preparedGovApplications, canonicalOverride, draftsOwner, profile.municipality]);
 
   // ==========================================================================
   // Intake fact model.
@@ -1699,6 +1763,8 @@ export default function SmartPRIntake() {
   // it in the intent card — never defaulted. Declared up here because the
   // entry/creation effects below read it in their dependency arrays.
   const [projectIntent, setProjectIntent] = useState<ProjectIntent | null>(null);
+  // Semantic scenario (declared early: session resume restores it).
+  const [scenario, setScenario] = useState<ScenarioContext | null>(null);
   // Whether the current intent is settled (user-picked, interpreter-applied
   // at high confidence, or proceeded-past). The ?entry=new-business default
   // alone does NOT confirm: the user may still switch to project_only, and a
@@ -1885,6 +1951,8 @@ export default function SmartPRIntake() {
     }
     const restoredPassport = validateProjectPassport(st.projectPassport);
     if (restoredPassport) setProjectPassport(restoredPassport);
+    const restoredScenario = restoreScenario(st.scenario);
+    if (restoredScenario) setScenario(restoredScenario);
     if (snap.business_id) {
       businessIdRef.current = snap.business_id;
       setBusinessId(snap.business_id);
@@ -1923,7 +1991,7 @@ export default function SmartPRIntake() {
         location_type: su.location_type || '',
       };
       setProfile(prev => ({ ...prev, ...restored }));
-      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
+      const computed = computeRequirements({ ...(profile as any), ...restored }, {}, potentialDecisions, requirementOptions());
       setRequirements(computed);
       if (su.business_id) {
         businessIdRef.current = su.business_id;
@@ -2026,19 +2094,38 @@ export default function SmartPRIntake() {
   // (ai/intake/scenario). The rules engine still decides requirements; the
   // scenario drives what is understood, what is uncertain, and which
   // controlling facts to ask about next.
-  const [scenario, setScenario] = useState<ScenarioContext | null>(null);
   const scenarioRef = useRef<ScenarioContext | null>(null);
   scenarioRef.current = scenario;
+  // Profile fields the user set by hand — facts from the description or the
+  // Passport never overwrite these.
+  const userEditedRef = useRef<Set<string>>(new Set());
+  // Profile keys filled from the linked business's Passport.
+  const passportFilledKeysRef = useRef<Set<string>>(new Set());
   // Scenario questions the user answered "Not sure" — not asked again.
   const [scenarioSkipped, setScenarioSkipped] = useState<string[]>([]);
   // Linked existing business's Passport (identity + registration facts).
   const [passportSnapshot, setPassportSnapshot] = useState<PassportSnapshot | null>(null);
+  const passportSnapshotRef = useRef<PassportSnapshot | null>(null);
+  useEffect(() => { passportSnapshotRef.current = passportSnapshot; }, [passportSnapshot]);
   const scenarioActive = !!scenario && Object.values(scenario).some((section) => Object.keys(section).length > 0);
   // The Passport only counts for the existing-business branch.
   const scenarioPassport = projectIntent === 'existing_business' ? passportSnapshot : null;
+  // Form facts flow back into the scenario, so a business type picked in the
+  // form (or on file in the Passport) answers "what operation?" and is never
+  // asked again. A Passport municipality is the business address, not the
+  // project's location, so only a municipality the user chose is carried.
+  const formBusinessType = profile.business_type;
+  const formMunicipality = projectIntent === 'existing_business' && passportSnapshot?.municipality === profile.municipality
+    ? ''
+    : profile.municipality;
   const mergedScenario = useMemo(
-    () => (scenarioActive || scenarioPassport ? mergePassportIntoScenario(scenario ?? emptyScenario(), scenarioPassport) : null),
-    [scenario, scenarioActive, scenarioPassport]
+    () => {
+      if (!scenarioActive && !scenarioPassport) return null;
+      const merged = mergePassportIntoScenario(scenario ?? emptyScenario(), scenarioPassport);
+      return scenarioActive ? withFormFacts(merged, { business_type: formBusinessType, municipality: formMunicipality }, KB) : merged;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
+    [scenario, scenarioActive, scenarioPassport, formBusinessType, formMunicipality, kbReady]
   );
   // Knowledge-graph applicability of the scenario: likely vs potential
   // paths, controlling unknowns, and the next questions.
@@ -2049,7 +2136,13 @@ export default function SmartPRIntake() {
   );
   const scenarioSummary = useMemo(() => (mergedScenario && scenarioActive ? describeScenario(mergedScenario) : null), [mergedScenario, scenarioActive]);
   // Identity fields the linked Passport already answers are not asked again.
-  const passportKnownFields = useMemo(() => identityFieldsKnown(scenarioPassport), [scenarioPassport]);
+  // The Passport's municipality is the business address; the project's
+  // location stays a (prefilled) project fact, so it is not hidden.
+  const passportKnownFields = useMemo(() => {
+    const known = identityFieldsKnown(scenarioPassport);
+    known.delete('municipality');
+    return known;
+  }, [scenarioPassport]);
   const answerScenarioQuestion = (q: ScenarioQuestion, answer: string | boolean | string[]) => {
     const next = applyScenarioAnswer(scenarioRef.current ?? emptyScenario(), q.id, answer);
     if (JSON.stringify(next) === JSON.stringify(scenarioRef.current)) {
@@ -2063,6 +2156,94 @@ export default function SmartPRIntake() {
     setProjectContext((prev) => reconcileProjectContext(prev, next));
   };
   const skipScenarioQuestion = (q: ScenarioQuestion) => setScenarioSkipped((prev) => [...prev, q.id]);
+
+  // Ask once: what the description (or an answer to a scenario question)
+  // established fills the form, so the same fact is never asked again in a
+  // different form. Only empty fields the user has not set by hand are
+  // filled; a project municipality replaces a Passport business address.
+  const scenarioProfileFill = useMemo(() => {
+    if (!mergedScenario || !scenarioActive || projectIntent === 'project_only') {
+      return mergedScenario && scenarioActive ? { municipality: mergedScenario.property.municipality?.value ?? null } : null;
+    }
+    const businessType = businessTypeFromScenario(mergedScenario, KB);
+    return {
+      municipality: mergedScenario.property.municipality?.value ?? null,
+      business_type: businessType,
+      location_type: locationTypeFromScenario(mergedScenario, LOCATION_TYPES_BY_BUSINESS_TYPE[businessType ?? profile.business_type] || LOCATION_TYPES),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
+  }, [mergedScenario, scenarioActive, projectIntent, profile.business_type, kbReady]);
+  useEffect(() => {
+    if (!scenarioProfileFill) return;
+    const edited = userEditedRef.current;
+    const fromPassport = passportFilledKeysRef.current;
+    setProfile((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      const fill = (key: 'municipality' | 'business_type' | 'location_type', value: string | null | undefined) => {
+        if (!value || edited.has(key)) return;
+        const current = next[key];
+        // A location type the business type does not offer (the property's
+        // old use, e.g. "Warehouse" for a furniture factory) is not an answer.
+        const invalidLocation = key === 'location_type' && !!current
+          && !(LOCATION_TYPES_BY_BUSINESS_TYPE[next.business_type] || LOCATION_TYPES).includes(current);
+        const replaceable = !current || invalidLocation || (key === 'municipality' && fromPassport.has('municipality'));
+        if (!replaceable || current === value) return;
+        next[key] = value;
+        changed = true;
+      };
+      fill('municipality', scenarioProfileFill.municipality);
+      if ('business_type' in scenarioProfileFill) {
+        fill('business_type', scenarioProfileFill.business_type);
+        fill('location_type', scenarioProfileFill.location_type);
+      }
+      if (next.business_type && !next.industry && !edited.has('industry')) {
+        const industry = industryForBusinessType(next.business_type);
+        if (industry) {
+          next.industry = industry;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+    // Re-applied when a later profile update (e.g. the interpreter's patch)
+    // clears a field the description had already answered.
+  }, [scenarioProfileFill, profile.municipality, profile.business_type, profile.location_type, profile.industry]);
+
+  // Guided questions the description already answers (stated facts only —
+  // "12 employees" answers "Will employees be hired?").
+  const scenarioAnswers = useMemo(() => (scenarioActive ? scenarioStatedAnswers(mergedScenario) : {}), [mergedScenario, scenarioActive]);
+  useEffect(() => {
+    const fresh = Object.entries(scenarioAnswers).filter(([key]) => discoveryAnswersRef.current[key] === undefined && !userEditedRef.current.has(key));
+    if (fresh.length === 0) return;
+    const patch = Object.fromEntries(fresh);
+    setDiscoveryAnswers((prev) => ({ ...patch, ...prev }));
+    setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...prefillKeysForPatch(Object.keys(patch))])));
+  }, [scenarioAnswers]);
+
+  // What must be known before requirements (required now), what the Passport
+  // can collect progressively (useful later), and what only a filing needs
+  // (filing specific — Clara asks, after checking Passport + project facts).
+  const descriptionKnownFields = useMemo(() => {
+    const known = new Set(
+      Object.entries(scenarioProfileFill ?? {})
+        .filter(([key, value]) => !!value && (profile as unknown as Record<string, unknown>)[key] === value)
+        .map(([key]) => key)
+    );
+    const b = mergedScenario && scenarioActive ? mergedScenario.business : null;
+    const stated = (f: { source: string } | undefined) => !!f && f.source !== 'inferred';
+    if (b && stated(b.name) && profile.name) known.add('name');
+    if (b && stated(b.entityType) && profile.business_structure) known.add('business_structure');
+    if (mergedScenario && scenarioActive && stated(mergedScenario.operations.employees) && profile.number_of_employees != null) known.add('number_of_employees');
+    if (profile.industry && known.has('business_type')) known.add('industry');
+    return known;
+  }, [scenarioProfileFill, profile, mergedScenario, scenarioActive]);
+  const intakePlan = useMemo(() => planIntake({
+    intent: projectIntent,
+    profile,
+    passportKnown: passportKnownFields,
+    descriptionKnown: descriptionKnownFields,
+  }), [projectIntent, profile, passportKnownFields, descriptionKnownFields]);
   // (projectIntent / projectIntentConfirmed are declared above the
   // entry/creation effects, which read them in their dependency arrays.)
   // The Project Passport: project/property facts for the active intent,
@@ -2101,13 +2282,21 @@ export default function SmartPRIntake() {
     };
   }, [me, projectIntent, businessId]);
 
-  // Existing business with exactly one business on the account: load its
-  // Passport immediately instead of asking the user to pick it.
+  // Existing business: link its Passport without asking when the choice is
+  // unambiguous — the one business the narrative names ("Caribe Precision
+  // Manufacturing, LLC"), or the account's only business when no name was
+  // given. A name that matches nothing, or several, shows the picker.
+  const narrativeBusinessName = scenario?.business.name?.value ?? null;
   useEffect(() => {
-    if (projectIntent !== "existing_business" || businessId) return;
-    if (linkableBusinesses && linkableBusinesses.length === 1) linkExistingBusiness(linkableBusinesses[0].public_id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the list arrives
-  }, [linkableBusinesses, projectIntent, businessId]);
+    if (projectIntent !== "existing_business" || businessId || !linkableBusinesses) return;
+    if (narrativeBusinessName) {
+      const match = matchBusinessByName(linkableBusinesses, narrativeBusinessName);
+      if (match) linkExistingBusiness(match.public_id);
+      return;
+    }
+    if (linkableBusinesses.length === 1) linkExistingBusiness(linkableBusinesses[0].public_id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when the list or the named business arrives
+  }, [linkableBusinesses, projectIntent, businessId, narrativeBusinessName]);
 
   /** Link the picked existing business: updates the URL + state so the
    *  passport-prefill effect picks it up exactly like a ?business= landing. */
@@ -2173,6 +2362,7 @@ export default function SmartPRIntake() {
    * description never quarantines a fact the user explicitly set.
    */
   const markUserTouched = (key: string) => {
+    userEditedRef.current.add(key);
     for (const k of relatedIntakeKeys(key)) interpretedKeysRef.current.delete(k);
     clearConfirmation(key);
   };
@@ -2185,6 +2375,18 @@ export default function SmartPRIntake() {
    * Suggested-but-unconfirmed interpretations and quarantined facts from a
    * previous description are excluded — present in state, but inert.
    */
+  // Engine options shared by every requirement computation: provenance,
+  // deferred discovery questions and the new-premises posture.
+  const requirementOptions = (opts: { deferUnanswered?: boolean } = {}) => ({
+    projectIntent,
+    projectContext,
+    provenance: provenanceExtra(),
+    aiPrefilledKeys,
+    deferUnanswered: opts.deferUnanswered ?? true,
+    newPremises: projectIntent === 'existing_business' && isNewPremises(mergedScenario, passportSnapshot)
+      ? { registeredMunicipality: passportSnapshot?.municipality ?? null }
+      : null,
+  });
   const provenanceExtra = () => {
     const valuedKeys = (obj: Record<string, unknown>): string[] =>
       Object.keys(obj).filter((k) => {
@@ -2460,7 +2662,6 @@ export default function SmartPRIntake() {
   const intakeSessionIdRef = useRef<string>(crypto.randomUUID());
   const interpretedKeysRef = useRef<Set<string>>(new Set());
   const interpretedContextKeysRef = useRef<Set<string>>(new Set());
-  const passportFilledKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     // Project-context follow-ups: deterministic questions for meaningful
     // project unknowns (renovation scope, occupancy change, …). Generated
@@ -2557,7 +2758,8 @@ export default function SmartPRIntake() {
         })
       );
     }
-    if (projectIntent !== "existing_business" || !businessId || existingBizPrefillRef.current) return;
+    // A local draft id is not a saved business: there is no Passport to load.
+    if (projectIntent !== "existing_business" || !businessId || businessId.startsWith("local-") || existingBizPrefillRef.current) return;
     existingBizPrefillRef.current = true;
     (async () => {
       try {
@@ -3139,7 +3341,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   setProfile(newProfile);
   const newAnswers = { ...getFollowUpQuestions(newProfile.industry) };
   setDiscoveryAnswers(newAnswers);
-  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
+  const computed = computeRequirements(newProfile, newAnswers, potentialDecisions, requirementOptions());
   setRequirements(computed);
   setReadinessScore(null);
   setFindings([]);
@@ -3218,7 +3420,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       await ensurePersistedBusiness();
     }
     setDiscoveryAnswers(answers);
-    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
+    const baseRequirements = computeRequirements(profile, answers, potentialDecisions, requirementOptions());
     const merged = mergeConfirmedPotentialRequirements(
       baseRequirements,
       potentialItemsForProfile(profile, baseRequirements),
@@ -3245,6 +3447,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     setRequirements(computed);
 
     // --- Knowledge-graph capture (observational, fire-and-forget) ---
+    // An existing business's project gets its own matter, so the engine's
+    // requirements project into obligations Clara can file against.
+    await ensureProjectMatter();
     captureScenario(profile, answers, computed);
 
     setCurrentStep(3);
@@ -3253,6 +3458,32 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Build and emit a "submission" capture event from the current scenario.
   // Never throws — capture is best-effort and never affects the user flow.
+  const ensureProjectMatter = async () => {
+    if (!me || matterIdRef.current || projectIntentRef.current !== 'existing_business') return;
+    const id = businessIdRef.current;
+    if (!id || id.startsWith('local-')) return;
+    try {
+      const secondLocation = isNewPremises(scenarioRef.current, passportSnapshot);
+      const response = await fetch('/api/matters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business_id: id,
+          matter_type: secondLocation ? 'SECOND_LOCATION' : 'OTHER',
+          title: (scenarioRef.current && scenarioTitle(scenarioRef.current)) || 'New project',
+        }),
+      });
+      if (!response.ok) return;
+      const created = await response.json();
+      if (created.matter_id) {
+        matterIdRef.current = created.matter_id;
+        const params = new URLSearchParams(window.location.search);
+        params.set('matter', created.matter_id);
+        window.history.replaceState(null, '', `/?${params.toString()}`);
+      }
+    } catch { /* requirements still show; filings need the matter and retry on the next generation */ }
+  };
+
   const captureScenario = (
     p: BusinessProfile,
     answers: Record<string, any>,
@@ -3346,6 +3577,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               // session.
               projectIntent,
               projectPassport,
+              // The scenario read from the description (and answered
+              // scenario questions): resuming never re-asks those facts.
+              scenario,
             },
           }),
         })];
@@ -3361,6 +3595,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           industry: profile.industry || undefined,
           municipality: profile.municipality || undefined,
         };
+        // Existing business: the Passport is the record. This project's facts
+        // (e.g. a project in another municipality) fill Passport gaps only —
+        // they never overwrite what is already on file.
+        if (projectIntentRef.current === "existing_business" && passportSnapshotRef.current) {
+          const onFile = passportSnapshotRef.current;
+          const known: Record<string, unknown> = {
+            legal_name: onFile.name,
+            business_structure: onFile.entityType,
+            business_type: onFile.businessType,
+            industry: onFile.industry,
+            municipality: onFile.municipality,
+          };
+          for (const [key, value] of Object.entries(known)) if (value) delete businessPatch[key];
+        }
         // Persist the full Business Passport when the user has edited core facts
         // (canonicalOverride) so regenerated artifacts pick up the same values.
         if (canonicalOverride && !skipBusinessWrites) {
@@ -3450,7 +3698,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   }, [
     me, businessId, profile, discoveryAnswers, requirements, potentialDecisions, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives,
     sampleFormDrafts, preparedSampleApplications, govFormDrafts,
-    preparedGovApplications, canonicalOverride, currentStep, readinessScore,
+    preparedGovApplications, canonicalOverride, currentStep, readinessScore, scenario,
   ]);
 
   // Typing and voice enter the same canonical state. Keep the existing intake
@@ -3473,7 +3721,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // Recomputing with the shown intent settles the branch.
     if (projectIntent) setProjectIntentConfirmed(true);
     setIsLoading(true);
-    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
+    const computed = computeRequirements(profile, discoveryAnswers, potentialDecisions, requirementOptions());
     setRequirements(computed);
     setCurrentStep(3);
     setIsLoading(false);
@@ -3489,7 +3737,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const answerTriggerQuestion = (writeKey: string, value: boolean) => {
     const nextAnswers = { ...discoveryAnswers, [writeKey]: value };
     setDiscoveryAnswers(nextAnswers);
-    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys }));
+    setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, requirementOptions()));
   };
 
   // When business_type changes, also ensure location is valid (already handled in onChange)
@@ -3698,6 +3946,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const processRealFileUpload = async (file: File, reqCode: string) => {
     setIsLoading(true);
     const filename = file.name;
+    // One evidence record for SmartPR and Clara: the upload also lands in the
+    // business's Evidence Locker, tagged with the requirement it satisfies,
+    // so Clara's filing readiness sees it and never asks for it again.
+    const evidenceBusinessId = me && businessId && !businessId.startsWith('local-') ? businessId : null;
+    const evidenceTag = requirements.find((r) => r.code === reqCode)?.document_id;
+    if (evidenceBusinessId && evidenceTag) {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('business_id', evidenceBusinessId);
+      form.append('requirement_tags', evidenceTag);
+      void fetch('/api/evidence', { method: 'POST', body: form }).catch(() => undefined);
+    }
 
     // Read both text (for LLM analysis) and binary blob (for ZIP packaging of original documents)
     const [textContent, arrayBuffer] = await Promise.all([
@@ -4685,7 +4945,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // document that is already required for the selected business profile.
   const potentialItems = potentialItemsForProfile(
     profile,
-    computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys })
+    computeRequirements(profile, discoveryAnswers, potentialDecisions, requirementOptions({ deferUnanswered: false }))
   );
 
   // Render one requirement row (shared by Mandatory + Recommended sections).
@@ -4718,7 +4978,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // intelligence panel and progress stats update as they answer.
   const liveReqs = React.useMemo(() => {
     try {
-      return computeRequirements(profile, discoveryAnswers, potentialDecisions, { projectIntent, projectContext, provenance: provenanceExtra(), aiPrefilledKeys });
+      return computeRequirements(profile, discoveryAnswers, potentialDecisions, requirementOptions());
     } catch {
       return [] as Requirement[];
     }
@@ -4738,24 +4998,25 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // project_only collects only the project name and municipality as base
   // profile fields — industry, business type, and location type are never
   // asked, so they must not inflate the progress denominator either.
-  const intakeFieldsDone = (isProjectOnly
-    ? [profile.name, profile.municipality]
-    : [profile.name, profile.municipality, profile.industry, profile.business_type, profile.location_type]
-  ).filter(Boolean).length;
+  // Only required-now facts count: useful-later Passport facts and
+  // filing-specific details never hold back the requirements.
+  const requiredNowFields = intakePlan.fields.filter((f) => f.tier === 'required_now');
+  const intakeFieldsDone = requiredNowFields.filter((f) => f.known).length;
   const answeredPotentialCount = potentialItems.filter((item) => potentialDecisions[item.flag]).length;
   // Totals count only questions SmartPR still needs. A question it can already
   // answer is not work the user has to do, so it must not inflate the progress
   // denominator either.
-  const intakeQuestionTotal = guidedQuestions.length + potentialItems.length;
-  const intakeTotal = (isProjectOnly ? 2 : 5) + intakeQuestionTotal;
-  const intakeDone = intakeFieldsDone + guidedQuestionsAnswered + answeredPotentialCount;
+  // Description-driven intake: discovery questions are deferred to the
+  // requirements page, so progress counts only the required-now facts.
+  const intakeQuestionTotal = scenarioActive ? 0 : guidedQuestions.length + potentialItems.length;
+  const intakeTotal = requiredNowFields.length + intakeQuestionTotal;
+  const intakeDone = intakeFieldsDone + (scenarioActive ? 0 : guidedQuestionsAnswered + answeredPotentialCount);
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
   // project_only readiness is the project name + municipality: without this
   // branch the "See my requirements" button could never enable for a
   // property-only project, because the business fields are never collected.
-  const baseProfileReady = isProjectOnly
-    ? Boolean(profile.name && profile.municipality)
-    : Boolean(profile.name && profile.municipality && profile.industry && profile.business_type && profile.location_type);
+  // Only required-now facts gate requirements (ai/intake/infoNeeds.ts).
+  const baseProfileReady = intakePlan.ready;
   // Compact one-line summary of the business details for the minimized
   // block. The block stays minimized by default — fields expand only via
   // Add/Edit or the incomplete-submit attention path.
@@ -4794,7 +5055,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const profileFieldVisible = () => !showProfileSummary;
   // Highlight ring on the fields after an incomplete submit tap.
   const profileAttentionCls = profileNeedsAttention ? ' spr-attention' : '';
-  const intakeDisplayTotal = isProjectOnly ? intakeTotal : Math.max(7, intakeTotal);
+  const intakeDisplayTotal = intakeTotal;
   const intakeDisplayDone = intakeDone + (
     baseProfileReady && intakeDone === intakeTotal
       ? Math.max(0, intakeDisplayTotal - intakeTotal)
@@ -4987,6 +5248,87 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     return set;
   }, []);
 
+  // Clara-first filing action. Clara needs a persisted business (the run is
+  // tied to its obligations) and a signed-in owner — never a local draft id.
+  const persistedBusinessId = businessId && !businessId.startsWith('local-') ? businessId : null;
+  const claraBusinessId = me ? (persistedBusinessId ?? 'pending') : null;
+  const openClara = async (documentId: string) => {
+    if (!me) return;
+    // An existing business links its Passport; any other signed-in intake
+    // gets its business record now (ensurePersistedBusiness).
+    // Only a new business gets a record created here — an existing one is
+    // linked through its Passport, and unknown intent never creates one.
+    const id = persistedBusinessId
+      ?? (projectIntent === 'new_business' ? await ensurePersistedBusiness() : null);
+    if (!id) {
+      window.alert(L('Link your business (existing business → pick it above) so Clara can file for it.', language));
+      return;
+    }
+    await saveProgress().catch(() => false);
+    // Clara's filing list reads persisted obligations: sync this intake's
+    // requirements first. A failed sync never blocks entry.
+    await Promise.race([
+      fetch(`/api/businesses/${encodeURIComponent(id)}/obligations/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requirements: requirements.map((r) => ({
+            document_id: r.document_id ?? null,
+            name: r.name,
+            agency: r.agency ?? null,
+            mandatory: r.mandatory,
+            source_rule: r.source_rule ?? null,
+          })),
+        }),
+      }).catch(() => undefined),
+      new Promise((resolve) => setTimeout(resolve, 8000)),
+    ]);
+    window.location.href = `/businesses/${encodeURIComponent(id)}/agency-run?filing=${encodeURIComponent(documentId)}`;
+  };
+  const filingFor = (req: Requirement): RequirementFiling | null => {
+    const { support } = claraSupportFor(req.document_id);
+    const site = req.agencyUrl || (req.downloadKind === 'filing_portal' ? req.downloadUrl : null) || null;
+    const agencySite = site ? { label: L('Open agency site', language), url: site } : null;
+    if (support === 'instructions') {
+      const guide = req.downloadUrl && req.downloadKind && req.downloadKind !== 'filing_portal' && req.downloadKind !== 'none' ? req.downloadUrl : undefined;
+      return { kind: 'instructions', label: L('View filing instructions', language), href: guide, agencySite };
+    }
+    const label = support === 'file' ? L('File with Clara', language) : L('Prepare with Clara', language);
+    if (!claraBusinessId) {
+      const next = typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '%2F';
+      return { kind: support, label, href: `/auth/login?next=${next}`, hint: L('Sign in to let Clara use your saved information.', language), agencySite: support === 'prepare' ? agencySite : null };
+    }
+    return { kind: support, label, onClick: () => { void openClara(req.document_id!); }, agencySite: support === 'prepare' ? agencySite : null };
+  };
+  // Why this applies to THIS project, beyond the rule's trigger: a new
+  // premises (or municipality) for an existing business, and — for the
+  // Permiso Único, which integrates the use permit — a use change the graph
+  // derived from the authorized use.
+  const projectContextLabel = (req: Requirement): string | null => {
+    const facts = req.triggerFacts ?? [];
+    const where = mergedScenario?.property.municipality?.value ?? profile.municipality;
+    const parts: string[] = [];
+    if (facts.includes('new_premises:other_municipality')) parts.push(`${L('New location for your business in', language)} ${where} — ${L('not covered by your registered location', language)}`);
+    else if (facts.includes('new_premises')) parts.push(L('Required for the new premises — your existing permits cover your current location only', language));
+    const change = mergedScenario?.project.possibleChangeOfUse;
+    if (req.document_id === 'DOC_PERMISO_UNICO' && change?.value === true) {
+      parts.push(`${L('Includes the use authorization', language)}: ${change.evidenceText.replace(/^Answered:\s*/, '')}`);
+    }
+    return parts.length ? parts.join(' · ') : null;
+  };
+  const requirementFacts = (req: Requirement, state: 'pending' | 'done' | 'review', fileName: string | null, prepared: boolean, name: string): RequirementFact[] => {
+    const docMeta = (KB.documents as Array<{ id: string; citation?: string | null }>).find((d) => d.id === req.document_id);
+    const { support, config } = claraSupportFor(req.document_id);
+    const conditional = req.applicability === 'conditional' || req.applicability === 'needs_more_information' || !!req.unansweredTriggerQuestionId;
+    return [
+      { label: L('Source', language), value: docMeta?.citation || (req.source_rule ? `${L('Rule', language)} ${req.source_rule}` : '—') },
+      { label: L('Evidence', language), value: fileName ? `${L('On file', language)}: ${fileName}` : conditional ? L('Only if it applies', language) : `${L('Copy of the issued', language)} ${name}` },
+      { label: L('Readiness', language), value: state === 'done' ? L('Complete', language) : state === 'review' ? L('Needs review', language) : conditional ? L('Depends on your answer', language) : prepared ? L('Prepared', language) : L('Not started', language) },
+      { label: L('Filing', language), value: state === 'done' ? L('Issued', language) : prepared ? L('Prepared — not filed', language) : config ? `${config.agencyEn} · ${config.portalEn}` : L('Not filed', language) },
+      { label: 'Clara', value: support === 'file' ? L('Can file this', language) : support === 'prepare' ? L('Can prepare this', language) : L('Not supported yet', language) },
+    ];
+  };
+
   const computeReqCard = (req: Requirement) => {
     const doc = uploadedDocs.find(d => d.requirement_code === req.code);
     const analysis = doc?.ai_analysis;
@@ -5007,7 +5349,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // the card asks the question inline (Yes/No) instead of asking for an
     // upload. The answer is genuinely missing — never invented.
     const triggerQuestion = req.unansweredTriggerQuestionId
-      ? UNANSWERED_TRIGGER_QUESTIONS.find((t) => t.questionId === req.unansweredTriggerQuestionId)
+      ? (req.unansweredTriggerWriteKey
+          ? { questionId: req.unansweredTriggerQuestionId, writeKey: req.unansweredTriggerWriteKey }
+          : UNANSWERED_TRIGGER_QUESTIONS.find((t) => t.questionId === req.unansweredTriggerQuestionId))
       : undefined;
 
     // Two ways SmartPR can prepare a requirement for the user, in priority
@@ -5272,7 +5616,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const isRenewable =
       !!req.document_id &&
       renewableDocumentIds.has(req.document_id) &&
-      projectIntent === "existing_business";
+      projectIntent === "existing_business" &&
+      // Only a document the business already holds has a current expiry — a
+      // first filing for new premises, or a conditional one, does not.
+      req.applicability === 'verify_existing';
     const expiryValue = expiryDates[req.code] || "";
     const expiryBlock = isRenewable ? (
       <div style={{ marginTop: 8, padding: 10, background: 'var(--surface-2)', borderRadius: 8, fontSize: 13 }}>
@@ -5417,55 +5764,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       onDownload: () => handleDownloadClick(req.code),
     } : undefined;
 
-    // Clara-first filing (2026-09-25): requirements filed at an external
-    // portal launch the Clara filing workspace in-app instead of kicking
-    // the user out to a government website in a new tab. Clara works
-    // through the filing with the user — approvals and sensitive/human-only
-    // steps stay in their hands. Needs a business to file for; without one
-    // (anonymous intake) the external link stays as the fallback.
-    const filingBusinessId = businessIdRef.current ?? businessId;
-    const portalFiling = req.downloadUrl && req.downloadKind === "filing_portal" && filingBusinessId
-      ? {
-          label: L('File with Clara', language),
-          href: req.document_id
-            ? `/businesses/${filingBusinessId}/agency-run?filing=${encodeURIComponent(req.document_id)}`
-            : `/businesses/${filingBusinessId}/agency-run`,
-          hint: L('Work through this filing with Clara — you stay in control of every step.', language),
-          // Clara's filing picker reads persisted obligations. The intake
-          // computes requirements client-side, so sync them first — without
-          // this Clara lands on the empty "nothing I can file" state even
-          // though the business just went through intake. Intake-local ids
-          // (local-*) are not persisted businesses: nothing to sync.
-          onBeforeNavigate: async () => {
-            if (filingBusinessId.startsWith('local-')) return;
-            try {
-              await fetch(`/api/businesses/${encodeURIComponent(filingBusinessId)}/obligations/sync`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  requirements: requirements.map((r) => ({
-                    document_id: r.document_id ?? null,
-                    name: r.name,
-                    agency: r.agency ?? null,
-                    mandatory: r.mandatory,
-                    source_rule: r.source_rule ?? null,
-                  })),
-                }),
-              });
-            } catch {
-              // A failed sync never blocks entering Clara — the workspace
-              // falls back to its empty state, same as before.
-            }
-          },
-        }
-      : undefined;
 
     // Inline answer control for the "more information needed" card. Writing
     // the answer is a REAL discovery answer: the engine reruns immediately
     // and the card becomes REQUIRED with "Answer: Yes" (or disappears on
     // No) — the provenance is the user, not an assumption.
+    const triggerQuestionText = triggerQuestion && triggerQuestion.questionId !== 'Q_EXISTING_LEASE'
+      ? (KB.questions as Array<{ id: string; question?: string }>).find((q) => q.id === triggerQuestion.questionId)?.question
+      : undefined;
     const answerPrompt = triggerQuestion ? {
-      prompt: L('Do you lease your commercial space?', language),
+      prompt: L(triggerQuestionText ?? 'Do you lease your commercial space?', language),
       yesLabel: L('Yes', language),
       noLabel: L('No', language),
       onYes: () => answerTriggerQuestion(triggerQuestion.writeKey, true),
@@ -5482,16 +5790,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       badge,
       why,
       action,
-      // Inline answer prompt for an unanswered trigger question (unfinished:
-      // the classifier never sets unansweredTriggerQuestionId yet, so this
-      // stays undefined and the card renders no prompt).
-      answerPrompt: undefined,
+      answerPrompt,
+      awaitingAnswer: !!triggerQuestion,
+      filing: triggerQuestion ? null : filingFor(req),
+      baseFacts: requirementFacts(req, state, doc?.filename ?? null, !!prepared || !!samplePrepared, name),
       secondary,
       secondaryOnCompleted,
-      download,
-      portalFiling,
+      // Not filed until the deciding answer is in — no filing link yet.
+      download: triggerQuestion ? undefined : download,
       extra: hasExtra ? extra : undefined,
-      contextLabel: req.incentiveLabel ?? null,
+      contextLabel: req.incentiveLabel ?? projectContextLabel(req),
     };
   };
 
@@ -5500,7 +5808,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .filter(r => r.applicability !== 'not_applicable')
       .map(computeReqCard),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds]
+    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds, claraBusinessId]
   );
   const tabNeedsActionCount = reqCards.filter(c => c.bucket === 'needs_action').length;
   const tabInProgressCount = reqCards.filter(c => c.bucket === 'in_progress').length;
@@ -5518,8 +5826,39 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // under "Other requirements" so the critical path dominates the page.
   const isCriticalPath = (c: (typeof reqCards)[number]) =>
     c.req.mandatory && c.bucket !== 'completed' && c.bucket !== 'none' && c.state === 'pending';
-  const criticalPathCards = tabFilteredCards.filter(isCriticalPath);
-  const otherCards = tabFilteredCards.filter(c => !isCriticalPath(c));
+  // The whole regulatory path, grouped (requirementGroups.ts). Prerequisites
+  // come from the KB's depends_on_document_ids among the present requirements.
+  const kbDocs = KB.documents as unknown as Array<{ id: string; depends_on_document_ids?: string[] | null }>;
+  const grouping = groupRequirements(
+    reqCards.map((c) => ({ documentId: c.req.document_id, applicability: c.req.applicability, stage: c.req.stage, mandatory: c.req.mandatory, done: c.state === 'done', awaitingAnswer: c.awaitingAnswer })),
+    kbDocs
+  );
+  const nameByDoc = new Map(reqCards.map((c) => [c.req.document_id, c.name]));
+  const groupedCards = REQUIREMENT_GROUP_ORDER.map((groupId) => ({
+    id: groupId,
+    cards: tabFilteredCards
+      .map((c) => ({ c, g: grouping[reqCards.indexOf(c)] }))
+      .filter(({ g }) => g.group === groupId)
+      .map(({ c, g }) => ({
+        ...c,
+        facts: [
+          ...c.baseFacts.slice(0, 3),
+          { label: L('Prerequisites', language), value: g.waitingOn.length ? g.waitingOn.map((d) => nameByDoc.get(d) ?? d).join(', ') : g.neededBefore.length ? `${L('None — needed before', language)} ${g.neededBefore.map((d) => nameByDoc.get(d) ?? d).join(', ')}` : L('None', language) },
+          ...c.baseFacts.slice(3),
+        ],
+      })),
+  })).filter((g) => g.cards.length > 0);
+  // Environmental review is an open question, not a requirement, when the
+  // activity is industrial and the equipment/emissions/waste facts are
+  // unknown: the graph decides once they are answered.
+  const envOpenItem = (() => {
+    if (!mergedScenario || !scenarioActive) return false;
+    const act = mergedScenario.operations.activity?.value ?? mergedScenario.property.proposedUse?.value;
+    if (!act || !activityFamilies(act).some((f) => f === 'industrial' || f === 'automotive')) return false;
+    const o = mergedScenario.operations;
+    if ([o.generator, o.fuelStorage, o.emissionsEquipment, o.hazardousMaterials, o.wastewaterDischarge].every((f) => f !== undefined)) return false;
+    return !reqCards.some((c) => /air|emission|hazard|wastewater|stormwater|npdes|used-oil|environment/i.test(`${c.req.document_id} ${c.name}`));
+  })();
 
   // Contradictions only the user can settle. Clashes SmartPR resolved itself
   // (a derivation losing to a user answer) are deliberately not shown.
@@ -5552,7 +5891,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const currentPotentialQuestionIndex = currentPotentialQuestion
     ? potentialItems.findIndex((item) => item.flag === currentPotentialQuestion.flag)
     : -1;
-  const intakeQuestionsComplete = activeQuestionIndex >= questionList.length
+  // A description-driven intake asks only the scenario's controlling facts;
+  // the business type's discovery questions are deferred to the requirements
+  // page, where the engine lists only those that would change the path.
+  const deferGuidedQuestions = scenarioActive;
+  const intakeQuestionsComplete = deferGuidedQuestions || activeQuestionIndex >= questionList.length
     && answeredPotentialCount === potentialItems.length;
   // One question UI at a time in the consolidated top area: the knowledge
   // graph's controlling question first, then the guided question, then the
@@ -5562,8 +5905,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const scenarioNextQuestion = scenarioEval?.questions[0] ?? null;
   const topQuestionKind: 'scenario' | 'guided' | 'potential' | null =
     scenarioNextQuestion ? 'scenario'
-    : currentQuestion ? 'guided'
-    : currentPotentialQuestion ? 'potential'
+    : currentQuestion && !deferGuidedQuestions ? 'guided'
+    : currentPotentialQuestion && !deferGuidedQuestions ? 'potential'
     : scenarioEval ? 'scenario'
     : null;
   const questionsHeading =
@@ -6433,15 +6776,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
 
             {passportModeActive && (
-              <div style={{ margin: '4px 0 8px', borderTop: '1px solid var(--border, #e2e8f0)', paddingTop: 12 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>{L('Core Application Details', language)}</h3>
+              <details className="spr-later" data-testid="filing-details" style={{ margin: '4px 0 8px' }}>
+                <summary>{L('Filing details (optional now)', language)}</summary>
+                <p className="spr-later-note">{L('Clara uses these when preparing a filing. Anything you leave blank is asked only when a filing needs it.', language)}</p>
                 <CoreApplicationDetails
                   passportMode
                   canonical={canonicalApplication}
                   lang={language}
                   onChange={updatePassport}
                 />
-              </div>
+              </details>
             )}
 
             <div className="spr-form-footer">
@@ -6543,70 +6887,59 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             );
           })()}
 
-          {/* Critical path — the page's main focus. Full real estate, no
-              per-item explanatory copy, always shown for the active tab. */}
-          {criticalPathCards.length > 0 && (
-            <>
-              <div className="rq-critical-head">
-                <Star size={13} /> {L('CRITICAL PATH — HANDLE THESE NEXT', language)}
-                <span className="rq-critical-count">{criticalPathCards.length}</span>
-              </div>
-              <p className="rq-critical-sub">{L('These requirements are blocking your ability to move forward.', language)}</p>
-            </>
-          )}
-
-          <div className="rq-list">
-            {criticalPathCards.map((c, i) => (
-              <RequirementCard
-                key={c.req.code}
-                id={`req-row-${c.req.code}`}
-                index={i + 1}
-                icon={c.icon}
-                iconTone={c.iconTone}
-                name={c.name}
-                agency={c.agency}
-                description={c.description}
-                badge={c.badge}
-                whyLabel={L('Why do I need this?', language)}
-                why={c.why}
-                action={c.action}
-                answerPrompt={c.answerPrompt}
-                secondary={c.secondary}
-                secondaryOnCompleted={c.secondaryOnCompleted}
-                download={c.download}
-                portalFiling={c.portalFiling}
-                extra={c.extra}
-                contextLabel={c.contextLabel}
-              />
-            ))}
-          </div>
-
-          {otherCards.length > 0 && (
-            <div className="rq-list">
-              {otherCards.map((c, i) => (
-                <RequirementCard
-                  key={c.req.code}
-                  id={`req-row-${c.req.code}`}
-                  index={criticalPathCards.length + i + 1}
-                  icon={c.icon}
-                  iconTone={c.iconTone}
-                  name={c.name}
-                  agency={c.agency}
-                  description={c.description}
-                  badge={c.badge}
-                  whyLabel={L('Why do I need this?', language)}
-                  why={c.why}
-                  action={c.action}
-                  answerPrompt={c.answerPrompt}
-                  secondary={c.secondary}
-                  secondaryOnCompleted={c.secondaryOnCompleted}
-                  download={c.download}
-                  portalFiling={c.portalFiling}
-                  extra={c.extra}
-                  contextLabel={c.contextLabel}
-                />
-              ))}
-            </div>
+          {/* The whole regulatory path, grouped: what to file now, what may
+              apply (and the fact that decides it), what waits on a
+              prerequisite, supporting documents, registrations already held,
+              and what is done. Critical-path items lead the first group. */}
+          {groupedCards.map((group, gi) => {
+            const offset = groupedCards.slice(0, gi).reduce((n, g) => n + g.cards.length, 0);
+            const meta = REQUIREMENT_GROUP_COPY[group.id];
+            const cards = group.id === 'required_now'
+              ? [...group.cards.filter(isCriticalPath), ...group.cards.filter((c) => !isCriticalPath(c))]
+              : group.cards;
+            return (
+              <section key={group.id} className={`rq-group rq-group-${group.id}`} data-testid={`req-group-${group.id}`}>
+                <div className="rq-group-head">
+                  {group.id === 'required_now' && <Star size={13} />} {L(meta.title, language)}
+                  <span className="rq-critical-count">{group.cards.length}</span>
+                </div>
+                <p className="rq-group-sub">{L(projectIntent === 'existing_business' && group.id === 'registrations' ? 'Already held by your business — confirm they are current.' : meta.sub, language)}</p>
+                <div className="rq-list">
+                  {cards.map((c, i) => (
+                    <RequirementCard
+                      key={c.req.code}
+                      id={`req-row-${c.req.code}`}
+                      index={offset + i + 1}
+                      icon={c.icon}
+                      iconTone={c.iconTone}
+                      name={c.name}
+                      agency={c.agency}
+                      description={c.description}
+                      badge={c.badge}
+                      whyLabel={L('Why do I need this?', language)}
+                      why={c.why}
+                      action={c.action}
+                      answerPrompt={c.answerPrompt}
+                      secondary={c.secondary}
+                      secondaryOnCompleted={c.secondaryOnCompleted}
+                      download={c.download}
+                      filing={c.filing}
+                      facts={c.facts}
+                      extra={c.extra}
+                      contextLabel={c.contextLabel}
+                    />
+                  ))}
+                  {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
+                </div>
+              </section>
+            );
+          })}
+          {envOpenItem && !groupedCards.some((g) => g.id === 'conditional') && (
+            <section className="rq-group rq-group-conditional" data-testid="req-group-conditional">
+              <div className="rq-group-head">{L(REQUIREMENT_GROUP_COPY.conditional.title, language)}</div>
+              <p className="rq-group-sub">{L(REQUIREMENT_GROUP_COPY.conditional.sub, language)}</p>
+              <div className="rq-list"><EnvironmentalOpenItem language={language} /></div>
+            </section>
           )}
 
           {/* Recommendation panel — advisory historical insights (never mandatory) */}
@@ -6716,7 +7049,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
             <div className="headline">
               <div className="eyebrow">{L('Readiness Score', language)}</div>
-              <h1>{profile.name || '—'}</h1>
+              <h1>{profile.name || (mergedScenario ? scenarioTitle(mergedScenario) : null) || L(isProjectOnly ? 'Your project' : 'Your business', language)}</h1>
               <p>{completedMandatory} {L('of', language)} {totalMandatory} {L('Required Documents Validated', language)}{findings.filter(f => f.severity === 'critical').length === 0 && missingCount === 0 ? ` · ${L('No Critical Issues Found', language)}` : missingCount > 0 ? ` · ${missingCount} ${L('still missing', language)}` : ''}</p>
             </div>
             <div className="banner-stat">

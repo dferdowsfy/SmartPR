@@ -6,7 +6,7 @@
  * an uncertain conclusion is never dressed up as a confirmed chip.
  */
 import { changeOfUseStatus, isConfirmed, type ScenarioContext, type ScenarioFact } from "./types";
-import { displayOfUse } from "./uses";
+import { displayOfUse, familiesOf } from "./uses";
 
 export interface ScenarioChip {
   key: string;
@@ -43,7 +43,10 @@ export function describeScenario(ctx: ScenarioContext, opts: { includePassport?:
   // "Existing warehouse/office facility": the use and "existing" combine into
   // one fact about the property; each half keeps its own certainty.
   const use = p.existingUse ? displayOfUse(p.existingUse.value).toLowerCase().replace(/ \/ /g, "/") : null;
-  if (p.existingBuilding?.value && p.existingUse && isConfirmed(p.existingBuilding) && isConfirmed(p.existingUse)) {
+  const land = !!p.existingUse && familiesOf(p.existingUse.value).includes("vacant");
+  if (land) {
+    put("property.existingUse", p.existingUse, title(use!));
+  } else if (p.existingBuilding?.value && p.existingUse && isConfirmed(p.existingBuilding) && isConfirmed(p.existingUse)) {
     understood.push({ key: "property.existing", label: `Existing ${use} facility` });
   } else {
     put("property.existingUse", p.existingUse, use ? `${title(use)} facility` : null);
@@ -64,10 +67,8 @@ export function describeScenario(ctx: ScenarioContext, opts: { includePassport?:
   yesNo("project.electricalWork", pr.electricalWork, "Electrical work", "No electrical work");
   yesNo("project.plumbingWork", pr.plumbingWork, "Plumbing work", "No plumbing work");
   yesNo("project.mechanicalWork", pr.mechanicalWork, "Mechanical / HVAC work", "No mechanical work");
-  if (pr.layoutChanges) {
-    const buildout = /\boffice\s+build[\s-]?out/i.test(pr.layoutChanges.evidenceText);
-    yesNo("project.layoutChanges", pr.layoutChanges, buildout ? "Office build-out" : "Layout changes", "No layout changes");
-  }
+  yesNo("project.officeBuildout", pr.officeBuildout, "Office build-out", "No office build-out");
+  yesNo("project.layoutChanges", pr.layoutChanges, "Layout changes", "No layout changes");
   yesNo("project.structuralWork", pr.structuralWork, "Structural work", "No structural work");
   yesNo("project.exteriorWork", pr.exteriorWork, "Exterior work", "No exterior work");
   yesNo("project.footprintChange", pr.footprintChange, "Footprint changes", "Footprint unchanged");
@@ -115,7 +116,8 @@ export function liveFactLines(ctx: ScenarioContext): string[] {
   if (b.name?.value) lines.push(`Business: ${b.name.value}`);
   if (p.municipality && isConfirmed(p.municipality)) lines.push(`Municipality: ${p.municipality.value}`);
   if (p.existingUse && isConfirmed(p.existingUse)) {
-    lines.push(`${p.existingBuilding?.value && isConfirmed(p.existingBuilding) ? "Existing facility" : "Facility"}: ${displayOfUse(p.existingUse.value).toLowerCase()}`);
+    const onLand = familiesOf(p.existingUse.value).includes("vacant");
+    lines.push(`${onLand ? "Property" : p.existingBuilding?.value && isConfirmed(p.existingBuilding) ? "Existing facility" : "Facility"}: ${displayOfUse(p.existingUse.value).toLowerCase()}`);
   }
   if (p.squareFeet) lines.push(`Size: ${p.squareFeet.value.toLocaleString("en-US")} sq ft`);
   if (p.ownershipStatus && isConfirmed(p.ownershipStatus)) lines.push(`Property relationship: ${p.ownershipStatus.value}`);

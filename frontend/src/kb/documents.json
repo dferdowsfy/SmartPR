@@ -121,6 +121,9 @@
     "download_url": "https://www.ogpe.pr.gov",
     "download_kind": "filing_portal",
     "download_note": "No standalone form: OGPe's official applicant manual states filing is 100% electronic via the Single Business Portal at ogpe.pr.gov.",
+    "depends_on_document_ids": [
+      "DOC_OGPE_CONSTRUCTION_PERMIT"
+    ],
     "citation": "Art. 8.4A, Ley 161-2009 (23 L.P.R.A. § 9018c-1), añadido por Ley 19-2017",
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page"
@@ -150,6 +153,9 @@
     "download_url": null,
     "download_kind": "none",
     "download_note": "No statewide form: each municipality's finance office issues its own PA02 (provisional) / PA01 (annual declaration) — e.g. Aguada, Caguas, Guaynabo publish their own PDFs. Get it from the business municipality's finance office.",
+    "depends_on_document_ids": [
+      "DOC_PERMISO_UNICO"
+    ],
     "citation": "Arts. 7.200-7.207, Ley 107-2020 (Código Municipal de Puerto Rico)",
     "citation_url": "https://www.municipiodebayamon.com/servicios-municipales/empresas/patente-municipal/",
     "citation_confidence": "statute"

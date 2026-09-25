@@ -6,7 +6,7 @@
  * decides what applies. Nothing in this folder names a permit on its own.
  */
 export {
-  SCENARIO_PATHS, businessStatus, changeOfUseStatus, cloneScenario, emptyScenario, getFact, isConfirmed, ownershipStatus, setFact, valueOf,
+  SCENARIO_PATHS, businessStatus, changeOfUseStatus, cloneScenario, emptyScenario, getFact, restoreScenario, isConfirmed, ownershipStatus, setFact, valueOf,
 } from "./types";
 export type {
   BusinessStatus, DemolitionScope, F, FactSource, OwnershipStatus, ScenarioContext, ScenarioFact, ScenarioPath, ScenarioSection, UseSpecificity,
@@ -14,7 +14,7 @@ export type {
 export { interpretScenario, clauseAt } from "./interpret";
 export { normalizeScenario, combineScenario, evidenceInText } from "./normalize";
 export {
-  identityFieldsKnown, mergePassportIntoScenario, passportDeltas, passportKnownItems, passportSnapshotFromApi,
+  identityFieldsKnown, isNewPremises, mergePassportIntoScenario, passportDeltas, passportKnownItems, passportSnapshotFromApi,
 } from "./passport";
 export type { PassportDelta, PassportKnownItem, PassportSnapshot } from "./passport";
 export { applyScenarioAnswer, evaluateScenario, resolveBusinessTypes } from "./graph";

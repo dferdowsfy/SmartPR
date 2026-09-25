@@ -13,6 +13,7 @@ import type { ProjectContext } from "../../app/ai/intake/projectContext";
 import { validateProjectContext } from "../../app/ai/intake/projectContext";
 import type { ProjectIntent } from "../../app/ai/intake/projectIntent";
 import { normalizeProjectIntent } from "../../app/ai/intake/projectIntent";
+import { projectFilingFactsFromState, type ProjectFilingFacts } from "./filingFacts";
 
 /**
  * Best-effort project-intent load for agency runs. Reads the same snapshot
@@ -77,5 +78,37 @@ export async function loadProjectContextForBusiness(
   } catch {
     // DB optional for local UI demos — never log connection strings / secrets.
     return null;
+  }
+}
+
+/**
+ * Confirmed project facts from the latest intake snapshot (project context +
+ * the saved scenario), for filing prefill. Empty when unavailable.
+ */
+export async function loadProjectFilingFactsForBusiness(
+  businessId: string,
+  userId: string | null
+): Promise<ProjectFilingFacts> {
+  if (!userId) return {};
+  try {
+    const { getPool, isEnabled } = await import("../../app/graph/db");
+    const { ensureSchema, resolveBusinessUuid } = await import("../../app/graph/store");
+    if (!isEnabled()) return {};
+    const pool = getPool();
+    if (!pool) return {};
+    await ensureSchema();
+    const businessUuid = await resolveBusinessUuid(pool, businessId);
+    if (!businessUuid) return {};
+    const { rows } = await pool.query(
+      `SELECT state FROM workflow_snapshots
+        WHERE business_id = $1 AND user_id = $2
+        ORDER BY updated_at DESC LIMIT 1`,
+      [businessUuid, userId]
+    );
+    const state = rows[0]?.state;
+    if (!state || typeof state !== "object") return {};
+    return projectFilingFactsFromState(state as Record<string, unknown>, validateProjectContext);
+  } catch {
+    return {};
   }
 }

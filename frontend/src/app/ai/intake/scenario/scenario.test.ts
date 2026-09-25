@@ -364,6 +364,15 @@ describe("bridge to the existing intake and rules engine", () => {
     assert.equal(out.suggested.projectIntent, undefined);
   });
 
+  it("'I want to open a daycare' makes new_business a suggestion to confirm, not an applied fact", () => {
+    const validated = empty();
+    validated.projectIntent = { value: "new_business", confidence: 0.95, requiresConfirmation: false, evidence: "I want to open a daycare" };
+    const out = applyScenarioToInterpretation(validated, interpretScenario("I want to open a daycare in Caguas."));
+    assert.equal(out.projectIntent, undefined);
+    assert.equal(out.suggested.projectIntent?.value, "new_business");
+    assert.equal(out.suggested.projectIntent?.requiresConfirmation, true);
+  });
+
   it("the scenario's own status fills the intent", () => {
     const out = applyScenarioToInterpretation(empty(), interpretScenario("Our existing company leased a warehouse in Guaynabo for a new operation."));
     assert.equal(out.projectIntent?.value, "existing_business");
@@ -398,5 +407,19 @@ describe("existing business: the Passport's activity is carried over, not re-ask
     assert.ok(!ev.questions.some((q) => /what exactly/i.test(q.text)), "the exact activity is not re-asked");
     assert.ok(ev.branches.includes("activity:BT_FURNITURE_MANUFACTURING"));
     assert.ok(describeScenario(c).needsConfirmation.some((x) => /Same activity as your Passport/.test(x.label)));
+  });
+});
+
+describe("tenure and premises read in context", () => {
+  it("'I own a vacant lot … for lease to tenants' is owned land with no building", () => {
+    const ctx = interpretScenario("I own a vacant 2-acre lot in Caguas and plan to build a 6,000-square-foot commercial building for lease to tenants.");
+    assert.equal(ctx.property.ownershipStatus?.value, "owned");
+    assert.equal(ctx.property.existingBuilding?.value, false);
+    assert.equal(ctx.property.existingUse?.value, "vacant_land");
+  });
+
+  it("a tenant's lease is still a lease", () => {
+    const ctx = interpretScenario("We leased a storefront in Ponce and will rent part of it out to another business.");
+    assert.equal(ctx.property.ownershipStatus?.value, "leased");
   });
 });

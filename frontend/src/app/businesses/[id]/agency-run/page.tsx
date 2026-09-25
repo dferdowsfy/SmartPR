@@ -55,6 +55,7 @@ import { AgencyBrowser } from "./AgencyBrowser";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import { filingReadinessKey, type FilingReadinessSummary } from "../../../../lib/agency-runs/filingReadiness";
+import { CLARA_HANDOFF_INTRO_EN, CLARA_HANDOFF_INTRO_ES, planClaraHandoff } from "./claraHandoff";
 import {
   buildChatMilestones,
   chatScrollKey,
@@ -192,12 +193,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     { id: "filing-picker", type: "filing-picker", groups: [], loading: true, error: null },
   ]);
   const [filingBusyId, setFilingBusyId] = useState<string | null>(null);
-  /** Deep link (?filing=<engine document_id>) from a requirement card's
-   * "File with Clara" button: once the filing list loads, Clara opens the
-   * pre-flight for that specific filing — the user still confirms before
-   * anything launches. Runs once; unknown/unsupported ids fall back to the
-   * normal picker. */
-  const deepLinkedFilingRef = useRef(false);
   const [goalBrief, setGoalBrief] = useState<GoalBrief | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -205,6 +200,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [bizHeader, setBizHeader] = useState<{ name: string; municipality: string } | null>(null);
   useEffect(() => {
     let cancelled = false;
+    // A local intake draft id is not a saved business — nothing to load.
+    if (businessId.startsWith("local-")) return;
     fetch(`/api/businesses/${businessId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
@@ -402,35 +399,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     };
   }, [businessId, demoVisible, lang]);
 
-  /* Deep link (?filing=<engine document_id>): when the filing list finishes
-   * loading, find the filing for that requirement and open its pre-flight
-   * (or resume its active run) — Clara lands scoped to the requirement's
-   * agency instead of the generic picker. The pre-flight confirmation and
-   * every human-only step stay in the user's hands; nothing launches on
-   * arrival. Unknown ids, unsupported filings, and already-submitted ones
-   * leave the normal picker untouched. */
-  useEffect(() => {
-    if (deepLinkedFilingRef.current) return;
-    if (typeof window === "undefined") return;
-    const wanted = new URLSearchParams(window.location.search).get("filing");
-    if (!wanted) {
-      deepLinkedFilingRef.current = true;
-      return;
-    }
-    const picker = msgs.find((m) => m.type === "filing-picker");
-    if (picker?.type !== "filing-picker" || picker.loading || picker.error) return;
-    deepLinkedFilingRef.current = true;
-    const filings = picker.groups.flatMap((g) => g.filings);
-    const match =
-      filings.find((f) => f.requirement_id === wanted) ??
-      filings.find((f) => f.obligation_id === wanted);
-    if (!match || !match.supported || match.filing_status === "submitted") return;
-    if (match.active_run_id) {
-      void resumeFiling(match);
-      return;
-    }
-    if (match.action) void startFiling(match);
-  });
 
   const poll = useCallback(async (runId: string) => {
     const response = await fetch(`/api/agency-runs/${runId}`);
@@ -612,6 +580,29 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       setFilingBusyId(null);
     }
   };
+
+  // Requirements → Clara handoff (?requirement=<DOC_ID>): once the filings
+  // load, open that requirement's filing — Clara says what she already has
+  // and shows the pre-flight card; nothing starts until the user confirms.
+  const handoffDoneRef = useRef(false);
+  const pickerState = msgs.find((m) => m.type === "filing-picker");
+  useEffect(() => {
+    if (handoffDoneRef.current || !pickerState || pickerState.type !== "filing-picker" || pickerState.loading) return;
+    // ?filing=<document_id> (requirement cards) or ?requirement=<document_id>.
+    const params = new URLSearchParams(window.location.search);
+    const requirementId = params.get("filing") ?? params.get("requirement");
+    if (!requirementId) return;
+    handoffDoneRef.current = true;
+    const plan = planClaraHandoff(pickerState.groups, requirementId);
+    if (plan.kind === "start" || plan.kind === "resume") {
+      pushMsg({ id: `handoff-${Date.now()}`, type: "text", textEn: CLARA_HANDOFF_INTRO_EN, textEs: CLARA_HANDOFF_INTRO_ES, tone: "info" });
+      if (plan.kind === "start") void startFiling(plan.filing);
+      else void resumeFiling(plan.filing);
+    } else {
+      pushMsg({ id: `handoff-${Date.now()}`, type: "text", textEn: plan.textEn, textEs: plan.textEs, tone: plan.kind === "missing" ? "warn" : "info" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot, when the filings first load
+  }, [pickerState]);
 
   /**
    * Step 2 of start: the human confirmed the pre-flight card. Launch the run

@@ -161,7 +161,8 @@ export const NEW_ENTITY_RE = new RegExp(
 export const EXISTING_BUSINESS_RE = new RegExp(
   [
     `\\b(?:our|my)\\s+(?:existing\\s+|current\\s+|established\\s+|family\\s+)?(?:company|business|firm|corporation|corp|llc|organization|store|restaurant|shop|clinic|practice|brand|group|bakery|operations)\\b`,
-    `\\bexisting\\s+(?:company|business|firm|corporation|llc|entity|client\\s+company)\\b`,
+    `\\bexisting\\s+(?:[A-Za-z-]+\\s+){0,3}(?:company|business|firm|corporation|llc|entity|client\\s+company)\\b`,
+    `\\b(?:is|are)\\s+expanding\\s+(?:into|to)\\b`,
     `\\bwe\\s+(?:already\\s+|currently\\s+)?(?:operate|run|own\\s+and\\s+operate)\\b`,
     `\\balready\\s+(?:operating|in\\s+business|established|registered|incorporated)\\b`,
     `\\b(?:relocat|expand|mov)\\w*\\s+(?:our|my)\\s+(?:business|company|operations?)\\b`,
@@ -188,6 +189,47 @@ function readBusinessStatus(text: string, ctx: ScenarioContext): void {
   if (neu) ctx.business.status = said("new", text, neu, 0.93);
   else if (old) ctx.business.status = said("existing", text, old, 0.92);
   else if (open) ctx.business.status = implied("new", text, open, 0.72);
+}
+
+// ---------------------------------------------------------------------------
+// Business identity: legal name, entity type, industry
+// ---------------------------------------------------------------------------
+
+const ENTITY_SUFFIXES: [RegExp, string][] = [
+  [/^(?:llc|l\.l\.c\.?)$/i, "llc"],
+  [/^(?:inc\.?|incorporated|corp\.?|corporation)$/i, "corporation"],
+  [/^(?:llp|l\.l\.p\.?)$/i, "limited_liability_partnership"],
+  [/^(?:csp|psc|p\.s\.c\.?)$/i, "professional_corporation"],
+];
+const entityTypeOf = (suffix: string) => ENTITY_SUFFIXES.find(([re]) => re.test(suffix))?.[1] ?? null;
+const NAME_STOP = /^(?:the|a|an|our|my|this|that|puerto|rico)$/i;
+// "Caribe Precision Manufacturing, LLC": capitalized words ending in an entity suffix.
+const LEGAL_NAME =
+  /\b((?:[A-Z][A-Za-z0-9&'.-]*\s+){0,6}[A-Z][A-Za-z0-9&'.-]*),?\s+(LLC|L\.L\.C\.?|Inc\.?|Corp\.?|Corporation|LLP|CSP|PSC)(?![A-Za-z])/;
+
+function readBusinessIdentity(text: string, ctx: ScenarioContext): void {
+  const m = LEGAL_NAME.exec(text);
+  if (m) {
+    const words = m[1].trim().split(/\s+/);
+    while (words.length && NAME_STOP.test(words[0])) words.shift();
+    if (words.length) {
+      const suffix = m[2].replace(/\.$/, "");
+      const hit: Hit = { index: m.index, text: m[0], groups: [] };
+      ctx.business.name = said(`${words.join(" ")} ${suffix.toUpperCase() === "L.L.C" ? "LLC" : suffix}`, text, hit, 0.94);
+      const type = entityTypeOf(suffix);
+      if (type) ctx.business.entityType = said(type, text, hit, 0.93);
+    }
+  }
+  if (!ctx.business.entityType) {
+    const isA = find(text, /\b(?:is|as)\s+an?\s+(llc|l\.l\.c\.?|corporation|corp\.?|partnership|nonprofit)\b/i);
+    const type = isA?.groups[0] ? entityTypeOf(isA.groups[0]) ?? (/partnership/i.test(isA.groups[0]) ? "partnership" : /nonprofit/i.test(isA.groups[0]) ? "nonprofit_nonstock_corporation" : null) : null;
+    if (isA && type) ctx.business.entityType = said(type, text, isA, 0.92);
+  }
+  const industry = find(text, /\bin\s+the\s+([a-z][a-z &-]{2,40}?)\s+(?:industry|sector)\b/i);
+  if (industry?.groups[0]) {
+    const words = industry.groups[0].trim().replace(/\s+/g, " ");
+    ctx.business.industry = said(words.replace(/\b\w/g, (c) => c.toUpperCase()), text, industry, 0.92);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -251,6 +293,11 @@ function readProperty(text: string, ctx: ScenarioContext): void {
       const label = uses.slice(0, 2).map((u) => u.label).join("_and_");
       ctx.property.existingUse = said(label, text, verb, 0.93);
     }
+    // A vacant lot has no building on it.
+    if (uses.some((u) => u.family === "vacant")) {
+      ctx.property.existingBuilding = said(false, text, verb, 0.95);
+      continue;
+    }
     if (!ctx.property.existingBuilding) {
       const existingWord = find(object, /\b(?:existing|vacant|former|current|old|empty)\b/i);
       if (existingWord) {
@@ -275,13 +322,17 @@ function readSize(text: string, ctx: ScenarioContext): void {
   if (Number.isFinite(n) && n > 0) ctx.property.squareFeet = said(n, text, sq, 0.96);
 }
 
+/** Leasing OUT ("for lease to tenants", "rent it out") says what the owner will do, not the tenure. */
+const LEASE_OUT = /\bfor\s+(?:lease|rent)\b|\b(?:leas|rent)\w*\s+(?:it|them|the\s+\w+|space|units?|suites?)?\s*(?:out\s+)?to\s+(?:tenants?|others|third[\s-]part\w*|businesses)\b|\brent\w*\s+(?:it|them)\s+out\b/gi;
+
 function readOwnership(text: string, ctx: ScenarioContext): void {
-  const lease = find(text, /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|as\s+(?:a\s+)?tenants?)\b/i);
+  const tenureText = text.replace(LEASE_OUT, (m) => " ".repeat(m.length));
+  const lease = find(tenureText, /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|as\s+(?:a\s+)?tenants?)\b/i);
   const own = find(
     text,
     /\b(?:we|i|they|the\s+client|the\s+company|client)\s+(?:own|owns|purchased|bought|acquired)\b|\b(?:purchased|bought|acquired)\s+(?:an?|the)\s+\w+|\bowners?\s+of\s+the\s+(?:property|building)\b/i
   );
-  if (lease && !negatedAt(text, lease.index)) ctx.property.ownershipStatus = said("leased", text, lease, 0.94);
+  if (lease && !negatedAt(text, lease.index)) ctx.property.ownershipStatus = said("leased", text, { ...lease, text: text.slice(lease.index, lease.index + lease.text.length) }, 0.94);
   else if (own && !negatedAt(text, own.index)) ctx.property.ownershipStatus = said("owned", text, own, 0.93);
 }
 
@@ -297,9 +348,33 @@ const FOR_USE =
 const CHANGE_OF_USE_STATED = /\bchang\w*\s+(?:of|the|in)\s+(?:the\s+)?(?:use|occupancy)\b|\bchang\w*\s+the\s+(?:property's\s+|building's\s+)?(?:use|occupancy)\b/i;
 const USE_MODIFIED = /\b(?:modif\w*|alter\w*|adjust\w*)\s+(?:to\s+|of\s+|in\s+)?(?:the\s+)?(?:existing\s+|current\s+)?(?:use|occupancy)\b/i;
 
-function setProposed(ctx: ScenarioContext, use: UseTerm, source: FactSource, confidence: number, evidence: string): void {
+function setProposed(ctx: ScenarioContext, use: UseTerm, source: FactSource, confidence: number, evidence: string, phrase?: string): void {
   ctx.property.proposedUse = fact(use.label, source, confidence, evidence);
   ctx.property.proposedUseSpecificity = fact(use.generic ? "insufficient" : "specific", source, confidence, evidence) as ScenarioFact<"specific" | "insufficient">;
+  // The use label is the occupancy class; the activity keeps the user's own
+  // qualifier ("furniture manufacturing"), so the graph never asks for the
+  // exact activity the description already gave.
+  const words = activityPhrase(phrase, use);
+  if (!use.generic && words) {
+    ctx.operations.activity = fact(words, source, confidence, evidence);
+    ctx.business.proposedActivity = fact(words, source, confidence, evidence);
+  }
+}
+
+/** "a new furniture manufacturing" → "furniture manufacturing"; null when it adds nothing to the use term. */
+function activityPhrase(phrase: string | undefined, use: UseTerm): string | null {
+  if (!phrase) return null;
+  const cleaned = phrase
+    .toLowerCase()
+    .replace(/\b(?:an?|the|our|its|their|new|small|light|proposed)\b/g, " ")
+    .replace(/[^a-z0-9\s&/-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const m = new RegExp(`\\b(?:${use.pattern})\\b`, "i").exec(cleaned);
+  if (!m) return null;
+  const qualified = cleaned.slice(0, m.index + m[0].length).trim();
+  const n = qualified.split(" ").length;
+  return n >= 2 && n <= 4 ? qualified : null;
 }
 
 function readProposedUse(text: string, ctx: ScenarioContext): void {
@@ -310,7 +385,7 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
   if (conv?.groups[0]) {
     const use = matchUse(conv.groups[0]);
     if (use) {
-      setProposed(ctx, use, "explicit", 0.95, clauseAt(text, conv.index));
+      setProposed(ctx, use, "explicit", 0.95, clauseAt(text, conv.index), conv.groups[0]);
       if (!use.generic) {
         const differ = existing ? usesDiffer(existing, use.label) : true;
         ctx.project.possibleChangeOfUse = fact(differ !== false, "explicit", 0.93, clauseAt(text, conv.index));
@@ -339,8 +414,17 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
     const use = matchUse(phrase);
     if (!use) continue;
     // "leased a warehouse for …" — the object of the lease is not the proposed use.
-    setProposed(ctx, use, "explicit", use.generic ? 0.9 : 0.93, clauseAt(text, hit.index));
-    if (!use.generic) break;
+    setProposed(ctx, use, "explicit", use.generic ? 0.9 : 0.93, clauseAt(text, hit.index), phrase);
+    if (!use.generic) {
+      // "used for furniture manufacturing, warehousing, and administrative
+      // offices": a mixed use — every listed use, in order.
+      const list = text.slice(hit.index).split(/[.;!?]/)[0];
+      const all = matchUses(list).filter((u) => !u.generic).slice(0, 3);
+      if (all.length > 1 && all[0].label === use.label) {
+        ctx.property.proposedUse = fact(all.map((u) => u.label).join("_and_"), "explicit", 0.93, clauseAt(text, hit.index));
+      }
+      break;
+    }
   }
 }
 
@@ -360,19 +444,8 @@ function readChangeOfUse(text: string, ctx: ScenarioContext): void {
     ctx.project.possibleChangeOfUse = implied(true, text, modified, 0.72);
     return;
   }
-  const existing = ctx.property.existingUse?.value;
-  const proposed = ctx.property.proposedUse?.value;
-  if (existing && proposed) {
-    const differ = usesDiffer(existing, proposed);
-    if (differ !== null) {
-      ctx.project.possibleChangeOfUse = fact(
-        differ,
-        "inferred",
-        differ ? 0.78 : 0.7,
-        ctx.property.proposedUse!.evidenceText
-      );
-    }
-  }
+  // Existing vs. proposed use alone does NOT establish a change of use: what
+  // matters is the use the property is AUTHORIZED for, which the graph asks.
 }
 
 // ---------------------------------------------------------------------------
@@ -400,7 +473,7 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
     ctx.project.footprintChange = said(true, text, expand, 0.9);
   }
 
-  const interior = find(text, /\binterior\s+demo(?:lition)?\b|\bdemolish\w*\s+(?:the\s+)?interior\b|\bgut\w*\s+the\s+interior\b|\bselective\s+demolition\b/i);
+  const interior = find(text, /\binterior\s+demo(?:lition)?\b|\binterior\s+(?:work|scope|renovation)\s+(?:includes?|including|will\s+include)\b[^.;]{0,60}\bdemolition\b|\bdemolish\w*\s+(?:the\s+)?interior\b|\bgut\w*\s+the\s+interior\b|\bselective\s+demolition\b/i);
   const full = find(text, /\b(?:demolish\w*|tear\w*\s+down|raz\w*)\s+(?:the\s+)?(?:entire\s+|whole\s+|existing\s+)?(?:building|structure|warehouse|facility)\b/i);
   const partial = find(text, /\bpartial\s+demolition\b/i);
   const noDemo = find(text, /\bno\s+demolition\b|\bwithout\s+(?:any\s+)?demolition\b/i);
@@ -415,7 +488,8 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
   ctx.project.mechanicalWork = flag(text, /\b(?:mechanical|hvac|air[\s-]conditioning)\b/i);
   ctx.project.structuralWork = flag(text, /\bstructural\b/i);
   ctx.project.exteriorWork = flag(text, /\b(?:exterior|fa[cç]ade|roof(?:ing)?)\b/i);
-  ctx.project.layoutChanges = flag(text, /\b(?:office\s+)?build[\s-]?outs?\b|\blayout\b|\bpartitions?\b|\bnew\s+walls\b|\breconfigur\w*|\bfloor\s+plan\b/i);
+  ctx.project.layoutChanges = flag(text, /\blayout\b|\bpartitions?\b|\bnew\s+walls\b|\breconfigur\w*|\bfloor\s+plan\b|\b(?:office\s+)?build[\s-]?outs?\b/i);
+  ctx.project.officeBuildout = flag(text, /\boffice\s+build[\s-]?outs?\b|\bbuild[\s-]?out\s+(?:of\s+)?(?:the\s+|new\s+)?offices?\b/i);
   ctx.project.siteCirculationChanges = flag(text, /\b(?:parking|loading\s+(?:dock|zone|area)s?|driveway|site\s+circulation|access\s+road|curb\s+cut)\b/i);
   if (!ctx.project.footprintChange) ctx.project.footprintChange = flag(text, /\bfootprint\b/i);
 
@@ -437,7 +511,7 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
 
 function readOperations(text: string, ctx: ScenarioContext): void {
   const proposed = ctx.property.proposedUse;
-  if (proposed && ctx.property.proposedUseSpecificity?.value === "specific") {
+  if (proposed && ctx.property.proposedUseSpecificity?.value === "specific" && !ctx.operations.activity) {
     ctx.operations.activity = { ...proposed };
     ctx.business.proposedActivity = { ...proposed };
   }
@@ -471,14 +545,23 @@ export function interpretScenario(description: string): ScenarioContext {
   const ctx = emptyScenario();
   if (!text) return ctx;
   readBusinessStatus(text, ctx);
+  readBusinessIdentity(text, ctx);
   readMunicipality(text, ctx);
   readAddress(text, ctx);
   readProperty(text, ctx);
+  const existingBuilding = find(text, /\b(?:the|an?)\s+existing\s+(?:building|facility|structure)\b|\bcurrently\s+(?:configured|built\s+out|used)\s+as\b/i);
+  if (existingBuilding && ctx.property.existingBuilding?.value !== false) ctx.property.existingBuilding = said(true, text, existingBuilding, 0.94);
   readSize(text, ctx);
   readOwnership(text, ctx);
   readProposedUse(text, ctx);
   readChangeOfUse(text, ctx);
   readProjectScope(text, ctx);
   readOperations(text, ctx);
+  // "Caribe Precision Manufacturing, LLC, a … business with 28 employees":
+  // a named legal entity that already has staff is most likely operating —
+  // an inference to confirm, never a statement.
+  if (!ctx.business.status && ctx.business.name && typeof ctx.operations.employees?.value === "number" && ctx.operations.employees.value > 0) {
+    ctx.business.status = fact("existing", "inferred", 0.8, ctx.business.name.evidenceText);
+  }
   return ctx;
 }

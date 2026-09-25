@@ -503,7 +503,8 @@ export interface IntakePatch {
    */
   answers: Record<string, boolean | string>;
   /** Short confirmation chips for the "We understood:" strip. */
-  chips: { label: string; detail?: string; questionId?: string }[];
+  /** `field`: the profile key a chip came from (e.g. "industry"). */
+  chips: { label: string; detail?: string; questionId?: string; field?: string }[];
   /**
    * Model answers dropped because a stronger extracted fact makes them
    * impossible (e.g. "10 employees" + "no employees will be hired").
@@ -540,7 +541,10 @@ function profileChipLabel(pv: ValidatedProfileValue): string {
   if (pv.key === "number_of_vehicles") return `${pv.value} ${n === 1 ? "vehicle" : "vehicles"}`;
   if (pv.key === "number_of_rental_units") return `${pv.value} ${n === 1 ? "rental unit" : "rental units"}`;
   if (pv.key === "business_structure") {
-    return String(pv.value).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return String(pv.value)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .replace(/\b(Llc|Llp|Csp|Psc)\b/g, (m) => m.toUpperCase());
   }
   // Official identifiers: confirm capture without flashing the full value.
   if (pv.key === "ein") return `EIN ••••${String(pv.value).slice(-4)}`;
@@ -636,7 +640,7 @@ export function toIntakePatch(
   }
   for (const pv of validated.profileValues) {
     patch.profile[pv.key] = pv.value;
-    patch.chips.push({ label: profileChipLabel(pv) });
+    patch.chips.push({ label: profileChipLabel(pv), field: pv.key });
   }
 
   const derived = derivableFromExtractedFacts(validated, options);

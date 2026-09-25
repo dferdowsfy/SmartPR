@@ -2612,6 +2612,15 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-scn-known dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 8px 0 0; }
 .spr-scn-known dt { color: #7a8a96; }
 .spr-scn-known dd { margin: 0; color: #0f2332; font-weight: 500; }
+
+/* Fields the description already resolved: hidden, one line to review. */
+.spr-resolved-note { flex-direction: row; align-items: baseline; gap: 10px; font-size: 13px; color: #5b6b78; }
+
+/* Useful-later and filing-specific facts: optional, collapsed. */
+.spr-later { margin-top: 22px; border-top: 1px solid #e6eaee; padding-top: 14px; }
+.spr-later > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: #40515e; }
+.spr-later > .spr-form { margin-top: 16px; }
+.spr-later-note { margin: 8px 0 0; font-size: 13px; line-height: 1.45; color: #6b7c88; }
 .spr-scn-deltas { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: #8a5a0b; }
 .spr-scn-questions { margin-top: 16px; padding: 14px 16px; border: 1px solid #e4e0f5; border-radius: 12px; background: #faf9ff; }
 .spr-scn-questions h3 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #0f2332; }
@@ -2631,3 +2640,38 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 
 .spr-live-subhead { margin: 6px 0 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: #7a8a96; }
 .spr-live-agency { color: #7a8a96; font-weight: 500; }
+
+/* ---- Requirements grouped by path stage ---- */
+.rq-group { margin: 0 0 26px; }
+.rq-group-head {
+  display: flex; align-items: center; gap: 7px;
+  margin: 4px 0 4px; color: var(--ink-2);
+  font-size: 11.5px; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.rq-group-required_now .rq-group-head { color: var(--warn); }
+.rq-group-sub { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; }
+
+/* Fact strip: source, evidence, readiness, prerequisites, filing, Clara. */
+.rq-facts {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 14px; margin: 10px 0 0; font-size: 12px; line-height: 1.35;
+}
+.rq-fact { min-width: 0; }
+.rq-fact dt { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; }
+.rq-fact dd { margin: 1px 0 0; color: var(--ink-2); overflow-wrap: anywhere; }
+
+/* Clara-first filing action (replaces "File online"). */
+.rq-filing { display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 8px; }
+.rq-filing-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 9px 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 700; font-family: inherit; cursor: pointer;
+  text-decoration: none; white-space: nowrap;
+}
+.rq-filing-file { background: #ede7fb; border: 1.5px solid #c9b8f2; color: #4b2a9a; }
+.rq-filing-file:hover { background: #e2d8f8; }
+.rq-filing-prepare, .rq-filing-instructions { background: #fff; border: 1.5px solid var(--brand); color: var(--brand); }
+.rq-filing-prepare:hover, .rq-filing-instructions:hover { background: var(--accent-soft); }
+.rq-agency-site { display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; color: var(--muted); text-decoration: underline; }
+
+.rq-open-item { border-style: dashed; }

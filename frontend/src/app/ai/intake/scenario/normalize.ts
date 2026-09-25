@@ -39,7 +39,7 @@ import {
   type ScenarioFact,
   type ScenarioPath,
 } from "./types";
-import { matchUse, findUseByLabel } from "./uses";
+import { matchUse, matchUses, findUseByLabel, USE_TERMS } from "./uses";
 
 type Kind = "string" | "number" | "boolean" | "string[]";
 
@@ -70,6 +70,7 @@ const KIND: Record<ScenarioPath, Kind> = {
   "project.exteriorWork": "boolean",
   "project.footprintChange": "boolean",
   "project.layoutChanges": "boolean",
+  "project.officeBuildout": "boolean",
   "project.possibleChangeOfUse": "boolean",
   "project.siteCirculationChanges": "boolean",
   "operations.activity": "string",
@@ -193,6 +194,12 @@ export function normalizeScenario(
         report.push({ path, action: "downgraded", reason: "a possible change of use is not a confirmed one" });
       }
     }
+    if (path === "project.possibleChangeOfUse" && e.source !== "explicit") {
+      // Whether the use changes is decided against the AUTHORIZED use, which
+      // SmartPR asks — never guessed from how the building is used today.
+      report.push({ path, action: "dropped", reason: "a change of use is not inferred; the authorized use decides it" });
+      continue;
+    }
     // Guarded conclusion: the model turns cosmetic work ("painting and
     // signage") into a renovation conclusion. An "explicit" renovation needs
     // renovation language in the text itself; otherwise it is an inference
@@ -239,7 +246,8 @@ export function normalizeScenario(
     }
     if (source === "explicit" && confidence < 0.85) source = "inferred";
 
-    setFact(scenario, path, { value, source, confidence, evidenceText } as ScenarioFact<unknown>);
+    const finalValue = USE_PATHS.includes(path) && typeof value === "string" ? canonicalUse(value) ?? value : value;
+    setFact(scenario, path, { value: finalValue, source, confidence, evidenceText } as ScenarioFact<unknown>);
   }
 
   // A generic proposed use can't be "specific", whatever the model said.
@@ -251,6 +259,23 @@ export function normalizeScenario(
     }
   }
   return { scenario, report };
+}
+
+const USE_PATHS: ScenarioPath[] = ["property.existingUse", "property.authorizedUse", "property.proposedUse"];
+const KNOWN_LABELS = new Set(USE_TERMS.map((t) => t.label));
+
+/**
+ * "warehouse and office space" → "warehouse_and_office". Use facts drive
+ * occupancy reasoning, so they are kept in the use vocabulary; null when the
+ * phrase names no known use (kept as the model's words).
+ */
+export function canonicalUse(value: string): string | null {
+  const parts = value.split("_and_");
+  if (parts.every((p) => KNOWN_LABELS.has(p))) return value;
+  const uses = matchUses(value.replace(/_/g, " "));
+  const specific = uses.filter((u) => !u.generic).slice(0, 3);
+  if (specific.length) return specific.map((u) => u.label).join("_and_");
+  return uses[0]?.label ?? null;
 }
 
 const RANK: Record<FactSource, number> = { existing_passport: 3, explicit: 2, inferred: 1 };

@@ -341,7 +341,8 @@ property: municipality, address, parcel, existingBuilding (bool), existingUse,
 project: type (array: renovation | new_construction | expansion | demolition |
   change_of_use), renovation, demolition ("none" | "interior" | "partial" | "full"),
   electricalWork, plumbingWork, mechanicalWork, structuralWork, exteriorWork,
-  footprintChange, layoutChanges, possibleChangeOfUse, siteCirculationChanges (bools)
+  footprintChange, layoutChanges, officeBuildout, possibleChangeOfUse,
+  siteCirculationChanges (bools)
 operations: activity, employees (number), publicAccess, foodService,
   hazardousMaterials, emissionsEquipment, generator, fuelStorage,
   wastewaterDischarge, childrenPresent (bools)
@@ -358,6 +359,11 @@ Rules:
   started ("creating a new LLC", "starting a business"). "existing" only when the
   speaker's own business already operates ("our existing company"). A third
   party ("a client") says nothing about status — omit it.
+- possibleChangeOfUse: set it ONLY when the speaker says the use changes or
+  stays the same. Different existing and proposed uses do NOT establish a
+  change of use — the property's AUTHORIZED use decides that; omit it.
+- Omit authorizedUse, address, structuralWork, exteriorWork and the
+  environmental flags unless the speaker states them.
 - A vague proposed use ("a new commercial operation") is proposedUse
   "commercial operation" with proposedUseSpecificity "insufficient". Never
   invent the activity.

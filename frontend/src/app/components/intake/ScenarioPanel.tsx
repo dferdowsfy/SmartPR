@@ -32,10 +32,10 @@ export function ExistingPassportCard({
   return (
     <div className="spr-scn-passport" data-testid="existing-passport-card">
       <div className="spr-scn-passport-head">
-        <span className="spr-scn-passport-name">{name}</span>
+        <span className="spr-scn-passport-name">{name} —</span>
         <span className="spr-scn-passport-ok">
           <CheckCircle style={{ width: 13, height: 13 }} />
-          {T(lang, "Existing Business Passport loaded", "Pasaporte comercial existente cargado")}
+          {T(lang, "Business Passport linked", "Pasaporte comercial vinculado")}
         </span>
       </div>
       <p className="spr-scn-project">
@@ -108,6 +108,7 @@ function QuestionInput({
             {o.label}
           </button>
         ))}
+        {!(q.options ?? []).some((o) => o.value === "unknown") && notSure}
       </div>
     );
   }
