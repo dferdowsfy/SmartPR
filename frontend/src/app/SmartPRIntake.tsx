@@ -741,6 +741,17 @@ const HOME_BASED_NOT_APPLICABLE = new Set<string>([
   "outdoor_seating",
   "live_entertainment",
   "patients_visit",
+  // QA 2026-09-25 12:00 (live S198, REG-TENURE-HOMEBASED-001): asking
+  // "Will the business lease its commercial space?" to a home-based user is
+  // inapplicable — the premises are a home, not a commercial space. A "No"
+  // carries no home-ownership information, yet the existing_lease bridge
+  // (projectContextAnswerToFacts) turns it into property_tenure=owned at
+  // confidence 1, so RULE_0649 rendered a Property Deed card with an
+  // "Owned property" trigger the user never stated — an unsupported
+  // inference presented as fact (provenance hard rule 2026-09-19). Mirror
+  // the online-only path (PHYSICAL_PRESENCE_QUESTIONS), which already
+  // filters this question.
+  "existing_lease",
 ]);
 
 interface DiscoveryQuestionOption { value: string; label: string }

@@ -457,3 +457,33 @@ test("ai-prefill: writeKey-form prefill keys also render 'Derived answer'", () =
     assert.ok(r.reason.includes("Derived answer:"), `alias prefill renders honestly: ${r.reason}`);
   }
 });
+
+// --- REG-TENURE-HOMEBASED-001 (2026-09-25 12:00 QA cycle, live S198) --------
+// A home-based bakery user answered "No" to "Will the business lease its
+// commercial space?" — an inapplicable question for a home-based business.
+// The existing_lease bridge (projectContextAnswerToFacts) turned that No
+// into property_tenure=owned at confidence 1, so RULE_0649 rendered a
+// Property Deed card with an "Owned property" trigger the user never stated
+// — an unsupported inference presented as fact (provenance hard rule
+// 2026-09-19). Root cause fix: the commercial-lease question is filtered
+// out of the discovery flow for Home-Based Business locations, mirroring
+// the online-only path (PHYSICAL_PRESENCE_QUESTIONS). A home-based user can
+// therefore never answer it, so the bridge can never invent "owned".
+test("home-based: commercial-lease question is not asked (never bridges to owned)", async () => {
+  const { filterQuestionsByContext } = await import("./SmartPRIntake");
+  const questions = [
+    { id: "existing_lease", text: "Will the business lease its commercial space?" },
+    { id: "outdoor_seating", text: "Outdoor seating?" },
+    { id: "some_other", text: "Other?" },
+  ];
+  const home = filterQuestionsByContext(questions, "Home-Based Business").map((q) => q.id);
+  assert.ok(!home.includes("existing_lease"),
+    `home-based flow must not ask the commercial-lease question: ${JSON.stringify(home)}`);
+  // Sibling non-applicables stay filtered too.
+  assert.ok(!home.includes("outdoor_seating"), "home-based outdoor-seating filter unchanged");
+
+  // Control: commercial premises still get the lease question.
+  const commercial = filterQuestionsByContext(questions, "Commercial Facility").map((q) => q.id);
+  assert.ok(commercial.includes("existing_lease"),
+    `commercial flow must keep the lease question: ${JSON.stringify(commercial)}`);
+});
