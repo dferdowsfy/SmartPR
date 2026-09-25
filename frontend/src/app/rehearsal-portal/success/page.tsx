@@ -12,7 +12,7 @@ export default function RehearsalSuccessPage() {
   );
 
   return (
-    <PortalCard>
+    <PortalCard step="submission">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
         <span aria-hidden className="text-2xl">✓</span>
       </div>

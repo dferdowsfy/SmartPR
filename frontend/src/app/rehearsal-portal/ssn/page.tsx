@@ -16,7 +16,7 @@ export default function RehearsalSsnPage() {
   const router = useRouter();
 
   return (
-    <PortalCard>
+    <PortalCard step="identity">
       <PageTitle>{t("Identity verification (rehearsal)", "Verificación de identidad (ensayo)")}</PageTitle>
       <PageSub>
         {t(

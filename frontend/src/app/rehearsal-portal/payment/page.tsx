@@ -16,7 +16,7 @@ export default function RehearsalPaymentPage() {
   const router = useRouter();
 
   return (
-    <PortalCard>
+    <PortalCard step="payment">
       <PageTitle>{t("Payment (rehearsal — no real charge)", "Pago (ensayo — no se cobra nada real)")}</PageTitle>
       <PageSub>
         {t(

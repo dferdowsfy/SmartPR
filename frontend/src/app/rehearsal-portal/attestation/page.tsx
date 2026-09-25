@@ -19,7 +19,7 @@ export default function RehearsalAttestationPage() {
   const signed = (data.attestSignature ?? "").trim().length > 0;
 
   return (
-    <PortalCard>
+    <PortalCard step="certification">
       <PageTitle>{t("Certification (rehearsal)", "Certificación (ensayo)")}</PageTitle>
       <PageSub>
         {t(

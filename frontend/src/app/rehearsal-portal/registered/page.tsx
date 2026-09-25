@@ -21,7 +21,7 @@ export default function RehearsalRegisteredPage() {
   const fictionalNumber = data.fictionalRegistryNumber || "482916";
 
   return (
-    <PortalCard>
+    <PortalCard step="form">
       <PageTitle>{t("Account created", "Cuenta creada")}</PageTitle>
       <PageSub>
         {t(

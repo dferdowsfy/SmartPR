@@ -266,25 +266,37 @@ describe("playbook portal-identity and sensitivity invariants", () => {
     }
   });
 
-  it("SURI marks every sensitive verification/credential field sensitive", () => {
+  it("SURI marks every sensitive verification field sensitive", () => {
     const playbook = AGENCY_FILING_CONFIGS.find(
       (c) => c.id === "SURI_REGISTER_TAXPAYER"
     )!.playbook!;
     const sensitiveIds = playbook.steps.flatMap((s) =>
       s.fields.filter((f) => f.sensitive).map((f) => f.id)
     );
-    for (const expected of [
-      "ssn",
-      "ssn_confirm",
-      "verification_amount",
-      "web_password",
-      "secret_answer",
-      "otp_code",
-    ]) {
+    for (const expected of ["ssn", "ssn_confirm", "verification_amount"]) {
       assert.ok(
         sensitiveIds.includes(expected),
         `SURI field ${expected} must be marked sensitive`
       );
+    }
+  });
+
+  it("no playbook collects portal credentials outside the browser", () => {
+    // Login, account passwords and MFA are human-only: they happen in the
+    // live browser via Take over, never in SmartPR chat or a vault fill.
+    const CREDENTIAL = /password|contrase|otp|one-time|mfa|secret_answer|username/i;
+    for (const config of AGENCY_FILING_CONFIGS) {
+      for (const step of config.playbook?.steps ?? []) {
+        for (const f of step.fields ?? []) {
+          assert.ok(
+            !(f.type === "password" || CREDENTIAL.test(f.id) || CREDENTIAL.test(f.label_en)),
+            `${config.id} step ${step.id} collects credential field ${f.id}`
+          );
+        }
+        if (step.gate === "login") {
+          assert.equal(step.channel, "IN_BROWSER", `${config.id} login step ${step.id} must be IN_BROWSER`);
+        }
+      }
     }
   });
 });

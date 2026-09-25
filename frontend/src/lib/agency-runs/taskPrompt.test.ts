@@ -82,7 +82,9 @@ describe("buildAgencyTaskPrompt final-submit permission", () => {
     });
     assert.ok(task.includes("NEVER click the final Submit"));
     assert.ok(task.includes("REVIEW_READY"));
-    assert.ok(!task.includes("SUBMITTED:"), "unauthorized prompt must not mention the SUBMITTED marker");
+    // SUBMITTED only reports a submission the HUMAN made — never permission.
+    assert.ok(task.includes("ONLY when you observe the portal's confirmation page after the HUMAN submitted"));
+    assert.ok(task.includes("You never click submit yourself."));
     assert.ok(!task.includes("AUTHORIZED FINAL SUBMISSION"));
   });
 
@@ -126,7 +128,7 @@ describe("buildAgencyTaskPrompt final-submit permission", () => {
       passport: null,
     });
     assert.ok(plain.includes("NEVER click the final Submit"));
-    assert.ok(!plain.includes("SUBMITTED:"));
+    assert.ok(!plain.includes("AUTHORIZED FINAL SUBMISSION"));
   });
 });
 

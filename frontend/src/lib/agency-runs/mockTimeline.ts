@@ -82,8 +82,8 @@ export function timelineFor(config: AgencyFilingConfig): MockBeat[] {
     {
       kind: "review",
       delayMs: 800,
-      message: "Review ready — authorize SmartPR to file it for you, or take over the browser.",
-      message_es: "Revisión lista — autoriza a SmartPR a enviarlo por ti, o toma el control del navegador.",
+      message: "Review ready — take over the browser to review and submit it yourself.",
+      message_es: "Revisión lista — toma el control del navegador para revisarlo y enviarlo tú mismo.",
       shot: "review",
     }
   );

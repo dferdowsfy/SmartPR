@@ -6,7 +6,7 @@ import { PageSub, PageTitle, PortalCard, useRehearsal } from "./rehearsal";
 export default function RehearsalLandingPage() {
   const { t } = useRehearsal();
   return (
-    <PortalCard>
+    <PortalCard step="landing">
       <PageTitle>{t("Demo Filing Portal", "Portal de Radicación Demo")}</PageTitle>
       <PageSub>
         {t(

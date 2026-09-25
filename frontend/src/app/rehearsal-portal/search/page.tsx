@@ -32,7 +32,7 @@ export default function RehearsalSearchPage() {
   };
 
   return (
-    <PortalCard>
+    <PortalCard step="form">
       <PageTitle>{t("Find your entity", "Busca tu entidad")}</PageTitle>
       <PageSub>
         {t(

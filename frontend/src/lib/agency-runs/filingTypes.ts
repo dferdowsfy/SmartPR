@@ -26,8 +26,29 @@ function demoPortalHost(): string {
  * Single Business Portal user guide → sbp.ogpe.pr.gov). Briefs stay
  * goal-oriented on purpose — never a brittle click map.
  */
+/**
+ * How much of a filing's live government workflow has actually been proven.
+ * A requirement mapped to a filing is NOT evidence that the workflow works.
+ * - "rehearsal": SmartPR's fictional portal, covered by the end-to-end test.
+ * - "documented": built from official guides/manuals; no live walkthrough.
+ * - "partial": some live screens walked (read-only); the rest is documented.
+ * - "verified": a real filing ran start → human submission → confirmation,
+ *   with the evidence recorded (see docs/agency-rollout-plan.md).
+ */
+export type FilingVerificationStatus = "rehearsal" | "documented" | "partial" | "verified";
+
+export interface FilingVerification {
+  status: FilingVerificationStatus;
+  /** What was actually observed, and where the evidence lives. */
+  evidence: string;
+  /** ISO date of the last live check (required for "partial" and "verified"). */
+  checkedAt?: string;
+}
+
 export interface AgencyFilingConfig {
   id: AgencyFilingType;
+  /** Live-workflow evidence — never inferred from requirement mappings. */
+  verification: FilingVerification;
   /** Filing picker label. */
   labelEn: string;
   labelEs: string;
@@ -184,16 +205,16 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEs: "Registrar como contribuyente individual / crear acceso SURI",
     procedureEn: [
       "Open suri.hacienda.pr.gov and navigate toward Registration → Create SURI Logon / Register as Individual Taxpayer (adapt to on-screen Spanish labels)",
-      "If a login wall appears first: prefill email from passport when available, then PAUSE_USER_LOGIN once with REQUIRED_FIELDS (email if still empty, password, mfa if shown). Prefer Assistant-fill — do not loop on login and do not expect the human to type in the live browser",
+      "If a login / MFA wall appears: PAUSE_USER_LOGIN with PORTAL_STEP kind=login (or mfa) and NO REQUIRED_FIELDS — the human signs in directly in the browser via Take over. Never collect or type credentials; do not loop on login",
       "After landing past login/registration start: prefill name, address, phone, and contact from the Business Passport; prefer Verify Address when the portal requires it before Next",
-      "For SSN / taxpayer ID blanks: PAUSE_USER_LOGIN with REQUIRED_FIELDS using type=text; sensitive=true; hint describing the portal format (e.g. 9 digits — dashes or no dashes as shown). On re-pause after a failed fill, prefer error=<exact on-screen validation> (keep hint= for format)",
+      "For SSN / taxpayer ID blanks: PAUSE_FOR_USER with PORTAL_STEP kind=identity and REQUIRED_FIELDS using type=text; sensitive=true; hint describing the portal format (e.g. 9 digits — dashes or no dashes as shown). On re-pause after a failed fill, prefer error=<exact on-screen validation> (keep hint= for format)",
       "Pause for document uploads (photo ID, utility bill, SSN card) or remaining sensitive blanks; stop at pre-submit review",
     ],
     procedureEs: [
       "Abra suri.hacienda.pr.gov y navegue hacia Registro → Crear acceso SURI / Registrar como contribuyente individual (adapte a las etiquetas en pantalla)",
-      "Si aparece un muro de inicio de sesión: rellene el email desde el pasaporte si está disponible, luego PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS (email si sigue vacío, contraseña, MFA si se muestra). Prefiera el llenado en Asistente — no ciclar en login ni esperar que el humano escriba en el navegador en vivo",
+      "Si aparece un muro de inicio de sesión / MFA: PAUSE_USER_LOGIN con PORTAL_STEP kind=login (o mfa) y SIN REQUIRED_FIELDS — la persona inicia sesión directamente en el navegador con Tomar el control. Nunca recoja ni escriba credenciales; no cicle en el login",
       "Tras pasar el login/inicio de registro: rellene nombre, dirección, teléfono y contacto desde el Pasaporte de Negocio; prefiera Verificar dirección cuando el portal lo exija antes de Siguiente",
-      "Para SSN / ID del contribuyente: PAUSE_USER_LOGIN con REQUIRED_FIELDS usando type=text; sensitive=true; hint con el formato del portal (p. ej. 9 dígitos — con o sin guiones según se muestre). En re-pausa tras un llenado fallido, prefiera error=<validación exacta en pantalla> (mantenga hint= para formato)",
+      "Para SSN / ID del contribuyente: PAUSE_FOR_USER con PORTAL_STEP kind=identity y REQUIRED_FIELDS usando type=text; sensitive=true; hint con el formato del portal (p. ej. 9 dígitos — con o sin guiones según se muestre). En re-pausa tras un llenado fallido, prefiera error=<validación exacta en pantalla> (mantenga hint= para formato)",
       "Pause para adjuntos (ID con foto, utilidad, tarjeta SSN) o campos sensibles restantes; deténgase en la revisión previa al envío",
     ],
     uploadsEn: "Photo ID, utility bill, and SSN card copy (max 5 MB each)",
@@ -238,6 +259,11 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // DOC_SURI_REGISTRATION exists in the document catalog but no engine
     // rule currently emits it (verified 2026-09-18 in data/rules.json) — this
     // join only fires when an obligation actually carries the id.
+    verification: {
+      status: "documented",
+      evidence:
+        "Playbook from Hacienda's official registration guide. Live host timed out during the walkthrough; no screen, selector, CAPTCHA or bot-wall behavior observed. DOC_SURI_REGISTRATION is emitted by no engine rule, so no user reaches this filing today.",
+    },
     requirementIds: ["DOC_SURI_REGISTRATION"],
     /**
      * Evidence basis: Hacienda's official registration guide. The live host
@@ -437,55 +463,18 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
           id: "web_user",
           label_en: "Web user information",
           label_es: "Información del usuario web",
-          channel: "INLINE",
+          // Credentials are created by the human in the browser (Take
+          // over) — SmartPR never collects portal passwords in chat.
+          channel: "IN_BROWSER",
           pageId: "Registration — web user",
-          fields: [
-            {
-              id: "web_username",
-              label_en: "Username",
-              label_es: "Nombre de usuario",
-              type: "text",
-              required: true,
-            },
-            {
-              id: "web_password",
-              label_en: "Password",
-              label_es: "Contraseña",
-              type: "password",
-              required: true,
-              sensitive: true,
-            },
-            {
-              id: "web_password_confirm",
-              label_en: "Confirm password",
-              label_es: "Confirmar contraseña",
-              type: "password",
-              required: true,
-              sensitive: true,
-            },
-            {
-              id: "secret_question",
-              label_en: "Secret question",
-              label_es: "Pregunta secreta",
-              type: "text",
-              required: true,
-            },
-            {
-              id: "secret_answer",
-              label_en: "Secret answer",
-              label_es: "Respuesta secreta",
-              type: "text",
-              required: true,
-              sensitive: true,
-            },
-          ],
+          fields: [],
           expectedState_en: "Web user credentials and secret Q&A accepted",
           expectedState_es:
             "Credenciales del usuario web y pregunta secreta aceptadas",
           notes_en:
-            "Password and secret Q&A stay encrypted at rest and masked in chat with an eye icon to reveal.",
+            "The human chooses the username, password and secret question/answer directly on the portal — pause with PORTAL_STEP kind=login and offer Take over. Never type or collect them.",
           notes_es:
-            "La contraseña y la pregunta secreta permanecen cifradas en reposo y enmascaradas en el chat con un ícono de ojo para mostrarlas.",
+            "La persona elige el usuario, la contraseña y la pregunta/respuesta secreta directamente en el portal — pause con PORTAL_STEP kind=login y ofrezca Tomar el control. Nunca los escriba ni los recoja.",
         },
         {
           id: "review_submit",
@@ -516,37 +505,33 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
           id: "first_login",
           label_en: "First login",
           label_es: "Primer inicio de sesión",
-          channel: "VAULT",
+          // Login is a human-only step: the human signs in in the browser.
+          channel: "IN_BROWSER",
           pageId: "SURI login",
           gate: "login",
           fields: [],
           expectedState_en: "Authenticated into SURI",
           expectedState_es: "Autenticado en SURI",
           notes_en:
-            "First-login credentials come from Secure Vault — never ask the human to type them in chat or the browser.",
+            "Pause with PORTAL_STEP kind=login — the human signs in directly in the browser via Take over. Never type or collect credentials.",
           notes_es:
-            "Las credenciales del primer inicio de sesión vienen del Vault seguro — nunca pida al humano que las escriba en el chat ni en el navegador.",
+            "Pause con PORTAL_STEP kind=login — la persona inicia sesión directamente en el navegador con Tomar el control. Nunca escriba ni recoja credenciales.",
         },
         {
           id: "otp",
           label_en: "One-time code (unrecognized device)",
           label_es: "Código de un solo uso (dispositivo no reconocido)",
-          channel: "INLINE",
+          // MFA is human-only: the code is typed in the browser, never chat.
+          channel: "IN_BROWSER",
           pageId: "SURI device verification",
-          fields: [
-            {
-              id: "otp_code",
-              label_en: "One-time code",
-              label_es: "Código de un solo uso",
-              type: "text",
-              required: true,
-              sensitive: true,
-              hint_en: "Code sent to the verified channel, as shown",
-              hint_es: "Código enviado al canal verificado, según se muestre",
-            },
-          ],
+          gate: "login",
+          fields: [],
           expectedState_en: "Device verified; login completes",
           expectedState_es: "Dispositivo verificado; inicio de sesión completo",
+          notes_en:
+            "Pause with PORTAL_STEP kind=mfa — the human enters the one-time code in the browser via Take over.",
+          notes_es:
+            "Pause con PORTAL_STEP kind=mfa — la persona escribe el código de un solo uso en el navegador con Tomar el control.",
         },
         {
           id: "dashboard",
@@ -590,13 +575,13 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEn: "Merchant registration (Registro de Comerciante) — post-login path",
     goalEs: "Registro de Comerciante — ruta post-login",
     procedureEn: [
-      "Open suri.hacienda.pr.gov; on the login page PAUSE_USER_LOGIN once with REQUIRED_FIELDS (email if passport has none, password, mfa if shown). Prefer Assistant-fill over live typing — do not loop on login",
+      "Open suri.hacienda.pr.gov; on the login page PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS — the human signs in (and completes MFA) in the browser via Take over. Never collect or type credentials; do not loop on login",
       "After landing in the authenticated SURI home, open the merchant registration path (Registro de Comerciante) from the post-login menus",
       "Prefill merchant / business identity, addresses, and contact from the Business Passport; pause only for uploads, captcha, payment, or sensitive blanks the passport cannot fill. For SSN/ID use type=text; sensitive=true with hint= format (and error= for on-screen validation on re-pause)",
       "Stop at pre-submit review — never click final Enviar",
     ],
     procedureEs: [
-      "Abra suri.hacienda.pr.gov; en la página de login haga PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS (email si el pasaporte no lo tiene, contraseña, MFA si se muestra). Prefiera Asistente sobre escribir en vivo — no ciclar en login",
+      "Abra suri.hacienda.pr.gov; en la página de login haga PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS — la persona inicia sesión (y completa MFA) en el navegador con Tomar el control. Nunca recoja ni escriba credenciales; no cicle en el login",
       "Tras aterrizar en el inicio autenticado de SURI, abra la ruta de Registro de Comerciante desde los menús post-login",
       "Rellene identidad del comerciante/negocio, direcciones y contacto desde el Pasaporte de Negocio; pause solo para adjuntos, captcha, pago o campos sensibles que el pasaporte no pueda llenar. Para SSN/ID use type=text; sensitive=true con hint= de formato (y error= para validación en pantalla en re-pausa)",
       "Deténgase en la revisión previa al envío — nunca haga clic en Enviar final",
@@ -630,6 +615,11 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: ["SURI_REGISTER_TAXPAYER"],
     sensitiveNeeds: [],
+    verification: {
+      status: "documented",
+      evidence:
+        "No playbook and disabled. DOC_MERCHANT_REGISTRATION is emitted by engine rules, so users see it as 'not yet supported'.",
+    },
     requirementIds: ["DOC_MERCHANT_REGISTRATION"],
   },
   {
@@ -647,14 +637,14 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     procedureEn: [
       "Follow the OBJECTIVE named in the goal brief above exactly — it names ONE transaction (new-entity creation OR annual report filing). Do that one only; never do both, never pick the other one.",
       "From the registry homepage, open the online services for the transaction named in the objective",
-      "If login is required: PAUSE_USER_LOGIN once with REQUIRED_FIELDS and prefer Assistant-fill — do not expect the human to type in the live browser",
+      "If login is required: PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS — the human signs in in the browser via Take over",
       "Prefill entity name, entity type, organizers/members, registered agent, and addresses from the Business Passport",
       "Pause for document uploads, captcha, or payment as the portal requires; stop at pre-submit review",
     ],
     procedureEs: [
       "Siga EXACTAMENTE el OBJETIVO indicado en el resumen de objetivo anterior — nombra UNA transacción (creación de nueva entidad O radicación de informe anual). Haga solo esa; nunca ambas, nunca la otra.",
       "Desde la página del registro, abra los servicios en línea para la transacción nombrada en el objetivo",
-      "Si se requiere inicio de sesión: PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS y prefiera Asistente — no espere que el humano escriba en el navegador en vivo",
+      "Si se requiere inicio de sesión: PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS — la persona inicia sesión en el navegador con Tomar el control",
       "Rellene nombre de la entidad, tipo de entidad, organizadores/miembros, agente residente y direcciones desde el Pasaporte de Negocio",
       "Pause para adjuntos, captcha o pago según lo pida el portal; deténgase en la revisión previa al envío",
     ],
@@ -695,6 +685,12 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // exists in the document catalog (no rule emits it yet — future-proof).
     // DOC_ANNUAL_REPORT has no document entry and no rule: the annual-report
     // variant cannot be obligation-driven until the engine models it.
+    verification: {
+      status: "partial",
+      evidence:
+        "Read-only live walkthrough of the new-entity creation wizard, stopped at Signatures (one fictional name lookup). Payment, human signature, submission and confirmation never observed. Annual-report variant not recorded. Start URL rcp.estado.pr.gov differs from the rceweb.estado.pr.gov named in the 2026-09-15 URL note — reconfirm.",
+      checkedAt: "2026-09-24",
+    },
     requirementIds: ["DOC_CERT_INCORPORATION", "DOC_ARTICLES_ORGANIZATION"],
     // Playbook recorded 2026-09-24 from a live read-only walkthrough of the
     // creation wizard (stopped at Signatures; one fictional name lookup).
@@ -1220,13 +1216,13 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEn: "File a Permiso Único (single business permit) application",
     goalEs: "Radicar una solicitud de Permiso Único",
     procedureEn: [
-      "Open sbp.ogpe.pr.gov (Single Business Portal). If a login / profile gate appears: PAUSE_USER_LOGIN once with REQUIRED_FIELDS (email if passport has none, password, mfa if shown). Prefer Assistant-fill — do not loop on login or expect live-browser typing",
+      "Open sbp.ogpe.pr.gov (Single Business Portal). If a login / profile gate appears: PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS — the human signs in in the browser via Take over. Never collect or type credentials; do not loop on login",
       "After landing authenticated, start a new Permiso Único application from the portal home / services path the UI actually shows",
       "Prefill business identity, physical location, municipality, phone, and contact from the Business Passport before pausing for anything the passport cannot fill",
       "Pause for document uploads, captcha, or payment as needed; stop at pre-submit review — never click final submit",
     ],
     procedureEs: [
-      "Abra sbp.ogpe.pr.gov (Single Business Portal). Si aparece un muro de login / perfil: PAUSE_USER_LOGIN una vez con REQUIRED_FIELDS (email si el pasaporte no lo tiene, contraseña, MFA si se muestra). Prefiera Asistente — no ciclar en login ni esperar escritura en el navegador en vivo",
+      "Abra sbp.ogpe.pr.gov (Single Business Portal). Si aparece un muro de login / perfil: PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS — la persona inicia sesión en el navegador con Tomar el control. Nunca recoja ni escriba credenciales; no cicle en el login",
       "Tras aterrizar autenticado, inicie una nueva solicitud de Permiso Único desde el inicio / servicios que la UI muestre",
       "Rellene identidad del negocio, ubicación física, municipio, teléfono y contacto desde el Pasaporte de Negocio antes de pausar por lo que el pasaporte no pueda llenar",
       "Pause para adjuntos, captcha o pago según sea necesario; deténgase en la revisión previa al envío — nunca haga clic en enviar final",
@@ -1262,6 +1258,12 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     ],
     blockedBy: [],
     sensitiveNeeds: [],
+    verification: {
+      status: "partial",
+      evidence:
+        "Only pre-login Single Business Portal screens were live-verified; every post-login step comes from OGPe's official Permiso Único manual. Uploads, payment and submission never observed.",
+      checkedAt: "2026-09-15",
+    },
     requirementIds: ["DOC_PERMISO_UNICO"],
     /**
      * Evidence basis: only pre-login screens were live-verified. Post-login
@@ -1288,16 +1290,17 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
           id: "login",
           label_en: "Single Business Portal login",
           label_es: "Inicio de sesión en el Single Business Portal",
-          channel: "VAULT",
+          // Login is a human-only step: the human signs in in the browser.
+          channel: "IN_BROWSER",
           pageId: "SBP login screen",
           gate: "login",
           fields: [],
           expectedState_en: "Authenticated into the Single Business Portal",
           expectedState_es: "Autenticado en el Single Business Portal",
           notes_en:
-            "Hard login gate before any application step. Credentials come from Secure Vault; if none are stored the human intervenes — never type passwords in the live browser.",
+            "Hard login gate before any application step. Pause with PORTAL_STEP kind=login — the human signs in directly in the browser via Take over. Never type or collect credentials.",
           notes_es:
-            "Muro de inicio de sesión antes de cualquier paso de solicitud. Las credenciales vienen del Vault seguro; si no hay ninguna guardada, interviene el humano — nunca escriba contraseñas en el navegador en vivo.",
+            "Muro de inicio de sesión antes de cualquier paso de solicitud. Pause con PORTAL_STEP kind=login — la persona inicia sesión directamente en el navegador con Tomar el control. Nunca escriba ni recoja credenciales.",
         },
         {
           id: "crear_solicitud",
@@ -1580,21 +1583,23 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEs:
       "Completar una radicación de informe anual de ENSAYO en el portal demo de SmartPR — un portal ficticio. No se radica nada real, no se usan credenciales ni datos reales.",
     procedureEn: [
-      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, click Create account on the landing — NEVER click Log in and NEVER pause for login credentials on the create-account path. Fill name and email from the passport, then invent a clearly-fictional password yourself (e.g. rehearsal-demo-0000) and continue — NEVER pause for password creation on the demo portal: it accepts any credentials and stores nothing.",
-      "If a login form appears: fill the email from the passport (or demo@example.com), invent a clearly-fictional password yourself (e.g. rehearsal-demo-0000) — the demo accepts ANY credentials and stores nothing — click Log in and CONTINUE. NEVER pause for login credentials on the demo portal and NEVER emit REQUIRED_FIELDS for the demo login. Do not loop on login.",
+      "Follow the PORTAL ACCOUNT line in the goal brief: if the human HAS an account, use the Log in path; if NOT, click Create account on the landing — NEVER click Log in on the create-account path. Fill name and email from the passport, then stop at password creation: PAUSE_USER_LOGIN with PORTAL_STEP kind=login — the human creates the password in the browser via Take over. Never type a password yourself, even on the demo portal.",
+      "If a login form appears: PAUSE_USER_LOGIN with PORTAL_STEP kind=login (no REQUIRED_FIELDS) — the human signs in in the browser via Take over, exactly as on a real portal. Never type credentials yourself and do not loop on login.",
       "After demo registration completes, the portal shows a fictional registry number and a Continue button — go DIRECTLY to the filing form. Never visit the entity search page on the registration path.",
       "On the entity search page (login path only): enter any 6+ digits yourself (e.g. 482916) — demo numbers are fictional, any number works — then select the DEMO ENTITY LLC result and Continue. NEVER ask the human for a registry number on the demo portal.",
       "On the filing form: prefill EVERY non-sensitive field from the Business Passport first — contact name, email, phone, street, city, postal code, entity type, business activity — matching the dropdown, checkboxes, and radio buttons. Leave SSN, passwords, payment, and attestations blank.",
       "Fiscal year end (filing form): the passport has no fiscal-year field and this entity is fictional, so type 12/31 of the previous calendar year (a calendar fiscal year) in MM/DD/YYYY form, then read it back. Never loop on this field and never pause for it on the demo portal.",
       "If the portal shows an inline validation error after submitting: surface the exact portal message to the chat via the humanized-error path (never invent an explanation), correct the flagged field from passport data when possible, otherwise pause for the human.",
       "On the identity-verification step: PAUSE for the human — never fill in or invent a Social Security Number.",
-      "On the certification page: PAUSE for human review — never check legal certifications or sign on the human's behalf.",
-      "On the payment page: PAUSE for human review — never enter card details or pay.",
+      "On the identity-verification step use PAUSE_FOR_USER with PORTAL_STEP kind=identity and REQUIRED_FIELDS for the SSN only.",
+      "On the certification page: PAUSE_FOR_USER with PORTAL_STEP kind=certification, naming any still-empty items in missing= (e.g. Signature (printed name)) — never check legal certifications or sign on the human's behalf.",
+      "On the payment page: PAUSE_PAYMENT with PORTAL_STEP kind=payment — never enter card details or pay.",
+      "When the human submits after a takeover, the portal shows a confirmation page: report SUBMITTED:<confirmation number>.",
       "On the final review page: stop at pre-submit review and summarize for the human — never click the final Submit button yourself.",
     ],
     procedureEs: [
-      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, pulse Crear cuenta en la portada — NUNCA pulse Iniciar sesión ni pause por credenciales en la ruta de crear cuenta. Llene nombre y correo desde el pasaporte, luego invente usted mismo una contraseña claramente ficticia (p. ej. rehearsal-demo-0000) y continúe — NUNCA pause por la creación de contraseña en el portal demo: acepta cualquier credencial y no guarda nada.",
-      "Si aparece un formulario de inicio de sesión: llene el correo desde el pasaporte (o demo@example.com), invente usted mismo una contraseña claramente ficticia (p. ej. rehearsal-demo-0000) — el demo acepta CUALQUIER credencial y no guarda nada — pulse Iniciar sesión y CONTINÚE. NUNCA pause por credenciales de inicio de sesión en el portal demo ni emita REQUIRED_FIELDS para el login demo. No cicle en el login.",
+      "Siga la línea de CUENTA DEL PORTAL en el resumen: si la persona TIENE cuenta, use Iniciar sesión; si NO, pulse Crear cuenta en la portada. Llene nombre y correo desde el pasaporte y deténgase en la creación de contraseña: PAUSE_USER_LOGIN con PORTAL_STEP kind=login — la persona crea la contraseña en el navegador con Tomar el control. Nunca escriba una contraseña usted mismo, ni siquiera en el portal demo.",
+      "Si aparece un formulario de inicio de sesión: PAUSE_USER_LOGIN con PORTAL_STEP kind=login (sin REQUIRED_FIELDS) — la persona inicia sesión en el navegador con Tomar el control, igual que en un portal real. Nunca escriba credenciales usted mismo ni cicle en el login.",
       "Tras completar el registro demo, el portal muestra un número de registro ficticio y un botón Continuar — vaya DIRECTO al formulario de radicación. Nunca visite la página de búsqueda de entidad en la ruta de registro.",
       "En la página de búsqueda de entidad (solo ruta de inicio de sesión): escriba usted mismo cualquier número de 6+ dígitos (p. ej. 482916) — los números demo son ficticios, cualquiera funciona — luego seleccione el resultado DEMO ENTITY LLC y pulse Continuar. NUNCA le pida a la persona un número de registro en el portal demo.",
       "En el formulario de radicación: rellene PRIMERO todos los campos no sensibles desde el Pasaporte de Negocio — nombre del contacto, correo, teléfono, dirección, ciudad, código postal, tipo de entidad, actividad del negocio — incluyendo el dropdown, los checkboxes y los botones de radio. Deje el Seguro Social, contraseñas, pago y certificaciones en blanco.",
@@ -1609,13 +1614,13 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     uploadsEs: "El ensayo no requiere adjuntos",
     hintsEn: [
       "The demo portal is fictional — rehearse freely; nothing here touches a government system.",
-      "The demo accepts any credentials — NEVER pause for login or password creation on the demo portal; use obviously-fictional placeholders yourself and continue. Still pause for the human at SSN, attestation, payment, and final review.",
+      "The demo behaves like a real portal for human steps: the human signs in, certifies, signs, pays and submits in the browser via Take over. Every page declares its step in a data-smartpr-step attribute.",
       "Demo registry numbers are fictional — entering any 6+ digits on the demo search page is expected. Never ask the human for a registry number.",
       "The first form submit always fails on phone format — expect the inline error and handle it through the humanized-error path.",
     ],
     hintsEs: [
       "El portal demo es ficticio — ensaye con libertad; nada aquí toca un sistema del gobierno.",
-      "El demo acepta cualquier credencial — NUNCA pause por el inicio de sesión ni por la creación de contraseña en el portal demo; use usted mismo marcadores obviamente ficticios y continúe. Siga pausando para la persona en Seguro Social, certificación, pago y revisión final.",
+      "El demo se comporta como un portal real en los pasos humanos: la persona inicia sesión, certifica, firma, paga y envía en el navegador con Tomar el control. Cada página declara su paso en un atributo data-smartpr-step.",
       "Los números de registro demo son ficticios — escribir cualquier número de 6+ dígitos en la búsqueda demo es lo esperado. Nunca le pida a la persona un número de registro.",
       "El primer envío del formulario siempre falla en el formato del teléfono — espere el error en línea y manéjelo por la vía de error humanizado.",
     ],
@@ -1649,6 +1654,11 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     // Synthetic requirement id — the demo portal has no real obligation, so
     // the server synthesizes a demo obligation carrying this id and routes it
     // through the identical structured-objective code path as real agencies.
+    verification: {
+      status: "rehearsal",
+      evidence:
+        "Fictional SmartPR portal; each page declares data-smartpr-step. Walked end to end (login takeover → form → SSN → certification takeover → unknown-state pause → human submission → confirmation) by the Mita rehearsal browser test.",
+    },
     requirementIds: ["demo:rehearsal-filing"],
   },
 ];

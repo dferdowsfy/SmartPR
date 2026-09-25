@@ -41,7 +41,6 @@ import type {
 } from "../../../../lib/agency-runs/types";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
 import {
-  DEFAULT_LOGIN_PENDING_FIELDS,
   askedAgainWithValues,
 } from "../../../../lib/agency-runs/pendingFields";
 import { sealSensitiveValue } from "../../../../lib/agency-runs/sensitiveCrypto";
@@ -387,8 +386,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   }, [run?.id, run?.status, poll]);
 
   /** "File it for me" state — declared before the run-reset block below. */
-  const [authorizeBusy, setAuthorizeBusy] = useState(false);
-  const [authorizeError, setAuthorizeError] = useState<string | null>(null);
 
   // Leaving takeover mode whenever a different run loads (adjust state during
   // render — the React-endorsed pattern for previous-render resets).
@@ -399,7 +396,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     setFieldValues({});
     setRevealedFields({});
     setValidationError(null);
-    setAuthorizeError(null);
   }
 
   // Reset the preview loading animation whenever the stream is (re)created.
@@ -647,47 +643,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  /**
-   * "File it for me" — the owner authorizes SmartPR to click final submit.
-   * The ReviewCard only calls this after the attestation checkbox is
-   * checked; the API re-validates attestation server-side.
-   */
-  const authorize = async () => {
-    if (!run || run.status !== "review") return;
-    setAuthorizeBusy(true);
-    setAuthorizeError(null);
-    try {
-      const response = await fetch(`/api/agency-runs/${run.id}/authorize`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attestation: true }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setAuthorizeError(
-          result.error === "attestation_required"
-            ? L(
-                "Please check the authorization box first.",
-                "Marca la casilla de autorización primero.",
-                lang
-              )
-            : result.error === "not_in_review"
-              ? L(
-                  "This filing is no longer at the review step.",
-                  "Este trámite ya no está en el paso de revisión.",
-                  lang
-                )
-              : result.error ||
-                L("Could not authorize.", "No se pudo autorizar.", lang)
-        );
-        return;
-      }
-      setRun(result.run as AgencyRunPublic);
-    } finally {
-      setAuthorizeBusy(false);
-    }
-  };
-
   const reconnectPreview = async () => {
     if (!run?.live_url) return;
     setReconnectBusy(true);
@@ -812,9 +767,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
 
   const pendingFields: AgencyPendingField[] = useMemo(() => {
     if (!run || run.status !== "paused") return [];
-    if (run.pending_fields?.length) return run.pending_fields;
-    if (run.pause_reason === "USER_LOGIN") return DEFAULT_LOGIN_PENDING_FIELDS;
-    return [];
+    // Exactly what the server resolved for the visible portal step — never
+    // a substituted login form.
+    return run.pending_fields ?? [];
   }, [run]);
 
   /** Ids of pending fields treated as sensitive (masked + sealed). */
@@ -825,9 +780,11 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   }, [pendingFields]);
 
   /** Text-field pause: the chat card is the only place to type; live browser is view-only. */
+  const stepKind = run?.portal_step?.kind ?? null;
   const fieldsPause =
     Boolean(run && run.status === "paused") &&
-    (pendingFields.length > 0 || run?.pause_reason === "USER_LOGIN");
+    pendingFields.length > 0 &&
+    (stepKind === null || stepKind === "form" || stepKind === "identity");
 
   /**
    * "Asking again" prefill: when the agent re-requests fields the human
@@ -885,7 +842,10 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       plain,
       run.passport_snapshot
     );
-    await resume(merged);
+    // Keep the newest activity in view after an inline answer.
+    setScrollToLatest((n) => n + 1);
+    const ok = await resume(merged);
+    if (ok) setScrollToLatest((n) => n + 1);
   };
 
   const canFillFields =
@@ -894,28 +854,34 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
       return fieldValuePresent(fieldValues[f.id]);
     }) || pendingFields.some((f) => fieldValuePresent(fieldValues[f.id]));
 
-  // Detail line for the transient "waiting on you" status.
-  const waitingDetail =
-    wfState === "WAITING_FOR_USER"
-      ? run?.pause_reason === "USER_UPLOAD"
-        ? L("Waiting on you: upload the documents", "Esperando por ti: sube los documentos", lang)
-        : run?.pause_reason === "USER_LOGIN"
-          ? // Name what the page actually asks for — USER_LOGIN also covers
-            // SSN / other human-typed fields, not just a sign-in.
-            pendingFields.length > 0 &&
-            !pendingFields.some((f) => /^(email|password|mfa|username)$/.test(f.id))
-            ? L(
-                `Waiting on you: ${pendingFields.map((f) => f.label).join(", ")}`,
-                `Esperando por ti: ${pendingFields.map((f) => f.label).join(", ")}`,
-                lang
-              )
-            : L("Waiting on you: your portal login", "Esperando por ti: tu inicio de sesión", lang)
-          : run?.pause_reason === "CAPTCHA"
-            ? L("Waiting on you: complete the captcha", "Esperando por ti: completa el captcha", lang)
-            : run?.pause_reason === "PAYMENT"
-              ? L("Waiting on you: complete the payment", "Esperando por ti: completa el pago", lang)
-              : undefined
-      : undefined;
+  // Detail line for the transient "waiting on you" status — named from the
+  // visible portal step so it matches what the browser shows.
+  const waitingDetail = (() => {
+    if (wfState !== "WAITING_FOR_USER") return undefined;
+    if (fieldsPause) {
+      const labels = pendingFields.map((f) => f.label).join(", ");
+      return L(`Waiting on you: ${labels}`, `Esperando por ti: ${labels}`, lang);
+    }
+    switch (stepKind) {
+      case "login":
+      case "mfa":
+        return L("Waiting on you: sign in on the portal", "Esperando por ti: inicia sesión en el portal", lang);
+      case "certification":
+      case "signature":
+        return L("Waiting on you: review and sign the certification", "Esperando por ti: revisa y firma la certificación", lang);
+      case "payment":
+        return L("Waiting on you: complete the payment", "Esperando por ti: completa el pago", lang);
+      case "captcha":
+        return L("Waiting on you: complete the captcha", "Esperando por ti: completa el captcha", lang);
+      case "upload":
+        return L("Waiting on you: upload the documents", "Esperando por ti: sube los documentos", lang);
+      case "review":
+      case "submission":
+        return L("Waiting on you: final review", "Esperando por ti: revisión final", lang);
+      default:
+        return L("Waiting on you: take over this step", "Esperando por ti: toma el control en este paso", lang);
+    }
+  })();
 
   const transientLabel =
     run && wfState && !terminal && run.status !== "stopped"
@@ -999,9 +965,6 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             if (run.live_url) void enterTakeover();
           },
           onClose: () => void stop(),
-          onAuthorize: () => void authorize(),
-          authorizeBusy,
-          authorizeError,
           busy,
         }
       : null;

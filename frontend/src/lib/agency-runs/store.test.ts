@@ -88,7 +88,7 @@ describe("authorizeFiling", () => {
     assert.equal(after.status, run.status);
   });
 
-  it("mock worker: review → submitted with a confirmation reference", async () => {
+  it("never lets the agent submit — final submission is human-only", async () => {
     const run = await createRun({
       business_id: "biz-1",
       filing_type: "SURI_REGISTER_TAXPAYER",
@@ -100,11 +100,8 @@ describe("authorizeFiling", () => {
     internal.status = "review";
     const after = await authorizeFiling(run.id);
     assert.ok(after);
-    assert.equal(after.status, "submitted");
-    assert.equal(after.filing_authorized, true);
-    assert.ok(after.filing_confirmation, "confirmation reference recorded");
-    // Authorizing an already-submitted run is a stable no-op.
-    const again = await authorizeFiling(run.id);
-    assert.equal(again?.status, "submitted");
+    assert.equal(after.status, "review", "run stays at review for the human to submit");
+    assert.equal(after.filing_authorized, false);
+    assert.equal(after.filing_confirmation, null);
   });
 });

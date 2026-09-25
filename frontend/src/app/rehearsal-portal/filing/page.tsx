@@ -46,7 +46,7 @@ export default function RehearsalFilingPage() {
   };
 
   return (
-    <PortalCard>
+    <PortalCard step="form">
       <PageTitle>{t("Annual report (rehearsal)", "Informe anual (ensayo)")}</PageTitle>
       <PageSub>
         {t(

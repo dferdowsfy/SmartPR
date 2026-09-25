@@ -19,7 +19,7 @@ export default function RehearsalRegisterPage() {
   const router = useRouter();
 
   return (
-    <PortalCard>
+    <PortalCard step="login">
       <PageTitle>{t("Create account", "Crear cuenta")}</PageTitle>
       <PageSub>
         {t(

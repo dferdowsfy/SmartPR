@@ -20,7 +20,7 @@ export default function RehearsalLoginPage() {
   const router = useRouter();
 
   return (
-    <PortalCard>
+    <PortalCard step="login">
       <PageTitle>{t("Log in", "Iniciar sesión")}</PageTitle>
       <PageSub>
         {t(

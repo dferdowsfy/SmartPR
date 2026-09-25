@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, Building2, CheckCircle2, ChevronDown, ClipboardList, Eye, EyeOff,
-  Hand, KeyRound, Landmark, Loader2, Play, Send, Square, Stamp, Upload,
+  Hand, KeyRound, Landmark, Loader2, Play, Square, Stamp, Upload,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import type {
@@ -46,14 +46,14 @@ import {
   type FieldValue,
 } from "../../../../lib/agency-runs/sensitiveFields";
 import { prefillFromPassport } from "../../../../lib/agency-runs/prefillFromPassport";
+import { INLINE_STEPS, type PortalStepKind } from "../../../../lib/agency-runs/portalStep";
+import { AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
 import {
   filingGateCopy,
   filingPassportCtaCopy,
   filingPickerIntro,
   filingStatusChipLabel,
   filingUnsupportedCopy,
-  gateCopy,
-  interventionHeading,
   type AgencyAction,
   type ChatMilestone,
   type GoalBrief,
@@ -285,6 +285,9 @@ function FilingCard({
   // Informational count: passport fields still missing. The human can
   // start anyway — the assistant asks for these during the run.
   const gate = action ? nonSensitiveMissingItems(action).length : 0;
+  const verification = action
+    ? AGENCY_FILING_CONFIGS.find((c) => c.id === action.filing_type)?.verification
+    : undefined;
   // Supported + ready or missing-information filings get the Start button.
   // In-progress filings with a live run get Resume instead — an
   // in-progress card with no action is a dead end. Unsupported, blocked,
@@ -323,6 +326,16 @@ function FilingCard({
           {L(
             `${action.known} of ${action.total} ready from your Passport`,
             `${action.known} de ${action.total} listas en tu Pasaporte`,
+            lang
+          )}
+        </p>
+      )}
+      {verification && (verification.status === "documented" || verification.status === "partial") && (
+        <p className="mt-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[13px] leading-snug text-slate-600">
+          <span className="font-semibold text-slate-700">{L("Early access: ", "Acceso anticipado: ", lang)}</span>
+          {L(
+            "this portal's online steps haven't been verified end to end yet. Mita pauses and hands over whenever the portal differs from what it expects.",
+            "los pasos en línea de este portal aún no se han verificado de principio a fin. Mita se detiene y te pasa el control cuando el portal no coincide con lo esperado.",
             lang
           )}
         </p>
@@ -606,6 +619,77 @@ export interface InterventionProps {
   busy: boolean;
 }
 
+/** Title + instruction for a human-only portal step (no chat inputs). */
+function humanStepCopy(kind: PortalStepKind, lang: Lang): { title: string; body: string } {
+  switch (kind) {
+    case "login":
+      return {
+        title: L("Sign in on the portal", "Inicia sesión en el portal", lang),
+        body: L(
+          "The portal wants your sign-in. Take over the browser and sign in yourself — SmartPR never asks for or stores portal passwords. Press “I'm done” when you're in and I'll continue.",
+          "El portal pide tu inicio de sesión. Toma el control del navegador e inicia sesión tú mismo — SmartPR nunca pide ni guarda contraseñas del portal. Pulsa “Terminé” cuando entres y sigo yo.",
+          lang
+        ),
+      };
+    case "mfa":
+      return {
+        title: L("Enter the verification code", "Escribe el código de verificación", lang),
+        body: L(
+          "Take over the browser and type the code the portal sent you, then press “I'm done”.",
+          "Toma el control del navegador y escribe el código que te envió el portal, luego pulsa “Terminé”.",
+          lang
+        ),
+      };
+    case "captcha":
+      return {
+        title: L("Quick human check", "Verificación humana", lang),
+        body: L(
+          "Take over the browser, complete the check on the portal page, then press “I'm done”.",
+          "Toma el control del navegador, completa la verificación en la página del portal y luego pulsa “Terminé”.",
+          lang
+        ),
+      };
+    case "certification":
+    case "signature":
+      return {
+        title: L("Review and certify — this one is yours", "Revisa y certifica — esto te toca a ti", lang),
+        body: L(
+          "Read the certification on the portal page. Take over the browser to check the box and sign with your printed name — I never certify or sign for you. Press “I'm done” when it's complete.",
+          "Lee la certificación en la página del portal. Toma el control del navegador para marcar la casilla y firmar con tu nombre — nunca certifico ni firmo por ti. Pulsa “Terminé” cuando termines.",
+          lang
+        ),
+      };
+    case "payment":
+      return {
+        title: L("Payment — this one is yours", "Pago — esto te toca a ti", lang),
+        body: L(
+          "Review the amount and pay directly on the portal page. I never enter payment details or pay. Take over, then press “I'm done”.",
+          "Revisa el monto y paga directamente en la página del portal. Nunca ingreso datos de pago ni pago. Toma el control y luego pulsa “Terminé”.",
+          lang
+        ),
+      };
+    case "review":
+    case "submission":
+      return {
+        title: L("Final review — you submit", "Revisión final — tú envías", lang),
+        body: L(
+          "Check everything on the portal page, then submit it yourself. I never submit for you.",
+          "Revisa todo en la página del portal y envíalo tú mismo. Nunca envío por ti.",
+          lang
+        ),
+      };
+    default:
+      return {
+        title: L("I can't tell what this page needs", "No puedo identificar qué pide esta página", lang),
+        body: L(
+          "Rather than guess, I've paused. Take over the browser, finish this step on the portal, then press “I'm done” and I'll pick up from there.",
+          "En vez de adivinar, me detuve. Toma el control del navegador, termina este paso en el portal y luego pulsa “Terminé” y sigo desde ahí.",
+          lang
+        ),
+      };
+  }
+}
+
 function InterventionCard(props: InterventionProps) {
   const { run, pendingFields, lang } = props;
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -664,14 +748,34 @@ function InterventionCard(props: InterventionProps) {
   }, [run.id, pendingFields, props.fieldValues]);
 
   const pauseReason: AgencyPauseReason = run.pause_reason;
+  /**
+   * The visible portal step decides what this card may show. Only ordinary
+   * data steps (form / identity) render inputs; every other step — login,
+   * MFA, captcha, certification, signature, payment, review, unknown — is
+   * done by the human in the browser. With no reported step, fields imply a
+   * data step and anything else is treated as unknown (take over), never as
+   * a login form.
+   */
+  const stepKind: PortalStepKind =
+    run.portal_step?.kind ??
+    (pendingFields.length > 0
+      ? "form"
+      : pauseReason === "USER_UPLOAD"
+        ? "upload"
+        : pauseReason === "CAPTCHA"
+          ? "captcha"
+          : pauseReason === "PAYMENT"
+            ? "payment"
+            : "unknown");
+  const stepTitle = run.portal_step?.title ?? null;
+  const stepMissing = run.portal_step?.missing ?? [];
   /** Fields the human already supplied once that the agent is asking for
    * again — these get a confirm banner instead of blank inputs. */
   // Banner renders ONLY for fields with an actually-retained prior value
   // (computed by the parent) — never on a bare supplied id.
   const askedAgain = props.askedAgainFields ?? [];
   /** Text-field pause: the assistant card is the only place to type. */
-  const fieldsPause =
-    pendingFields.length > 0 || pauseReason === "USER_LOGIN";
+  const fieldsPause = INLINE_STEPS.has(stepKind) && pendingFields.length > 0;
   const portalValidationMessages = useMemo(
     () => collectPortalValidationMessages(pendingFields),
     [pendingFields]
@@ -679,8 +783,9 @@ function InterventionCard(props: InterventionProps) {
   const showValidationBanner =
     portalValidationMessages.length > 0 ||
     pendingFields.some((f) => fieldHasValidationIssue(f));
-  const isUpload = pauseReason === "USER_UPLOAD";
-  const isGate = pauseReason === "CAPTCHA" || pauseReason === "PAYMENT";
+  const isUpload = stepKind === "upload";
+  /** Human-only step: the card explains it and offers Take over — no inputs. */
+  const humanStep = !fieldsPause && !isUpload;
 
   // Seed non-sensitive values from the passport snapshot whenever a new
   // fields pause appears. Seeded values merge into fieldValues (local state
@@ -700,38 +805,35 @@ function InterventionCard(props: InterventionProps) {
   useEffect(() => {
     if (!fieldsPause || props.takeover) return;
     const handle = window.setTimeout(() => {
-      firstEmptyFieldRef.current?.focus();
+      // preventScroll: focusing must never scroll the page or the browser
+      // panel — the chat's own stick-to-bottom decides what is in view.
+      firstEmptyFieldRef.current?.focus({ preventScroll: true });
     }, 50);
     return () => window.clearTimeout(handle);
   }, [fieldsPause, props.takeover, pendingFields, run.id]);
 
-  const gateBody = isGate
-    ? pauseReason === "CAPTCHA"
-      ? L(
-          "This one needs a human touch. Take over the browser, complete the captcha or challenge directly on the portal page, then press “I'm done” to hand it back to me.",
-          "Esto necesita un toque humano. Toma el control del navegador, completa el captcha o el desafío directamente en la página del portal, luego pulsa “Terminé” para devolvérmelo.",
-          lang
-        )
-      : L(
-          "Payment is always yours to make — I never touch it. Take over the browser and pay directly on the portal page, then press “I'm done” to hand it back to me.",
-          "El pago siempre lo haces tú — yo nunca lo toco. Toma el control del navegador y paga directamente en la página del portal, luego pulsa “Terminé” para devolvérmelo.",
-          lang
-        )
-    : null;
+  const humanCopy = humanStep ? humanStepCopy(stepKind, lang) : null;
 
   return (
     <AssistantBubble id="agency-intervention" tone="action">
       <div className="flex items-start gap-2">
         <Hand className="mt-0.5 h-4 w-4 shrink-0 text-rose-700" />
         <div className="min-w-0 flex-1">
-          {pendingFields.length > 0 && (
-            <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-rose-800">
-              {L("Item needed", "Falta un dato", lang)}
+          <p className="text-[13px] font-bold uppercase tracking-[0.18em] text-rose-800">
+            {fieldsPause
+              ? L("Item needed", "Falta un dato", lang)
+              : L("Your turn in the browser", "Te toca en el navegador", lang)}
+          </p>
+          <p className="text-[15px] font-bold text-[#161616]">
+            {humanCopy ? humanCopy.title : isUpload ? L("Documents needed", "Documentos necesarios", lang) : L("One more item needed", "Falta un dato", lang)}
+          </p>
+          {/* Ties this request to the page visible in the browser. */}
+          {stepTitle && (
+            <p className="mt-0.5 text-[13px] text-slate-600">
+              {L("On the portal:", "En el portal:", lang)}{" "}
+              <span className="font-semibold text-slate-800">{stepTitle}</span>
             </p>
           )}
-          <p className="text-[15px] font-bold text-[#161616]">
-            {interventionHeading(pauseReason, lang)}
-          </p>
 
           {props.validationError && (
             <div className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[15px] font-medium text-rose-800">
@@ -782,8 +884,22 @@ function InterventionCard(props: InterventionProps) {
             </div>
           )}
 
-          {gateBody && (
-            <p className="mt-1.5 text-[15px] leading-snug text-slate-600">{gateBody}</p>
+          {humanCopy && (
+            <>
+              <p className="mt-1.5 text-[15px] leading-snug text-slate-700">{humanCopy.body}</p>
+              {stepMissing.length > 0 && (
+                <div className="mt-2 rounded-lg border border-rose-200 bg-white/70 px-3 py-2">
+                  <p className="text-[13px] font-semibold text-slate-800">
+                    {L("Still empty on this page:", "Todavía vacío en esta página:", lang)}
+                  </p>
+                  <ul className="mt-1 list-disc pl-5 text-[15px] text-slate-800">
+                    {stepMissing.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
 
           {isUpload && (
@@ -834,17 +950,12 @@ function InterventionCard(props: InterventionProps) {
                           : props.fieldValues[f.id]
                       )
                   ) === index;
-                const inputType = isSensitive
-                  ? revealed
-                    ? "text"
-                    : "password"
-                  : field.type === "email"
-                    ? "email"
-                    : field.type === "tel"
-                      ? "tel"
-                      : field.type === "number"
-                        ? "number"
-                        : "text";
+                // Never type="password": inline requests are never
+                // credentials, and a password input is what makes browser
+                // password managers offer to save/suggest. Sensitive values
+                // (SSN, …) are masked visually instead.
+                const inputType =
+                  field.type === "tel" ? "tel" : field.type === "number" ? "number" : "text";
                 return (
                   <label key={field.id} className="block">
                     <span className="mb-1 block text-[13px] font-semibold text-slate-700">
@@ -859,21 +970,28 @@ function InterventionCard(props: InterventionProps) {
                       <input
                         ref={isFirstEmpty ? firstEmptyFieldRef : undefined}
                         type={inputType}
-                        autoComplete={
-                          field.id === "email" || field.id.endsWith("_email")
-                            ? "username"
-                            : field.id === "password"
-                              ? "current-password"
-                              : field.id === "mfa"
-                                ? "one-time-code"
-                                : "off"
+                        name={`mita-${run.id.slice(0, 8)}-${field.id}`}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        // Password-manager opt-outs (1Password, LastPass,
+                        // Bitwarden, Dashlane) — belt and braces on top of
+                        // never rendering a password input.
+                        data-1p-ignore=""
+                        data-lpignore="true"
+                        data-bwignore=""
+                        data-form-type="other"
+                        style={
+                          isSensitive && !revealed
+                            ? ({ WebkitTextSecurity: "disc" } as React.CSSProperties)
+                            : undefined
                         }
                         inputMode={
-                          field.id === "mfa" ||
-                          field.type === "tel" ||
-                          /ssn|itin|tax_id/i.test(field.id)
-                            ? "numeric"
-                            : undefined
+                          field.type === "email"
+                            ? "email"
+                            : field.type === "tel" || /ssn|itin|tax_id/i.test(field.id)
+                              ? "numeric"
+                              : undefined
                         }
                         value={
                           isSensitive
@@ -981,7 +1099,7 @@ function InterventionCard(props: InterventionProps) {
             </div>
           )}
 
-          {(isGate || isUpload) && props.hasLiveUrl && !props.takeover && (
+          {(humanStep || isUpload) && props.hasLiveUrl && !props.takeover && (
             <button
               type="button"
               onClick={props.onTakeover}
@@ -991,6 +1109,15 @@ function InterventionCard(props: InterventionProps) {
               {L("Take over the browser", "Tomar el control del navegador", lang)}
             </button>
           )}
+          {humanStep && props.takeover && (
+            <p className="mt-2.5 rounded-lg bg-white/70 px-3 py-2 text-[15px] text-slate-700">
+              {L(
+                "You're in control — finish this step in the browser, then press “I'm done” above the browser.",
+                "Tienes el control — termina este paso en el navegador y luego pulsa “Terminé” sobre el navegador.",
+                lang
+              )}
+            </p>
+          )}
 
           {fieldsPause && props.hasLiveUrl && !props.takeover && (
             <button
@@ -999,8 +1126,8 @@ function InterventionCard(props: InterventionProps) {
               className="mt-2 w-full text-center text-[15px] font-medium text-slate-700 underline-offset-2 hover:text-[#1e4d38] hover:underline"
             >
               {L(
-                "Need to solve a captcha or weird UI? Take over instead",
-                "¿Necesitas resolver un captcha o una pantalla rara? Toma el control",
+                "Browser showing something else? Take over instead",
+                "¿El navegador muestra otra cosa? Toma el control",
                 lang
               )}
             </button>
@@ -1012,10 +1139,12 @@ function InterventionCard(props: InterventionProps) {
                 type="button"
                 disabled={props.busy}
                 onClick={props.onResume}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#1e4d38]/40 bg-white px-3 py-2 text-[15px] font-bold text-[#1e4d38] hover:bg-[#1e4d38]/[.06] disabled:opacity-50"
               >
                 <Play className="h-3.5 w-3.5" />
-                {L("Resume", "Reanudar", lang)}
+                {humanStep
+                  ? L("I did it — continue", "Listo — continuar", lang)
+                  : L("Resume", "Reanudar", lang)}
               </button>
             )}
             <button
@@ -1043,21 +1172,14 @@ function ReviewCard({
   knownCount,
   onReviewInBrowser,
   onClose,
-  onAuthorize,
-  authorizeBusy,
-  authorizeError,
   busy,
 }: {
   lang: Lang;
   knownCount: number | null;
   onReviewInBrowser: () => void;
   onClose: () => void;
-  onAuthorize: () => void;
-  authorizeBusy: boolean;
-  authorizeError: string | null;
   busy: boolean;
 }) {
-  const [attested, setAttested] = useState(false);
   return (
     <AssistantBubble tone="success">
       <div className="flex items-start gap-2">
@@ -1065,8 +1187,8 @@ function ReviewCard({
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-bold text-[#161616]">
             {L(
-              "Your application is prepared and ready for final review.",
-              "Tu solicitud está preparada y lista para revisión final.",
+              "Your application is prepared and ready for your final review.",
+              "Tu solicitud está preparada y lista para tu revisión final.",
               lang
             )}
           </p>
@@ -1083,48 +1205,21 @@ function ReviewCard({
                   lang
                 )}
           </p>
-          <p className="mt-1.5 text-[15px] font-medium text-slate-500">{gateCopy(lang)}</p>
-          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-            <input
-              type="checkbox"
-              checked={attested}
-              onChange={(e) => setAttested(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-700"
-            />
-            <span className="text-[13px] leading-snug text-slate-600">
-              {L(
-                "I authorize SmartPR to submit this filing on my behalf. I confirm the information is true and correct.",
-                "Autorizo a SmartPR a enviar este trámite por mí. Confirmo que la información es cierta y correcta.",
-                lang
-              )}
-            </span>
-          </label>
-          {authorizeError && (
-            <p className="mt-2 text-[13px] font-medium text-rose-700">{authorizeError}</p>
-          )}
-          <button
-            type="button"
-            disabled={busy || authorizeBusy || !attested}
-            onClick={onAuthorize}
-            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-[15px] font-semibold text-white disabled:opacity-50"
-          >
-            {authorizeBusy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Send className="h-3.5 w-3.5" />
+          <p className="mt-1.5 text-[15px] leading-snug text-slate-700">
+            {L(
+              "Submitting is yours: take over the browser, review every page, and press the portal's Submit button yourself. Press “I'm done” afterwards and I'll record the confirmation.",
+              "Enviar te toca a ti: toma el control del navegador, revisa cada página y pulsa tú el botón Enviar del portal. Luego pulsa “Terminé” y registro la confirmación.",
+              lang
             )}
-            {authorizeBusy
-              ? L("Submitting…", "Enviando…", lang)
-              : L("File it for me", "Envíalo por mí", lang)}
-          </button>
+          </p>
           <button
             type="button"
             disabled={busy}
             onClick={onReviewInBrowser}
-            className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-[15px] font-semibold text-slate-700 disabled:opacity-50"
+            className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#1e4d38] px-3 py-2 text-[15px] font-bold text-white hover:bg-[#16382a] disabled:opacity-50"
           >
-            <Eye className="h-3.5 w-3.5" />
-            {L("Review in browser", "Revisar en el navegador", lang)}
+            <KeyRound className="h-3.5 w-3.5" />
+            {L("Take over to review & submit", "Tomar el control para revisar y enviar", lang)}
           </button>
           <button
             type="button"
@@ -1174,8 +1269,8 @@ function SubmittedCard({
           )}
           <p className="mt-1.5 text-[15px] leading-snug text-slate-600">
             {L(
-              "SmartPR submitted this filing on the portal on your behalf — no need to visit the portal yourself.",
-              "SmartPR envió este trámite en el portal por ti — no necesitas visitar el portal tú mismo.",
+              "You submitted this filing on the portal — I recorded the confirmation it showed.",
+              "Enviaste este trámite en el portal — registré la confirmación que mostró.",
               lang
             )}
           </p>
@@ -1228,9 +1323,6 @@ export interface AgencyChatProps {
     knownCount: number | null;
     onReviewInBrowser: () => void;
     onClose: () => void;
-    onAuthorize: () => void;
-    authorizeBusy: boolean;
-    authorizeError: string | null;
     busy: boolean;
   } | null;
   submitted: {
@@ -1259,15 +1351,6 @@ export function AgencyChat(props: AgencyChatProps) {
   const { lang } = props;
   const scrollBoxRef = useRef<HTMLDivElement>(null);
 
-  // Chat auto-scroll is always container-local: only the message list moves,
-  // never the window or an outer ancestor — so the browser panel and the
-  // field cards stay anchored while the human fills them out.
-  const scrollChatToBottom = (behavior: ScrollBehavior) => {
-    const box = scrollBoxRef.current;
-    if (!box) return;
-    box.scrollTo({ top: box.scrollHeight, behavior });
-  };
-
   /**
    * Stick-to-bottom: while true, any growth of the thread (new milestone,
    * status line, card) scrolls to the newest activity. Only an explicit
@@ -1281,6 +1364,29 @@ export function AgencyChat(props: AgencyChatProps) {
   // restored session asks to jump to the newest activity.
   const stickRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Chat auto-scroll is always container-local: only the message list moves,
+  // never the window or an outer ancestor — so the browser panel and the
+  // field cards stay anchored while the human fills them out.
+  /**
+   * Pin the chat to its newest message — instantly, then again after the
+   * next two frames, so content that is still growing (a card mounting,
+   * fonts, a status line appearing) is never left clipped below the fold.
+   * Only the message list moves; never the page or the browser panel.
+   */
+  const pinToBottom = () => {
+    const box = scrollBoxRef.current;
+    if (!box) return;
+    box.scrollTop = box.scrollHeight;
+    requestAnimationFrame(() => {
+      if (!stickRef.current) return;
+      box.scrollTop = box.scrollHeight;
+      requestAnimationFrame(() => {
+        if (stickRef.current) box.scrollTop = box.scrollHeight;
+      });
+    });
+  };
+
   useEffect(() => {
     scrollBoxRef.current?.scrollTo({ top: 0 });
   }, []);
@@ -1288,8 +1394,9 @@ export function AgencyChat(props: AgencyChatProps) {
     const box = scrollBoxRef.current;
     const content = contentRef.current;
     if (!box || !content) return;
+    // Messages that grow after rendering keep the view pinned while sticky.
     const ro = new ResizeObserver(() => {
-      if (stickRef.current) box.scrollTo({ top: box.scrollHeight, behavior: "smooth" });
+      if (stickRef.current) box.scrollTop = box.scrollHeight;
     });
     ro.observe(content);
     return () => ro.disconnect();
@@ -1306,11 +1413,11 @@ export function AgencyChat(props: AgencyChatProps) {
     const btn = (e.target as HTMLElement).closest("button");
     if (!btn || btn.hasAttribute("data-no-autoscroll")) return;
     stickRef.current = true;
-    window.setTimeout(() => scrollChatToBottom("smooth"), 120);
+    window.setTimeout(pinToBottom, 60);
   };
 
   useEffect(() => {
-    if (stickRef.current) scrollChatToBottom("smooth");
+    if (stickRef.current) pinToBottom();
   }, [props.scrollKey]);
 
   // Hand-backs from outside the chat always re-arm stick-to-bottom and jump
@@ -1319,8 +1426,8 @@ export function AgencyChat(props: AgencyChatProps) {
   useEffect(() => {
     if (!props.scrollToLatestSignal) return;
     stickRef.current = true;
-    scrollChatToBottom("smooth");
-    const t = window.setTimeout(() => scrollChatToBottom("smooth"), 400);
+    pinToBottom();
+    const t = window.setTimeout(pinToBottom, 400);
     return () => window.clearTimeout(t);
   }, [props.scrollToLatestSignal]);
 
@@ -1371,7 +1478,7 @@ export function AgencyChat(props: AgencyChatProps) {
         }
       } else {
         stickRef.current = true;
-        scrollChatToBottom("smooth");
+        pinToBottom();
       }
     }, 60);
     return () => window.clearTimeout(t);

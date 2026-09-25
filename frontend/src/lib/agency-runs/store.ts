@@ -27,10 +27,8 @@ import { getFilingConfig, AGENCY_FILING_CONFIGS } from "./filingTypes";
 import { PLACEHOLDER_SHOTS } from "./placeholders";
 import {
   displayMessagesForAgentText,
-  humanizePauseEvent,
   mergeSuppliedFieldIds,
   parseRequiredFields,
-  resolvePendingFields,
 } from "./pendingFields";
 import {
   buildAuthorizeTaskPrompt,
@@ -43,6 +41,7 @@ import {
 import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
 import type { GoalBrief } from "./goalBrief";
 import { setPortalAccountStatus } from "./portalAccounts";
+import { resolvePauseState, stepPauseMessage } from "./portalStep";
 import type {
   AgencyFilingType,
   AgencyPauseReason,
@@ -85,6 +84,8 @@ function toPublic(run: AgencyRun): AgencyRunPublic {
     pause_streak: run.pause_streak,
     // Labels/types/ids only — never values.
     pending_fields: run.pending_fields ?? [],
+    // Step kind/title/missing labels only — never values.
+    portal_step: run.portal_step ?? null,
     // Ids only — never values. Safe for the public payload.
     supplied_field_ids: [...(run.supplied_field_ids ?? [])],
     // GoalBrief is labels-only by construction — safe for public payloads.
@@ -126,15 +127,37 @@ function pushBeat(run: AgencyRun, beat: MockBeat): AgencyRunEvent {
 
 function clearPendingFields(run: AgencyRun): void {
   run.pending_fields = [];
+  run.portal_step = null;
 }
 
+/**
+ * Record the visible portal step and the inline fields for it. Inline
+ * fields exist only for ordinary data steps and never include credentials;
+ * an unidentifiable or contradictory step becomes "unknown" (take over).
+ */
 function applyPendingFields(
   run: AgencyRun,
   text: string,
   reason: AgencyPauseReason
 ): void {
-  run.pending_fields = resolvePendingFields(text, reason);
+  const state = resolvePauseState(text, reason);
+  run.pending_fields = state.fields;
+  run.portal_step = state.step;
 }
+
+/** Human-readable chat copy for a pause, derived from the resolved step. */
+function pauseDisplay(text: string, reason: AgencyPauseReason): { message: string; message_es: string } {
+  const state = resolvePauseState(text, reason);
+  return stepPauseMessage(state.step, state.fields);
+}
+
+/** Mock beats carry no agent text — give them an explicit portal step. */
+const MOCK_STEP_FOR: Partial<Record<Exclude<AgencyPauseReason, null>, string>> = {
+  USER_LOGIN: "login",
+  USER_UPLOAD: "upload",
+  CAPTCHA: "captcha",
+  PAYMENT: "payment",
+};
 
 /** Apply any mock beats whose delay has elapsed since segment_started_at. */
 export function advanceMock(run: AgencyRun): AgencyRun {
@@ -169,7 +192,13 @@ export function advanceMock(run: AgencyRun): AgencyRun {
     run.updated_at = nowIso();
 
     if (beat.kind === "pause") {
-      trackPause(run, beat.pause_reason ?? null, PLACEHOLDER_SHOTS.home, beat.message);
+      const mockKind = beat.pause_reason ? MOCK_STEP_FOR[beat.pause_reason] : undefined;
+      trackPause(
+        run,
+        beat.pause_reason ?? null,
+        PLACEHOLDER_SHOTS.home,
+        mockKind ? `${beat.message}\nPORTAL_STEP: kind=${mockKind}` : beat.message
+      );
       break;
     }
     if (beat.kind === "review") {
@@ -194,6 +223,11 @@ function detectMarker(text: string): {
   confirmation?: string | null;
 } {
   const upper = text.toUpperCase();
+  // Human step described by PORTAL_STEP (certification, SSN, a missing
+  // date, …). Checked first: the looser LOGIN match below must not claim it.
+  if (upper.includes("PAUSE_FOR_USER")) {
+    return { status: "paused", pause_reason: "USER_ACTION" };
+  }
   if (upper.includes("PAUSE_USER_UPLOAD") || /\bUSER_UPLOAD\b/.test(upper)) {
     return { status: "paused", pause_reason: "USER_UPLOAD" };
   }
@@ -265,7 +299,7 @@ function trackPause(
   applyPendingFields(run, sourceText || "", reason);
   // Same reason AND same requested fields = the agent is stuck on one step.
   // A different field set (login → SSN → fiscal year) is forward progress.
-  const signature = `${reason ?? ""}:${run.pending_fields
+  const signature = `${reason ?? ""}:${run.portal_step?.kind ?? ""}:${run.pending_fields
     .map((f) => f.id)
     .sort()
     .join(",")}`;
@@ -279,7 +313,7 @@ function trackPause(
   run.updated_at = nowIso();
   // A login gate proves the business has a portal account — remember the
   // label (never credentials) so the pre-flight question is asked once.
-  if (reason === "USER_LOGIN") {
+  if (run.portal_step?.kind === "login" || run.portal_step?.kind === "mfa") {
     const agencyId = getFilingConfig(run.filing_type).agencyId;
     if (agencyId) {
       void setPortalAccountStatus(run.business_id, agencyId, true);
@@ -437,15 +471,10 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
     const marker = markerText ? detectMarker(markerText) : {};
     // Parse fields before display so pause events stay human-readable (no raw
     // REQUIRED_FIELDS spam in the Assistant panel).
-    const previewFields =
+    const display =
       marker.status === "paused"
-        ? resolvePendingFields(fieldsText, marker.pause_reason ?? null)
-        : [];
-    const display = displayMessagesForAgentText(
-      latestText,
-      marker.pause_reason ?? run.pause_reason,
-      previewFields
-    );
+        ? pauseDisplay(fieldsText, marker.pause_reason ?? null)
+        : displayMessagesForAgentText(latestText, null, []);
     pushEvent(run, {
       message: display.message,
       message_es: display.message_es,
@@ -490,15 +519,10 @@ async function applyRunStatus(run: AgencyRun, bu: BuRun, events: BuEvent[]): Pro
       const marker = detectMarker(out);
       if (marker.status === "paused") {
         trackPause(run, marker.pause_reason ?? null, shot, fieldsText);
-        const pauseFields = resolvePendingFields(fieldsText, marker.pause_reason ?? null);
-        const pauseDisplay = humanizePauseEvent(
-          marker.pause_reason ?? null,
-          pauseFields,
-          out
-        );
+        const display = pauseDisplay(fieldsText, marker.pause_reason ?? null);
         pushEvent(run, {
-          message: pauseDisplay.message,
-          message_es: pauseDisplay.message_es,
+          message: display.message,
+          message_es: display.message_es,
           screenshot_url: shot,
           kind: "pause",
         });
@@ -709,6 +733,7 @@ export async function createRun(input: {
     prev_pause_signature: null,
     bu_awaiting_turn: null,
     pending_fields: [],
+    portal_step: null,
     // Submit permission starts off — only the owner-authenticated authorize
     // endpoint can flip filing_authorized after pre-submit review.
     filing_authorized: false,
@@ -858,6 +883,7 @@ export async function resumeRun(
   // never values.
   run.supplied_field_ids = mergeSuppliedFieldIds(run.supplied_field_ids, submitted);
   const pendingSnapshot = [...(run.pending_fields ?? [])];
+  const stepSnapshot = run.portal_step ?? null;
   const mergedMap = mergeFieldsWithPassportPrefill(
     pendingSnapshot,
     submitted,
@@ -925,6 +951,7 @@ export async function resumeRun(
         if (fields) {
           // Keep pending_fields so the user can retry; do not silently clear.
           run.pending_fields = pendingSnapshot;
+          run.portal_step = stepSnapshot;
           run.status = "paused";
           run.pause_reason = prevPause;
           pushEvent(run, {
@@ -945,6 +972,7 @@ export async function resumeRun(
     } else if (fields) {
       // No session to deliver to — restore so the user can retry after reconnect.
       run.pending_fields = pendingSnapshot;
+      run.portal_step = stepSnapshot;
       run.status = "paused";
       run.pause_reason = prevPause;
       pushEvent(run, {
@@ -995,9 +1023,19 @@ export async function resumeRun(
  *
  * Returns the public run; null when the run does not exist.
  */
+/**
+ * Final submission is a human-only step: Mita never certifies, signs, pays
+ * or submits on the user's behalf. The "File it for me" path is disabled —
+ * the human submits in the browser (Take over) and the agent only reports
+ * the confirmation it observes. Kept as a switch so the capability cannot
+ * be re-enabled by client input.
+ */
+export const AGENT_FINAL_SUBMIT_ENABLED = false;
+
 export async function authorizeFiling(id: string): Promise<AgencyRunPublic | null> {
   const run = runs().get(id);
   if (!run) return null;
+  if (!AGENT_FINAL_SUBMIT_ENABLED) return toPublic(run);
   if (run.status === "submitted") return toPublic(run);
   // Authorization is only meaningful from pre-submit review. Anything else
   // (paused, running, failed, stopped) is a no-op so a stale/double click
@@ -1086,16 +1124,13 @@ export async function authorizeFiling(id: string): Promise<AgencyRunPublic | nul
 export function takeoverRun(id: string): AgencyRunPublic | null {
   const run = runs().get(id);
   if (!run) return null;
-  const reasonLabel =
-    run.pause_reason === "USER_LOGIN"
-      ? "login / profile"
-      : run.pause_reason === "USER_UPLOAD"
-        ? "document upload"
-        : run.pause_reason === "CAPTCHA"
-          ? "captcha"
-          : run.pause_reason === "PAYMENT"
-            ? "payment"
-            : "manual control";
+  const reasonLabel = run.portal_step?.kind
+    ? run.portal_step.kind === "unknown"
+      ? "unidentified step"
+      : run.portal_step.kind
+    : run.pause_reason === "USER_UPLOAD"
+      ? "document upload"
+      : "manual control";
   run.updated_at = nowIso();
   pushEvent(run, {
     message: `User took over the browser (${reasonLabel}) — completing the step directly in the live browser`,

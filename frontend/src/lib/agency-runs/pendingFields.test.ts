@@ -1,7 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  DEFAULT_LOGIN_PENDING_FIELDS,
   collectPortalValidationMessages,
   displayMessagesForAgentText,
   fieldHasValidationIssue,
@@ -97,9 +96,10 @@ Next steps for the human.`;
 });
 
 describe("resolvePendingFields", () => {
-  it("falls back to login defaults for USER_LOGIN with no block", () => {
-    const fields = resolvePendingFields("PAUSE_USER_LOGIN", "USER_LOGIN");
-    assert.deepEqual(fields, DEFAULT_LOGIN_PENDING_FIELDS);
+  it("never substitutes a login form when USER_LOGIN has no block", () => {
+    // Regression: a certification pause with no parsed fields used to
+    // render email/password/MFA inputs in chat.
+    assert.deepEqual(resolvePendingFields("PAUSE_USER_LOGIN", "USER_LOGIN"), []);
   });
 
   it("returns empty for CAPTCHA with no block", () => {

@@ -24,12 +24,6 @@ const FIELD_TYPES = new Set<AgencyPendingFieldType>([
 export const VALIDATION_HINT_RE =
   /error|invalid|inválid|incorrect|no es válido|formato|rejected|must |debe /i;
 
-/** Fallback when USER_LOGIN pause has no parsed REQUIRED_FIELDS (preserves #88 UX). */
-export const DEFAULT_LOGIN_PENDING_FIELDS: AgencyPendingField[] = [
-  { id: "email", label: "Email", type: "email", sensitive: false },
-  { id: "password", label: "Password", type: "password", sensitive: true },
-  { id: "mfa", label: "MFA code", type: "text", sensitive: true, optional: true },
-];
 
 /**
  * Subset of pending fields the human already supplied once (by id). When the
@@ -183,17 +177,18 @@ export function parseRequiredFields(text: string): AgencyPendingField[] {
 }
 
 /**
- * Resolve pending fields for a pause: prefer parsed REQUIRED_FIELDS;
- * fall back to default email/password/mfa for USER_LOGIN (preserve #88 UX).
+ * Pending fields for a pause: exactly the parsed REQUIRED_FIELDS — never a
+ * substituted default. (A hard-coded email/password/MFA fallback used to
+ * render a login form on steps that were not logins, e.g. certification.)
+ * Callers that render UI should use resolvePauseState (portalStep.ts),
+ * which also drops credential fields and checks the step.
  */
 export function resolvePendingFields(
   text: string,
   pauseReason: AgencyPauseReason
 ): AgencyPendingField[] {
-  const parsed = parseRequiredFields(text);
-  if (parsed.length > 0) return parsed;
-  if (pauseReason === "USER_LOGIN") return [...DEFAULT_LOGIN_PENDING_FIELDS];
-  return [];
+  void pauseReason;
+  return parseRequiredFields(text);
 }
 
 /** True when a field has an explicit error= or a hint that looks like validation failure. */

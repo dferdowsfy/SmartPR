@@ -19,7 +19,7 @@ export default function RehearsalReviewPage() {
   const masked = (v?: string) => (v ? "••••" : "—");
 
   return (
-    <PortalCard>
+    <PortalCard step="review">
       <PageTitle>{t("Review before submitting", "Revisa antes de enviar")}</PageTitle>
       <PageSub>
         {t(

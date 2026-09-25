@@ -381,7 +381,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
 
             {/* Pause overlay — only for uploads / captcha / payment while the
                 browser is open. Field/login pauses live in the chat. */}
-            {paused && !props.takeover && !props.fieldsPause && (
+            {paused && !props.takeover && !props.fieldsPause && run.pause_reason === "USER_UPLOAD" && (
               <PauseOverlay
                 lang={lang}
                 reason={run.pause_reason}
@@ -442,6 +442,30 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
             )}
           </div>
 
+          {/* Human step (login, certification, payment, unknown…): keep the
+              portal page fully visible — the user must read it — and put
+              the handoff in a slim bar below it, never over it. */}
+          {paused && !props.takeover && !props.fieldsPause && run.pause_reason !== "USER_UPLOAD" && (
+            <div className="mt-2 flex shrink-0 justify-center">
+              <div className="flex items-center gap-3 rounded-full bg-[#161616] py-1.5 pl-4 pr-1.5 text-[13px] font-semibold text-white shadow-lg">
+                <span>
+                  {run.portal_step?.kind === "unknown"
+                    ? L("Mita can't identify this step — your turn", "Mita no identifica este paso — te toca", lang)
+                    : L("Your turn on this step", "Te toca en este paso", lang)}
+                </span>
+                {run.live_url && (
+                  <button
+                    type="button"
+                    onClick={props.onTakeover}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#fbf8f2] px-3 py-1 text-[13px] font-bold text-[#161616] hover:bg-white"
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                    {L("Take over", "Tomar el control", lang)}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           {/* Filmstrip — screenshots when not embedding live preview */}
           {!run.live_url && filmstrip.length > 0 && (
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">

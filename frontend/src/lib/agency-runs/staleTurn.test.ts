@@ -20,15 +20,16 @@ const queue: { messageRunId: string | null; latestRunId: string } = {
   latestRunId: "run-1",
 };
 
-const LOGIN_PAUSE = [
-  "PAUSE_USER_LOGIN",
+const FORM_PAUSE = [
+  "PAUSE_FOR_USER",
+  "PORTAL_STEP: kind=form; title=Annual report",
   "REQUIRED_FIELDS:",
-  "- id=email; label=Email; type=email; sensitive=false",
-  "- id=password; label=Password; type=password; sensitive=true",
+  "- id=fiscal_year_end; label=Fiscal year end; type=text; sensitive=false; hint=MM/DD/YYYY",
 ].join("\n");
 
 const SSN_PAUSE = [
-  "PAUSE_USER_LOGIN",
+  "PAUSE_FOR_USER",
+  "PORTAL_STEP: kind=identity; title=Identity verification",
   "REQUIRED_FIELDS:",
   "- id=ssn; label=Social Security Number; type=text; sensitive=true; hint=9 digits",
 ].join("\n");
@@ -107,15 +108,16 @@ describe("Browser Use follow-up turns", () => {
     let pub = await getRun(run.id);
     assert.equal(pub?.status, "running");
 
-    // Turn 1 finishes at the login gate.
-    turns["run-1"] = { status: "completed", result: LOGIN_PAUSE, events: [] };
+    // Turn 1 finishes on the filing form missing one value.
+    turns["run-1"] = { status: "completed", result: FORM_PAUSE, events: [] };
     pub = await getRun(run.id);
     assert.equal(pub?.status, "paused");
-    assert.deepEqual(pub?.pending_fields.map((f) => f.id), ["email", "password"]);
+    assert.equal(pub?.portal_step?.kind, "form");
+    assert.deepEqual(pub?.pending_fields.map((f) => f.id), ["fiscal_year_end"]);
 
-    // Human fills the login once. Cloud has not dispatched the follow-up yet.
-    pub = await resumeRun(run.id, { fields: { email: "a@b.co", password: "pw" } });
-    assert.equal(pub?.status, "running", "must not re-read the finished login turn");
+    // Human answers once. Cloud has not dispatched the follow-up yet.
+    pub = await resumeRun(run.id, { fields: { fiscal_year_end: "12/31/2025" } });
+    assert.equal(pub?.status, "running", "must not re-read the finished turn");
     pub = await getRun(run.id);
     assert.equal(pub?.status, "running", "still waiting on the queued turn — no second ask");
     assert.deepEqual(pub?.pending_fields, []);
@@ -123,7 +125,7 @@ describe("Browser Use follow-up turns", () => {
     // Follow-up dispatches as run-2 and reaches the SSN step.
     queue.messageRunId = "run-2";
     queue.latestRunId = "run-2";
-    turns["run-2"] = { status: "running", result: null, events: ["Filled login, continuing to the filing form."] };
+    turns["run-2"] = { status: "running", result: null, events: ["Filled the fiscal year end, continuing."] };
     pub = await getRun(run.id);
     assert.equal(pub?.status, "running");
 
@@ -131,6 +133,7 @@ describe("Browser Use follow-up turns", () => {
     pub = await getRun(run.id);
     assert.equal(pub?.status, "paused");
     assert.deepEqual(pub?.pending_fields.map((f) => f.id), ["ssn"], "chat asks for exactly what the page shows");
+    assert.equal(pub?.portal_step?.kind, "identity");
     assert.equal(pub?.pause_streak, 1, "a new field set is progress, not a stuck loop");
   });
 });

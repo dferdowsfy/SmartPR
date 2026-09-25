@@ -1,3 +1,4 @@
+import type { PortalStep } from "./portalStep";
 /** Agency assistant run types — mock worker or Browser Use Cloud. */
 import type { GoalBrief } from "./goalBrief";
 
@@ -20,6 +21,8 @@ export type AgencyRunStatus =
 export type AgencyPauseReason =
   | "USER_UPLOAD"
   | "USER_LOGIN"
+  /** Any other human step — what it is lives in the run's portal_step. */
+  | "USER_ACTION"
   | "CAPTCHA"
   | "PAYMENT"
   | null;
@@ -141,6 +144,8 @@ export interface AgencyRun {
    * Cleared when pause clears or on successful resume that supplied values.
    */
   pending_fields: AgencyPendingField[];
+  /** Visible portal step at the current pause (null when not paused). */
+  portal_step?: PortalStep | null;
   /**
    * Ids of fields the human has already supplied once (pre-flight or a
    * previous Fill & continue). Ids only — never values. Used to avoid
@@ -192,6 +197,8 @@ export interface AgencyRunPublic {
    * blocked" messaging when the user is stuck in a pause loop. */
   pause_streak: number;
   /** Required fields for the Assistant panel (ids/labels/types only — never values). */
+  /** Visible portal step at the current pause — drives what the chat may ask for. */
+  portal_step: PortalStep | null;
   pending_fields: AgencyPendingField[];
   /**
    * Ids of fields the human already supplied once (ids only — never values).

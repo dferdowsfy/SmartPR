@@ -515,6 +515,7 @@ test("createsBusinessRecordForIntent: only new_business creates records", () => 
 
 const BRIEF_CONFIG: AgencyFilingConfig = {
   id: "OGPE_PERMISO_UNICO",
+  verification: { status: "documented", evidence: "test fixture" },
   labelEn: "OGPe Permiso Unico",
   labelEs: "OGPe Permiso Unico",
   agencyEn: "OGPe",

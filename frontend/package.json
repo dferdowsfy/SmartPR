@@ -23,7 +23,9 @@
     "test:goldens": "tsx --test src/app/qa/goldenScenarios.test.ts src/app/qa/ruleCoverage.test.ts src/app/qa/requirementProperties.test.ts",
     "qa:snapshot-goldens": "tsx src/app/qa/snapshotGoldens.ts",
     "qa:update-coverage-baseline": "tsx src/app/qa/updateCoverageBaseline.ts",
-    "test:security": "tsx --test src/lib/__tests__/enterprise-security.test.ts src/lib/__tests__/soc2-security.test.ts"
+    "test:security": "tsx --test src/lib/__tests__/enterprise-security.test.ts src/lib/__tests__/soc2-security.test.ts",
+    "test:mita:e2e": "node tests/mita-rehearsal.e2e.mjs",
+    "test:agency": "tsx --test src/lib/agency-runs/*.test.ts 'src/app/businesses/[id]/agency-run/chatContracts.test.ts'"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

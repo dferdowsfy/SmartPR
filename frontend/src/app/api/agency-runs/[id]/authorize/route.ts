@@ -9,7 +9,12 @@
  * The submit permission reaches the agent ONLY through the server-built
  * authorize prompt (see authorizeFiling) — never from client input.
  */
-import { assertRunOwner, authorizeFiling, peekRun } from "../../../../../lib/agency-runs/store";
+import {
+  AGENT_FINAL_SUBMIT_ENABLED,
+  assertRunOwner,
+  authorizeFiling,
+  peekRun,
+} from "../../../../../lib/agency-runs/store";
 import { getCurrentUser } from "../../../../../lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -23,6 +28,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const user = await getCurrentUser();
   if (!assertRunOwner(peek, user?.id ?? null)) {
     return Response.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  // Final submission stays with the human (Take over → submit in the
+  // browser). Mita never submits on the user's behalf.
+  if (!AGENT_FINAL_SUBMIT_ENABLED) {
+    return Response.json({ error: "human_submission_only" }, { status: 403 });
   }
 
   let attestation = false;

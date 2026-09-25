@@ -75,9 +75,19 @@ export function DemoBanner() {
   );
 }
 
-export function PortalCard({ children }: { children: ReactNode }) {
+/**
+ * Machine-readable step for the rehearsal agent (data-smartpr-step). Real
+ * portals have no such marker — there the agent identifies the step from
+ * the heading, URL and controls — but declaring it here makes the
+ * rehearsal's step detection deterministic and testable.
+ */
+export type RehearsalStep =
+  | "landing" | "login" | "form" | "identity" | "certification"
+  | "payment" | "review" | "submission";
+
+export function PortalCard({ children, step }: { children: ReactNode; step?: RehearsalStep }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8">
+    <main data-smartpr-step={step} className="mx-auto w-full max-w-3xl px-4 pb-16 pt-8">
       <div className="rounded-2xl border border-slate-300 bg-white p-6 shadow-sm md:p-8">
         {children}
       </div>
