@@ -1563,6 +1563,10 @@ export default function SmartPRIntake() {
   const profileFieldsRef = useRef<HTMLDivElement>(null);
   // Correlation id tying every capture event for this scenario together.
   const submissionIdRef = useRef<string>('');
+  // Set once the Clara-return snapshot restore has been attempted (or ruled
+  // out). Autosave waits on it so a blank return-mount can never mint or
+  // overwrite a submission with empty state before restore lands.
+  const restoreAttemptedRef = useRef<boolean>(false);
   // The business this assessment belongs to (when signed in + /?business=<id>).
   const businessIdRef = useRef<string | null>(null);
   // The regulatory matter this workflow belongs to. Older links without a
@@ -1931,22 +1935,28 @@ export default function SmartPRIntake() {
   }, []);
 
   // Returning from Clara (Back) lands here with ?business=<id>&matter=<id>
-  // but no ?resume=, and the component remounts with empty state. Restore
-  // the latest workflow snapshot for that business/matter so the completed
-  // intake and requirements come back exactly. Fresh mounts only — this
-  // never clobbers state the user has already started entering.
+  // but no ?resume=, and the page may mount with empty state. Restore the
+  // latest workflow snapshot for that business/matter so the completed
+  // intake and requirements come back exactly. Runs on mount — not gated on
+  // the /api/me round-trip — so it wins the race against autosave; the
+  // endpoint 401s for signed-out callers, which is a no-op here. Fresh
+  // mounts only — this never clobbers state the user has started entering.
+  // Every path marks the restore attempt so autosave never waits forever.
   useEffect(() => {
-    if (!me) return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get('resume')) return; // the ?resume= effect owns that case
     const businessParam = params.get('business');
     const matterParam = params.get('matter');
-    if (!businessParam || businessParam.startsWith('local-')) return;
-    if (requirements.length || profile.name || currentStep !== 1) return;
+    const needsRestore = !params.get('resume')
+      && !!businessParam && !businessParam.startsWith('local-')
+      && !requirements.length && !profile.name && currentStep === 1;
+    if (!needsRestore) {
+      restoreAttemptedRef.current = true;
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
-        const q = new URLSearchParams({ business_id: businessParam });
+        const q = new URLSearchParams({ business_id: businessParam as string });
         if (matterParam && !matterParam.startsWith('local-')) q.set('matter_id', matterParam);
         const res = await fetch(`/api/snapshots/latest?${q.toString()}`);
         if (!res.ok || cancelled) return;
@@ -1955,10 +1965,11 @@ export default function SmartPRIntake() {
         if (snap.submission_id) submissionIdRef.current = snap.submission_id;
         hydrateFromSnapshot(snap.state, snap);
       } catch { /* stay on the fresh intake */ }
+      finally { if (!cancelled) restoreAttemptedRef.current = true; }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me]);
+  }, []);
 
   useEffect(() => {
     if (!requirements.length || !profile.business_type) { setAdvisory(null); return; }
@@ -3407,6 +3418,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // capped exponential backoff; saving never depends on a manual button.
   useEffect(() => {
     if (!me || !businessId || !matterIdRef.current) return;
+    // Never let a blank mount (e.g. Back from Clara before the snapshot
+    // restore lands) mint or overwrite a submission with empty state: wait
+    // for the restore attempt, and don't create a submission row until
+    // there's actually something to save.
+    if (!restoreAttemptedRef.current) return;
+    const hasContent = !!profile.name || requirements.length > 0
+      || Object.keys(discoveryAnswers).length > 0 || Object.keys(potentialDecisions).length > 0;
+    if (!submissionIdRef.current && !hasContent) return;
     let cancelled = false;
     let retryTimer: number | null = null;
     let attempts = 0;
