@@ -1411,7 +1411,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-intake-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 43px 48px 22px;
+  padding: 28px 48px 22px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #ccd5dc transparent;
@@ -2037,7 +2037,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-matter-header {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 18px 32px 14px;
+  padding: 12px 32px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2057,13 +2057,13 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   gap: 16px;
   max-width: 1440px;
   margin: 0 auto;
-  padding: 0 32px 12px;
+  padding: 0 32px 8px;
 }
 .spr-stepper-bar .spr-workflow-stepper {
   flex: 1;
   max-width: none;
   margin: 0;
-  padding: 0 0 17px;
+  padding: 0 0 10px;
 }
 .spr-filing-sticky.compact .spr-stepper-bar {
   padding-top: 10px;
@@ -2229,7 +2229,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-workflow-grid {
   width: min(1440px, 100%);
   margin: 0 auto;
-  padding: 28px 32px 54px;
+  padding: 16px 32px 54px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 350px);
   align-items: start;
@@ -2262,7 +2262,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 }
 .spr-main-workarea .spr-intake-scroll {
   min-height: 0;
-  padding: 34px 38px 22px;
+  padding: 24px 38px 22px;
   overflow: visible;
 }
 .spr-main-workarea .spr-intake-panel h1 {
@@ -2366,7 +2366,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   .spr-matter-header,
   .spr-workflow-stepper,
   .spr-stepper-bar { padding-left: 22px; padding-right: 22px; }
-  .spr-workflow-grid { padding: 22px 22px 44px; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; }
+  .spr-workflow-grid { padding: 14px 22px 44px; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; }
   .spr-main-workarea .spr-intake-scroll { padding-inline: 28px; }
   .spr-main-workarea .spr-form-footer { padding-inline: 28px; }
 }
@@ -2427,7 +2427,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   .spr-workflow-step { position: relative; z-index: 1; width: 100%; padding: 4px 2px; flex-direction: column; gap: 4px; font-size: 9px; }
   .spr-workflow-step-icon { width: 22px; height: 22px; }
   .spr-workflow-connector { position: absolute; z-index: 0; top: 15px; right: calc(-50% + 15px); left: calc(50% + 15px); min-width: 0; margin: 0; }
-  .spr-workflow-grid { padding: 14px 12px 36px; gap: 14px; }
+  .spr-workflow-grid { padding: 10px 12px 36px; gap: 12px; }
   .spr-main-workarea .spr-intake-panel { border-radius: 13px; }
   .spr-main-workarea .spr-intake-scroll { padding: 24px 18px 18px; }
   .spr-main-workarea .spr-form-footer { padding: 16px 18px 20px; }

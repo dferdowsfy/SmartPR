@@ -29,7 +29,7 @@
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Eye, EyeOff, KeyRound, Shield,
+  ArrowLeft, Eye, EyeOff, KeyRound, Shield,
 } from "lucide-react";
 import { TopNav } from "../../../history/ui";
 import { useLang } from "../../../useLang";
@@ -156,7 +156,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
    * hide it; starting a new run (or taking over) reopens it.
    */
   const [browserHidden, setBrowserHidden] = useState(false);
-  const browserOpen = Boolean(run) && !browserHidden;
+  /** Small screens show one pane at a time; desktop ignores this. */
+  const [mobilePane, setMobilePane] = useState<"chat" | "browser">("chat");
   /** Fictional rehearsal portal — admin-only or ?demo=1. Never for real users. */
   const [demoVisible, setDemoVisible] = useState(false);
   useEffect(() => {
@@ -302,6 +303,78 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
     setRun(result.run as AgencyRunPublic);
   }, [lang]);
+
+  /**
+   * Session continuity: leaving for the dashboard never discards a Mita
+   * session. The active run id (never field values) is remembered per
+   * business, and reopening the route restores that run and jumps the
+   * conversation to where the user left off. The run itself lives
+   * server-side and keeps its state while nobody is watching.
+   */
+  const sessionKey = `smartpr-mita-session:${businessId}`;
+  useEffect(() => {
+    if (!run?.id) return;
+    try {
+      window.localStorage.setItem(
+        sessionKey,
+        JSON.stringify({ runId: run.id, filing_type: run.filing_type })
+      );
+    } catch {
+      // Private mode / blocked storage — the in-progress filing card's
+      // Resume button still reopens the run.
+    }
+  }, [run?.id, run?.filing_type, sessionKey]);
+
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    let saved: { runId?: string } | null = null;
+    try {
+      saved = JSON.parse(window.localStorage.getItem(sessionKey) || "null");
+    } catch {
+      saved = null;
+    }
+    const runId = saved?.runId;
+    if (!runId) return;
+    let cancelled = false;
+    (async () => {
+      const response = await fetch(`/api/agency-runs/${runId}`).catch(() => null);
+      const result = response ? await response.json().catch(() => ({})) : {};
+      if (cancelled) return;
+      if (!response?.ok || !result.run) {
+        try {
+          window.localStorage.removeItem(sessionKey);
+        } catch {}
+        return;
+      }
+      const restored = result.run as AgencyRunPublic;
+      const cfg = getFilingConfig(restored.filing_type);
+      setRun(restored);
+      if (restored.goal_brief) {
+        setGoalBrief(restored.goal_brief);
+        setMsgs((prev) =>
+          prev.some((m) => m.type === "goal-brief")
+            ? prev
+            : [
+                ...prev,
+                {
+                  id: `brief-restored-${restored.id}`,
+                  type: "goal-brief",
+                  brief: restored.goal_brief as GoalBrief,
+                  filingLabelEn: cfg.labelEn,
+                  filingLabelEs: cfg.labelEs,
+                },
+              ]
+        );
+      }
+      // Reopened mid-session: show the newest activity, not the top.
+      setScrollToLatest((n) => n + 1);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionKey]);
 
   useEffect(() => {
     if (!run?.id) return;
@@ -629,6 +702,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const enterTakeover = async () => {
     setTakeover(true);
     setBrowserHidden(false);
+    setMobilePane("browser");
     if (!run) return;
     try {
       const response = await fetch(`/api/agency-runs/${run.id}/takeover`, { method: "POST" });
@@ -642,6 +716,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   /** "I'm done" — exit takeover mode AND hand control back to the agent in one tap. */
   const handBackToAgent = async () => {
     setTakeover(false);
+    setMobilePane("chat");
     setScrollToLatest((n) => n + 1);
     await resume();
     setScrollToLatest((n) => n + 1);
@@ -940,6 +1015,18 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
         }
       : null;
 
+  // Small screens: when Mita needs the user (fields, review, done), bring
+  // the conversation forward — unless they are driving the browser.
+  const needsChatKey =
+    run && (run.status === "paused" || run.status === "review" || run.status === "submitted")
+      ? `${run.id}:${run.status}:${pendingSig}`
+      : null;
+  const [prevNeedsChatKey, setPrevNeedsChatKey] = useState<string | null>(null);
+  if (needsChatKey !== prevNeedsChatKey) {
+    setPrevNeedsChatKey(needsChatKey);
+    if (needsChatKey && !takeover) setMobilePane("chat");
+  }
+
   const scrollKey = chatScrollKey({
     runId: run?.id ?? null,
     milestoneCount: milestones.length,
@@ -949,6 +1036,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   });
 
   const newRun = () => {
+    try {
+      window.localStorage.removeItem(sessionKey);
+    } catch {}
     setRun(null);
     setGoalBrief(null);
     setError(null);
@@ -959,227 +1049,154 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   };
 
   /**
-   * Workspace mode starts the moment the human presses Start on a filing
-   * (a pre-flight card exists) and lasts through the run. In workspace mode
-   * the page is locked to exactly the viewport: the header compacts, the
-   * chat and the browser panel are both anchored full-height side by side
-   * (stacked on mobile), and only the chat's message list scrolls. Before
-   * Start (just the filing picker) the page is a normal scrolling page.
+   * The Mita route is always a viewport-locked workspace: one compact
+   * persistent header, then the conversation and the agency browser filling
+   * the rest of the screen. Every flex ancestor between the page and each
+   * panel's own scroller carries min-h-0, so the panels — never the page —
+   * scroll, and nothing hides behind a fixed bar. The entry explanation lives
+   * in the first chat message, not a hero above the window.
    */
-  const inWorkspace = Boolean(run) || msgs.some((m) => m.type === "preflight");
-  /** Pre-run the browser panel is a placeholder so the layout doesn't jump when the run starts. */
-  const showBrowserPanel = inWorkspace && !browserHidden;
+  /** Before a run the browser pane is a placeholder (desktop), so the layout doesn't jump. */
+  const showBrowserPanel = !browserHidden;
+  const workflowLabel = activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang);
 
   return (
-    // Workspace mode locks the page to exactly the viewport (see
-    // inWorkspace): every flex ancestor between here and the chat's message
-    // list carries min-h-0, so the list, not the page, is what scrolls, and
-    // the browser panel stays anchored beside it. Before Start, the page
-    // scrolls normally.
-    // Workspace lock: the page is exactly the viewport — the chat's message
-    // list is the only scroller, so the user can never scroll past the two
-    // windows. h-screen is the fallback; the inline 100dvh wins where the
-    // unit is supported (some webviews ignore dvh and would collapse the
-    // lock). overscroll-none kills rubber-band chaining past the windows.
+    // h-screen is the fallback; the inline 100dvh wins where supported (some
+    // webviews ignore dvh). overscroll-none stops rubber-band chaining.
     <div
-      className={`flex flex-col overscroll-none bg-[#161616] ${
-        inWorkspace ? "h-screen overflow-hidden" : "min-h-dvh"
-      }`}
-      style={inWorkspace ? { height: "100dvh" } : undefined}
+      className="flex h-screen flex-col overflow-hidden overscroll-none bg-[#161616]"
+      style={{ height: "100dvh" }}
     >
       <TopNav active="businesses" />
-      <main
-        className={`mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col ${
-          inWorkspace ? "px-3 py-3 sm:px-5" : "px-5 py-6"
-        }`}
-      >
-        {inWorkspace ? (
-          // Workspace: one slim line of context so the chat + browser keep
-          // the viewport (the full header lives on the pre-run page).
-          <div className="flex min-w-0 shrink-0 items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-2 text-[13px]">
-              <Link
-                href={`/businesses/${businessId}`}
-                className="shrink-0 font-semibold text-[#cfc6b4] hover:text-white"
-                aria-label={L("Back to business profile", "Volver al perfil del negocio", lang)}
-              >
-                ←<span className="hidden sm:inline"> {L("Business profile", "Perfil del negocio", lang)}</span>
-              </Link>
-              <span className="shrink-0 text-[#5f584c]" aria-hidden="true">/</span>
-              <p className="min-w-0 truncate text-[#cfc6b4]">
-                {bizHeader && (
-                  <span className="font-bold uppercase tracking-[0.14em] text-[#9a917f]">
-                    {bizHeader.name}
-                    <span className="hidden md:inline">
-                      {bizHeader.municipality ? ` · ${bizHeader.municipality}` : ""}
-                    </span>
-                    {" · "}
-                  </span>
-                )}
-                <span className="text-[#f4efe2]">
-                  {activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang)}
-                </span>
+      <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-3 pb-3 pt-2.5 sm:px-5">
+        {/* Compact persistent workspace header */}
+        <header className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:px-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/businesses"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
+              title={
+                run && !terminal
+                  ? L(
+                      "Mita keeps your place — reopen this filing to pick up where you left off.",
+                      "Mita guarda tu lugar — vuelve a abrir este trámite para seguir donde lo dejaste.",
+                      lang
+                    )
+                  : undefined
+              }
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{L("My Businesses", "Mis Negocios", lang)}</span>
+            </Link>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[15px] text-white">
+              M
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-bold uppercase tracking-[0.14em] text-[#9a917f]">
+                {bizHeader
+                  ? bizHeader.municipality
+                    ? `${bizHeader.name} · ${bizHeader.municipality}`
+                    : bizHeader.name
+                  : L("Mita · Assisted filing", "Mita · Radicación asistida", lang)}
+              </p>
+              <p className="truncate font-[family-name:var(--font-display)] text-[17px] leading-tight text-[#f4efe2]">
+                {workflowLabel}
               </p>
             </div>
-            <ol
-              className="hidden shrink-0 items-center gap-2.5 text-[13px] font-bold md:flex"
-              aria-label={L("Filing progress", "Progreso del trámite", lang)}
-            >
-              <li className="flex items-center gap-1.5 text-[#8f8674]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
-                Intake
-              </li>
-              <li className="flex items-center gap-1.5 text-[#8f8674]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
-                {L("Requirements", "Requisitos", lang)}
-              </li>
-              <li className="flex items-center gap-1.5 text-[#f4efe2]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1e4d38] text-[9px] font-black text-white">3</span>
-                {L("File", "Radicación", lang)}
-              </li>
-            </ol>
-          </div>
-        ) : (
-          <>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link href={`/businesses/${businessId}`} className="text-[15px] font-semibold text-[#cfc6b4] hover:text-white">
-            ← {L("Business profile", "Perfil del negocio", lang)}
-          </Link>
-          {run && !inWorkspace && <StatusPill status={run.status} lang={lang} />}
-        </div>
-
-        {/* Business sub-header + step tracker (Mita design) */}
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0">
-            {bizHeader && (
-              <p className="truncate text-[13px] font-bold uppercase tracking-[0.18em] text-[#9a917f]">
-                {bizHeader.municipality
-                  ? `${bizHeader.name} · ${bizHeader.municipality}`
-                  : bizHeader.name}
-              </p>
-            )}
-            <p className="mt-1 truncate font-[family-name:var(--font-display)] text-xl text-[#f4efe2]">
-              {activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang)}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-4">
-            <ol
-              className="flex items-center gap-2.5 text-[13px] font-bold"
-              aria-label={L("Filing progress", "Progreso del trámite", lang)}
-            >
-              <li className="flex items-center gap-1.5 text-[#8f8674]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
-                Intake
-              </li>
-              <li className="flex items-center gap-1.5 text-[#8f8674]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
-                {L("Requirements", "Requisitos", lang)}
-              </li>
-              <li className="flex items-center gap-1.5 text-[#f4efe2]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1e4d38] text-[9px] font-black text-white">3</span>
-                {L("File", "Radicación", lang)}
-              </li>
-            </ol>
-          </div>
-        </div>
-
-          </>
-        )}
-
-        {/* Mita hero — pre-run only. In the workspace it compacts to one
-            slim row so the chat + browser keep the viewport. */}
-        {!inWorkspace ? (
-          <header className="mt-8 max-w-3xl">
-            <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-[#c9a227]">
-              {L("Mita · Assisted filing", "Mita · Radicación asistida", lang)}
-            </p>
-            <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight text-[#f7f2e4] md:text-5xl">
-              {L("Let Mita file this for you.", "Deja que Mita radique por ti.", lang)}
-            </h1>
-            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[#b9b0a0]">
-              {L(
-                "Mita opens the portal, fills it from your Business Passport, and asks you for anything missing. It never submits without your approval.",
-                "Mita abre el portal, lo llena desde tu Pasaporte de Negocio y te pregunta lo que falte. Nunca envía nada sin tu aprobación.",
-                lang
-              )}
-            </p>
-          </header>
-        ) : (
-          // The chat window has no header bar of its own — Mita's identity,
-          // run status, portal-field progress and the browser toggle live in
-          // this one row above the window.
-          <div className="mt-2 flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[15px] text-white">
-                M
-              </span>
-              <p className="font-[family-name:var(--font-display)] text-lg text-[#f4efe2]">
-                Mita
-              </p>
+            <div className="flex shrink-0 items-center gap-2">
               {run && <StatusPill status={run.status} lang={lang} />}
               {intervention && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[13px] font-bold text-amber-900">
+                <span className="hidden items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[13px] font-bold text-amber-900 sm:inline-flex">
                   <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                   {L("Needs you", "Te necesita", lang)}
                 </span>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-4">
-              {portalFieldsProgress && (
-                <span className="hidden items-center gap-2 md:inline-flex">
-                  <span className="whitespace-nowrap text-[13px] font-semibold text-[#b9b0a0]">
-                    {L("Portal fields", "Campos del portal", lang)} ·{" "}
-                    {portalFieldsProgress.known} {L("of", "de", lang)}{" "}
-                    {portalFieldsProgress.total}
-                  </span>
-                  <SegmentedBar
-                    known={portalFieldsProgress.known}
-                    total={portalFieldsProgress.total}
-                  />
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setBrowserHidden((h) => !h)}
-                aria-pressed={!showBrowserPanel}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
+            {/* Filing progress: portal fields (what Mita still needs) on
+                md+, the SmartPR workflow step on xl. */}
+            {portalFieldsProgress && (
+              <span
+                className="hidden shrink-0 items-center gap-2 md:inline-flex"
+                aria-label={L("Filing progress", "Progreso del trámite", lang)}
               >
-                {showBrowserPanel ? (
-                  <EyeOff className="h-3.5 w-3.5" />
-                ) : (
-                  <Eye className="h-3.5 w-3.5" />
-                )}
-                {showBrowserPanel
-                  ? L("Hide browser", "Ocultar navegador", lang)
-                  : L("View browser", "Ver navegador", lang)}
-              </button>
-            </div>
+                <span className="whitespace-nowrap text-[13px] font-semibold text-[#b9b0a0]">
+                  {L("Portal fields", "Campos del portal", lang)} · {portalFieldsProgress.known}/
+                  {portalFieldsProgress.total}
+                </span>
+                <SegmentedBar known={portalFieldsProgress.known} total={portalFieldsProgress.total} />
+              </span>
+            )}
+            <ol
+              className="hidden shrink-0 items-center gap-2 text-[13px] font-bold xl:flex"
+              aria-label={L("SmartPR steps", "Pasos de SmartPR", lang)}
+            >
+              <li className="flex items-center gap-1 text-[#8f8674]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
+                {L("Requirements", "Requisitos", lang)}
+              </li>
+              <li className="flex items-center gap-1 text-[#f4efe2]">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1e4d38] text-[9px] font-black text-white">3</span>
+                {L("File", "Radicación", lang)}
+              </li>
+            </ol>
+            <button
+              type="button"
+              onClick={() => setBrowserHidden((h) => !h)}
+              aria-pressed={!showBrowserPanel}
+              className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10 lg:inline-flex"
+            >
+              {showBrowserPanel ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {showBrowserPanel
+                ? L("Hide browser", "Ocultar navegador", lang)
+                : L("Show browser", "Ver navegador", lang)}
+            </button>
           </div>
-        )}
+
+          {/* Small screens: one pane at a time, with an explicit switch. */}
+          <div
+            className="mt-2 grid grid-cols-2 gap-1 rounded-full bg-black/30 p-1 lg:hidden"
+            role="tablist"
+            aria-label={L("Workspace view", "Vista del espacio", lang)}
+          >
+            {(
+              [
+                ["chat", L("Conversation", "Conversación", lang)],
+                ["browser", L("Browser", "Navegador", lang)],
+              ] as const
+            ).map(([pane, label]) => (
+              <button
+                key={pane}
+                type="button"
+                role="tab"
+                aria-selected={mobilePane === pane}
+                onClick={() => setMobilePane(pane)}
+                className={`relative rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${
+                  mobilePane === pane ? "bg-[#fbf8f2] text-[#161616]" : "text-[#cfc6b4] hover:text-white"
+                }`}
+              >
+                {label}
+                {pane === "chat" && intervention && mobilePane !== "chat" && (
+                  <span className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-amber-400" aria-label={L("Needs you", "Te necesita", lang)} />
+                )}
+              </button>
+            ))}
+          </div>
+        </header>
 
         {error && (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-[15px] text-rose-800">
+          <div className="mt-2 shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-[15px] text-rose-800">
             {error}
           </div>
         )}
 
-        {/* The window — one seamless container on the darkened page. The chat
-            and the browser lock side by side (chat ~40%, browser ~60%) at a
-            single locked height, and only the chat's message list scrolls.
-            Flex (not grid): a grid row sizes to its content, which let the
-            chat grow past the viewport instead of scrolling. */}
-        <div className={`flex min-h-0 flex-col ${inWorkspace ? "mt-2.5 flex-1" : "mt-8"}`}>
-          <div
-            className={`flex min-h-0 flex-col overflow-hidden rounded-3xl bg-[#fbf8f2] shadow-2xl shadow-black/50 lg:flex-row ${
-              inWorkspace ? "flex-1" : ""
-            }`}
-          >
-          {/* Chat: the primary surface. Its message list is the only thing
-              that scrolls in the workspace. */}
-          {/* The chat column keeps a hard minimum width and clips its own
-              overflow, so the browser beside it can never cover its buttons. */}
+        {/* The window — chat and browser side by side on desktop, one at a
+            time on small screens. Flex (not grid): a grid row sizes to its
+            content, which let the chat grow past the viewport. */}
+        <div className="mt-2.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-[#fbf8f2] shadow-2xl shadow-black/50 lg:flex-row">
           <section
-            className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${
+            className={`min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex ${
+              mobilePane === "chat" ? "flex" : "hidden"
+            } ${
               showBrowserPanel
                 ? "lg:w-[38%] lg:min-w-[360px] lg:max-w-[480px] lg:flex-none lg:border-r lg:border-[#161616]/10"
                 : "lg:mx-auto lg:w-full lg:max-w-3xl"
@@ -1214,75 +1231,66 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             />
           </section>
 
-          {/* Browser — fills the rest of the window at the same locked height
-              (above the chat on mobile, beside it on desktop). The panel stays
-              mounted (hidden via CSS) so the session survives view switches.
-              Not rendered at all before Start: an empty wrapper would paint a
-              dead pane beside the chat (the chat section centers itself when
-              the browser panel is absent). */}
-          {(run || showBrowserPanel) && (
+          {/* Browser — stays mounted (hidden via CSS) so the live session
+              survives view switches. */}
           <div
-            className={`order-first min-h-0 min-w-0 flex-col lg:order-none lg:flex lg:flex-1 ${
-              run ? "flex flex-none" : "hidden"
-            }`}
+            className={`min-h-0 min-w-0 flex-1 flex-col ${
+              mobilePane === "browser" ? "flex" : "hidden"
+            } ${showBrowserPanel ? "lg:flex" : "lg:hidden"}`}
           >
-          {run && (
-            <AgencyBrowser
-              lang={lang}
-              run={run}
-              open={browserOpen}
-              onClose={() => setBrowserHidden(true)}
-              portalName={portalName}
-              uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
-              domainsLabel={activeConfig.domains[0] ?? ""}
-              isMock={run.provider === "mock"}
-              takeover={takeover}
-              busy={busy}
-              previewKey={previewKey}
-              previewLoaded={previewLoaded}
-              onPreviewLoaded={() => setPreviewLoaded(true)}
-              reconnectBusy={reconnectBusy}
-              onReconnect={() => void reconnectPreview()}
-              onTakeover={() => void enterTakeover()}
-              onHandBack={() => void handBackToAgent()}
-              onResume={() => void resume()}
-              onStop={() => void stop()}
-              fieldsPause={fieldsPause}
-              uploadBusy={uploadBusy}
-              uploadMsg={uploadMsg}
-              onUpload={(file) => void uploadToLocker(file)}
-            />
-          )}
-
-          {/* Pre-run placeholder (desktop only; on mobile the chat keeps the room): holds the browser's place from the moment
-              Start is pressed, so the layout is already anchored and doesn't
-              jump when the run begins. */}
-          {!run && showBrowserPanel && (
-            <div
-              className="hidden min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center lg:flex"
-              aria-label={L("Live browser", "Navegador en vivo", lang)}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e4d38]/10">
-                <Shield className="h-5 w-5 text-[#1e4d38]" />
-              </span>
-              <p className="max-w-sm text-[15px] font-semibold text-[#23211c]">
-                {L(
-                  "The agency portal opens here when you confirm.",
-                  "El portal de la agencia se abre aquí cuando confirmes.",
-                  lang
-                )}
-              </p>
-              <p className="max-w-sm text-[13px] text-[#6b675e]">
-                {L(
-                  "You'll watch every field fill in. Nothing is submitted without your approval.",
-                  "Verás cada campo llenarse. Nada se envía sin tu aprobación.",
-                  lang
-                )}
-              </p>
-            </div>
-          )}
-          </div>
-          )}
+            {run ? (
+              <AgencyBrowser
+                lang={lang}
+                run={run}
+                open
+                onClose={() => {
+                  setBrowserHidden(true);
+                  setMobilePane("chat");
+                }}
+                portalName={portalName}
+                uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
+                domainsLabel={activeConfig.domains[0] ?? ""}
+                isMock={run.provider === "mock"}
+                takeover={takeover}
+                busy={busy}
+                previewKey={previewKey}
+                previewLoaded={previewLoaded}
+                onPreviewLoaded={() => setPreviewLoaded(true)}
+                reconnectBusy={reconnectBusy}
+                onReconnect={() => void reconnectPreview()}
+                onTakeover={() => void enterTakeover()}
+                onHandBack={() => void handBackToAgent()}
+                onResume={() => void resume()}
+                onStop={() => void stop()}
+                fieldsPause={fieldsPause}
+                uploadBusy={uploadBusy}
+                uploadMsg={uploadMsg}
+                onUpload={(file) => void uploadToLocker(file)}
+              />
+            ) : (
+              <div
+                className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center"
+                aria-label={L("Live browser", "Navegador en vivo", lang)}
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e4d38]/10">
+                  <Shield className="h-5 w-5 text-[#1e4d38]" />
+                </span>
+                <p className="max-w-sm text-[15px] font-semibold text-[#23211c]">
+                  {L(
+                    "The agency portal opens here once you start a filing.",
+                    "El portal de la agencia se abre aquí cuando empieces un trámite.",
+                    lang
+                  )}
+                </p>
+                <p className="max-w-sm text-[13px] text-[#6b675e]">
+                  {L(
+                    "You'll watch Mita fill every field. You review and submit — nothing is sent without your approval.",
+                    "Verás a Mita llenar cada campo. Tú revisas y envías — nada se envía sin tu aprobación.",
+                    lang
+                  )}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>

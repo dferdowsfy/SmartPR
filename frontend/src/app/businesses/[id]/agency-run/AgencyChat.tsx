@@ -1276,8 +1276,14 @@ export function AgencyChat(props: AgencyChatProps) {
    * Programmatic smooth scrolls never release it, which is what broke the
    * old "only when already near the bottom" check after a click.
    */
-  const stickRef = useRef(true);
+  // Off at entry: opening Mita shows the thread from its first message.
+  // It arms once the user acts in the chat, a run's cards arrive, or a
+  // restored session asks to jump to the newest activity.
+  const stickRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    scrollBoxRef.current?.scrollTo({ top: 0 });
+  }, []);
   useEffect(() => {
     const box = scrollBoxRef.current;
     const content = contentRef.current;
@@ -1396,6 +1402,15 @@ export function AgencyChat(props: AgencyChatProps) {
                 <p className="text-[15px] leading-snug text-slate-700">
                   {filingPickerIntro(lang)}
                 </p>
+                {!props.run && (
+                  <p className="mt-1.5 text-[13px] leading-snug text-slate-500">
+                    {L(
+                      "I open the agency portal, fill it from your Business Passport and ask you for anything missing. You review and submit — nothing is sent without your approval.",
+                      "Abro el portal de la agencia, lo lleno desde tu Pasaporte de Negocio y te pido lo que falte. Tú revisas y envías — nada se envía sin tu aprobación.",
+                      lang
+                    )}
+                  </p>
+                )}
                 {msg.loading ? (
                   <p className="mt-3 flex items-center gap-2 text-[15px] text-slate-500">
                     <Loader2 className="h-4 w-4 animate-spin text-[#1e4d38]" />

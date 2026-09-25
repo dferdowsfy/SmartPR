@@ -126,7 +126,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
       ref={sectionRef}
       className={
         props.open
-          ? "flex min-h-0 flex-col overflow-hidden h-[clamp(220px,34dvh,340px)] sm:h-[clamp(280px,46dvh,560px)] lg:h-auto lg:flex-1"
+          ? "flex min-h-0 flex-1 flex-col overflow-hidden"
           : "hidden"
       }
       aria-label={L("Live browser", "Navegador en vivo", lang)}
@@ -165,7 +165,7 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {run.live_url && (
-              <div className="hidden items-center overflow-hidden rounded-md border border-slate-200 bg-white sm:inline-flex">
+              <div className="inline-flex items-center overflow-hidden rounded-md border border-slate-200 bg-white">
                 <button
                   type="button"
                   disabled={zoomIdx <= 0}
