@@ -47,3 +47,21 @@ export async function clearFilingFeeCard(pool: Pool, businessUuid: string): Prom
     [businessUuid]
   );
 }
+
+/** Businesses this user can edit, oldest first (checkout's filing-fee choices). */
+export async function listAccessibleBusinesses(
+  pool: Pool,
+  userId: string,
+  limit = 10
+): Promise<Array<{ id: string; name: string }>> {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT b.id, COALESCE(NULLIF(b.legal_name,''), NULLIF(b.name,''), 'Business') AS name, b.created_at
+       FROM businesses b
+       LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$1
+      WHERE b.archived=false AND (b.user_id=$1 OR wm.user_id IS NOT NULL)
+      ORDER BY b.created_at ASC
+      LIMIT $2`,
+    [userId, limit]
+  );
+  return rows.map((r) => ({ id: r.id as string, name: String(r.name) }));
+}

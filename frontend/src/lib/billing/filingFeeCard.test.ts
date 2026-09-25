@@ -92,11 +92,12 @@ describe("filing-fee card — webhook save", () => {
     subscription: "sub_1",
     metadata: {
       user_id: "user-1",
-      filing_fee_card: "reminder_only",
-      filing_fee_card_business_id: "biz-uuid",
+      filing_fee_card: "offered",
+      filing_fee_card_b0: "biz-uuid",
+      filing_fee_card_b1: "other-uuid",
       filing_fee_card_consent_version: V,
-      filing_fee_card_consented_at: "2026-09-25T11:59:00Z",
     },
+    custom_fields: [{ key: "filingfeecard", dropdown: { value: "b0" } }],
   };
   function deps(over: Partial<FilingFeeCardDeps> = {}) {
     const saved: unknown[] = [];
@@ -117,11 +118,31 @@ describe("filing-fee card — webhook save", () => {
     assert.equal(saved.length, 1);
   });
 
-  it("does nothing without opt-in", async () => {
+  it("does nothing unless the payer picked Yes on the checkout page", async () => {
+    for (const custom_fields of [[], [{ key: "filingfeecard", dropdown: { value: null } }], [{ key: "filingfeecard", dropdown: { value: "no" } }]]) {
+      const { d, saved } = deps();
+      const r = await saveFilingFeeCardFromCheckout({ ...session, custom_fields }, d, NOW);
+      assert.deepEqual(r, { saved: false, reason: "not_requested" });
+      assert.equal(saved.length, 0);
+    }
     const { d, saved } = deps();
-    const r = await saveFilingFeeCardFromCheckout({ ...session, metadata: { user_id: "user-1" } }, d, NOW);
-    assert.deepEqual(r, { saved: false, reason: "not_requested" });
+    const notOffered = { ...session, metadata: { user_id: "user-1" } };
+    assert.equal((await saveFilingFeeCardFromCheckout(notOffered, d, NOW)).saved, false);
     assert.equal(saved.length, 0);
+  });
+
+  it("saves to the business the payer picked, with consent stamped at completion", async () => {
+    const { d, saved } = deps({ accessibleBusiness: async (b) => b });
+    const r = await saveFilingFeeCardFromCheckout({ ...session, custom_fields: [{ key: "filingfeecard", dropdown: { value: "b1" } }] }, d, NOW);
+    assert.deepEqual(r, { saved: true, businessUuid: "other-uuid" });
+    const [, card] = saved[0] as [string, { consent: { consentedAt: string } }];
+    assert.equal(card.consent.consentedAt, NOW.toISOString());
+  });
+
+  it("ignores a forged option value", async () => {
+    const { d } = deps();
+    const r = await saveFilingFeeCardFromCheckout({ ...session, custom_fields: [{ key: "filingfeecard", dropdown: { value: "b7" } }] }, d, NOW);
+    assert.equal(r.saved, false);
   });
 
   it("re-checks access at webhook time", async () => {
@@ -134,8 +155,8 @@ describe("filing-fee card — webhook save", () => {
     const { d } = deps();
     const stale = { ...session, metadata: { ...session.metadata, filing_fee_card_consent_version: "old" } };
     assert.equal((await saveFilingFeeCardFromCheckout(stale, d, NOW)).saved, false);
-    const noTime = { ...session, metadata: { ...session.metadata, filing_fee_card_consented_at: "yesterday-ish" } };
-    assert.equal((await saveFilingFeeCardFromCheckout(noTime, d, NOW)).saved, false);
+    const noUser = { ...session, metadata: { ...session.metadata, user_id: "" } };
+    assert.equal((await saveFilingFeeCardFromCheckout(noUser, d, NOW)).saved, false);
   });
 
   it("skips unpaid sessions and non-card methods", async () => {

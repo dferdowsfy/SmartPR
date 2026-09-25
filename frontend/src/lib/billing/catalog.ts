@@ -88,6 +88,77 @@ const TEST_PRICES = {
   },
 } as const;
 
+/**
+ * Live-mode Stripe IDs (docs/billing/stripe-catalog.json → plans.*.live).
+ * Used when STRIPE_SECRET_KEY is a live key and no STRIPE_PRICE_* override
+ * is set — a live key can't see test-mode prices, so falling back to the
+ * test IDs would make every checkout fail with "No such price".
+ */
+const LIVE_PRICES = {
+  free: { monthly: "price_1UD5BjHS9D3i7NQZfhlbFOx9", product: "prod_VDWDzLz4YErBsR" },
+  core: {
+    monthly: "price_1UD5BWHS9D3i7NQZ1onBY2cM",
+    yearly: "price_1UD5BXHS9D3i7NQZZro2BX5G",
+    product: "prod_VDWDUpU9Y6A3pZ",
+  },
+  operator: {
+    monthly: "price_1UD5BYHS9D3i7NQZv22gs6V0",
+    yearly: "price_1UD5BgHS9D3i7NQZQxPwlzD9",
+    product: "prod_VDWDFU7J4eGwq8",
+  },
+  partner: {
+    monthly: "price_1UD5BhHS9D3i7NQZ1YT8xl2R",
+    yearly: "price_1UD5BiHS9D3i7NQZ3szQR9j5",
+    product: "prod_VDWDio6B89x4aa",
+  },
+  pilot: { one_time: "price_1UD5BjHS9D3i7NQZIA2oeKUi", product: "prod_VDWDMzcBo6lyZP" },
+  enterprise: { product: "prod_VDWDhQOIAqvakS" },
+} as const;
+
+export type StripeMode = "live" | "test";
+
+/** Mode of the configured secret key (live keys are sk_live_ / rk_live_). */
+export function stripeMode(
+  secretKey: string | undefined = typeof process !== "undefined" ? process.env.STRIPE_SECRET_KEY : undefined
+): StripeMode {
+  return secretKey && /^(sk|rk)_live_/.test(secretKey) ? "live" : "test";
+}
+
+const PERIOD_ENV: Record<BillingPeriod, string> = {
+  monthly: "MONTHLY",
+  yearly: "YEARLY",
+  one_time: "ONE_TIME",
+};
+
+/** Catalog default price for a plan/period in a mode (no env override). */
+export function defaultPriceId(plan: PlanId, period: BillingPeriod, mode: StripeMode): string | null {
+  const table = (mode === "live" ? LIVE_PRICES : TEST_PRICES) as Record<string, Record<string, string>>;
+  return table[plan]?.[period] ?? null;
+}
+
+/**
+ * Price for a plan/period: STRIPE_PRICE_<PLAN>_<PERIOD> override, else the
+ * catalog ID for the key's mode. Null when the plan has no Checkout price.
+ */
+export function resolvePriceId(
+  plan: PlanId,
+  period: BillingPeriod,
+  opts: { mode?: StripeMode; env?: Record<string, string | undefined> } = {}
+): string | null {
+  if (plan === "enterprise") return null;
+  if (!defaultPriceId(plan, period, "test") && !defaultPriceId(plan, period, "live")) return null;
+  const env = opts.env ?? (typeof process !== "undefined" ? process.env : {});
+  const override = env[`STRIPE_PRICE_${plan.toUpperCase()}_${PERIOD_ENV[period]}`];
+  if (override && override.length > 0) return override;
+  return defaultPriceId(plan, period, opts.mode ?? stripeMode(env.STRIPE_SECRET_KEY));
+}
+
+/** Expected Checkout amount in cents for a plan/period (for price validation). */
+export function expectedAmountCents(plan: PlanId, period: BillingPeriod): number | null {
+  const amount = PLAN_CATALOG[plan]?.amountUsd[period];
+  return typeof amount === "number" ? Math.round(amount * 100) : null;
+}
+
 function envPrice(
   key: string,
   fallback: string | undefined
@@ -335,10 +406,18 @@ export const PLANS: PlanDefinition[] = [
 ];
 
 /**
- * Resolve a Stripe Price ID for a plan + billing period.
- * Returns null when the plan/period has no Checkout price (e.g. enterprise).
+ * Resolve a Stripe Price ID for a plan + billing period, for the configured
+ * key's mode. Returns null when the plan/period has no Checkout price.
  */
 export function getPriceId(
+  plan: PlanId,
+  period: BillingPeriod
+): string | null {
+  return resolvePriceId(plan, period);
+}
+
+/** Test-mode/env price table (legacy; prefer getPriceId). */
+export function getTestOrEnvPriceId(
   plan: PlanId,
   period: BillingPeriod
 ): string | null {
@@ -382,6 +461,10 @@ export function allPriceIdToPlan(): Record<string, PlanId> {
   add(PRICE_IDS.partner.monthly, "partner");
   add(PRICE_IDS.partner.yearly, "partner");
   add(PRICE_IDS.pilot.one_time, "pilot");
+  // Live IDs too, so webhooks resolve the plan whichever mode is configured.
+  for (const [plan, row] of Object.entries(LIVE_PRICES)) {
+    for (const [k, id] of Object.entries(row)) if (k !== "product") add(id, plan as PlanId);
+  }
   return map;
 }
 

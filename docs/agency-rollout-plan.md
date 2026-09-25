@@ -149,18 +149,18 @@ explicit confirmation before any charge. Only Stripe IDs and non-sensitive displ
 last 4) may be stored in payment settings — never card numbers, CVV, or portal credentials, and
 nothing payment-related in the Business Passport.
 
-**Filing-fee card reminder (shipped).** The pricing page has an opt-in toggle, "Use this card for
-filing fees", plus a business picker. When it is on, checkout checks that the user can edit that
-business and records consent (user, business, consent version, timestamp) in the session
-metadata. The signed `checkout.session.completed` webhook checks access again and stores only
-the Stripe `pm_…` reference, brand, last 4 and expiry, with `use: "reminder_only"`. It goes in
-`businesses.payment_settings`, a separate column. `passport_json` would be the wrong place: passport
-saves replace it and the agent prompt embeds it. The Business Passport panel shows it under
-"Payment settings" with a Remove button that withdraws consent. At Mita's payment step the handoff
-shows "Use your Visa •••• 4242" next to the payee and the portal amount. The human still enters
-the card in the agency portal. SmartPR never charges this card for government fees, Mita never
-types card details, and the browser API never returns the Stripe reference. Tests:
-`npm run test:billing`, plus the payment assertions in `npm run test:dos:e2e`.
+**Filing-fee card reminder (shipped).** The choice is made on Stripe's checkout page, not on
+/pricing. Checkout adds a "Use this card for filing fees" dropdown with one "Yes, for <business>"
+option per business the user can edit, plus "No". There's no default, and the option values are
+opaque (b0, b1…); the business UUIDs they stand for stay in session metadata. Stripe's page shows
+the consent text above the pay button. The signed `checkout.session.completed` webhook reads the
+pick, checks access again, and stores only the Stripe `pm_…` reference, brand, last 4 and expiry
+(`use: "reminder_only"`) in `businesses.payment_settings`. That column is separate from
+`passport_json`: passport saves replace `passport_json` and the agent prompt embeds it. The
+Business Passport shows the card under "Payment settings", with Remove. At Mita's payment step the
+handoff shows "Use your Visa •••• 4242" and the portal amount. The human still enters the card in
+the agency portal. SmartPR never charges it for government fees and Mita never types card details.
+Tests: `npm run test:billing` and `npm run test:dos:e2e`.
 
 ## 6. Next filing variants (priority order)
 

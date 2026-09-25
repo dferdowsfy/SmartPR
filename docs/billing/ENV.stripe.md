@@ -35,6 +35,23 @@ STRIPE_PRODUCT_PILOT=prod_VDWChPZiQSoPbq
 STRIPE_PRODUCT_ENTERPRISE=prod_VDWCBYm1uH2voo
 ```
 
+## How a plan finds its price
+
+`getPriceId(plan, period)` uses `STRIPE_PRICE_<PLAN>_<PERIOD>` when set. Otherwise it uses the
+catalog ID for the key's mode: `sk_live_`/`rk_live_` keys get `plans.*.live` from
+`stripe-catalog.json`, and any other key gets `plans.*.test`. Before opening Checkout, the
+server retrieves the price and refuses it (503, logged as `price mismatch`) if it's archived, its
+product is archived, or its currency, amount or interval doesn't match the plan card.
+
+Check every plan against your key (read-only):
+
+```bash
+STRIPE_SECRET_KEY=sk_live_... npm run billing:verify
+```
+
+Signed-out visitors who click Continue go to `/auth/login?next=/pricing?checkout=<plan>&period=…`
+and resume checkout after signing in.
+
 ## Live vs test
 
 | Mode | Secret key prefix | Price source |

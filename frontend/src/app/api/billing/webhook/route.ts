@@ -114,7 +114,7 @@ function periodEnd(sub: Stripe.Subscription): Date | null {
  */
 async function rememberFilingFeeCard(session: Stripe.Checkout.Session): Promise<void> {
   const pool = getPool();
-  if (!pool || session.metadata?.filing_fee_card !== "reminder_only") return;
+  if (!pool || session.metadata?.filing_fee_card !== "offered") return;
   const stripe = getStripe();
   try {
     const outcome = await saveFilingFeeCardFromCheckout(
@@ -125,6 +125,7 @@ async function rememberFilingFeeCard(session: Stripe.Checkout.Session): Promise<
         metadata: session.metadata,
         subscription: session.subscription as string | { id: string } | null,
         payment_intent: session.payment_intent as string | { id: string } | null,
+        custom_fields: session.custom_fields,
       },
       {
         subscriptionPaymentMethod: async (id) =>

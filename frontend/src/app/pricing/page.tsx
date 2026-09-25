@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SmartPRLogo } from "../components/brand/SmartPRLogo";
 import { PLANS, type PlanDefinition, type PlanId } from "@/lib/billing/catalog";
-import { FILING_FEE_CARD_CONSENT_EN } from "@/lib/billing/filingFeeCard";
 import styles from "./pricing.module.css";
 
 type Period = "monthly" | "yearly";
-type BusinessOption = { id: string; label: string };
 
 function formatUsd(amount: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -48,46 +46,23 @@ function PricingPageInner() {
   const searchParams = useSearchParams();
   const success = searchParams.get("success") === "1";
   const canceled = searchParams.get("cancel") === "1";
-  const cardSaved = success && searchParams.get("card") === "1";
+  // Arriving from Mita / the passport ("Save one for next time"): list that
+  // business first in the checkout page's filing-fee choice.
   const requestedBusiness = searchParams.get("business");
+  const fromSaveCard = searchParams.get("saveCard") === "1";
+  // Returning from sign-in with a plan already picked.
+  const resumePlan = searchParams.get("checkout");
+  const resumePeriod = searchParams.get("period");
 
-  const [period, setPeriod] = useState<Period>("monthly");
+  const [period, setPeriod] = useState<Period>(resumePeriod === "yearly" ? "yearly" : "monthly");
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Filing-fee card reminder: off unless the owner turns it on.
-  const [saveCard, setSaveCard] = useState(searchParams.get("saveCard") === "1");
-  const [businesses, setBusinesses] = useState<BusinessOption[] | null>(null);
-  const [businessId, setBusinessId] = useState<string>(requestedBusiness ?? "");
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/businesses", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { businesses: [] }))
-      .then((data: { businesses?: Array<{ id: string; public_id?: string | null; legal_name?: string | null; name?: string | null }> }) => {
-        if (cancelled) return;
-        const list = (data.businesses ?? []).map((b) => ({
-          id: b.public_id || b.id,
-          label: b.legal_name || b.name || "Business",
-        }));
-        setBusinesses(list);
-        setBusinessId((cur) => (cur && (list.some((b) => b.id === cur) || cur === requestedBusiness) ? cur : list[0]?.id ?? ""));
-      })
-      .catch(() => {
-        if (!cancelled) setBusinesses([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [requestedBusiness]);
+  const resumed = useRef(false);
 
   const cards = useMemo(() => PLANS, []);
 
-  async function startCheckout(planId: PlanId) {
+  async function startCheckout(planId: PlanId, checkoutPeriod: Period = period) {
     setError(null);
-    if (saveCard && !businessId) {
-      setError("Choose which business the filing-fee card is for, or turn the toggle off.");
-      return;
-    }
     setLoadingPlan(planId);
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -95,20 +70,37 @@ function PricingPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId,
-          period,
-          ...(saveCard ? { saveCardForFilingFees: true, businessId } : {}),
+          period: checkoutPeriod,
+          ...(requestedBusiness ? { businessId: requestedBusiness } : {}),
         }),
       });
+      if (res.status === 401) {
+        // Sign in (or sign up), then come straight back into this checkout.
+        const back = new URLSearchParams({ checkout: planId, period: checkoutPeriod });
+        if (requestedBusiness) back.set("business", requestedBusiness);
+        window.location.assign(`/auth/login?next=${encodeURIComponent(`/pricing?${back}`)}`);
+        return;
+      }
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
         throw new Error(data.error || "Could not start checkout.");
       }
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout failed.");
       setLoadingPlan(null);
     }
   }
+
+  useEffect(() => {
+    if (resumed.current || !resumePlan) return;
+    const plan = PLANS.find((p) => p.id === resumePlan && !p.contactOnly && p.id !== "free");
+    if (!plan) return;
+    resumed.current = true;
+    const resumeTo = resumePeriod === "yearly" ? "yearly" : "monthly";
+    void Promise.resolve().then(() => startCheckout(plan.id, resumeTo));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on return from sign-in
+  }, [resumePlan]);
 
   function ctaFor(plan: PlanDefinition) {
     if (plan.contactOnly) {
@@ -186,9 +178,6 @@ function PricingPageInner() {
         {success ? (
           <p className={styles.banner} role="status">
             Payment received. You can continue in your workspace.
-            {cardSaved
-              ? " Your card will appear as a reminder at Mita's filing-fee step once Stripe confirms it."
-              : ""}
           </p>
         ) : null}
         {canceled ? (
@@ -223,55 +212,12 @@ function PricingPageInner() {
           </div>
         </div>
 
-        <section className={styles.cardOption} aria-labelledby="filing-fee-card-title">
-          <label className={styles.cardOptionRow}>
-            <span className={styles.switch}>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={saveCard}
-                onChange={(e) => setSaveCard(e.target.checked)}
-                aria-describedby="filing-fee-card-desc"
-                data-testid="filing-fee-card-toggle"
-              />
-              <span className={styles.switchTrack} aria-hidden="true" />
-            </span>
-            <span>
-              <span id="filing-fee-card-title" className={styles.cardOptionTitle}>
-                Use this card for filing fees
-              </span>
-              <span id="filing-fee-card-desc" className={styles.cardOptionDesc}>
-                {FILING_FEE_CARD_CONSENT_EN}
-              </span>
-            </span>
-          </label>
-          {saveCard ? (
-            businesses && businesses.length > 0 ? (
-              <label className={styles.cardOptionBusiness}>
-                <span>Save to the Business Passport of</span>
-                <select
-                  value={businessId}
-                  onChange={(e) => setBusinessId(e.target.value)}
-                  data-testid="filing-fee-card-business"
-                >
-                  {businessId && !businesses.some((b) => b.id === businessId) ? (
-                    <option value={businessId}>This business</option>
-                  ) : null}
-                  {businesses.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : businesses ? (
-              <p className={styles.cardOptionDesc}>
-                Sign in and add a business first — the card is saved to that
-                business&apos;s passport.
-              </p>
-            ) : null
-          ) : null}
-        </section>
+        {fromSaveCard ? (
+          <p className={styles.banner} role="status">
+            Pick a plan. On the checkout page, choose &ldquo;Use this card for
+            filing fees&rdquo; to have Mita remind you which card to use.
+          </p>
+        ) : null}
 
         <div className={styles.grid}>
           {cards.map((plan) => {

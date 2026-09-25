@@ -11,6 +11,7 @@ import {
   type FilingFeeCard,
   type StripeCardPaymentMethodLike,
 } from "./filingFeeCard";
+import { filingFeeChoiceFromSession } from "./checkoutOptions";
 
 export interface CheckoutSessionLike {
   id: string;
@@ -19,6 +20,7 @@ export interface CheckoutSessionLike {
   metadata?: Record<string, string> | null;
   subscription?: string | { id: string } | null;
   payment_intent?: string | { id: string } | null;
+  custom_fields?: Array<{ key: string; dropdown?: { value?: string | null } | null }> | null;
 }
 
 export interface FilingFeeCardDeps {
@@ -44,19 +46,15 @@ export async function saveFilingFeeCardFromCheckout(
   now: Date = new Date()
 ): Promise<FilingFeeCardOutcome> {
   const meta = session.metadata ?? {};
-  if (meta.filing_fee_card !== "reminder_only") return { saved: false, reason: "not_requested" };
+  // The payer opts in on Stripe's checkout page; no pick (or "No") = nothing saved.
+  const businessId = filingFeeChoiceFromSession(session);
+  if (!businessId) return { saved: false, reason: "not_requested" };
   if (session.payment_status && session.payment_status === "unpaid") return { saved: false, reason: "unpaid" };
 
   const userId = meta.user_id;
-  const businessId = meta.filing_fee_card_business_id;
-  const consentedAt = meta.filing_fee_card_consented_at;
-  if (
-    !userId ||
-    !businessId ||
-    !consentedAt ||
-    Number.isNaN(Date.parse(consentedAt)) ||
-    meta.filing_fee_card_consent_version !== FILING_FEE_CARD_CONSENT_VERSION
-  ) {
+  // The choice is submitted with the payment, so consent time = completion.
+  const consentedAt = now.toISOString();
+  if (!userId || meta.filing_fee_card_consent_version !== FILING_FEE_CARD_CONSENT_VERSION) {
     return { saved: false, reason: "consent_invalid" };
   }
 
