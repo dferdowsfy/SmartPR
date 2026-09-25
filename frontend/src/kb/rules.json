@@ -8315,7 +8315,7 @@
   "citation_source": "review",
   "verification": "heuristic",
   "missing_fact_keys": [
-   "physical_operating_location"
+   "physical_location"
   ],
   "citation_url": "https://bvirtualogp.pr.gov/ogp/BVirtual/LeyesOrganicas/pdf/161-2009.pdf",
   "change_log": [
@@ -8323,6 +8323,11 @@
     "date": "2026-09-21",
     "change": "Deep-research batch 1: verdict NEEDS-FACT; citation upgraded to primary source; missing_fact_keys=['physical_operating_location']",
     "reason": "External legal-research review 2026-09-21 (primary sources only). Rule is directionally right but fires before the controlling fact is known; stays heuristic by design. Research note: Q_ONLINE_ONLY true cuts against a use permit if there is no non-residential building or local premises. A home office, warehouse, pickup point, or shared workspace reintroduces PU. Online-only with no PR physical presence is outside Art. 8.4A."
+   },
+   {
+    "date": "2026-09-24",
+    "change": "missing_fact_keys physical_operating_location -> physical_location (REG-ONLINEONLY-MFK-001): the old key existed nowhere else in the KB — no QUESTION_KEY_MAP writeKey, no discovery question, no derivation — so the voice path's missing_facts named an unmappable key (FINDING-1200-02 family). physical_location is the KB's established fact for this concept (written conceptually by Q_PHYSICAL_LOCATION; its permit-model meaning is exactly 'nonresidential commercial premises' per REG-HOME-PHYSICAL-001, matching this rule's 2026-09-21 research note: 'non-residential building or local premises'). SCOPE NOTE: this is vocabulary alignment only. It does NOT add a QUESTION_KEY_MAP binding for Q_PHYSICAL_LOCATION — location-derived questions are deliberately computed from profile.location_type, and a binding would let the interpreter set Q_PHYSICAL_LOCATION=true from free text, opening a RULE_0007 REQUIRED false-positive vector for home businesses. The NMI card therefore remains honestly NMI on the web path; full NMI->conditional auto-resolution needs a product decision, not an autonomous edit.",
+    "reason": "2026-09-24 21:00 QA cycle (S189, Dorado home-based online-only consultant): RULE_0689 Permiso Único NMI named mfk=physical_operating_location, a key written by nothing in the KB. Probe-verified post-change: engine output identical in all cases (NMI with mfk=[physical_location]; Q_PHYSICAL_LOCATION answered true/false leaves it NMI) — zero behavioral change, heuristic card only."
    }
   ]
  },

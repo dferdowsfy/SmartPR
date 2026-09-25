@@ -3866,3 +3866,60 @@ test("CASE AT: food/beverage manufacturing BTs route Q_FOOD_PREPARED so the heal
     "an existing food manufacturer answering Q_FOOD_PREPARED=true gets the health permit verify_existing (S185 posture)"
   );
 });
+
+test("CASE AQ: RULE_0689's missing-fact key is established KB vocabulary, never an orphan (REG-ONLINEONLY-MFK-001)", () => {
+  // 2026-09-24 21:00 QA cycle (S189, Dorado home-based online-only
+  // consultant): RULE_0689 (Q_ONLINE_ONLY=true -> Permiso Único,
+  // needs_more_information) named mfk=["physical_operating_location"] — a
+  // key written by NOTHING in the KB (no QUESTION_KEY_MAP writeKey, no
+  // discovery question, no derivation), so the NMI card could never
+  // resolve through any intake path (FINDING-1200-02 orphan family).
+  // Fix: point the key at physical_location — the established fact for
+  // this concept (Q_PHYSICAL_LOCATION; permit-model meaning 'nonresidential
+  // commercial premises' per REG-HOME-PHYSICAL-001, matching the rule's
+  // own 2026-09-21 research note).
+  //
+  // SCOPE: deliberately vocabulary alignment only. No QUESTION_KEY_MAP
+  // binding was added for Q_PHYSICAL_LOCATION — location-derived questions
+  // are computed from profile.location_type by design, and a binding would
+  // let the interpreter set Q_PHYSICAL_LOCATION=true from free text,
+  // opening a RULE_0007 REQUIRED false-positive vector for home
+  // businesses. The card therefore stays honestly NMI on the web path;
+  // this test pins the key, not a behavior change.
+  const DOC_PERMISO = (KB.documents as Array<{ id: string; name: string }>).find(
+    (d) => d.name === "Permiso Único"
+  )?.id;
+  assert.ok(DOC_PERMISO, "KB document 'Permiso Único' resolves by exact name");
+  const rows = classify(
+    {
+      municipalityName: "Dorado",
+      businessTypeName: "IT Consulting Firm",
+      businessStatus: "new",
+      answers: {
+        Q_ONLINE_ONLY: true,
+        Q_FEDERAL_CONTRACTS_GRANTS: true,
+        Q_EMPLOYEES_HIRED: false,
+      },
+      projectFacts: { property_tenure: "owned" },
+    },
+    "new"
+  ).classified;
+  const card = rows.find(
+    (r) => r.document_id === DOC_PERMISO && r.source_rule_id === "RULE_0689"
+  );
+  assert.ok(card, "RULE_0689 Permiso Único card renders for the online-only consultant");
+  assert.equal(
+    card.applicability,
+    "needs_more_information",
+    "RULE_0689 stays honestly needs_more_information (heuristic, NEEDS-FACT by design)"
+  );
+  assert.deepEqual(
+    card.missingFacts,
+    ["physical_location"],
+    "the missing-fact key is established KB vocabulary, never the orphan physical_operating_location"
+  );
+  assert.ok(
+    !(card.missingFacts ?? []).includes("physical_operating_location"),
+    "the orphan key physical_operating_location must never resurface"
+  );
+});
