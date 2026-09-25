@@ -1617,6 +1617,89 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 }
 .spr-spin { animation: vspin .7s linear infinite; }
 
+/* ---- Consolidated intake: minimized business-details block ---- */
+.spr-anchor { display: block; height: 0; width: 0; overflow: hidden; }
+.spr-profile-summary-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-transform: uppercase;
+  letter-spacing: .075em;
+  font-weight: 720;
+  color: #80909c;
+  font-size: 11px;
+  line-height: 1;
+}
+.spr-profile-summary {
+  width: 100%;
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 19px;
+  border: 1px solid #dfe4e8;
+  border-radius: 4px;
+  background: #fbfcfd;
+  box-shadow: 0 1px 4px rgba(15, 35, 50, .04);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.spr-profile-summary:hover { border-color: #c7d1d8; }
+.spr-profile-summary:focus-visible {
+  outline: none;
+  border-color: #5590b6;
+  box-shadow: 0 0 0 3px rgba(51, 125, 171, .12);
+}
+.spr-profile-summary-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--spr-copy);
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spr-profile-summary-edit {
+  flex: 0 0 auto;
+  color: #287ca9;
+  font-size: 14px;
+  font-weight: 690;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.spr-profile-done {
+  justify-self: start;
+  padding: 12px 28px;
+  border: 1px solid #d2dbe1;
+  border-radius: 4px;
+  background: #fff;
+  color: #60717e;
+  font-size: 15px;
+  font-weight: 690;
+  cursor: pointer;
+}
+.spr-profile-done:hover { border-color: #c7d1d8; color: var(--spr-copy); }
+
+/* ---- Incomplete-submit attention: pulse ring on what's missing ---- */
+@keyframes spr-attention-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(138, 90, 18, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(138, 90, 18, .22); }
+}
+.spr-attention {
+  animation: spr-attention-pulse 1.6s ease-in-out 3;
+  border-radius: 4px;
+}
+.spr-field.spr-attention input,
+.spr-field.spr-attention select {
+  border-color: var(--warn);
+}
+/* ---- Submit loading pulse (incomplete tap): the button is never dead ---- */
+@keyframes spr-submit-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.18); }
+}
+.spr-primary.spr-submit-pulse { animation: spr-submit-pulse .45s ease-in-out 2; }
+
 .spr-review-panel {
   min-width: 0;
   min-height: 0;

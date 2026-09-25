@@ -1548,6 +1548,19 @@ export default function SmartPRIntake() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  // Business-details block: filled fields minimize to a compact summary and
+  // only fields still needing input render as inputs. Expands fully when the
+  // user taps Edit (or when submit finds profile fields missing).
+  const [profileFormExpanded, setProfileFormExpanded] = useState(false);
+  // Set when "See my requirements" is tapped while incomplete — drives the
+  // loading pulse plus scroll/highlight to what's missing.
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  // Brief loading animation on the submit button after an incomplete tap —
+  // the button is never dead, even when the form isn't ready.
+  const [submitPulse, setSubmitPulse] = useState(false);
+  const submitPulseTimer = useRef<number | null>(null);
+  const questionsPanelRef = useRef<HTMLDivElement>(null);
+  const profileFieldsRef = useRef<HTMLDivElement>(null);
   // Correlation id tying every capture event for this scenario together.
   const submissionIdRef = useRef<string>('');
   // The business this assessment belongs to (when signed in + /?business=<id>).
@@ -3059,6 +3072,27 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 };
 
   // Step 1: Save profile + compute discovery requirements (client-side)
+  // "See my requirements" is never a dead button: it only disables while a
+  // real submission is in flight. Tapped while incomplete, it plays a short
+  // loading pulse, expands the business-details block, and scrolls to the
+  // first thing missing — profile fields first, then the questions panel.
+  const handleSubmitTap = () => {
+    if (isLoading) return;
+    if (baseProfileReady && intakeQuestionsComplete) {
+      handleStartDiscovery();
+      return;
+    }
+    setSubmitAttempted(true);
+    setSubmitPulse(true);
+    setProfileFormExpanded(true);
+    if (submitPulseTimer.current) window.clearTimeout(submitPulseTimer.current);
+    submitPulseTimer.current = window.setTimeout(() => {
+      setSubmitPulse(false);
+      const target = !baseProfileReady ? profileFieldsRef.current : questionsPanelRef.current;
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 900);
+  };
+
   const handleStartDiscovery = async () => {
     // The user proceeds with the shown intent — the branch is settled.
     if (projectIntent) setProjectIntentConfirmed(true);
@@ -4624,6 +4658,42 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const baseProfileReady = isProjectOnly
     ? Boolean(profile.name && profile.municipality)
     : Boolean(profile.name && profile.municipality && profile.industry && profile.business_type && profile.location_type);
+  // Compact one-line summary of the business details for the minimized
+  // block. Only filled values appear; the block minimizes field-by-field so
+  // whatever still needs input stays visible as an input.
+  const STRUCTURE_SHORT_LABEL: Record<string, string> = {
+    llc: 'LLC',
+    corporation: 'Corporation',
+    nonprofit_nonstock_corporation: 'Nonprofit',
+    close_corporation: 'Close corp.',
+    professional_corporation: 'Prof. corp.',
+    foreign_corporation: 'Foreign corp.',
+    limited_liability_partnership: 'LLP',
+    sole_proprietorship: 'Sole prop.',
+    partnership: 'Partnership',
+    other: 'Other',
+  };
+  const profileSummaryParts = [
+    profile.name || null,
+    profile.municipality || null,
+    [profile.industry, profile.business_type].filter(Boolean).join(' · ') || null,
+    profile.location_type || null,
+    (profile.business_structure ? (STRUCTURE_SHORT_LABEL[profile.business_structure] ?? profile.business_structure) : null),
+    (profile.number_of_employees != null
+      ? (language === 'es' ? `${profile.number_of_employees} empleados` : `${profile.number_of_employees} employees`)
+      : null),
+  ].filter(Boolean) as string[];
+  const profileSummary = profileSummaryParts.join(' · ');
+  const anyProfileValue = profileSummaryParts.length > 0;
+  // Attention target after an incomplete submit tap (profile half).
+  const profileNeedsAttention = submitAttempted && !baseProfileReady;
+  // Minimized business-details block: the summary shows when there's at
+  // least one value and the block isn't expanded or flagged. A field's
+  // input stays visible when it's still empty — only filled fields minimize.
+  const showProfileSummary = anyProfileValue && !profileFormExpanded && !profileNeedsAttention;
+  const profileFieldVisible = (hasValue: boolean) => !showProfileSummary || !hasValue;
+  // Highlight ring on the fields after an incomplete submit tap.
+  const profileAttentionCls = profileNeedsAttention ? ' spr-attention' : '';
   const intakeDisplayTotal = isProjectOnly ? intakeTotal : Math.max(7, intakeTotal);
   const intakeDisplayDone = intakeDone + (
     baseProfileReady && intakeDone === intakeTotal
@@ -5358,6 +5428,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : -1;
   const intakeQuestionsComplete = activeQuestionIndex >= questionList.length
     && answeredPotentialCount === potentialItems.length;
+  // Attention target after an incomplete submit tap (questions half).
+  const questionsNeedAttention = submitAttempted && baseProfileReady && !intakeQuestionsComplete;
+  // Once everything's complete, the incomplete-submit state retires: the
+  // highlight clears and the block settles back to its minimized summary.
+  useEffect(() => {
+    if (submitAttempted && baseProfileReady && intakeQuestionsComplete) {
+      setSubmitAttempted(false);
+      setProfileFormExpanded(false);
+    }
+  }, [submitAttempted, baseProfileReady, intakeQuestionsComplete]);
   const passportReadyNow = baseProfileReady && intakeQuestionsComplete;
   const passportModeActive = passportPhaseStarted || passportReadyNow;
   const canGoBackInIntake = guidedQuestionsAnswered > 0 || answeredPotentialCount > 0;
@@ -5923,11 +6003,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </div>
                 )}
 
-                {/* Relational questions from the knowledge graph: only the
-                    controlling unknowns of branches this scenario reaches,
-                    one at a time, in dependency order. */}
-                {scenarioEval && (
-                  <div className="spr-field full">
+                {/* Consolidated questions: the knowledge-graph question, the
+                    guided yes/no questions, and the municipality follow-ups
+                    all live in this one region at the top — one at a time, in
+                    dependency order — instead of split between the top panel
+                    and the bottom of the form. Renders only when a question
+                    exists, so it never leaves blank grid space. */}
+                {(scenarioEval || currentQuestion || currentPotentialQuestion) && (
+                <div
+                  className={`spr-field full${questionsNeedAttention ? ' spr-attention' : ''}`}
+                  ref={questionsPanelRef}
+                >
+                  {scenarioEval && (
                     <ScenarioQuestions
                       evaluation={scenarioEval}
                       heading={
@@ -5939,11 +6026,56 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       onAnswer={answerScenarioQuestion}
                       onSkip={skipScenarioQuestion}
                     />
-                  </div>
+                  )}
+                  {currentQuestion && (
+                    <IntakeQuestion
+                      language={language}
+                      questionNumber={activeGuidedQuestionNumber}
+                      questionTotal={intakeQuestionTotal}
+                      title={L(currentQuestion.text, language)}
+                      contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
+                      contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
+                      options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
+                      onAnswer={(value) => handleQuestionAnswer(value)}
+                    />
+                  )}
+                  {currentPotentialQuestion && (
+                    <IntakeQuestion
+                      language={language}
+                      questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
+                      questionTotal={intakeQuestionTotal}
+                      title={L(currentPotentialQuestion.followUp, language)}
+                      contextTitle={L(currentPotentialQuestion.document, language)}
+                      contextBody={L(currentPotentialQuestion.why, language)}
+                      onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
+                      onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
+                    />
+                  )}
+                </div>
                 )}
 
-                {!passportKnownFields.has('name') && (
+                {/* Business-details block: filled fields minimize into the
+                    compact summary (tap to edit); fields still needing input
+                    stay visible. An incomplete submit expands everything and
+                    scrolls here. */}
+                <span ref={profileFieldsRef} aria-hidden="true" className="spr-anchor" />
+                {showProfileSummary && (
                 <div className="spr-field full">
+                  <span className="spr-profile-summary-label">{L('Business details', language)}</span>
+                  <button
+                    type="button"
+                    className="spr-profile-summary"
+                    onClick={() => setProfileFormExpanded(true)}
+                    aria-expanded="false"
+                  >
+                    <span className="spr-profile-summary-text">{profileSummary}</span>
+                    <span className="spr-profile-summary-edit">{L('Edit', language)}</span>
+                  </button>
+                </div>
+                )}
+
+                {!passportKnownFields.has('name') && profileFieldVisible(!!profile.name) && (
+                <div className={`spr-field full${profileAttentionCls}`}>
                   <label htmlFor="spr-business-name">
                     {isProjectOnly ? L('Project name', language) : t('businessName')}
                     {confirmationBadge('name')}
@@ -5958,8 +6090,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('municipality') && (
-                <div className="spr-field">
+                {!passportKnownFields.has('municipality') && profileFieldVisible(!!profile.municipality) && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
                   <select
                     id="spr-municipality"
@@ -5980,8 +6112,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     are business fields and never appear for a property-only
                     project. */}
                 {!isProjectOnly && (<>
-                {!passportKnownFields.has('industry') && (
-                <div className="spr-field">
+                {!passportKnownFields.has('industry') && profileFieldVisible(!!profile.industry) && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
                     id="spr-industry"
@@ -5994,8 +6126,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('business_type') && (
-                <div className="spr-field">
+                {!passportKnownFields.has('business_type') && profileFieldVisible(!!profile.business_type) && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
                     id="spr-business-type"
@@ -6016,7 +6148,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                <div className="spr-field">
+                {profileFieldVisible(!!profile.location_type) && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
                   <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
                     <option value="">{t('selectLocationType')}</option>
@@ -6025,9 +6158,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     ))}
                   </select>
                 </div>
+                )}
 
-                {!passportKnownFields.has('business_structure') && (
-                <div className="spr-field spr-field-static">
+                {!passportKnownFields.has('business_structure') && profileFieldVisible(!!profile.business_structure) && (
+                <div className={`spr-field spr-field-static${profileAttentionCls}`}>
                   <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
                     const structure = e.target.value;
@@ -6049,7 +6183,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                <div className="spr-field">
+                {profileFieldVisible(profile.number_of_employees != null) && (
+                <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-employees">{t('numEmployees')}{confirmationBadge('number_of_employees')}</label>
                   <input
                     id="spr-employees"
@@ -6073,6 +6208,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     }}
                   />
                 </div>
+                )}
+                {profileFormExpanded && anyProfileValue && (
+                <div className="spr-field full">
+                  <button
+                    type="button"
+                    className="spr-profile-done"
+                    onClick={() => setProfileFormExpanded(false)}
+                  >
+                    {L('Done', language)}
+                  </button>
+                </div>
+                )}
                 </>)}
               </div>
 
@@ -6127,31 +6274,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
               )}
 
-              {currentQuestion && (
-                <IntakeQuestion
-                  language={language}
-                  questionNumber={activeGuidedQuestionNumber}
-                  questionTotal={intakeQuestionTotal}
-                  title={L(currentQuestion.text, language)}
-                  contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
-                  contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
-                  options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
-                  onAnswer={(value) => handleQuestionAnswer(value)}
-                />
-              )}
-
-              {currentPotentialQuestion && (
-                <IntakeQuestion
-                  language={language}
-                  questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
-                  questionTotal={intakeQuestionTotal}
-                  title={L(currentPotentialQuestion.followUp, language)}
-                  contextTitle={L(currentPotentialQuestion.document, language)}
-                  contextBody={L(currentPotentialQuestion.why, language)}
-                  onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
-                  onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
-                />
-              )}
             </div>
 
             {passportModeActive && (
@@ -6173,12 +6295,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   <button className="spr-back" onClick={handleIntakeBack}>{L('Back', language)}</button>
                 )}
                 <button
-                  className="spr-primary"
-                  onClick={handleStartDiscovery}
-                  disabled={!baseProfileReady || !intakeQuestionsComplete || isLoading}
+                  className={`spr-primary${submitPulse ? ' spr-submit-pulse' : ''}`}
+                  onClick={handleSubmitTap}
+                  disabled={isLoading}
                 >
                   {L('See my requirements', language)}
-                  {isLoading ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
+                  {isLoading || submitPulse ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
                 </button>
               </div>
             </div>
