@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./marketing.module.css";
 import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./MarketingChrome";
+import DemoPreview from "./DemoPreview";
 import LeadModal from "./LeadModal";
 import { createSupabaseBrowser } from "../../../lib/supabase/client";
 
@@ -19,6 +20,9 @@ const copy = {
     fileForClients: "For professionals",
     talkItThrough: "Talk it through",
     voiceNote: "You can also do this by voice.",
+    demoButton: "Try the interactive demo →",
+    demoCaption: "A real case: furniture manufacturer, Guaynabo",
+    demoOpen: "Open the interactive SmartPR demo",
     buyKicker: "What you get",
     buyTitle: "Three things. Not a pile of features.",
     buyCards: [
@@ -127,6 +131,9 @@ const copy = {
     fileForClients: "Para profesionales",
     talkItThrough: "Háblalo por voz",
     voiceNote: "También puedes hacerlo por voz.",
+    demoButton: "Probar la demostración interactiva →",
+    demoCaption: "Un caso real: fabricante de muebles, Guaynabo",
+    demoOpen: "Abrir la demostración interactiva de SmartPR",
     buyKicker: "Lo que obtiene",
     buyTitle: "Tres cosas. No una pila de funciones.",
     buyCards: [
@@ -333,6 +340,17 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
           >
             {c.talkItThrough}
           </Link>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionInner}>
+            <DemoPreview
+              language={language}
+              buttonLabel={c.demoButton}
+              caption={c.demoCaption}
+              openLabel={c.demoOpen}
+            />
+          </div>
         </section>
 
         <section id="what-you-get" className={styles.section}>

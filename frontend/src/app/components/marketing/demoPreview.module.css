@@ -1,0 +1,68 @@
+/* Looping demo preview card for the marketing landing page.
+   The 1400x875 demo iframe is scaled with a JS-driven transform (see
+   DemoPreview.tsx); the card reserves its aspect ratio up front so the
+   hero never shifts when the iframe loads. */
+
+.card {
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
+  border-radius: 16px;
+  border: 1px solid #e2dccf;
+  background: #fbf8f2;
+  box-shadow: 0 24px 60px -28px rgba(60, 50, 35, 0.35);
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scaler {
+  position: relative;
+  flex: none;
+}
+
+.scaler iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1400px;
+  height: 875px;
+  border: 0;
+  transform-origin: top left;
+}
+
+/* Transparent click layer: any click on the preview opens /demo. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.cta {
+  margin-top: 1.75rem;
+  text-align: center;
+}
+
+.caption {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #5c574e;
+}
+
+@media (max-width: 640px) {
+  .card {
+    aspect-ratio: 4 / 3;
+  }
+
+  .cta a {
+    width: 100%;
+  }
+}
