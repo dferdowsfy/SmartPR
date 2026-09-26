@@ -1156,6 +1156,22 @@ function applyNewPremisesPosture(
 }
 
 /**
+ * Obligation strength for comparing requirement applicabilities. Used by the
+ * deferred-question upgrade path: a counterfactual answer is only worth
+ * asking about when it would strengthen an already-listed document.
+ */
+function applicabilityStrength(a: string | undefined): number {
+  switch (a) {
+    case "required": return 5;
+    case "likely_required": return 4;
+    case "needs_more_information": return 3;
+    case "conditional": return 2;
+    case "recommended": return 1;
+    default: return 0;
+  }
+}
+
+/**
  * Deferred discovery questions, checked against the same engine: rerun with
  * the answer "Yes" and list only the documents that answer would add. The
  * rules decide — nothing is listed that a Yes would not actually require.
@@ -1182,7 +1198,25 @@ function appendDeferredQuestionConditionals(
       deferredQuestions: [],
     });
     for (const r of withYes) {
-      if (present.has(r.document_id) || r.applicability === "not_applicable") continue;
+      if (r.applicability === "not_applicable") continue;
+      const existingIdx = out.findIndex((o) => o.document_id === r.document_id);
+      if (existingIdx >= 0) {
+        // Upgrade path (QA 2026-09-26 15:00, live S226): a deferred question
+        // whose Yes would STRENGTHEN an already-listed document must still be
+        // asked. The old duplicate suppression hid it, leaving the user with
+        // an unresolvable weaker card — e.g. the DACO contractor license sat
+        // at MORE INFORMATION NEEDED via RULE_0123 (business-type heuristic
+        // gated on the orphan residential_work fact, no wired question) while
+        // the RULE_0642 upgrade question ("offer construction services?")
+        // never appeared. A same-or-weaker counterfactual adds nothing and
+        // stays suppressed. Replacing (not duplicating) keeps one card per
+        // document; answering No re-renders the weaker card on recompute.
+        if (applicabilityStrength(r.applicability) > applicabilityStrength(out[existingIdx].applicability)) {
+          out.splice(existingIdx, 1);
+        } else {
+          continue;
+        }
+      }
       present.add(r.document_id);
       out.push({
         ...r,

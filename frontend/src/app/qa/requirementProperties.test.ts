@@ -177,3 +177,85 @@ test("scenario evaluation is deterministic", () => {
     assert.deepEqual(second, first, `${golden.id}: non-deterministic output across runs`);
   }
 });
+
+// 5. deferred upgrade questions are never suppressed by weaker cards — a
+//    deferred question whose Yes would STRENGTHEN an already-listed document
+//    must surface its inline question instead of being dropped as a
+//    duplicate (the 2026-09-26 live S226 class: the DACO contractor license
+//    sat at MORE INFORMATION NEEDED via RULE_0123, whose residential_work
+//    gate has no wired question, while the RULE_0642 upgrade question was
+//    suppressed — the user could never reach REQUIRED).
+test("deferred question that would strengthen a listed document is asked", () => {
+  const profile = {
+    business_type: "General Contractor",
+    municipality: "Ponce",
+    location_type: "Commercial Facility",
+    number_of_employees: 12,
+    industry: "Construction",
+    business_structure: "Limited Liability Company",
+  };
+  const answers = { employees_hired: true, existing_lease: true };
+  const run = (ans: Record<string, unknown>, deferred: Array<{ questionId: string; writeKey: string }>) =>
+    computeRequirementsFromKB(profile, ans, {}, {
+      entityType: "limited_liability_company",
+      projectIntent: "new_business",
+      sessionId: "qa-test",
+      businessId: null,
+      confirmedKeys: [...Object.keys(profile), ...Object.keys(ans)],
+      passportKeys: [],
+      deferredQuestions: deferred,
+    } as never);
+  const DQ = [{ questionId: "Q_OFFERS_CONSTRUCTION_SERVICES", writeKey: "Q_OFFERS_CONSTRUCTION_SERVICES" }];
+
+  // Unanswered: exactly one contractor card, and it must carry the inline
+  // upgrade question — never the dead-end weaker card without one.
+  const unanswered = run(answers, DQ).filter((r) => r.document_id === "DOC_CONTRACTOR_LICENSE");
+  assert.equal(unanswered.length, 1, "expected exactly one contractor license card");
+  assert.equal(
+    unanswered[0].unansweredTriggerQuestionId,
+    "Q_OFFERS_CONSTRUCTION_SERVICES",
+    "upgrade question must be asked inline"
+  );
+
+  // Answering Yes upgrades the document to required via the stronger rule.
+  const afterYes = run({ ...answers, Q_OFFERS_CONSTRUCTION_SERVICES: true }, [])
+    .filter((r) => r.document_id === "DOC_CONTRACTOR_LICENSE");
+  assert.equal(afterYes.length, 1);
+  assert.equal(afterYes[0].applicability, "required");
+  assert.equal(afterYes[0].source_rule, "RULE_0642");
+
+  // Answering No falls back to the weaker card — it is not lost.
+  const afterNo = run({ ...answers, Q_OFFERS_CONSTRUCTION_SERVICES: false }, [])
+    .filter((r) => r.document_id === "DOC_CONTRACTOR_LICENSE");
+  assert.equal(afterNo.length, 1);
+  assert.equal(afterNo[0].applicability, "needs_more_information");
+});
+
+// 6. same-or-weaker counterfactuals stay suppressed — the upgrade path must
+//    not duplicate cards when the deferred question adds nothing.
+test("deferred question that would not strengthen a listed document stays suppressed", () => {
+  const profile = {
+    business_type: "General Contractor",
+    municipality: "Ponce",
+    location_type: "Commercial Facility",
+    number_of_employees: 12,
+    industry: "Construction",
+    business_structure: "Limited Liability Company",
+  };
+  const answers = { employees_hired: true, existing_lease: true, Q_OFFERS_CONSTRUCTION_SERVICES: true };
+  const rows = computeRequirementsFromKB(profile, answers, {}, {
+    entityType: "limited_liability_company",
+    projectIntent: "new_business",
+    sessionId: "qa-test",
+    businessId: null,
+    confirmedKeys: [...Object.keys(profile), ...Object.keys(answers)],
+    passportKeys: [],
+    // Commercial signage is unanswered; its counterfactual cannot strengthen
+    // the already-required contractor license.
+    deferredQuestions: [{ questionId: "Q_COMMERCIAL_SIGNAGE", writeKey: "Q_COMMERCIAL_SIGNAGE" }],
+  } as never);
+  const cards = rows.filter((r) => r.document_id === "DOC_CONTRACTOR_LICENSE");
+  assert.equal(cards.length, 1, "contractor license must not duplicate");
+  assert.equal(cards[0].applicability, "required");
+  assert.equal(cards[0].unansweredTriggerQuestionId, undefined);
+});
