@@ -52,6 +52,7 @@ export default function DemoPreview({
   }, []);
 
   const src = `/demo/?embed=1${language === "ES" ? "&lang=es" : ""}`;
+  const demoHref = "/demo/?step=0";
 
   return (
     <>
@@ -61,10 +62,10 @@ export default function DemoPreview({
             <iframe ref={frameRef} src={src} title="SmartPR demo preview" loading="lazy" />
           </div>
         </div>
-        <Link href="/demo" className={styles.overlay} aria-label={openLabel} />
+        <Link href={demoHref} className={styles.overlay} aria-label={openLabel} />
       </div>
       <div className={styles.cta}>
-        <Link href="/demo" className={marketingStyles.primary}>
+        <Link href={demoHref} className={marketingStyles.primary}>
           {buttonLabel}
         </Link>
         <p className={styles.caption}>{caption}</p>
