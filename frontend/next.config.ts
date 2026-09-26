@@ -9,6 +9,17 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["RealForms/**/*", "form-mappings/**/*"],
   },
+  // Standalone /demo page: a single self-contained HTML file in public/.
+  // beforeFiles runs ahead of the app router, so /demo serves the static
+  // file even though src/app/demo/ exists (it only has /demo/enterprise).
+  async rewrites() {
+    return {
+      beforeFiles: [
+        { source: "/demo", destination: "/demo.html" },
+        { source: "/demo/", destination: "/demo.html" },
+      ],
+    };
+  },
   // Allow Browser Use Cloud live preview iframes (live.browser-use.com).
   async headers() {
     return [
