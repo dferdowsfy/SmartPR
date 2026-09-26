@@ -432,3 +432,38 @@ export function legalBasisFor(
   }
   return null;
 }
+
+/**
+ * User-facing "Source" row value for a requirement card: the triggering
+ * rule's own citation when it carries one (rule citation first, then the
+ * required document's — the same precedence legalBasisFor uses for the
+ * legal-basis line), so the source row never contradicts the card's agency
+ * pill and legal-basis link. Review-provenance citations ("Validated review
+ * …") are suppressed unconditionally here: they are audit-trail provenance,
+ * not a legal basis, and the row falls back to the document's citation.
+ * (2026-09-26 QA, live S221: the attorney Professional License card's pill
+ * correctly showed "Tribunal Supremo de Puerto Rico" while its Source row
+ * showed the generic document citation "Juntas Examinadoras (Dept of
+ * State)".)
+ */
+export function sourceRowCitation(
+  sourceRuleId: string | null | undefined,
+  documentId: string | null | undefined,
+  kb: KnowledgeBase,
+): string | null {
+  const rules = kb.rules as (KnowledgeBase["rules"][number] & CitationCarrier & { requires_document_id?: unknown })[];
+  const docs = kb.documents as (KnowledgeBase["documents"][number] & CitationCarrier)[];
+  const rule = rules.find((r) => r.id === sourceRuleId);
+  const ruleCitation = citationText(rule);
+  if (ruleCitation.length > 10 && !isReviewCitation(ruleCitation)) {
+    return displayCitation(ruleCitation);
+  }
+  const docId =
+    (typeof rule?.requires_document_id === "string" && rule.requires_document_id) || documentId;
+  const doc = docs.find((d) => d.id === docId);
+  const docCitation = citationText(doc);
+  if (doc && docCitation.length > 10 && !isReviewCitation(docCitation)) {
+    return displayCitation(docCitation);
+  }
+  return null;
+}

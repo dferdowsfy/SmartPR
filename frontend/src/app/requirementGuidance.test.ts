@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ACTIVE_JURISDICTION } from "./jurisdictions/index.ts";
-import { buildRequirementGuidance, legalBasisFor, POTENTIAL_ADVISORY_REASON_ES, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
+import { buildRequirementGuidance, legalBasisFor, sourceRowCitation, POTENTIAL_ADVISORY_REASON_ES, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
 import { validateGuidanceConcept } from "./guidance/model.ts";
 
 const kb = ACTIVE_JURISDICTION.kb;
@@ -613,4 +613,35 @@ test("REG-GUIDE-BTID-001: per-BT `equals: \"BT_*\"` guidance conditions match fi
     ctxBar
   );
   assert.equal(gBar.status, "GUIDANCE_NEEDS_REVIEW", "no fired BT rule: hedge stays");
+});
+
+test("REG-SOURCE-ROW-001: card Source row prefers the triggering rule's own citation over the generic document citation", () => {
+  // 2026-09-26 QA, live S221: the attorney Professional License card's agency
+  // pill correctly showed "Tribunal Supremo de Puerto Rico" while its Source
+  // row showed the generic document citation "Juntas Examinadoras (Dept of
+  // State)". The RULE_0114 rule-specific citation must win.
+  const c = sourceRowCitation("RULE_0114", "DOC_PROFESSIONAL_LICENSE", kb);
+  assert.ok(c, "sourceRowCitation returns a citation for RULE_0114");
+  assert.match(c!, /Tribunal Supremo de Puerto Rico/, "rule citation names the actual licensing authority");
+  assert.doesNotMatch(c!, /Juntas Examinadoras \(Dept of State\)/, "generic document citation is not shown");
+});
+
+test("REG-SOURCE-ROW-002: review-provenance citations never render as the card Source row", () => {
+  // RULE_0652's citation is "Validated review 2026-09-16 (…)" — audit-trail
+  // provenance, not a legal basis. The row must fall back to the document's
+  // citation, never the provenance string.
+  const c = sourceRowCitation("RULE_0652", "DOC_DOMICILIARY_USE_PERMIT", kb);
+  assert.ok(c, "falls back to the document citation");
+  assert.doesNotMatch(c!, /validated review/i, "review provenance is suppressed");
+  assert.match(c!, /OGPe/, "document citation renders instead");
+});
+
+test("REG-SOURCE-ROW-003: document citation fallback when the rule carries none; null when nothing exists", () => {
+  // RULE_0649 (deed) has no rule citation; the document's statute renders.
+  const docFallback = sourceRowCitation("RULE_0649", "DOC_PROPERTY_DEED", kb);
+  assert.equal(docFallback, "Ley 210-2015 (Ley del Registro de la Propiedad Inmobiliaria) — títulos de propiedad se inscriben mediante escritura pública");
+  // RULE_0037 (lease) and its document carry no citation at all — the UI
+  // then falls back to the rule id; sourceRowCitation reports null.
+  assert.equal(sourceRowCitation("RULE_0037", "DOC_LEASE_AGREEMENT", kb), null);
+  assert.equal(sourceRowCitation(null, "DOC_LEASE_AGREEMENT", kb), null);
 });

@@ -7,7 +7,7 @@ import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, 
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
-import { buildRequirementGuidance, legalBasisFor, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
+import { buildRequirementGuidance, legalBasisFor, sourceRowCitation, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
@@ -5318,10 +5318,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   };
   const requirementFacts = (req: Requirement, state: 'pending' | 'done' | 'review', fileName: string | null, prepared: boolean, name: string): RequirementFact[] => {
     const docMeta = (KB.documents as Array<{ id: string; citation?: string | null }>).find((d) => d.id === req.document_id);
+    // The Source row prefers the triggering rule's own citation when the rule
+    // carries one (rule citation first, then the document's), so the source
+    // never contradicts the card's agency pill and legal-basis link. Review-
+    // provenance citations are suppressed inside sourceRowCitation.
+    // (2026-09-26 QA, live S221.)
+    const sourceCitation = sourceRowCitation(req.source_rule, req.document_id, KB);
     const { support, config } = claraSupportFor(req.document_id);
     const conditional = req.applicability === 'conditional' || req.applicability === 'needs_more_information' || !!req.unansweredTriggerQuestionId;
     return [
-      { label: L('Source', language), value: docMeta?.citation || (req.source_rule ? `${L('Rule', language)} ${req.source_rule}` : '—') },
+      { label: L('Source', language), value: sourceCitation || docMeta?.citation || (req.source_rule ? `${L('Rule', language)} ${req.source_rule}` : '—') },
       { label: L('Evidence', language), value: fileName ? `${L('On file', language)}: ${fileName}` : conditional ? L('Only if it applies', language) : `${L('Copy of the issued', language)} ${name}` },
       { label: L('Readiness', language), value: state === 'done' ? L('Complete', language) : state === 'review' ? L('Needs review', language) : conditional ? L('Depends on your answer', language) : prepared ? L('Prepared', language) : L('Not started', language) },
       { label: L('Filing', language), value: state === 'done' ? L('Issued', language) : prepared ? L('Prepared — not filed', language) : config ? `${config.agencyEn} · ${config.portalEn}` : L('Not filed', language) },
