@@ -422,4 +422,33 @@ describe("tenure and premises read in context", () => {
     const ctx = interpretScenario("We leased a storefront in Ponce and will rent part of it out to another business.");
     assert.equal(ctx.property.ownershipStatus?.value, "leased");
   });
+
+  it("'I haven't signed a lease yet' is unknown tenure, not a lease (REG-NEGATED-LEASE-001)", () => {
+    // Live 2026-09-26 18:00 (S231): "haven't signed a lease yet" was derived as
+    // "Leased property" because negatedAt() did not recognize n't-contractions.
+    const ctx = interpretScenario(
+      "I'm opening a restaurant in San Juan. I haven't signed a lease yet, still looking at spaces in Santurce."
+    );
+    assert.equal(ctx.property.ownershipStatus, undefined);
+  });
+
+  it("n't-contractions negate tenure and renovation claims generally", () => {
+    assert.equal(
+      interpretScenario("We don't have a lease — still looking at spaces.").property.ownershipStatus,
+      undefined
+    );
+    assert.equal(
+      interpretScenario("The space isn't leased yet.").property.ownershipStatus,
+      undefined
+    );
+    // Positive controls: genuine tenure language still concludes.
+    assert.equal(
+      interpretScenario("We signed a lease for the storefront in Ponce.").property.ownershipStatus?.value,
+      "leased"
+    );
+    assert.equal(
+      interpretScenario("I haven't signed a lease yet but I own the building.").property.ownershipStatus?.value,
+      "owned"
+    );
+  });
 });

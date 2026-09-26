@@ -74,7 +74,13 @@ export function clauseAt(text: string, index: number, max = 180): string {
   return clause;
 }
 
-const NEGATORS = /\b(?:no|not|without|won't|will not|wont|none|never|nor|excluding|excludes)\b/i;
+const NEGATOR_WORDS =
+  "no|not|without|won't|will not|wont|none|never|nor|excluding|excludes|cannot|\\w+(?:n't|\\u2019t)";
+const NEGATORS = new RegExp(`\\b(?:${NEGATOR_WORDS})\\b`, "i");
+const LAST_NEGATOR = new RegExp(
+  `\\b(?:${NEGATOR_WORDS})\\b(?![\\s\\S]*\\b(?:${NEGATOR_WORDS})\\b)`,
+  "i"
+);
 
 /** Is the mention at `index` negated within its own clause? ("no structural or exterior work") */
 function negatedAt(text: string, index: number): boolean {
@@ -83,7 +89,7 @@ function negatedAt(text: string, index: number): boolean {
   const before = text.slice(start, index);
   if (!NEGATORS.test(before)) return false;
   // "no demolition, but electrical work" — a "but" after the negator resets it.
-  const lastNeg = before.search(/\b(?:no|not|without|won't|will not|none|never|nor)\b(?![\s\S]*\b(?:no|not|without|won't|will not|none|never|nor)\b)/i);
+  const lastNeg = before.search(LAST_NEGATOR);
   const afterNeg = before.slice(lastNeg);
   return !/\bbut\b|\bhowever\b/i.test(afterNeg);
 }
