@@ -9,6 +9,19 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["RealForms/**/*", "form-mappings/**/*"],
   },
+  // Bare-domain canonicalization: once getsmartpr.com points at Railway,
+  // redirect it to www (path-preserving). Only matches the bare host, so
+  // www traffic is unaffected.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "getsmartpr.com" }],
+        destination: "https://www.getsmartpr.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   // Standalone /demo page: a single self-contained HTML file in public/.
   // beforeFiles runs ahead of the app router, so /demo serves the static
   // file even though src/app/demo/ exists (it only has /demo/enterprise).
