@@ -618,7 +618,16 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     // triggering: a stale, unconfirmed, or provenance-less "no" must not
     // silently kill a valid requirement (its block is recorded, never
     // silent).
-    if (rule.negated_fact_keys?.length) {
+    //
+    // Strict-mode only (2026-09-25 QA, REG-ALCOHOL-NEGATED-001): negative
+    // facts derived by the intake translation layer (e.g. on() yielding
+    // false for an unanswered question) are indistinguishable from explicit
+    // answers in the legacy no-session path, where every defined answer
+    // reads as established. Suppression is destructive — it removes a
+    // requirement — so it fails closed: without session identity the
+    // mechanism stays inert and rules keep their historical behavior. The
+    // live intake always passes a session id.
+    if (input.sessionId && rule.negated_fact_keys?.length) {
       const suppressing = rule.negated_fact_keys.find((key) => {
         const pf = input.projectFacts?.[key];
         if (pf !== undefined && isNegativeFact(pf)) {

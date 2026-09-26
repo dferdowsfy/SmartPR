@@ -4244,3 +4244,103 @@ test("CASE AV: the OCS professional-license card's filing destination follows OC
     "the guidance note must not name the examining-boards portal as the destination"
   );
 });
+
+test("CASE AW: a bar that explicitly denies alcohol sales gets no alcohol license or alcohol-path clearances in strict mode (REG-ALCOHOL-NEGATED-001)", () => {
+  // 2026-09-25 21:00 QA cycle (S210 dry-bar probe): BT_BAR's BT-keyed
+  // alcohol rules (RULE_0066 + RULE_0630/0631/0632) fired the alcohol
+  // license + CRIM/ASUME/background as REQUIRED even with an explicit
+  // Q_ALCOHOL_SOLD=false — a HIGH false positive and a §29.2 violation
+  // (the prerequisites belong to the sells-alcohol path, not the BT).
+  // negated_fact_keys=["Q_ALCOHOL_SOLD"] now suppresses them on an
+  // explicit No. Strict-mode only: the mechanism fails closed without
+  // session identity (legacy callers keep historical behavior), so this
+  // test simulates the production intake with sessionId + confirmedKeys.
+  const DOC_ALCOHOL = docByName("alcohol", "license");
+  const DOC_CRIM = docByName("crim");
+  const DOC_ASUME = docByName("asume");
+  const DOC_BGCHECK = docByName("background check");
+  const strictInput = (answers: Record<string, unknown>, confirmedKeys: string[]) =>
+    buildEngineInput(
+      {
+        business_type: "Bar",
+        municipality: "Toa Baja",
+        location_type: "Commercial Facility",
+        number_of_employees: 2,
+        business_structure: "llc",
+      },
+      answers,
+      {},
+      {
+        projectIntent: "new_business",
+        sessionId: "qa-case-aw",
+        confirmedKeys,
+      }
+    );
+  const run = (input: EngineInput) => {
+    const { requirements } = runRulesEngine(KB, input);
+    return classifyEngineRequirements(requirements, { kb: KB, businessStatus: "new" });
+  };
+
+  // 1) Explicit No -> the alcohol path is suppressed.
+  // (Answers use the wizard's write keys, as production does.)
+  const dry = run(
+    strictInput({ alcohol_sold: false, employees_hired: true }, [
+      "business_type",
+      "municipality",
+      "alcohol_sold",
+    ])
+  );
+  for (const [id, label] of [
+    [DOC_ALCOHOL, "alcohol license"],
+    [DOC_CRIM, "CRIM clearance"],
+    [DOC_ASUME, "ASUME clearance"],
+    [DOC_BGCHECK, "background check"],
+  ] as const) {
+    assert.equal(
+      byId(dry, id),
+      undefined,
+      `explicit no-alcohol: no ${label} card`
+    );
+  }
+
+  // 2) Unanswered -> the BT default still fires (a bar is assumed to sell
+  // alcohol until the user says otherwise).
+  const unanswered = run(
+    strictInput({ employees_hired: true }, ["business_type", "municipality"])
+  );
+  assert.ok(
+    byId(unanswered, DOC_ALCOHOL),
+    "unanswered alcohol: the BT default still fires the alcohol license"
+  );
+
+  // 3) Explicit Yes -> the question path fires as before.
+  const yes = run(
+    strictInput({ alcohol_sold: true, employees_hired: true }, [
+      "business_type",
+      "municipality",
+      "alcohol_sold",
+    ])
+  );
+  assert.ok(byId(yes, DOC_ALCOHOL), "explicit yes: alcohol license fires");
+
+  // 4) Legacy path (no session identity) keeps historical behavior — the
+  // strict-only gate must not silently change legacy callers.
+  const legacy = run(
+    buildEngineInput(
+      {
+        business_type: "Bar",
+        municipality: "Toa Baja",
+        location_type: "Commercial Facility",
+        number_of_employees: 2,
+        business_structure: "llc",
+      },
+      { alcohol_sold: false, employees_hired: true },
+      {},
+      { projectIntent: "new_business" }
+    )
+  );
+  assert.ok(
+    byId(legacy, DOC_ALCOHOL),
+    "legacy path: historical behavior unchanged"
+  );
+});

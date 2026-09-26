@@ -1329,7 +1329,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -1747,7 +1755,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -7003,7 +7019,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -7022,7 +7046,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -7041,7 +7073,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -7060,7 +7100,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -7079,7 +7127,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
@@ -7098,7 +7154,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode set to verify_existing",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (e.g. alcohol sales, existing seating, background-check obligation) should verify its existing license/clearance/authorization is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-25",
+    "change": "negated_fact_keys=['Q_ALCOHOL_SOLD']",
+    "reason": "QA 2026-09-25 21:00 cycle (S210 dry-bar probe): a bar explicitly answering Q_ALCOHOL_SOLD=false still received the alcohol license + CRIM/ASUME/background as REQUIRED on the BT alone (HIGH false positive; §29.2 principle — prerequisites belong to the sells-alcohol path). An explicit No now suppresses these BT-keyed rules; unanswered stays firing (bar assumed to sell alcohol), explicit Yes unchanged (RULE_0013 question path). Generalizes across BT_BAR and BT_JUICE_BAR."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_ALCOHOL_SOLD"
   ]
  },
  {
