@@ -22,7 +22,6 @@ const copy = {
     voiceNote: "You can also do this by voice.",
     demoButton: "Try the interactive demo →",
     demoCaption: "A real case: furniture manufacturer, Guaynabo",
-    demoOpen: "Open the interactive SmartPR demo",
     buyKicker: "What you get",
     buyTitle: "Three things. Not a pile of features.",
     buyCards: [
@@ -133,7 +132,6 @@ const copy = {
     voiceNote: "También puedes hacerlo por voz.",
     demoButton: "Probar la demostración interactiva →",
     demoCaption: "Un caso real: fabricante de muebles, Guaynabo",
-    demoOpen: "Abrir la demostración interactiva de SmartPR",
     buyKicker: "Lo que obtiene",
     buyTitle: "Tres cosas. No una pila de funciones.",
     buyCards: [
@@ -348,7 +346,6 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
               language={language}
               buttonLabel={c.demoButton}
               caption={c.demoCaption}
-              openLabel={c.demoOpen}
             />
           </div>
         </section>
