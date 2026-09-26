@@ -89,6 +89,36 @@ export function IncentivesSidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [normalizedProfile]);
 
+  // On mobile the trigger is position:fixed below the sticky stepper bar.
+  // The bar's height varies by breakpoint, so measure it and expose the
+  // offset as a CSS var the media query below consumes. Also measure the
+  // trigger itself so the main column can reserve space for it.
+  useEffect(() => {
+    const bar = document.querySelector(".spr-stepper-bar-sticky");
+    if (!bar) return;
+    const apply = () => {
+      document.documentElement.style.setProperty(
+        "--inc-trigger-top",
+        `${Math.ceil(bar.getBoundingClientRect().height) + 8}px`
+      );
+      const trigger = document.querySelector(".inc-mobile-trigger");
+      if (trigger) {
+        document.documentElement.style.setProperty(
+          "--inc-trigger-h",
+          `${Math.ceil(trigger.getBoundingClientRect().height)}px`
+        );
+      }
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(bar);
+    window.addEventListener("resize", apply);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", apply);
+    };
+  }, []);
+
   const opportunities = assessment?.opportunities ?? [];
   const topMatches = opportunities.slice(0, 2);
   const questionCount = assessment?.followUpQuestions.length ?? 0;
@@ -130,8 +160,9 @@ export function IncentivesSidebar({
         @media(max-width:960px){
           .inc-sidebar{position:static;max-height:none;overflow:visible;display:block}
           .inc-sidebar>.inc-card{display:none}
-          .inc-mobile-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;position:sticky;top:8px;z-index:40;background:var(--accent,#0f766e);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+          .inc-mobile-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;position:fixed;top:var(--inc-trigger-top,84px);left:12px;right:12px;width:auto;z-index:60;background:var(--accent,#0f766e);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.15)}
           .inc-mobile-trigger:hover{background:#0c5f59}
+          .spr-requirements-main{padding-top:calc(var(--inc-trigger-h,48px) + 8px)}
         }
       `}</style>
 
