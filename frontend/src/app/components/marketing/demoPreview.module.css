@@ -59,7 +59,18 @@
 
 @media (max-width: 640px) {
   .card {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: auto;
+  }
+
+  /* Mobile renders the demo natively at the card width (it carries its own
+     viewport meta), so the preview stays readable instead of shrinking the
+     desktop frame to a thumbnail. Fixed height with overflow hidden: the
+     overlay still routes every tap to /demo. */
+  .mobileFrame {
+    width: 100%;
+    height: 680px;
+    border: 0;
+    display: block;
   }
 
   .cta a {
