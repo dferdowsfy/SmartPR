@@ -12,6 +12,40 @@ import type { ProjectIntent } from "../projectIntent";
 import { changeOfUseStatus, isConfirmed, type ScenarioContext, type ScenarioFact } from "./types";
 import { displayOfUse } from "./uses";
 
+/**
+ * S204 non-determinism investigation (2026-09-26 QA): set
+ * NEXT_PUBLIC_QA_TRACE_CHANGE_OF_USE=1 to log how the possibleChangeOfUse
+ * fact survives (or is dropped by) reconciliation. Dev-only diagnostic —
+ * zero behavior change when unset. The S204 flip (same facts → Permiso Único
+ * REQUIRED+change_of_use tag vs VERIFY EXISTING) happens exactly where
+ * changeOfUseStatus is not "confirmed"/"none": reconcileProjectContext
+ * deletes change_of_use / occupancy_change, and scenarioToProjectContext
+ * declines to set them.
+ */
+const TRACE_CHANGE_OF_USE =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_QA_TRACE_CHANGE_OF_USE === "1";
+
+function traceChangeOfUse(ctx: ScenarioContext, decision: string, detail: Record<string, unknown>): void {
+  if (!TRACE_CHANGE_OF_USE) return;
+  const f = ctx.project.possibleChangeOfUse;
+  console.log(
+    "[qa-trace] change_of_use reconciliation",
+    JSON.stringify({
+      status: changeOfUseStatus(ctx),
+      decision,
+      fact: f
+        ? {
+            value: f.value,
+            source: f.source,
+            confidence: f.confidence,
+            evidence: (f.evidenceText ?? "").slice(0, 200),
+          }
+        : null,
+      ...detail,
+    })
+  );
+}
+
 function conv(f: ScenarioFact<unknown>, value: string | number | boolean): ProjectContextFact {
   const confidence = isConfirmed(f) ? Math.max(0.9, f.confidence) : Math.min(0.82, Math.max(0.6, f.confidence));
   return { value, confidence, evidence: f.evidenceText.slice(0, 300) };
@@ -56,6 +90,10 @@ export function scenarioToProjectContext(ctx: ScenarioContext): ProjectContext {
     set("change_of_use", pr.possibleChangeOfUse);
     set("occupancy_change", pr.possibleChangeOfUse);
   }
+  traceChangeOfUse(ctx, change === "confirmed" || change === "none" ? "set" : "not-set", {
+    change_of_use: out.change_of_use ?? null,
+    occupancy_change: out.occupancy_change ?? null,
+  });
   if (o.activity && isConfirmed(o.activity)) set("business_activity", o.activity, displayOfUse(o.activity.value).toLowerCase());
   set("employee_count", o.employees);
   return out;
@@ -72,6 +110,9 @@ export function reconcileProjectContext(flat: ProjectContext | undefined, ctx: S
   if (change !== "confirmed" && change !== "none") {
     delete out.change_of_use;
     delete out.occupancy_change;
+    traceChangeOfUse(ctx, "dropped (unconfirmed)", { had_flat_change_of_use: !!(flat && flat.change_of_use) });
+  } else {
+    traceChangeOfUse(ctx, "kept", { flat_change_of_use: (flat as Record<string, unknown> | undefined)?.change_of_use ?? null });
   }
   // A vague proposed use is not a proposed use.
   if (ctx.property.proposedUseSpecificity?.value === "insufficient") delete out.proposed_use;
