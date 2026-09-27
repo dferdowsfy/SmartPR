@@ -30,10 +30,13 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         { source: "/demo", destination: "/demo.html" },
         { source: "/demo/", destination: "/demo.html" },
-        // /demo/es serves the same bundle; the page reads location.pathname
-        // and starts the Spanish narrated walkthrough (see public/demo.html).
+        // /demo/es and /demo/en serve the same bundle; the page reads
+        // location.pathname and starts that language's narrated walkthrough
+        // with tap-to-start autoplay (see public/demo.html).
         { source: "/demo/es", destination: "/demo.html" },
         { source: "/demo/es/", destination: "/demo.html" },
+        { source: "/demo/en", destination: "/demo.html" },
+        { source: "/demo/en/", destination: "/demo.html" },
       ],
     };
   },
