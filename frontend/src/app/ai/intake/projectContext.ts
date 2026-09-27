@@ -461,19 +461,26 @@ export function projectContextAnswerToFacts(
           ]
         : [];
     case "existing_lease":
-      // QA 2026-09-24 06:00 (S174 live audit): the bakery owns its premises
-      // ("Will the business lease its commercial space?" answered No) but no
-      // Property Deed card appeared — RULE_0649 reads project_fact
-      // property_tenure=owned, and nothing on the confirmed wizard path ever
-      // establishes it (only the interpreter can, and its extraction is
-      // provenance-inert unless confirmed). A "No" here is a direct user
-      // statement that the business does not lease — i.e. it owns — so bridge
-      // to property_tenure=owned at confidence 1. A "Yes" applies nothing:
-      // RULE_0037 already renders the lease card from the question answer,
-      // and bridging "leased" would duplicate it via RULE_0648.
-      return typeof value === "boolean" && value === false
-        ? [{ key: "property_tenure", fact: { value: "owned", confidence: 1, evidence } }]
-        : [];
+      // QA 2026-09-26 21:00 (S232-S234 live audit, REG-TENURE-BRIDGE-001):
+      // the S174 bridge derived property_tenure=owned at confidence 1 from a
+      // "No" here ("does not lease — i.e. it owns"). Live evidence killed
+      // that entailment twice in one cycle: a restaurant whose description
+      // said "I haven't signed a lease yet" (No = undecided) and a mobile
+      // food truck (no property at all) both rendered a Property Deed card
+      // with an "Owned property" trigger the user never stated. A "No" is a
+      // negation of leasing, not a confirmation of ownership — deriving
+      // owned from it violates the 2026-09-19 provenance hard rule (only
+      // confirmed facts may trigger requirements) and generalizes the
+      // 2026-09-25 REG-TENURE-HOMEBASED-001 principle to every business: a
+      // No-to-lease carries no ownership information, period. So a "No"
+      // bridges nothing: tenure stays unknown unless the narrative
+      // interpreter (readOwnership: "we own the building") or another
+      // affirmative source establishes it. The deed card (RULE_0649,
+      // supporting evidence only) then appears solely for genuinely known
+      // owners. A "Yes" also bridges nothing: RULE_0037 already renders the
+      // lease card from the question answer, and bridging "leased" would
+      // duplicate it via RULE_0648.
+      return [];
     default:
       return [];
   }

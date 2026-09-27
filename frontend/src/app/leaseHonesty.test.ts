@@ -469,6 +469,10 @@ test("ai-prefill: writeKey-form prefill keys also render 'Derived answer'", () =
 // out of the discovery flow for Home-Based Business locations, mirroring
 // the online-only path (PHYSICAL_PRESENCE_QUESTIONS). A home-based user can
 // therefore never answer it, so the bridge can never invent "owned".
+// NOTE 2026-09-26 21:00 (REG-TENURE-BRIDGE-001): the bridge itself is now
+// removed — a No-to-lease bridges nothing for ANY business — so this filter
+// remains as defense-in-depth for an inapplicable question, not as the sole
+// guard against the phantom.
 test("home-based: commercial-lease question is not asked (never bridges to owned)", async () => {
   const { filterQuestionsByContext } = await import("./SmartPRIntake");
   const questions = [

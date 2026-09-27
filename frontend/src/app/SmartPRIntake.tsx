@@ -2979,24 +2979,14 @@ export default function SmartPRIntake() {
       }
     }
 
-    // Deterministic ownership bridge (QA 2026-09-24 06:00, S174): a "No" on
-    // "Will the business lease its commercial space?" means the business
-    // owns its premises — the user just stated it — so the ownership-
-    // evidence rule (RULE_0649, Property Deed as supporting evidence) fires
-    // even when the interpreter missed the tenure in the narrative. A "Yes"
-    // bridges nothing: the lease card already renders from the question
-    // answer (RULE_0037) and bridging "leased" would duplicate it via
-    // RULE_0648.
-    if (q.id === "existing_lease" && value === false) {
-      const facts = projectContextAnswerToFacts(q.id, value, language);
-      if (facts.length > 0) {
-        setProjectContext((prev) => {
-          const next = { ...prev };
-          for (const { key, fact } of facts) next[key] = fact;
-          return next;
-        });
-      }
-    }
+    // REG-TENURE-BRIDGE-001 (QA 2026-09-26 21:00): the former deterministic
+    // ownership bridge lived here — a "No" on "Will the business lease its
+    // commercial space?" used to assert property_tenure=owned at confidence
+    // 1. Removed: a No-to-lease is a negation of leasing, not a confirmation
+    // of ownership (provenance hard rule 2026-09-19). Live evidence: a
+    // restaurant that said "I haven't signed a lease yet" and a mobile food
+    // truck both rendered a phantom "Owned property" deed card.
+    // projectContextAnswerToFacts("existing_lease", false) now returns [].
 
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
     // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): a Yes

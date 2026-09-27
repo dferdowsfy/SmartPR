@@ -367,22 +367,35 @@ test("projectContextAnswerToFacts: a renovations Yes arms the project path (S150
   assert.ok(String(es[0].fact.evidence).includes("entrevista guiada"));
 });
 
-test("projectContextAnswerToFacts: an existing_lease No bridges property_tenure=owned (S174)", () => {
-  // 2026-09-24 06:00 QA cycle (S174 live audit): the bakery answered "No"
-  // to "Will the business lease its commercial space?" but no Property Deed
-  // card appeared — RULE_0649 reads project_fact property_tenure=owned and
-  // nothing on the confirmed wizard path established it. A "No" here is a
-  // direct user statement of ownership, so it bridges at confidence 1.
+test("projectContextAnswerToFacts: an existing_lease No bridges NOTHING (REG-TENURE-BRIDGE-001)", () => {
+  // 2026-09-26 21:00 QA cycle (live audit S232-S234): the S174 bridge derived
+  // property_tenure=owned at confidence 1 from a "No" on "Will the business
+  // lease its commercial space?" — a negation of leasing, not a confirmation
+  // of ownership. Live evidence: a restaurant whose description said "I
+  // haven't signed a lease yet" (No = undecided) and a mobile food truck (no
+  // property at all) both rendered a Property Deed card with an "Owned
+  // property" trigger the user never stated — an unsupported inference
+  // presented as fact (provenance hard rule 2026-09-19; generalizes
+  // REG-TENURE-HOMEBASED-001 to every business). A "No" now applies nothing:
+  // tenure stays unknown unless the narrative interpreter (readOwnership:
+  // "we own the building") or another affirmative source establishes it.
   const en = "en" as const;
-  const facts = projectContextAnswerToFacts("existing_lease", false, en);
-  assert.equal(facts.length, 1);
-  assert.equal(facts[0].key, "property_tenure");
-  assert.equal(facts[0].fact.value, "owned");
-  assert.equal(facts[0].fact.confidence, 1);
-  assert.ok(String(facts[0].fact.evidence).includes("guided intake"));
+  assert.deepEqual(projectContextAnswerToFacts("existing_lease", false, en), []);
   // A "Yes" applies nothing — RULE_0037 already renders the lease card from
   // the question answer; bridging "leased" would duplicate it via RULE_0648.
   assert.deepEqual(projectContextAnswerToFacts("existing_lease", true, en), []);
+});
+
+test("REG-TENURE-BRIDGE-001: No-to-lease leaves tenure unknown, so RULE_0649 never fires", () => {
+  // End-to-end at the project-context level: after a "No" on existing_lease
+  // with no other tenure signal, no property_tenure fact exists for the
+  // engine to match — the deed card cannot render. (Engine-level probe
+  // 2026-09-26: Q_EXISTING_LEASE=false with no property_tenure in
+  // projectContext yields no DOC_PROPERTY_DEED.)
+  const en = "en" as const;
+  const facts = projectContextAnswerToFacts("existing_lease", false, en);
+  assert.ok(!facts.some((f) => f.key === "property_tenure"),
+    "no tenure fact may be derived from a lease negation");
 });
 
 test("mergeProjectContext: restated facts win, otherwise higher confidence wins", () => {
