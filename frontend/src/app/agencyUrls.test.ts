@@ -243,3 +243,36 @@ describe("REG-DOMICILIARY-CITATION-001: domiciliary-use permit cites a real OGPe
     assert.match(d.citation_note ?? "", /not an independent permit/i);
   });
 });
+
+describe("REG-GUIDE-PLACEHOLDER-004: ambulant-business license cites primary law", () => {
+  // 2026-09-27 00:00 QA cycle (S237, Cataño food truck): the live card showed
+  // the plain-English sentence "Mobile food units need the municipal
+  // ambulant-business license for each municipality of operation" as its
+  // SOURCE row at page confidence — guidance copy masquerading as a legal
+  // citation. §14.7 fix: Ley 81-1991, Artículo 20.003 (21 L.P.R.A. § 4952)
+  // "Reglamentación de Negocios Ambulantes" — "Los municipios reglamentarán
+  // la ubicación y operación de negocios ambulantes dentro de sus respectivos
+  // límites territoriales" — verified verbatim against agencias.pr.gov
+  // (official Ley de Municipios Autónomos PDF) and LexJuris. Pin the sourced
+  // citation so it never regresses to filler.
+  it("cites Ley 81-1991 Art. 20.003 at official confidence with a government URL", () => {
+    const docs = KB.documents as Array<{
+      id: string; citation?: string; citation_url?: string | null;
+      citation_confidence?: string;
+    }>;
+    const d = docs.find((x) => x.id === "DOC_AMBULANT_BUSINESS_LICENSE");
+    assert.ok(d, "DOC_AMBULANT_BUSINESS_LICENSE must exist in the KB");
+    assert.match(d.citation ?? "", /Ley 81-1991/);
+    assert.match(d.citation ?? "", /Art[ií]culo 20\.003/);
+    assert.match(d.citation ?? "", /4952/);
+    assert.equal(d.citation_url, "https://agencias.pr.gov/agencias/JACL/Documents/LeyesReglamentos/Ley de Municipios Autonomos.pdf");
+    assert.equal(d.citation_confidence, "official");
+  });
+
+  it("no longer carries the model-written generic sentence as its citation", () => {
+    const docs = KB.documents as Array<{ id: string; citation?: string }>;
+    const d = docs.find((x) => x.id === "DOC_AMBULANT_BUSINESS_LICENSE");
+    assert.ok(d);
+    assert.doesNotMatch(d.citation ?? "", /Mobile food units need/i);
+  });
+});

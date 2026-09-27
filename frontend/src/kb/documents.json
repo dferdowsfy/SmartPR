@@ -888,9 +888,10 @@
     "download_url": null,
     "download_kind": null,
     "download_note": null,
-    "citation": "Mobile food units need the municipal ambulant-business license for each municipality of operation",
-    "citation_url": null,
-    "citation_confidence": "page"
+    "citation": "Ley 81-1991, Artículo 20.003 — Reglamentación de Negocios Ambulantes (21 L.P.R.A. § 4952)",
+    "citation_url": "https://agencias.pr.gov/agencias/JACL/Documents/LeyesReglamentos/Ley de Municipios Autonomos.pdf",
+    "citation_confidence": "official",
+    "citation_source": null
   },
   {
     "id": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
