@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         { source: "/demo", destination: "/demo.html" },
         { source: "/demo/", destination: "/demo.html" },
+        // /demo/es serves the same bundle; the page reads location.pathname
+        // and starts the Spanish narrated walkthrough (see public/demo.html).
+        { source: "/demo/es", destination: "/demo.html" },
+        { source: "/demo/es/", destination: "/demo.html" },
       ],
     };
   },
