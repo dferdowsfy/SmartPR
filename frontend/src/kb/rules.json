@@ -8679,5 +8679,31 @@
     "reason": "QA 2026-09-25 09:00 cycle (S197, Bayamón used-car dealership): the KB had no dealer-license rule for car dealerships — a HIGH-severity false negative. Primary source (daco.pr.gov/consumidores, verified 2026-09-25): 'A través del Registro único de dealers, el DACO y el DTOP colaboran...' / 'verifica en el Registro Único los concesionarios que tienen licencia para operar'. Only verified fields modeled; application form/fee/reglamento number NOT yet verified — see CONTENT_REQUIRES_RESEARCH follow-up."
    }
   ]
+ },
+ {
+  "id": "RULE_0700",
+  "rule_type": "municipality",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FOREIGN_CORPORATION_AUTHORIZATION",
+  "included_entity_types": [
+   "foreign_corporation"
+  ],
+  "requires_business": true,
+  "compliance_mode": "verify_existing",
+  "verification": "verified",
+  "citation": "Ley 164-2009, Art. 13.01 (14 L.P.R.A. § 3801) — las corporaciones extranjeras deben obtener el Certificado de Autorización del Departamento de Estado antes de hacer negocios en Puerto Rico.",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Corporaciones%20Privadas/164-2009/164-2009.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "change_log": [
+   {
+    "date": "2026-09-27",
+    "change": "New rule: foreign_corporation entities must obtain the Certificate of Authorization to do business in PR.",
+    "reason": "QA 2026-09-27 15:00 cycle (S250, Caguas PR sales office of a Delaware corporation): DOC_FOREIGN_CORPORATION_AUTHORIZATION existed in the KB with a statute-confidence citation (Ley 164-2009 Art. 13.01) but zero rules fired it — the document was unreachable, a HIGH-severity false negative for any foreign entity entering PR. New positive entity scoping (included_entity_types, REG-FOREIGN-AUTH-001) fires the existing verified document for foreign_corporation entities only; unknown entity types never trigger. compliance_mode verify_existing per the deliberate 2026-09-18 posture (existing foreign operators verify their certificate; new entrants get REQUIRED). Generalizes beyond the test: enables entity-keyed rules as a class."
+   }
+  ]
  }
 ]

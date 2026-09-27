@@ -100,6 +100,14 @@ export interface KBRule {
    */
   excluded_entity_types?: string[] | string | null;
   /**
+   * Optional POSITIVE entity-type scoping (REG-FOREIGN-AUTH-001): the rule
+   * fires ONLY for these canonical entity types (e.g. the foreign-corporation
+   * authorization). An unknown/null entity type never triggers — the engine
+   * stays silent rather than inventing an entity-keyed requirement.
+   * Data-driven — the engine interprets it, never hardcodes per-document law.
+   */
+  included_entity_types?: string[] | string | null;
+  /**
    * Optional business-type scoping: the rule never fires for these business
    * type ids (e.g. the universal municipal-patente rule for farms and
    * nonprofits, which have exemption questions handled by heuristic rules).
@@ -443,6 +451,15 @@ export interface EngineResult {
 const truthy = (v: boolean | string | undefined): boolean =>
   v === true || v === "true" || v === "yes" || v === "Yes";
 
+/** Normalize a rule's included_entity_types to a list (accepts arrays from
+ *  the KB JSON and comma-separated strings from admin authoring). */
+function includedEntityTypes(rule: KBRule): string[] {
+  const v = rule.included_entity_types;
+  if (!v) return [];
+  if (Array.isArray(v)) return v.map(String).map((s) => s.trim()).filter(Boolean);
+  return String(v).split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 /** Normalize a rule's excluded_entity_types to a list (accepts arrays from
  *  the KB JSON and comma-separated strings from admin authoring). */
 function excludedEntityTypes(rule: KBRule): string[] {
@@ -669,6 +686,16 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     // resulting items conditional rather than required.
     if (input.entityType && excludedEntityTypes(rule).includes(input.entityType)) {
       continue;
+    }
+    // Positive entity scoping (REG-FOREIGN-AUTH-001): a rule carrying
+    // included_entity_types fires ONLY for those legal forms. An unknown or
+    // null entity type never triggers — the engine stays silent rather than
+    // inventing an entity-keyed requirement.
+    const included = includedEntityTypes(rule);
+    if (included.length > 0) {
+      if (!input.entityType || !included.includes(input.entityType)) {
+        continue;
+      }
     }
     // Business-type-scoped rules never fire for an excluded business type
     // (e.g. universal patente for farms/nonprofits with exemption questions).

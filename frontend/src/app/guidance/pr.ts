@@ -20,6 +20,10 @@ export const PR_GUIDANCE_SOURCES = {
   // Organization") because both legal forms shared one source. Corporations
   // and LLCs now cite their own formation source.
   entityCorp: source("SRC_GUIDANCE_ENTITY_CORP", "Departamento de Estado", "Corporations — incorporation by Certificate of Incorporation", "https://www.estado.pr.gov/corporaciones", "A corporation comes into existence when the Department of State accepts its Certificate of Incorporation (Ley 164-2009)."),
+  // REG-FOREIGN-AUTH-001 (2026-09-27 QA): foreign corporations doing business
+  // in PR need the Certificate of Authorization (Ley 164-2009 Art. 13.01),
+  // not a new incorporation.
+  entityForeign: source("SRC_GUIDANCE_ENTITY_FOREIGN", "Departamento de Estado", "Foreign corporations — Certificate of Authorization to do business in PR", "https://www.estado.pr.gov/formularios-para-corporaciones", "A corporation formed outside Puerto Rico obtains a Certificate of Authorization from the Department of State before doing business in Puerto Rico (Ley 164-2009, Art. 13.01)."),
   cfse: source("SRC_GUIDANCE_CFSE", "Corporación del Fondo del Seguro del Estado", "Employer information — workers compensation coverage", "https://old.fondopr.com/patronos/informacion-general/", "Employers hire compensated workers; insured employers formalize a CFSE policy, report payroll, risks and locations, and pay premiums."),
   zoning: source("SRC_GUIDANCE_ZONING", "OGPe", "Single Business Portal — land use / zoning consultation", "https://www.permisos.pr.gov/", "SBP's location consultation confirms the permitted use classification for the premises before a use permit is issued."),
   health: source("SRC_GUIDANCE_HEALTH", "Departamento de Salud", "Reglamento General de Salud Ambiental — sanitary permit for establishments", "https://www.salud.pr.gov/", "Establishments handling food or serving the public are subject to sanitary-permit inspection under environmental health regulation."),
@@ -229,6 +233,9 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // dealer-license concept (daco.pr.gov/consumidores — Registro Único de
   // Dealers; dealers must hold a DACO license to operate).
   DOC_DACO_DEALER_LICENSE: { en: ["DACO", "dealer license", "car dealer", "dealership", "concesionario"], es: ["DACO", "licencia de dealer", "dealer", "concesionario", "vehículos de motor"] },
+  // REG-FOREIGN-AUTH-001 (2026-09-27 QA): subject terms for the foreign-
+  // corporation authorization concept (Ley 164-2009 Art. 13.01; CORPREG03).
+  DOC_FOREIGN_CORPORATION_AUTHORIZATION: { en: ["foreign corporation", "certificate of authorization", "authorization to do business", "CORPREG03"], es: ["corporación extranjera", "certificado de autorización", "hacer negocios en puerto rico", "CORPREG03"] },
   DOC_MERCHANT_REGISTRATION: { en: ["merchant", "suri", "ivu"], es: ["comerciante", "suri", "ivu"] },
   DOC_PERMISO_UNICO: { en: ["permit"], es: ["permiso", "solicitud en sbp"] },
   DOC_PATENTE_MUNICIPAL: { en: ["patent", "municipal tax"], es: ["patente", "contributivo municipal"] },
@@ -495,6 +502,17 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The Certificate of Organization is the filing that brings the limited liability company into legal existence in Puerto Rico, recorded with the Department of State.", "El Certificado de Organización es la radicación que le da existencia legal a la compañía de responsabilidad limitada en Puerto Rico, registrada ante el Departamento de Estado."),
     text("Draft the certificate with the LLC's name, registered office, and resident agent, then file it with the Department of State; keep the stamped acceptance as the formation proof.", "Prepara el certificado con el nombre de la LLC, la oficina registrada y el agente residente, y radícalo en el Departamento de Estado; conserva la aceptación ponchada como prueba de constitución."),
     text("Once recorded, the LLC can obtain its EIN and enter contracts in its own name; until then the owners act in their personal capacity.", "Una vez registrado, la LLC puede sacar su EIN y contratar en su propio nombre; hasta entonces los dueños actúan a título personal."),
+  ]),
+  // REG-FOREIGN-AUTH-001 (2026-09-27 QA): DOC_FOREIGN_CORPORATION_AUTHORIZATION
+  // existed in the KB with a statute-confidence citation (Ley 164-2009 Art.
+  // 13.01) but no rule fired it and no guidance concept covered it. Grounded
+  // in the KB's own verified fields: the CORPREG03 official form PDF and the
+  // certificate-of-existence-from-home-jurisdiction filing requirement.
+  DOC_FOREIGN_CORPORATION_AUTHORIZATION: concept("DOC_FOREIGN_CORPORATION_AUTHORIZATION", [[condition("entityType", "Entity: Foreign Corporation", "Entidad: Corporación extranjera", "foreign_corporation")]], [PR_GUIDANCE_SOURCES.entityForeign], [
+    text("A corporation formed outside Puerto Rico does not re-incorporate in PR; it obtains a Certificate of Authorization from the Department of State before doing business in Puerto Rico (Ley 164-2009, Art. 13.01).", "Una corporación constituida fuera de Puerto Rico no se reincorpora en PR; obtiene un Certificado de Autorización del Departamento de Estado antes de hacer negocios en Puerto Rico (Ley 164-2009, Art. 13.01)."),
+    text("The certificate of authorization is the corporation's PR operating authority — distinct from registering with Hacienda, obtaining an EIN, or the municipal patent.", "El certificado de autorización es la autoridad operativa de la corporación en PR — distinta del registro ante Hacienda, el EIN o la patente municipal."),
+    text("The application (Form CORPREG03) requires a certificate of existence (good standing) from the corporation's home jurisdiction, attached to the filing.", "La solicitud (Formulario CORPREG03) requiere un certificado de existencia (good standing) de la jurisdicción de origen de la corporación, adjunto a la radicación."),
+    text("An existing foreign corporation already operating in PR verifies its current certificate rather than filing anew.", "Una corporación extranjera que ya opera en PR verifica su certificado vigente en lugar de radicar uno nuevo."),
   ]),
   DOC_WORKERS_COMP: concept("DOC_WORKERS_COMP", [[employee]], [PR_GUIDANCE_SOURCES.cfse], [
     text("Hiring workers creates employer responsibilities for workplace-injury coverage through CFSE, subject to the applicable coverage rules.", "Contratar trabajadores conlleva responsabilidades patronales de cobertura por lesiones ocupacionales mediante la CFSE, según las reglas aplicables."),

@@ -353,3 +353,31 @@ test("Freight Forwarding in San Juan (no airport flag) gets no airport docs", ()
   assert.ok(lacks(docs, "DOC_CUSTOMS_BROKER_BOND", "DOC_TSA_KNOWN_SHIPPER", "DOC_AIRPORT_CONCESSION"),
     "airport_host composites must NOT fire in San Juan (no flag)");
 });
+
+// REG-FOREIGN-AUTH-001 (2026-09-27 QA): positive entity scoping. A rule
+// carrying included_entity_types fires ONLY for those legal forms; an
+// unknown/null entity type never triggers.
+const runWithEntity = (businessTypeName: string, entityType: string | null, answers: Record<string, boolean> = {}, municipalityName = "San Juan") => {
+  const input: EngineInput = { municipalityName, businessTypeName, answers, entityType };
+  return runRulesEngine(KB, input).debug.documentsGenerated;
+};
+
+test("included_entity_types: foreign corporation gets the authorization doc (RULE_0700)", () => {
+  const docs = runWithEntity("Consulting Firm", "foreign_corporation", {}, "Caguas");
+  assert.ok(has(docs, "DOC_FOREIGN_CORPORATION_AUTHORIZATION"),
+    "foreign_corporation must trigger DOC_FOREIGN_CORPORATION_AUTHORIZATION");
+});
+
+test("included_entity_types: other legal forms never get the foreign card", () => {
+  for (const et of ["limited_liability_company", "stock_corporation", "sole_proprietorship", "partnership"]) {
+    const docs = runWithEntity("Consulting Firm", et, {}, "Caguas");
+    assert.ok(lacks(docs, "DOC_FOREIGN_CORPORATION_AUTHORIZATION"),
+      `${et} must never trigger the foreign-corporation authorization`);
+  }
+});
+
+test("included_entity_types: unknown/null entity stays silent (no invention)", () => {
+  const docs = runWithEntity("Consulting Firm", null, {}, "Caguas");
+  assert.ok(lacks(docs, "DOC_FOREIGN_CORPORATION_AUTHORIZATION"),
+    "an unknown entity type must not trigger an entity-keyed requirement");
+});

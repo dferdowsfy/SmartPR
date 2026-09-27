@@ -4068,6 +4068,112 @@ test("CASE AS: a car dealership gets the DACO dealer license — REQUIRED when n
   );
 });
 
+test("CASE AV: REG-FOREIGN-AUTH-001 — a foreign corporation gets the Certificate of Authorization, never a PR formation card", () => {
+  // 2026-09-27 15:00 QA cycle (S250, Caguas sales office of a Delaware
+  // corporation): DOC_FOREIGN_CORPORATION_AUTHORIZATION existed in the KB
+  // with a statute-confidence citation (Ley 164-2009 Art. 13.01, 14 L.P.R.A.
+  // § 3801) but ZERO rules fired it — the document was unreachable, a
+  // HIGH-severity false negative for any foreign entity entering PR.
+  // RULE_0700 keys the existing verified document on the new positive entity
+  // scoping (included_entity_types); unknown entity types never trigger.
+  // compliance_mode verify_existing per the deliberate 2026-09-18 posture
+  // (existing foreign operators verify their certificate; new entrants get
+  // REQUIRED). The EN/ES guidance concept + keyword index mirror the
+  // REG-DEALER-DACO-001 precedent.
+  const DOC_AUTH = "DOC_FOREIGN_CORPORATION_AUTHORIZATION";
+
+  // 1) New foreign corporation: REQUIRED, via RULE_0700 — and never told to
+  //    re-incorporate or form an LLC in PR.
+  const fresh = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Consulting Firm",
+      businessStatus: "new",
+      entityType: "foreign_corporation",
+      entityNotFormed: true,
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  const card = byId(fresh, DOC_AUTH);
+  assert.ok(
+    card,
+    "a new foreign corporation must get the Certificate of Authorization card"
+  );
+  assert.equal(card.source_rule_id, "RULE_0700");
+  assert.equal(
+    card.applicability,
+    "required",
+    "a new foreign entrant must obtain the authorization"
+  );
+  assert.equal(
+    byId(fresh, "DOC_CERT_INCORPORATION"),
+    undefined,
+    "a foreign corporation must never be told to incorporate in PR"
+  );
+  assert.equal(
+    byId(fresh, "DOC_CERT_ORGANIZATION"),
+    undefined,
+    "a foreign corporation must never be told to form a PR LLC"
+  );
+
+  // 2) Existing foreign corporation: verify_existing posture (the deliberate
+  //    2026-09-18 posture for operating businesses).
+  const operating = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Consulting Firm",
+      businessStatus: "existing",
+      entityType: "foreign_corporation",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "existing"
+  ).classified;
+  const existingCard = byId(operating, DOC_AUTH);
+  assert.ok(
+    existingCard,
+    "an existing foreign corporation must still see the authorization card"
+  );
+  assert.equal(
+    existingCard.applicability,
+    "verify_existing",
+    "an existing foreign operator verifies its certificate"
+  );
+
+  // 3) Negative controls: an LLC never gets the foreign card, and an unknown
+  //    entity type stays silent rather than inventing an entity-keyed card.
+  const llc = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Consulting Firm",
+      businessStatus: "new",
+      entityType: "limited_liability_company",
+      entityNotFormed: true,
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(llc, DOC_AUTH),
+    undefined,
+    "an LLC must never receive the foreign-corporation authorization card"
+  );
+  const unknownEntity = classify(
+    {
+      municipalityName: "Caguas",
+      businessTypeName: "Consulting Firm",
+      businessStatus: "new",
+      answers: { Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true },
+    },
+    "new"
+  ).classified;
+  assert.equal(
+    byId(unknownEntity, DOC_AUTH),
+    undefined,
+    "an unknown entity type must stay silent on the foreign card"
+  );
+});
+
 test("CASE AT: REG-PROFESSION-AGENCY-003 — the veterinarian license names Departamento de Salud, never the Juntas Examinadoras", () => {
   // 2026-09-25 09:00 QA cycle (S196, Ponce vet clinic; live-confirmed): the
   // professional-license card rendered the "Department of State Examining
