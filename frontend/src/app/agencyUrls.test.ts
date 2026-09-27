@@ -276,3 +276,46 @@ describe("REG-GUIDE-PLACEHOLDER-004: ambulant-business license cites primary law
     assert.doesNotMatch(d.citation ?? "", /Mobile food units need/i);
   });
 });
+
+describe("REG-GUIDE-PLACEHOLDER-005: content-completeness pass for three high-confidence docs", () => {
+  // 2026-09-27 06:00 QA cycle (S242, Toa Baja STR / S237 ambulant class):
+  // DOC_HACIENDA_TAX_COMPLIANCE, DOC_AMBULANT_BUSINESS_LICENSE and
+  // DOC_DOMICILIARY_USE_PERMIT lacked agency_url/agency_note and/or
+  // download_url/download_note coverage — part of the standing 24-doc
+  // content pass. All three fields below are grounded in authoritative,
+  // already-verified KB data (same conventions as DOC_PATENTE_MUNICIPAL /
+  // DOC_MERCHANT_REGISTRATION / DOC_PERMISO_UNICO); nothing is invented.
+  it("DOC_HACIENDA_TAX_COMPLIANCE is obtainable via SURI (filing portal)", () => {
+    const docs = KB.documents as Array<{
+      id: string; download_url?: string | null; download_kind?: string | null;
+      download_note?: string | null;
+    }>;
+    const d = docs.find((x) => x.id === "DOC_HACIENDA_TAX_COMPLIANCE");
+    assert.ok(d, "DOC_HACIENDA_TAX_COMPLIANCE must exist in the KB");
+    assert.equal(d.download_url, "https://suri.hacienda.pr.gov");
+    assert.equal(d.download_kind, "filing_portal");
+    assert.match(d.download_note ?? "", /SURI/);
+  });
+
+  it("DOC_AMBULANT_BUSINESS_LICENSE carries municipal-issuance guidance", () => {
+    const docs = KB.documents as Array<{
+      id: string; agency_note?: string | null; download_note?: string | null;
+    }>;
+    const d = docs.find((x) => x.id === "DOC_AMBULANT_BUSINESS_LICENSE");
+    assert.ok(d);
+    assert.match(d.agency_note ?? "", /each municipality issues/i);
+    assert.match(d.download_note ?? "", /Ley 81-1991/);
+  });
+
+  it("DOC_DOMICILIARY_USE_PERMIT is filed via the Permiso Único portal", () => {
+    const docs = KB.documents as Array<{
+      id: string; download_url?: string | null; download_kind?: string | null;
+      download_note?: string | null;
+    }>;
+    const d = docs.find((x) => x.id === "DOC_DOMICILIARY_USE_PERMIT");
+    assert.ok(d);
+    assert.equal(d.download_url, "https://www.permisos.pr.gov/");
+    assert.equal(d.download_kind, "filing_portal");
+    assert.match(d.download_note ?? "", /Permiso [ÚU]nico/);
+  });
+});
