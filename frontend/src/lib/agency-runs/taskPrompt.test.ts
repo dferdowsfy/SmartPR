@@ -356,6 +356,14 @@ describe("buildAgencyTaskPrompt live-portal fixes (2026-09-28 OGPe QA run)", () 
     assert.ok(rendered.includes("surface its questions as REQUIRED_FIELDS in chat"));
   });
 
+  it("OGPe playbook documents the email one-time-code login step", () => {
+    const config = getFilingConfig("OGPE_PERMISO_UNICO");
+    const rendered = renderPlaybookProcedure(config);
+    assert.ok(rendered);
+    assert.ok(rendered.includes("DoNotReply@ddec.pr.gov"));
+    assert.ok(rendered.includes("Never invent or reuse a code"));
+  });
+
   it("OGPe playbook records the 2026-09-28 live QA quirks", () => {
     const config = getFilingConfig("OGPE_PERMISO_UNICO");
     const quirks = config.playbook?.quirks_en ?? [];
