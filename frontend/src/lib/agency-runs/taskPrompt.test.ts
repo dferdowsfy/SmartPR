@@ -364,3 +364,13 @@ describe("buildAgencyTaskPrompt live-portal fixes (2026-09-28 OGPe QA run)", () 
     assert.ok(quirks.some((q) => q.includes("¿A nombre de quién deben salir los trámites de este proyecto?")));
   });
 });
+
+describe("buildAgencyTaskPrompt no-invented-entities (2026-09-28)", () => {
+  it("never invents a company or website the human declines to provide", () => {
+    const config = getFilingConfig("OGPE_PERMISO_UNICO");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("do NOT invent one"));
+    assert.ok(task.includes("a nombre de usted"));
+    assert.ok(task.includes("https://ejemplo.invalid"));
+  });
+});
