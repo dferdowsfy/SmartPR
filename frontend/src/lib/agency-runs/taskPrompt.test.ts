@@ -326,3 +326,41 @@ describe("buildAgencyTaskPrompt fill reliability", () => {
     assert.ok(task.includes("if the passport's entity type matches no visible option"));
   });
 });
+
+describe("buildAgencyTaskPrompt live-portal fixes (2026-09-28 OGPe QA run)", () => {
+  it("instructs custom-dropdown handling: click-to-open, verify, pause on empty lists", () => {
+    const config = getFilingConfig("OGPE_PERMISO_UNICO");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("CUSTOM DROPDOWNS"));
+    assert.ok(task.includes("click the dropdown control to open its option list"));
+    assert.ok(task.includes("Read the control's displayed value back to verify the pick stuck"));
+    // Empty option list (e.g. new-account company selector) must pause, never silently retry.
+    assert.ok(task.includes("option list is EMPTY"));
+    assert.ok(task.includes("do NOT retry"));
+    assert.ok(task.includes("Seleccione un valor de la lista"));
+  });
+
+  it("mandates the post-login sweep: first authenticated screen is a new form step", () => {
+    const config = getFilingConfig("OGPE_PERMISO_UNICO");
+    const task = buildAgencyTaskPrompt({ config, passport: null });
+    assert.ok(task.includes("POST-LOGIN SWEEP"));
+    assert.ok(task.includes("the page you land on is a NEW step"));
+    assert.ok(task.includes("Never silently skip a question batch"));
+  });
+
+  it("OGPe playbook login step tells the agent to surface post-login questions in chat", () => {
+    const config = getFilingConfig("OGPE_PERMISO_UNICO");
+    const rendered = renderPlaybookProcedure(config);
+    assert.ok(rendered);
+    assert.ok(rendered.includes("first authenticated screen is a NEW form step"));
+    assert.ok(rendered.includes("surface its questions as REQUIRED_FIELDS in chat"));
+  });
+
+  it("OGPe playbook records the 2026-09-28 live QA quirks", () => {
+    const config = getFilingConfig("OGPE_PERMISO_UNICO");
+    const quirks = config.playbook?.quirks_en ?? [];
+    assert.ok(quirks.some((q) => q.includes("custom (non-native) dropdowns")));
+    assert.ok(quirks.some((q) => q.includes("Compañías") && q.includes("EMPTY")));
+    assert.ok(quirks.some((q) => q.includes("¿A nombre de quién deben salir los trámites de este proyecto?")));
+  });
+});

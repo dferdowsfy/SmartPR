@@ -1350,13 +1350,13 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     goalEn: "File a Permiso Único (single business permit) application",
     goalEs: "Radicar una solicitud de Permiso Único",
     procedureEn: [
-      "Open sbp.ogpe.pr.gov (Single Business Portal). If a login / profile gate appears: PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS — the human signs in in the browser via Take over. Never collect or type credentials; do not loop on login",
+      "Open sbp.ogpe.pr.gov (Single Business Portal). If a login / profile gate appears: PAUSE_USER_LOGIN with PORTAL_STEP kind=login and NO REQUIRED_FIELDS for the credential gate itself — the human signs in in the browser via Take over. Never collect or type credentials; do not loop on login. The first screen AFTER login is a separate form step: prefill it from the passport and surface its questions in chat.",
       "After landing authenticated, start a new Permiso Único application from the portal home / services path the UI actually shows",
       "Prefill business identity, physical location, municipality, phone, and contact from the Business Passport before pausing for anything the passport cannot fill",
       "Pause for document uploads, captcha, or payment as needed; stop at pre-submit review — never click final submit",
     ],
     procedureEs: [
-      "Abra sbp.ogpe.pr.gov (Single Business Portal). Si aparece un muro de login / perfil: PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS — la persona inicia sesión en el navegador con Tomar el control. Nunca recoja ni escriba credenciales; no cicle en el login",
+      "Abra sbp.ogpe.pr.gov (Single Business Portal). Si aparece un muro de login / perfil: PAUSE_USER_LOGIN con PORTAL_STEP kind=login y SIN REQUIRED_FIELDS para el muro de credenciales en sí — la persona inicia sesión en el navegador con Tomar el control. Nunca recoja ni escriba credenciales; no cicle en el login. La primera pantalla DESPUÉS del login es un paso de formulario aparte: rellénelo desde el pasaporte y muestre sus preguntas en el chat.",
       "Tras aterrizar autenticado, inicie una nueva solicitud de Permiso Único desde el inicio / servicios que la UI muestre",
       "Rellene identidad del negocio, ubicación física, municipio, teléfono y contacto desde el Pasaporte de Negocio antes de pausar por lo que el pasaporte no pueda llenar",
       "Pause para adjuntos, captcha o pago según sea necesario; deténgase en la revisión previa al envío — nunca haga clic en enviar final",
@@ -1407,8 +1407,8 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     verification: {
       status: "partially_observed",
       evidence:
-        "Only pre-login Single Business Portal screens were live-verified; every post-login step comes from OGPe's official Permiso Único manual. Uploads, payment and submission never observed.",
-      checkedAt: "2026-09-15",
+        "Pre-login Single Business Portal screens live-verified. 2026-09-28 live QA run observed the post-login Proyecto wizard (Dueño del Proyecto: '¿A nombre de quién deben salir los trámites?' question, custom non-native dropdowns, empty Compañías selector on a brand-new account). Remaining post-login steps still come from OGPe's official Permiso Único manual. Uploads, payment and submission never observed.",
+      checkedAt: "2026-09-28",
     },
     requirementIds: ["DOC_PERMISO_UNICO"],
     /**
@@ -1444,9 +1444,9 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
           expectedState_en: "Authenticated into the Single Business Portal",
           expectedState_es: "Autenticado en el Single Business Portal",
           notes_en:
-            "Hard login gate before any application step. Pause with PORTAL_STEP kind=login — the human signs in directly in the browser via Take over. Never type or collect credentials.",
+            "Hard login gate before any application step. Pause with PORTAL_STEP kind=login — the human signs in directly in the browser via Take over. Never type or collect credentials. After the human signs in and the run resumes, the first authenticated screen is a NEW form step: prefill it from the passport and surface its questions as REQUIRED_FIELDS in chat — do not skip them.",
           notes_es:
-            "Muro de inicio de sesión antes de cualquier paso de solicitud. Pause con PORTAL_STEP kind=login — la persona inicia sesión directamente en el navegador con Tomar el control. Nunca escriba ni recoja credenciales.",
+            "Muro de inicio de sesión antes de cualquier paso de solicitud. Pause con PORTAL_STEP kind=login — la persona inicia sesión directamente en el navegador con Tomar el control. Nunca escriba ni recoja credenciales. Después de que la persona inicie sesión y se reanude la gestión, la primera pantalla autenticada es un NUEVO paso de formulario: rellénelo desde el pasaporte y muestre sus preguntas como REQUIRED_FIELDS en el chat — no las omita.",
         },
         {
           id: "crear_solicitud",
@@ -1705,12 +1705,18 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
         "Hard Single Business Portal login gate before any application step.",
         "Required anejos (uploads) block progress before payment.",
         "Payment is non-refundable: regular evaluation 10% initially and 90% after analyst validation; ministerial 100% initially; card or ACH.",
+        "2026-09-28 live QA run: SBP uses custom (non-native) dropdowns — click the control to open the option list, then click the option; native value setters do not work on them.",
+        "2026-09-28 live QA run: the 'Compañías' company selector is EMPTY on a brand-new account (no companies registered) — the human must add/select a company during takeover; report the on-screen validation message instead of retrying.",
+        "2026-09-28 live QA run: the post-login Proyecto wizard asks '¿A nombre de quién deben salir los trámites de este proyecto?' (Usted / De otra persona / De una compañía) before project details.",
       ],
       quirks_es: [
         "Solo las pantallas previas al inicio de sesión se verificaron en vivo; los pasos posteriores provienen del manual oficial de Permiso Único de OGPe — no describa el comportamiento posterior como verificado en vivo.",
         "Muro de inicio de sesión del Single Business Portal antes de cualquier paso de solicitud.",
         "Los anejos requeridos (adjuntos) bloquean el avance antes del pago.",
         "El pago no es reembolsable: evaluación regular 10% inicial y 90% tras la validación del analista; ministerial 100% inicial; tarjeta o ACH.",
+        "Prueba QA en vivo 2026-09-28: SBP usa menús desplegables personalizados (no nativos) — haga clic en el control para abrir la lista y luego en la opción; los setters nativos no funcionan en ellos.",
+        "Prueba QA en vivo 2026-09-28: el selector de 'Compañías' está VACÍO en una cuenta nueva (sin compañías registradas) — el humano debe agregar/seleccionar una compañía durante la toma de control; reporte el mensaje de validación en pantalla en vez de reintentar.",
+        "Prueba QA en vivo 2026-09-28: el asistente Proyecto tras el login pregunta '¿A nombre de quién deben salir los trámites de este proyecto?' (Usted / De otra persona / De una compañía) antes de los detalles del proyecto.",
       ],
     },
   },
