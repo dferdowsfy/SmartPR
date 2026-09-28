@@ -1392,3 +1392,60 @@ The graph must contain, for short_term_rental < 90 days:
 
 Do NOT invent a Toa Baja-specific (or any municipality-specific) STR permit
 without an authoritative municipal source establishing one.
+
+# 30. SUBMISSION-PATH QA (added 2026-09-28)
+
+Regulatory correctness (does SmartPR identify the right requirements?) is only
+half the product. The other half is: for each requirement SmartPR surfaces,
+does Clara know a REAL path to submission with the issuing agency — or is she
+improvising? This section is one dimension of QA, not the whole program; it
+runs inside the normal scenario cycle, not instead of it.
+
+## 30.1 The four path statuses
+
+`frontend/src/lib/agency-runs/submissionPaths.ts` resolves every KB
+requirement to exactly one status, derived from the filing registry and the
+KB — never invented:
+
+- **verified** — a playbook was recorded from a real walk of this filing flow.
+  Clara executes it.
+- **partial** — portal identity is verified (allowlisted domains, entry URL,
+  login model) but no playbook was recorded. Clara may open the portal and
+  treat the outline as a hypothesis; at the FIRST deviation she STOPS and
+  reports instead of improvising (prompt guard in `taskPrompt.ts`).
+- **unknown** — no filing config exists. Clara must NOT attempt a browser
+  filing; she states what is known (agency, published entry point when the KB
+  has one) and the requirement joins the recon backlog.
+- **not-applicable** — no browser path can exist (in-person, municipal office,
+  mail, third party). Clara says so plainly.
+
+## 30.2 Per-scenario checks
+
+For every requirement the scenario surfaces, in addition to sections 7–10:
+
+1. Resolve its submission path (`resolveSubmissionPath`). It must never be
+   null — null means the requirement is missing from the KB documents, which
+   is a data bug, not a path gap.
+2. If the requirement is one a real user would file online AND the status is
+   "unknown", log it as a **recon candidate** with the agency and the KB's
+   `agency_url`. Do not invent the path; do not mark it verified.
+3. If the status is "partial", verify the portal identity fields are real:
+   `startUrl` must load, `domains` must match the agency's actual domains.
+   A partial path with a dead entry URL is a defect.
+4. If the status is "not-applicable", verify the reason matches reality
+   (e.g. the municipality genuinely has no online filing route). A newly
+   launched agency portal promotes the requirement to "unknown" (recon
+   candidate), never straight to "verified".
+5. Never weaken a status to make a scenario pass. A requirement the user
+   expects to file online but SmartPR can only "prepare" is a coverage gap
+   to report, not a test expectation to edit.
+
+## 30.3 Coverage tracking
+
+Each cycle, record the counts from `submissionPathCoverage()`:
+verified / partial / unknown / not-applicable, plus the length of the recon
+backlog. The trend matters more than any single number: verified should grow
+as portal walks are recorded; unknown should shrink. A cycle that adds
+requirements to the KB without resolving their paths must say so in the
+digest — new requirements default to "unknown", which is honest but must be
+visible.

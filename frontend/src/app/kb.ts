@@ -210,6 +210,24 @@ export function downloadKindLabel(kind: string): string {
     : "Where to get this";
 }
 
+/**
+ * The visible "Open agency site" destination for a requirement card.
+ *
+ * When the KB curates a filing-portal URL (download_kind === "filing_portal"),
+ * that portal IS the official place to file — prefer it over the generic
+ * agency homepage (e.g. suri.hacienda.pr.gov over hacienda.pr.gov for
+ * Hacienda tax filings). All other download kinds keep the agency homepage
+ * first; the specific document link stays available in the card body.
+ */
+export function agencySiteUrl(req: {
+  agencyUrl?: string | null;
+  downloadUrl?: string | null;
+  downloadKind?: string | null;
+}): string | null {
+  if (req.downloadKind === "filing_portal" && req.downloadUrl) return req.downloadUrl;
+  return req.agencyUrl ?? null;
+}
+
 interface KbMeta {
   source: "static" | "snapshot";
   version: number;

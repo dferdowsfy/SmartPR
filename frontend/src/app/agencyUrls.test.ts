@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { computeRequirementsFromKB, KB } from "./kb";
+import { computeRequirementsFromKB, KB, agencySiteUrl } from "./kb";
 
 // Every KB document must either carry a verified official agency_url or an
 // explicit agency_note (non-governmental issuers) — so the intake can always
@@ -317,5 +317,49 @@ describe("REG-GUIDE-PLACEHOLDER-005: content-completeness pass for three high-co
     assert.equal(d.download_url, "https://www.permisos.pr.gov/");
     assert.equal(d.download_kind, "filing_portal");
     assert.match(d.download_note ?? "", /Permiso [ÚU]nico/);
+  });
+});
+
+describe("agencySiteUrl: filing-portal preference for the visible agency link", () => {
+  // 2026-09-27 12:00 QA cycle (live audit, "QA Hacienda Restaurant 0927"):
+  // commit 5876cf1 curated download_url=https://suri.hacienda.pr.gov with
+  // download_kind=filing_portal on DOC_HACIENDA_TAX_COMPLIANCE, but the live
+  // card's only visible link was the generic https://hacienda.pr.gov/
+  // agency homepage. Root cause: the intake's filingFor() built the
+  // "Open agency site" URL as agencyUrl || downloadUrl — the curated filing
+  // portal never won. The portal IS the official place to file, so it must
+  // be preferred over the generic homepage.
+  it("prefers a filing_portal downloadUrl over the generic agencyUrl", () => {
+    assert.equal(
+      agencySiteUrl({ agencyUrl: "https://hacienda.pr.gov/", downloadUrl: "https://suri.hacienda.pr.gov", downloadKind: "filing_portal" }),
+      "https://suri.hacienda.pr.gov"
+    );
+  });
+
+  it("falls back to agencyUrl when there is no filing-portal download", () => {
+    assert.equal(
+      agencySiteUrl({ agencyUrl: "https://hacienda.pr.gov/", downloadUrl: null, downloadKind: "filing_portal" }),
+      "https://hacienda.pr.gov/"
+    );
+    assert.equal(agencySiteUrl({ agencyUrl: "https://hacienda.pr.gov/" }), "https://hacienda.pr.gov/");
+    assert.equal(agencySiteUrl({}), null);
+  });
+
+  it("does not prefer non-portal download kinds over the agency homepage", () => {
+    assert.equal(
+      agencySiteUrl({ agencyUrl: "https://www.estado.pr.gov/", downloadUrl: "https://rceweb.estado.pr.gov/es/form.pdf", downloadKind: "form_pdf" }),
+      "https://www.estado.pr.gov/"
+    );
+  });
+
+  it("DOC_HACIENDA_TAX_COMPLIANCE resolves to the SURI portal end to end", () => {
+    const reqs = computeRequirementsFromKB(
+      { business_type: "Restaurant", municipality: "San Juan", industry: "Food & Beverage", location_type: "Commercial Facility", number_of_employees: 8 } as any,
+      { alcohol_sold: true },
+      {}
+    ) as Array<{ document_id: string; agencyUrl?: string | null; downloadUrl?: string | null; downloadKind?: string | null }>;
+    const card = reqs.find((r) => r.document_id === "DOC_HACIENDA_TAX_COMPLIANCE");
+    assert.ok(card, "Hacienda tax-compliance requirement must exist for a restaurant selling alcohol");
+    assert.equal(agencySiteUrl(card), "https://suri.hacienda.pr.gov");
   });
 });

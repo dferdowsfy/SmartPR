@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { buildAgencyTaskPrompt, buildAuthorizeTaskPrompt, buildResumeTaskPrompt, renderPlaybookProcedure, submissionObjectivePromptBlock } from "./taskPrompt";
+import { buildAgencyTaskPrompt, buildAuthorizeTaskPrompt, buildResumeTaskPrompt, renderPlaybookProcedure, renderPathStatusBlock, submissionObjectivePromptBlock } from "./taskPrompt";
 import { getFilingConfig } from "./filingTypes";
 import type { SubmissionObjective } from "./types";
 
@@ -129,6 +129,47 @@ describe("buildAgencyTaskPrompt final-submit permission", () => {
     });
     assert.ok(plain.includes("NEVER click the final Submit"));
     assert.ok(!plain.includes("AUTHORIZED FINAL SUBMISSION"));
+  });
+});
+
+describe("renderPathStatusBlock", () => {
+  it("returns empty for a verified (playbook-backed) config", () => {
+    const config = getFilingConfig("DEPT_STATE_CORPORATE_FILING");
+    assert.equal(renderPathStatusBlock(config), "");
+  });
+
+  it("emits the stop-on-deviation guard for a partial config", () => {
+    const config = getFilingConfig("SURI_MERCHANT_REGISTRATION");
+    const block = renderPathStatusBlock(config);
+    assert.ok(block.includes("PATH STATUS: PARTIAL"), "names the status");
+    assert.ok(block.includes("STOP"), "orders a stop, not improvisation");
+    assert.ok(
+      block.includes("do not improvise navigation"),
+      "forbids improvisation explicitly"
+    );
+    assert.ok(
+      block.includes("kind=unknown"),
+      "deviation reports use the unknown step kind"
+    );
+  });
+
+  it("the guard appears in the built prompt for partial filings only", () => {
+    const base = {
+      passport: null,
+      goalBrief: null,
+      submissionObjective: null,
+      authorizedFiling: false,
+    } as const;
+    const partial = buildAgencyTaskPrompt({
+      ...base,
+      config: getFilingConfig("SURI_MERCHANT_REGISTRATION"),
+    });
+    assert.ok(partial.includes("PATH STATUS: PARTIAL"));
+    const verified = buildAgencyTaskPrompt({
+      ...base,
+      config: getFilingConfig("DEPT_STATE_CORPORATE_FILING"),
+    });
+    assert.ok(!verified.includes("PATH STATUS: PARTIAL"));
   });
 });
 

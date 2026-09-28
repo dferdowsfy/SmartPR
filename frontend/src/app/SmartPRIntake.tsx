@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
-import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
+import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, agencySiteUrl, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
@@ -5277,7 +5277,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   };
   const filingFor = (req: Requirement): RequirementFiling | null => {
     const { support } = claraSupportFor(req.document_id);
-    const site = req.agencyUrl || (req.downloadKind === 'filing_portal' ? req.downloadUrl : null) || null;
+    // The filing portal IS the official place to file: prefer the curated
+    // portal URL over the generic agency homepage when one exists.
+    const site = agencySiteUrl(req);
     const agencySite = site ? { label: L('Open agency site', language), url: site } : null;
     if (support === 'instructions') {
       const guide = req.downloadUrl && req.downloadKind && req.downloadKind !== 'filing_portal' && req.downloadKind !== 'none' ? req.downloadUrl : undefined;

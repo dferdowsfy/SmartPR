@@ -54,6 +54,30 @@ export type ResumeCredentials = {
 export type ResumeFields = Record<string, string>;
 
 /**
+ * Path-status guard (2026-09-28, submissionPaths.ts). A filing config with a
+ * recorded playbook is "verified" and needs no guard — the playbook procedure
+ * is the authority. A config WITHOUT a playbook is "partial": portal identity
+ * (domains, entry URL, login model) is verified but the step sequence is not.
+ * The old prompt told the agent to "adapt to what the portal actually shows",
+ * which licensed improvising navigation on unwalked portals — the brittleness
+ * this guard removes. On a partial path the outline below is a HYPOTHESIS:
+ * the agent verifies each step against it and STOPS at the first deviation,
+ * reporting what it saw instead of guessing forward. That accurate report is
+ * what lets the next run record a real playbook.
+ *
+ * Returns "" for verified configs.
+ */
+export function renderPathStatusBlock(config: AgencyFilingConfig): string {
+  const steps = config.playbook?.steps;
+  if (Array.isArray(steps) && steps.length > 0) return "";
+  return `PATH STATUS: PARTIAL — the portal identity above (domains, entry URL, login model) is verified, but NO recorded playbook exists for this filing. The outline below is a hypothesis, not a map.
+- Follow the outline step by step, verifying each screen against it BEFORE acting.
+- At the FIRST screen or step that does not match the outline: STOP. Do not click forward, do not guess the next step, do not improvise navigation, do not invent a URL.
+- Report with a PORTAL_STEP line: kind=unknown; title=<the visible heading>; url=<visible path>; expected=<what the outline predicted>; saw=<what is actually shown>.
+- Your accurate deviation report IS the deliverable in that case — SmartPR records the real path from it so the next run has a verified playbook. A wrong guess now poisons every future run.`;
+}
+
+/**
  * Render a filing playbook as the deterministic procedure block of the agent
  * task prompt. Steps render in recorded order with their channel semantics
  * so the agent knows, per step, whether to collect fields in the Assistant
@@ -249,6 +273,7 @@ export function buildAgencyTaskPrompt(input: {
   const procedureHeading = playbookProcedure
     ? "PLAYBOOK PROCEDURE (goal-oriented — adapt to what the portal actually shows; ordered from the recorded filing flow)"
     : "PROCEDURE OUTLINE (goal-oriented — adapt to what the portal actually shows)";
+  const pathStatusBlock = renderPathStatusBlock(config);
 
   // Structured goal brief — so the agent is never sent in with just
   // "Go to SURI". Labels only, no values, no secrets.
@@ -357,7 +382,7 @@ ${passportBlock}
 
 ${procedureHeading}
 ${procedure}${flowBlock}
-${authorizeBlock}${resume}${fieldsBlock}
+${pathStatusBlock ? `${pathStatusBlock}\n` : ""}${authorizeBlock}${resume}${fieldsBlock}
 
 When finished or paused, end with a short status line containing exactly one marker: ${pauseMarkers}
 On every pause, include the PORTAL_STEP line — and REQUIRED_FIELDS only for form / identity steps.`;
