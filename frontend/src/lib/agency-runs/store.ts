@@ -42,6 +42,13 @@ import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
 import type { GoalBrief } from "./goalBrief";
 import { setPortalAccountStatus } from "./portalAccounts";
 import { stepPauseMessage } from "./portalStep";
+import {
+  fetchQaOtpCode,
+  getQaOtpSpec,
+  qaOtpAssistAllowed,
+  qaOtpAssistConfigured,
+  shouldAutoAssist,
+} from "./qaOtp";
 import { resolvePauseForFiling } from "./flows";
 import type {
   AgencyFilingType,
@@ -332,7 +339,33 @@ function trackPause(
       kind: "pause",
     });
   }
+  // QA OTP assist: a supervised QA run paused at an emailed-code step can
+  // fetch the fresh code from the QA mailbox and hand it to the agent —
+  // no human typing needed. Fire-and-forget; the assist pushes its own
+  // events and resumes the run through the normal ephemeral-fields path.
+  // The in-flight set keeps every poll tick from starting a duplicate.
+  if (
+    run.pause_streak === 1 &&
+    !qaOtpAssistInFlight.has(run.id) &&
+    shouldAutoAssist({
+      worker: run.worker,
+      status: run.status,
+      stepKind: run.portal_step?.kind ?? null,
+      businessId: run.business_id,
+      agencyId: getFilingConfig(run.filing_type).agencyId,
+      assistInFlight: false,
+    })
+  ) {
+    qaOtpAssistInFlight.add(run.id);
+    void runQaOtpAssist(run.id).finally(() => qaOtpAssistInFlight.delete(run.id));
+  }
 }
+
+/**
+ * Run ids with a QA OTP assist currently in flight — prevents the status
+ * poll from launching a duplicate assist on every tick.
+ */
+const qaOtpAssistInFlight = new Set<string>();
 
 /** Clear the pause-loop counter when the run moves past the pause. */
 function resetPauseStreak(run: AgencyRun): void {
@@ -862,7 +895,101 @@ export type ResumeRunOptions = {
   fields?: ResumeFields | null;
   /** @deprecated Prefer `fields`. Merged into fields when both are sent. */
   credentials?: ResumeCredentials | null;
+  /** True when the fields came from QA OTP assist (not a human) — the run
+   *  event says so instead of "User provided". */
+  viaQaOtpAssist?: boolean;
 };
+
+/**
+ * QA OTP assist — fetch the portal's fresh emailed verification code from
+ * the QA mailbox and hand it to the agent through the normal ephemeral
+ * resume path. The code itself is never stored on the run, in events, or
+ * in logs; only the fact that assist ran is recorded.
+ *
+ * Returns { ok:true, run } on success, or { ok:false, error } where error is
+ * one of: not_paused_at_mfa | not_allowed | not_configured | no_spec |
+ * no_code | fetch_failed.
+ */
+export async function assistQaOtp(
+  id: string,
+  opts?: { manual?: boolean }
+): Promise<{ ok: true; run: AgencyRunPublic } | { ok: false; error: string; run?: AgencyRunPublic }> {
+  const run = runs().get(id);
+  if (!run) return { ok: false, error: "not_found" };
+  if (run.status !== "paused" || run.portal_step?.kind !== "mfa") {
+    return { ok: false, error: "not_paused_at_mfa" };
+  }
+  const agencyId = getFilingConfig(run.filing_type).agencyId;
+  const spec = getQaOtpSpec(agencyId);
+  if (!spec) return { ok: false, error: "no_spec" };
+  if (!qaOtpAssistConfigured()) return { ok: false, error: "not_configured" };
+  if (!qaOtpAssistAllowed(run.business_id)) return { ok: false, error: "not_allowed" };
+  const resumed = await runQaOtpAssist(id, { manual: opts?.manual });
+  const r = runs().get(id);
+  if (!r) return { ok: false, error: "not_found" };
+  // runQaOtpAssist pushed a specific event when it could not complete
+  // (no fresh code, or the mailbox was unreachable).
+  return resumed
+    ? { ok: true, run: toPublic(r) }
+    : { ok: false as const, error: "no_code", run: toPublic(r) };
+}
+
+/**
+ * Internal QA OTP assist worker. Fetches the code, then resumes the run
+ * with { fields: { mfa: code } } so the agent types it into the portal.
+ * Returns true when the code was handed to the agent.
+ */
+async function runQaOtpAssist(id: string, opts?: { manual?: boolean }): Promise<boolean> {
+  const run = runs().get(id);
+  if (!run) return false;
+  const spec = getQaOtpSpec(getFilingConfig(run.filing_type).agencyId);
+  if (!spec) return false;
+  const shot =
+    run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home;
+  pushEvent(run, {
+    message: opts?.manual
+      ? "QA OTP assist requested — fetching the verification code from the QA mailbox…"
+      : "QA OTP assist: fetching the portal verification code from the QA mailbox…",
+    message_es:
+      "Asistencia QA de OTP: obteniendo el código de verificación del buzón QA…",
+    screenshot_url: shot,
+    kind: "info",
+  });
+  let code: string | null = null;
+  try {
+    code = await fetchQaOtpCode(spec);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "unknown error";
+    pushEvent(run, {
+      message: `QA OTP assist could not read the QA mailbox (${detail}). Enter the code in the browser via Take over, then press “I'm done”.`,
+      message_es: `La asistencia QA no pudo leer el buzón QA (${detail}). Escriba el código en el navegador con Tomar el control y luego pulse “Terminé”.`,
+      screenshot_url: shot,
+      kind: "pause",
+    });
+    return false;
+  }
+  if (!code) {
+    pushEvent(run, {
+      message:
+        "QA OTP assist found no fresh verification code in the QA mailbox — enter the code in the browser via Take over, then press “I'm done”.",
+      message_es:
+        "La asistencia QA no encontró un código de verificación reciente en el buzón QA — escriba el código en el navegador con Tomar el control y luego pulse “Terminé”.",
+      screenshot_url: shot,
+      kind: "pause",
+    });
+    return false;
+  }
+  pushEvent(run, {
+    message:
+      "QA OTP assist: fresh code received — sending it to the agent now. The code itself is never stored or shown.",
+    message_es:
+      "Asistencia QA de OTP: código recibido — enviándolo al agente ahora. El código nunca se guarda ni se muestra.",
+    screenshot_url: shot,
+    kind: "info",
+  });
+  await resumeRun(id, { fields: { mfa: code }, viaQaOtpAssist: true });
+  return true;
+}
 
 function sanitizeFields(raw: ResumeFields | null | undefined): ResumeFields | null {
   if (!raw || typeof raw !== "object") return null;
@@ -916,8 +1043,12 @@ export async function resumeRun(
     run.updated_at = nowIso();
     if (fields) {
       pushEvent(run, {
-        message: "User provided required fields from Assistant — filling and continuing",
-        message_es: "El usuario proporcionó los campos requeridos desde Asistente — rellenando y continuando",
+        message: options?.viaQaOtpAssist
+          ? "QA OTP assist provided the verification code — filling and continuing"
+          : "User provided required fields from Assistant — filling and continuing",
+        message_es: options?.viaQaOtpAssist
+          ? "La asistencia QA proporcionó el código de verificación — rellenando y continuando"
+          : "El usuario proporcionó los campos requeridos desde Asistente — rellenando y continuando",
         screenshot_url: run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home,
         kind: "info",
       });
