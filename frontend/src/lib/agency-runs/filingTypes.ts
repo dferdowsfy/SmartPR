@@ -714,8 +714,12 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
     },
     verification: {
       status: "mapped",
+      fixture: {
+        route: "/rehearsal-portal/suri",
+        test: "frontend/tests/clara-suri-merchant.e2e.mts",
+      },
       evidence:
-        "No playbook and disabled. DOC_MERCHANT_REGISTRATION is emitted by engine rules, so users see it as 'not yet supported'.",
+        "No playbook and disabled. DOC_MERCHANT_REGISTRATION is emitted by engine rules, so users see it as 'not yet supported'. A fictional SURI simulator (procedure-derived — the real SURI host was unreachable 2026-09-25 and 2026-09-28, so NO screen was observed live) plus a 25-check browser regression test prove Clara's gate behavior: login pause, passport prefill, human-only submit, unknown-screen pause. The test simulates an in-progress run as a supervised pilot would produce; it proves behavior, not SURI's layout.",
     },
     requirementIds: ["DOC_MERCHANT_REGISTRATION"],
   },

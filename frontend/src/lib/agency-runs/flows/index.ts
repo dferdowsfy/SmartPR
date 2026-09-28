@@ -7,12 +7,14 @@ import type { AgencyPauseReason } from "../types";
 import type { PauseState, PortalStep } from "../portalStep";
 import { INLINE_STEPS, isCredentialField, resolvePauseState } from "../portalStep";
 import { DEPT_STATE_CORPORATION_FLOW } from "./deptStateCorporation";
+import { SURI_MERCHANT_FLOW } from "./suriMerchant";
 import type { FilingFlow, FlowField, FlowStep } from "./types";
 
 export type { FilingFlow, FlowField, FlowStep } from "./types";
 
 const FLOWS: Record<string, FilingFlow> = {
   [DEPT_STATE_CORPORATION_FLOW.filingType]: DEPT_STATE_CORPORATION_FLOW,
+  [SURI_MERCHANT_FLOW.filingType]: SURI_MERCHANT_FLOW,
 };
 
 export function flowFor(filingType: string): FilingFlow | null {
