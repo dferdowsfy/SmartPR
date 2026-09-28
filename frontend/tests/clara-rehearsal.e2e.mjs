@@ -14,6 +14,7 @@
  */
 import { chromium } from "playwright";
 import os from "node:os";
+import { ensureSignedIn } from "./e2e-auth.mjs";
 const OUT = process.argv[2] || os.tmpdir();
 const base = process.env.BASE_URL || "http://localhost:3000";
 const W = +process.argv[3] || 1440, H = +process.argv[4] || 860, TAG = process.argv[5] || "desk";
@@ -44,9 +45,12 @@ const advance = () => {
   run = { ...run, status: st.status, pause_reason: st.reason, portal_step: st.step, pending_fields: st.fields, pause_streak: st.status === "paused" ? 1 : 0, live_url: P(st.url), filing_confirmation: st.confirmation ?? null, events: [...events] };
 };
 const resumes = [];
-const browser = await chromium.launch(
-  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}
-);
+const launchOpts = process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {};
+// Egress from this host requires the outbound proxy (see env HTTPS_PROXY); without it,
+// Chromium makes direct connections and production is unreachable (net::ERR_EMPTY_RESPONSE).
+const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
+if (proxyUrl) launchOpts.proxy = { server: proxyUrl };
+const browser = await chromium.launch(launchOpts);
 const ctx = await browser.newContext({ viewport: { width: W, height: H } });
 const page = await ctx.newPage();
 await page.route("**/api/**", async (route) => {
@@ -80,7 +84,7 @@ const imDone = async () => { await page.getByRole("button", { name: "I'm done" }
 const mobile = W < 1024;
 const showChat = async () => { if (mobile) { await page.getByRole("tab", { name: "Conversation" }).click(); await page.waitForTimeout(300); } };
 
-await page.goto(`${base}/businesses/b1/agency-run?demo=1`, { waitUntil: "networkidle" });
+await ensureSignedIn(page, base);
 await page.getByRole("button", { name: "Submit", exact: true }).click();
 await page.waitForTimeout(900);
 await page.getByRole("button", { name: "Start filing" }).click();

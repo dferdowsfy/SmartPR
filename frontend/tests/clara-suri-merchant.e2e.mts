@@ -26,6 +26,7 @@
  */
 import { chromium, type Frame, type Page } from "playwright";
 import os from "node:os";
+import { ensureSignedIn } from "./e2e-auth.mjs";
 import { resolveFilingOptions, type ObligationLike } from "../src/lib/agency-runs/agencyActions";
 import { resolvePauseForFiling } from "../src/lib/agency-runs/flows";
 import { stepPauseMessage } from "../src/lib/agency-runs/portalStep";
@@ -150,7 +151,12 @@ async function assertMatches(page: Page, f: Frame, label: string) {
 }
 
 /* ---------------- run ---------------- */
-const browser = await chromium.launch(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {});
+// Egress from this host requires the outbound proxy (see env HTTPS_PROXY); without it,
+// Chromium makes direct connections and production is unreachable (net::ERR_EMPTY_RESPONSE).
+const launchOpts = process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {};
+const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
+if (proxyUrl) launchOpts.proxy = { server: proxyUrl };
+const browser = await chromium.launch(launchOpts);
 const ctx = await browser.newContext({ viewport: { width: W, height: H } });
 const page = await ctx.newPage();
 const asked: unknown[] = [];
@@ -174,7 +180,7 @@ await page.route("**/api/**", async (route) => {
 
 // 1 — picker truth: SURI merchant is not launchable (portal unverified) →
 // "not yet supported", no Submit for it.
-await page.goto(`${base}/businesses/b1/agency-run`, { waitUntil: "networkidle" });
+await ensureSignedIn(page, base, "/businesses/b1/agency-run");
 await page.waitForTimeout(800);
 const pickerText = await page.locator("[aria-label='Clara chat']").innerText();
 check("picker: SURI merchant filing is visible", /Merchant registration/.test(pickerText));
