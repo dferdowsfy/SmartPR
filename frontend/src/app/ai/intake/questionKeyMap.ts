@@ -36,6 +36,18 @@ export const QUESTION_KEY_MAP: Record<string, QuestionKeyBinding> = {
   Q_FOOD_PREPARED: { writeKey: "food_prepared_on_site", aliases: ["food_prepared_or_sold", "food_prepared"] },
   Q_FOOD_SOLD: { writeKey: "food_sold", aliases: ["food_prepared_or_sold"] },
   Q_FOOD_SERVED: { writeKey: "food_served", aliases: ["food_prepared_or_sold"] },
+  // REG-MOBILE-AMBULANT-PROVENANCE-001 (2026-09-28 QA): the forward map
+  // lacked Q_FOOD_TRUCK_MOBILE even though the reverse map and
+  // buildEngineInput's on("food_truck_or_mobile", ...) both know the
+  // writeKey. In strict (live) mode a structured "Yes" recorded under the
+  // writeKey never inherited confirmation (isQuestionConfirmed,
+  // isPassportKey, isQuestionAiPrefilled all resolve through this table),
+  // and validateInterpretation silently dropped the interpreter's
+  // Q_FOOD_TRUCK_MOBILE patch ("if (!binding) continue"). The municipal
+  // ambulant license (RULE_0653) appeared in the non-strict preview, then
+  // vanished the moment the user answered Yes — an inverted-answer
+  // misfire visible only in production.
+  Q_FOOD_TRUCK_MOBILE: { writeKey: "food_truck_or_mobile" },
   Q_ALCOHOL_SOLD: { writeKey: "alcohol_sold" },
   Q_ALCOHOL_SERVED: { writeKey: "alcohol_served", aliases: ["alcohol_sold"] },
   Q_HEALTHCARE_SERVICES: { writeKey: "healthcare_services", aliases: ["healthcare_professionals", "patients_visit"] },

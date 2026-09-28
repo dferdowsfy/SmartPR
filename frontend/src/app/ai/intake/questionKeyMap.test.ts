@@ -142,3 +142,90 @@ test("end-to-end: vehicle_repair prefill produces no phantom vehicle cards", () 
   const reasons = vehicleReasons(reqs);
   assert.equal(reasons.length, 0, `phantom vehicle cards fired: ${JSON.stringify(reasons)}`);
 });
+
+// Regression tests for REG-MOBILE-AMBULANT-PROVENANCE-001 (2026-09-28 QA).
+// Live Arecibo food truck: the municipal ambulant license (RULE_0653)
+// appeared in the non-strict preview, then VANISHED after the user answered
+// "Yes" to "Will the business operate from a food truck or mobile unit?".
+// Root cause: Q_FOOD_TRUCK_MOBILE was missing from the forward
+// QUESTION_KEY_MAP even though the reverse map and buildEngineInput's
+// on("food_truck_or_mobile", ...) both know the writeKey. In strict (live)
+// mode the structured Yes recorded under the writeKey never inherited
+// confirmation — isQuestionConfirmed / isPassportKey / isQuestionAiPrefilled
+// all resolve through the forward table — so the fact was quarantined and
+// the card gated off. validateInterpretation additionally dropped the AI
+// interpreter's Q_FOOD_TRUCK_MOBILE patch ("if (!binding) continue").
+// These tests pin the strict-mode end-to-end behavior: a writeKey-confirmed
+// Yes keeps the ambulant card; an unconfirmed one gates it (provenance rule).
+
+const FOOD_TRUCK_PROFILE = {
+  business_name: "REG-MOBILE-AMBULANT",
+  business_type: "Food Truck",
+  industry: "Food & Beverage",
+  municipality: "Arecibo",
+  business_structure: "sole_proprietorship",
+  location_type: "Mobile Business",
+  number_of_employees: 0,
+};
+
+function ambulantCard(reqs: Array<{ document_id?: string }>): boolean {
+  return reqs.some((r) => r.document_id === "DOC_AMBULANT_BUSINESS_LICENSE");
+}
+
+test("strict mode: writeKey-confirmed food-truck Yes keeps the ambulant card", () => {
+  const reqs = computeRequirementsFromKB(
+    FOOD_TRUCK_PROFILE,
+    { food_truck_or_mobile: true },
+    {},
+    {
+      projectIntent: "new_business",
+      sessionId: "sess-reg-mobile-ambulant",
+      confirmedKeys: ["food_truck_or_mobile"],
+    }
+  ) as Array<{ document_id?: string }>;
+  assert.ok(
+    ambulantCard(reqs),
+    "confirmed writeKey Yes must survive the provenance gate (RULE_0653)"
+  );
+});
+
+test("strict mode: Q-id-confirmed food-truck Yes keeps the ambulant card", () => {
+  const reqs = computeRequirementsFromKB(
+    FOOD_TRUCK_PROFILE,
+    { Q_FOOD_TRUCK_MOBILE: true },
+    {},
+    {
+      projectIntent: "new_business",
+      sessionId: "sess-reg-mobile-ambulant",
+      confirmedKeys: ["Q_FOOD_TRUCK_MOBILE"],
+    }
+  ) as Array<{ document_id?: string }>;
+  assert.ok(ambulantCard(reqs), "confirmed Q_ id Yes must keep RULE_0653");
+});
+
+test("strict mode: unconfirmed food-truck Yes still gates the ambulant card (provenance rule intact)", () => {
+  const reqs = computeRequirementsFromKB(
+    FOOD_TRUCK_PROFILE,
+    { food_truck_or_mobile: true },
+    {},
+    {
+      projectIntent: "new_business",
+      sessionId: "sess-reg-mobile-ambulant",
+      confirmedKeys: [],
+    }
+  ) as Array<{ document_id?: string }>;
+  assert.ok(
+    !ambulantCard(reqs),
+    "unconfirmed facts must stay inert in strict mode — the gate itself is correct"
+  );
+});
+
+test("non-strict baseline: food-truck Yes fires the ambulant card", () => {
+  const reqs = computeRequirementsFromKB(
+    FOOD_TRUCK_PROFILE,
+    { food_truck_or_mobile: true },
+    {},
+    { projectIntent: "new_business" }
+  ) as Array<{ document_id?: string }>;
+  assert.ok(ambulantCard(reqs), "non-strict legacy behavior must not change");
+});
