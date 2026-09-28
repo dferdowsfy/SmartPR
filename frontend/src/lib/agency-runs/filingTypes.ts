@@ -1707,6 +1707,7 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
         "Payment is non-refundable: regular evaluation 10% initially and 90% after analyst validation; ministerial 100% initially; card or ACH.",
         "2026-09-28 live QA run: SBP uses custom (non-native) dropdowns — click the control to open the option list, then click the option; native value setters do not work on them.",
         "2026-09-28 live QA run: the 'Compañías' company selector is EMPTY on a brand-new account (no companies registered) — the human can instead file 'a nombre de usted' (the selector only applies to 'de una compañía'); never invent a company. Report the on-screen validation message instead of retrying.",
+        "The Localización step requires the property's Número Catastro (CRIM tax ID); the magnifying-glass button opens a map/address lookup so the number is not needed in advance. A QA run with no real project location cannot meaningfully complete this step — drafts are never submitted.",
         "2026-09-28 live QA run: the post-login Proyecto wizard asks '¿A nombre de quién deben salir los trámites de este proyecto?' (Usted / De otra persona / De una compañía) before project details.",
       ],
       quirks_es: [
@@ -1716,6 +1717,7 @@ export const AGENCY_FILING_CONFIGS: AgencyFilingConfig[] = [
         "El pago no es reembolsable: evaluación regular 10% inicial y 90% tras la validación del analista; ministerial 100% inicial; tarjeta o ACH.",
         "Prueba QA en vivo 2026-09-28: SBP usa menús desplegables personalizados (no nativos) — haga clic en el control para abrir la lista y luego en la opción; los setters nativos no funcionan en ellos.",
         "Prueba QA en vivo 2026-09-28: el selector de 'Compañías' está VACÍO en una cuenta nueva (sin compañías registradas) — el humano puede radicar 'a nombre de usted' (el selector solo aplica a 'de una compañía'); nunca invente una compañía. Reporte el mensaje de validación en pantalla en vez de reintentar.",
+        "El paso de Localización requiere el Número de Catastro de la propiedad (CRIM); el botón de lupa abre un mapa/búsqueda por dirección, no hay que saber el número de antemano. Una prueba QA sin una localización real no puede completar este paso de forma significativa — los borradores nunca se radican.",
         "Prueba QA en vivo 2026-09-28: el asistente Proyecto tras el login pregunta '¿A nombre de quién deben salir los trámites de este proyecto?' (Usted / De otra persona / De una compañía) antes de los detalles del proyecto.",
       ],
     },
