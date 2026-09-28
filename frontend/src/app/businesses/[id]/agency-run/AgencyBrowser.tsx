@@ -39,6 +39,8 @@ export interface AgencyBrowserProps {
   onPreviewLoaded: () => void;
   reconnectBusy: boolean;
   onReconnect: () => void;
+  reloadBusy: boolean;
+  onReload: () => void;
   onTakeover: () => void;
   onHandBack: () => void;
   onResume: () => void;
@@ -227,23 +229,52 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
               </button>
             )}
             {props.takeover && run.live_url ? (
-              <button
-                type="button"
-                onClick={props.onHandBack}
-                disabled={props.busy}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d38] px-3 py-1.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#16382a] disabled:opacity-60"
-              >
-                {props.busy ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                )}
-                {props.busy
-                  ? L("Handing back…", "Devolviendo…", lang)
-                  : L("I'm done", "Terminé", lang)}
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={props.reloadBusy}
+                  onClick={props.onReload}
+                  title={L("Reload the portal page", "Recargar la página del portal", lang)}
+                  aria-label={L("Reload the portal page", "Recargar la página del portal", lang)}
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3 w-3 ${props.reloadBusy ? "animate-spin" : ""}`} />
+                  {props.reloadBusy
+                    ? L("Reloading…", "Recargando…", lang)
+                    : L("Reload page", "Recargar página", lang)}
+                </button>
+                <button
+                  type="button"
+                  onClick={props.onHandBack}
+                  disabled={props.busy}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e4d38] px-3 py-1.5 text-[13px] font-bold text-white shadow-sm hover:bg-[#16382a] disabled:opacity-60"
+                >
+                  {props.busy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  )}
+                  {props.busy
+                    ? L("Handing back…", "Devolviendo…", lang)
+                    : L("I'm done", "Terminé", lang)}
+                </button>
+              </>
             ) : (
               <>
+                {run.live_url && (
+                  <button
+                    type="button"
+                    disabled={props.reloadBusy}
+                    onClick={props.onReload}
+                    title={L("Reload the portal page", "Recargar la página del portal", lang)}
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${props.reloadBusy ? "animate-spin" : ""}`} />
+                    {props.reloadBusy
+                      ? L("Reloading…", "Recargando…", lang)
+                      : L("Reload page", "Recargar página", lang)}
+                  </button>
+                )}
                 {run.live_url && (
                   <button
                     type="button"

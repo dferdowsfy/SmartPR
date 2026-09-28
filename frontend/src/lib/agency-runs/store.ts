@@ -1129,6 +1129,58 @@ export async function authorizeFiling(id: string): Promise<AgencyRunPublic | nul
 }
 
 /**
+ * Reload the portal page inside the live browser. Queues a short agent turn
+ * that only refreshes the page and reports what it shows — no filling,
+ * clicking, or submitting. Pause state is preserved: a run paused for fields
+ * stays paused for those fields after the reload.
+ */
+export async function reloadPageRun(id: string): Promise<AgencyRunPublic | null> {
+  const run = runs().get(id);
+  if (!run) return null;
+  const shot =
+    run.events[run.events.length - 1]?.screenshot_url || PLACEHOLDER_SHOTS.home;
+  if (!run.browser_use_session_id) {
+    run.updated_at = nowIso();
+    pushEvent(run, {
+      message: "Could not reload the page — the browser session is missing. Try Reconnect.",
+      message_es: "No se pudo recargar la página — falta la sesión del navegador. Intenta Reconectar.",
+      screenshot_url: shot,
+      kind: "info",
+    });
+    return toPublic(run);
+  }
+  try {
+    const previousRunId = run.browser_use_run_id;
+    const bu = run.browser_use_run_id ? await getAgentRun(run.browser_use_run_id) : null;
+    const terminal =
+      !bu || bu.status === "completed" || bu.status === "failed" || bu.status === "cancelled";
+    const portal = getFilingConfig(run.filing_type).agencyId || "the portal page";
+    const queued = await queueAgentMessage(
+      run.browser_use_session_id,
+      `Reload the current page in the browser now (use the browser's reload/refresh action) and wait for it to finish loading. Then report the page title and briefly describe what the page shows — nothing more. Do not fill any fields, do not click any buttons or links, do not submit anything, do not solve captchas. The user asked for a fresh load of ${portal}.`,
+      // The user asked for the reload now — interrupt an active turn so it
+      // happens immediately rather than queueing behind it.
+      { interrupt: !terminal }
+    );
+    adoptQueuedTurn(run, queued, previousRunId);
+    pushEvent(run, {
+      message: "Reloading the portal page…",
+      message_es: "Recargando la página del portal…",
+      screenshot_url: shot,
+      kind: "info",
+    });
+  } catch (err) {
+    pushEvent(run, {
+      message: `Could not reload the page — try again. (${sanitizeError(err)})`,
+      message_es: `No se pudo recargar la página — intenta de nuevo. (${sanitizeError(err)})`,
+      screenshot_url: shot,
+      kind: "info",
+    });
+  }
+  return toPublic(await syncBrowserUse(run));
+}
+
+/**
  * Record that the user took over the live browser. The run status itself is
  * unchanged (still paused/running) — this only logs the handoff so the
  * Assistant panel ("notifications") reflects the takeover.

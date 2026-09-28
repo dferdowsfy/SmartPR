@@ -144,6 +144,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [reconnectBusy, setReconnectBusy] = useState(false);
+  const [reloadBusy, setReloadBusy] = useState(false);
   const [takeover, setTakeover] = useState(false);
   /** Bumped when an action outside the chat should jump it to the newest activity. */
   const [scrollToLatest, setScrollToLatest] = useState(0);
@@ -784,6 +785,27 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  const reloadPortalPage = async () => {
+    if (!run?.live_url || reloadBusy) return;
+    // The agent reloads the remote page — it cannot do that while the user is
+    // also driving the browser, so end takeover first (without resume: the
+    // reload turn is the only instruction queued).
+    if (takeover) {
+      setTakeover(false);
+      setMobilePane("chat");
+    }
+    setReloadBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/agency-runs/${run.id}/reload`, { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (result.run) setRun(result.run as AgencyRunPublic);
+      await poll(run.id);
+    } finally {
+      setReloadBusy(false);
+    }
+  };
+
   const enterTakeover = async () => {
     setTakeover(true);
     setBrowserHidden(false);
@@ -1382,6 +1404,8 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 onPreviewLoaded={() => setPreviewLoaded(true)}
                 reconnectBusy={reconnectBusy}
                 onReconnect={() => void reconnectPreview()}
+                reloadBusy={reloadBusy}
+                onReload={() => void reloadPortalPage()}
                 onTakeover={() => void enterTakeover()}
                 onHandBack={() => void handBackToAgent()}
                 onResume={() => void resume()}
