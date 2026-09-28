@@ -229,3 +229,155 @@ test("non-strict baseline: food-truck Yes fires the ambulant card", () => {
   ) as Array<{ document_id?: string }>;
   assert.ok(ambulantCard(reqs), "non-strict legacy behavior must not change");
 });
+
+// --- REG-HAZMAT-TRANSPORT-PROVENANCE-001 / REG-GUESTS-OVERNIGHT-PROVENANCE-001
+// (2026-09-28 QA): forward-map completeness sweep. Q_HAZMAT_TRANSPORT and
+// Q_GUESTS_OVERNIGHT were reverse-mapped in WIZARD_KEY_TO_QUESTION and had
+// live engine value bindings — on("hazardous_materials_transported") feeding
+// RULE_0618 (NTSP Porteador por Contrato franchise), on("guests_stay_overnight")
+// feeding RULE_0691 (monthly room-tax return) — but had no forward
+// QUESTION_KEY_MAP entries. Same defect class as
+// REG-MOBILE-AMBULANT-PROVENANCE-001: in strict (live) mode a writeKey-
+// confirmed Yes never inherited confirmation (the fact was quarantined and
+// the card gated off), and validateInterpretation dropped the interpreter's
+// patch ("if (!binding) continue"). Non-strict engine harnesses never catch
+// this class, so these tests pin the strict-mode behavior and the patch path.
+//
+// Sweep result: of 68 reverse-mapped keys, these two were the only ones with
+// live engine bindings and no forward entry. (Q_HOA_CONDO has an on() binding
+// but is not reverse-mapped — a different, unobserved gap class, not touched.)
+
+const HAZMAT_PROFILE = {
+  business_name: "REG-HAZMAT-TRANSPORT",
+  business_type: "Consulting Firm",
+  industry: "Professional Services",
+  municipality: "Ponce",
+  business_structure: "llc",
+  location_type: "Commercial Space",
+  number_of_employees: 3,
+};
+
+function transportPermit(reqs: Array<{ document_id?: string; source_rule?: string }>) {
+  return reqs.find((r) => r.document_id === "DOC_TRANSPORT_PERMIT");
+}
+
+test("strict mode: writeKey-confirmed hazmat-transport Yes keeps the NTSP card (RULE_0618)", () => {
+  const reqs = computeRequirementsFromKB(
+    HAZMAT_PROFILE,
+    { hazardous_materials_transported: true },
+    {},
+    {
+      projectIntent: "new_business",
+      sessionId: "sess-reg-hazmat-transport",
+      confirmedKeys: ["hazardous_materials_transported"],
+    }
+  ) as Array<{ document_id?: string; source_rule?: string }>;
+  const card = transportPermit(reqs);
+  assert.ok(card, "confirmed writeKey Yes must survive the provenance gate (RULE_0618)");
+  assert.equal(card?.source_rule, "RULE_0618", "the card must fire from the hazmat-transport rule, not a BT/vehicle rule");
+});
+
+test("strict mode: unconfirmed hazmat-transport Yes still gates the NTSP card (provenance rule intact)", () => {
+  const reqs = computeRequirementsFromKB(
+    HAZMAT_PROFILE,
+    { hazardous_materials_transported: true },
+    {},
+    {
+      projectIntent: "new_business",
+      sessionId: "sess-reg-hazmat-transport",
+      confirmedKeys: [],
+    }
+  ) as Array<{ document_id?: string; source_rule?: string }>;
+  assert.ok(
+    !transportPermit(reqs),
+    "unconfirmed facts must stay inert in strict mode — the gate itself is correct"
+  );
+});
+
+test("non-strict baseline: hazmat-transport Yes fires the NTSP card", () => {
+  const reqs = computeRequirementsFromKB(
+    HAZMAT_PROFILE,
+    { hazardous_materials_transported: true },
+    {},
+    { projectIntent: "new_business" }
+  ) as Array<{ document_id?: string; source_rule?: string }>;
+  const card = transportPermit(reqs);
+  assert.ok(card, "non-strict legacy behavior must not change");
+  assert.equal(card?.source_rule, "RULE_0618");
+});
+
+test("interpreter patches for Q_HAZMAT_TRANSPORT / Q_GUESTS_OVERNIGHT are applied, not dropped", async () => {
+  // validateInterpretation's "if (!binding) continue" silently discarded the
+  // interpreter's answers for these two questions before the forward entries
+  // existed. This pins the patch path (the engine path is pinned above).
+  const { validateInterpretation, toIntakePatch } = await import("./validateInterpretation.ts");
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const kbDir = join(here, "..", "..", "..", "kb");
+  const load = (f: string) => JSON.parse(readFileSync(join(kbDir, f), "utf8"));
+  const kb = {
+    municipalities: load("municipalities.json"),
+    businessTypes: load("business_types.json"),
+    questions: load("questions.json"),
+    documents: load("documents.json"),
+    rules: load("rules.json"),
+  };
+  const validated = validateInterpretation(
+    {
+      answers: [
+        { questionId: "Q_HAZMAT_TRANSPORT", value: true, confidence: 0.95 },
+        { questionId: "Q_GUESTS_OVERNIGHT", value: true, confidence: 0.95 },
+      ],
+    },
+    kb,
+    {}
+  );
+  const patch = toIntakePatch(validated);
+  assert.equal(
+    patch.answers["hazardous_materials_transported"],
+    true,
+    "Q_HAZMAT_TRANSPORT must map to its writeKey (was dropped pre-fix)"
+  );
+  assert.equal(
+    patch.answers["guests_stay_overnight"],
+    true,
+    "Q_GUESTS_OVERNIGHT must map to its writeKey (was dropped pre-fix)"
+  );
+});
+
+test("forward-map completeness: every reverse-mapped question with an engine value binding is applicable", async () => {
+  // The generalized invariant behind both provenance fixes. If kb.ts reads a
+  // question via on()/boolOf()/strVal() and the interpreter can emit it (i.e.
+  // it is reverse-mapped), the forward QUESTION_KEY_MAP must carry it —
+  // otherwise strict-mode confirmation is silently lost and interpreter
+  // patches are dropped. Location-derived questions are deliberately
+  // forward-less (LOCATION_QUESTION_IDS) and are excluded.
+  const { readFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, join } = await import("node:path");
+  const {
+    QUESTION_KEY_MAP,
+    WIZARD_KEY_TO_QUESTION,
+    LOCATION_QUESTION_IDS,
+    isApplicableQuestionId,
+  } = await import("./questionKeyMap.ts");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const kbTs = readFileSync(join(here, "..", "..", "kb.ts"), "utf8");
+  const bound = new Set<string>();
+  for (const m of kbTs.matchAll(/(Q_[A-Z0-9_]+):\s*(?:on|boolOf|strVal)\(/g)) bound.add(m[1]);
+  assert.ok(bound.size > 30, `expected dozens of engine-bound questions, found ${bound.size}`);
+  const reverseMapped = new Set<string>(Object.values(WIZARD_KEY_TO_QUESTION));
+  const missing = [...bound].filter(
+    (qid) => reverseMapped.has(qid) && !LOCATION_QUESTION_IDS.has(qid) && !isApplicableQuestionId(qid)
+  );
+  assert.deepEqual(
+    missing,
+    [],
+    `forward map is missing reverse-mapped engine-bound questions: ${missing.join(", ")}`
+  );
+  // Pin the two instances this sweep added.
+  assert.ok(QUESTION_KEY_MAP["Q_HAZMAT_TRANSPORT"], "Q_HAZMAT_TRANSPORT must be forward-mapped");
+  assert.ok(QUESTION_KEY_MAP["Q_GUESTS_OVERNIGHT"], "Q_GUESTS_OVERNIGHT must be forward-mapped");
+});

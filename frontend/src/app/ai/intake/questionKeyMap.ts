@@ -57,6 +57,15 @@ export const QUESTION_KEY_MAP: Record<string, QuestionKeyBinding> = {
   Q_EMPLOYEES_HIRED: { writeKey: "employees_hired", aliases: ["employees_work_on_site"] },
   Q_COMMERCIAL_VEHICLES: { writeKey: "commercial_vehicles", aliases: ["vehicles_used"] },
   Q_HAZARDOUS_MATERIALS: { writeKey: "hazardous_materials" },
+  // REG-HAZMAT-TRANSPORT-PROVENANCE-001 (2026-09-28 QA): same inverted-answer
+  // misfire class as REG-MOBILE-AMBULANT-PROVENANCE-001. buildEngineInput
+  // reads Q_HAZMAT_TRANSPORT via on("hazardous_materials_transported") and
+  // RULE_0618 (NTSP Porteador por Contrato franchise) keys on it, but the
+  // forward table had no entry — so a structured Yes recorded under the
+  // writeKey never inherited confirmation in strict (live) mode and the
+  // interpreter's patch was dropped by validateInterpretation. writeKey
+  // matches on()'s key exactly, mirroring the food-truck fix.
+  Q_HAZMAT_TRANSPORT: { writeKey: "hazardous_materials_transported" },
   Q_HAZARDOUS_FLUIDS: { writeKey: "hazardous_fluids", aliases: ["hazardous_fluids_stored"] },
   Q_CHEMICALS_USED: { writeKey: "chemicals_used", aliases: ["chemicals_stored"] },
   Q_PRODUCTS_MANUFACTURED: { writeKey: "products_manufactured", aliases: ["products_manufactured_on_site"] },
@@ -66,6 +75,20 @@ export const QUESTION_KEY_MAP: Record<string, QuestionKeyBinding> = {
   Q_OUTDOOR_SEATING: { writeKey: "outdoor_seating" },
   Q_LIVE_ENTERTAINMENT: { writeKey: "live_entertainment" },
   Q_SHORT_TERM_RENTAL: { writeKey: "short_term_rental", aliases: ["guests_stay_overnight"] },
+  // REG-GUESTS-OVERNIGHT-PROVENANCE-001 (2026-09-28 QA): same inverted-answer
+  // misfire class as REG-MOBILE-AMBULANT-PROVENANCE-001. buildEngineInput
+  // reads Q_GUESTS_OVERNIGHT via on("guests_stay_overnight") and RULE_0691
+  // (monthly room-tax return) keys on it, but the forward table had no entry —
+  // so the interpreter's Q_GUESTS_OVERNIGHT patch was dropped by
+  // validateInterpretation and a Q-id-confirmed Yes never inherited
+  // confirmation in strict (live) mode.
+  // Alias-overlap note: Q_SHORT_TERM_RENTAL already reads
+  // "guests_stay_overnight" as an alias in on(), in every mode — adding this
+  // entry introduces NO new cross-firing (a wizard/writer Yes under
+  // guests_stay_overnight already set Q_SHORT_TERM_RENTAL true before this
+  // change). The entry only enables the Q_GUESTS_OVERNIGHT interpreter path
+  // and its strict-mode confirmation. writeKey matches on()'s key exactly.
+  Q_GUESTS_OVERNIGHT: { writeKey: "guests_stay_overnight" },
   Q_TOURISM_ACTIVITY: { writeKey: "tourism_activity", aliases: ["water_activities", "excursions"] },
   Q_OWNS_PROPERTY: { writeKey: "owns_property" },
   Q_EXISTING_LEASE: { writeKey: "existing_lease" },
