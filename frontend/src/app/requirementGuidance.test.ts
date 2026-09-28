@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ACTIVE_JURISDICTION } from "./jurisdictions/index.ts";
-import { buildRequirementGuidance, legalBasisFor, sourceRowCitation, POTENTIAL_ADVISORY_REASON_ES, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
+import { buildRequirementGuidance, legalBasisFor, sourceRowCitation, sourceRowValue, POTENTIAL_ADVISORY_REASON_ES, type GuidanceContext, type GuidanceRequirement } from "./requirementGuidance.ts";
 import { validateGuidanceConcept } from "./guidance/model.ts";
 
 const kb = ACTIVE_JURISDICTION.kb;
@@ -640,8 +640,26 @@ test("REG-SOURCE-ROW-003: document citation fallback when the rule carries none;
   // RULE_0649 (deed) has no rule citation; the document's statute renders.
   const docFallback = sourceRowCitation("RULE_0649", "DOC_PROPERTY_DEED", kb);
   assert.equal(docFallback, "Ley 210-2015 (Ley del Registro de la Propiedad Inmobiliaria) — títulos de propiedad se inscriben mediante escritura pública");
-  // RULE_0037 (lease) and its document carry no citation at all — the UI
-  // then falls back to the rule id; sourceRowCitation reports null.
+  // RULE_0037 (lease) and its document carry no citation at all — the final
+  // row value is '—'; sourceRowCitation reports null.
   assert.equal(sourceRowCitation("RULE_0037", "DOC_LEASE_AGREEMENT", kb), null);
   assert.equal(sourceRowCitation(null, "DOC_LEASE_AGREEMENT", kb), null);
+});
+
+test("REG-SOURCE-ROW-004: the final Source row value never exposes an internal rule ID", () => {
+  // 2026-09-28 QA, live S262/S263/S264: the Lease Agreement card showed
+  // SOURCE "Rule RULE_0648" in all three scenarios. When neither the rule
+  // nor the document carries a citation, the row must show '—' — an
+  // internal rule ID is never a user-meaningful source.
+  assert.equal(sourceRowValue("RULE_0648", "DOC_LEASE_AGREEMENT", kb), "—");
+  assert.equal(sourceRowValue("RULE_0037", "DOC_LEASE_AGREEMENT", kb), "—");
+  assert.equal(sourceRowValue(null, "DOC_LEASE_AGREEMENT", kb), "—");
+  assert.equal(sourceRowValue("RULE_0614", "DOC_OWNER_AFFIDAVIT", kb), "—");
+  // Citations still win when present: rule citation first, then document's.
+  const ruleWins = sourceRowValue("RULE_0114", "DOC_PROFESSIONAL_LICENSE", kb);
+  assert.match(ruleWins, /Tribunal Supremo de Puerto Rico/);
+  assert.doesNotMatch(ruleWins, /RULE_0114/);
+  const docWins = sourceRowValue("RULE_0649", "DOC_PROPERTY_DEED", kb);
+  assert.match(docWins, /Ley 210-2015/);
+  assert.doesNotMatch(docWins, /RULE_0649/);
 });

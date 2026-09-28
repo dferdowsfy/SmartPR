@@ -467,3 +467,26 @@ export function sourceRowCitation(
   }
   return null;
 }
+/**
+ * Final user-facing "Source" row value for a requirement card: the
+ * rule/document citation chain above, or '—' when neither carries one. The
+ * internal rule ID is never a user-meaningful source, so it must never
+ * render here (2026-09-28 QA, live S262/S263/S264: the Lease Agreement
+ * card showed SOURCE "Rule RULE_0648" in all three scenarios — 21
+ * rule→document pairs across the KB hit the old rule-id fallback).
+ */
+export function sourceRowValue(
+  sourceRuleId: string | null | undefined,
+  documentId: string | null | undefined,
+  kb: KnowledgeBase,
+): string {
+  const citation = sourceRowCitation(sourceRuleId, documentId, kb);
+  if (citation) return citation;
+  const docs = kb.documents as (KnowledgeBase["documents"][number] & CitationCarrier)[];
+  const doc = docs.find((d) => d.id === documentId);
+  const docCitation = citationText(doc);
+  if (doc && docCitation.length > 10 && !isReviewCitation(docCitation)) {
+    return displayCitation(docCitation);
+  }
+  return "—";
+}
