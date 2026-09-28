@@ -8705,5 +8705,112 @@
     "reason": "QA 2026-09-27 15:00 cycle (S250, Caguas PR sales office of a Delaware corporation): DOC_FOREIGN_CORPORATION_AUTHORIZATION existed in the KB with a statute-confidence citation (Ley 164-2009 Art. 13.01) but zero rules fired it — the document was unreachable, a HIGH-severity false negative for any foreign entity entering PR. New positive entity scoping (included_entity_types, REG-FOREIGN-AUTH-001) fires the existing verified document for foreign_corporation entities only; unknown entity types never trigger. compliance_mode verify_existing per the deliberate 2026-09-18 posture (existing foreign operators verify their certificate; new entrants get REQUIRED). Generalizes beyond the test: enables entity-keyed rules as a class."
    }
   ]
+ },
+ {
+  "id": "RULE_0701",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_TOBACCO_SOLD",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_TOBACCO_RETAIL_LICENSE",
+  "citation": "Sec. 3050.01, Código de Rentas Internas de 2011 (Ley 1-2011) — licencia de traficante al detal de cigarrillos y productos derivados del tabaco; requisitos oficiales del Departamento de Hacienda",
+  "citation_url": "https://hacienda.pr.gov/node/1178",
+  "citation_confidence": "official",
+  "citation_source": "document",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-28",
+    "change": "REG-TOBACCO-RETAIL-001 (QA): Q_TOBACCO_SOLD was orphaned — zero rules keyed on it (2026-09-27 21:00 QA). Hacienda's official 'Requisitos para cada tipo de Licencia de Rentas Internas' page lists the Licencia de Detallista / Mayorista de Cigarrillos with ASUME, CRIM, criminal-record and sales-projection prerequisites (verified 2026-09-28).",
+    "reason": "KB INCOMPLETE false negative: a clearly applicable PR-wide requirement with an authoritative source had no rule. verify_existing per the deliberate 2026-09-18 posture (an operating tobacco retailer verifies its existing license; new businesses keep the required posture via the classifier's businessStatus mapping)."
+   }
+  ],
+  "citation_inherited_from": "DOC_TOBACCO_RETAIL_LICENSE"
+ },
+ {
+  "id": "RULE_0702",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_TOBACCO_SOLD",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_ASUME_CLEARANCE",
+  "citation": "Sec. 3050.01, Código de Rentas Internas de 2011 (Ley 1-2011) — licencia de traficante al detal de cigarrillos y productos derivados del tabaco; requisitos oficiales del Departamento de Hacienda",
+  "citation_url": "https://hacienda.pr.gov/node/1178",
+  "citation_confidence": "official",
+  "citation_source": "rule",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-28",
+    "change": "REG-TOBACCO-RETAIL-001 (QA): Q_TOBACCO_SOLD was orphaned — zero rules keyed on it (2026-09-27 21:00 QA). Hacienda's official 'Requisitos para cada tipo de Licencia de Rentas Internas' page lists the Licencia de Detallista / Mayorista de Cigarrillos with ASUME, CRIM, criminal-record and sales-projection prerequisites (verified 2026-09-28).",
+    "reason": "KB INCOMPLETE false negative: a clearly applicable PR-wide requirement with an authoritative source had no rule. verify_existing per the deliberate 2026-09-18 posture (an operating tobacco retailer verifies its existing license; new businesses keep the required posture via the classifier's businessStatus mapping)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0703",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_TOBACCO_SOLD",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_CRIM_CLEARANCE",
+  "citation": "Sec. 3050.01, Código de Rentas Internas de 2011 (Ley 1-2011) — licencia de traficante al detal de cigarrillos y productos derivados del tabaco; requisitos oficiales del Departamento de Hacienda",
+  "citation_url": "https://hacienda.pr.gov/node/1178",
+  "citation_confidence": "official",
+  "citation_source": "rule",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-28",
+    "change": "REG-TOBACCO-RETAIL-001 (QA): Q_TOBACCO_SOLD was orphaned — zero rules keyed on it (2026-09-27 21:00 QA). Hacienda's official 'Requisitos para cada tipo de Licencia de Rentas Internas' page lists the Licencia de Detallista / Mayorista de Cigarrillos with ASUME, CRIM, criminal-record and sales-projection prerequisites (verified 2026-09-28).",
+    "reason": "KB INCOMPLETE false negative: a clearly applicable PR-wide requirement with an authoritative source had no rule. verify_existing per the deliberate 2026-09-18 posture (an operating tobacco retailer verifies its existing license; new businesses keep the required posture via the classifier's businessStatus mapping)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0704",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_TOBACCO_SOLD",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_BACKGROUND_CHECK",
+  "citation": "Sec. 3050.01, Código de Rentas Internas de 2011 (Ley 1-2011) — licencia de traficante al detal de cigarrillos y productos derivados del tabaco; requisitos oficiales del Departamento de Hacienda",
+  "citation_url": "https://hacienda.pr.gov/node/1178",
+  "citation_confidence": "official",
+  "citation_source": "rule",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-28",
+    "change": "REG-TOBACCO-RETAIL-001 (QA): Q_TOBACCO_SOLD was orphaned — zero rules keyed on it (2026-09-27 21:00 QA). Hacienda's official 'Requisitos para cada tipo de Licencia de Rentas Internas' page lists the Licencia de Detallista / Mayorista de Cigarrillos with ASUME, CRIM, criminal-record and sales-projection prerequisites (verified 2026-09-28).",
+    "reason": "KB INCOMPLETE false negative: a clearly applicable PR-wide requirement with an authoritative source had no rule. verify_existing per the deliberate 2026-09-18 posture (an operating tobacco retailer verifies its existing license; new businesses keep the required posture via the classifier's businessStatus mapping)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0705",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_TOBACCO_SOLD",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_TOBACCO_SALES_PROJECTION",
+  "citation": "Sec. 3050.01, Código de Rentas Internas de 2011 (Ley 1-2011) — licencia de traficante al detal de cigarrillos y productos derivados del tabaco; requisitos oficiales del Departamento de Hacienda",
+  "citation_url": "https://hacienda.pr.gov/node/1178",
+  "citation_confidence": "official",
+  "citation_source": "document",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-09-28",
+    "change": "REG-TOBACCO-RETAIL-001 (QA): Q_TOBACCO_SOLD was orphaned — zero rules keyed on it (2026-09-27 21:00 QA). Hacienda's official 'Requisitos para cada tipo de Licencia de Rentas Internas' page lists the Licencia de Detallista / Mayorista de Cigarrillos with ASUME, CRIM, criminal-record and sales-projection prerequisites (verified 2026-09-28).",
+    "reason": "KB INCOMPLETE false negative: a clearly applicable PR-wide requirement with an authoritative source had no rule. verify_existing per the deliberate 2026-09-18 posture (an operating tobacco retailer verifies its existing license; new businesses keep the required posture via the classifier's businessStatus mapping)."
+   }
+  ],
+  "citation_inherited_from": "DOC_TOBACCO_SALES_PROJECTION"
  }
 ]

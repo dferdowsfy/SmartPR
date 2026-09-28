@@ -381,3 +381,47 @@ test("included_entity_types: unknown/null entity stays silent (no invention)", (
   assert.ok(lacks(docs, "DOC_FOREIGN_CORPORATION_AUTHORIZATION"),
     "an unknown entity type must not trigger an entity-keyed requirement");
 });
+
+// REG-TOBACCO-RETAIL-001 (2026-09-28 QA): Q_TOBACCO_SOLD was orphaned — zero
+// rules keyed on it — while Hacienda's official license-requirements page
+// lists the Licencia de Detallista / Mayorista de Cigarrillos as a PR-wide
+// requirement for tobacco retailers (verified 2026-09-28). The license fires
+// only on the tobacco question, with the Hacienda prerequisites (ASUME, CRIM,
+// criminal-record, sales projection) as children — never on the alcohol
+// chain, never from municipality alone.
+const TOBACCO_CHAIN = [
+  "DOC_TOBACCO_RETAIL_LICENSE",
+  "DOC_ASUME_CLEARANCE",
+  "DOC_CRIM_CLEARANCE",
+  "DOC_BACKGROUND_CHECK",
+  "DOC_TOBACCO_SALES_PROJECTION",
+];
+
+test("tobacco retail chain: selling tobacco products fires the Hacienda cigarette-dealer license (RULE_0701–0705)", () => {
+  const docs = run("Convenience Store", { Q_TOBACCO_SOLD: true }, "Ponce");
+  assert.ok(has(docs, ...TOBACCO_CHAIN),
+    "Q_TOBACCO_SOLD=true must trigger the retail cigarette license and its Hacienda prerequisites: " + docs.join(","));
+});
+
+test("tobacco retail chain: no tobacco sales means no tobacco license", () => {
+  for (const answers of [{}, { Q_TOBACCO_SOLD: false }, { Q_ALCOHOL_SOLD: true }] as Record<string, boolean>[]) {
+    const docs = run("Convenience Store", answers, "Ponce");
+    assert.ok(lacks(docs, "DOC_TOBACCO_RETAIL_LICENSE", "DOC_TOBACCO_SALES_PROJECTION"),
+      `tobacco license must not fire without tobacco sales (${JSON.stringify(answers)})`);
+  }
+});
+
+test("tobacco retail chain: tobacco never implies alcohol licensing (and vice versa)", () => {
+  const tobaccoOnly = run("Convenience Store", { Q_TOBACCO_SOLD: true, Q_ALCOHOL_SOLD: false }, "Ponce");
+  assert.ok(lacks(tobaccoOnly, "DOC_ALCOHOL_LICENSE", "DOC_ALCOHOL_SALES_PROJECTION"),
+    "a tobacco-only seller must not receive the alcohol license chain");
+  const alcoholOnly = run("Convenience Store", { Q_TOBACCO_SOLD: false, Q_ALCOHOL_SOLD: true }, "Ponce");
+  assert.ok(has(alcoholOnly, "DOC_ALCOHOL_LICENSE") && lacks(alcoholOnly, "DOC_TOBACCO_RETAIL_LICENSE"),
+    "an alcohol-only seller must not receive the tobacco license chain");
+});
+
+test("tobacco retail chain: municipality alone never triggers it", () => {
+  const docs = run("Convenience Store", {}, "Ponce");
+  assert.ok(lacks(docs, ...TOBACCO_CHAIN),
+    "the tobacco chain must key on the tobacco-sales fact, not on municipality");
+});

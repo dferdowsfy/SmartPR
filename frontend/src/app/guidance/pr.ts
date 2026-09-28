@@ -49,6 +49,17 @@ export const PR_GUIDANCE_SOURCES = {
   // page lists them for the Licencia de Traficante al Detalle de Bebidas
   // Alcohólicas.
   alcoholReqs: source("SRC_GUIDANCE_ALCOHOL_REQS", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas", "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas", "Hacienda's internal-revenue license requirements list the ASUME certification, the CRIM debt certification, and the criminal-record certificate among the prerequisites for the retail alcoholic-beverage dealer license."),
+  // REG-TOBACCO-RETAIL-001 (2026-09-28 QA): source for the Retail Cigarette
+  // License and its prerequisite cards. Hacienda's official
+  // "Requisitos para cada tipo de Licencia de Rentas Internas" page
+  // (verified 2026-09-28 at hacienda.pr.gov/node/1178) lists the
+  // "Licencia de Detallista / Mayorista de Cigarrillos" — the retail
+  // cigarette/tobacco dealer license under Sec. 3050.01 of the Código de
+  // Rentas Internas de 2011 — with the ASUME certification, the CRIM
+  // movable-property debt certification, the criminal-record certificate,
+  // and the sales projection (proyección o volumen de ventas) among its
+  // prerequisites.
+  tobaccoReqs: source("SRC_GUIDANCE_TOBACCO_REQS", "Departamento de Hacienda", "Requisitos para cada tipo de licencia de rentas internas — Licencia de Detallista / Mayorista de Cigarrillos", "https://hacienda.pr.gov/node/1178", "Hacienda's official internal-revenue license requirements list the retail cigarette dealer license (Licencia de Detallista de Cigarrillos) with the ASUME certification, the CRIM debt certification, the criminal-record certificate, and the sales projection among its prerequisites."),
   // REG-GUIDE-TAX-COMPLIANCE-001 (2026-09-21 QA): source for the Hacienda
   // Tax Filing & Debt Compliance evidence card. The requirement is
   // established by the founder judgment (§29.2, 2026-09-16, settled):
@@ -211,6 +222,8 @@ const municipality = condition("municipality", "Municipality", "Municipio");
 const business = condition("businessType", "Commercial activity", "Actividad comercial");
 const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_ALCOHOL_LICENSE: { en: ["alcohol"], es: ["alcohol", "alcohólic"] },
+  DOC_TOBACCO_RETAIL_LICENSE: { en: ["tobacco", "cigarette"], es: ["tabaco", "cigarrillos"] },
+  DOC_TOBACCO_SALES_PROJECTION: { en: ["tobacco", "projection"], es: ["tabaco", "proyección"] },
   // §29.2: alcohol-license prerequisites — children of the alcohol license.
   DOC_ASUME_CLEARANCE: { en: ["asume", "child support clearance"], es: ["asume", "sustento de menores"] },
   DOC_CRIM_CLEARANCE: { en: ["crim", "property debt clearance"], es: ["crim", "deuda contributiva"] },
@@ -317,22 +330,62 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("Confirm the sales category, complete the alcohol-license application, and supply the supporting evidence requested for that category.", "Confirma la categoría de venta, completa la solicitud de licencia de alcohol y aporta la evidencia de respaldo correspondiente."),
     text("Issuance authorizes only the alcohol sales covered by that license, subject to its conditions; a prepared application is not authorization.", "La expedición autoriza solo las ventas de alcohol cubiertas por la licencia y sus condiciones; una solicitud preparada no es una autorización."),
   ]),
+  // REG-TOBACCO-RETAIL-001 (2026-09-28 QA): Puerto Rico licenses retail
+  // cigarette and tobacco dealers (Licencia de Detallista de Cigarrillos)
+  // under Sec. 3050.01 of the Código de Rentas Internas de 2011 (verified
+  // 2026-09-28 on Hacienda's official internal-revenue license-requirements
+  // page). Tobacco sales need their own Hacienda license — separate from the
+  // alcohol dealer license (§29.2-class isolation).
+  DOC_TOBACCO_RETAIL_LICENSE: concept("DOC_TOBACCO_RETAIL_LICENSE", [[condition("Q_TOBACCO_SOLD", "Tobacco sales: Yes", "Venta de productos de tabaco: Sí", true)]], [PR_GUIDANCE_SOURCES.tobaccoReqs], [
+    text("Selling cigarettes, cigars and other tobacco products at retail is separately licensed. Ordinary business registration does not itself authorize tobacco sales.", "La venta al detal de cigarrillos, cigarros y otros productos de tabaco requiere una licencia específica. El registro del negocio por sí solo no autoriza esas ventas."),
+    text("The Hacienda license authorizes the retail tobacco sales specified in it — cigarettes, cigars, tobacco products and related devices covered by the dealer's filing.", "La licencia de Hacienda autoriza las ventas de tabaco al detal que especifica — cigarrillos, cigarros, productos de tabaco y artículos relacionados cubiertos por la solicitud del traficante."),
+    text("Confirm the sales category, complete the cigarette-dealer license application (Modelo SC 2309), and supply the supporting evidence requested — including the ASUME and CRIM certifications, the criminal-record certificate, and the sales projection.", "Confirma la categoría de venta, completa la solicitud de licencia de detallista de cigarrillos (Modelo SC 2309) y aporta la evidencia de respaldo correspondiente — incluyendo las certificaciones de ASUME y CRIM, el certificado de antecedentes penales y la proyección de ventas."),
+    text("Issuance authorizes only the tobacco sales covered by that license, subject to its conditions; a prepared application is not authorization.", "La expedición autoriza solo las ventas de tabaco cubiertas por la licencia y sus condiciones; una solicitud preparada no es una autorización."),
+  ]),
   // §29.2 (founder judgment 2026-09-16): ASUME, CRIM and the criminal-record
   // certificate are prerequisites of the retail alcohol beverage license —
   // never generic restaurant requirements. Modeled as children of
   // DOC_ALCOHOL_LICENSE via dependencies.
-  DOC_ASUME_CLEARANCE: concept("DOC_ASUME_CLEARANCE", [[condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)]], [PR_GUIDANCE_SOURCES.alcoholReqs], [
-    text("Hacienda requires the ASUME child-support clearance as a prerequisite for the retail alcohol beverage license — it proves the applicant owes no child-support debt to ASUME.", "Hacienda exige la certificación de ASUME como prerrequisito de la licencia de bebidas alcohólicas al detal — acredita que el solicitante no tiene deuda de sustento de menores con ASUME."),
-    text("The ASUME clearance certifies child-support compliance; without it Hacienda will not issue the alcohol dealer license.", "La certificación de ASUME acredita el cumplimiento con el sustento de menores; sin ella Hacienda no expide la licencia de traficante de alcohol."),
-    text("Request the ASUME certification through ASUME/Familia offices and file it with the alcohol-license application in SURI.", "Solicita la certificación de ASUME en las oficinas de ASUME/Familia y radícala junto a la solicitud de licencia de alcohol en SURI."),
-    text("Once Hacienda accepts the ASUME clearance, the alcohol-license file moves forward; an expired or missing clearance stalls issuance.", "Una vez Hacienda acepta la certificación de ASUME, el expediente de la licencia de alcohol avanza; una certificación vencida o ausente detiene la expedición."),
-  ], ["DOC_ALCOHOL_LICENSE"]),
-  DOC_CRIM_CLEARANCE: concept("DOC_CRIM_CLEARANCE", [[condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)]], [PR_GUIDANCE_SOURCES.alcoholReqs], [
-    text("Hacienda requires the CRIM property debt clearance as a prerequisite for the retail alcohol beverage license — it certifies the applicant has no outstanding movable-property tax debt with CRIM.", "Hacienda exige la certificación de deuda del CRIM como prerrequisito de la licencia de bebidas alcohólicas al detal — certifica que el solicitante no tiene deuda contributiva sobre propiedad mueble con el CRIM."),
-    text("The CRIM clearance proves municipal property-tax compliance; Hacienda treats it as a gate for the alcohol dealer license.", "La certificación del CRIM prueba el cumplimiento contributivo municipal; Hacienda la trata como un filtro para la licencia de traficante de alcohol."),
-    text("Obtain the negative debt certification through the CRIM360 portal and attach it to the alcohol-license application.", "Obtén la certificación negativa de deuda en el portal CRIM360 y anéxala a la solicitud de licencia de alcohol."),
-    text("A clean CRIM clearance lets the alcohol-license application proceed; unresolved CRIM debt blocks the license until paid.", "Una certificación del CRIM limpia deja avanzar la solicitud de licencia de alcohol; una deuda contributiva sin resolver bloquea la licencia hasta saldarla."),
-  ], ["DOC_ALCOHOL_LICENSE"]),
+  // REG-TOBACCO-RETAIL-001 (2026-09-28 QA): the ASUME clearance is also a
+  // prerequisite of the retail cigarette dealer license (RULE_0702), not
+  // only of the alcohol license. Following the REG-GUIDE-BACKGROUND-001/002
+  // pattern: shared body copy stays context-free; the requiring basis lives
+  // in branchContext per matched branch; dependencies are conditional.
+  // The alcohol branch is unchanged.
+  DOC_ASUME_CLEARANCE: concept("DOC_ASUME_CLEARANCE", [
+    [condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)],
+    [condition("Q_TOBACCO_SOLD", "Tobacco sales: Yes", "Venta de productos de tabaco: Sí", true)],
+  ], [PR_GUIDANCE_SOURCES.alcoholReqs, PR_GUIDANCE_SOURCES.tobaccoReqs], [
+    text("Hacienda requires the ASUME child-support clearance as a prerequisite for its internal-revenue dealer licenses (licencias de rentas internas) — it proves the applicant owes no child-support debt to ASUME.", "Hacienda exige la certificación de ASUME como prerrequisito de sus licencias de traficante de rentas internas — acredita que el solicitante no tiene deuda de sustento de menores con ASUME."),
+    text("The ASUME clearance certifies child-support compliance; without it Hacienda will not issue the dealer license that requires it.", "La certificación de ASUME acredita el cumplimiento con el sustento de menores; sin ella Hacienda no expide la licencia de traficante que la exige."),
+    text("Request the ASUME certification through ASUME/Familia offices and file it with the license application in SURI.", "Solicita la certificación de ASUME en las oficinas de ASUME/Familia y radícala junto a la solicitud de licencia en SURI."),
+    text("Once Hacienda accepts the ASUME clearance, the license file moves forward; an expired or missing clearance stalls issuance.", "Una vez Hacienda acepta la certificación de ASUME, el expediente de la licencia avanza; una certificación vencida o ausente detiene la expedición."),
+  ], [], [
+    { factKey: "Q_ALCOHOL_SOLD", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
+    { factKey: "Q_TOBACCO_SOLD", factValue: true, documentId: "DOC_TOBACCO_RETAIL_LICENSE" },
+  ], [
+    text("Hacienda requires the ASUME child-support clearance inside the retail alcohol beverage license file.", "Hacienda exige la certificación de ASUME dentro del expediente de la licencia de bebidas alcohólicas al detal."),
+    text("Hacienda requires the ASUME child-support clearance inside the retail cigarette dealer license file.", "Hacienda exige la certificación de ASUME dentro del expediente de la licencia de detallista de cigarrillos."),
+  ]),
+  // REG-TOBACCO-RETAIL-001 (2026-09-28 QA): the CRIM clearance is also a
+  // prerequisite of the retail cigarette dealer license (RULE_0703). Same
+  // BACKGROUND-pattern restructure as ASUME above; the alcohol branch is
+  // unchanged.
+  DOC_CRIM_CLEARANCE: concept("DOC_CRIM_CLEARANCE", [
+    [condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)],
+    [condition("Q_TOBACCO_SOLD", "Tobacco sales: Yes", "Venta de productos de tabaco: Sí", true)],
+  ], [PR_GUIDANCE_SOURCES.alcoholReqs, PR_GUIDANCE_SOURCES.tobaccoReqs], [
+    text("Hacienda requires the CRIM property debt clearance as a prerequisite for its internal-revenue dealer licenses (licencias de rentas internas) — it certifies the applicant has no outstanding movable-property tax debt with CRIM.", "Hacienda exige la certificación de deuda del CRIM como prerrequisito de sus licencias de traficante de rentas internas — certifica que el solicitante no tiene deuda contributiva sobre propiedad mueble con el CRIM."),
+    text("The CRIM clearance proves municipal property-tax compliance; Hacienda treats it as a gate for the dealer license that requires it.", "La certificación del CRIM prueba el cumplimiento contributivo municipal; Hacienda la trata como un filtro para la licencia de traficante que la exige."),
+    text("Obtain the negative debt certification through the CRIM360 portal and attach it to the license application.", "Obtén la certificación negativa de deuda en el portal CRIM360 y anéxala a la solicitud de licencia."),
+    text("A clean CRIM clearance lets the license application proceed; unresolved CRIM debt blocks the license until paid.", "Una certificación del CRIM limpia deja avanzar la solicitud de licencia; una deuda contributiva sin resolver bloquea la licencia hasta saldarla."),
+  ], [], [
+    { factKey: "Q_ALCOHOL_SOLD", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
+    { factKey: "Q_TOBACCO_SOLD", factValue: true, documentId: "DOC_TOBACCO_RETAIL_LICENSE" },
+  ], [
+    text("Hacienda requires the CRIM property debt clearance inside the retail alcohol beverage license file.", "Hacienda exige la certificación de deuda del CRIM dentro del expediente de la licencia de bebidas alcohólicas al detal."),
+    text("Hacienda requires the CRIM property debt clearance inside the retail cigarette dealer license file.", "Hacienda exige la certificación de deuda del CRIM dentro del expediente de la licencia de detallista de cigarrillos."),
+  ]),
   // §29.2 (founder judgment 2026-09-16): ASUME, CRIM and the criminal-record
   // certificate are prerequisites of the retail alcohol beverage license —
   // never generic restaurant requirements. They are modeled as children of
@@ -353,10 +406,11 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     [condition("Q_ALCOHOL_SOLD", "Alcohol sales: Yes", "Venta de alcohol: Sí", true)],
     [condition("Q_ALCOHOL_SERVED", "Alcohol service: Yes", "Servicio de alcohol: Sí", true)],
     [condition("Q_ALCOHOL_MANUFACTURED", "Alcohol manufacturing: Yes", "Manufactura de alcohol: Sí", true)],
+    [condition("Q_TOBACCO_SOLD", "Tobacco sales: Yes", "Venta de productos de tabaco: Sí", true)],
     [condition("Q_CHILDREN_PRESENT", "Children present at the business: Yes", "Niños presentes en el negocio: Sí", true)],
     ...["BT_DAYCARE", "BT_TUTORING_CENTER", "BT_PRIVATE_SCHOOL", "BT_VOCATIONAL_SCHOOL", "BT_TRAINING_COMPANY", "BT_AFTER_SCHOOL_PROGRAM"].map(bt => [condition("businessType", "Childcare/education staffing", "Personal de cuido/educación", bt)]),
     [condition("businessType", "Security staff", "Personal de seguridad", "BT_SECURITY_CONTRACTOR")],
-  ], [PR_GUIDANCE_SOURCES.alcoholReqs, PR_GUIDANCE_SOURCES.antecedentes], [
+  ], [PR_GUIDANCE_SOURCES.alcoholReqs, PR_GUIDANCE_SOURCES.tobaccoReqs, PR_GUIDANCE_SOURCES.antecedentes], [
     text("The criminal-record certificate (Certificado de Antecedentes Penales) documents a person's criminal history as recorded by the Policía de Puerto Rico, which issues it under Ley 254-1974. Every licensing process that asks for criminal-record documentation accepts this certificate as the proof.", "El certificado de antecedentes penales documenta el historial delictivo de una persona según lo registra la Policía de Puerto Rico, que lo expide bajo la Ley 254-1974. Todo proceso de licenciamiento que pida documentación de antecedentes penales acepta este certificado como prueba."),
     text("The certificate proves the applicant or staff member has no disqualifying criminal record for the filing that requires it. The Policía issues it free through the official pr.gov portal, and every licensing process that asks for criminal-record documentation accepts it.", "El certificado prueba que el solicitante o empleado no tiene un récord criminal que lo descalifique para la solicitud que lo exige. La Policía lo expide gratis en el portal oficial de pr.gov, y todo proceso de licenciamiento que pida documentación de antecedentes penales lo acepta."),
     text("Request a Certificado de Antecedentes Penales for each person who must be cleared — through the official pr.gov portal (free, online) — and file each certificate with the application that requires it.", "Solicita un certificado de antecedentes penales para cada persona que haya que depurar — en el portal oficial de pr.gov (gratis, en línea) — y radica cada certificado con la solicitud que lo exige."),
@@ -370,11 +424,13 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     { factKey: "Q_ALCOHOL_SOLD", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
     { factKey: "Q_ALCOHOL_SERVED", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
     { factKey: "Q_ALCOHOL_MANUFACTURED", factValue: true, documentId: "DOC_ALCOHOL_LICENSE" },
+    { factKey: "Q_TOBACCO_SOLD", factValue: true, documentId: "DOC_TOBACCO_RETAIL_LICENSE" },
     { factKey: "Q_CHILDREN_PRESENT", factValue: true, documentId: "DOC_CHILDCARE_LICENSE" },
   ], [
     text("Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de bebidas alcohólicas al detal."),
     text("Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de bebidas alcohólicas al detal."),
     text("Hacienda requires the criminal-record certificate inside the retail alcohol beverage license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de bebidas alcohólicas al detal."),
+    text("Hacienda requires the criminal-record certificate inside the retail cigarette dealer license file.", "Hacienda exige el certificado de antecedentes penales dentro del expediente de la licencia de detallista de cigarrillos."),
     text("Establishments that care for or educate children must clear their staff with criminal-record checks as part of their licensing.", "Los establecimientos que cuidan o educan niños tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
     text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
     text("Childcare and education businesses must clear their staff with criminal-record checks as part of their licensing.", "Los negocios de cuido y educación tienen que depurar a su personal con verificaciones de antecedentes penales como parte de su licenciamiento."),
@@ -862,6 +918,19 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("This sales projection describes the volume of alcohol the business expects to sell — how much, and of what type — so Hacienda can complete the license file. It is a filing input for the alcohol license, alongside the Merchant Registration, the ASUME and CRIM certifications, and the criminal-record certificate.", "Esta proyección describe el volumen de alcohol que el negocio espera vender — cuánto y de qué tipo — para completar el expediente de la licencia. Es un insumo de la solicitud de la licencia de bebidas alcohólicas, junto al Registro de Comerciante, las certificaciones de ASUME y CRIM, y el certificado de antecedentes penales."),
     text("Prepare the projected sales volume for the licensed premises — estimated monthly or annual alcohol sales — and enter it when completing the alcohol-license application. Keep the working numbers with the license file; Hacienda uses them as the declared basis for the license.", "Prepara la proyección del volumen de ventas del local — ventas de alcohol estimadas por mes o por año — y anótala al completar la solicitud de la licencia. Guarda los números de trabajo en el expediente; Hacienda los usa como la base declarada de la licencia."),
     text("An alcohol-license application without the sales projection is incomplete: Hacienda holds the license until the projected sales volume is in the file. Prepare the numbers before filing so the application is not held up.", "Una solicitud de licencia de bebidas alcohólicas sin la proyección de ventas está incompleta: Hacienda la detiene hasta que el volumen proyectado entre al expediente. Prepara los números antes de radicar para que la solicitud no se tranque."),
+  ]),
+  // REG-TOBACCO-RETAIL-001 (2026-09-28 QA): the tobacco sales projection is
+  // one of Hacienda's official prerequisites for the Licencia de
+  // Detallista / Mayorista de Cigarrillos ("Proyección o Volumen de Ventas",
+  // verified 2026-09-28) — mirrors the alcohol sales-projection card.
+  DOC_TOBACCO_SALES_PROJECTION: concept("DOC_TOBACCO_SALES_PROJECTION", [
+    [condition("Q_TOBACCO_SOLD", "Tobacco sales: Yes", "Venta de productos de tabaco: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.tobaccoReqs], [
+    text("Hacienda wants to know the scale of your tobacco business before it licenses you. On its official list of prerequisites for the cigarette dealer license, Hacienda names the sales projection ('Proyecci\u00f3n o Volumen de Ventas') \u2014 your estimate of how much tobacco you will move. The estimate goes into the license file along with the ASUME and CRIM clearances, the criminal-record certificate, and the Merchant Registration.", "Hacienda quiere conocer la escala de tu negocio de tabaco antes de licenciarlo. En su lista oficial de requisitos para la licencia de detallista de cigarrillos, Hacienda incluye la proyecci\u00f3n de ventas ('Proyecci\u00f3n o Volumen de Ventas') \u2014 tu estimado de cu\u00e1nto tabaco vender\u00e1s. El estimado entra al expediente de la licencia junto con las certificaciones de ASUME y CRIM, el certificado de antecedentes penales y el Registro de Comerciante."),
+    text("The projection tells Hacienda what size of tobacco operation it is authorizing. A corner store selling a few packs a week and a larger smoke shop get judged on different numbers, and the license file needs your number in it before Hacienda signs off.", "La proyecci\u00f3n le dice a Hacienda qu\u00e9 tama\u00f1o de operaci\u00f3n de tabaco est\u00e1 autorizando. Un colmado que vende unas cajetillas a la semana y una tabaquer\u00eda m\u00e1s grande se eval\u00faan con n\u00fameros distintos, y el expediente necesita tu n\u00famero antes de que Hacienda firme."),
+    text("Put a monthly or annual tobacco-sales estimate in writing \u2014 packs, cartons, units \u2014 and bring it when you file the cigarette-dealer license application in SURI. Keep a copy with the license file; it is the declared sales basis of your application.", "Pon por escrito un estimado mensual o anual de ventas de tabaco \u2014 cajetillas, cartones, unidades \u2014 y ll\u00e9valo cuando radiques la solicitud de licencia de detallista de cigarrillos en SURI. Guarda copia en el expediente; es la base declarada de ventas de tu solicitud."),
+    text("No projection, no license. Hacienda will not issue the cigarette dealer license until the projected sales figure is in the file. Write the estimate up front so the filing does not sit waiting for it.", "Sin proyecci\u00f3n no hay licencia. Hacienda no expide la licencia de detallista de cigarrillos hasta que la cifra de ventas proyectadas est\u00e9 en el expediente. Prepara el estimado por adelantado para que la solicitud no se quede esperando."),
   ]),
   // REG-GUIDE-FDA-001 (2026-09-21 QA): the FDA Food Facility Registration
   // card rendered the unvalidated-description placeholder with a confident

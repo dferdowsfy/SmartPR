@@ -1159,5 +1159,39 @@
     "citation": "DACO y DTOP mantienen el Registro Único de Dealers; los concesionarios de vehículos de motor deben tener licencia de DACO para operar (licencia para operar).",
     "citation_url": "https://www.daco.pr.gov/consumidores",
     "citation_confidence": "official"
+  },
+  {
+    "id": "DOC_TOBACCO_RETAIL_LICENSE",
+    "name": "Retail Cigarette License (Licencia de Detallista de Cigarrillos)",
+    "agency": "Departamento de Hacienda",
+    "category": "State",
+    "agency_url": "https://hacienda.pr.gov/",
+    "agency_canonical": "Departamento de Hacienda",
+    "download_url": "https://suri.hacienda.pr.gov",
+    "download_kind": "filing_portal",
+    "download_note": "Hacienda's license-requirements page lists the 'Licencia de Detallista / Mayorista de Cigarrillos' (verified 2026-09-28) — file the SC 2309 'Solicitud de Licencias' and apply/renew through the SURI portal.",
+    "depends_on_document_ids": [
+      "DOC_ASUME_CLEARANCE",
+      "DOC_CRIM_CLEARANCE",
+      "DOC_BACKGROUND_CHECK",
+      "DOC_TOBACCO_SALES_PROJECTION"
+    ],
+    "citation": "Sección 3050.01, Código de Rentas Internas de 2011 (Ley 1-2011) — licencia de traficante al detal de cigarrillos y productos derivados del tabaco",
+    "citation_url": "https://hacienda.pr.gov/node/1178",
+    "citation_confidence": "official"
+  },
+  {
+    "id": "DOC_TOBACCO_SALES_PROJECTION",
+    "name": "Tobacco Sales Projection (Proyección de Ventas de Tabaco)",
+    "agency": "Departamento de Hacienda",
+    "category": "State",
+    "agency_url": "https://hacienda.pr.gov/",
+    "agency_canonical": "Departamento de Hacienda",
+    "download_url": null,
+    "download_kind": "none",
+    "download_note": "Hacienda lists 'Proyección o Volumen de Ventas' among the official prerequisites for the Licencia de Detallista / Mayorista de Cigarrillos — prepare the projected tobacco-product sales volume when filing the license application in SURI.",
+    "citation": "Requisitos para cada tipo de licencia de rentas internas — Licencia de Detallista / Mayorista de Cigarrillos: proyección del volumen de ventas",
+    "citation_url": "https://hacienda.pr.gov/node/1178",
+    "citation_confidence": "official"
   }
 ]
