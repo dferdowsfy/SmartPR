@@ -6586,7 +6586,16 @@
   "expected_answer": "true",
   "excluded_business_types": [
    "BT_SOLAR_INSTALLER",
-   "BT_BATTERY_STORAGE_INSTALLER"
+   "BT_BATTERY_STORAGE_INSTALLER",
+   "BT_GENERAL_CONTRACTOR",
+   "BT_ELECTRICAL_CONTRACTOR",
+   "BT_PLUMBING_CONTRACTOR",
+   "BT_HVAC_CONTRACTOR",
+   "BT_ROOFING_CONTRACTOR",
+   "BT_CONCRETE_CONTRACTOR",
+   "BT_SPECIALTY_TRADE_CONTRACTOR",
+   "BT_UTILITY_CONTRACTOR",
+   "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR"
   ],
   "municipality_flag": null,
   "requires_document_id": "DOC_LUMA_INTERCONNECTION",
@@ -6606,6 +6615,11 @@
     "date": "2026-09-24",
     "change": "excluded_business_types=[BT_SOLAR_INSTALLER, BT_BATTERY_STORAGE_INSTALLER] (QA 18:00 cycle, REG-RENEWABLE-OWNER-001)",
     "reason": "S184 (Guaynabo solar installer): Q_RENEWABLE_INSTALL=true in the installer-trade reading ('we install systems for clients') fired the owner-side LUMA interconnection + net-metering instruments as REQUIRED for a trade business that owns no generating system. Same installer!=owner defect class as f992061 (2026-09-21), which removed the BT->Q_RENEWABLE_INSTALL definitional derivations but left the bare question-triggered rules firing for installer BTs answering Yes in discovery. The instruments are customer-generator-side (Ley 114-2007 Art. 9 net metering; CEPR-MI-2014-0001 distributed-generator interconnection; the KB's own guidance names the installer as information ON the filing, not the filer). The project-scoped solar follow-ups (RULE_0612-0615: OGPe ground-mount/>1MW, owner affidavit, battery fire) are untouched - installers still get project cards. Owner/developer BTs (incl. BT_RENEWABLE_ENERGY_COMPANY, S79 class) and all other BTs keep the question-keyed behavior. Edge case documented: an installer BT that also owns a generating system at its own premises will not surface these cards."
+   },
+   {
+    "date": "2026-09-29",
+    "change": "excluded_business_types += 9 trade-contractor BTs (QA 12:00 cycle, REG-RENEWABLE-OWNER-001 extension)",
+    "reason": "S295 (Bayamon): live intake classified a solar-installation company as BT_SPECIALTY_TRADE_CONTRACTOR; Q_RENEWABLE_INSTALL=true in the installer-trade reading fired the generator-side LUMA interconnection + net-metering instruments as REQUIRED - the same installer!=owner defect class the 2026-09-24 REG-RENEWABLE-OWNER-001 fix closed for BT_SOLAR_INSTALLER/BT_BATTERY_STORAGE_INSTALLER. The narrow 2-BT exclusion is one extraction choice away from re-firing (intake auto-classification picked the generic contractor BT). Generalizing the exclusion to the full trade-contractor family: trade contractors install/construct for clients and cannot be the filer of owner-side generator instruments. Owner/developer BTs (incl. BT_RENEWABLE_ENERGY_COMPANY, S79 class) untouched; project-scoped solar follow-ups (RULE_0612-0615) untouched. Edge case carried: a trade-contractor BT that owns a generating system at its own premises will not surface these cards."
    }
   ]
  },
@@ -6617,7 +6631,16 @@
   "expected_answer": "true",
   "excluded_business_types": [
    "BT_SOLAR_INSTALLER",
-   "BT_BATTERY_STORAGE_INSTALLER"
+   "BT_BATTERY_STORAGE_INSTALLER",
+   "BT_GENERAL_CONTRACTOR",
+   "BT_ELECTRICAL_CONTRACTOR",
+   "BT_PLUMBING_CONTRACTOR",
+   "BT_HVAC_CONTRACTOR",
+   "BT_ROOFING_CONTRACTOR",
+   "BT_CONCRETE_CONTRACTOR",
+   "BT_SPECIALTY_TRADE_CONTRACTOR",
+   "BT_UTILITY_CONTRACTOR",
+   "BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR"
   ],
   "municipality_flag": null,
   "requires_document_id": "DOC_NET_METERING_AGREEMENT",
@@ -6637,6 +6660,11 @@
     "date": "2026-09-24",
     "change": "excluded_business_types=[BT_SOLAR_INSTALLER, BT_BATTERY_STORAGE_INSTALLER] (QA 18:00 cycle, REG-RENEWABLE-OWNER-001)",
     "reason": "S184 (Guaynabo solar installer): Q_RENEWABLE_INSTALL=true in the installer-trade reading ('we install systems for clients') fired the owner-side LUMA interconnection + net-metering instruments as REQUIRED for a trade business that owns no generating system. Same installer!=owner defect class as f992061 (2026-09-21), which removed the BT->Q_RENEWABLE_INSTALL definitional derivations but left the bare question-triggered rules firing for installer BTs answering Yes in discovery. The instruments are customer-generator-side (Ley 114-2007 Art. 9 net metering; CEPR-MI-2014-0001 distributed-generator interconnection; the KB's own guidance names the installer as information ON the filing, not the filer). The project-scoped solar follow-ups (RULE_0612-0615: OGPe ground-mount/>1MW, owner affidavit, battery fire) are untouched - installers still get project cards. Owner/developer BTs (incl. BT_RENEWABLE_ENERGY_COMPANY, S79 class) and all other BTs keep the question-keyed behavior. Edge case documented: an installer BT that also owns a generating system at its own premises will not surface these cards."
+   },
+   {
+    "date": "2026-09-29",
+    "change": "excluded_business_types += 9 trade-contractor BTs (QA 12:00 cycle, REG-RENEWABLE-OWNER-001 extension)",
+    "reason": "S295 (Bayamon): live intake classified a solar-installation company as BT_SPECIALTY_TRADE_CONTRACTOR; Q_RENEWABLE_INSTALL=true in the installer-trade reading fired the generator-side LUMA interconnection + net-metering instruments as REQUIRED - the same installer!=owner defect class the 2026-09-24 REG-RENEWABLE-OWNER-001 fix closed for BT_SOLAR_INSTALLER/BT_BATTERY_STORAGE_INSTALLER. The narrow 2-BT exclusion is one extraction choice away from re-firing (intake auto-classification picked the generic contractor BT). Generalizing the exclusion to the full trade-contractor family: trade contractors install/construct for clients and cannot be the filer of owner-side generator instruments. Owner/developer BTs (incl. BT_RENEWABLE_ENERGY_COMPANY, S79 class) untouched; project-scoped solar follow-ups (RULE_0612-0615) untouched. Edge case carried: a trade-contractor BT that owns a generating system at its own premises will not surface these cards."
    }
   ]
  },

@@ -3733,7 +3733,25 @@ test("CASE AP: installer-trade BTs never get generator-side LUMA/net-metering ev
   // RULE_0237 uses for repair shops. Deliberately NOT excluding
   // BT_RENEWABLE_ENERGY_COMPANY (owner/developer class, S79): a renewable
   // energy company answering Yes in the owner reading keeps both cards.
-  for (const btName of ["Solar Installer", "Battery Storage Installer"] as const) {
+  // 2026-09-29 QA 12:00 (S295, REG-RENEWABLE-OWNER-001 extension): the 2-BT
+  // exclusion is one intake-extraction choice away from re-firing — live
+  // classified a solar-installation company as "Specialty Trade Contractor"
+  // and the generator-side cards returned as REQUIRED. Generalized to the
+  // whole trade-contractor family: trade contractors install/construct for
+  // clients and cannot be the filer of owner-side generator instruments.
+  for (const btName of [
+    "Solar Installer",
+    "Battery Storage Installer",
+    "Specialty Trade Contractor",
+    "General Contractor",
+    "Electrical Contractor",
+    "Plumbing Contractor",
+    "HVAC Contractor",
+    "Roofing Contractor",
+    "Concrete Contractor",
+    "Utility Contractor",
+    "Construction Government Contractor",
+  ] as const) {
     const rows = classify(
       {
         municipalityName: "Guaynabo",
