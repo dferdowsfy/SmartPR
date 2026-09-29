@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import "./validador.css";
 import { AuthRecoveryRedirect } from "./components/AuthRecoveryRedirect";
+import { AnalyticsMount } from "./components/AnalyticsMount";
 import { BrandProvider } from "./components/brand/BrandProvider";
 import { TopNavMount } from "./components/TopNavMount";
 
@@ -78,7 +79,7 @@ export default async function RootLayout({
   const initialSearch = h.get("x-search") ?? "";
   return (
     <html lang="en" className={`${sans.variable} ${display.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col"><BrandProvider><AuthRecoveryRedirect /><TopNavMount initialPathname={initialPathname} initialSearch={initialSearch} />{children}</BrandProvider></body>
+      <body className="min-h-full flex flex-col"><AnalyticsMount /><BrandProvider><AuthRecoveryRedirect /><TopNavMount initialPathname={initialPathname} initialSearch={initialSearch} />{children}</BrandProvider></body>
     </html>
   );
 }
