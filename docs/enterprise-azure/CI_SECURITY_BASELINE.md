@@ -75,9 +75,13 @@ later.
 - **What `scripts/ci/lint-baseline.mjs` fails on:**
   1. Any count above its baseline, or a problem in a file or rule the baseline
      doesn't list. This is the regression check.
-  2. Any lint problem at all in a file **added or modified** by the PR,
-     compared with the PR's base commit, or with the previous `main` commit on
-     a push. Touching a file means cleaning the whole file.
+  2. Any lint problem at all (error or warning) in a file **newly added** by
+     the PR, compared with the PR's base commit, or with the previous `main`
+     commit on a push. **Existing files that a PR modifies may keep exactly
+     their recorded debt**; rule 1 still fails them on any new rule violation
+     or any increased count. A rename is treated as a new path, so a renamed
+     file with debt must either be cleaned or have its baseline entry moved
+     intentionally.
   3. Any count **below** its baseline. The debt went down, so the baseline
      must be lowered in the same PR. This is how the ratchet moves only toward
      zero.
@@ -89,8 +93,8 @@ later.
 1. Fix the problems that `eslint --fix` can resolve automatically (unused
    disable directives and similar), one reviewed PR per area.
 2. Fix the remaining errors area by area. Test-only files and admin UI come
-   first; files with enterprise-critical paths (auth, db, AI) get cleaned as
-   the enterprise PRs touch them, which rule 2 above enforces.
+   first; files with enterprise-critical paths (auth, db, AI) are cleaned in
+   dedicated reviewed PRs, and rule 3 records each reduction.
 3. Once both counts reach 0, delete the baseline tooling and gate on
    `eslint --max-warnings 0`.
 

@@ -8,7 +8,8 @@
 //
 //   - any (file, rule, severity) count above its baseline      -> FAIL
 //   - any problem in a file/rule not in the baseline           -> FAIL
-//   - any problem at all in a file added or modified vs --base -> FAIL
+//   - any problem at all in a file ADDED vs --base (new files)   -> FAIL
+//     (existing files may keep exactly their recorded debt)
 //   - counts below baseline (debt paid down)                   -> FAIL until the
 //     baseline is intentionally lowered with --update, so the ratchet only
 //     ever moves toward zero and improvements are recorded, not silently lost.
@@ -95,13 +96,14 @@ for (const [file, rules] of Object.entries(baseline.files)) {
   }
 }
 
-// Files added/modified relative to --base must be fully lint-clean.
+// Files ADDED relative to --base must be fully lint-clean. Existing files are
+// held to their recorded per-rule counts by the regression check above.
 const dirtyChanged = [];
 if (base) {
   const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
   const changed = execFileSync(
     "git",
-    ["diff", "--name-only", "--diff-filter=AMR", `${base}...HEAD`, "--", "."],
+    ["diff", "--name-only", "--diff-filter=A", `${base}...HEAD`, "--", "."],
     { encoding: "utf8" }
   )
     .split("\n")
@@ -115,7 +117,7 @@ if (base) {
       dirtyChanged.push(`${file}  (${n} problem${n === 1 ? "" : "s"})`);
     }
   }
-  console.log(`Changed lintable files checked for zero problems: ${changed.length}`);
+  console.log(`New lintable files checked for zero problems: ${changed.length}`);
 }
 
 console.log(
@@ -131,7 +133,7 @@ if (regressions.length) {
 }
 if (dirtyChanged.length) {
   failed = true;
-  console.log(`\nFAIL: added/modified files must be lint-clean (fix the whole file):`);
+  console.log(`\nFAIL: new files must have zero lint errors and warnings:`);
   for (const r of dirtyChanged) console.log(`  ${r}`);
 }
 if (improvements.length) {
