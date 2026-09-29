@@ -1930,6 +1930,30 @@ test("CASE X: OPPE installer registration posture — existing installers verify
   );
 });
 
+test("REG-AGENCY-LABEL-001: DOC_OPPE_INSTALLER_REG agency label matches the KB's canonical agency record", () => {
+  // 2026-09-29 03:00 QA cycle (S287): the KB carried three different labels
+  // for the same agency on one document — agency "OPPE" (stale), while the
+  // document's own agency_canonical, the agencies.json "oppe" record, the
+  // RULE_0605 citation, and the 2026-09-18 REG-GUIDE-OPPE-001 guidance copy
+  // all say PPPE-DDEC ("OPPE (ahora PPPE-DDEC)"). The stale display label
+  // was aligned to the canonical record. Targeted (not a blanket
+  // agency===agency_canonical invariant — other documents deliberately use a
+  // display label that differs from canonical, e.g. "EPA / DRNA").
+  const doc = (KB.documents as Array<{ id: string; agency?: string; agency_canonical?: string }>)
+    .find((d) => d.id === "DOC_OPPE_INSTALLER_REG");
+  assert.ok(doc, "DOC_OPPE_INSTALLER_REG exists in the KB documents");
+  assert.equal(
+    doc.agency,
+    "OPPE (ahora PPPE-DDEC)",
+    "installer-registration agency pill must name the current PPPE-DDEC agency, not the stale OPPE label"
+  );
+  assert.equal(
+    doc.agency,
+    doc.agency_canonical,
+    "document agency label must match its own agency_canonical record"
+  );
+});
+
 test("CASE Y: DOC_ENTERTAINMENT_PERMIT is verify_existing for existing entertainment businesses, required for new ones", () => {
   // 2026-09-19 00:00 QA cycle (S51): an existing 6-year Toa Baja event
   // venue got DOC_ENTERTAINMENT_PERMIT (RULE_0246) as REQUIRED-as-new —
