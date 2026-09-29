@@ -6,6 +6,7 @@ import municipalities from '../../kb/municipalities.json';
 import { SmartPRLogo } from '../components/brand/SmartPRLogo';
 import { checklistKeys, emptyAnswers, intakeUrl, kinds, type Answers } from './model';
 import { trackAcquisition } from './analytics';
+import { trackEvent } from '../../lib/analytics';
 import styles from './restaurants.module.css';
 
 const permitSource = 'https://www.permisos.pr.gov/sobre-nosotros';
@@ -43,6 +44,7 @@ export default function RestaurantChecker({ language: initialLanguage }: { langu
     event.preventDefault();
     setResult({ ...answers });
     trackAcquisition('checklist_completed', source, language);
+    trackEvent('checklist_completed', { vertical: 'restaurant', source, language });
   }
   return <div className={styles.shell} lang={language}>
     <header className={styles.header}>
@@ -82,7 +84,7 @@ export default function RestaurantChecker({ language: initialLanguage }: { langu
           <ol className={styles.results}>{checklistKeys(result).map((key, i) => <li key={key}><span className={styles.number}>{String(i + 1).padStart(2, '0')}</span><div><h3>{content[key][language][0]}</h3><p>{content[key][language][1]}</p><a href={content[key].source} target="_blank" rel="noreferrer">{t('Official source', 'Fuente oficial')}</a></div></li>)}</ol>
           <p className={styles.disclaimer}>{t('Preliminary guidance, not a complete permit determination or approval. Exact requirements depend on your site and activities. Source review: September 8, 2026.', 'Orientación preliminar, no una determinación completa de permisos ni una aprobación. Los requisitos dependen del local y las actividades. Fuentes revisadas: 8 de septiembre de 2026.')}</p>
           <div className={styles.save}><Check size={22} /><div><h3>{t('Turn this into your SmartPR project', 'Convierte esta lista en tu proyecto de SmartPR')}</h3><p>{t('Create an account to continue with your answers already filled in, confirm what applies and prepare your documents.', 'Crea una cuenta para continuar con tus respuestas completadas, confirmar qué aplica y preparar tus documentos.')}</p></div></div>
-          <Link className={styles.primary} href={signup} onClick={() => trackAcquisition('signup_clicked', source, language)}>{t('Create account & continue my plan', 'Crear cuenta y continuar mi plan')}<ArrowRight size={20} /></Link>
+          <Link className={styles.primary} href={signup} onClick={() => { trackAcquisition('signup_clicked', source, language); trackEvent('signup_clicked', { vertical: 'restaurant', source, language }); }}>{t('Create account & continue my plan', 'Crear cuenta y continuar mi plan')}<ArrowRight size={20} /></Link>
           <button className={styles.back} onClick={() => setResult(null)}>{t('Edit my answers', 'Editar mis respuestas')}</button>
         </div>}
       </section>

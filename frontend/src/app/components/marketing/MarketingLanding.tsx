@@ -8,6 +8,7 @@ import { SiteHeader, SiteFooter, useMarketingLanguage, type Language } from "./M
 import DemoPreview from "./DemoPreview";
 import LeadModal from "./LeadModal";
 import { createSupabaseBrowser } from "../../../lib/supabase/client";
+import { trackEvent } from "../../../lib/analytics";
 
 const TRUST_URL = "https://trust.getsmartpr.com";
 
@@ -277,6 +278,7 @@ export default function MarketingLanding({ initialLanguage = "EN" }: { initialLa
   }, []);
 
   function goToAssessment() {
+    trackEvent("assessment_started");
     router.push("/?entry=new-business");
   }
 

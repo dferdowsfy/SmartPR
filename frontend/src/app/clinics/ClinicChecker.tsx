@@ -6,6 +6,7 @@ import municipalities from '../../kb/municipalities.json';
 import { SmartPRLogo } from '../components/brand/SmartPRLogo';
 import { checklistKeys, emptyAnswers, intakeUrl, kinds, type Answers } from './model';
 import { trackAcquisition } from './analytics';
+import { trackEvent } from '../../lib/analytics';
 import styles from '../restaurants/restaurants.module.css';
 
 const permitSource = 'https://www.permisos.pr.gov/sobre-nosotros';
@@ -146,6 +147,7 @@ export default function ClinicChecker({ language: initialLanguage }: { language:
     event.preventDefault();
     setResult({ ...answers });
     trackAcquisition('checklist_completed', source, language);
+    trackEvent('checklist_completed', { vertical: 'clinic', source, language });
   }
   const kindLabels = es
     ? ['Consultorio', 'Ambulatorio / outpatient', 'Laboratorio', 'Otro']
@@ -344,7 +346,7 @@ export default function ClinicChecker({ language: initialLanguage }: { language:
               <Link
                 className={styles.primary}
                 href={signup}
-                onClick={() => trackAcquisition('signup_clicked', source, language)}
+                onClick={() => { trackAcquisition('signup_clicked', source, language); trackEvent('signup_clicked', { vertical: 'clinic', source, language }); }}
               >
                 {t('Create account & continue my plan', 'Crear cuenta y continuar mi plan')}
                 <ArrowRight size={20} />

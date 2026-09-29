@@ -9,6 +9,7 @@ import { verificationRedirectUrl } from "../../lib/siteUrl";
 import styles from "./signup.module.css";
 import { BrandLogo } from "../components/brand/BrandProvider";
 import { trackAcquisition } from "../restaurants/analytics";
+import { trackEvent } from "../../lib/analytics";
 import { GUEST_INTAKE, sanitizeNext } from "../../lib/safeNext";
 
 type Intent = "start" | "manage";
@@ -113,6 +114,8 @@ function SignupForm() {
         },
       });
       if (signupError) throw signupError;
+      // GA4 recommended signup event (mark as conversion in the GA4 UI).
+      trackEvent("sign_up", { method: "email" });
       const acquisition = new URLSearchParams(nextPath.split("?")[1] || "");
       if ((acquisition.get("acquisition") === "restaurant" || acquisition.get("acquisition") === "clinic") && data.user && data.user.identities?.length) {
         trackAcquisition("account_created", acquisition.get("source") || "direct", language.toLowerCase());

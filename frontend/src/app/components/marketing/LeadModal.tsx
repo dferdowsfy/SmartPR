@@ -3,6 +3,7 @@
 import { useState } from "react";
 import styles from "./marketing.module.css";
 import type { Language } from "./MarketingChrome";
+import { trackEvent } from "../../../lib/analytics";
 
 const copy = {
   EN: {
@@ -94,6 +95,9 @@ export default function LeadModal({
       onClose();
       onDone();
     }
+    // GA4 recommended lead event (mark as conversion in the GA4 UI).
+    // Fires on successful capture even if the /api/leads POST above failed.
+    trackEvent("generate_lead", { source });
   }
 
   function close() {
