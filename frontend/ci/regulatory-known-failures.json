@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-09-29",
+  "recordedAtCommit": "0da0866",
+  "minimumTests": 259,
+  "knownFailures": [
+    { "id": "G13", "name": "G13 [validated] Barbershop, 3 employees, leased — Cataño" },
+    { "id": "G20", "name": "G20 [validated] Nonprofit organization, 5 employees — San Juan" },
+    { "id": "G21", "name": "G21 [validated] Convenience store with fuel sales, 6 employees — Toa Baja" }
+  ]
+}

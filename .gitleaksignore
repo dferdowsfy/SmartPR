@@ -1,0 +1,9 @@
+# gitleaks allowlist — exact fingerprints only (commit:file:rule:line).
+# Each entry was reviewed; see docs/enterprise-azure/CI_SECURITY_BASELINE.md.
+#
+# Fake JWT test fixture: header {"alg":"HS256","typ":"JWT"}, payload {}, signature
+# literally "sig". Used to assert the security helpers reject service-role-shaped
+# tokens. Not a credential.
+4d5b77d5567d4b2b86653ca7cc27e0a4e77b2866:frontend/src/lib/__tests__/soc2-security.test.ts:generic-api-key:78
+a2c41f8786bec0f34d896d3df6c3a522cbf9a5a4:frontend/src/lib/__tests__/soc2-security.test.ts:generic-api-key:78
+fde6686dc8d567a1a7775fd0a56051f932badd89:frontend/src/lib/__tests__/soc2-security.test.ts:generic-api-key:78

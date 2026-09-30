@@ -1,0 +1,268 @@
+{
+  "totals": {
+    "errors": 168,
+    "warnings": 63
+  },
+  "files": {
+    "scripts/apply-citations.mts": {
+      "error:@typescript-eslint/no-explicit-any": 2,
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "scripts/rk-graph-score.mts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "scripts/rk-resync-from-seed.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/SmartPRIntake.tsx": {
+      "error:@typescript-eslint/no-explicit-any": 28,
+      "error:prefer-const": 4,
+      "error:react-hooks/immutability": 7,
+      "error:react-hooks/preserve-manual-memoization": 2,
+      "error:react-hooks/purity": 2,
+      "error:react-hooks/refs": 6,
+      "error:react-hooks/set-state-in-effect": 15,
+      "warning:(fatal)": 2,
+      "warning:@typescript-eslint/no-unused-vars": 9,
+      "warning:react-hooks/exhaustive-deps": 6
+    },
+    "src/app/admin/SupportAccessBanner.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/billing/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/emails/EmailsClient.tsx": {
+      "error:react-hooks/set-state-in-effect": 2
+    },
+    "src/app/admin/knowledge-base/tabs/AuditTab.tsx": {
+      "warning:(fatal)": 1
+    },
+    "src/app/admin/workspaces/[id]/BrandingDomainTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/workspaces/[id]/CompanyAuditTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/workspaces/[id]/CompanyFeatureFlagsTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 2
+    },
+    "src/app/admin/workspaces/[id]/CompanyOverviewTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/workspaces/[id]/CompanyPlanLimitsTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/workspaces/[id]/CompanySecurityTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/workspaces/[id]/CompanySupportAccessTab.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/admin/workspaces/[id]/WorkspaceDetail.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/agencyUrls.test.ts": {
+      "error:@typescript-eslint/no-explicit-any": 10
+    },
+    "src/app/api/admin/workspaces/[id]/branding/route.ts": {
+      "error:prefer-const": 1
+    },
+    "src/app/api/agency-runs/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/enterprise/_util.ts": {
+      "error:@typescript-eslint/no-explicit-any": 3
+    },
+    "src/app/api/enterprise/admin/team/route.ts": {
+      "error:prefer-const": 1
+    },
+    "src/app/api/enterprise/cron/webhooks/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/enterprise/domain/verify/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/enterprise/integrations/webhooks/[id]/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 2
+    },
+    "src/app/api/enterprise/regulatory/events/[id]/compute-impact/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 2
+    },
+    "src/app/api/enterprise/regulatory/events/[id]/verify/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/enterprise/regulatory/impacts/[id]/acknowledge/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/enterprise/regulatory/impacts/[id]/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/enterprise/reports/[report]/route.ts": {
+      "error:@typescript-eslint/no-empty-object-type": 1
+    },
+    "src/app/api/enterprise/work/[id]/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/api/incentives/evaluate/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/auth/login/page.tsx": {
+      "error:react-hooks/immutability": 1,
+      "error:react-hooks/rules-of-hooks": 1,
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/auth/reset/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/auth/signout/route.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/businessTypes.test.ts": {
+      "error:@typescript-eslint/no-require-imports": 4
+    },
+    "src/app/businesses/BusinessPassportPanel.tsx": {
+      "error:react-hooks/set-state-in-effect": 2
+    },
+    "src/app/businesses/[id]/agency-run/page.tsx": {
+      "warning:(fatal)": 2,
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/businesses/[id]/page.tsx": {
+      "warning:react-hooks/exhaustive-deps": 1
+    },
+    "src/app/clinics/ClinicChecker.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/components/NaturalLanguageIntake.tsx": {
+      "warning:react-hooks/exhaustive-deps": 3
+    },
+    "src/app/components/NotificationBell.tsx": {
+      "error:react-hooks/set-state-in-effect": 3
+    },
+    "src/app/components/filing/FilingWorkflowShell.tsx": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/components/marketing/DemoPreview.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/components/voice/IntakeVoiceOrb.tsx": {
+      "error:react-hooks/refs": 1,
+      "error:react-hooks/set-state-in-effect": 1,
+      "warning:react-hooks/exhaustive-deps": 1
+    },
+    "src/app/demo/enterprise/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1,
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/enterprise/_lib/useEnterpriseWorkspaces.ts": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/enterprise/admin/audit/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 2
+    },
+    "src/app/enterprise/admin/integrations/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 2
+    },
+    "src/app/enterprise/admin/reminders/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/enterprise/admin/roles/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1,
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/enterprise/admin/team/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/enterprise/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/enterprise/regulatory/[id]/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 2
+    },
+    "src/app/enterprise/regulatory/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/enterprise/reports/page.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/enterprise/work/page.tsx": {
+      "error:@typescript-eslint/no-explicit-any": 1,
+      "error:react-hooks/set-state-in-effect": 2,
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/history/[submissionId]/page.tsx": {
+      "error:@typescript-eslint/no-explicit-any": 7
+    },
+    "src/app/history/ui.tsx": {
+      "error:react-hooks/set-state-in-effect": 3
+    },
+    "src/app/qa/ruleCoverage.test.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/regulatoryCorrectness.test.ts": {
+      "error:@typescript-eslint/no-explicit-any": 3
+    },
+    "src/app/rehearsal-portal/suri/merchant/page.tsx": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/requirementGuidance.test.ts": {
+      "error:@typescript-eslint/no-explicit-any": 12
+    },
+    "src/app/requirementsAudit.test.ts": {
+      "error:@typescript-eslint/no-explicit-any": 6
+    },
+    "src/app/restaurants/RestaurantChecker.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/rk/edgeParity.test.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/sampleApplicationForms.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/app/settings/phone-access.tsx": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/useLang.ts": {
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/app/workspace/[id]/page.tsx": {
+      "error:@next/next/no-html-link-for-pages": 1,
+      "error:react-hooks/set-state-in-effect": 1
+    },
+    "src/lib/__tests__/enterprise-always-json.test.ts": {
+      "warning:(fatal)": 1
+    },
+    "src/lib/__tests__/enterprise-security.test.ts": {
+      "error:@typescript-eslint/no-empty-object-type": 1
+    },
+    "src/lib/__tests__/enterprise-work-queue.test.ts": {
+      "error:@typescript-eslint/no-explicit-any": 1
+    },
+    "src/lib/agency-runs/qaOtp.test.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 3
+    },
+    "src/lib/agency-runs/sensitiveFields.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/lib/compliance-digest-emails.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 2
+    },
+    "src/lib/compliance-digest.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "src/lib/enterprise-integrations.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 2
+    },
+    "src/lib/voice/deliverables.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 2
+    },
+    "src/lib/voice/phase3.test.ts": {
+      "error:@typescript-eslint/no-non-null-asserted-optional-chain": 1
+    },
+    "src/lib/voice/secureLinks.ts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    }
+  }
+}
