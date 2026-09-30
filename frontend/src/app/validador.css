@@ -2906,7 +2906,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .ck-row-head:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .ck-num { flex: none; width: 28px; height: 28px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: var(--rq-text-sm); font-weight: 700; background: color-mix(in oklab, var(--brand) 14%, transparent); color: var(--brand); }
 .ck-name { flex: 1; min-width: 0; font-size: var(--rq-text-title); font-weight: 600; line-height: 1.35; color: var(--ink); }
-.ck-agency { flex: none; font-size: var(--rq-text-sm); color: var(--muted); font-weight: 600; }
+.ck-agency { flex: none; font-size: var(--rq-text-sm); color: var(--muted); font-weight: 400; }
 .ck-chevron { flex: none; color: var(--muted); transition: transform .15s ease; }
 .ck-row-open .ck-chevron { transform: rotate(180deg); }
 .ck-pill { flex: none; font-size: var(--rq-text-sm); font-weight: 650; border-radius: 999px; padding: 3px 10px; border: 1px solid transparent; white-space: nowrap; }
@@ -2924,7 +2924,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .ck-pill-inc-low, .ck-pill-inc-no { background: #eeeeea; color: #444; }
 .ck-row-body { padding: 0 16px 14px 54px; display: grid; gap: 10px; }
 .ck-stage .ck-row-body, .rq-group-incentives .ck-row-body { padding-left: 16px; }
-.ck-why { margin: 0; font-size: var(--rq-text-body); color: var(--ink); }
+.ck-why { margin: 0; font-size: var(--rq-text-body); font-weight: 400; color: var(--muted); }
 .ck-what { margin: 0; font-size: var(--rq-text-body); color: var(--muted); }
 .ck-block ul { margin: 2px 0 0; padding-left: 20px; }
 .ck-label { font-size: var(--rq-text-sm); font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
