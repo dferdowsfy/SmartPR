@@ -50,3 +50,10 @@ Prepared intake forms that referenced changed canonical keys are flagged
 `businesses.passport_json JSONB` — added idempotently by `ensureSchema()` /
 `COMPLIANCE_SCHEMA_SQL`. Railway needs no special one-off migration beyond a
 normal deploy that boots the app (schema bootstrap runs on first DB touch).
+
+## Property / Location
+
+The passport's **Property / Location** section stores confirmed map
+coordinates (and provider-labeled address metadata) as reusable, business-
+scoped Location records that projects reference by id. See
+[`passport-locations.md`](passport-locations.md).
