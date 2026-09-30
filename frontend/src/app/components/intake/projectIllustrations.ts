@@ -8,7 +8,7 @@ export const PROJECT_ILLUSTRATIONS = {
   construction: "/illustrations/projects/construction.png",
   office: "/illustrations/projects/office.png",
   warehouse: "/illustrations/projects/warehouse.png",
-  solar: "/illustrations/projects/solar.png",
+  solar: "/illustrations/projects/solar-warehouse.png",
   solarWarehouse: "/illustrations/projects/solar-warehouse.png",
   hospitality: "/illustrations/projects/hospitality.png",
   foodTruck: "/illustrations/projects/food-truck.png",
@@ -28,7 +28,19 @@ export interface ProjectIllustrationInput {
   industry?: string | null;
   locationType?: string | null;
   answers?: Record<string, unknown> | null;
+  /** Already validated description facts; uncertain suggestions are ignored. */
+  projectContext?: Partial<Record<string, { value: string | number | boolean; confidence: number }>> | null;
+  scenario?: {
+    business?: { proposedActivity?: VisualFact };
+    property?: { proposedUse?: VisualFact; existingUse?: VisualFact };
+    project?: { type?: { value: string[]; source: string; confidence: number } };
+    operations?: { activity?: VisualFact };
+  } | null;
 }
+
+interface VisualFact { value: string; source: string; confidence: number }
+const confirmedScenarioValue = (fact: VisualFact | undefined) =>
+  fact && fact.source !== "inferred" && fact.confidence >= 0.85 ? fact.value : "";
 
 const normalize = (value: string | null | undefined) =>
   (value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
@@ -36,12 +48,30 @@ const normalize = (value: string | null | undefined) =>
 const matches = (value: string, terms: string[]) => terms.some((term) => value === term || value.includes(term));
 
 /**
- * Prefer a confirmed business type over a broad industry. Never read the
+ * Prefer a confirmed proposed use, then business type, over a broad industry. Never read the
  * business name or a raw transcript: an illustration must not promote an
  * uncertain mention into an asserted project fact.
  */
 export function selectProjectIllustration(input: ProjectIllustrationInput): ProjectIllustration {
-  const type = normalize(input.businessType);
+  const context = input.projectContext || {};
+  const confirmedContext = (key: string) => {
+    const fact = context[key];
+    return fact && fact.confidence >= 0.85 ? fact.value : undefined;
+  };
+  const scenario = input.scenario;
+  const proposedUse = confirmedScenarioValue(scenario?.property?.proposedUse) || String(confirmedContext("proposed_use") ?? "");
+  const businessType = normalize(input.businessType);
+  // The scenario groups bars/food trucks under a broad food-service use.
+  // Keep the more specific confirmed business artwork within that group.
+  const foodServiceSubtype = ['bar', 'nightclub', 'food truck', 'juice bar'].includes(businessType)
+    && ['restaurant', 'restaurant / food service', 'food service'].includes(normalize(proposedUse));
+  const type = (foodServiceSubtype ? businessType : normalize(proposedUse)) || businessType || normalize(
+    confirmedScenarioValue(scenario?.operations?.activity)
+      || confirmedScenarioValue(scenario?.business?.proposedActivity)
+      || String(confirmedContext("proposed_use") ?? confirmedContext("business_activity") ?? "")
+      || confirmedScenarioValue(scenario?.property?.existingUse)
+      || String(confirmedContext("existing_use") ?? confirmedContext("property_type") ?? "")
+  );
   const industry = normalize(input.industry);
   const location = normalize(input.locationType);
   const answers = input.answers || {};
@@ -54,7 +84,8 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
     const value = answers[key];
     return typeof value === "boolean" || (typeof value === "string" && value.trim().length > 0);
   });
-  const isWarehouse = matches(type, ["warehouse", "distribution center"]) || location === "warehouse";
+  const hasSolarProject = matches(normalize(String(confirmedContext("generation_technology") ?? "")), ["solar", "photovoltaic", "fotovoltaic"]);
+  const isWarehouse = matches(type, ["warehouse", "distribution center", "almacen"]) || location === "warehouse";
 
   if (["bar", "nightclub", "pub", "tavern", "cocktail lounge"].includes(type) || (type.endsWith(" bar") && type !== "juice bar")) return "bar";
   if (type === "food truck") return "foodTruck";
@@ -67,7 +98,7 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
   if (matches(type, ["general contractor", "electrical contractor", "plumbing contractor", "hvac contractor", "roofing contractor", "concrete contractor", "construction contractor", "real estate developer"])) return "construction";
   if (type === "utility contractor") return "construction";
   if (matches(type, ["solar installer", "battery storage installer", "renewable energy company"])) return "solar";
-  if (isWarehouse && hasSolarAnswers) return "solarWarehouse";
+  if (isWarehouse && (hasSolarAnswers || hasSolarProject)) return "solarWarehouse";
   if (isWarehouse) return "warehouse";
   if (matches(type, ["manufacturing", "materials recovery", "recycling"])) return "manufacturing";
   if (matches(type, ["trucking", "courier", "moving company", "logistics", "freight forwarding", "delivery service"])) return "logistics";
@@ -81,6 +112,12 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
   if (type === "religious organization" || type === "taxi service" || type === "car rental business") return "default";
   if (type.endsWith(" store") || (type.endsWith(" shop") && !matches(type, ["repair", "body", "tire"])) || matches(type, ["e-commerce", "ecommerce"])) return "retail";
   if (matches(type, ["law firm", "attorney office", "cpa firm", "consulting firm", "accounting firm", "software company", "saas company", "insurance agency", "real estate brokerage", "property management company"])) return "office";
+
+  if (hasSolarProject) return "solar";
+  const constructionTypes = scenario?.project?.type;
+  if (constructionTypes && constructionTypes.source !== "inferred" && constructionTypes.confidence >= 0.85
+    && constructionTypes.value.some((value) => ["renovation", "new_construction", "expansion", "demolition"].includes(value))) return "construction";
+  if (["new_construction", "renovation", "expansion"].some((key) => confirmedContext(key) === true)) return "construction";
 
   // Only use an industry fallback once a specific type exists; "Food &
   // Beverage" by itself cannot distinguish a restaurant from a bar.

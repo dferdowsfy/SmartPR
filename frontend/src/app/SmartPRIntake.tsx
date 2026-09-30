@@ -3363,7 +3363,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     }
     setSubmitAttempted(true);
     setSubmitPulse(true);
-    setProfileFormExpanded(true);
     if (submitPulseTimer.current) window.clearTimeout(submitPulseTimer.current);
     submitPulseTimer.current = window.setTimeout(() => {
       setSubmitPulse(false);
@@ -5052,8 +5051,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // or when an incomplete submit flags missing fields. Questions are asked
   // when needed — the top question box handles them one at a time, and the
   // submit-attention path expands this block for whatever's still missing.
-  const showProfileSummary = !profileFormExpanded && !profileNeedsAttention;
-  const profileFieldVisible = () => !showProfileSummary;
+  const showProfileSummary = !profileFormExpanded;
+  const firstMissingField = intakePlan.missingRequired[0];
+  // Industry is only a filter for the business catalog. Show it before the
+  // type when needed; otherwise ask only one required-now field at a time.
+  const nextProfileField = firstMissingField === 'business_type' && !profile.industry ? 'industry' : firstMissingField;
+  const profileFieldVisible = (key: string) => profileFormExpanded || key === nextProfileField;
   // Highlight ring on the fields after an incomplete submit tap.
   const profileAttentionCls = profileNeedsAttention ? ' spr-attention' : '';
   const intakeDisplayTotal = intakeTotal;
@@ -6236,39 +6239,24 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   const projectTypeKnown = projectTypeParts.length > 0;
 
-  // project_only: the action chain is project-centric — a property-only
-  // project never asks for a business industry or business type. When no
-  // project has been described yet there are no guided questions, so the
-  // action points at the intake box where the description is entered.
-  const nextIntakeAction = isProjectOnly
-    ? (!profile.name
-      ? (language === 'es' ? 'Ponle un nombre al proyecto para identificarlo en la solicitud.' : 'Give the project a name so the filing has a clear identity.')
-      : !profile.municipality
-        ? (language === 'es' ? 'Indica el municipio donde está el proyecto.' : 'Tell us which municipality the project is in.')
-        : !projectIsActive(projectContext)
-          ? (language === 'es' ? 'Cuéntanos del proyecto en el recuadro de arriba — por ejemplo, "construcción de un almacén nuevo" o "renovación de 20 habitaciones".' : 'Describe your project in the box above — for example, "new warehouse construction" or "renovating 20 hotel rooms".')
-          : !projectTypeKnown
-            ? (language === 'es' ? 'Describe el tipo de proyecto: construcción nueva, renovación o ampliación.' : 'Describe the project type — new construction, renovation, or expansion.')
-            : currentQuestion
-              ? L(currentQuestion.text, language)
-              : currentPotentialQuestion
-                ? L(currentPotentialQuestion.followUp, language)
-                : (language === 'es' ? 'Revisa el perfil y genera los requisitos.' : 'Review the profile, then generate the requirements.'))
-    : !profile.name
-    ? (language === 'es' ? 'Ingresa el nombre legal o de trabajo del negocio.' : 'Enter the business name so this filing has a clear identity.')
-    : !profile.municipality
-      ? (language === 'es' ? 'Indica el municipio donde operará el negocio.' : 'Tell us which municipality the business will operate in.')
-      : !profile.industry
-        ? (language === 'es' ? 'Selecciona la industria del negocio.' : 'Select the business industry.')
-        : !profile.business_type
-          ? (language === 'es' ? 'Selecciona el tipo de negocio específico.' : 'Select the specific business type.')
-          : !profile.location_type
-            ? (language === 'es' ? 'Describe el tipo de ubicación física.' : 'Tell us what type of physical location the business will use.')
-            : currentQuestion
-              ? L(currentQuestion.text, language)
-              : currentPotentialQuestion
-                ? L(currentPotentialQuestion.followUp, language)
-                : (language === 'es' ? 'Revisa el perfil y genera los requisitos.' : 'Review the profile, then generate the requirements.');
+  // The sidebar follows the same required-now field/question as the form.
+  // Deferred Passport details must not look like blockers here.
+  const nextFieldActions: Record<string, string> = {
+    municipality: language === 'es' ? 'Indica el municipio del proyecto.' : 'Tell us which municipality the project is in.',
+    industry: language === 'es' ? 'Selecciona la industria del negocio.' : 'Select the business industry.',
+    business_type: language === 'es' ? 'Selecciona el tipo de negocio.' : 'Select the business type.',
+    location_type: language === 'es' ? 'Indica el tipo de ubicación.' : 'Tell us the location type.',
+    filing_intent: language === 'es' ? 'Confirma qué quieres hacer.' : 'Confirm what you want to do.',
+  };
+  const nextIntakeAction = nextProfileField
+    ? nextFieldActions[nextProfileField] ?? (language === 'es' ? 'Confirma el detalle pendiente.' : 'Confirm the remaining detail.')
+    : scenarioEval?.questions[0]
+      ? L(scenarioEval.questions[0].text, language)
+      : currentQuestion
+        ? L(currentQuestion.text, language)
+        : currentPotentialQuestion
+          ? L(currentPotentialQuestion.followUp, language)
+          : (language === 'es' ? 'Revisa tu proyecto y genera los requisitos.' : 'Review your project and generate the requirements.');
 
   const whyAsking = isProjectOnly
     ? (!profile.name
@@ -6305,15 +6293,19 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const stageIntelligence: SmartPRLiveData = view === 'intake' ? {
     project: {
       illustrationSrc: PROJECT_ILLUSTRATIONS[selectProjectIllustration({
-        businessType: profile.business_type,
-        industry: profile.industry,
-        locationType: profile.location_type,
+        businessType: confirmationsNeeded.business_type ? null : profile.business_type,
+        industry: confirmationsNeeded.industry ? null : profile.industry,
+        locationType: confirmationsNeeded.location_type ? null : profile.location_type,
         answers: discoveryAnswers,
+        projectContext,
+        scenario: mergedScenario,
       })],
-      title: profile.name.trim() || profile.business_type || (language === 'es' ? 'Nuevo proyecto' : 'New project'),
+      title: profile.name.trim() || (mergedScenario && scenarioActive ? scenarioTitle(mergedScenario) : null) || profile.business_type || (language === 'es' ? 'Nuevo proyecto' : 'New project'),
       businessType: profile.business_type,
       municipality: profile.municipality,
       locationType: profile.location_type,
+      scope: projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null,
+      onPreview: handleSubmitTap,
     },
     statusText: scenarioEval
       ? (scenarioEval.questions.length
@@ -6343,7 +6335,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     potentialRequirements: potentialItems
       .filter((item) => !potentialDecisions[item.flag])
       .map((item) => language === 'es' ? L(item.document, language) : item.document),
-    nextAction: scenarioEval?.questions[0] ? L(scenarioEval.questions[0].text, language) : nextIntakeAction,
+    nextAction: nextIntakeAction,
     whyAsking: scenarioEval?.questions[0] ? L(scenarioEval.questions[0].whyWeAsk, language) : whyAsking,
     // Driven by the scenario and knowledge-graph applicability — not by
     // keyword matches in the description.
@@ -6406,6 +6398,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       ? (language === 'es' ? 'Borrador' : 'Draft')
       : (language === 'es' ? 'En progreso' : 'In Progress');
 
+  const hasProjectRequest = scenarioActive || anyProfileValue;
+  const guidedIntakeStage = !hasProjectRequest ? 0 : baseProfileReady && intakeQuestionsComplete && !scenarioNextQuestion && !Object.values(confirmationsNeeded).some(Boolean) ? 2 : 1;
+  const remainingIntakeItems = intakePlan.missingRequired.length + (scenarioActive ? (scenarioEval?.questions.length ?? 0) : Math.max(0, intakeQuestionTotal - guidedQuestionsAnswered - answeredPotentialCount));
+
   return (
     <div style={{ minHeight: '100vh' }}>
       {/* Upload result toast (LLM document analysis feedback) */}
@@ -6466,24 +6462,33 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       {view === 'intake' && (
           <section className="spr-intake-panel">
             <div className="spr-intake-scroll">
-              <div className="spr-kicker">
-                <span>{L('Business profile', language)}</span>
-                <span aria-hidden="true">·</span>
-                <span>{L('Discovery', language)}</span>
-              </div>
-              <h1>{language === 'en' ? 'Tell us about your business' : t('title')}</h1>
-              {!me && (
-                <p className="spr-guest-note">
-                  {language === 'es'
-                    ? 'Puede completar esta evaluación ahora. Crear una cuenta guarda el trabajo en la nube, permite varios negocios y reanudar en otro dispositivo.'
-                    : 'You can complete this assessment now. Creating an account is required for cloud storage, multiple businesses, and resuming on another device.'}
-                </p>
+              <nav className="spr-guided-steps" aria-label={language === 'es' ? 'Pasos del perfil' : 'Intake steps'}>
+                {(language === 'es' ? ['Proyecto', 'Confirmar detalles', 'Revisar'] : ['Project', 'Confirm details', 'Review']).map((label, index) => (
+                  <span key={label} className={index === guidedIntakeStage ? 'active' : index < guidedIntakeStage ? 'complete' : ''} aria-current={index === guidedIntakeStage ? 'step' : undefined}>
+                    <b>{index < guidedIntakeStage ? <CheckCircle size={16} /> : index + 1}</b>{label}
+                  </span>
+                ))}
+              </nav>
+              <h1>{language === 'es'
+                ? (hasProjectRequest ? 'Unos detalles y verás tus requisitos.' : 'Cuéntanos sobre tu proyecto.')
+                : (hasProjectRequest ? 'A few details, then your requirements.' : 'Tell us about your project.')}</h1>
+              <p className="spr-subtitle">{language === 'es'
+                ? (hasProjectRequest ? 'Completamos lo que ya nos dijiste. Confirma solo lo que falta.' : 'Escribe o habla. SmartPR organiza los detalles y pregunta solo lo que falta.')
+                : (hasProjectRequest ? 'We filled in what you already told us. Confirm only what is missing.' : 'Speak or type. SmartPR organizes the details and asks only for what is missing.')}</p>
+
+              {hasProjectRequest && (
+                <div className="spr-project-brief" data-testid="guided-project-brief">
+                  {[
+                    { label: language === 'es' ? 'Proyecto' : 'Project', value: projectIntent ? projectIntentLabel(projectIntent, language) : null },
+                    { label: t('businessType'), value: profile.business_type },
+                    { label: t('municipality'), value: profile.municipality },
+                    { label: language === 'es' ? 'Alcance' : 'Scope', value: (projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null) || profile.location_type },
+                  ].filter((item) => item.value).map((item) => (
+                    <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>
+                  ))}
+                  <button type="button" className="spr-link" onClick={() => setProfileFormExpanded((value) => !value)} aria-expanded={profileFormExpanded}>{L('Edit', language)}</button>
+                </div>
               )}
-              <p className="spr-subtitle">
-                {language === 'en'
-                  ? 'Answer a few questions and we determine every Puerto Rico license, permit, certification and document you need.'
-                  : t('subtitle')}
-              </p>
 
               <div className="spr-form">
                 {/* Optional shortcut: describe the business in plain language and
@@ -6497,6 +6502,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   onApply={applyInterpretedIntake}
                   onEdit={handleNarrativeEdit}
                   scenarioSummary={scenarioSummary}
+                  compact={hasProjectRequest}
                   passport={passportModeActive ? {
                     canonical: canonicalApplication,
                     unconfirmedDefaults: canonicalOverride ? [] : ['formationStatus', ...(profile.business_structure ? [] : ['entityType'])],
@@ -6507,7 +6513,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 {/* Project-first intent: asked early, never defaulted. The
                     interpreter may pre-select it (with a needs-confirmation
                     badge at 0.60–0.85); the user can always change it. */}
-                <div className="spr-field full">
+                {(projectIntent === null || profileFormExpanded || confirmationsNeeded.project_intent) && <div className="spr-field full">
                   <label>{projectIntentQuestionText(language)}{confirmationBadge('project_intent')}</label>
                   {projectIntent === null ? (
                     <div>
@@ -6545,7 +6551,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       </button>
                     </div>
                   )}
-                </div>
+                </div>}
 
                 {/* Existing-business picker: when the intent is
                     existing_business and no ?business= id is attached, offer
@@ -6621,7 +6627,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     this one region at the top — exactly one question UI at a
                     time, in the pink "what we still need" box, before the
                     text fields. */}
-                {topQuestionKind && (
+                {topQuestionKind && baseProfileReady && (
                 <div
                   className={`spr-field full${questionsNeedAttention ? ' spr-attention' : ''}`}
                   ref={questionsPanelRef}
@@ -6673,7 +6679,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     stay visible. An incomplete submit expands everything and
                     scrolls here. */}
                 <span ref={profileFieldsRef} aria-hidden="true" className="spr-anchor" />
-                {showProfileSummary && (
+                {showProfileSummary && !hasProjectRequest && (
                 <div className="spr-field full">
                   <span className="spr-profile-summary-label">{L('Business details', language)}</span>
                   <button
@@ -6691,11 +6697,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </button>
                 </div>
                 )}
-                <p className="spr-enter-once">
-                  {L('Enter it once — SmartPR carries it to every requirement.', language)}
-                </p>
 
-                {!passportKnownFields.has('name') && profileFieldVisible() && (
+
+                {!passportKnownFields.has('name') && profileFieldVisible('name') && (
                 <div className={`spr-field full${profileAttentionCls}`}>
                   <label htmlFor="spr-business-name">
                     {isProjectOnly ? L('Project name', language) : t('businessName')}
@@ -6711,7 +6715,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('municipality') && profileFieldVisible() && (
+                {!passportKnownFields.has('municipality') && profileFieldVisible('municipality') && (
                 <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
                   <select
@@ -6750,7 +6754,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     are business fields and never appear for a property-only
                     project. */}
                 {!isProjectOnly && (<>
-                {!passportKnownFields.has('industry') && profileFieldVisible() && (
+                {!passportKnownFields.has('industry') && profileFieldVisible('industry') && (
                 <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
@@ -6764,7 +6768,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('business_type') && profileFieldVisible() && (
+                {!passportKnownFields.has('business_type') && profileFieldVisible('business_type') && (
                 <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
@@ -6786,7 +6790,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                {profileFieldVisible() && (
+                {profileFieldVisible('location_type') && (
                 <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
                   <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
@@ -6798,7 +6802,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('business_structure') && profileFieldVisible() && (
+                {!passportKnownFields.has('business_structure') && profileFieldVisible('business_structure') && (
                 <div className={`spr-field spr-field-static${profileAttentionCls}`}>
                   <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>
                   <select id="spr-structure" value={profile.business_structure} onChange={e => {
@@ -6821,7 +6825,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                {profileFieldVisible() && (
+                {profileFieldVisible('number_of_employees') && (
                 <div className={`spr-field${profileAttentionCls}`}>
                   <label htmlFor="spr-employees">{t('numEmployees')}{confirmationBadge('number_of_employees')}</label>
                   <input
@@ -6871,7 +6875,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   completed so the user can see what was understood (and change
                   it) instead of silently losing them. */}
               {answeredFromDescription.length > 0 && (
-                <div className="spr-answered">
+                <details className="spr-answered spr-saved-answers">
+                  <summary>{language === 'es' ? 'Ver respuestas guardadas' : 'View saved answers'}</summary>
                   <div className="spr-kicker">
                     {L('Answered from your description', language)} · {answeredFromDescription.length}
                   </div>
@@ -6896,7 +6901,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </details>
               )}
 
               {/* Two things the user told us cannot both be true. SmartPR never
@@ -6934,7 +6939,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             )}
 
             <div className="spr-form-footer">
-              <span>{intakeDisplayDone}/{intakeDisplayTotal} {L('completed', language)}</span>
+              <span>{remainingIntakeItems > 0 ? (language === 'es' ? `${remainingIntakeItems} detalles por confirmar` : `${remainingIntakeItems} details to confirm`) : (language === 'es' ? 'Listo para revisar los requisitos' : 'Ready to review requirements')}</span>
               <div className="spr-form-actions">
                 {canGoBackInIntake && (
                   <button className="spr-back" onClick={handleIntakeBack}>{L('Back', language)}</button>

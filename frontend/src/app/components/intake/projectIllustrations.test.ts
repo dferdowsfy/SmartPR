@@ -50,3 +50,15 @@ test("solar warehouse requires explicit solar answers and updates when they chan
   assert.equal(selectProjectIllustration({ ...base, answers: {} }), "warehouse");
   assert.equal(selectProjectIllustration({ businessType: "Bar", locationType: "Warehouse", answers: { Q_SOLAR_BATTERY: true } }), "bar");
 });
+
+test('confirmed request facts select images without any manually selected business type', () => {
+  const fact = (value: string) => ({ value, source: 'explicit', confidence: 0.99 });
+  assert.equal(selectProjectIllustration({ scenario: { operations: { activity: fact('restaurant') } } }), 'restaurant');
+  assert.equal(selectProjectIllustration({ scenario: { property: { proposedUse: fact('bar') } } }), 'bar');
+  assert.equal(selectProjectIllustration({ businessType: 'Bar', scenario: { property: { proposedUse: fact('restaurant / food service') } } }), 'bar');
+  assert.equal(selectProjectIllustration({ businessType: 'Warehouse Operator', scenario: { property: { proposedUse: fact('restaurant'), existingUse: fact('warehouse') } } }), 'restaurant');
+  assert.equal(selectProjectIllustration({ projectContext: { generation_technology: { value: 'solar', confidence: 0.99 }, existing_use: { value: 'warehouse', confidence: 0.99 } } }), 'solarWarehouse');
+  assert.equal(selectProjectIllustration({ projectContext: { generation_technology: { value: 'solar', confidence: 0.65 } } }), 'default');
+  assert.equal(selectProjectIllustration({ scenario: { operations: { activity: { value: 'restaurant', source: 'inferred', confidence: 0.75 } } } }), 'default');
+  assert.equal(existsSync(path.join(process.cwd(), 'public/illustrations/projects/solar.png')), false);
+});
