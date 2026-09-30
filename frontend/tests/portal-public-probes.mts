@@ -166,6 +166,15 @@ function main() {
     writeFileSync(logPath, line, { flag: "a" });
 
     const down = results.filter((r) => !r.reachable);
+    // Teach Clara (§9): hand drift/unreachable signals to skill health, when
+    // configured. Best-effort — never changes this script's exit code.
+    if (process.env.SKILL_HEALTH_URL && process.env.SKILL_HEALTH_CRON_SECRET) {
+      await fetch(process.env.SKILL_HEALTH_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-cron-secret": process.env.SKILL_HEALTH_CRON_SECRET },
+        body: JSON.stringify({ results: results.map((r) => ({ url: r.url, reachable: r.reachable, drift: r.drift, driftDetail: r.driftDetail })) }),
+      }).catch((e) => console.error(`skill health post failed: ${(e as Error).message}`));
+    }
     const drifted = results.filter((r) => r.drift);
     if (down.length > 0 || drifted.length > 0) {
       console.error(

@@ -12,6 +12,7 @@
  * address and form name. Hidden when teaching isn't available here.
  */
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GraduationCap } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
@@ -24,6 +25,8 @@ interface MatchState {
   isAdmin: boolean;
   canTeach: boolean;
   hasSkill: boolean | null;
+  /** Replayable skill for the current filing, when Clara already knows it. */
+  replayRef: string | null;
 }
 
 function teachHref(businessId: string, filingType: string | null): string {
@@ -45,7 +48,9 @@ export function TeachClaraEntry(props: {
   variant: "button" | "offer";
 }) {
   const { businessId, filingType, lang, variant } = props;
+  const router = useRouter();
   const [state, setState] = useState<MatchState | null>(null);
+  const [starting, setStarting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,8 +63,16 @@ export function TeachClaraEntry(props: {
         const q = new URLSearchParams({ url: cfg?.startUrl ?? "https://example.gov/", form: cfg?.labelEs ?? "-" });
         const res = await fetch(`/api/skills/match?${q}`, { cache: "no-store" });
         const match = res.ok ? await res.json() : null;
+        const replay = cfg
+          ? await fetch(`/api/replays/match?filing_type=${encodeURIComponent(cfg.id)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
+          : null;
         if (!cancelled) {
-          setState({ isAdmin, canTeach: Boolean(match?.can_teach), hasSkill: cfg ? Boolean(match?.skill) : null });
+          setState({
+            isAdmin,
+            canTeach: Boolean(match?.can_teach),
+            hasSkill: cfg ? Boolean(match?.skill || replay?.skill) : null,
+            replayRef: replay?.skill && replay?.can_replay ? String(replay.skill.ref) : null,
+          });
         }
       } catch {
         // Teach entry is optional chrome — never break the filing view.
@@ -70,7 +83,32 @@ export function TeachClaraEntry(props: {
     };
   }, [filingType]);
 
-  if (!state || !state.canTeach) return null;
+  if (!state) return null;
+  if (variant === "offer" && state.replayRef) {
+    const ref = state.replayRef;
+    const plan = async () => {
+      setStarting(true);
+      try {
+        const res = await fetch("/api/replays", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skill_ref: ref, business_id: businessId }) });
+        const body = await res.json();
+        if (res.ok) router.push(`/businesses/${encodeURIComponent(businessId)}/replay/${body.replay.id}`);
+      } finally {
+        setStarting(false);
+      }
+    };
+    return (
+      <div className="mt-2 flex flex-wrap items-center gap-3 rounded-2xl border border-[#2f6b4f] bg-[#1e4d38]/30 px-4 py-3 text-[14px] text-[#e8e1d0]">
+        <GraduationCap className="h-4 w-4 shrink-0 text-[#9fd3b4]" />
+        <p className="min-w-0 flex-1">
+          {L("I already know this form. I can fill it in from your business info and stop wherever you're needed.", "Ya conozco este formulario. Lo puedo llenar con la información de tu negocio y me detengo donde me necesites.", lang)}
+        </p>
+        <button type="button" disabled={starting} onClick={plan} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[13px] font-bold text-[#161616] hover:bg-white disabled:opacity-50">
+          {L("See the plan", "Ver el plan", lang)}
+        </button>
+      </div>
+    );
+  }
+  if (!state.canTeach) return null;
   const href = teachHref(businessId, filingType);
 
   if (variant === "button") {

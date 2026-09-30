@@ -34,7 +34,12 @@ export interface StoredSkill {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+  checks?: unknown | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
 }
+
+export type PortalHealthStatus = "ok" | "portal_changed" | "unreachable";
 
 export interface SkillViewer {
   userId: string;
@@ -48,6 +53,8 @@ export interface SkillRepo {
   /** Rows a viewer could possibly see — the library filters further. */
   listCandidates(filter: { ownerUserId?: string; includeShared?: boolean; includeInReview?: boolean; portalHost?: string }): Promise<StoredSkill[]>;
   maxVersion(skillId: string, scope: Skill["scope"], ownerUserId: string): Promise<number>;
+  setPortalHealth(host: string, status: PortalHealthStatus, detail: string | null): Promise<void>;
+  portalHealth(host: string): Promise<{ status: PortalHealthStatus; detail: string | null } | null>;
 }
 
 export class SkillLibraryError extends Error {
@@ -163,6 +170,97 @@ export async function matchSkill(repo: SkillRepo, viewer: SkillViewer, host: str
   return own[0] ?? null;
 }
 
+/**
+ * A replay hit drift on this skill: mark it needs_reteach and keep the
+ * report. The skill content is never edited — a re-teach makes a new
+ * version. Anyone whose replay hit it can report (the run is theirs).
+ */
+export async function markNeedsReteach(repo: SkillRepo, id: string, report: string): Promise<StoredSkill | null> {
+  const row = await repo.get(id);
+  if (!row) return null;
+  if (row.status === "needs_reteach" || row.status === "rejected") return row;
+  const note = `[${nowIso()}] needs re-teach: ${report}`.slice(0, 1000);
+  const review_notes = row.review_notes ? `${row.review_notes}\n${note}` : note;
+  const skill: Skill = { ...row.skill, status: "needs_reteach" };
+  const updated_at = nowIso();
+  await repo.update(id, { status: "needs_reteach", skill, review_notes, updated_at });
+  return { ...row, status: "needs_reteach", skill, review_notes, updated_at };
+}
+
+// --------------------------------------------------------------------------
+// Review and promote (spec §8)
+// --------------------------------------------------------------------------
+
+function requireAdmin(viewer: SkillViewer): void {
+  if (!viewer.isAdmin) throw new SkillLibraryError(403, "forbidden", "Only the SmartPR team reviews skills.");
+}
+
+/** Private skills sent for review, plus admin drafts in the shared library. */
+export async function reviewQueue(repo: SkillRepo, viewer: SkillViewer): Promise<StoredSkill[]> {
+  requireAdmin(viewer);
+  const rows = await repo.listCandidates({ ownerUserId: viewer.userId, includeShared: true, includeInReview: true });
+  return rows.filter((r) => (r.scope === "private" && r.status === "in_review") || (r.scope === "shared" && r.status === "draft"));
+}
+
+/**
+ * Approve after the automated checks passed. A private skill is copied into
+ * the shared library as the next shared version, attributed to its teacher
+ * (owner_user_id + taught_by kept, promoted_from set); an admin's shared
+ * draft is approved in place. Checks are re-run by the caller server-side.
+ */
+export async function approveSkill(repo: SkillRepo, viewer: SkillViewer, id: string, checks: { ok: boolean }): Promise<StoredSkill> {
+  requireAdmin(viewer);
+  const row = await repo.get(id);
+  if (!row) throw new SkillLibraryError(404, "not_found", "Skill not found.");
+  if (!checks.ok) throw new SkillLibraryError(409, "checks_failed", "The automated checks didn't pass.");
+  const now = nowIso();
+  if (row.scope === "shared") {
+    if (row.status !== "draft") throw new SkillLibraryError(409, "not_reviewable", "Only drafts can be approved.");
+    const skill: Skill = { ...row.skill, status: "approved" };
+    assertValid(skill);
+    const patch = { status: "approved" as const, skill, checks, approved_by: viewer.userId, approved_at: now, updated_at: now };
+    await repo.update(id, patch);
+    return { ...row, ...patch };
+  }
+  if (row.status !== "in_review") throw new SkillLibraryError(409, "not_reviewable", "Only skills sent for review can be approved.");
+  const version = (await repo.maxVersion(row.skill_id, "shared", viewer.userId)) + 1;
+  const skill: Skill = { ...row.skill, version, scope: "shared", status: "approved" };
+  assertValid(skill);
+  const shared: StoredSkill = {
+    ...row,
+    id: randomUUID(),
+    version,
+    scope: "shared",
+    status: "approved",
+    skill,
+    promoted_from: row.id,
+    review_notes: null,
+    checks,
+    approved_by: viewer.userId,
+    approved_at: now,
+    created_at: now,
+    updated_at: now,
+  };
+  await repo.insert(shared);
+  await repo.update(id, { status: "approved", skill: { ...row.skill, status: "approved" }, review_notes: `Promoted to the shared library as v${version}.`, checks, approved_by: viewer.userId, approved_at: now, updated_at: now });
+  return shared;
+}
+
+/** Reject: the skill stays with its owner, with notes. */
+export async function rejectSkill(repo: SkillRepo, viewer: SkillViewer, id: string, notes: string): Promise<StoredSkill> {
+  requireAdmin(viewer);
+  const row = await repo.get(id);
+  if (!row) throw new SkillLibraryError(404, "not_found", "Skill not found.");
+  if (!((row.scope === "private" && row.status === "in_review") || (row.scope === "shared" && row.status === "draft"))) {
+    throw new SkillLibraryError(409, "not_reviewable", "This skill isn't waiting for review.");
+  }
+  const review_notes = notes.trim().slice(0, 2000) || "Rejected.";
+  const skill: Skill = { ...row.skill, status: "rejected" };
+  const updated_at = nowIso();
+  await repo.update(id, { status: "rejected", skill, review_notes, updated_at });
+  return { ...row, status: "rejected", skill, review_notes, updated_at };
+}
+
 // --------------------------------------------------------------------------
 // Repos
 // --------------------------------------------------------------------------
@@ -191,6 +289,13 @@ export class MemorySkillRepo implements SkillRepo {
       )
       .map((r) => structuredClone(r));
   }
+  health = new Map<string, { status: PortalHealthStatus; detail: string | null }>();
+  async setPortalHealth(host: string, status: PortalHealthStatus, detail: string | null) {
+    this.health.set(host, { status, detail });
+  }
+  async portalHealth(host: string) {
+    return this.health.get(host) ?? null;
+  }
   async maxVersion(skillId: string, scope: Skill["scope"], ownerUserId: string) {
     return [...this.rows.values()]
       .filter((r) => r.skill_id === skillId && r.scope === scope && (scope === "shared" || r.owner_user_id === ownerUserId))
@@ -218,20 +323,25 @@ function fromRow(r: Row): StoredSkill {
     submitted_at: iso(r.submitted_at),
     created_at: iso(r.created_at)!,
     updated_at: iso(r.updated_at)!,
+    checks: r.checks ?? null,
+    approved_by: (r.approved_by as string | null) ?? null,
+    approved_at: iso(r.approved_at),
   };
 }
 
 const COLUMNS: (keyof StoredSkill)[] = [
   "skill_id", "version", "scope", "status", "taught_by", "owner_user_id", "portal_host", "form",
   "skill", "review_notes", "promoted_from", "submitted_at", "created_at", "updated_at",
+  "checks", "approved_by", "approved_at",
 ];
+const json = (k: keyof StoredSkill, v: unknown) => (k === "skill" || k === "checks" ? (v == null ? null : JSON.stringify(v)) : v ?? null);
 const column = (k: keyof StoredSkill) => (k === "skill" ? "skill_json" : k);
 
 export class PgSkillRepo implements SkillRepo {
   constructor(private pool: Pool) {}
   async insert(row: StoredSkill) {
     const cols = ["id", ...COLUMNS.map(column)];
-    const values = [row.id, ...COLUMNS.map((k) => (k === "skill" ? JSON.stringify(row.skill) : row[k]))];
+    const values = [row.id, ...COLUMNS.map((k) => json(k, row[k]))];
     await this.pool.query(
       `INSERT INTO clara_skills (${cols.join(",")}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(",")})`,
       values
@@ -241,7 +351,7 @@ export class PgSkillRepo implements SkillRepo {
     const keys = (Object.keys(patch) as (keyof StoredSkill)[]).filter((k) => COLUMNS.includes(k));
     if (!keys.length) return;
     const sets = keys.map((k, i) => `${column(k)} = $${i + 2}`);
-    const values = keys.map((k) => (k === "skill" ? JSON.stringify(patch.skill) : patch[k]));
+    const values = keys.map((k) => json(k, patch[k]));
     await this.pool.query(`UPDATE clara_skills SET ${sets.join(", ")} WHERE id = $1`, [id, ...values]);
   }
   async get(id: string) {
@@ -261,6 +371,17 @@ export class PgSkillRepo implements SkillRepo {
       [filter.ownerUserId ?? null, !!filter.includeShared, !!filter.includeInReview, filter.portalHost ?? null]
     );
     return rows.map(fromRow);
+  }
+  async setPortalHealth(host: string, status: PortalHealthStatus, detail: string | null) {
+    await this.pool.query(
+      `INSERT INTO clara_portal_health (host, status, detail, updated_at) VALUES ($1,$2,$3,now())
+       ON CONFLICT (host) DO UPDATE SET status = EXCLUDED.status, detail = EXCLUDED.detail, updated_at = now()`,
+      [host, status, detail]
+    );
+  }
+  async portalHealth(host: string) {
+    const { rows } = await this.pool.query(`SELECT status, detail FROM clara_portal_health WHERE host = $1`, [host]);
+    return rows[0] ? { status: rows[0].status as PortalHealthStatus, detail: (rows[0].detail as string | null) ?? null } : null;
   }
   async maxVersion(skillId: string, scope: Skill["scope"], ownerUserId: string) {
     const { rows } = await this.pool.query(

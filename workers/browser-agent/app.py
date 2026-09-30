@@ -16,6 +16,9 @@ client uses, so switching providers is an env change, not a rewrite:
   POST   /api/v4/teach                     {startUrl, allowedDomains, recorderScript}
   GET    /api/v4/teach/{id}/events         ?after=     (recorder events, structure only)
   POST   /api/v4/teach/{id}/stop
+  POST   /api/v4/drive                     {startUrl, allowedDomains, driverScript}  (skill replay)
+  POST   /api/v4/drive/{id}/call           {op: snapshot|locate|fill|selectOption|click|settle, ...}
+  POST   /api/v4/drive/{id}/stop
 
 Live view: Chromium renders on Xvfb :99, x11vnc exports it on 127.0.0.1:5900,
 and the /vnc/websock endpoint bridges the noVNC client straight to x11vnc.
@@ -862,21 +865,27 @@ async def _teach_timeout(sess: AgentSession) -> None:
 
 @app.post("/api/v4/teach", dependencies=[Depends(require_api_token)])
 async def teach_create(body: TeachCreate):
+    return await _open_plain_browser(body.startUrl, body.allowedDomains, body.recorderScript, record=True)
+
+
+async def _open_plain_browser(start_url: str, allowed_domains: list[str], script: str, record: bool):
+    """Plain Playwright browser on the live-view display with `script`
+    injected on every page (teach recorder or replay driver)."""
     busy = active_session()
     if busy:
         raise HTTPException(status_code=409, detail=f"pilot limit: session {busy.id} is still active; stop it first")
-    if not body.startUrl.startswith("https://"):
+    if not start_url.startswith("https://"):
         raise HTTPException(status_code=400, detail="startUrl must be https")
-    allowed = [d for d in body.allowedDomains if isinstance(d, str) and d.strip()][:20]
-    if not allowed or not _host_allowed(body.startUrl, allowed):
+    allowed = [d for d in allowed_domains if isinstance(d, str) and d.strip()][:20]
+    if not allowed or not _host_allowed(start_url, allowed):
         raise HTTPException(status_code=400, detail="startUrl is outside allowedDomains")
-    if not body.recorderScript or len(body.recorderScript) > TEACH_MAX_SCRIPT_BYTES:
-        raise HTTPException(status_code=400, detail="recorderScript missing or too large")
+    if not script or len(script) > TEACH_MAX_SCRIPT_BYTES:
+        raise HTTPException(status_code=400, detail="script missing or too large")
 
     sess = AgentSession(id=f"teach_{uuid.uuid4().hex[:12]}", token=uuid.uuid4().hex, model="teach")
     sess.kind = "teach"
     sess.status = "running"
-    sess.title = "Teach Clara"
+    sess.title = "Teach Clara" if record else "Clara replay"
     sess.teach_allowed = allowed
     SESSIONS[sess.id] = sess
     try:
@@ -894,8 +903,9 @@ async def teach_create(body: TeachCreate):
             viewport={"width": 1280, "height": 760}, ignore_https_errors=TEACH_IGNORE_HTTPS_ERRORS
         )
         sess.teach_handles["context"] = context
-        await context.expose_binding("__claraRecord", lambda _source, payload: _teach_record(sess, payload))
-        await context.add_init_script(script=body.recorderScript)
+        if record:
+            await context.expose_binding("__claraRecord", lambda _source, payload: _teach_record(sess, payload))
+        await context.add_init_script(script=script)
 
         async def guard(route, request):
             frame = request.frame
@@ -909,7 +919,7 @@ async def teach_create(body: TeachCreate):
         await context.route("**/*", guard)
         page = await context.new_page()
         try:
-            await page.goto(body.startUrl, wait_until="domcontentloaded", timeout=45_000)
+            await page.goto(start_url, wait_until="domcontentloaded", timeout=45_000)
         except Exception as exc:  # the user can still navigate from the viewer
             sess.push_log("system", f"Start page load issue: {type(exc).__name__}")
     except Exception as exc:  # noqa: BLE001
@@ -945,6 +955,98 @@ async def teach_stop(session_id: str):
         sess.push_log("system", "Teach session stopped.")
     await _teach_close(sess)
     return {"sessionId": sess.id, "status": sess.status}
+
+
+# --------------------------------------------------------------------------- #
+# Drive mode — skill replay. SmartPR's server runs the replay engine and
+# calls these primitives; DRIVER_SCRIPT (sent by SmartPR) finds and tags
+# controls, Playwright types/clicks on the tagged element. The worker never
+# decides what to fill or click, and refuses nothing it isn't asked.
+# --------------------------------------------------------------------------- #
+
+class DriveCreate(BaseModel):
+    startUrl: str
+    allowedDomains: list[str] = []
+    driverScript: str
+
+
+class DriveCall(BaseModel):
+    op: str
+    target: Optional[dict] = None
+    ref: Optional[str] = None
+    value: Optional[str] = None
+
+
+def _drive_page(sess: AgentSession):
+    ctx = sess.teach_handles.get("context")
+    if ctx is None or not ctx.pages:
+        raise HTTPException(status_code=409, detail="browser closed")
+    return ctx.pages[-1]
+
+
+def _ref_selector(ref: Optional[str]) -> str:
+    import re
+
+    clean = re.sub(r"[^a-zA-Z0-9]", "", ref or "")
+    if not clean:
+        raise HTTPException(status_code=400, detail="ref required")
+    return f'[data-clara-ref="{clean}"]'
+
+
+@app.post("/api/v4/drive", dependencies=[Depends(require_api_token)])
+async def drive_create(body: DriveCreate):
+    return await _open_plain_browser(body.startUrl, body.allowedDomains, body.driverScript, record=False)
+
+
+@app.post("/api/v4/drive/{session_id}/call", dependencies=[Depends(require_api_token)])
+async def drive_call(session_id: str, body: DriveCall):
+    sess = SESSIONS.get(session_id)
+    if not sess or sess.kind != "teach" or sess.status != "running":
+        raise HTTPException(status_code=404, detail="drive session not found")
+    page = _drive_page(sess)
+    op = body.op
+    if op == "snapshot":
+        return await page.evaluate("() => window.__claraDrive.snapshot()")
+    if op == "locate":
+        t = body.target or {}
+        target = {"role": str(t.get("role", "")), "label": str(t.get("label", ""))[:200], "selector": t.get("selector")}
+        return await page.evaluate("(t) => window.__claraDrive.locate(t)", target)
+    if op == "fill":
+        await page.locator(_ref_selector(body.ref)).fill(body.value or "")
+        return {"ok": True}
+    if op == "selectOption":
+        loc = page.locator(_ref_selector(body.ref))
+        labels = await loc.evaluate("(s) => Array.from(s.options).map(o => o.text.trim())")
+        norm = lambda x: x.lower()
+        want = norm(body.value or "")
+        exact = [l for l in labels if norm(l) == want]
+        partial = [l for l in labels if want and want in norm(l)]
+        pick = exact[0] if len(exact) == 1 else (partial[0] if not exact and len(partial) == 1 else None)
+        if pick is None:
+            return {"ok": False}
+        await loc.select_option(label=pick)
+        return {"ok": True}
+    if op == "click":
+        loc = page.locator(_ref_selector(body.ref))
+        kind = await loc.evaluate("(e) => e.type || ''")
+        if kind in ("radio", "checkbox"):
+            await loc.check(force=True)
+        else:
+            await loc.click()
+        return {"ok": True}
+    if op == "settle":
+        try:
+            await page.wait_for_load_state("domcontentloaded", timeout=10_000)
+        except Exception:
+            pass
+        await asyncio.sleep(0.4)
+        return {"ok": True}
+    raise HTTPException(status_code=400, detail="unknown op")
+
+
+@app.post("/api/v4/drive/{session_id}/stop", dependencies=[Depends(require_api_token)])
+async def drive_stop(session_id: str):
+    return await teach_stop(session_id)
 
 
 # --------------------------------------------------------------------------- #

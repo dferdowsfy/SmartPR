@@ -72,9 +72,18 @@ export function errorResponse(err: unknown): Response {
   if (err instanceof TeachSessionError) {
     return Response.json({ error: err.code, message: err.message, detail: err.detail ?? null }, { status: err.status });
   }
+  if (err && typeof err === "object" && (err as { name?: string }).name === "ReplayError") {
+    const e = err as unknown as { status: number; code: string; message: string };
+    return Response.json({ error: e.code, message: e.message }, { status: e.status });
+  }
   if (err instanceof SkillLibraryError) {
     return Response.json({ error: err.code, message: err.message }, { status: err.status });
   }
   console.error("[teach] unexpected error:", (err as Error)?.message);
   return Response.json({ error: "server_error", message: "Something went wrong." }, { status: 500 });
+}
+
+export async function replayDeps(): Promise<import("../replay/replaySessions").ReplayDeps> {
+  const { startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
+  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id) };
 }

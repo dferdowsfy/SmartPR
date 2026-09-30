@@ -33,4 +33,16 @@ CREATE INDEX IF NOT EXISTS idx_clara_skills_match ON clara_skills (portal_host, 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_clara_skills_shared_version ON clara_skills (skill_id, version) WHERE scope = 'shared';
 -- A private skill version number is unique per owner.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_clara_skills_private_version ON clara_skills (owner_user_id, skill_id, version) WHERE scope = 'private';
+-- Review-and-promote (spec §8): automated check results and who approved.
+ALTER TABLE clara_skills ADD COLUMN IF NOT EXISTS checks JSONB;
+ALTER TABLE clara_skills ADD COLUMN IF NOT EXISTS approved_by UUID;
+ALTER TABLE clara_skills ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+-- Portal health from the Layer 4 public probes, per host. A changed portal
+-- flags every skill for that host until someone replays or re-teaches it.
+CREATE TABLE IF NOT EXISTS clara_portal_health (
+  host TEXT PRIMARY KEY,
+  status TEXT NOT NULL CHECK (status IN ('ok','portal_changed','unreachable')),
+  detail TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;

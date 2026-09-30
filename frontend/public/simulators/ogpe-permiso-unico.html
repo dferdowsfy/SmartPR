@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Single Business Portal — Simulador</title>
+<style>
+  :root { --ink:#1b2a22; --muted:#5b6a60; --line:#cfd8d2; --accent:#1e4d38; --bg:#f6f4ee; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+  .banner { background:#8a1c1c; color:#fff; padding:6px 16px; font-weight:700; font-size:13px; }
+  main { max-width:760px; margin:0 auto; padding:16px; }
+  section { display:none; background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px; }
+  section.on { display:block; }
+  label { display:block; margin:10px 0 4px; font-weight:600; }
+  input[type=text], input[type=email], input[type=tel], input[type=password] { width:100%; padding:8px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  button { margin-top:14px; padding:8px 16px; border:0; border-radius:999px; background:var(--accent); color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; }
+  .dd { position:relative; }
+  .dd-trigger { display:block; width:100%; padding:8px; border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; }
+  .dd ul { display:none; list-style:none; margin:4px 0 0; padding:0; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  .dd.open ul { display:block; }
+  .dd li { padding:6px 10px; cursor:pointer; } .dd li:hover { background:#eef3ef; }
+  .radio { font-weight:400; } .radio input { margin-right:6px; }
+  .error { color:#8a1c1c; font-weight:600; }
+</style>
+</head>
+<body>
+<!--
+  FICTIONAL simulator of the OGPe Single Business Portal Permiso Único flow,
+  shaped after skill ogpe.permiso_unico v1 (manual-derived + 2026-09-28 QA
+  observations). Used by the replay engine tests and for rehearsals. Nothing
+  here reaches any government system; nothing is stored.
+
+  Query flags: ?drift=label  (the "Nombre legal" field is renamed)
+               ?drift=screen (an unexpected survey screen appears after Dueño)
+-->
+<div class="banner">SIMULADOR — no es el portal real de OGPe. Nada se radica.</div>
+<main>
+  <section id="s-home" class="on">
+    <h1>Single Business Portal</h1>
+    <p>Bienvenido al simulador del portal de permisos.</p>
+    <button type="button" onclick="go('login')">Iniciar sesión</button>
+  </section>
+
+  <section id="s-login">
+    <h1>Iniciar sesión</h1>
+    <label for="usuario">Usuario</label><input id="usuario" type="text">
+    <label for="clave">Contraseña</label><input id="clave" type="password">
+    <button type="button" onclick="go('codigo')">Entrar</button>
+  </section>
+
+  <section id="s-codigo">
+    <h1>Ingrese el código de verificación</h1>
+    <p>Enviamos un código a su correo electrónico.</p>
+    <label for="otp">Código</label><input id="otp" type="text" autocomplete="one-time-code">
+    <button type="button" onclick="go('inicio')">Verificar</button>
+  </section>
+
+  <section id="s-inicio">
+    <h1>Mis Solicitudes</h1>
+    <p>No tiene solicitudes todavía.</p>
+    <button type="button" onclick="document.getElementById('nueva').hidden=false">Crear Solicitud</button>
+    <div id="nueva" hidden>
+      <span id="tipo-label" style="display:block;margin:10px 0 4px;font-weight:600">Tipo de solicitud</span>
+      <div class="dd" id="dd-tipo">
+        <span class="dd-trigger" role="combobox" aria-labelledby="tipo-label" tabindex="0" onclick="toggleDd('dd-tipo')">Seleccione</span>
+        <ul role="listbox">
+          <li role="option" onclick="pick('dd-tipo', this); if (this.textContent==='Permiso Único') go('dueno')">Permiso Único</li>
+          <li role="option" onclick="pick('dd-tipo', this)">Permiso de Construcción</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="s-dueno">
+    <h1>¿A nombre de quién deben salir los trámites de este proyecto?</h1>
+    <label class="radio"><input type="radio" name="dueno" id="d-usted" onchange="go(DRIFT==='screen' ? 'encuesta' : 'detalles')"> Usted</label>
+    <label class="radio"><input type="radio" name="dueno" id="d-otra"> De otra persona</label>
+    <label class="radio"><input type="radio" name="dueno" id="d-compania" onchange="document.getElementById('comp').hidden=false"> De una compañía</label>
+    <div id="comp" hidden><label for="companias">Compañías</label><select id="companias"><option value="">Seleccione</option></select><p class="error" role="alert">Seleccione un valor de la lista</p></div>
+  </section>
+
+  <section id="s-encuesta">
+    <h1>Encuesta de satisfacción</h1>
+    <p>¿Cómo fue su experiencia hasta ahora?</p>
+    <button type="button" onclick="go('detalles')">Omitir</button>
+  </section>
+
+  <section id="s-detalles">
+    <h1>Detalles del Proyecto</h1>
+    <label for="proj">Nombre del proyecto</label><input id="proj" type="text">
+    <label for="legal" id="legal-label">Nombre legal</label><input id="legal" type="text">
+    <label for="dba">Nombre comercial</label><input id="dba" type="text">
+    <span id="ent-label" style="display:block;margin:10px 0 4px;font-weight:600">Tipo de entidad</span>
+    <div class="dd" id="dd-ent">
+      <span class="dd-trigger" role="combobox" aria-labelledby="ent-label" tabindex="0" onclick="toggleDd('dd-ent')">Seleccione</span>
+      <ul role="listbox">
+        <li role="option" onclick="pick('dd-ent', this)">Individuo</li>
+        <li role="option" onclick="pick('dd-ent', this)">Corporación</li>
+        <li role="option" onclick="pick('dd-ent', this)">Compañía de Responsabilidad Limitada (LLC)</li>
+      </ul>
+    </div>
+    <label for="dir1">Dirección física</label><input id="dir1" type="text">
+    <label for="dir2">Dirección física línea 2</label><input id="dir2" type="text">
+    <span id="mun-label" style="display:block;margin:10px 0 4px;font-weight:600">Municipio</span>
+    <div class="dd" id="dd-mun">
+      <span class="dd-trigger" role="combobox" aria-labelledby="mun-label" tabindex="0" onclick="toggleDd('dd-mun')">Seleccione</span>
+      <ul role="listbox">
+        <li role="option" onclick="pick('dd-mun', this)">Bayamón</li>
+        <li role="option" onclick="pick('dd-mun', this)">Ponce</li>
+        <li role="option" onclick="pick('dd-mun', this)">San Juan</li>
+      </ul>
+    </div>
+    <label for="zip">Código postal</label><input id="zip" type="text">
+    <label for="cname">Nombre de contacto</label><input id="cname" type="text">
+    <label for="cemail">Email de contacto</label><input id="cemail" type="email">
+    <label for="ctel">Teléfono de contacto</label><input id="ctel" type="tel">
+    <button type="button" onclick="go('localizacion')">Continuar</button>
+  </section>
+
+  <section id="s-localizacion">
+    <h1>Localización</h1>
+    <p>Busque la propiedad sobre el mapa para llenar el Número de Catastro.</p>
+    <button type="button" onclick="document.getElementById('catastro').value='000-000-000-00'">Seleccionar parcela en el mapa</button>
+    <label for="catastro">Número de Catastro</label><input id="catastro" type="text" readonly>
+    <button type="button" onclick="go('permiso')">Continuar</button>
+  </section>
+
+  <section id="s-permiso">
+    <h1>Solicitud de Permiso Único</h1>
+    <label for="p-legal">Nombre legal</label><input id="p-legal" type="text">
+    <label for="p-dir">Dirección del local</label><input id="p-dir" type="text">
+    <span id="pmun-label" style="display:block;margin:10px 0 4px;font-weight:600">Municipio</span>
+    <div class="dd" id="dd-pmun">
+      <span class="dd-trigger" role="combobox" aria-labelledby="pmun-label" tabindex="0" onclick="toggleDd('dd-pmun')">Seleccione</span>
+      <ul role="listbox">
+        <li role="option" onclick="pick('dd-pmun', this)">Bayamón</li>
+        <li role="option" onclick="pick('dd-pmun', this)">Ponce</li>
+        <li role="option" onclick="pick('dd-pmun', this)">San Juan</li>
+      </ul>
+    </div>
+    <label for="p-zip">Código postal</label><input id="p-zip" type="text">
+    <label for="p-email">Email de contacto</label><input id="p-email" type="email">
+    <label for="p-tel">Teléfono de contacto</label><input id="p-tel" type="tel">
+    <button type="button" onclick="go('anejos')">Continuar</button>
+  </section>
+
+  <section id="s-anejos">
+    <h1>Anejos</h1>
+    <label for="plano">Plano del local (máx. 5 MB)</label><input id="plano" type="file">
+    <button type="button" onclick="go('certificacion')">Continuar</button>
+  </section>
+
+  <section id="s-certificacion">
+    <h1>Certificación bajo juramento</h1>
+    <label class="radio"><input type="checkbox" id="cert" onchange="document.getElementById('cert-next').disabled=!this.checked"> Certifico bajo juramento que la información es correcta</label>
+    <button type="button" id="cert-next" disabled onclick="go('revision')">Continuar</button>
+  </section>
+
+  <section id="s-revision">
+    <h1>Revisar y Radicar</h1>
+    <p>Revise la información antes de radicar.</p>
+    <button type="button" id="radicar" onclick="window.__sim.submitted=true; go('pago')">Radicar</button>
+  </section>
+
+  <section id="s-pago">
+    <h1>Pago</h1>
+    <label for="tarjeta">Número de tarjeta</label><input id="tarjeta" type="text">
+    <button type="button" onclick="window.__sim.paid=true; go('confirmacion')">Pagar</button>
+  </section>
+
+  <section id="s-confirmacion">
+    <h1>Confirmación — Número de Trámite PU-2026-000123</h1>
+    <p>Su solicitud fue radicada.</p>
+  </section>
+</main>
+<script>
+  var DRIFT = new URLSearchParams(location.search).get('drift') || '';
+  window.__sim = { submitted: false, paid: false };
+  if (DRIFT === 'label') {
+    document.getElementById('legal-label').textContent = 'Razón social';
+  }
+  function go(id) {
+    document.querySelectorAll('section').forEach(function (s) { s.classList.toggle('on', s.id === 's-' + id); });
+    history.pushState({}, '', location.pathname + location.search + '#' + id);
+  }
+  function toggleDd(id) { document.getElementById(id).classList.toggle('open'); }
+  function pick(id, li) {
+    var dd = document.getElementById(id);
+    dd.querySelector('.dd-trigger').textContent = li.textContent;
+    dd.classList.remove('open');
+  }
+</script>
+</body>
+</html>

@@ -252,3 +252,36 @@ export function pathStatusLabelEs(status: SubmissionPathStatus): string {
       return "Sin ruta en línea";
   }
 }
+
+/**
+ * Teach Clara extension (2026-09-30): a filing path backed by an approved,
+ * replayable skill is "verified" — the replay engine walks the recorded
+ * steps and stops at the first deviation, the same guard as above, now
+ * enforced step by step instead of by prompt. A portal the public probes
+ * flagged as changed keeps the path's status but says so.
+ */
+export interface TaughtSkillInfo {
+  version: number;
+  attribution: "smartpr" | "partner" | "you";
+  health: "ok" | "portal_changed" | "unreachable";
+}
+
+export function withTaughtSkill(path: SubmissionPath, skill: TaughtSkillInfo | null): SubmissionPath & { skill: TaughtSkillInfo | null } {
+  if (!skill || path.status === "not-applicable") return { ...path, skill: null };
+  if (skill.health === "portal_changed") {
+    return {
+      ...path,
+      skill,
+      reasonEn: `${path.reasonEn} A taught skill (v${skill.version}) exists, but the portal changed since — Clara stops at the first difference.`,
+      reasonEs: `${path.reasonEs} Existe una destreza enseñada (v${skill.version}), pero el portal cambió — Clara se detiene ante la primera diferencia.`,
+    };
+  }
+  return {
+    ...path,
+    status: "verified",
+    skill,
+    reasonEn: `Taught skill v${skill.version}: Clara replays the recorded steps from the business's info and stops at the first deviation.`,
+    reasonEs: `Destreza enseñada v${skill.version}: Clara repite los pasos grabados con la información del negocio y se detiene ante la primera desviación.`,
+    reconNeeded: false,
+  };
+}

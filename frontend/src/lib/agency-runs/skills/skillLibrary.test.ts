@@ -19,6 +19,7 @@ import {
   MemorySkillRepo,
   PgSkillRepo,
   SkillLibraryError,
+  approveSkill,
   getVisibleSkill,
   listVisibleSkills,
   matchSkill,
@@ -92,6 +93,23 @@ function suite(name: string, makeRepo: () => Promise<SkillRepo>) {
       await assert.rejects(saveTaughtSkill(repo, ALICE, bad, "user"), (e: SkillLibraryError) => e.status === 422);
     });
 
+    it("promote: private → shared vN with checks and approver; portal health round-trips", async () => {
+      const t = { userId: randomUUID(), isAdmin: false };
+      const d = await saveTaughtSkill(repo, t, { ...OGPE, skill_id: "promo_test.permiso", form: "Formulario de prueba" }, "partner");
+      await submitForReview(repo, t, d.id);
+      const shared = await approveSkill(repo, ADMIN, d.id, { ok: true, note: "clean" } as { ok: boolean });
+      const back = await repo.get(shared.id);
+      assert.equal(back?.scope, "shared");
+      assert.equal(back?.status, "approved");
+      assert.equal(back?.owner_user_id, t.userId);
+      assert.equal(back?.promoted_from, d.id);
+      assert.equal(back?.approved_by, ADMIN.userId);
+      assert.deepEqual(back?.checks, { ok: true, note: "clean" });
+      assert.equal((await repo.get(d.id))?.status, "approved");
+      await repo.setPortalHealth("sbp.ogpe.pr.gov", "portal_changed", "title changed");
+      assert.deepEqual(await repo.portalHealth("sbp.ogpe.pr.gov"), { status: "portal_changed", detail: "title changed" });
+    });
+
     it("versions per owner for private skills", async () => {
       const carol = { userId: randomUUID(), isAdmin: false };
       const a = await saveTaughtSkill(repo, carol, OGPE, "user");
@@ -142,7 +160,7 @@ describe("clara_skills schema", () => {
   it("is additive only", () => {
     for (const statement of splitSqlStatements(CLARA_SKILLS_SCHEMA_SQL)) {
       const body = statement.replace(/^(--[^\n]*\n|\s)*/, "");
-      assert.match(body, /^CREATE (TABLE|INDEX|UNIQUE INDEX) IF NOT EXISTS\b/i, body.slice(0, 60));
+      assert.match(body, /^(CREATE (TABLE|INDEX|UNIQUE INDEX) IF NOT EXISTS|ALTER TABLE clara_skills ADD COLUMN IF NOT EXISTS)\b/i, body.slice(0, 60));
     }
   });
 });
