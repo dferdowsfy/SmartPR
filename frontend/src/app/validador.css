@@ -2039,6 +2039,50 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 }
 .spr-nl-go:hover:not(:disabled) { transform: translateX(1px); }
 .spr-nl-go:disabled { opacity: .3; cursor: default; box-shadow: none; }
+/* While interpreting, the whole textbox visibly works: a shimmer sweeps
+   across it and the border pulses, so it's obvious something is happening. */
+.spr-nl-row.spr-nl-loading .spr-nl-input {
+  border-color: #5590b6;
+  animation: spr-nl-pulse 1.6s ease-in-out infinite;
+}
+/* Textareas can't render ::before/::after themselves, so the sweep lives on
+   the row overlay, inset to match the textarea's rounded box. */
+.spr-nl-row.spr-nl-loading::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 24px;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 25%, rgba(85, 144, 182, .22) 50%, transparent 75%);
+  background-size: 220% 100%;
+  animation: spr-nl-shimmer 1.6s linear infinite;
+}
+@keyframes spr-nl-shimmer {
+  from { background-position: 180% 0; }
+  to { background-position: -80% 0; }
+}
+@keyframes spr-nl-pulse {
+  0%, 100% { box-shadow: 0 0 0 5px rgba(85, 144, 182, .16), 0 0 22px rgba(85, 144, 182, .22), 0 3px 14px rgba(15, 35, 50, .06); }
+  50% { box-shadow: 0 0 0 7px rgba(85, 144, 182, .26), 0 0 30px rgba(85, 144, 182, .34), 0 3px 14px rgba(15, 35, 50, .06); }
+}
+/* Spinner that replaces the arrow on the submit button while loading. */
+.spr-nl-spinner {
+  display: block; width: 20px; height: 20px; border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  animation: spr-nl-spin .8s linear infinite;
+}
+@keyframes spr-nl-spin { to { transform: rotate(360deg); } }
+/* Keep the button readable while its spinner runs (base :disabled is .3). */
+.spr-nl-row.spr-nl-loading .spr-nl-go:disabled { opacity: .6; }
+.spr-nl-status {
+  margin: 0; font-size: 12.5px; font-weight: 600; color: #5590b6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spr-nl-row.spr-nl-loading .spr-nl-input,
+  .spr-nl-row.spr-nl-loading::after,
+  .spr-nl-spinner { animation: none; }
+  .spr-nl-row.spr-nl-loading .spr-nl-input { border-color: #5590b6; }
+}
 .spr-nl-example { margin: 0; color: #a6b3bd; font-size: 12.5px; }
 .spr-nl-result { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .spr-nl-result-label { color: #5b6b78; font-size: 12px; font-weight: 600; }
