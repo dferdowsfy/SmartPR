@@ -10,7 +10,6 @@
     "version",
     "portal",
     "form",
-    "filing_type_id",
     "taught_by",
     "scope",
     "status",
@@ -36,9 +35,9 @@
     },
     "form": { "type": "string", "minLength": 1 },
     "filing_type_id": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 1,
-      "description": "Extension: the AGENCY_FILING_CONFIGS id this skill replays, used for skill matching on filing launch."
+      "description": "Extension, optional: link to a hand-written AGENCY_FILING_CONFIGS entry when one exists. Skills for any other government site omit it; they are matched by portal.base_url host + form."
     },
     "taught_by": { "enum": ["admin", "partner", "user"] },
     "scope": { "enum": ["shared", "private"] },

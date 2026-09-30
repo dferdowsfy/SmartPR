@@ -108,6 +108,51 @@ describe("skill schema validator", () => {
   });
 });
 
+describe("skills are not tied to known portals", () => {
+  it("a skill for any government site validates without a filing config", () => {
+    const other: Skill = {
+      skill_id: "municipio_ejemplo.patente_municipal",
+      version: 1,
+      portal: { name: "Municipio de Ejemplo — Portal de Patentes", base_url: "https://patentes.ejemplo.invalid/" },
+      form: "Patente Municipal",
+      taught_by: "user",
+      scope: "private",
+      status: "draft",
+      steps: [
+        {
+          id: "datos-negocio",
+          label: { en: "Business details", es: "Datos del negocio" },
+          page_match: { title_contains: "Datos del negocio" },
+          observed: true,
+          fallback: "pause_and_ask",
+          actions: [],
+          fields: [
+            {
+              portal_field: { label: "Nombre del negocio", selector: "#nombre", role: "textbox" },
+              passport_path: "business.legalName",
+              transform: "trim",
+              required: true,
+              fallback: "pause_and_ask",
+            },
+          ],
+        },
+        {
+          id: "enviar",
+          label: { en: "Submit", es: "Enviar" },
+          page_match: { title_contains: "Revisión" },
+          gate: "submit",
+          observed: true,
+          fallback: "pause_and_ask",
+          actions: [],
+          fields: [],
+        },
+      ],
+      gates: REQUIRED_HUMAN_GATES.map((id) => ({ id, type: "human" as const })),
+    };
+    assert.deepEqual(validateSkill(other), []);
+  });
+});
+
 describe("field transforms", () => {
   it("strip_formatting drops phone punctuation and spaces", () => {
     assert.equal(applyTransform("(787) 555-1234", "strip_formatting"), "7875551234");

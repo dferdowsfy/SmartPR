@@ -72,9 +72,12 @@ export interface Skill {
   $schema?: string;
   skill_id: string;
   version: number;
+  /** base_url's host is the site the skill is for (and the replay's allowed domain). */
   portal: { name: string; base_url: string };
   form: string;
-  filing_type_id: string;
+  /** Optional link to a hand-written filing config; taught skills for any
+   *  other site omit it and match on portal host + form. */
+  filing_type_id?: string | null;
   taught_by: "admin" | "partner" | "user";
   scope: "shared" | "private";
   status: "draft" | "in_review" | "approved" | "rejected" | "needs_reteach";
