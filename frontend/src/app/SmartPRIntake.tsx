@@ -114,6 +114,9 @@ import {
 } from './components/filing/FilingWorkflowShell';
 import { MunicipalityMapButton } from './components/intake/MunicipalityMapButton';
 import { normalizeMunicipio } from './locations/geo';
+import { LocationStepCard, intakeSiteFromPick } from './components/intake/LocationStepCard';
+import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteLabel, type IntakeSite } from './locations/intakeLocation';
+import type { LocationEngineFacts } from './locations/locationContext';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
 import { claraSupportFor, groupRequirements, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
@@ -1298,6 +1301,8 @@ function computeRequirements(
     deferUnanswered?: boolean;
     /** Existing business at premises it does not operate yet. */
     newPremises?: { registeredMunicipality?: string | null } | null;
+    /** Engine facts of the confirmed site (intake location step). */
+    locationFacts?: LocationEngineFacts | null;
   } = {}
 ): Requirement[] {
   const entityType = entityTypeFromLegacyStructure(profile.business_structure);
@@ -1325,6 +1330,7 @@ function computeRequirements(
       aiPrefilledKeys: project.aiPrefilledKeys,
       deferredQuestions,
       newPremises: project.newPremises ?? null,
+      locationFacts: project.locationFacts ?? null,
     }
   ) as Requirement[];
 
@@ -1623,6 +1629,19 @@ export default function SmartPRIntake() {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
+  // Intake location step: the confirmed site (pin / geocoded address / saved
+  // location) whose municipio and location facts drive the requirements.
+  const [intakeSite, setIntakeSiteState] = useState<IntakeSite | null>(null);
+  const intakeSiteRef = useRef<IntakeSite | null>(null);
+  const setIntakeSite = (next: IntakeSite | null | ((cur: IntakeSite | null) => IntakeSite | null)) => {
+    const value = typeof next === 'function' ? next(intakeSiteRef.current) : next;
+    intakeSiteRef.current = value;
+    setIntakeSiteState(value);
+  };
+  // The user's own description (prompt): location-need detection reads it.
+  const [intakeDescription, setIntakeDescription] = useState('');
+  // Passport location this intake created for its site (updated on Change).
+  const intakeSavedLocationIdRef = useRef<string | null>(null);
   // Business-details block: filled fields minimize to a compact summary and
   // only fields still needing input render as inputs. Expands fully when the
   // user taps Edit (or when submit finds profile fields missing).
@@ -1967,6 +1986,12 @@ export default function SmartPRIntake() {
     if (restoredPassport) setProjectPassport(restoredPassport);
     const restoredScenario = restoreScenario(st.scenario);
     if (restoredScenario) setScenario(restoredScenario);
+    const restoredSite = restoreIntakeSite(st.intakeSite);
+    if (restoredSite) {
+      setIntakeSite(restoredSite);
+      if (restoredSite.location_id) intakeSavedLocationIdRef.current = restoredSite.location_id;
+    }
+    if (typeof st.intakeDescription === 'string') setIntakeDescription(st.intakeDescription);
     if (snap.business_id) {
       businessIdRef.current = snap.business_id;
       setBusinessId(snap.business_id);
@@ -2149,7 +2174,9 @@ export default function SmartPRIntake() {
   // Knowledge-graph applicability of the scenario: likely vs potential
   // paths, controlling unknowns, and the next questions.
   const scenarioEval = useMemo(
-    () => (mergedScenario && scenarioActive ? evaluateScenario(mergedScenario, KB, { passport: scenarioPassport, skip: scenarioSkipped }) : null),
+    // The property-location question is owned by the inline location step
+    // (pin / address / saved location), so it is never asked as free text.
+    () => (mergedScenario && scenarioActive ? evaluateScenario(mergedScenario, KB, { passport: scenarioPassport, skip: [...scenarioSkipped, 'sq_location'] }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
     [mergedScenario, scenarioActive, scenarioPassport, scenarioSkipped, kbReady]
   );
@@ -2400,6 +2427,7 @@ export default function SmartPRIntake() {
     projectIntent,
     projectContext,
     provenance: provenanceExtra(),
+    locationFacts: (intakeSite ? siteEngineFacts(intakeSite, businessId) : null) as LocationEngineFacts | null,
     aiPrefilledKeys,
     deferUnanswered: opts.deferUnanswered ?? true,
     newPremises: projectIntent === 'existing_business' && isNewPremises(mergedScenario, passportSnapshot)
@@ -3094,7 +3122,11 @@ export default function SmartPRIntake() {
     setScenarioSkipped([]);
   };
 
-  const applyInterpretedIntake = (patch: IntakePatch, validated?: ValidatedInterpretation, opts?: { fresh?: boolean }) => {
+  const applyInterpretedIntake = (patch: IntakePatch, validated?: ValidatedInterpretation, opts?: { fresh?: boolean; description?: string }) => {
+    if (typeof opts?.description === 'string') {
+      const text = opts.description;
+      setIntakeDescription((prev) => (opts.fresh || !prev ? text : `${prev}\n${text}`));
+    }
     const numericFields = ['number_of_employees', 'number_of_vehicles', 'number_of_rental_units'];
 
     if (opts?.fresh) {
@@ -3585,6 +3617,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               // The scenario read from the description (and answered
               // scenario questions): resuming never re-asks those facts.
               scenario,
+              // The confirmed site (location step) and the description it was read from.
+              intakeSite,
+              intakeDescription,
             },
           }),
         })];
@@ -3731,6 +3766,76 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     setCurrentStep(3);
     setIsLoading(false);
   };
+
+  /**
+   * Intake location step: a confirmed site sets the municipio from the pin
+   * (Census boundary, not typed text) and binds the site's location facts to
+   * the engine; requirements already on screen re-evaluate immediately.
+   */
+  const confirmIntakeSite = (site: IntakeSite) => {
+    setIntakeSite(site);
+    const option = municipalityOptions.find((m: string) => normalizeMunicipio(m) === normalizeMunicipio(site.municipality.name));
+    const nextProfile = option ? { ...profile, municipality: option } : profile;
+    if (option) {
+      setProfile((current) => ({ ...current, municipality: option }));
+      markUserTouched('municipality');
+    }
+    setPotentialDecisions({});
+    // The scenario's property location is answered by the pin (its address
+    // or coordinates), so the use-authorization branch stops waiting on it.
+    if (scenarioRef.current) {
+      const next = applyScenarioAnswer(scenarioRef.current, 'sq_location', siteLabel(site));
+      setScenario(next);
+      setProjectContext((prev) => reconcileProjectContext(prev, next));
+    }
+    if (requirements.length > 0) {
+      const options = requirementOptions();
+      // The municipio was just set by the user's own pin: it is confirmed in
+      // this session (state updates above have not landed yet).
+      const provenance = { ...options.provenance, confirmedKeys: [...options.provenance.confirmedKeys, 'municipality'] };
+      setRequirements(computeRequirements(nextProfile, discoveryAnswers, {}, { ...options, provenance, locationFacts: siteEngineFacts(site, businessId) }));
+    }
+  };
+
+  // A confirmed site is saved to the business's locations (the same model
+  // as Passport → Property / Location) once a persisted business exists.
+  // Moving the pin later updates the location this intake created instead
+  // of adding another one.
+  const intakeSiteSavingRef = useRef<string | null>(null);
+  useEffect(() => {
+    const site = intakeSite;
+    if (!site || site.location_id || !me) return;
+    if (!businessId || businessId.startsWith('local-') || projectIntent === 'project_only') return;
+    const key = `${site.latitude},${site.longitude}`;
+    if (intakeSiteSavingRef.current === key) return;
+    intakeSiteSavingRef.current = key;
+    const existingId = intakeSavedLocationIdRef.current;
+    const url = existingId
+      ? `/api/businesses/${encodeURIComponent(businessId)}/locations/${encodeURIComponent(existingId)}`
+      : `/api/businesses/${encodeURIComponent(businessId)}/locations`;
+    fetch(url, {
+      method: existingId ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: null,
+        latitude: site.latitude,
+        longitude: site.longitude,
+        coordinate_source: site.coordinate_source,
+        formatted_address: site.formatted_address,
+        address_source: site.formatted_address
+          ? (site.coordinate_source === 'GEOCODED_ADDRESS' ? 'PROVIDER_GEOCODE' : 'PROVIDER_REVERSE_GEOCODE')
+          : 'NONE',
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { location?: { id?: string } } | null) => {
+        const id = data?.location?.id;
+        if (!id) return;
+        intakeSavedLocationIdRef.current = id;
+        setIntakeSite((cur) => (cur && cur.latitude === site.latitude && cur.longitude === site.longitude ? { ...cur, location_id: id } : cur));
+      })
+      .catch(() => { intakeSiteSavingRef.current = null; });
+  }, [intakeSite, me, businessId, projectIntent]);
 
   // Answering the inline "more information needed" question on a requirement
   // card writes a REAL discovery answer — exactly what the wizard would have
@@ -4989,7 +5094,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     } catch {
       return [] as Requirement[];
     }
-  }, [profile, discoveryAnswers, potentialDecisions]);
+  }, [profile, discoveryAnswers, potentialDecisions, intakeSite]);
 
   // Some conditional rule questions are outside the business type's guided
   // list. Ask those here too, using the same write keys as the rule engine.
@@ -6025,6 +6130,43 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         (projectPassport ? projectPassportTitle(projectPassport) : null) ?? (profile.business_type ? L(profile.business_type, language) : null) ?? profile.name,
         profile.municipality,
       ].filter(Boolean).join(', ');
+  // Location step: does this request need a site? (pure detection, see
+  // locations/intakeLocation.ts). Reads the prompt, the scenario, project
+  // facts, the energy assessment and the KB rules that depend on location.
+  const locationNeed = detectLocationNeed({
+    description: intakeDescription,
+    municipality: profile.municipality,
+    physicalAddress: profile.physical_address ?? null,
+    locationType: profile.location_type,
+    businessTypeId: KB.businessTypes.find((b) => b.name === profile.business_type)?.id ?? null,
+    projectIntent,
+    physicalLocation: profile.physical_location,
+    customersVisit: profile.customers_visit,
+    foodPreparedOrSold: profile.food_prepared_or_sold,
+    projectFacts: Object.fromEntries(Object.entries(projectContext ?? {}).map(([k, f]) => [k, f?.value])),
+    scenario: scenario ? {
+      municipality: scenario.property.municipality?.value ?? null,
+      address: scenario.property.address?.value ?? null,
+      parcel: scenario.property.parcel?.value ?? null,
+      projectTypes: scenario.project.type?.value ?? null,
+    } : null,
+    energyProject: Boolean(energyAssessment?.processes?.some((p) => p.state !== 'NOT_REQUIRED')),
+    municipalityNames: municipalityOptions,
+    rules: KB.rules,
+    // The scenario graph is waiting on the property location (use authorization).
+    locationFactsPending: Boolean(scenarioEval?.controlling.some((c) => c.id === 'location')),
+  });
+  const siteBusinessId = me && businessId && !businessId.startsWith('local-') ? businessId : null;
+  const summaryLocation = intakeSite || locationNeed.needed ? (
+    <LocationStepCard
+      compact
+      lang={language}
+      need={locationNeed}
+      site={intakeSite}
+      businessId={siteBusinessId}
+      onConfirm={confirmIntakeSite}
+    />
+  ) : null;
   const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, 0, language)}`;
   const energySection = energyAssessment && energyChecklist ? (
     <EnergyProcessesSection
@@ -6798,6 +6940,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 />
               )}
 
+                {/* Location step: when the request needs a site, ask "Where is
+                    it?" inline (pin, address, or a saved location). The
+                    confirmed site's municipio and location facts drive the
+                    requirements. */}
+                {(locationNeed.needed || intakeSite) && (
+                  <div className="spr-field full">
+                    <LocationStepCard
+                      lang={language}
+                      need={locationNeed}
+                      site={intakeSite}
+                      businessId={siteBusinessId}
+                      onConfirm={confirmIntakeSite}
+                    />
+                  </div>
+                )}
+
                 {/* Business-details block: filled fields minimize into the
                     compact summary (tap to edit); fields still needing input
                     stay visible. An incomplete submit expands everything and
@@ -6862,15 +7020,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     lang={language}
                     currentMunicipality={profile.municipality}
                     businessId={me && businessId && !businessId.startsWith('local-') ? businessId : null}
-                    onPicked={(site) => {
-                      const option = municipalityOptions.find(
-                        (m: string) => normalizeMunicipio(m) === normalizeMunicipio(site.placement.municipality.name)
-                      );
-                      if (!option) return;
-                      setProfile((current) => ({ ...current, municipality: option }));
-                      setPotentialDecisions({});
-                      markUserTouched('municipality');
-                    }}
+                    onPicked={(site) => confirmIntakeSite(intakeSiteFromPick(site))}
                   />
                 </div>
                 )}
@@ -7050,7 +7200,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <div className="spr-requirements-layout spr-requirements-layout-single">
           <div className="spr-requirements-main">
           {requirements.length > 0 && (
-            <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={[]} language={language} />
+            <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={[]} language={language} location={summaryLocation} />
           )}
           {requirements.length === 0 && (
             <div style={{ padding: 24 }}>

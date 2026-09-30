@@ -35,6 +35,7 @@ import type { ProjectContext } from "./ai/intake/projectContext";
 import { projectFactsForEngine } from "./ai/intake/projectContext";
 import { INTAKE_RELATIONSHIPS } from "./ai/intake/relationshipRegistry";
 import type { FactMeta } from "./rulesEngine";
+import type { LocationEngineFacts } from "./locations/locationContext";
 
 /**
  * Reverse map: KB question id -> the profile/discovery answer keys that
@@ -1042,6 +1043,12 @@ export function computeRequirementsFromSnapshot(
      * buildEngineInput for honest trigger labeling (presentation-only).
      */
     aiPrefilledKeys?: Iterable<string>;
+    /**
+     * Engine facts of the site the request is for (intake pin or saved
+     * Passport location): `location.*` project facts bound to its location id.
+     * The site's municipio reaches the engine through the profile.
+     */
+    locationFacts?: LocationEngineFacts | null;
   } = {}
 ): UIRequirement[] {
   const input = buildEngineInput(profile, answers, resolved, {
@@ -1067,6 +1074,12 @@ export function computeRequirementsFromSnapshot(
     input.answers,
     (profile as { location_type?: string } | null | undefined)?.location_type ?? null
   );
+  if (options.locationFacts) {
+    const lf = options.locationFacts;
+    input.locationId = lf.locationId;
+    input.projectFacts = { ...lf.projectFacts, ...(input.projectFacts ?? {}) };
+    input.factMeta = { ...lf.factMeta, ...(input.factMeta ?? {}) };
+  }
   // Entity type from explicit caller options must reach the engine so
   // entity-scoped rules (excluded_entity_types) filter correctly; the
   // profile-derived value is only a fallback.
@@ -1278,9 +1291,12 @@ export function computeRequirementsFromKB(
     aiPrefilledKeys?: Iterable<string>;
     deferredQuestions?: Array<{ questionId: string; writeKey: string }>;
     newPremises?: { registeredMunicipality?: string | null } | null;
+    /** Engine facts of the confirmed site (see locations/intakeLocation.siteEngineFacts). */
+    locationFacts?: LocationEngineFacts | null;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
+    locationFacts: options.locationFacts ?? null,
     deferredQuestions: options.deferredQuestions,
     newPremises: options.newPremises,
     entityType: options.entityType,

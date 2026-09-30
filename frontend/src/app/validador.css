@@ -3129,3 +3129,27 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 @media (prefers-reduced-motion: reduce) {
   .spr-stage-enter, .spr-stage-enter::before { animation: none; }
 }
+
+/* ---- Intake location step ("Where is it?") + "Rules for:" line ---- */
+.spr-loc-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.spr-loc-card-done { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.spr-loc-title { margin: 0; font-size: var(--rq-text-heading, 20px); font-weight: 700; line-height: 1.3; color: var(--ink); }
+.spr-loc-hint { margin: 0; font-size: var(--rq-text-body, 16px); line-height: 1.5; color: var(--ink); }
+.spr-loc-why { margin: 0; font-size: var(--rq-text-body, 16px); color: var(--muted, #555); }
+.spr-loc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.spr-loc-primary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: 10px; border: 0; background: var(--brand); color: #f6f3ea; font-size: var(--rq-text-body, 16px); font-weight: 600; cursor: pointer; }
+.spr-loc-primary svg { width: 18px; height: 18px; }
+.spr-loc-saved { display: flex; flex-direction: column; gap: 6px; }
+.spr-loc-saved-label { font-size: 14px; font-weight: 600; color: var(--muted, #555); }
+.spr-loc-saved-item { text-align: left; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: var(--rq-text-body, 16px); color: var(--ink); cursor: pointer; }
+.spr-loc-saved-item:hover { border-color: var(--brand); }
+.spr-loc-saved-sub { color: var(--muted, #555); }
+.spr-loc-error { margin: 0; color: var(--danger, #b42318); font-size: 14px; }
+.spr-loc-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; font-size: var(--rq-text-body, 16px); color: var(--ink); }
+.spr-loc-icon { width: 18px; height: 18px; color: var(--brand); flex: none; }
+.spr-loc-rules { min-width: 0; overflow-wrap: anywhere; }
+.spr-loc-rules-label { color: var(--muted, #555); }
+.spr-loc-note { color: var(--warn, #b54708); font-size: 14px; }
+.spr-loc-change { font-size: var(--rq-text-body, 16px); font-weight: 600; }
+.spr-loc-action { min-height: 36px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--brand); background: #fff; color: var(--brand); font-size: 15px; font-weight: 600; cursor: pointer; }
+.spr-loc-pending .spr-loc-rules { color: var(--muted, #555); }

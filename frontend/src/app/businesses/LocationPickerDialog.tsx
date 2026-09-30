@@ -128,6 +128,13 @@ export interface LocationPickerDialogProps {
   defaultName?: string;
   /** Pick mode: offer "also save to the Passport" (needs businessId). */
   offerSave?: boolean;
+  /**
+   * Prefill the address search (e.g. a municipio or address the user already
+   * mentioned) and run it once when the dialog opens.
+   */
+  initialQuery?: string | null;
+  /** Dialog title override (pick mode). */
+  title?: string;
   onClose: () => void;
   onSaved?: (location: PassportLocationWithGeographies, warnings: string[]) => void;
   onPicked?: (site: PickedSite) => void;
@@ -146,6 +153,8 @@ export function LocationPickerDialog({
   existing,
   defaultName,
   offerSave = false,
+  initialQuery = null,
+  title,
   onClose,
   onSaved,
   onPicked,
@@ -187,7 +196,7 @@ export function LocationPickerDialog({
   const [addressText, setAddressText] = useState(existing?.formatted_address ?? "");
   const [lookup, setLookup] = useState<LookupState>({ status: "idle" });
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery?.trim() ?? "");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<GeocodeCandidate[] | null>(null);
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
@@ -348,9 +357,8 @@ export function LocationPickerDialog({
     movePoint({ latitude: v.latitude, longitude: v.longitude }, "MANUAL_ENTRY", true);
   };
 
-  const search = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const q = query.trim();
+  const runSearch = async (raw: string) => {
+    const q = raw.trim();
     if (!q) return;
     setSearching(true);
     setSearchMessage(null);
@@ -399,6 +407,21 @@ export function LocationPickerDialog({
       setSearching(false);
     }
   };
+
+  const search = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await runSearch(query);
+  };
+
+  // A prefilled query (what the user already told us) is searched once on open.
+  const initialSearchDone = useRef(false);
+  useEffect(() => {
+    if (initialSearchDone.current || !initialQuery?.trim()) return;
+    initialSearchDone.current = true;
+    void runSearch(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
+
 
   const chooseResult = (c: GeocodeCandidate) => {
     lookupSeq.current += 1; // cancel any in-flight reverse lookup
@@ -515,7 +538,7 @@ export function LocationPickerDialog({
           <div>
             <h3 id={titleId} className="text-base font-bold text-[#161616]">
               {pickMode
-                ? L("Find the site on the map", "Busque el lugar en el mapa", lang)
+                ? title ?? L("Find the site on the map", "Busque el lugar en el mapa", lang)
                 : existing
                   ? L("Edit location", "Editar ubicación", lang)
                   : L("Add location", "Agregar ubicación", lang)}
