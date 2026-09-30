@@ -120,7 +120,7 @@ import { computeEnergyAssessment } from './processes/view';
 import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
-import { requirementRowActions } from './components/checklist/rowActions';
+import { requirementRowActions } from './components/checklist/rowActionModel';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';

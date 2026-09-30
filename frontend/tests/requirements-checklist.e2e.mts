@@ -182,6 +182,9 @@ for (const g of ["req-group-registrations"]) {
 }
 await page.waitForTimeout(200);
 await page.screenshot({ path: path.join(OUT, `${tag}_requirements_inline.png`), fullPage: true });
+const desktopButtonWidths = await page.locator('.spr-requirements-main [data-testid="row-actions"] > [data-testid="row-cta"]').evaluateAll((buttons) =>
+  buttons.filter((button) => (button as HTMLElement).offsetParent !== null).map((button) => Math.round(button.getBoundingClientRect().width)));
+check("desktop: primary buttons have equal widths", desktopButtonWidths.length > 1 && desktopButtonWidths.every((width) => Math.abs(width - desktopButtonWidths[0]) <= 1), desktopButtonWidths.join(","));
 const rowSel = '.spr-requirements-main .ck-row:not(:has(> .ck-row-static)), .spr-requirements-main .ck-card';
 const rowCount = await page.locator(rowSel).count();
 let actionable = 0;

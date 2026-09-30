@@ -4,7 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 import { RowActions, RowQuestion } from "../checklist/RowActions";
-import { requirementRowActions } from "../checklist/rowActions";
+import { requirementRowActions } from "../checklist/rowActionModel";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
 

@@ -41,10 +41,10 @@ export interface RowActionsModel {
 
 export const EMPTY_ROW_ACTIONS: RowActionsModel = { primary: null, more: [], done: null, answer: null };
 
-const MAX = 22;
+const MAX = 16;
 
 const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
-  form: { en: "Complete form", es: "Completar formulario" },
+  form: { en: "Complete form", es: "Completar" },
   upload: { en: "Upload", es: "Subir" },
   assist: { en: "File with Clara", es: "Radicar con Clara" },
   download: { en: "Download", es: "Descargar" },
@@ -60,6 +60,10 @@ const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
 export function shortCtaLabel(label: string, kind: RowCtaKind, language: Language): string {
   const t = label.trim();
   if (t && t.length <= MAX) return t;
+  if (kind === "form") {
+    if (/^(continue|continuar)/i.test(t)) return language === "es" ? "Continuar" : "Continue";
+    if (/^(review|revisar)/i.test(t)) return language === "es" ? "Revisar" : "Review";
+  }
   return DEFAULT_SHORT[kind][language];
 }
 

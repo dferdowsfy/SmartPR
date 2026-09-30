@@ -1,11 +1,11 @@
 // Inline row actions: the collapsed row shows the card's own primary action
 // (same handler), the rest in an overflow, a check + "View" once done, and
-// "Answer" for answer-only rows. Run: npx tsx --test src/app/components/checklist/rowActions.test.ts
+// "Answer" for answer-only rows. Run: npx tsx --test src/app/components/checklist/rowActionModel.test.ts
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { energyRowActions, mergeRowActions, requirementRowActions, shortCtaLabel, EMPTY_ROW_ACTIONS } from "./rowActions.ts";
+import { energyRowActions, mergeRowActions, requirementRowActions, shortCtaLabel, EMPTY_ROW_ACTIONS } from "./rowActionModel.ts";
 import { developerGroup, isEnergyDeveloperCompany, openStepCount } from "../filing/requirementGroups.ts";
 import { RequirementCard } from "../filing/RequirementCard.tsx";
 
@@ -28,9 +28,9 @@ test("primary = the card's form action (same handler); filing, site and upload g
 });
 
 test("short labels: kept when short, per-kind default otherwise (EN/ES)", () => {
-  assert.equal(shortCtaLabel("Complete LUMA form", "form", "en"), "Complete LUMA form");
-  assert.equal(shortCtaLabel("Continue application", "form", "en"), "Continue application");
-  assert.equal(shortCtaLabel("Completar formulario de registro de comerciante", "form", "es"), "Completar formulario");
+  assert.equal(shortCtaLabel("Complete LUMA form", "form", "en"), "Complete form");
+  assert.equal(shortCtaLabel("Continue application", "form", "en"), "Continue");
+  assert.equal(shortCtaLabel("Completar formulario de registro de comerciante", "form", "es"), "Completar");
   assert.equal(shortCtaLabel("Upload the issued Patente Municipal", "upload", "es"), "Subir");
 });
 
@@ -60,7 +60,7 @@ test("verify existing: Confirm (the held-document upload) leads; a started appli
   assert.equal(a.primary?.onClick, onUpload);
   assert.equal(a.more[0].onClick, onForm);
   const b = requirementRowActions({ verifyExisting: true, action: { kind: "form", label: "Continue application", onClick: onForm }, secondary: { prompt: "", label: "Upload certificate", onClick: onUpload } }, "es");
-  assert.equal(b.primary?.label, "Continue application");
+  assert.equal(b.primary?.label, "Continuar");
   assert.equal(b.more[0].label, "Confirmar");
 });
 

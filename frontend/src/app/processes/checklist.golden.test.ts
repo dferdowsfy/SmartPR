@@ -266,7 +266,7 @@ test("incentives: only programs with a real signal show for a solar installer (E
 });
 
 test("energy rows: inline CTA from the covered card, Answer on answer-only rows, May apply only with a portal (E01)", async () => {
-  const { requirementRowActions } = await import("../components/checklist/rowActions.ts");
+  const { requirementRowActions } = await import("../components/checklist/rowActionModel.ts");
   const r = run("E01_warehouse_rooftop_solar_caguas.json");
   const onForm = () => {};
   const legacyCards = {

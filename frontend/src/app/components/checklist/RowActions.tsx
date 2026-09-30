@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
-import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActions";
+import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 
 type Language = "en" | "es";
 

@@ -18,7 +18,7 @@ import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/proj
 import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
 import { ActionList, RowActions } from "../checklist/RowActions";
-import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActions";
+import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActionModel";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
 export interface EnergyLegacyCard {
