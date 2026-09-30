@@ -3,16 +3,29 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import businessTypes from "../../../kb/business_types.json";
+import industries from "../../../kb/industries.json";
 import { PROJECT_ILLUSTRATIONS, selectProjectIllustration } from "./projectIllustrations";
 
 test("every selected illustration has a shipped asset, including the full business-type catalog", () => {
   for (const src of Object.values(PROJECT_ILLUSTRATIONS)) {
     assert.equal(existsSync(path.join(process.cwd(), "public", src)), true, src);
   }
+  const industryNames = new Map(industries.map((industry) => [industry.id, industry.name]));
+  const intakeIndustryNames: Record<string, string> = {
+    IND_TOURISM: "Accommodation & Tourism",
+    IND_GOVCON: "Government Contractor",
+    IND_NONPROFIT: "Nonprofit / Religious Organization",
+  };
+  const neutral: string[] = [];
   for (const type of businessTypes) {
-    const key = selectProjectIllustration({ businessType: type.name });
+    const key = selectProjectIllustration({
+      businessType: type.name,
+      industry: intakeIndustryNames[type.industry_id] || industryNames.get(type.industry_id),
+    });
     assert.ok(PROJECT_ILLUSTRATIONS[key], type.id);
+    if (key === "default") neutral.push(type.name);
   }
+  assert.deepEqual(neutral.sort(), ["Car Rental Business", "Excursion Company", "Religious Organization", "Taxi Service"]);
 });
 
 test("specific business types stay distinct and unknowns remain neutral", () => {
@@ -21,7 +34,10 @@ test("specific business types stay distinct and unknowns remain neutral", () => 
   assert.equal(selectProjectIllustration({ businessType: "Juice Bar", industry: "Food & Beverage" }), "restaurant");
   assert.equal(selectProjectIllustration({ businessType: "Liquor Store", industry: "Food & Beverage" }), "retail");
   assert.equal(selectProjectIllustration({ businessType: "Pharmacy", industry: "Healthcare" }), "retail");
-  assert.equal(selectProjectIllustration({ businessType: "Auto Repair Shop", industry: "Automotive" }), "default");
+  assert.equal(selectProjectIllustration({ businessType: "Auto Repair Shop", industry: "Automotive" }), "garage");
+  assert.equal(selectProjectIllustration({ businessType: "Food Truck", industry: "Food & Beverage" }), "foodTruck");
+  assert.equal(selectProjectIllustration({ businessType: "Beauty Salon", industry: "Beauty & Personal Care" }), "salon");
+  assert.equal(selectProjectIllustration({ businessType: "Private School", industry: "Education & Training" }), "school");
   assert.equal(selectProjectIllustration({ industry: "Food & Beverage" }), "default");
   assert.equal(selectProjectIllustration({ businessType: "Unknown Business" }), "default");
 });
