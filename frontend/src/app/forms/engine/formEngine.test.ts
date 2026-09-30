@@ -543,3 +543,28 @@ test("voice-extracted passport fields never clobber already-filled values", () =
   assert.equal(c.contact.fullName, "Typed Owner");
   assert.equal(c.business.email, "jandreas@gmail.com");
 });
+
+// REG-SOLEPROP-DUALFORMATION-001: entity resolution must survive the guided
+// intake leaving business_structure null. Profile wins when set; otherwise the
+// Q_BUSINESS_STRUCTURE discovery answer fills the gap; display-string variants
+// normalize instead of silently becoming "other".
+import { entityTypeFromLegacyStructure, entityTypeFromProfileOrAnswers } from "./intake.ts";
+
+test("entityTypeFromLegacyStructure normalizes label variants", () => {
+  assert.equal(entityTypeFromLegacyStructure("sole_proprietorship"), "sole_proprietorship");
+  assert.equal(entityTypeFromLegacyStructure("Sole Proprietorship"), "sole_proprietorship");
+  assert.equal(entityTypeFromLegacyStructure("SOLE PROPRIETORSHIP"), "sole_proprietorship");
+  assert.equal(entityTypeFromLegacyStructure("LLC"), "limited_liability_company");
+  assert.equal(entityTypeFromLegacyStructure("llc"), "limited_liability_company");
+  assert.equal(entityTypeFromLegacyStructure("Corporation"), "stock_corporation");
+  assert.equal(entityTypeFromLegacyStructure(undefined), "other");
+  assert.equal(entityTypeFromLegacyStructure(""), "other");
+});
+
+test("entityTypeFromProfileOrAnswers prefers profile, falls back to Q_BUSINESS_STRUCTURE", () => {
+  assert.equal(entityTypeFromProfileOrAnswers("sole_proprietorship", "LLC"), "sole_proprietorship");
+  assert.equal(entityTypeFromProfileOrAnswers(undefined, "Sole Proprietorship"), "sole_proprietorship");
+  assert.equal(entityTypeFromProfileOrAnswers("", "LLC"), "limited_liability_company");
+  assert.equal(entityTypeFromProfileOrAnswers(null as never, undefined), "other");
+  assert.equal(entityTypeFromProfileOrAnswers(undefined, "Other"), "other");
+});

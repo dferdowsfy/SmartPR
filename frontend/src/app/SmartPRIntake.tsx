@@ -3845,6 +3845,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // conditional into REQUIRED with "Answer: Yes" (user-provided, hence the
   // honest label); a No removes the requirement entirely.
   const answerTriggerQuestion = (writeKey: string, value: boolean) => {
+    // REG-INTAKE-ANSWER-PERSIST-001: an explicit user answer must win over
+    // scenario-derived values — without this, the scenario merge re-applies
+    // a deleted/changed answer and Change→No never sticks.
+    markUserTouched(writeKey);
     const nextAnswers = { ...discoveryAnswers, [writeKey]: value };
     setDiscoveryAnswers(nextAnswers);
     setRequirements(computeRequirements(profile, nextAnswers, potentialDecisions, requirementOptions()));
@@ -6921,7 +6925,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                         <button
                           type="button"
                           className="spr-answered-change"
-                          onClick={() => item.writeKey === item.id ? reopenAnsweredQuestion(item.id) : setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; })}
+                          onClick={() => {
+                            if (item.writeKey === item.id) {
+                              reopenAnsweredQuestion(item.id);
+                            } else {
+                              // REG-INTAKE-ANSWER-PERSIST-001: mark the key
+                              // user-touched so the scenario-answer merge
+                              // cannot re-apply the deleted value.
+                              markUserTouched(item.writeKey);
+                              setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; });
+                            }
+                          }}
                         >
                           {L('Change', language)}
                         </button>
