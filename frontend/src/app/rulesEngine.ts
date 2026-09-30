@@ -280,11 +280,23 @@ export interface EngineInput {
   sessionId?: string | null;
   /** The business this evaluation is for (existing-business link). */
   businessId?: string | null;
+  /**
+   * The Passport location assigned to the project under evaluation. Facts
+   * with source "location" are admissible only when their meta.locationId
+   * matches this id (see locations/locationContext.ts). Absent = no location
+   * bound, so no location fact can trigger in strict mode.
+   */
+  locationId?: string | null;
 }
 
 /** Audit metadata for a single fact the engine consumed. */
 export interface FactMeta {
-  source: "user_intake" | "passport" | "derived" | "admin";
+  /**
+   * "location": a fact of the confirmed Passport location bound to this
+   * evaluation — its coordinates, or a boundary determined by spatial
+   * intersection / official record. Never geocoder-derived address text.
+   */
+  source: "user_intake" | "passport" | "derived" | "admin" | "location";
   scope: "business" | "project" | "property";
   /**
    * Intake/project session this fact was established in. A fact bound to a
@@ -293,6 +305,8 @@ export interface FactMeta {
   sessionId?: string | null;
   /** Business a persistent (passport) fact belongs to. */
   businessId?: string | null;
+  /** Passport location a "location" fact belongs to. */
+  locationId?: string | null;
   /**
    * True when the fact was explicitly established or confirmed during the
    * current intake: a manual answer, a high-confidence (≥0.85) read of the
@@ -318,6 +332,8 @@ export interface TriggerFactProvenance {
   sessionId?: string | null;
   /** Business a passport-scope fact belongs to. Absent for intake facts. */
   businessId?: string | null;
+  /** Passport location a location-sourced fact belongs to. */
+  locationId?: string | null;
   confirmedInCurrentIntake?: boolean;
 }
 
@@ -335,7 +351,8 @@ export function sameTriggerProvenance(a: TriggerFactProvenance, b: TriggerFactPr
     a.scope === b.scope &&
     String(a.value) === String(b.value) &&
     (a.sessionId ?? null) === (b.sessionId ?? null) &&
-    (a.businessId ?? null) === (b.businessId ?? null)
+    (a.businessId ?? null) === (b.businessId ?? null) &&
+    (a.locationId ?? null) === (b.locationId ?? null)
   );
 }
 
@@ -361,6 +378,13 @@ function isFactAdmissible(
   if (!meta) return false;
   if (kind === "business" ? meta.scope !== "business" : meta.scope !== "project" && meta.scope !== "property") {
     return false;
+  }
+  if (meta.source === "location") {
+    // Location facts describe a property, never a business, and are bound to
+    // one confirmed location: admissible only for the location assigned to
+    // this evaluation. Fail closed on any missing identity.
+    if (kind !== "project" || meta.scope !== "property") return false;
+    return !!input.locationId && !!meta.locationId && input.locationId === meta.locationId;
   }
   if (meta.source === "passport") {
     if (kind !== "business") return false;
@@ -580,6 +604,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
         scope: meta?.scope ?? kind,
         sessionId: meta?.sessionId ?? null,
         businessId: meta?.businessId ?? null,
+        ...(meta?.locationId ? { locationId: meta.locationId } : {}),
         confirmedInCurrentIntake: meta?.confirmedInCurrentIntake ?? false,
       };
     }

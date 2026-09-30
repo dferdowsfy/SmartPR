@@ -11,6 +11,7 @@
 import { createHash, randomUUID } from "crypto";
 import { getPool, isEnabled } from "./db";
 import { COMPLIANCE_SCHEMA_SQL } from "../compliance/schema";
+import { LOCATIONS_SCHEMA_SQL } from "../locations/schema";
 import { splitSqlStatements } from "./sqlStatements";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../compliance/dates";
 import { renewalMetadataForDocuments, scheduleObligationNotifications } from "../compliance/server";
@@ -24,7 +25,8 @@ import type {
 import type { Pool, PoolClient } from "pg";
 
 // Mirror of data/graph_schema.sql, applied once per process (idempotent).
-const SCHEMA_SQL = `
+// Exported for the migration test that replays the pre-locations schema.
+export const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS submissions (
   id UUID PRIMARY KEY, municipality TEXT, industry TEXT, business_type TEXT,
   location_type TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -221,7 +223,7 @@ async function applySchema(pool: NonNullable<ReturnType<typeof getPool>>): Promi
   await pool.query("SELECT 1");
 
   const failures: SchemaStatementFailure[] = [];
-  for (const statement of splitSqlStatements(`${SCHEMA_SQL}\n${COMPLIANCE_SCHEMA_SQL}`)) {
+  for (const statement of splitSqlStatements(`${SCHEMA_SQL}\n${COMPLIANCE_SCHEMA_SQL}\n${LOCATIONS_SCHEMA_SQL}`)) {
     try {
       await pool.query(statement);
     } catch (e) {
