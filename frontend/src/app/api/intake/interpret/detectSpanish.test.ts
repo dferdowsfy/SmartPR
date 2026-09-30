@@ -6,7 +6,7 @@
  */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { detectSpanish } from "./route.ts";
+import { detectSpanish } from "../../../ai/intake/detectSpanish.ts";
 
 describe("detectSpanish", () => {
   it("detects plain Spanish descriptions", () => {
