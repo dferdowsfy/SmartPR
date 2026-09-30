@@ -22,7 +22,7 @@ import type { PotentialDecision } from "./potentialRequirements";
 import { classifyEngineRequirements, kindForDocument, stageForDocument, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
 import { filterEffective } from "./temporal";
 import type { EntityType } from "./forms/engine/types";
-import { entityTypeFromLegacyStructure, entityTypeFromProfileOrAnswers } from "./forms/engine/intake.ts";
+import { entityTypeFromProfileOrAnswers } from "./forms/engine/intake.ts";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
 import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
