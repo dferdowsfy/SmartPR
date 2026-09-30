@@ -119,13 +119,14 @@ import { computeEnergyAssessment } from './processes/view';
 import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
+import { requirementRowActions } from './components/checklist/rowActions';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
 import { IncentivesSidebar } from './components/incentives/IncentivesSidebar';
-import { EnergyProcessesSection, energySummaryQuestions } from './components/energy/EnergyProcessesSection';
+import { EnergyProcessesSection, energySummaryQuestions, type EnergyLegacyCard } from './components/energy/EnergyProcessesSection';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
@@ -5853,7 +5854,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   );
   const energySuperseded = supersededLegacyCards(energyGraph, energyAssessment, requirements);
   const visibleReqCards = reqCards.filter((c) => !energySuperseded.has(c.req.document_id ?? ''));
-  const energyLegacyCards: Record<string, { name: string; actionLabel?: string; onAction?: () => void }> = {};
+  const energyLegacyCards: Record<string, EnergyLegacyCard> = {};
   const energySuppressed = [...energySuperseded.values()].filter((x) => x.suppressed);
   const energyLegacyNames: Record<string, string> = {};
   for (const c of reqCards) {
@@ -5863,7 +5864,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     if (energySuperseded.get(doc)!.suppressed) continue;
     const primary = (c.action.kind === 'upload' || c.action.kind === 'form') && c.action.onClick ? { actionLabel: c.action.label, onAction: c.action.onClick } : null;
     const secondary = c.secondary ? { actionLabel: c.secondary.label, onAction: c.secondary.onClick } : null;
-    energyLegacyCards[doc] = { name: c.name, ...(primary ?? secondary ?? {}) };
+    // The energy row's inline actions are this card's own (same handlers).
+    const rowActions = requirementRowActions({ action: c.action, filing: c.filing, download: c.download, secondary: c.secondary, secondaryOnCompleted: c.secondaryOnCompleted, answerPrompt: c.answerPrompt }, language);
+    energyLegacyCards[doc] = { name: c.name, ...(primary ?? secondary ?? {}), rowActions };
   }
 
   const tabNeedsActionCount = visibleReqCards.filter(c => c.bucket === 'needs_action').length;
@@ -5954,6 +5957,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       legacyCards={energyLegacyCards}
       suppressedLegacy={energySuppressed}
       language={language}
+      onAnswer={onEnergyAnswer}
     />
   ) : null;
   const summaryReadiness = (() => {
@@ -7049,6 +7053,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       whySentence={c.whySentence}
                       extraInBody={c.extraInBody}
                       fullReasoningLabel={L('Show full reasoning', language)}
+                      verifyExisting={c.req.applicability === 'verify_existing'}
+                      language={language}
                     />
                   ))}
                   {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
@@ -7101,6 +7107,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     whySentence={c.whySentence}
                     extraInBody={c.extraInBody}
                     fullReasoningLabel={L('Show full reasoning', language)}
+                    verifyExisting={c.req.applicability === 'verify_existing'}
+                    language={language}
                   />
                 ))}
               </div>

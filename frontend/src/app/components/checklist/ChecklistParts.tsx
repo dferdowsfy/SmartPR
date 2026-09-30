@@ -41,12 +41,12 @@ export interface SummaryQuestion {
   multi?: { options: { value: string; label: string }[]; onSubmit: (values: string[]) => void };
 }
 
-function QuestionLine({ q, language }: { q: SummaryQuestion; language: Language }) {
+export function QuestionLine({ q, language, standalone = false }: { q: SummaryQuestion; language: Language; standalone?: boolean }) {
   const [text, setText] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const toggle = (v: string) => setPicked((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   return (
-    <div role="listitem" className="ck-q" data-testid={`summary-q-${q.id}`}>
+    <div role={standalone ? "group" : "listitem"} aria-label={standalone ? q.text : undefined} className={`ck-q ${standalone ? "ck-row-question" : ""}`} data-testid={standalone ? "row-question" : `summary-q-${q.id}`}>
       <span className="ck-q-text">{q.text}</span>
       {q.why && <InfoTip text={q.why} language={language} />}
       <span className="ck-q-actions">

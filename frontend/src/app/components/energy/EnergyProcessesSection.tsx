@@ -14,11 +14,19 @@ import type { ProcessAssessment, ProcessEvaluation } from "../../processes/engin
 import type { ProcessGraph } from "../../processes/graph";
 import type { LegacySupersession } from "../../processes/legacyCards";
 import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
-import { processChecklist, type ChecklistItem, type ProcessChecklist } from "../../processes/presentation";
-import { ConfidenceBadge, FullReasoning, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
+import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
+import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
+import { ActionList, RowActions } from "../checklist/RowActions";
+import { EMPTY_ROW_ACTIONS, mergeRowActions, type RowActionsModel } from "../checklist/rowActions";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
-export interface EnergyLegacyCard { name: string; actionLabel?: string; onAction?: () => void }
+export interface EnergyLegacyCard {
+  name: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  /** The card's inline row actions (same handlers as the card). */
+  rowActions?: RowActionsModel;
+}
 
 type Language = "en" | "es";
 
@@ -28,9 +36,18 @@ export function energySummaryQuestions(
   language: Language,
   onAnswer: (key: ProjectContextKey, fact: ProjectContextFact) => void
 ): SummaryQuestion[] {
+  return checklist.questions.map((q) => summaryQuestionFor(q, language, onAnswer));
+}
+
+/** One clarifying question as an answerable line (buttons, chips or input). */
+export function summaryQuestionFor(
+  q: ChecklistQuestion,
+  language: Language,
+  onAnswer: (key: ProjectContextKey, fact: ProjectContextFact) => void
+): SummaryQuestion {
   const evidence = language === "es" ? "Confirmado por el usuario en la lista de requisitos." : "Confirmed by user in the requirements checklist.";
   const answer = (fact: string, value: string | number | boolean) => onAnswer(fact as ProjectContextKey, { value, confidence: 1, evidence });
-  return checklist.questions.map((q) => ({
+  return ({
     id: q.fact,
     text: q.text,
     why: q.why,
@@ -57,7 +74,7 @@ export function energySummaryQuestions(
             },
           }
         : undefined,
-  }));
+  });
 }
 
 export function EnergyProcessesSection({
@@ -68,6 +85,7 @@ export function EnergyProcessesSection({
   suppressedLegacy = [],
   language,
   defaultOpen = [],
+  onAnswer,
 }: {
   /** Computed by the caller (processes/view.ts) so legacy cards can be deduped. */
   assessment: ProcessAssessment;
@@ -81,11 +99,19 @@ export function EnergyProcessesSection({
   language: Language;
   /** Process ids whose row (and full reasoning) start expanded — deep links and tests. */
   defaultOpen?: string[];
+  /** Answers a row's question in place ("Answer" on answer-only rows). */
+  onAnswer?: (key: ProjectContextKey, fact: ProjectContextFact) => void;
 }) {
   const es = language === "es";
   const checklist = given ?? processChecklist(assessment, graph, language, { suppressedLegacy });
   const byId = new Map(assessment.processes.map((p) => [p.process_id, p]));
   const flat = checklist.stages.length === 1 && checklist.stages[0].step === null;
+  // The first open question that decides a row, as an answerable line.
+  const questionFor = (p: ProcessEvaluation): SummaryQuestion | null => {
+    if (!onAnswer || p.state !== "NEEDS_FACT") return null;
+    const q = assessment.questions.find((x) => p.missing_facts.includes(x.fact)) ?? assessment.questions.find((x) => x.resolves.includes(p.process_id));
+    return q ? summaryQuestionFor(checklistQuestion(q, language), language, onAnswer) : null;
+  };
   // Numbering restarts at 1 in every group of the page.
   let n = 0;
   return (
@@ -103,14 +129,14 @@ export function EnergyProcessesSection({
         {checklist.stages.map((s) =>
           flat ? (
             s.items.map((it) => (
-              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
             ))
           ) : (
             <div role="listitem" key={s.id} className="ck-stage" data-testid={`energy-step-${s.step}`}>
               <div className="ck-stage-head"><span className="ck-num">{s.step}</span> {s.name}</div>
               <div role="list" className="ck-rows">
                 {s.items.map((it) => (
-                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
                 ))}
               </div>
             </div>
@@ -139,18 +165,29 @@ function legacyFor(p: ProcessEvaluation, cards: Record<string, EnergyLegacyCard>
   return p.legacy_document_ids.map((d) => cards[d]).filter((c): c is EnergyLegacyCard => !!c);
 }
 
-function EnergyRow({ item, p, num, legacy, language, startOpen = false }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; language: Language; startOpen?: boolean }) {
+function EnergyRow({ item, p, num, legacy, language, startOpen = false, question = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; language: Language; startOpen?: boolean; question?: SummaryQuestion | null }) {
   const es = language === "es";
   const [open, setOpen] = useState(startOpen);
+  const [askOpen, setAskOpen] = useState(false);
+  // Inline actions: the covered legacy cards' own actions; an answer-only
+  // row gets "Answer"; "May apply" / expert-check rows without a form get none.
+  const fromCards = mergeRowActions(legacy.map((c) => c.rowActions ?? EMPTY_ROW_ACTIONS));
+  const actions: RowActionsModel = fromCards.primary || fromCards.done || fromCards.more.length
+    ? fromCards
+    : question ? { ...EMPTY_ROW_ACTIONS, answer: { prompt: question.text } } : EMPTY_ROW_ACTIONS;
   return (
     <div role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
-      <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {num !== undefined && <span className="ck-num">{num}</span>}
-        <span className="ck-name">{item.name}</span>
-        {item.agency && <span className="ck-agency">{item.agency}</span>}
-        <StatusPill status={item.status} language={language} />
-        <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
-      </button>
+      <div className="ck-card-line">
+        <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {num !== undefined && <span className="ck-num">{num}</span>}
+          <span className="ck-name" title={item.name}>{item.name}</span>
+          {item.agency && <span className="ck-agency">{item.agency}</span>}
+          <StatusPill status={item.status} language={language} />
+          <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
+        </button>
+        <RowActions model={actions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
+      </div>
+      {askOpen && question && <QuestionLine q={question} language={language} standalone />}
       {open && (
         <div className="ck-row-body">
           <p className="ck-why">{item.why}</p>
@@ -174,9 +211,10 @@ function EnergyRow({ item, p, num, legacy, language, startOpen = false }: { item
               <div>{item.before.join(" · ")}</div>
             </div>
           )}
-          {legacy.map((c) => c.onAction && c.actionLabel ? (
-            <button key={c.name} type="button" className="ck-action" onClick={c.onAction}>{c.actionLabel}</button>
-          ) : null)}
+          {/* The covered cards' actions — the same handlers as the row's inline button. */}
+          {legacy.map((c) => c.rowActions
+            ? <ActionList key={c.name} model={c.rowActions} />
+            : c.onAction && c.actionLabel ? <button key={c.name} type="button" className="ck-action" onClick={c.onAction}>{c.actionLabel}</button> : null)}
           {item.source && (
             <div className="ck-source">
               {es ? "Fuente" : "Source"}: <a href={item.source.url} target="_blank" rel="noreferrer">{item.source.title} <ExternalLink size={11} /></a>{" "}

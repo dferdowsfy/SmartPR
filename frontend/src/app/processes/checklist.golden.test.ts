@@ -264,3 +264,24 @@ test("incentives: only programs with a real signal show for a solar installer (E
   const { extra } = unifiedIncentives(shownBare, r.a.incentives);
   assert.ok(extra.some((i) => /ENERGY/.test(i.program_id ?? i.incentive_id)), "energy incentive from the process graph");
 });
+
+test("energy rows: inline CTA from the covered card, Answer on answer-only rows, nothing on May apply (E01)", async () => {
+  const { requirementRowActions } = await import("../components/checklist/rowActions.ts");
+  const r = run("E01_warehouse_rooftop_solar_caguas.json");
+  const onForm = () => {};
+  const legacyCards = {
+    DOC_LUMA_INTERCONNECTION: { name: "LUMA Interconnection Registration", rowActions: requirementRowActions({ action: { kind: "form", label: "Complete LUMA form", onClick: onForm } }, "en") },
+  };
+  const html = renderToStaticMarkup(createElement(EnergyProcessesSection, {
+    assessment: r.a, graph: r.graph, checklist: r.ck, legacyCards, suppressedLegacy: [...r.sup.values()], language: "en", onAnswer: () => {},
+  }));
+  const rowOf = (id: string) => { const i = html.indexOf(`data-testid="energy-process-${id}"`); return html.slice(i, html.indexOf('data-testid="energy-process-', i + 10) === -1 ? undefined : html.indexOf('data-testid="energy-process-', i + 10)); };
+  const byProcess = new Map(items(r.ck).map((i) => [i.process_id, i.id]));
+  assert.match(rowOf(byProcess.get("PR_ENERGY_DG_INTERCONNECTION")!), /data-cta="form"[^>]*>.*Complete LUMA form/);
+  for (const i of items(r.ck)) {
+    const row = rowOf(i.id);
+    if (i.status === "question") assert.match(row, /data-cta="answer"/, `${i.id} Answer`);
+    if (i.status === "may_apply") assert.ok(!/row-cta/.test(row), `${i.id} no button`);
+  }
+  assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
+});
