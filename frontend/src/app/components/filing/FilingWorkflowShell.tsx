@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
@@ -43,6 +44,15 @@ export interface SmartPRLiveData {
    * scenario, paths from knowledge-graph applicability.
    */
   scenario?: LiveScenario | null;
+  project?: {
+    illustrationSrc: string;
+    title: string;
+    businessType?: string | null;
+    municipality?: string | null;
+    locationType?: string | null;
+    scope?: string | null;
+    onPreview?: () => void;
+  };
 }
 
 export interface LiveScenarioPath {
@@ -64,6 +74,7 @@ interface FilingWorkflowShellProps {
   municipality?: string | null;
   matterTitle: string;
   matterStatus: string;
+  headerControl?: ReactNode;
   stage: FilingStage;
   availableStages: FilingStage[];
   language: "en" | "es";
@@ -139,6 +150,31 @@ function SignalIcon({ state }: { state: IntelligenceSignal["state"] }) {
 
 export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; language: "en" | "es" }) {
   const [expanded, setExpanded] = useState(false);
+  if (data.project) {
+    const { project } = data;
+    return (
+      <aside className="spr-project-summary" aria-label={language === "es" ? "Resumen de tu proyecto" : "Your project summary"}>
+        <div className="spr-project-summary-kicker">{language === "es" ? "Tu proyecto" : "Your project"}</div>
+        <Image src={project.illustrationSrc} alt="" width={240} height={146} loading="eager" className="spr-project-summary-art" />
+        <h2>{project.title}</h2>
+        <dl>
+          {project.businessType && <div><dt>{language === "es" ? "Negocio" : "Business"}</dt><dd>{project.businessType}</dd></div>}
+          {project.municipality && <div><dt>{language === "es" ? "Municipio" : "Municipality"}</dt><dd>{project.municipality}</dd></div>}
+          {project.scope && <div><dt>{language === "es" ? "Proyecto" : "Scope"}</dt><dd>{project.scope}</dd></div>}
+          {project.locationType && <div><dt>{language === "es" ? "Ubicación" : "Location"}</dt><dd>{project.locationType}</dd></div>}
+        </dl>
+        {!!data.scenario?.facts.length && <details className="spr-project-saved"><summary>{language === "es" ? "Información guardada" : "Saved information"}</summary><ul>{data.scenario.facts.map((fact) => <li key={fact}>{fact}</li>)}</ul></details>}
+        <div className="spr-project-summary-next">
+          <strong>{language === "es" ? "Próximo paso" : "Next step"}</strong>
+          <p>{data.nextAction}</p>
+        </div>
+        <p className="spr-project-summary-note">{language === "es"
+          ? "Puedes completar los datos adicionales del negocio al preparar una solicitud."
+          : "You can complete additional business details when preparing a filing."}</p>
+        {project.onPreview && <button type="button" className="spr-project-preview" onClick={project.onPreview}>{language === "es" ? "Revisar requisitos" : "Review requirements"}</button>}
+      </aside>
+    );
+  }
   const copy = language === "es" ? {
     live: "SmartPR en vivo",
     readiness: "Preparación para comenzar",
@@ -318,6 +354,7 @@ export function FilingWorkflowShell({
   municipality,
   matterTitle,
   matterStatus,
+  headerControl,
   stage,
   availableStages,
   language,
@@ -386,7 +423,7 @@ export function FilingWorkflowShell({
   );
 
   return (
-    <div className="spr-product-shell">
+    <div className={`spr-product-shell${stage === "intake" && intelligence.project ? " spr-guided-intake-shell" : ""}`}>
       <div className={stickyClass}>
         {/* Keep account nav outside the collapsing overflow region so the
             avatar menu is never clipped by matter chrome / compact collapse. */}
@@ -402,6 +439,7 @@ export function FilingWorkflowShell({
                     <span className="spr-matter-status">{matterStatus}</span>
                   </div>
                   <p>{matterTitle}{municipality ? ` · ${municipality}` : ""}</p>
+                  {headerControl}
                 </div>
               </div>
               {actions}

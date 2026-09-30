@@ -60,6 +60,8 @@ export interface NaturalLanguageIntakeProps {
    * strip never goes stale.
    */
   scenarioSummary?: ScenarioSummary | null;
+  /** Minimize a successful description while keeping voice and corrections available. */
+  compact?: boolean;
 }
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -120,6 +122,7 @@ export function NaturalLanguageIntake({
   showVoiceOrb = true,
   passport,
   scenarioSummary,
+  compact = false,
 }: NaturalLanguageIntakeProps) {
   const passportReview = usePassportVoiceInput(passport, lang);
   const receivePassport = passportReview.receive;
@@ -134,6 +137,8 @@ export function NaturalLanguageIntake({
   const [businessNeeds, setBusinessNeeds] = useState<{ label: string }[]>([]);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const loadingRef = useRef(false);
+  // An explicit description edit replaces the project, even after Passport mode starts.
+  const replacingDescriptionRef = useRef(false);
   // Tracks whether the description box already has content, so the first
   // voice input becomes the description while later follow-ups are treated
   // as incremental facts (never appended to the box).
@@ -200,7 +205,7 @@ export function NaturalLanguageIntake({
       setStatus("loading");
       setChips([]);
       try {
-        if (passport) {
+        if (passport && !replacingDescriptionRef.current) {
           const res = await fetch("/api/intake/interpret", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ description, mode: "passport", lang, candidates: buildKbCandidates(kb, description), allowedIndustries, allowedLocationTypes }),
@@ -258,6 +263,7 @@ export function NaturalLanguageIntake({
         // a new provenance session — facts the previous description
         // established are quarantined, never silently inherited.
         onApply(patch, validated, { fresh: true });
+        replacingDescriptionRef.current = false;
         // Stated facts under "We understood"; suggested (0.60–0.85) business
         // facts and scenario inferences under "Needs confirmation".
         const sc = scenarioChips(validated);
@@ -278,6 +284,7 @@ export function NaturalLanguageIntake({
         if (scenarioHasFacts(offline.scenario)) {
           const patch = toIntakePatch(offline, { kb, allowedIndustries });
           onApply(patch, offline, { fresh: true });
+          replacingDescriptionRef.current = false;
           const sc = scenarioChips(offline);
           setChips(sc.understood);
           setNeedsChips(sc.needs);
@@ -403,7 +410,7 @@ export function NaturalLanguageIntake({
   }, []);
 
   return (
-    <div className="spr-nl">
+    <div className={`spr-nl${compact && status === "done" ? " spr-nl-compact" : ""}`}>
       <label className="spr-nl-label" htmlFor="spr-nl-input">
         {L("What are you looking to open?", "¿Qué desea abrir?")}
       </label>
@@ -455,7 +462,7 @@ export function NaturalLanguageIntake({
         <div className="spr-nl-result" data-testid="scenario-understood">
           {shownUnderstood.length > 0 && (
             <>
-              <span className="spr-nl-result-label">{L("We understood", "Entendimos")}</span>
+              <span className="spr-nl-result-label">{L(compact ? "Project description saved" : "We understood", compact ? "Descripción del proyecto guardada" : "Entendimos")}</span>
               <div className="spr-nl-chips">
                 {shownUnderstood.map((chip, i) => (
                   <span key={`${chip.label}-${i}`} className="spr-nl-chip">
@@ -489,6 +496,7 @@ export function NaturalLanguageIntake({
               // Tell the parent now: it quarantines the narrative-derived
               // facts immediately so nothing stale keeps driving requirements
               // while the user retypes the description.
+              replacingDescriptionRef.current = true;
               onEdit?.();
             }}
           >
