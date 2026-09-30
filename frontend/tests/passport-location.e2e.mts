@@ -206,6 +206,13 @@ try {
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByRole("button", { name: /123 Calle Ejemplo, Guaynabo/ }).click();
   check("choosing a search result fills the address", (await page.getByLabel(/Address or site description/).inputValue()).startsWith("123 Calle Ejemplo"));
+  check("the address shows right under the map with the coordinates",
+    (await page.getByTestId("location-selected-address").innerText()).startsWith("123 Calle Ejemplo"));
+  const footer = await page.getByTestId("location-footer-summary").innerText();
+  check("the footer always shows what will be saved",
+    footer.includes("18.391230, -66.117840") && footer.includes("123 Calle Ejemplo"), footer.replace(/\n/g, " "));
+  const summaryBox = (await page.getByTestId("location-footer-summary").boundingBox())!;
+  check("the footer summary is on screen without scrolling", summaryBox.y + summaryBox.height <= 900);
   await page.getByLabel(/Location name/).fill("Guaynabo Manufacturing Facility");
   await page.screenshot({ path: path.join(OUT, "loc-2-picker.png") });
 

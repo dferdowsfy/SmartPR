@@ -3,15 +3,17 @@
 //
 // SmartPR's domain model never depends on a geocoder: coordinates the user
 // confirms on the map are the authoritative fact, and anything a provider
-// returns is labeled provider-derived metadata. Geocoding is OPTIONAL — with
-// no provider configured, address search reports "not configured" and users
-// place the pin on the map or type coordinates.
+// returns is labeled provider-derived metadata.
+//
+// Default: OSMF's public Nominatim, used within its usage policy
+// (https://operations.osmfoundation.org/policies/nominatim/): an identifying
+// User-Agent, at most one upstream request per second from this process, and
+// results cached. That suits low-volume interactive use; for higher traffic
+// point MAP_GEOCODING_BASE_URL at a self-hosted or commercial
+// Nominatim-compatible API (LocationIQ, etc.).
 //
 // Configuration (all server-side; nothing here is exposed to the browser):
-//   MAP_GEOCODING_PROVIDER      "nominatim" to enable (only adapter today).
-//                               Any Nominatim-compatible API works: a
-//                               self-hosted Nominatim, OSMF's public instance
-//                               (low volume, policy-bound), LocationIQ, ...
+//   MAP_GEOCODING_PROVIDER      "nominatim" (default) or "off" to disable.
 //   MAP_GEOCODING_BASE_URL      API root (default https://nominatim.openstreetmap.org)
 //   MAP_GEOCODING_API_KEY       Optional key, sent as `key=` (LocationIQ-style).
 //   MAP_GEOCODING_USER_AGENT    Identifying User-Agent (required by OSMF policy).
@@ -206,14 +208,89 @@ export function nominatimProvider(config: NominatimConfig): GeocodingProvider {
   };
 }
 
-/** The configured provider, or null when geocoding is not configured. */
+// ---------------------------------------------------------------------------
+// Throttle + cache (process-wide)
+// ---------------------------------------------------------------------------
+
+export interface PoliteOptions {
+  /** Minimum spacing between upstream requests (ms). */
+  minIntervalMs: number;
+  cacheTtlMs?: number;
+  cacheMax?: number;
+  now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
+}
+
+/**
+ * Wrap a provider so upstream calls are serialized at most one per
+ * `minIntervalMs`, and identical queries (reverse lookups rounded to ~1 m)
+ * are answered from an in-memory cache. Failures are not cached.
+ */
+export function politeProvider(inner: GeocodingProvider, opts: PoliteOptions): GeocodingProvider {
+  const now = opts.now ?? (() => Date.now());
+  const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  const ttl = opts.cacheTtlMs ?? 24 * 60 * 60 * 1000;
+  const max = opts.cacheMax ?? 1000;
+  const cache = new Map<string, { at: number; value: unknown }>();
+  let chain: Promise<unknown> = Promise.resolve();
+  let lastCall = -Infinity;
+
+  function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+    const hit = cache.get(key);
+    if (hit && now() - hit.at < ttl) return Promise.resolve(hit.value as T);
+    const run = chain.then(async () => {
+      const wait = lastCall + opts.minIntervalMs - now();
+      if (wait > 0) await sleep(wait);
+      lastCall = now();
+      return fetcher();
+    });
+    // Keep the queue alive after failures; the caller still sees the error.
+    chain = run.catch(() => undefined);
+    return run.then((value) => {
+      cache.delete(key);
+      cache.set(key, { at: now(), value });
+      while (cache.size > max) cache.delete(cache.keys().next().value as string);
+      return value;
+    });
+  }
+
+  return {
+    id: inner.id,
+    search(query, o = {}) {
+      const key = `s|${o.lang ?? ""}|${o.limit ?? ""}|${query.trim().toLowerCase().replace(/\s+/g, " ")}`;
+      return cached(key, () => inner.search(query, o));
+    },
+    reverse(latitude, longitude, o = {}) {
+      const key = `r|${o.lang ?? ""}|${latitude.toFixed(5)},${longitude.toFixed(5)}`;
+      return cached(key, () => inner.reverse(latitude, longitude, o));
+    },
+  };
+}
+
+const OSMF_PUBLIC = "https://nominatim.openstreetmap.org";
+let singleton: { key: string; provider: GeocodingProvider } | null = null;
+
+/**
+ * The configured provider (Nominatim by default), or null when explicitly
+ * disabled with MAP_GEOCODING_PROVIDER=off. Returns a process-wide instance
+ * so the throttle and cache are shared by every request.
+ */
 export function geocoderFromEnv(env: Record<string, string | undefined> = process.env): GeocodingProvider | null {
-  const provider = (env.MAP_GEOCODING_PROVIDER || "").trim().toLowerCase();
+  const provider = (env.MAP_GEOCODING_PROVIDER || "nominatim").trim().toLowerCase();
   if (provider !== "nominatim") return null;
-  return nominatimProvider({
-    baseUrl: env.MAP_GEOCODING_BASE_URL?.trim() || "https://nominatim.openstreetmap.org",
+  const baseUrl = env.MAP_GEOCODING_BASE_URL?.trim() || OSMF_PUBLIC;
+  const config: NominatimConfig = {
+    baseUrl,
     apiKey: env.MAP_GEOCODING_API_KEY?.trim() || null,
-    userAgent: env.MAP_GEOCODING_USER_AGENT?.trim() || "SmartPR/1.0 (https://www.getsmartpr.com)",
+    userAgent: env.MAP_GEOCODING_USER_AGENT?.trim() || "SmartPR/1.0 (+https://www.getsmartpr.com)",
     email: env.MAP_GEOCODING_EMAIL?.trim() || null,
-  });
+  };
+  const key = JSON.stringify(config);
+  if (singleton?.key === key) return singleton.provider;
+  // The public OSMF instance allows at most 1 request/second; own or
+  // commercial endpoints get a lighter default spacing.
+  const minIntervalMs = baseUrl.replace(/\/+$/, "") === OSMF_PUBLIC ? 1100 : 100;
+  const wrapped = politeProvider(nominatimProvider(config), { minIntervalMs });
+  singleton = { key, provider: wrapped };
+  return wrapped;
 }

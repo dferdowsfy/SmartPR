@@ -493,8 +493,87 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
               "El mapa no pudo cargar. Ingrese la latitud y longitud abajo — aún puede guardar la ubicación.",
               lang
             )}
-            className="mt-2 h-[42dvh] min-h-[260px] touch-none sm:h-80"
+            className="mt-2 h-[42dvh] min-h-[260px] touch-none sm:h-72"
           />
+
+          <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3" aria-live="polite">
+            {point ? (
+              <>
+                <div className="text-[11px] font-medium text-slate-500">{L("Selected point", "Punto seleccionado", lang)}</div>
+                <div className="mt-0.5 break-words font-mono text-sm font-semibold text-[#161616]" data-testid="location-selected-coordinates">
+                  {L("Latitude", "Latitud", lang)}: {formatCoordinate(point.latitude)}
+                  <span className="mx-2 text-slate-300" aria-hidden="true">·</span>
+                  {L("Longitude", "Longitud", lang)}: {formatCoordinate(point.longitude)}
+                </div>
+                {addressText && lookup.status !== "loading" && (
+                  <div className="mt-1 break-words text-sm text-[#161616]" data-testid="location-selected-address">
+                    {addressText}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-600">
+                {L("No point selected yet.", "Aún no ha seleccionado un punto.", lang)}
+              </p>
+            )}
+            {outsidePR && (
+              <p className="mt-2 text-xs font-medium text-amber-800" role="status">
+                {L(
+                  "This point is outside Puerto Rico. SmartPR currently evaluates Puerto Rico requirements — double-check the pin.",
+                  "Este punto está fuera de Puerto Rico. SmartPR evalúa actualmente requisitos de Puerto Rico — verifique el pin.",
+                  lang
+                )}
+              </p>
+            )}
+            {lookup.status === "loading" && (
+              <p className="mt-2 text-xs text-slate-500">{L("Looking up the address for this point…", "Buscando la dirección de este punto…", lang)}</p>
+            )}
+            {lookup.status === "none" && (
+              <p className="mt-2 text-xs text-slate-600">
+                {L(
+                  "No street address was found for this point. That's common for land, construction sites and rural parcels — you can still save the coordinates.",
+                  "No se encontró una dirección para este punto. Es común en terrenos, obras y fincas — aún puede guardar las coordenadas.",
+                  lang
+                )}
+              </p>
+            )}
+            {(lookup.status === "unavailable" || lookup.status === "error") && (
+              <p className="mt-2 text-xs text-slate-600">
+                {L(
+                  "The address for this point couldn't be looked up. You can still save the coordinates and type an address below.",
+                  "No se pudo buscar la dirección de este punto. Aún puede guardar las coordenadas y escribir una dirección abajo.",
+                  lang
+                )}
+              </p>
+            )}
+            {mapStatus === "error" && !point && (
+              <p className="mt-2 text-xs text-slate-600">
+                {L("Enter coordinates below to continue.", "Ingrese coordenadas abajo para continuar.", lang)}
+              </p>
+            )}
+          </div>
+
+          <label htmlFor={addressId} className="mt-3 block text-xs font-semibold text-slate-600">
+            {L("Address or site description", "Dirección o descripción del lugar", lang)}
+            <span className="font-normal text-slate-400"> {L("(optional)", "(opcional)", lang)}</span>
+          </label>
+          <input
+            id={addressId}
+            value={addressText}
+            maxLength={400}
+            onChange={(e) => onAddressEdit(e.target.value)}
+            placeholder={L("e.g. Carr. 2 km 14.2, Bo. Pueblo Viejo", "p. ej. Carr. 2 km 14.2, Bo. Pueblo Viejo", lang)}
+            className={inputCls}
+          />
+          {address.address_source === "PROVIDER_GEOCODE" || address.address_source === "PROVIDER_REVERSE_GEOCODE" ? (
+            <p className="mt-1 text-[11px] text-slate-500">
+              {L(
+                "From address lookup. The pin's coordinates are what SmartPR uses; the address is for reference.",
+                "De la búsqueda de direcciones. SmartPR usa las coordenadas del pin; la dirección es de referencia.",
+                lang
+              )}
+            </p>
+          ) : null}
 
           <fieldset className="mt-4">
             <legend className="text-xs font-semibold text-slate-600">
@@ -550,80 +629,6 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
             </div>
           </fieldset>
 
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3" aria-live="polite">
-            {point ? (
-              <>
-                <div className="text-[11px] font-medium text-slate-500">{L("Selected point", "Punto seleccionado", lang)}</div>
-                <div className="mt-0.5 break-all font-mono text-sm font-semibold text-[#161616]" data-testid="location-selected-coordinates">
-                  {L("Latitude", "Latitud", lang)}: {formatCoordinate(point.latitude)}
-                  <br />
-                  {L("Longitude", "Longitud", lang)}: {formatCoordinate(point.longitude)}
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-slate-600">
-                {L("No point selected yet.", "Aún no ha seleccionado un punto.", lang)}
-              </p>
-            )}
-            {outsidePR && (
-              <p className="mt-2 text-xs font-medium text-amber-800" role="status">
-                {L(
-                  "This point is outside Puerto Rico. SmartPR currently evaluates Puerto Rico requirements — double-check the pin.",
-                  "Este punto está fuera de Puerto Rico. SmartPR evalúa actualmente requisitos de Puerto Rico — verifique el pin.",
-                  lang
-                )}
-              </p>
-            )}
-            {lookup.status === "loading" && (
-              <p className="mt-2 text-xs text-slate-500">{L("Looking up the address for this point…", "Buscando la dirección de este punto…", lang)}</p>
-            )}
-            {lookup.status === "none" && (
-              <p className="mt-2 text-xs text-slate-600">
-                {L(
-                  "No street address was found for this point. That's common for land, construction sites and rural parcels — you can still save the coordinates.",
-                  "No se encontró una dirección para este punto. Es común en terrenos, obras y fincas — aún puede guardar las coordenadas.",
-                  lang
-                )}
-              </p>
-            )}
-            {(lookup.status === "unavailable" || lookup.status === "error") && (
-              <p className="mt-2 text-xs text-slate-600">
-                {L(
-                  "The address for this point couldn't be looked up. You can still save the coordinates and type an address below.",
-                  "No se pudo buscar la dirección de este punto. Aún puede guardar las coordenadas y escribir una dirección abajo.",
-                  lang
-                )}
-              </p>
-            )}
-            {mapStatus === "error" && !point && (
-              <p className="mt-2 text-xs text-slate-600">
-                {L("Enter coordinates above to continue.", "Ingrese coordenadas arriba para continuar.", lang)}
-              </p>
-            )}
-          </div>
-
-          <label htmlFor={addressId} className="mt-4 block text-xs font-semibold text-slate-600">
-            {L("Address or site description", "Dirección o descripción del lugar", lang)}
-            <span className="font-normal text-slate-400"> {L("(optional)", "(opcional)", lang)}</span>
-          </label>
-          <input
-            id={addressId}
-            value={addressText}
-            maxLength={400}
-            onChange={(e) => onAddressEdit(e.target.value)}
-            placeholder={L("e.g. Carr. 2 km 14.2, Bo. Pueblo Viejo", "p. ej. Carr. 2 km 14.2, Bo. Pueblo Viejo", lang)}
-            className={inputCls}
-          />
-          {address.address_source === "PROVIDER_GEOCODE" || address.address_source === "PROVIDER_REVERSE_GEOCODE" ? (
-            <p className="mt-1 text-[11px] text-slate-500">
-              {L(
-                "From address lookup. The pin's coordinates are what SmartPR uses; the address is for reference.",
-                "De la búsqueda de direcciones. SmartPR usa las coordenadas del pin; la dirección es de referencia.",
-                lang
-              )}
-            </p>
-          ) : null}
-
           {saveError && (
             <p role="alert" className="mt-3 text-sm font-medium text-red-700">
               {saveError}
@@ -631,7 +636,24 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
           )}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-100 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:flex-row sm:items-center sm:justify-end">
+          {/* Always-visible summary of what "Use this location" will save. */}
+          <div className="min-w-0 text-xs text-slate-600 sm:mr-auto" data-testid="location-footer-summary" aria-hidden="true">
+            {point ? (
+              <>
+                <div className="font-mono font-semibold text-[#161616]">
+                  {formatCoordinate(point.latitude)}, {formatCoordinate(point.longitude)}
+                </div>
+                <div className="truncate">
+                  {lookup.status === "loading"
+                    ? L("Looking up address…", "Buscando dirección…", lang)
+                    : addressText || L("No street address", "Sin dirección", lang)}
+                </div>
+              </>
+            ) : (
+              <span>{L("Tap the map to choose a point", "Toque el mapa para escoger un punto", lang)}</span>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}

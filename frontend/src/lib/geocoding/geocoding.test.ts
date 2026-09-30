@@ -7,6 +7,7 @@ import {
   geocoderFromEnv,
   nominatimProvider,
   normalizeNominatimPlace,
+  politeProvider,
   stripMunicipioSuffix,
 } from "./index.ts";
 
@@ -94,8 +95,61 @@ test("provider failures surface as typed errors, not fake results", async () => 
   await assert.rejects(offline.search("x"), (e: unknown) => e instanceof GeocodingError && e.message === "provider_unreachable");
 });
 
-test("geocoding is off unless explicitly configured", () => {
-  assert.equal(geocoderFromEnv({}), null);
-  assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "google" }), null);
+test("geocoding defaults to Nominatim and can be switched off", () => {
+  assert.equal(geocoderFromEnv({})?.id, "nominatim");
   assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "nominatim" })?.id, "nominatim");
+  assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "off" }), null);
+  assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "google" }), null);
+  // One shared instance per configuration, so the throttle/cache are process-wide.
+  assert.equal(geocoderFromEnv({}), geocoderFromEnv({}));
+});
+
+test("polite provider spaces upstream calls and caches repeats", async () => {
+  let clock = 0;
+  const sleeps: number[] = [];
+  const calls: string[] = [];
+  const inner = {
+    id: "fake",
+    async search(q: string) {
+      calls.push(`s:${q}@${clock}`);
+      return [];
+    },
+    async reverse(lat: number, lng: number) {
+      calls.push(`r:${lat},${lng}@${clock}`);
+      return null;
+    },
+  };
+  const p = politeProvider(inner, {
+    minIntervalMs: 1000,
+    now: () => clock,
+    sleep: async (ms) => {
+      sleeps.push(ms);
+      clock += ms;
+    },
+  });
+  await Promise.all([p.reverse(18.391231, -66.117841), p.reverse(18.2, -66.5), p.search("Guaynabo")]);
+  assert.deepEqual(calls, ["r:18.391231,-66.117841@0", "r:18.2,-66.5@1000", "s:Guaynabo@2000"]);
+  assert.deepEqual(sleeps, [1000, 1000]);
+  // Same point (to ~1 m) and same query: served from cache, no upstream call.
+  await p.reverse(18.391232, -66.117842);
+  await p.search("  guaynabo ");
+  assert.equal(calls.length, 3);
+});
+
+test("polite provider does not cache failures and keeps serving after one", async () => {
+  let fail = true;
+  const inner = {
+    id: "fake",
+    async search() {
+      return [];
+    },
+    async reverse() {
+      if (fail) throw new GeocodingError("provider_http_503", 503);
+      return null;
+    },
+  };
+  const p = politeProvider(inner, { minIntervalMs: 0 });
+  await assert.rejects(p.reverse(18.2, -66.5));
+  fail = false;
+  assert.equal(await p.reverse(18.2, -66.5), null);
 });
