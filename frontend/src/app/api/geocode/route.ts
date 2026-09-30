@@ -8,17 +8,36 @@
 //   503 { error: "geocoding_not_configured" } when no provider is set up.
 
 import { getCurrentUser } from "../../../lib/supabase/server";
-import { geocoderFromEnv, GeocodingError } from "../../../lib/geocoding";
+import { geocoderFromEnv, GeocodingError, type SlotReserver } from "../../../lib/geocoding";
+import { pgSlotReserver } from "../../../lib/geocoding/slots";
+import { getPool } from "../../graph/db";
+import { ensureSchema } from "../../graph/store";
 import { rateLimitAllow } from "../../../lib/rateLimit";
 import { validateCoordinates } from "../../locations/geo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * App-wide slot reservation through Postgres, so the public Nominatim limit
+ * (1 request/second for the whole application) holds across every server
+ * instance. Without a database the geocoder falls back to per-process spacing.
+ */
+async function sharedReserver(): Promise<SlotReserver | undefined> {
+  const pool = getPool();
+  if (!pool) return undefined;
+  try {
+    await ensureSchema();
+  } catch {
+    return undefined;
+  }
+  return pgSlotReserver(pool, "nominatim-public", 1100);
+}
+
 export async function GET(req: Request) {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const geocoder = geocoderFromEnv();
+  const geocoder = geocoderFromEnv(process.env, { reserve: await sharedReserver() });
   if (!geocoder) return Response.json({ error: "geocoding_not_configured" }, { status: 503 });
   if (!rateLimitAllow(`geocode:${user.id}`, 30, 60_000)) {
     return Response.json({ error: "rate_limited" }, { status: 429 });

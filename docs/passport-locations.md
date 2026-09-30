@@ -203,13 +203,14 @@ Rico are accepted with a warning — the schema is not Puerto-Rico-only.
 - **Map: MapLibre GL JS** (BSD, vendor-neutral, strong touch/pinch support).
   Basemap = a style URL: `NEXT_PUBLIC_MAP_STYLE_URL`, default OpenFreeMap
   "liberty" (free, no key). Panning is limited to the Puerto Rico region.
-- **Geocoding: optional, server-side.** `MAP_GEOCODING_PROVIDER=nominatim`
-  enables a Nominatim-compatible adapter (`MAP_GEOCODING_BASE_URL`,
-  `MAP_GEOCODING_API_KEY`, `MAP_GEOCODING_USER_AGENT`, `MAP_GEOCODING_EMAIL`);
-  search is bounded to Puerto Rico. Unset = address search shows "not
-  available" and users place the pin or type coordinates. Keys never reach
-  the browser. OSMF's public Nominatim is for low volume only — use a
-  self-hosted or commercial Nominatim-compatible endpoint in production.
+- **Geocoding: server-side, on by default.** Uses OSMF's public Nominatim
+  with an identifying User-Agent, at most one upstream request per second per
+  process (queued), and a 24-hour in-memory cache — within its usage policy
+  for low-volume interactive use. Selecting a point on the map reverse-
+  geocodes it and fills the address automatically. For higher traffic set
+  `MAP_GEOCODING_BASE_URL` (+ `MAP_GEOCODING_API_KEY`) to a self-hosted or
+  commercial Nominatim-compatible endpoint; `MAP_GEOCODING_PROVIDER=off`
+  disables lookups. Keys never reach the browser.
 
 ## Deployment
 
@@ -217,7 +218,7 @@ Rico are accepted with a warning — the schema is not Puerto-Rico-only.
 2. Recommended once: run `data/locations_schema.sql` (enables PostGIS where
    permitted, then applies the same statements), or enable PostGIS in
    Supabase → Database → Extensions and redeploy/re-run.
-3. Optionally configure geocoding and a basemap style.
+3. Optionally point geocoding at a dedicated endpoint and set a basemap style.
 
 ## Tests
 

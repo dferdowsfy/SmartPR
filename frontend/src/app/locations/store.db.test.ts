@@ -317,6 +317,18 @@ describe("Passport locations on PostgreSQL", { skip }, () => {
     assert.doesNotMatch(JSON.stringify(rows[0].after), /18\.39|66\.11|Example Street/);
   });
 
+  test("geocoding slots are shared across instances through the database", async () => {
+    const { pgSlotReserver } = await import("../../lib/geocoding/slots.ts");
+    // Two reservers = two server instances sharing one limiter row.
+    const a = pgSlotReserver(pool, "test-limiter", 1100);
+    const b = pgSlotReserver(pool, "test-limiter", 1100);
+    const waits = (await Promise.all([a(), b(), a(), b()])).map((w) => w ?? -1).sort((x, y) => x - y);
+    // Distinct slots 1.1 s apart (allowing a little DB clock progression).
+    for (let i = 0; i < waits.length; i++) {
+      assert.ok(Math.abs(waits[i] - i * 1100) < 250, `slot ${i}: waited ${waits[i]}ms`);
+    }
+  });
+
   test("the database rejects out-of-range coordinates even if app validation were bypassed", async () => {
     await assert.rejects(
       pool.query(`INSERT INTO locations (id, business_id, created_by_user_id, latitude, longitude) VALUES ($1,$2,$3,91,0)`, [
