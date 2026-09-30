@@ -162,7 +162,7 @@ Logging sink: `console.log` only.
 6. xAI voice telephony: vendor-held agent config, requires public MCP callback.
 7. Browser Use Cloud sends client data to a third party.
 8. Runtime DDL via `ensureSchema()`; no migration runner.
-9. Admin open default.
+9. Admin open default. **Enterprise: closed in PR #3** (fails closed; see `admin-authorization.md`). Standard: unchanged, tracked as debt.
 10. DB TLS verification disabled; no Entra/managed-identity DB auth.
 11. No IaC; no CI/CD.
 

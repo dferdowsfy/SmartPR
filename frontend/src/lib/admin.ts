@@ -10,10 +10,48 @@
 // is empty/missing), ANY signed-in user is treated as an admin so the tools
 // stay reachable out of the box. As soon as at least one admin is
 // configured anywhere, the default closes and only allowlisted emails pass.
+//
+// ENTERPRISE: when DEPLOYMENT_MODE=enterprise (or the deployment config is
+// invalid), the open default never applies. Empty allowlists, a missing
+// database, or database errors deny admin access; only explicitly listed
+// admins pass. See docs/enterprise-azure/admin-authorization.md.
 // ============================================================================
 
 import { getCurrentUser } from "./supabase/server";
-import { getPool } from "../app/graph/db";
+import { getPool as defaultGetPool } from "../app/graph/db";
+import { loadDeploymentConfig } from "./config/deployment";
+
+type AdminPool = { query: <T>(text: string, params?: unknown[]) => Promise<{ rows: T[] }> };
+let getPool: () => AdminPool | null = defaultGetPool as unknown as () => AdminPool | null;
+
+/** Test seam: replaces the Postgres pool used by the admin checks. */
+export function setAdminPoolForTests(fn: (() => AdminPool | null) | null): void {
+  getPool = fn ?? (defaultGetPool as unknown as () => AdminPool | null);
+}
+
+let warnedClosed = false;
+
+/**
+ * Whether the "no admins configured -> everyone is admin" default may apply.
+ * Standard: yes (unchanged). Enterprise, or a deployment config that fails
+ * validation: never. Reads config per call so it cannot be cached open.
+ */
+export function openDefaultAllowed(): boolean {
+  let standard = false;
+  try {
+    standard = loadDeploymentConfig().mode === "standard";
+  } catch {
+    standard = false;
+  }
+  if (!standard && !warnedClosed) {
+    warnedClosed = true;
+    console.warn(
+      "[admin] Open admin default disabled (enterprise or invalid deployment config); " +
+        "only explicitly allowlisted administrators are authorized."
+    );
+  }
+  return standard;
+}
 
 function adminSet(): Set<string> {
   return new Set(
@@ -28,7 +66,7 @@ function adminSet(): Set<string> {
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;
   const set = adminSet();
-  if (set.size === 0) return true; // open default: no allowlist configured
+  if (set.size === 0) return openDefaultAllowed(); // open default (Standard only)
   return set.has(email.toLowerCase());
 }
 
@@ -67,7 +105,7 @@ export async function userInGroup(
   }
   try {
     const pool = getPool();
-    if (!pool) return adminSet().size === 0; // no DB: preserve open default
+    if (!pool) return adminSet().size === 0 && openDefaultAllowed(); // no DB: open default (Standard only)
     const mine = await pool.query<{ n: string }>(
       `SELECT COUNT(*)::text AS n FROM admin_allowlist
         WHERE lower(email) = lower($1)
@@ -80,9 +118,9 @@ export async function userInGroup(
     const total = await pool.query<{ n: string }>(
       `SELECT COUNT(*)::text AS n FROM admin_allowlist`
     );
-    return Number(total.rows[0]?.n || 0) === 0 && adminSet().size === 0;
+    return Number(total.rows[0]?.n || 0) === 0 && adminSet().size === 0 && openDefaultAllowed();
   } catch {
-    return adminSet().size === 0; // table missing / DB error: open default
+    return adminSet().size === 0 && openDefaultAllowed(); // table missing / DB error: open default (Standard only)
   }
 }
 

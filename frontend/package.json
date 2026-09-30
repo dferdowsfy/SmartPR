@@ -25,7 +25,7 @@
     "qa:snapshot-goldens": "tsx src/app/qa/snapshotGoldens.ts",
     "qa:update-coverage-baseline": "tsx src/app/qa/updateCoverageBaseline.ts",
     "test:config": "tsx --test src/lib/config/deployment.test.ts",
-    "test:security": "tsx --test src/lib/__tests__/enterprise-security.test.ts src/lib/__tests__/soc2-security.test.ts",
+    "test:security": "tsx --test src/lib/__tests__/enterprise-security.test.ts src/lib/__tests__/soc2-security.test.ts src/lib/__tests__/admin-open-default.test.ts",
     "test:clara:e2e": "node tests/clara-rehearsal.e2e.mjs",
     "test:agency": "tsx --test src/lib/agency-runs/*.test.ts src/lib/agency-runs/flows/*.test.ts 'src/app/businesses/[id]/agency-run/chatContracts.test.ts'",
     "test:dos:e2e": "tsx tests/dept-state-corporation.e2e.mts",
