@@ -464,6 +464,17 @@ function flag(text: string, re: RegExp): ScenarioFact<boolean> | undefined {
   return negatedAt(text, hit.index) ? said(false, text, hit, 0.93) : said(true, text, hit, 0.94);
 }
 
+// New-construction language: a new building/structure is being built. An
+// equipment install on an existing building ("install rooftop solar on our
+// warehouse") is not new construction.
+const NEW_CONSTRUCTION_RE =
+  /\bnew\s+construction\b|\b(?:build|construct)\w*\s+(?:a\s+|an\s+)?new\s+(?:building|facility|structure|warehouse|plant|store|restaurant|office)|\bground[\s-]up\b|\bnueva\s+construcci[oó]n\b|\b(?:construir|edificar)\s+(?:un|una)\s+(?:\w+\s+)?nuev[oa]\b/i;
+
+/** True when the text states new construction in the speaker's own words, not negated. */
+export function newConstructionStated(text: string): boolean {
+  return findAll(text, NEW_CONSTRUCTION_RE).some((hit) => !negatedAt(text, hit.index));
+}
+
 function readProjectScope(text: string, ctx: ScenarioContext): void {
   const types: string[] = [];
   const reno = find(text, RENOVATION_RE);

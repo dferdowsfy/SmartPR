@@ -1,0 +1,26 @@
+{
+  "id": "E01",
+  "title": "Operating Caguas distribution warehouse adds 400 kW rooftop solar + battery, grid-connected, may share power with two neighboring buildings it owns, asks about incentives",
+  "source": "Darius live test of PR #109 on www.getsmartpr.com, 2026-09-29 22:38 ET; model output is a fixture (no live LLM in CI)",
+  "description": "We run a distribution warehouse in Caguas and want to install a 400 kW rooftop solar system with battery storage. It will stay connected to the LUMA grid, and we're also thinking about sharing power with the two neighboring buildings we own. We'd like to know what incentives we can get.",
+  "profile": { "business_type": "Warehouse Distributor", "municipality": "Caguas" },
+  "projectIntent": "existing_business",
+  "answers": { "Q_RENEWABLE_INSTALL": true, "Q_SOLAR_BATTERY": true, "Q_SOLAR_MOUNTING": "Roof-mounted", "Q_PHYSICAL_LOCATION": true },
+  "modelProjectContext": {
+    "project_type": { "value": "new_construction", "confidence": 0.9, "evidence": "install a 400 kW rooftop solar system" },
+    "existing_building": { "value": true, "confidence": 0.9, "evidence": "We run a distribution warehouse" },
+    "municipality": { "value": "Caguas", "confidence": 0.95, "evidence": "Caguas" },
+    "generation_technology": { "value": "solar", "confidence": 0.95, "evidence": "rooftop solar system" },
+    "battery_storage": { "value": true, "confidence": 0.95, "evidence": "with battery storage" },
+    "generation_capacity_kw": { "value": "400 kW", "confidence": 0.95, "evidence": "400 kW" },
+    "mounting_type": { "value": "roof", "confidence": 0.9, "evidence": "rooftop" },
+    "parallel_operation": { "value": true, "confidence": 0.9, "evidence": "stay connected to the LUMA grid" },
+    "properties_served": { "value": 3, "confidence": 0.8, "evidence": "the two neighboring buildings we own" },
+    "common_ownership": { "value": true, "confidence": 0.85, "evidence": "buildings we own" },
+    "customer_class": { "value": "commercial", "confidence": 0.85, "evidence": "distribution warehouse" },
+    "energy_project_status": { "value": "proposed", "confidence": 0.9, "evidence": "want to install" },
+    "energy_applicant_role": { "value": "end_use_customer", "confidence": 0.85, "evidence": "We run a distribution warehouse" },
+    "system_ownership": { "value": "owner", "confidence": 0.8, "evidence": "want to install" },
+    "energy_incentive_interest": { "value": true, "confidence": 0.95, "evidence": "what incentives we can get" }
+  }
+}

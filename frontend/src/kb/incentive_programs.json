@@ -622,8 +622,8 @@
   },
   {
     "id": "PR_ACT60_RENEWABLE_INVESTMENT",
-    "name": "Renewable Energy Equipment Investment Credit",
-    "description": "Any business — not only energy companies — that invests directly in renewable generation equipment (solar, wind, hydro, or battery storage) for its own operations can access a separate green-investment tax benefit, distinct from the Green Energy and Renewable Resources decree for businesses whose primary activity is power generation.",
+    "name": "Green Energy Equipment Exemption and Special Deduction (Act 60 decree holders)",
+    "description": "Available only to an Exempt Business holding an Act 60 Green Energy decree (Ley 60-2019, Chapter 7, Subchapter B) that is engaged in the Green Energy activities of Section 2071.01(6)–(10). Such a decree holder gets a full IVU and state excise exemption on qualifying Green Energy machinery and equipment (Section 2072.05) and may elect to deduct its green-energy buildings, structures, machinery, and equipment in the year incurred (Section 2072.06). A business that only installs solar or storage for its own facility, without that decree, does not qualify through this provision.",
     "administering_agency_id": "ddec",
     "application_agency_id": "ddec",
     "authorized_by_ids": [
@@ -633,12 +633,14 @@
     "municipality_ids": [],
     "geography_level": "Puerto Rico",
     "criterion_ids": [
-      "renewable_investment_fact"
+      "renewable_investment_fact",
+      "green_energy_decree_fact"
     ],
     "benefit_ids": [
-      "PR_ACT60_RENEWABLE_INVESTMENT_b1"
+      "PR_ACT60_RENEWABLE_INVESTMENT_b1",
+      "PR_ACT60_RENEWABLE_INVESTMENT_b2"
     ],
-    "application_process": "Document the renewable-energy equipment investment and apply for the exemption through DDEC.",
+    "application_process": "Obtain an Act 60 Green Energy decree from DDEC for an eligible Section 2071.01(6)–(10) activity; the exemption and special deduction then apply to that decree holder's qualifying equipment and investment. Source: Ley 60-2019, Sections 2072.05–2072.06.",
     "program_status": "active",
     "effective_from": "2019-07-01",
     "last_verified_at": "2026-09-04",

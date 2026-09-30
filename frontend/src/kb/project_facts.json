@@ -15,10 +15,17 @@
   },
   {
     "id": "FACT_RENEWABLE_ENERGY_INVESTMENT",
-    "name": "Renewable energy equipment investment",
+    "name": "Green Energy equipment investment",
     "fact_key": "renewable_energy_investment",
     "value_type": "boolean",
-    "description": "This credit is for a business's own renewable-generation or storage investment, separate from operating a power-generation business."
+    "description": "The equipment must be used for Green Energy production (Section 2072.05(a)(1)(ii)); for the special deduction it must not have been depreciated or previously used in Puerto Rico (Section 2072.06(a)(1))."
+  },
+  {
+    "id": "FACT_GREEN_ENERGY_DECREE",
+    "name": "Holds an Act 60 Green Energy decree",
+    "fact_key": "green_energy_decree",
+    "value_type": "boolean",
+    "description": "Sections 2072.05 and 2072.06 apply only to an Exempt Business holding a Decree granted under Chapter 7, Subchapter B (Green Energy) of Ley 60-2019, engaged in the activities of Section 2071.01(6)–(10)."
   },
   {
     "id": "FACT_OPPORTUNITY_ZONE",

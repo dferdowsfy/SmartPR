@@ -80,6 +80,8 @@ export interface PrerequisiteView {
   note?: string;
   /** Required prerequisite with outstanding evidence. */
   blocking: boolean;
+  /** Applies only if a still-unknown fact turns out a certain way. */
+  conditional: boolean;
 }
 
 export interface ProcessEvaluation {
@@ -88,6 +90,9 @@ export interface ProcessEvaluation {
   process_type: ProcessType;
   domain: string;
   state: ProcessState;
+  /** Voluntary program: REQUIRED means "required if you enroll", never mandatory. */
+  voluntary: boolean;
+  voluntary_note?: string;
   reason: string;
   decided_by: { kind: "rule" | "exception" | "gate" | "follows" | "none"; id?: string };
   citation?: CitationView;
@@ -125,6 +130,8 @@ export interface ClarifyingQuestion {
   why: string;
   type: FactDefinition["type"];
   options?: string[];
+  /** value → plain-English label, for every option. */
+  option_labels?: Record<string, string>;
   /** Process / incentive ids whose decision this fact controls. */
   resolves: string[];
 }
@@ -140,6 +147,8 @@ export interface Gap {
 
 export interface ProcessAssessment {
   facts: FactMap;
+  /** Readiness counts evidence for REQUIRED processes only — never potentially
+   * required processes or incentives. */
   project_types: ProjectTypeMatch[];
   processes: ProcessEvaluation[];
   incentives: IncentiveEvaluation[];
@@ -379,6 +388,8 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
       process_type: p.process_type,
       domain: p.domain,
       state: d.state,
+      voluntary: !!p.voluntary,
+      voluntary_note: p.voluntary_note,
       reason: d.reason,
       decided_by: d.decided_by,
       citation: d.citation,
@@ -403,9 +414,12 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
     for (const pre of p.prerequisites) {
       const pe = byId.get(pre.process_id);
       if (!pe || pe.state === "NOT_REQUIRED") continue;
-      const blocking = pe.state === "REQUIRED" && !!pe.readiness && pe.readiness.score < 1;
-      e.prerequisites.push({ process_id: pe.process_id, name: pe.name, state: pe.state, note: pre.note, blocking });
-      e.explanation.push({ kind: "dependency", label: `Prerequisite: ${pe.name} (${pe.state})`, detail: pre.note });
+      const w = evaluateCondition(pre.when, facts);
+      if (w.value === false) continue;
+      const conditional = w.value === null;
+      const blocking = !conditional && pe.state === "REQUIRED" && !!pe.readiness && pe.readiness.score < 1;
+      e.prerequisites.push({ process_id: pe.process_id, name: pe.name, state: pe.state, note: pre.note, blocking, conditional });
+      e.explanation.push({ kind: "dependency", label: `${conditional ? "Conditional prerequisite" : "Prerequisite"}: ${pe.name} (${pe.state})`, detail: pre.note });
     }
   }
   evaluations.sort((a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state] || a.name.localeCompare(b.name));
@@ -494,15 +508,16 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
       const def = factDefs.get(fact);
       return {
         fact,
-        question: def?.question ?? fact,
+        question: def ? questionFor(def, facts) : fact,
         why: def?.why ?? "",
         type: def?.type ?? "string",
         options: def?.options,
+        option_labels: def?.options ? Object.fromEntries(def.options.map((o) => [o, optionLabel(def, o)])) : undefined,
         resolves: [...resolves],
       };
     });
 
-  const required = evaluations.filter((e) => e.state === "REQUIRED" && e.readiness);
+  const required = evaluations.filter((e) => e.state === "REQUIRED" && !e.voluntary && e.readiness);
   const satisfied = required.reduce((n, e) => n + e.readiness!.satisfied, 0);
   const total = required.reduce((n, e) => n + e.readiness!.total, 0);
 
@@ -515,6 +530,24 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
     gaps,
     readiness: total ? { satisfied, total, score: Math.round((satisfied / total) * 100) / 100 } : null,
   };
+}
+
+/** Context-aware question text: first matching variant, with {fact} interpolation. */
+export function questionFor(def: FactDefinition, facts: FactMap): string {
+  const variant = (def.question_variants ?? []).find((v) => evaluateCondition(v.when, facts).value === true);
+  const text = variant?.question ?? def.question;
+  return text.replace(/\{([a-z_]+)\}/g, (m, key: string) => {
+    const v = facts[key];
+    return v === undefined ? m : Array.isArray(v) ? v.join(", ") : String(v);
+  });
+}
+
+/** Plain-English label for an option value (KB label, else humanized). */
+export function optionLabel(def: FactDefinition | undefined, value: string): string {
+  const l = def?.option_labels?.[value];
+  if (l) return l;
+  const h = value.replace(/_/g, " ");
+  return h.charAt(0).toUpperCase() + h.slice(1);
 }
 
 /** Compact, source-backed text explanation for one process (audit / tests). */

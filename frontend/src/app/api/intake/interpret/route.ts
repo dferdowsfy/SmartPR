@@ -278,6 +278,9 @@ determine:
 
 - "project_type" :: one of: renovation, new_construction, expansion,
   change_of_use, or a short phrase when none fits (e.g. "renovation and expansion").
+  Installing equipment (solar panels, batteries, generators, HVAC) on or at an
+  existing building is NOT new_construction: use a short phrase such as
+  "rooftop solar installation" and set "existing_building" true.
 - "existing_building" :: true when the project alters an already-existing building.
 - "new_construction" :: true when the project builds something new (can be true
   alongside "renovation": an expansion adds new construction to an existing building).
@@ -337,9 +340,16 @@ applicability is decided by SmartPR's regulatory graph, never by you):
 - "customer_class" :: "residential" | "commercial" | "industrial" |
   "agricultural" | "government" | "educational" | "medical".
 - "system_ownership" :: "owner" | "third_party" | "lease_ppa" | "cooperative"
-  | "municipal" — only when the speaker says who owns the system.
-- "properties_served" :: number of separate properties/facilities served.
-- "customers_served" :: number of separate electric customers served.
+  | "municipal" — only when the speaker says who owns the system. A business
+  installing a system for its own facility ("we want to install") is "owner".
+- "properties_served" :: number of separate properties/buildings the system
+  serves, counting the speaker's own site ("our warehouse and the two
+  neighboring buildings we own" = 3).
+- "common_ownership" :: true when every property/building served is owned by
+  the speaker ("buildings we own"). Omit when not stated.
+- "customers_served" :: number of separate electric customers (other people or
+  businesses) served. Buildings owned by the same speaker are ONE customer;
+  omit when no other customers are stated.
 - "sells_energy_to_third_parties" :: true only when the speaker says energy
   will be sold to others; false only when they say it is for their own use.
   Never assume a sale.
@@ -354,7 +364,9 @@ applicability is decided by SmartPR's regulatory graph, never by you):
   Never infer a microgrid from solar panels alone.
 - "energy_project_status" :: "existing" | "proposed".
 - "energy_applicant_role" :: "end_use_customer" | "developer" |
-  "energy_service_provider" | "installer".
+  "energy_service_provider" | "installer". A business installing a system to
+  power its own facility ("we run a warehouse and want to install solar") is
+  "end_use_customer".
 - "proposed_energy_services" :: comma-separated from generation_sale,
   storage_service, billing, resale, wheeling, installation, consulting.
 - "energy_incentive_interest" :: true when the speaker asks about energy
@@ -655,6 +667,9 @@ determinar:
 
 - "project_type" :: uno de: renovation, new_construction, expansion,
   change_of_use, o una frase corta cuando ninguno encaje (ej. "renovation and expansion").
+  Instalar equipo (placas solares, baterías, generadores, HVAC) en un edificio
+  existente NO es new_construction: usa una frase corta como "rooftop solar
+  installation" y marca "existing_building" true.
 - "existing_building" :: true cuando el proyecto altera un edificio que ya existe.
 - "new_construction" :: true cuando el proyecto construye algo nuevo (puede ser true
   junto con "renovation": una ampliación añade construcción nueva a un edificio existente).
@@ -713,9 +728,16 @@ Usa los mismos valores en inglés indicados:
 - "customer_class" :: "residential" | "commercial" | "industrial" |
   "agricultural" | "government" | "educational" | "medical".
 - "system_ownership" :: "owner" | "third_party" | "lease_ppa" | "cooperative"
-  | "municipal" — solo si se dice quién es dueño del sistema.
-- "properties_served" :: número de propiedades/instalaciones servidas.
-- "customers_served" :: número de clientes eléctricos distintos servidos.
+  | "municipal" — solo si se dice quién es dueño del sistema. Un negocio que
+  instala un sistema para su propia instalación es "owner".
+- "properties_served" :: número de propiedades/edificios que sirve el sistema,
+  contando el sitio del hablante ("nuestro almacén y los dos edificios vecinos
+  que son nuestros" = 3).
+- "common_ownership" :: true cuando todas las propiedades servidas son del
+  hablante. Omite si no se dice.
+- "customers_served" :: número de clientes eléctricos distintos (otras personas
+  o negocios). Edificios del mismo dueño son UN cliente; omite si no se
+  mencionan otros clientes.
 - "sells_energy_to_third_parties" :: true solo si dice que venderá energía a
   otros; false solo si dice que es para consumo propio. Nunca asumas una venta.
 - "sells_to_utility_under_ppa" :: true solo si se menciona un contrato de
@@ -728,7 +750,9 @@ Usa los mismos valores en inglés indicados:
   microred solo por placas solares.
 - "energy_project_status" :: "existing" | "proposed".
 - "energy_applicant_role" :: "end_use_customer" | "developer" |
-  "energy_service_provider" | "installer".
+  "energy_service_provider" | "installer". Un negocio que instala un sistema para
+  su propia instalación ("operamos un almacén y queremos instalar placas") es
+  "end_use_customer".
 - "proposed_energy_services" :: separados por comas entre generation_sale,
   storage_service, billing, resale, wheeling, installation, consulting.
 - "energy_incentive_interest" :: true si pregunta por incentivos, créditos o

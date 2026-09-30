@@ -121,6 +121,7 @@ export const PROJECT_FACT_KEYS = [
   "manufacturing_activity",
   "research_and_development_activity",
   "renewable_energy_investment",
+  "green_energy_decree",
   "construction_or_rehabilitation_activity",
   "agricultural_activity",
   "business_size",

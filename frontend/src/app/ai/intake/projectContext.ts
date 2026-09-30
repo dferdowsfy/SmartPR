@@ -65,6 +65,7 @@ export const PROJECT_CONTEXT_KEYS = [
   "customer_class",
   "system_ownership",
   "properties_served",
+  "common_ownership",
   "customers_served",
   "sells_energy_to_third_parties",
   "sells_to_utility_under_ppa",
@@ -110,7 +111,7 @@ const KW_KEYS: ReadonlySet<string> = new Set(["generation_capacity_kw", "storage
 // ---------------------------------------------------------------------------
 
 import { evidenceInText } from "./scenario/normalize.ts";
-import { renovationStated } from "./scenario/interpret.ts";
+import { newConstructionStated, renovationStated } from "./scenario/interpret.ts";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -127,6 +128,22 @@ export interface DiscardedProjectFact {
  * high-confidence model claim without that language is capped into the
  * needs-confirmation band instead of auto-applying.
  */
+/**
+ * New-construction claims need new-construction language in the text. The
+ * model has read "install a 400 kW rooftop solar system" on an existing
+ * warehouse as project_type "new_construction", which fired the OGPe
+ * construction-permit rule as REQUIRED. An equipment install on an existing
+ * building is not new construction; the energy process graph decides any
+ * construction/use permit for it.
+ */
+function newConstructionClaimed(key: string, value: unknown): boolean {
+  if (key === "new_construction" && value === true) return true;
+  if (key === "project_type" && typeof value === "string") {
+    return /new[\s_-]*construction/i.test(value);
+  }
+  return false;
+}
+
 function renovationClaimed(key: string, value: unknown): boolean {
   if (key === "renovation" && value === true) return true;
   if (key === "project_type" && typeof value === "string") {
@@ -208,6 +225,10 @@ export function validateProjectContext(raw: unknown, description?: string): {
       // The model's evidence must be a real quote from the description.
       if (!evidence || !evidenceInText(evidence, description)) {
         discarded.push({ field, reason: "evidence is not a quote from the description" });
+        continue;
+      }
+      if (newConstructionClaimed(key, value) && !newConstructionStated(description)) {
+        discarded.push({ field, reason: "new construction claim dropped: no new-construction language in the description" });
         continue;
       }
       // Cosmetic work is not a renovation: cap the claim into the
@@ -645,6 +666,8 @@ function projectFactChipLabel(key: ProjectContextKey, value: string | number | b
       return value === true ? "Sells energy" : null;
     case "customers_served":
       return `Serves ${value} customers`;
+    case "properties_served":
+      return Number(value) > 1 ? `${value} buildings served` : null;
     case "energy_incentive_interest":
       return value === true ? "Energy incentives" : null;
     case "net_metering_requested":
@@ -652,7 +675,7 @@ function projectFactChipLabel(key: ProjectContextKey, value: string | number | b
     // No chip: internal classification details shown in the Energy section.
     case "customer_class":
     case "system_ownership":
-    case "properties_served":
+    case "common_ownership":
     case "sells_to_utility_under_ppa":
     case "energy_project_status":
     case "energy_applicant_role":

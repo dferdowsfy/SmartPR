@@ -339,18 +339,27 @@ export const PR_ACT60_CATALOG: IncentiveProgram[] = [
     extraEvidence: [{ id: "DOC_IMPORT_EXPORT_REG", name: "Import/Export Registration" }],
   }),
   program({
-    id: "PR_ACT60_RENEWABLE_INVESTMENT", name: "Renewable Energy Equipment Investment Credit", industry: undefined,
-    description: "Any business — not only energy companies — that invests directly in renewable generation equipment (solar, wind, hydro, or battery storage) for its own operations can access a separate green-investment tax benefit, distinct from the Green Energy and Renewable Resources decree for businesses whose primary activity is power generation.",
+    id: "PR_ACT60_RENEWABLE_INVESTMENT", name: "Green Energy Equipment Exemption and Special Deduction (Act 60 decree holders)", industry: undefined,
+    description: "Available only to an Exempt Business holding an Act 60 Green Energy decree (Ley 60-2019, Chapter 7, Subchapter B) that is engaged in the Green Energy activities of Section 2071.01(6)–(10). Such a decree holder gets a full IVU and state excise exemption on qualifying Green Energy machinery and equipment (Section 2072.05) and may elect to deduct its green-energy buildings, structures, machinery, and equipment in the year incurred (Section 2072.06). A business that only installs solar or storage for its own facility, without that decree, does not qualify through this provision.",
     benefits: [
-      benefit("b1", "IVU and excise exemption on equipment", "Exemption from Sales and Use Tax (IVU) and state excise taxes on qualifying renewable-generation or storage equipment purchased for the business's own operations."),
+      benefit("b1", "IVU and excise exemption on Green Energy equipment", "Decree holders only (Section 2072.05(a)(1)): full exemption from the Sales and Use Tax (IVU) and state excise taxes, during the decree's exemption period, on raw materials and on machinery, equipment, and accessories used for Green Energy production. Construction materials and electrical material affixed to structures are excluded (Section 2072.05(a)(2))."),
+      benefit("b2", "Special deduction for Green Energy investment", "Decree holders only (Section 2072.06(a)): option to deduct, in the year incurred, the cost of buildings, structures, machinery, and equipment used solely in the Section 2071.01(6)–(10) activities, instead of capitalizing it — provided the property has not been depreciated or previously used by another business or person in Puerto Rico. This accelerates the deduction; it is not an additional one (Section 2072.06(b))."),
     ],
-    applicationProcess: "Document the renewable-energy equipment investment and apply for the exemption through DDEC.",
-    criteria: [factCriterion({
-      id: "renewable_investment_fact", factKey: "renewable_energy_investment",
-      label: "Renewable energy equipment investment",
-      question: "Is the business investing in solar, wind, hydro, or battery storage equipment for its own facility?",
-      description: "This credit is for a business's own renewable-generation or storage investment, separate from operating a power-generation business.",
-    })],
+    applicationProcess: "Obtain an Act 60 Green Energy decree from DDEC for an eligible Section 2071.01(6)–(10) activity; the exemption and special deduction then apply to that decree holder's qualifying equipment and investment. Source: Ley 60-2019, Sections 2072.05–2072.06.",
+    criteria: [
+      factCriterion({
+        id: "renewable_investment_fact", factKey: "renewable_energy_investment",
+        label: "Green Energy equipment investment",
+        question: "Is the business investing in Green Energy generation or storage equipment (solar, wind, hydro, battery storage)?",
+        description: "The equipment must be used for Green Energy production (Section 2072.05(a)(1)(ii)); for the special deduction it must not have been depreciated or previously used in Puerto Rico (Section 2072.06(a)(1)).",
+      }),
+      factCriterion({
+        id: "green_energy_decree_fact", factKey: "green_energy_decree",
+        label: "Holds an Act 60 Green Energy decree",
+        question: "Does the business hold (or is it applying for) an Act 60 Green Energy tax-exemption decree from DDEC?",
+        description: "Sections 2072.05 and 2072.06 apply only to an Exempt Business holding a Decree granted under Chapter 7, Subchapter B (Green Energy) of Ley 60-2019, engaged in the activities of Section 2071.01(6)–(10).",
+      }),
+    ],
   }),
   program({
     id: "PR_ACT60_OPPORTUNITY_ZONE", name: "Opportunity Zone Incentive", industry: undefined,

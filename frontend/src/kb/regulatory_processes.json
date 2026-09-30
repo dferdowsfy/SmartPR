@@ -3,438 +3,2141 @@
   "domain": "energy",
   "jurisdiction": "Puerto Rico",
   "agencies": [
-    { "id": "nepr", "name": "Negociado de Energía de Puerto Rico (Puerto Rico Energy Bureau, PREB)", "url": "https://energia.pr.gov/", "note": "Not yet in kb/agencies.json; defined here so the process graph can name it." }
+    {
+      "id": "nepr",
+      "name": "Negociado de Energía de Puerto Rico (Puerto Rico Energy Bureau, PREB)",
+      "url": "https://energia.pr.gov/",
+      "note": "Not yet in kb/agencies.json; defined here so the process graph can name it."
+    }
   ],
   "facts": [
-    { "key": "generation_technology", "label": "Generation technology", "type": "enum", "options": ["solar", "wind", "storage", "hybrid", "other", "none"],
-      "question": "What will generate or store the energy?", "why": "The technology decides which interconnection, net-metering and safety processes can apply." },
-    { "key": "battery_storage", "label": "Battery storage", "type": "boolean",
-      "question": "Will the project include battery energy storage?", "why": "Battery storage can bring separate fire-safety review and, above 1 MW of storage service, PREB certification." },
-    { "key": "generation_capacity_kw", "label": "Generation capacity (kW)", "type": "number",
-      "question": "What is the total generating capacity, in kW (1 MW = 1,000 kW)?", "why": "Capacity thresholds (25 kW, 300 kW, 1 MW, 5 MW) change net-metering eligibility, insurance, and whether PREB certification applies." },
-    { "key": "storage_capacity_kw", "label": "Storage unit capacity (kW)", "type": "number",
-      "question": "What is the nominal capacity of the largest storage unit, in kW?", "why": "Offering storage service with a unit of 1 MW or more makes the operator an electric service company under PREB Regulation 8701." },
-    { "key": "customer_class", "label": "Customer class", "type": "enum", "options": ["residential", "commercial", "industrial", "agricultural", "government", "educational", "medical"],
-      "question": "Is the electric account residential, commercial, industrial, agricultural, government, educational, or medical?", "why": "Net-metering capacity limits differ for residential and non-residential customers." },
-    { "key": "system_ownership", "label": "System ownership", "type": "enum", "options": ["owner", "third_party", "lease_ppa", "cooperative", "municipal", "prepa"],
-      "question": "Who will own the system — your company, a third party (lease/PPA), a customer cooperative, or a municipality?", "why": "PREB classifies microgrids by ownership; cooperative, municipal and third-party systems have different obligations." },
-    { "key": "properties_served", "label": "Properties/facilities served", "type": "number",
-      "question": "How many separate properties or facilities will the system serve?", "why": "A system serving several facilities may be a microgrid rather than a single-site installation." },
-    { "key": "customers_served", "label": "Customers served", "type": "number",
-      "question": "How many separate electric customers (account holders) will the system serve?", "why": "Under PREB Regulation 9028 a microgrid with one or two customer-owners that only self-supplies has no registration requirement; three or more customers does." },
-    { "key": "sells_energy_to_third_parties", "label": "Sells energy to others", "type": "boolean",
-      "question": "Will you sell electricity or energy services to anyone other than yourself?", "why": "Selling energy is the fact that separates self-supply from regulated microgrid and electric-service-company activity." },
-    { "key": "sells_to_utility_under_ppa", "label": "Sells to PREPA/LUMA under a PPA", "type": "boolean",
-      "question": "Will you sell power to PREPA/LUMA or another electric company under a power purchase agreement?", "why": "Generators selling under a PPA are electric service companies under PREB Regulation 8701." },
-    { "key": "parallel_operation", "label": "Grid-connected (parallel operation)", "type": "boolean",
-      "question": "Will the system operate connected to (in parallel with) the LUMA grid?", "why": "Only systems that operate in parallel with the grid go through LUMA interconnection; fully off-grid systems do not." },
-    { "key": "interconnection_required", "label": "Interconnection with LUMA required", "type": "boolean",
-      "question": "Will the system need to interconnect with LUMA?", "why": "Interconnection is the controlling fact for LUMA's distributed-generation process." },
-    { "key": "microgrid_configuration", "label": "Microgrid configuration", "type": "boolean",
-      "question": "Will the system be set up as a microgrid (generation, storage and distribution able to serve loads as its own system)?", "why": "PREB's microgrid rules apply only to systems configured as microgrids — ordinary rooftop solar is not assumed to be one." },
-    { "key": "energy_project_status", "label": "Energy project status", "type": "enum", "options": ["existing", "proposed"],
-      "question": "Is the energy system already operating, or is it proposed?", "why": "Existing systems verify standing approvals; proposed systems apply." },
-    { "key": "energy_applicant_role", "label": "Applicant role", "type": "enum", "options": ["end_use_customer", "developer", "energy_service_provider", "installer"],
-      "question": "Is your company the electricity customer using the system, a developer/owner, an energy-service provider, or an installer?", "why": "Customer-side, developer, installer and energy-service obligations are different processes." },
-    { "key": "proposed_energy_services", "label": "Proposed energy services", "type": "list", "options": ["generation_sale", "storage_service", "billing", "resale", "wheeling", "installation", "consulting"],
-      "question": "Which energy services will you offer (generation sales, storage, billing, resale, wheeling, installation, consulting)?", "why": "Billing, resale, wheeling, and 1 MW+ generation or storage services require PREB electric-service-company certification." },
-    { "key": "energy_incentive_interest", "label": "Interested in energy incentives", "type": "boolean",
-      "question": "Are you interested in renewable-energy incentives?", "why": "Incentives are optional; SmartPR only evaluates them when you want them." },
-    { "key": "net_metering_requested", "label": "Wants net metering", "type": "boolean",
-      "question": "Do you want to enroll in LUMA net metering (credit for energy exported to the grid)?", "why": "Net metering is a voluntary program — it is required only if you want export credits." },
-    { "key": "interconnection_voltage", "label": "Interconnection voltage", "type": "enum", "options": ["distribution", "subtransmission", "transmission"],
-      "question": "Will the system connect at distribution voltage (up to 13.2 kV) or at sub-transmission/transmission voltage (38 kV/115 kV)?", "why": "Act 114-2007 caps non-residential net metering at 1 MW on distribution and 5 MW on sub-transmission/transmission." },
-    { "key": "mounting_type", "label": "Mounting", "type": "enum", "options": ["roof", "ground", "carport"],
-      "question": "Will the equipment be roof-mounted, ground-mounted, or on a carport/canopy?", "why": "Ground-mounted installations follow the existing SmartPR construction-permit rule." },
-    { "key": "municipality", "label": "Municipality", "type": "string",
-      "question": "In which municipality is the project?", "why": "Permitting jurisdiction (OGPe or a municipality with delegated permitting) depends on the municipality." }
+    {
+      "key": "generation_technology",
+      "label": "Generation technology",
+      "type": "enum",
+      "options": [
+        "solar",
+        "wind",
+        "storage",
+        "hybrid",
+        "other",
+        "none"
+      ],
+      "question": "What will generate or store the energy?",
+      "why": "The technology decides which interconnection, net-metering and safety processes can apply.",
+      "option_labels": {
+        "solar": "Solar",
+        "wind": "Wind",
+        "storage": "Battery storage only",
+        "hybrid": "Solar + storage / hybrid",
+        "other": "Other",
+        "none": "None"
+      }
+    },
+    {
+      "key": "battery_storage",
+      "label": "Battery storage",
+      "type": "boolean",
+      "question": "Will the project include battery energy storage?",
+      "why": "Battery storage can bring separate fire-safety review and, above 1 MW of storage service, PREB certification."
+    },
+    {
+      "key": "generation_capacity_kw",
+      "label": "Generation capacity (kW)",
+      "type": "number",
+      "question": "What is the total generating capacity, in kW (1 MW = 1,000 kW)?",
+      "why": "Capacity thresholds (25 kW, 300 kW, 1 MW, 5 MW) change net-metering eligibility, insurance, and whether PREB certification applies."
+    },
+    {
+      "key": "storage_capacity_kw",
+      "label": "Storage unit capacity (kW)",
+      "type": "number",
+      "question": "What is the nominal capacity of the largest storage unit, in kW?",
+      "why": "Offering storage service with a unit of 1 MW or more makes the operator an electric service company under PREB Regulation 8701."
+    },
+    {
+      "key": "customer_class",
+      "label": "Customer class",
+      "type": "enum",
+      "options": [
+        "residential",
+        "commercial",
+        "industrial",
+        "agricultural",
+        "government",
+        "educational",
+        "medical"
+      ],
+      "question": "Is the electric account residential, commercial, industrial, agricultural, government, educational, or medical?",
+      "why": "Net-metering capacity limits differ for residential and non-residential customers.",
+      "option_labels": {
+        "residential": "Residential",
+        "commercial": "Commercial",
+        "industrial": "Industrial",
+        "agricultural": "Agricultural",
+        "government": "Government",
+        "educational": "Educational",
+        "medical": "Medical / hospital"
+      }
+    },
+    {
+      "key": "system_ownership",
+      "label": "System ownership",
+      "type": "enum",
+      "options": [
+        "owner",
+        "third_party",
+        "lease_ppa",
+        "cooperative",
+        "municipal",
+        "prepa"
+      ],
+      "question": "Who will own the system — your company, a third party (lease/PPA), a customer cooperative, or a municipality?",
+      "why": "PREB classifies microgrids by ownership; cooperative, municipal and third-party systems have different obligations.",
+      "option_labels": {
+        "owner": "Our company",
+        "third_party": "A third party",
+        "lease_ppa": "Leased / PPA provider",
+        "cooperative": "A customer cooperative",
+        "municipal": "A municipality",
+        "prepa": "PREPA"
+      }
+    },
+    {
+      "key": "properties_served",
+      "label": "Properties/facilities served",
+      "type": "number",
+      "question": "How many separate buildings or properties will the system serve, including your own?",
+      "why": "A system serving several facilities may be a microgrid rather than a single-site installation."
+    },
+    {
+      "key": "common_ownership",
+      "label": "All served buildings have the same owner",
+      "type": "boolean",
+      "question": "Are all the buildings the system will serve owned by your company?",
+      "why": "Under Regulation 9028 a microgrid serving only its owner (one or two customer-owners) that sells nothing is an individual self-supply system with no PREB requirements."
+    },
+    {
+      "key": "customers_served",
+      "label": "Customers served",
+      "type": "number",
+      "question": "How many separate electric customers (account holders) will the system serve?",
+      "why": "Under PREB Regulation 9028 a microgrid with one or two customer-owners that only self-supplies has no registration requirement; three or more customers does.",
+      "question_variants": [
+        {
+          "when": {
+            "fact": "common_ownership",
+            "op": "eq",
+            "value": true
+          },
+          "question": "Besides your own buildings, will the system serve any other electric customers (tenants or other businesses)? If so, how many?"
+        }
+      ]
+    },
+    {
+      "key": "sells_energy_to_third_parties",
+      "label": "Sells energy to others",
+      "type": "boolean",
+      "question": "Will you sell electricity or energy services to anyone other than yourself?",
+      "why": "Selling energy is the fact that separates self-supply from regulated microgrid and electric-service-company activity.",
+      "question_variants": [
+        {
+          "when": {
+            "fact": "common_ownership",
+            "op": "eq",
+            "value": true
+          },
+          "question": "Sharing power among buildings you own is not a sale. Will you also sell electricity to anyone else, such as tenants or other businesses?"
+        }
+      ]
+    },
+    {
+      "key": "sells_to_utility_under_ppa",
+      "label": "Sells to PREPA/LUMA under a PPA",
+      "type": "boolean",
+      "question": "Will you sell power to PREPA/LUMA or another electric company under a power purchase agreement?",
+      "why": "Generators selling under a PPA are electric service companies under PREB Regulation 8701."
+    },
+    {
+      "key": "parallel_operation",
+      "label": "Grid-connected (parallel operation)",
+      "type": "boolean",
+      "question": "Will the system operate connected to (in parallel with) the LUMA grid?",
+      "why": "Only systems that operate in parallel with the grid go through LUMA interconnection; fully off-grid systems do not."
+    },
+    {
+      "key": "interconnection_required",
+      "label": "Interconnection with LUMA required",
+      "type": "boolean",
+      "question": "Will the system need to interconnect with LUMA?",
+      "why": "Interconnection is the controlling fact for LUMA's distributed-generation process."
+    },
+    {
+      "key": "microgrid_configuration",
+      "label": "Microgrid configuration",
+      "type": "boolean",
+      "question": "Will the system be set up as a microgrid (generation, storage and distribution able to serve loads as its own system)?",
+      "why": "PREB's microgrid rules apply only to systems configured as microgrids — ordinary rooftop solar is not assumed to be one.",
+      "question_variants": [
+        {
+          "when": {
+            "fact": "properties_served",
+            "op": "gte",
+            "value": 2
+          },
+          "question": "Will the {properties_served} buildings share power through their own distribution lines and controls (a microgrid), or will each building connect to LUMA separately?"
+        }
+      ]
+    },
+    {
+      "key": "energy_project_status",
+      "label": "Energy project status",
+      "type": "enum",
+      "options": [
+        "existing",
+        "proposed"
+      ],
+      "question": "Is the energy system already operating, or is it proposed?",
+      "why": "Existing systems verify standing approvals; proposed systems apply.",
+      "option_labels": {
+        "existing": "Already installed",
+        "proposed": "Planned / proposed"
+      }
+    },
+    {
+      "key": "energy_applicant_role",
+      "label": "Applicant role",
+      "type": "enum",
+      "options": [
+        "end_use_customer",
+        "developer",
+        "energy_service_provider",
+        "installer"
+      ],
+      "question": "Is your company the electricity customer using the system, a developer/owner, an energy-service provider, or an installer?",
+      "why": "Customer-side, developer, installer and energy-service obligations are different processes.",
+      "option_labels": {
+        "end_use_customer": "We use the power at our own facility",
+        "developer": "Project developer / owner",
+        "energy_service_provider": "Energy service provider",
+        "installer": "Installer / contractor"
+      }
+    },
+    {
+      "key": "proposed_energy_services",
+      "label": "Proposed energy services",
+      "type": "list",
+      "options": [
+        "generation_sale",
+        "storage_service",
+        "billing",
+        "resale",
+        "wheeling",
+        "installation",
+        "consulting"
+      ],
+      "question": "Which energy services will you offer (generation sales, storage, billing, resale, wheeling, installation, consulting)?",
+      "why": "Billing, resale, wheeling, and 1 MW+ generation or storage services require PREB electric-service-company certification.",
+      "option_labels": {
+        "generation_sale": "Selling generated power",
+        "storage_service": "Storage services",
+        "billing": "Billing",
+        "resale": "Resale",
+        "wheeling": "Wheeling (transmission)",
+        "installation": "Installation",
+        "consulting": "Consulting"
+      }
+    },
+    {
+      "key": "energy_incentive_interest",
+      "label": "Interested in energy incentives",
+      "type": "boolean",
+      "question": "Are you interested in renewable-energy incentives?",
+      "why": "Incentives are optional; SmartPR only evaluates them when you want them."
+    },
+    {
+      "key": "net_metering_requested",
+      "label": "Wants net metering",
+      "type": "boolean",
+      "question": "Do you want to enroll in LUMA net metering (credit for energy exported to the grid)?",
+      "why": "Net metering is a voluntary program — it is required only if you want export credits."
+    },
+    {
+      "key": "interconnection_voltage",
+      "label": "Interconnection voltage",
+      "type": "enum",
+      "options": [
+        "distribution",
+        "subtransmission",
+        "transmission"
+      ],
+      "question": "Will the system connect at distribution voltage (up to 13.2 kV) or at sub-transmission/transmission voltage (38 kV/115 kV)?",
+      "why": "Act 114-2007 caps non-residential net metering at 1 MW on distribution and 5 MW on sub-transmission/transmission.",
+      "option_labels": {
+        "distribution": "Distribution (up to 13.2 kV)",
+        "subtransmission": "Sub-transmission (38 kV)",
+        "transmission": "Transmission (115 kV)"
+      }
+    },
+    {
+      "key": "mounting_type",
+      "label": "Mounting",
+      "type": "enum",
+      "options": [
+        "roof",
+        "ground",
+        "carport"
+      ],
+      "question": "Will the equipment be roof-mounted, ground-mounted, or on a carport/canopy?",
+      "why": "Ground-mounted installations follow the existing SmartPR construction-permit rule.",
+      "option_labels": {
+        "roof": "Rooftop",
+        "ground": "Ground-mounted",
+        "carport": "Carport / canopy"
+      }
+    },
+    {
+      "key": "municipality",
+      "label": "Municipality",
+      "type": "string",
+      "question": "In which municipality is the project?",
+      "why": "Permitting jurisdiction (OGPe or a municipality with delegated permitting) depends on the municipality."
+    },
+    {
+      "key": "structural_work",
+      "label": "Structural work",
+      "type": "boolean",
+      "question": "Will the installation require structural work (roof reinforcement, new supports or foundations)?",
+      "why": "Structural work is one of the conditions SmartPR's existing rules use to require an OGPe construction permit."
+    }
   ],
   "evidence_types": [
-    { "id": "DOC_LUMA_INTERCONNECTION", "name": "LUMA customer orientation confirmation / interconnection registration", "legacy": true },
-    { "id": "DOC_NET_METERING_AGREEMENT", "name": "Signed LUMA interconnection & net-metering agreement", "legacy": true },
-    { "id": "DOC_OPPE_INSTALLER_REG", "name": "PPPE-DDEC renewable-systems installer certificate", "legacy": true },
-    { "id": "DOC_OGPE_CONSTRUCTION_PERMIT", "name": "OGPe (or delegated municipality) construction / use permit", "legacy": true },
-    { "id": "DOC_FIRE_CERT", "name": "Fire-safety certification (Negociado del Cuerpo de Bomberos)", "legacy": true },
-    { "id": "DOC_EVID_LUMA_DG_APPLICATION", "name": "LUMA distributed-generation portal application (submission confirmation)" },
-    { "id": "DOC_EVID_DG_EQUIPMENT_CERTIFICATIONS", "name": "Equipment certifications (inverters, modules, storage)" },
-    { "id": "DOC_EVID_DG_CERTIFIED_DIAGRAM", "name": "Designer-certified distributed-generation diagram (CIAPR seal)" },
-    { "id": "DOC_EVID_INVERTER_SETTINGS", "name": "Inverter configuration screenshot or manufacturer certification" },
-    { "id": "DOC_EVID_DER_ELECTRICAL_INSTALLATION_CERT", "name": "Certification of Electrical Installation of Distributed Energy Resources (RED)" },
-    { "id": "DOC_EVID_DER_TEST_CERTIFICATION", "name": "Certification of Tests for Distributed Energy Resources (licensed electrical engineer)" },
-    { "id": "DOC_EVID_DG_INSURANCE_WAIVER", "name": "Agreement for the Waiver of Insurance Requirement" },
-    { "id": "DOC_EVID_DG_LIABILITY_INSURANCE", "name": "General public liability insurance policy" },
-    { "id": "DOC_EVID_CERTIFIED_ELECTRICAL_DRAWINGS", "name": "Certified electrical construction drawings" },
-    { "id": "DOC_EVID_MICROGRID_REGISTRATION_FORM", "name": "PREB microgrid registration form" },
-    { "id": "DOC_EVID_MICROGRID_OWNERSHIP_CONTACT", "name": "Owner / authorized representative contact and ownership structure" },
-    { "id": "DOC_EVID_MICROGRID_LOCATION_MAP", "name": "Microgrid location: municipality, boundary map / customer addresses" },
-    { "id": "DOC_EVID_MICROGRID_CUSTOMER_LIST", "name": "Number of customers served, by customer type" },
-    { "id": "DOC_EVID_MICROGRID_RESOURCE_PLAN", "name": "Microgrid classification and resource plan (generation, storage, inverters)" },
-    { "id": "DOC_EVID_MICROGRID_VENDOR_INFO", "name": "Primary vendor / installer name and contact" },
-    { "id": "DOC_EVID_MICROGRID_ENGINEER_CERT", "name": "Certification of inspection signed by a licensed electrical engineer" },
-    { "id": "DOC_EVID_MICROGRID_MODEL_CONTRACT", "name": "Model customer contract and sample bill" },
-    { "id": "DOC_EVID_PREB_FILING_FEE", "name": "PREB filing-fee payment receipt" },
-    { "id": "DOC_EVID_MICROGRID_ANNUAL_REPORT", "name": "Annual microgrid report (generation, fuel use, sales, customer changes)" },
-    { "id": "DOC_EVID_MICROGRID_ENV_REPORTS", "name": "Copies of reports filed with US EPA / PR environmental regulator" },
-    { "id": "DOC_EVID_MICROGRID_STANDARDS_COMPLIANCE", "name": "IEEE 1547 / UL 1741 / NEC compliance documentation" },
-    { "id": "DOC_EVID_NEPR_B01", "name": "NEPR-B01 Información Personal" },
-    { "id": "DOC_EVID_NEPR_B02", "name": "NEPR-B02 Affiliated / subsidiary entities sheet" },
-    { "id": "DOC_EVID_NEPR_B03", "name": "NEPR-B03 Informe Operacional" },
-    { "id": "DOC_EVID_NEPR_B04", "name": "NEPR-B04 Solicitud de Certificación" },
-    { "id": "DOC_EVID_NEPR_B05", "name": "NEPR-B05 Ingresos Brutos y Estados Financieros" },
-    { "id": "DOC_EVID_ESC_SUPPORTING_PERMITS", "name": "Permits / certificates supporting the certification request" },
-    { "id": "DOC_EVID_ESC_FINANCIAL_CAPACITY", "name": "Certification of economic capacity and permits for new/renovated facilities" },
-    { "id": "DOC_EVID_PPPE_COURSE_CERT", "name": "Renewable-systems installer course approval certificate (or NABCEP)" },
-    { "id": "DOC_EVID_PROFESSIONAL_LICENSE", "name": "Engineer or electrician professional license (with colegiación)" },
-    { "id": "DOC_EVID_ACT60_ACTIVITY_DESCRIPTION", "name": "Description of the eligible green-energy activity" },
-    { "id": "DOC_EVID_ACT60_DECREE_APPLICATION", "name": "Act 60 green-energy decree application (DDEC)" }
+    {
+      "id": "DOC_LUMA_INTERCONNECTION",
+      "name": "LUMA customer orientation confirmation / interconnection registration",
+      "legacy": true
+    },
+    {
+      "id": "DOC_NET_METERING_AGREEMENT",
+      "name": "Signed LUMA interconnection & net-metering agreement",
+      "legacy": true
+    },
+    {
+      "id": "DOC_OPPE_INSTALLER_REG",
+      "name": "PPPE-DDEC renewable-systems installer certificate",
+      "legacy": true
+    },
+    {
+      "id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+      "name": "OGPe (or delegated municipality) construction / use permit",
+      "legacy": true
+    },
+    {
+      "id": "DOC_FIRE_CERT",
+      "name": "Fire-safety certification (Negociado del Cuerpo de Bomberos)",
+      "legacy": true
+    },
+    {
+      "id": "DOC_EVID_LUMA_DG_APPLICATION",
+      "name": "LUMA distributed-generation portal application (submission confirmation)"
+    },
+    {
+      "id": "DOC_EVID_DG_EQUIPMENT_CERTIFICATIONS",
+      "name": "Equipment certifications (inverters, modules, storage)"
+    },
+    {
+      "id": "DOC_EVID_DG_CERTIFIED_DIAGRAM",
+      "name": "Designer-certified distributed-generation diagram (CIAPR seal)"
+    },
+    {
+      "id": "DOC_EVID_INVERTER_SETTINGS",
+      "name": "Inverter configuration screenshot or manufacturer certification"
+    },
+    {
+      "id": "DOC_EVID_DER_ELECTRICAL_INSTALLATION_CERT",
+      "name": "Certification of Electrical Installation of Distributed Energy Resources (RED)"
+    },
+    {
+      "id": "DOC_EVID_DER_TEST_CERTIFICATION",
+      "name": "Certification of Tests for Distributed Energy Resources (licensed electrical engineer)"
+    },
+    {
+      "id": "DOC_EVID_DG_INSURANCE_WAIVER",
+      "name": "Agreement for the Waiver of Insurance Requirement"
+    },
+    {
+      "id": "DOC_EVID_DG_LIABILITY_INSURANCE",
+      "name": "General public liability insurance policy"
+    },
+    {
+      "id": "DOC_EVID_CERTIFIED_ELECTRICAL_DRAWINGS",
+      "name": "Certified electrical construction drawings"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_REGISTRATION_FORM",
+      "name": "PREB microgrid registration form"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_OWNERSHIP_CONTACT",
+      "name": "Owner / authorized representative contact and ownership structure"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_LOCATION_MAP",
+      "name": "Microgrid location: municipality, boundary map / customer addresses"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_CUSTOMER_LIST",
+      "name": "Number of customers served, by customer type"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_RESOURCE_PLAN",
+      "name": "Microgrid classification and resource plan (generation, storage, inverters)"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_VENDOR_INFO",
+      "name": "Primary vendor / installer name and contact"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_ENGINEER_CERT",
+      "name": "Certification of inspection signed by a licensed electrical engineer"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_MODEL_CONTRACT",
+      "name": "Model customer contract and sample bill"
+    },
+    {
+      "id": "DOC_EVID_PREB_FILING_FEE",
+      "name": "PREB filing-fee payment receipt"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_ANNUAL_REPORT",
+      "name": "Annual microgrid report (generation, fuel use, sales, customer changes)"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_ENV_REPORTS",
+      "name": "Copies of reports filed with US EPA / PR environmental regulator"
+    },
+    {
+      "id": "DOC_EVID_MICROGRID_STANDARDS_COMPLIANCE",
+      "name": "IEEE 1547 / UL 1741 / NEC compliance documentation"
+    },
+    {
+      "id": "DOC_EVID_NEPR_B01",
+      "name": "NEPR-B01 Información Personal"
+    },
+    {
+      "id": "DOC_EVID_NEPR_B02",
+      "name": "NEPR-B02 Affiliated / subsidiary entities sheet"
+    },
+    {
+      "id": "DOC_EVID_NEPR_B03",
+      "name": "NEPR-B03 Informe Operacional"
+    },
+    {
+      "id": "DOC_EVID_NEPR_B04",
+      "name": "NEPR-B04 Solicitud de Certificación"
+    },
+    {
+      "id": "DOC_EVID_NEPR_B05",
+      "name": "NEPR-B05 Ingresos Brutos y Estados Financieros"
+    },
+    {
+      "id": "DOC_EVID_ESC_SUPPORTING_PERMITS",
+      "name": "Permits / certificates supporting the certification request"
+    },
+    {
+      "id": "DOC_EVID_ESC_FINANCIAL_CAPACITY",
+      "name": "Certification of economic capacity and permits for new/renovated facilities"
+    },
+    {
+      "id": "DOC_EVID_PPPE_COURSE_CERT",
+      "name": "Renewable-systems installer course approval certificate (or NABCEP)"
+    },
+    {
+      "id": "DOC_EVID_PROFESSIONAL_LICENSE",
+      "name": "Engineer or electrician professional license (with colegiación)"
+    },
+    {
+      "id": "DOC_EVID_ACT60_ACTIVITY_DESCRIPTION",
+      "name": "Description of the eligible green-energy activity"
+    },
+    {
+      "id": "DOC_EVID_ACT60_DECREE_APPLICATION",
+      "name": "Act 60 green-energy decree application (DDEC)"
+    }
   ],
   "requirements": [
-    { "id": "REQ_DG_PORTAL_APPLICATION", "name": "Register the system through LUMA's distributed-generation portal", "evidence_ids": ["DOC_EVID_LUMA_DG_APPLICATION"],
-      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§ 6.1", "controlling_language": "may interconnect their system in parallel with the Authority's System, after completing the registration thereof, by filing the required documents through the Authority's electronic portal, signing this Agreement", "confidence": "high", "status": "verified" },
-    { "id": "REQ_DG_CUSTOMER_ORIENTATION", "name": "Customer orientation form (Formulario de Orientación al Cliente)", "evidence_ids": ["DOC_LUMA_INTERCONNECTION"],
-      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2", "locator": "Glosario — Solicitud Completada", "controlling_language": "Formulario de Orientación al Cliente", "confidence": "medium", "status": "verified" },
-    { "id": "REQ_DG_EQUIPMENT_CERTIFICATIONS", "name": "Equipment certifications", "evidence_ids": ["DOC_EVID_DG_EQUIPMENT_CERTIFICATIONS"],
-      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2", "locator": "Glosario — Solicitud Completada", "controlling_language": "Certificaciones de Equipos (OGPe)", "confidence": "medium", "status": "verified" },
-    { "id": "REQ_DG_CERTIFIED_DIAGRAM", "name": "Certified diagram of the distributed-generation installation", "evidence_ids": ["DOC_EVID_DG_CERTIFIED_DIAGRAM"],
-      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2", "locator": "Glosario — Solicitud Completada", "controlling_language": "Diagrama ilustrativo de GD (certificación del diseñador)", "confidence": "medium", "status": "verified" },
-    { "id": "REQ_DG_INVERTER_SETTINGS", "name": "Inverter configuration evidence", "evidence_ids": ["DOC_EVID_INVERTER_SETTINGS"],
-      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2", "locator": "Glosario — Solicitud Completada", "controlling_language": "Captura de pantalla o certificación del fabricante de la configuración del inversor", "confidence": "medium", "status": "verified" },
-    { "id": "REQ_DER_ELECTRICAL_INSTALLATION_CERT", "name": "Certification of Electrical Installation of Distributed Energy Resources", "evidence_ids": ["DOC_EVID_DER_ELECTRICAL_INSTALLATION_CERT"],
-      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§ 6.6", "controlling_language": "responsible for delivering to the Authority, together with the Certification of Electrical Installation of Distributed Energy Resources (RED) of the completed work, the report of the tests performed", "confidence": "high", "status": "verified" },
-    { "id": "REQ_DER_TEST_CERTIFICATION", "name": "Acceptance-test report certified by a licensed electrical engineer", "evidence_ids": ["DOC_EVID_DER_TEST_CERTIFICATION"],
-      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§§ 6.5–6.6", "controlling_language": "the report of the tests performed, certified by a licensed and collegiate electrical engineer, authorized to practice the engineering profession in Puerto Rico", "confidence": "high", "status": "verified" },
-    { "id": "REQ_DG_INSURANCE_WAIVER", "name": "Insurance-waiver agreement (inverter-based systems under 300 kW)", "evidence_ids": ["DOC_EVID_DG_INSURANCE_WAIVER"],
-      "applies_when": { "fact": "generation_capacity_kw", "op": "lt", "value": 300 },
-      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§ 7", "controlling_language": "an inverter-based GD, with a capacity of less than three hundred kilowatts (300 kW), with the Authority System, is exempt from a General Public Liability Insurance policy. In these cases, the Customer must sign an Agreement for the Waiver of Insurance Requirement.", "confidence": "high", "status": "verified" },
-    { "id": "REQ_DG_LIABILITY_INSURANCE", "name": "General public liability insurance (300 kW and above)", "evidence_ids": ["DOC_EVID_DG_LIABILITY_INSURANCE"],
-      "applies_when": { "fact": "generation_capacity_kw", "op": "gte", "value": 300 },
-      "source_id": "SRC_LUMA_NM_STEPS", "locator": "Paso 6", "controlling_language": "El cliente debe obtener un seguro de responsabilidad civil para la capacidad de generación distribuida superior a 300 kW", "confidence": "medium", "status": "verified",
-      "notes": "LUMA's page says 'superior a 300 kW' while the ≤25 kW agreement exempts systems 'less than 300 kW'; a system of exactly 300 kW is ambiguous — needs expert validation." },
-    { "id": "REQ_INSTALLER_CERTIFICATION", "name": "Installation by a licensed engineer or electrician registered with PPPE (formerly OEPPE)", "evidence_ids": ["DOC_OPPE_INSTALLER_REG"],
-      "source_id": "SRC_LAW_114_2007", "locator": "Art. 2(e)", "controlling_language": "Ser instalado por un ingeniero licenciado o un perito electricista licenciado, ambos colegiados … debiendo registrarse tal profesional en la Oficina Estatal de Política Pública Energética", "confidence": "high", "status": "verified" },
-    { "id": "REQ_NM_AGREEMENT", "name": "Sign the LUMA net-metering agreement in the DG portal", "evidence_ids": ["DOC_NET_METERING_AGREEMENT"],
-      "source_id": "SRC_LUMA_NM_STEPS", "locator": "Paso 6", "controlling_language": "El cliente debe firmar el acuerdo de medición neta en el portal de Generación Distribuida", "confidence": "high", "status": "verified" },
-    { "id": "REQ_NM_BIDIRECTIONAL_METER", "name": "LUMA installs or confirms a bidirectional meter", "evidence_ids": [], "kind": "agency_step",
-      "source_id": "SRC_LUMA_NM_STEPS", "locator": "Paso 7", "controlling_language": "el sitio debe tener un medidor bidireccional para medir con precisión la energía que está produciendo el cliente", "confidence": "high", "status": "verified" },
-    { "id": "REQ_CONSTRUCTION_PERMIT", "name": "Construction / use permit where the project requires one", "evidence_ids": ["DOC_OGPE_CONSTRUCTION_PERMIT"],
-      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§§ 6.1, 6.10", "controlling_language": "complying with any other requirements necessary for the interconnection of the project, such as the Use Permit or Single Permit for those projects that require it", "confidence": "medium", "status": "verified" },
-    { "id": "REQ_CERTIFIED_ELECTRICAL_DRAWINGS", "name": "Certified electrical construction drawings", "evidence_ids": ["DOC_EVID_CERTIFIED_ELECTRICAL_DRAWINGS"],
-      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§ 6.2(A)", "controlling_language": "installed in accordance with the Regulations, National Electrical Code (NEC), National Electrical Safety Code (NESC), Regulations for the Certification of Electrical Construction Project Drawings", "confidence": "medium", "status": "verified" },
-    { "id": "REQ_FIRE_SAFETY_CERT", "name": "Fire-safety certification covering the battery installation", "evidence_ids": ["DOC_FIRE_CERT"],
-      "source_id": "SRC_SMARTPR_KB_EXISTING_RULES", "locator": "RULE_0615", "controlling_language": "Existing SmartPR rule: Q_SOLAR_BATTERY = true → DOC_FIRE_CERT (citation Ley 20-2017).", "confidence": "low", "status": "needs_expert_validation" },
-    { "id": "REQ_MG_REGISTRATION_FORM", "name": "PREB microgrid registration application", "evidence_ids": ["DOC_EVID_MICROGRID_REGISTRATION_FORM"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§ 7.01(A)", "controlling_language": "Any person interested in developing a Cooperative, Municipal or Third-Party microgrid system, must complete a registration form, as applicable, for the classification of their system.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_OWNERSHIP_CONTACT", "name": "Owner/representative contact and ownership structure", "evidence_ids": ["DOC_EVID_MICROGRID_OWNERSHIP_CONTACT"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 4.02(A)–(B), 6.03(A)–(B)", "controlling_language": "The application for registration shall identify the proposed system as a Small Municipal System, Large Municipal System or Third-Party System.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_LOCATION", "name": "Microgrid location and boundaries", "evidence_ids": ["DOC_EVID_MICROGRID_LOCATION_MAP"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 4.02(C), 6.03(C)", "controlling_language": "Location information must include the municipality of the microgrid and a map showing the geographical boundaries of the proposed system.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_CUSTOMERS", "name": "Number (and type) of customers served", "evidence_ids": ["DOC_EVID_MICROGRID_CUSTOMER_LIST"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 4.02(D), 6.03(D)", "controlling_language": "The application for registration must include the total expected number of customers to be served by the microgrid.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_RESOURCE_PLAN", "name": "Classification (renewable / CHP / hybrid) and resource plan", "evidence_ids": ["DOC_EVID_MICROGRID_RESOURCE_PLAN"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 6.03(E)–(F), 6.04", "controlling_language": "The application for registration must list the planned sizes and types of assets (including, as applicable, generation, storage, inverters, and other major electrical equipment) to be added or connected to the system.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_VENDOR", "name": "Primary vendor / installer information", "evidence_ids": ["DOC_EVID_MICROGRID_VENDOR_INFO"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 4.02(G), 6.03(G)", "controlling_language": "The application for registration shall include the name and contact information for the primary vendor(s) or installer(s) of the system.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_ENGINEER_CERT", "name": "Licensed electrical engineer's certification of inspection / compliance", "evidence_ids": ["DOC_EVID_MICROGRID_ENGINEER_CERT"],
-      "source_id": "SRC_LAW_17_2019", "locator": "Art. 1.12", "supporting_source_ids": ["SRC_PREB_REG_9028"], "controlling_language": "Un ingeniero colegiado y licenciado deberá certificar que la microred cumple con las especificaciones requeridas por la reglamentación del Negociado para estos proyectos", "confidence": "high", "status": "verified" },
-    { "id": "REQ_MG_MODEL_CONTRACT", "name": "Model customer contract and sample bill for PREB approval", "evidence_ids": ["DOC_EVID_MICROGRID_MODEL_CONTRACT"],
-      "applies_when": { "not": { "fact": "system_ownership", "op": "stated_in", "value": ["cooperative"] } },
-      "source_id": "SRC_PREB_REG_9028", "locator": "§ 6.03(J)", "controlling_language": "A model contract for Commission review and approval, in accordance with Section 6.09 of this Regulation. A sample bill for Commission review and approval.", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_FILING_FEE", "name": "Registration filing fee ($50 small cooperative; $100 large cooperative, municipal, third-party)", "evidence_ids": ["DOC_EVID_PREB_FILING_FEE"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§ 7.03", "controlling_language": "any application for registration of a microgrid system shall include payment of a filing fee", "confidence": "medium", "status": "partially_verified",
-      "notes": "Microgrid owners that are electric service companies (§ 6.02) pay the Regulation 8701 fees instead and must show proof of that payment." },
-    { "id": "REQ_MG_CODES_STANDARDS", "name": "Comply with IEEE 1547, UL 1703/1741 and the National Electrical Code", "evidence_ids": ["DOC_EVID_MICROGRID_STANDARDS_COMPLIANCE"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§ 3.05", "controlling_language": "Microgrids shall be compliant with existing safety standards; namely, IEEE Standard 1547 for design; UL Standard 1703, UL Standard 1741, or IEEE Standard 1547 for equipment; and the National Electric Code", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_MG_ANNUAL_REPORT", "name": "Annual report on generation, fuel use, sales and customer changes", "evidence_ids": ["DOC_EVID_MICROGRID_ANNUAL_REPORT"],
-      "applies_when": { "not": { "all": [
-        { "fact": "system_ownership", "op": "stated_in", "value": ["cooperative"] },
-        { "fact": "customers_served", "op": "lte", "value": 10 },
-        { "fact": "generation_capacity_kw", "op": "lte", "value": 250 } ] } },
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 5.06(A), 6.13(A)", "controlling_language": "shall submit an annual report on fuel usage, generation, and sales to the Commission", "confidence": "medium", "status": "partially_verified",
-      "notes": "Article 4 (small cooperative systems) of the published text has no reporting section; the small-cooperative carve-out rests on that absence and needs expert validation." },
-    { "id": "REQ_MG_ENV_REPORTS", "name": "Maintain and submit copies of US EPA / environmental-board reports", "evidence_ids": ["DOC_EVID_MICROGRID_ENV_REPORTS"],
-      "source_id": "SRC_PREB_REG_9028", "locator": "§§ 5.06(B), 6.13(B)", "controlling_language": "must maintain and submit to the Commission copies of any reports required by the US EPA and the Puerto Rico Environmental Quality Board", "confidence": "medium", "status": "partially_verified" },
-    { "id": "REQ_ESC_PERSONAL_INFO", "name": "Personal information filing (NEPR-B01, with NEPR-B02 affiliates sheet)", "evidence_ids": ["DOC_EVID_NEPR_B01", "DOC_EVID_NEPR_B02"],
-      "source_id": "SRC_PREB_ESC_FILINGS_PAGE", "supporting_source_ids": ["SRC_PREB_REG_8701"], "locator": "Reg. 8701 § 2.01", "controlling_language": "toda compañía que se proponga operar u ofrecer servicios en Puerto Rico debe presentar al Negociado de Energía: 1. La Información Personal requerida en la Sec. 2.01 del Reglamento", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ESC_OPERATIONAL_REPORT", "name": "Operational Report (NEPR-B03)", "evidence_ids": ["DOC_EVID_NEPR_B03"],
-      "source_id": "SRC_PREB_REG_8701", "locator": "§ 2.02(A)", "controlling_language": "the following electric service companies must file before the Commission an Operational Report that includes the information required below", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ESC_CERT_REQUEST", "name": "Request for Certification (NEPR-B04)", "evidence_ids": ["DOC_EVID_NEPR_B04"],
-      "source_id": "SRC_PREB_REG_8701", "locator": "§§ 3.01, 3.03", "controlling_language": "no electric service company shall operate or offer any service whatsoever in Puerto Rico without first having requested and obtained a certification from the Energy Commission", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ESC_SUPPORTING_DOCS", "name": "Documents, certificates and permits supporting the request", "evidence_ids": ["DOC_EVID_ESC_SUPPORTING_PERMITS"],
-      "source_id": "SRC_PREB_REG_8701", "locator": "§ 3.03(C)", "controlling_language": "Requests for Certification must also be accompanied by every document, certificate, or permit that confirms or sustains the information included in the Request", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ESC_FINANCIAL_CAPACITY", "name": "Certification of economic capacity and of permits for new or renovated facilities", "evidence_ids": ["DOC_EVID_ESC_FINANCIAL_CAPACITY"],
-      "applies_when": { "fact": "energy_project_status", "op": "eq", "value": "proposed" },
-      "source_id": "SRC_PREB_REG_8701", "locator": "§ 3.03(B)(1)(b)", "controlling_language": "the company must also file a certification that confirms that the company has the economic capacity and solvency to finance the construction and the operation of the facilities, as well as a certification to the effect that the company has obtained or will obtain all the necessary permits", "confidence": "medium", "status": "verified",
-      "notes": "The source scopes this to companies generating for sale to PREPA/another ESC or offering storage/wheeling; applied here to proposed facilities generally — expert should confirm scope for distributed-generation sellers." },
-    { "id": "REQ_ESC_GROSS_REVENUE", "name": "Gross revenue and financial statements (NEPR-B05); annual regulatory charge", "evidence_ids": ["DOC_EVID_NEPR_B05"],
-      "source_id": "SRC_PREB_REG_8701", "supporting_source_ids": ["SRC_PREB_ESC_FILINGS_PAGE"], "locator": "§ 4.02", "controlling_language": "Duty to Inform Gross Revenue", "confidence": "high", "status": "verified",
-      "notes": "Annual-charge amounts were amended by Regulation 9182 (2020) and Act 17-2019; not modeled as numbers." },
-    { "id": "REQ_PPPE_APPLICATION", "name": "PPPE installer certification application", "evidence_ids": ["DOC_OPPE_INSTALLER_REG"],
-      "source_id": "SRC_PPPE_INSTALLER_FORM", "locator": "Instrucciones", "controlling_language": "Favor de completar esta solicitud en todas sus partes y enviarla junto a los documentos aplicables en PDF al correo electrónico energia@ddec.pr.gov", "confidence": "high", "status": "verified" },
-    { "id": "REQ_PPPE_COURSE", "name": "Installer course (or NABCEP) approval certificate", "evidence_ids": ["DOC_EVID_PPPE_COURSE_CERT"],
-      "source_id": "SRC_PPPE_INSTALLER_FORM", "locator": "Curso de Instalador de Sistemas Eléctricos Renovables", "controlling_language": "Certificado de aprobación de curso", "confidence": "high", "status": "verified" },
-    { "id": "REQ_PPPE_LICENSE", "name": "Professional license copy (engineer or electrician; colegiación for engineers)", "evidence_ids": ["DOC_EVID_PROFESSIONAL_LICENSE"],
-      "source_id": "SRC_PPPE_INSTALLER_FORM", "supporting_source_ids": ["SRC_LAW_114_2007"], "locator": "Curso de Instalador", "controlling_language": "Copia de licencia profesional (incluir especialidad y evidencia de colegiación en caso de ingenieros)", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ACT60_ELIGIBLE_ACTIVITY", "name": "Engage in an eligible green-energy activity", "evidence_ids": ["DOC_EVID_ACT60_ACTIVITY_DESCRIPTION"],
-      "source_id": "SRC_ACT60_2019_GREEN_ENERGY", "locator": "§ 2071.01(6)–(9)", "controlling_language": "Any business engaged in the production or sale, at a commercial level, of Green Energy for consumption in Puerto Rico … (8) Assembly of Green Energy generation equipment, including the installation of such equipment at the facilities of the user", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ACT60_DECREE_APPLICATION", "name": "Apply to the Secretary of DDEC for an incentives decree", "evidence_ids": ["DOC_EVID_ACT60_DECREE_APPLICATION"],
-      "source_id": "SRC_ACT60_2019_GREEN_ENERGY", "locator": "§ 2071.01", "controlling_language": "may file an application for Incentives with the Secretary of the DEDC when the Entity is established in Puerto Rico to engage in one of the following eligible activities", "confidence": "high", "status": "verified" },
-    { "id": "REQ_ACT60_DECREE_HELD", "name": "Hold an Act 60 green-energy decree; equipment not previously used or depreciated in Puerto Rico", "evidence_ids": ["DOC_EVID_ACT60_DECREE_APPLICATION"],
-      "source_id": "SRC_ACT60_2019_GREEN_ENERGY", "locator": "§ 2072.06(a)", "controlling_language": "Any Exempt Business holding a Decree granted under this Chapter shall be granted the option of deducting … provided, that these buildings, structures, machinery, and equipment: (1) Have not depreciated or been previously used by any other business or Person in Puerto Rico", "confidence": "high", "status": "verified" }
+    {
+      "id": "REQ_DG_PORTAL_APPLICATION",
+      "name": "Register the system through LUMA's distributed-generation portal",
+      "evidence_ids": [
+        "DOC_EVID_LUMA_DG_APPLICATION"
+      ],
+      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+      "locator": "§ 6.1",
+      "controlling_language": "may interconnect their system in parallel with the Authority's System, after completing the registration thereof, by filing the required documents through the Authority's electronic portal, signing this Agreement",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DG_CUSTOMER_ORIENTATION",
+      "name": "Customer orientation form (Formulario de Orientación al Cliente)",
+      "evidence_ids": [
+        "DOC_LUMA_INTERCONNECTION"
+      ],
+      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2",
+      "locator": "Glosario — Solicitud Completada",
+      "controlling_language": "Formulario de Orientación al Cliente",
+      "confidence": "medium",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DG_EQUIPMENT_CERTIFICATIONS",
+      "name": "Equipment certifications",
+      "evidence_ids": [
+        "DOC_EVID_DG_EQUIPMENT_CERTIFICATIONS"
+      ],
+      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2",
+      "locator": "Glosario — Solicitud Completada",
+      "controlling_language": "Certificaciones de Equipos (OGPe)",
+      "confidence": "medium",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DG_CERTIFIED_DIAGRAM",
+      "name": "Certified diagram of the distributed-generation installation",
+      "evidence_ids": [
+        "DOC_EVID_DG_CERTIFIED_DIAGRAM"
+      ],
+      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2",
+      "locator": "Glosario — Solicitud Completada",
+      "controlling_language": "Diagrama ilustrativo de GD (certificación del diseñador)",
+      "confidence": "medium",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DG_INVERTER_SETTINGS",
+      "name": "Inverter configuration evidence",
+      "evidence_ids": [
+        "DOC_EVID_INVERTER_SETTINGS"
+      ],
+      "source_id": "SRC_PREB_DG_PROGRESS_2026Q2",
+      "locator": "Glosario — Solicitud Completada",
+      "controlling_language": "Captura de pantalla o certificación del fabricante de la configuración del inversor",
+      "confidence": "medium",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DER_ELECTRICAL_INSTALLATION_CERT",
+      "name": "Certification of Electrical Installation of Distributed Energy Resources",
+      "evidence_ids": [
+        "DOC_EVID_DER_ELECTRICAL_INSTALLATION_CERT"
+      ],
+      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+      "locator": "§ 6.6",
+      "controlling_language": "responsible for delivering to the Authority, together with the Certification of Electrical Installation of Distributed Energy Resources (RED) of the completed work, the report of the tests performed",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DER_TEST_CERTIFICATION",
+      "name": "Acceptance-test report certified by a licensed electrical engineer",
+      "evidence_ids": [
+        "DOC_EVID_DER_TEST_CERTIFICATION"
+      ],
+      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+      "locator": "§§ 6.5–6.6",
+      "controlling_language": "the report of the tests performed, certified by a licensed and collegiate electrical engineer, authorized to practice the engineering profession in Puerto Rico",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DG_INSURANCE_WAIVER",
+      "name": "Insurance-waiver agreement (inverter-based systems under 300 kW)",
+      "evidence_ids": [
+        "DOC_EVID_DG_INSURANCE_WAIVER"
+      ],
+      "applies_when": {
+        "fact": "generation_capacity_kw",
+        "op": "lt",
+        "value": 300
+      },
+      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+      "locator": "§ 7",
+      "controlling_language": "an inverter-based GD, with a capacity of less than three hundred kilowatts (300 kW), with the Authority System, is exempt from a General Public Liability Insurance policy. In these cases, the Customer must sign an Agreement for the Waiver of Insurance Requirement.",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_DG_LIABILITY_INSURANCE",
+      "name": "General public liability insurance (300 kW and above)",
+      "evidence_ids": [
+        "DOC_EVID_DG_LIABILITY_INSURANCE"
+      ],
+      "applies_when": {
+        "fact": "generation_capacity_kw",
+        "op": "gte",
+        "value": 300
+      },
+      "source_id": "SRC_LUMA_NM_STEPS",
+      "locator": "Paso 6",
+      "controlling_language": "El cliente debe obtener un seguro de responsabilidad civil para la capacidad de generación distribuida superior a 300 kW",
+      "confidence": "medium",
+      "status": "verified",
+      "notes": "LUMA's page says 'superior a 300 kW' while the ≤25 kW agreement exempts systems 'less than 300 kW'; a system of exactly 300 kW is ambiguous — needs expert validation."
+    },
+    {
+      "id": "REQ_INSTALLER_CERTIFICATION",
+      "name": "Installation by a licensed engineer or electrician registered with PPPE (formerly OEPPE)",
+      "evidence_ids": [
+        "DOC_OPPE_INSTALLER_REG"
+      ],
+      "source_id": "SRC_LAW_114_2007",
+      "locator": "Art. 2(e)",
+      "controlling_language": "Ser instalado por un ingeniero licenciado o un perito electricista licenciado, ambos colegiados … debiendo registrarse tal profesional en la Oficina Estatal de Política Pública Energética",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_NM_AGREEMENT",
+      "name": "Sign the LUMA net-metering agreement in the DG portal",
+      "evidence_ids": [
+        "DOC_NET_METERING_AGREEMENT"
+      ],
+      "source_id": "SRC_LUMA_NM_STEPS",
+      "locator": "Paso 6",
+      "controlling_language": "El cliente debe firmar el acuerdo de medición neta en el portal de Generación Distribuida",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_NM_BIDIRECTIONAL_METER",
+      "name": "LUMA installs or confirms a bidirectional meter",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_LUMA_NM_STEPS",
+      "locator": "Paso 7",
+      "controlling_language": "el sitio debe tener un medidor bidireccional para medir con precisión la energía que está produciendo el cliente",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_CONSTRUCTION_PERMIT",
+      "name": "Construction / use permit where the project requires one",
+      "evidence_ids": [
+        "DOC_OGPE_CONSTRUCTION_PERMIT"
+      ],
+      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+      "locator": "§§ 6.1, 6.10",
+      "controlling_language": "complying with any other requirements necessary for the interconnection of the project, such as the Use Permit or Single Permit for those projects that require it",
+      "confidence": "medium",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_CERTIFIED_ELECTRICAL_DRAWINGS",
+      "name": "Certified electrical construction drawings",
+      "evidence_ids": [
+        "DOC_EVID_CERTIFIED_ELECTRICAL_DRAWINGS"
+      ],
+      "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+      "locator": "§ 6.2(A)",
+      "controlling_language": "installed in accordance with the Regulations, National Electrical Code (NEC), National Electrical Safety Code (NESC), Regulations for the Certification of Electrical Construction Project Drawings",
+      "confidence": "medium",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_FIRE_SAFETY_CERT",
+      "name": "Fire-safety certification covering the battery installation",
+      "evidence_ids": [
+        "DOC_FIRE_CERT"
+      ],
+      "source_id": "SRC_SMARTPR_KB_EXISTING_RULES",
+      "locator": "RULE_0615",
+      "controlling_language": "Existing SmartPR rule: Q_SOLAR_BATTERY = true → DOC_FIRE_CERT (citation Ley 20-2017).",
+      "confidence": "low",
+      "status": "needs_expert_validation"
+    },
+    {
+      "id": "REQ_MG_REGISTRATION_FORM",
+      "name": "PREB microgrid registration application",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_REGISTRATION_FORM"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§ 7.01(A)",
+      "controlling_language": "Any person interested in developing a Cooperative, Municipal or Third-Party microgrid system, must complete a registration form, as applicable, for the classification of their system.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_OWNERSHIP_CONTACT",
+      "name": "Owner/representative contact and ownership structure",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_OWNERSHIP_CONTACT"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 4.02(A)–(B), 6.03(A)–(B)",
+      "controlling_language": "The application for registration shall identify the proposed system as a Small Municipal System, Large Municipal System or Third-Party System.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_LOCATION",
+      "name": "Microgrid location and boundaries",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_LOCATION_MAP"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 4.02(C), 6.03(C)",
+      "controlling_language": "Location information must include the municipality of the microgrid and a map showing the geographical boundaries of the proposed system.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_CUSTOMERS",
+      "name": "Number (and type) of customers served",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_CUSTOMER_LIST"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 4.02(D), 6.03(D)",
+      "controlling_language": "The application for registration must include the total expected number of customers to be served by the microgrid.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_RESOURCE_PLAN",
+      "name": "Classification (renewable / CHP / hybrid) and resource plan",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_RESOURCE_PLAN"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 6.03(E)–(F), 6.04",
+      "controlling_language": "The application for registration must list the planned sizes and types of assets (including, as applicable, generation, storage, inverters, and other major electrical equipment) to be added or connected to the system.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_VENDOR",
+      "name": "Primary vendor / installer information",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_VENDOR_INFO"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 4.02(G), 6.03(G)",
+      "controlling_language": "The application for registration shall include the name and contact information for the primary vendor(s) or installer(s) of the system.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_ENGINEER_CERT",
+      "name": "Licensed electrical engineer's certification of inspection / compliance",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_ENGINEER_CERT"
+      ],
+      "source_id": "SRC_LAW_17_2019",
+      "locator": "Art. 1.12",
+      "supporting_source_ids": [
+        "SRC_PREB_REG_9028"
+      ],
+      "controlling_language": "Un ingeniero colegiado y licenciado deberá certificar que la microred cumple con las especificaciones requeridas por la reglamentación del Negociado para estos proyectos",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_MG_MODEL_CONTRACT",
+      "name": "Model customer contract and sample bill for PREB approval",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_MODEL_CONTRACT"
+      ],
+      "applies_when": {
+        "not": {
+          "fact": "system_ownership",
+          "op": "stated_in",
+          "value": [
+            "cooperative"
+          ]
+        }
+      },
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§ 6.03(J)",
+      "controlling_language": "A model contract for Commission review and approval, in accordance with Section 6.09 of this Regulation. A sample bill for Commission review and approval.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_FILING_FEE",
+      "name": "Registration filing fee ($50 small cooperative; $100 large cooperative, municipal, third-party)",
+      "evidence_ids": [
+        "DOC_EVID_PREB_FILING_FEE"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§ 7.03",
+      "controlling_language": "any application for registration of a microgrid system shall include payment of a filing fee",
+      "confidence": "medium",
+      "status": "partially_verified",
+      "notes": "Microgrid owners that are electric service companies (§ 6.02) pay the Regulation 8701 fees instead and must show proof of that payment."
+    },
+    {
+      "id": "REQ_MG_CODES_STANDARDS",
+      "name": "Comply with IEEE 1547, UL 1703/1741 and the National Electrical Code",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_STANDARDS_COMPLIANCE"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§ 3.05",
+      "controlling_language": "Microgrids shall be compliant with existing safety standards; namely, IEEE Standard 1547 for design; UL Standard 1703, UL Standard 1741, or IEEE Standard 1547 for equipment; and the National Electric Code",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MG_ANNUAL_REPORT",
+      "name": "Annual report on generation, fuel use, sales and customer changes",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_ANNUAL_REPORT"
+      ],
+      "applies_when": {
+        "not": {
+          "all": [
+            {
+              "fact": "system_ownership",
+              "op": "stated_in",
+              "value": [
+                "cooperative"
+              ]
+            },
+            {
+              "fact": "customers_served",
+              "op": "lte",
+              "value": 10
+            },
+            {
+              "fact": "generation_capacity_kw",
+              "op": "lte",
+              "value": 250
+            }
+          ]
+        }
+      },
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 5.06(A), 6.13(A)",
+      "controlling_language": "shall submit an annual report on fuel usage, generation, and sales to the Commission",
+      "confidence": "medium",
+      "status": "partially_verified",
+      "notes": "Article 4 (small cooperative systems) of the published text has no reporting section; the small-cooperative carve-out rests on that absence and needs expert validation."
+    },
+    {
+      "id": "REQ_MG_ENV_REPORTS",
+      "name": "Maintain and submit copies of US EPA / environmental-board reports",
+      "evidence_ids": [
+        "DOC_EVID_MICROGRID_ENV_REPORTS"
+      ],
+      "source_id": "SRC_PREB_REG_9028",
+      "locator": "§§ 5.06(B), 6.13(B)",
+      "controlling_language": "must maintain and submit to the Commission copies of any reports required by the US EPA and the Puerto Rico Environmental Quality Board",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_ESC_PERSONAL_INFO",
+      "name": "Personal information filing (NEPR-B01, with NEPR-B02 affiliates sheet)",
+      "evidence_ids": [
+        "DOC_EVID_NEPR_B01",
+        "DOC_EVID_NEPR_B02"
+      ],
+      "source_id": "SRC_PREB_ESC_FILINGS_PAGE",
+      "supporting_source_ids": [
+        "SRC_PREB_REG_8701"
+      ],
+      "locator": "Reg. 8701 § 2.01",
+      "controlling_language": "toda compañía que se proponga operar u ofrecer servicios en Puerto Rico debe presentar al Negociado de Energía: 1. La Información Personal requerida en la Sec. 2.01 del Reglamento",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ESC_OPERATIONAL_REPORT",
+      "name": "Operational Report (NEPR-B03)",
+      "evidence_ids": [
+        "DOC_EVID_NEPR_B03"
+      ],
+      "source_id": "SRC_PREB_REG_8701",
+      "locator": "§ 2.02(A)",
+      "controlling_language": "the following electric service companies must file before the Commission an Operational Report that includes the information required below",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ESC_CERT_REQUEST",
+      "name": "Request for Certification (NEPR-B04)",
+      "evidence_ids": [
+        "DOC_EVID_NEPR_B04"
+      ],
+      "source_id": "SRC_PREB_REG_8701",
+      "locator": "§§ 3.01, 3.03",
+      "controlling_language": "no electric service company shall operate or offer any service whatsoever in Puerto Rico without first having requested and obtained a certification from the Energy Commission",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ESC_SUPPORTING_DOCS",
+      "name": "Documents, certificates and permits supporting the request",
+      "evidence_ids": [
+        "DOC_EVID_ESC_SUPPORTING_PERMITS"
+      ],
+      "source_id": "SRC_PREB_REG_8701",
+      "locator": "§ 3.03(C)",
+      "controlling_language": "Requests for Certification must also be accompanied by every document, certificate, or permit that confirms or sustains the information included in the Request",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ESC_FINANCIAL_CAPACITY",
+      "name": "Certification of economic capacity and of permits for new or renovated facilities",
+      "evidence_ids": [
+        "DOC_EVID_ESC_FINANCIAL_CAPACITY"
+      ],
+      "applies_when": {
+        "fact": "energy_project_status",
+        "op": "eq",
+        "value": "proposed"
+      },
+      "source_id": "SRC_PREB_REG_8701",
+      "locator": "§ 3.03(B)(1)(b)",
+      "controlling_language": "the company must also file a certification that confirms that the company has the economic capacity and solvency to finance the construction and the operation of the facilities, as well as a certification to the effect that the company has obtained or will obtain all the necessary permits",
+      "confidence": "medium",
+      "status": "verified",
+      "notes": "The source scopes this to companies generating for sale to PREPA/another ESC or offering storage/wheeling; applied here to proposed facilities generally — expert should confirm scope for distributed-generation sellers."
+    },
+    {
+      "id": "REQ_ESC_GROSS_REVENUE",
+      "name": "Gross revenue and financial statements (NEPR-B05); annual regulatory charge",
+      "evidence_ids": [
+        "DOC_EVID_NEPR_B05"
+      ],
+      "source_id": "SRC_PREB_REG_8701",
+      "supporting_source_ids": [
+        "SRC_PREB_ESC_FILINGS_PAGE"
+      ],
+      "locator": "§ 4.02",
+      "controlling_language": "Duty to Inform Gross Revenue",
+      "confidence": "high",
+      "status": "verified",
+      "notes": "Annual-charge amounts were amended by Regulation 9182 (2020) and Act 17-2019; not modeled as numbers."
+    },
+    {
+      "id": "REQ_PPPE_APPLICATION",
+      "name": "PPPE installer certification application",
+      "evidence_ids": [
+        "DOC_OPPE_INSTALLER_REG"
+      ],
+      "source_id": "SRC_PPPE_INSTALLER_FORM",
+      "locator": "Instrucciones",
+      "controlling_language": "Favor de completar esta solicitud en todas sus partes y enviarla junto a los documentos aplicables en PDF al correo electrónico energia@ddec.pr.gov",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_PPPE_COURSE",
+      "name": "Installer course (or NABCEP) approval certificate",
+      "evidence_ids": [
+        "DOC_EVID_PPPE_COURSE_CERT"
+      ],
+      "source_id": "SRC_PPPE_INSTALLER_FORM",
+      "locator": "Curso de Instalador de Sistemas Eléctricos Renovables",
+      "controlling_language": "Certificado de aprobación de curso",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_PPPE_LICENSE",
+      "name": "Professional license copy (engineer or electrician; colegiación for engineers)",
+      "evidence_ids": [
+        "DOC_EVID_PROFESSIONAL_LICENSE"
+      ],
+      "source_id": "SRC_PPPE_INSTALLER_FORM",
+      "supporting_source_ids": [
+        "SRC_LAW_114_2007"
+      ],
+      "locator": "Curso de Instalador",
+      "controlling_language": "Copia de licencia profesional (incluir especialidad y evidencia de colegiación en caso de ingenieros)",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ACT60_ELIGIBLE_ACTIVITY",
+      "name": "Engage in an eligible green-energy activity",
+      "evidence_ids": [
+        "DOC_EVID_ACT60_ACTIVITY_DESCRIPTION"
+      ],
+      "source_id": "SRC_ACT60_2019_GREEN_ENERGY",
+      "locator": "§ 2071.01(6)–(9)",
+      "controlling_language": "Any business engaged in the production or sale, at a commercial level, of Green Energy for consumption in Puerto Rico … (8) Assembly of Green Energy generation equipment, including the installation of such equipment at the facilities of the user",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ACT60_DECREE_APPLICATION",
+      "name": "Apply to the Secretary of DDEC for an incentives decree",
+      "evidence_ids": [
+        "DOC_EVID_ACT60_DECREE_APPLICATION"
+      ],
+      "source_id": "SRC_ACT60_2019_GREEN_ENERGY",
+      "locator": "§ 2071.01",
+      "controlling_language": "may file an application for Incentives with the Secretary of the DEDC when the Entity is established in Puerto Rico to engage in one of the following eligible activities",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ACT60_DECREE_HELD",
+      "name": "Hold an Act 60 green-energy decree; equipment not previously used or depreciated in Puerto Rico",
+      "evidence_ids": [
+        "DOC_EVID_ACT60_DECREE_APPLICATION"
+      ],
+      "source_id": "SRC_ACT60_2019_GREEN_ENERGY",
+      "locator": "§ 2072.06(a)",
+      "controlling_language": "Any Exempt Business holding a Decree granted under this Chapter shall be granted the option of deducting … provided, that these buildings, structures, machinery, and equipment: (1) Have not depreciated or been previously used by any other business or Person in Puerto Rico",
+      "confidence": "high",
+      "status": "verified"
+    }
   ],
   "project_types": [
-    { "id": "PT_ONSITE_GENERATION", "name": "On-site generation or storage",
-      "classifier": { "any": [
-        { "fact": "generation_technology", "op": "in", "value": ["solar", "wind", "storage", "hybrid", "other"] },
-        { "fact": "battery_storage", "op": "stated" },
-        { "fact": "generation_capacity_kw", "op": "gt", "value": 0 } ] },
-      "may_require": ["PR_ENERGY_DG_INTERCONNECTION", "PR_ENERGY_NET_METERING", "PR_ENERGY_CONSTRUCTION_APPROVAL", "PR_ENERGY_BESS_FIRE_REVIEW"],
-      "may_qualify_for": ["INC_ACT60_GREEN_ENERGY"] },
-    { "id": "PT_MICROGRID", "name": "Microgrid",
-      "classifier": { "fact": "microgrid_configuration", "op": "eq", "value": true },
-      "signals": { "any": [
-        { "fact": "properties_served", "op": "gte", "value": 2 },
-        { "fact": "customers_served", "op": "gte", "value": 3 } ] },
-      "may_require": ["PR_ENERGY_MICROGRID_REGISTRATION", "PR_ENERGY_MICROGRID_COMPLIANCE", "PR_ENERGY_DG_INTERCONNECTION", "PR_ENERGY_ESC_CERTIFICATION", "PR_ENERGY_CONSTRUCTION_APPROVAL", "PR_ENERGY_BESS_FIRE_REVIEW"],
-      "may_qualify_for": ["INC_ACT60_GREEN_ENERGY", "INC_ACT60_GREEN_ENERGY_DEDUCTION"] },
-    { "id": "PT_ENERGY_SERVICES", "name": "Energy services / sale of energy",
-      "classifier": { "any": [
-        { "fact": "sells_energy_to_third_parties", "op": "stated" },
-        { "fact": "sells_to_utility_under_ppa", "op": "stated" },
-        { "fact": "proposed_energy_services", "op": "stated_contains", "value": ["generation_sale", "storage_service", "billing", "resale", "wheeling"] },
-        { "fact": "energy_applicant_role", "op": "stated_in", "value": ["energy_service_provider", "developer"] } ] },
-      "may_require": ["PR_ENERGY_ESC_CERTIFICATION"],
-      "may_qualify_for": ["INC_ACT60_GREEN_ENERGY", "INC_ACT60_GREEN_ENERGY_DEDUCTION"] },
-    { "id": "PT_RENEWABLE_INSTALLATION_TRADE", "name": "Renewable-systems installation trade",
-      "classifier": { "any": [
-        { "fact": "energy_applicant_role", "op": "stated_in", "value": ["installer"] },
-        { "fact": "proposed_energy_services", "op": "stated_contains", "value": ["installation"] } ] },
-      "may_require": ["PR_ENERGY_INSTALLER_CERTIFICATION"],
-      "may_qualify_for": ["INC_ACT60_GREEN_ENERGY"] },
-    { "id": "PT_ENERGY_INCENTIVE_INQUIRY", "name": "Energy incentive inquiry",
-      "classifier": { "fact": "energy_incentive_interest", "op": "stated" },
+    {
+      "id": "PT_ONSITE_GENERATION",
+      "name": "On-site generation or storage",
+      "classifier": {
+        "any": [
+          {
+            "fact": "generation_technology",
+            "op": "in",
+            "value": [
+              "solar",
+              "wind",
+              "storage",
+              "hybrid",
+              "other"
+            ]
+          },
+          {
+            "fact": "battery_storage",
+            "op": "stated"
+          },
+          {
+            "fact": "generation_capacity_kw",
+            "op": "gt",
+            "value": 0
+          }
+        ]
+      },
+      "may_require": [
+        "PR_ENERGY_DG_INTERCONNECTION",
+        "PR_ENERGY_NET_METERING",
+        "PR_ENERGY_CONSTRUCTION_APPROVAL",
+        "PR_ENERGY_BESS_FIRE_REVIEW"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY"
+      ]
+    },
+    {
+      "id": "PT_MICROGRID",
+      "name": "Microgrid",
+      "classifier": {
+        "fact": "microgrid_configuration",
+        "op": "eq",
+        "value": true
+      },
+      "signals": {
+        "any": [
+          {
+            "fact": "properties_served",
+            "op": "gte",
+            "value": 2
+          },
+          {
+            "fact": "customers_served",
+            "op": "gte",
+            "value": 3
+          }
+        ]
+      },
+      "may_require": [
+        "PR_ENERGY_MICROGRID_REGISTRATION",
+        "PR_ENERGY_MICROGRID_COMPLIANCE",
+        "PR_ENERGY_DG_INTERCONNECTION",
+        "PR_ENERGY_ESC_CERTIFICATION",
+        "PR_ENERGY_CONSTRUCTION_APPROVAL",
+        "PR_ENERGY_BESS_FIRE_REVIEW"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY",
+        "INC_ACT60_GREEN_ENERGY_DEDUCTION"
+      ]
+    },
+    {
+      "id": "PT_ENERGY_SERVICES",
+      "name": "Energy services / sale of energy",
+      "classifier": {
+        "any": [
+          {
+            "fact": "sells_energy_to_third_parties",
+            "op": "stated"
+          },
+          {
+            "fact": "sells_to_utility_under_ppa",
+            "op": "stated"
+          },
+          {
+            "fact": "proposed_energy_services",
+            "op": "stated_contains",
+            "value": [
+              "generation_sale",
+              "storage_service",
+              "billing",
+              "resale",
+              "wheeling"
+            ]
+          },
+          {
+            "fact": "energy_applicant_role",
+            "op": "stated_in",
+            "value": [
+              "energy_service_provider",
+              "developer"
+            ]
+          }
+        ]
+      },
+      "may_require": [
+        "PR_ENERGY_ESC_CERTIFICATION"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY",
+        "INC_ACT60_GREEN_ENERGY_DEDUCTION"
+      ]
+    },
+    {
+      "id": "PT_RENEWABLE_INSTALLATION_TRADE",
+      "name": "Renewable-systems installation trade",
+      "classifier": {
+        "any": [
+          {
+            "fact": "energy_applicant_role",
+            "op": "stated_in",
+            "value": [
+              "installer"
+            ]
+          },
+          {
+            "fact": "proposed_energy_services",
+            "op": "stated_contains",
+            "value": [
+              "installation"
+            ]
+          }
+        ]
+      },
+      "may_require": [
+        "PR_ENERGY_INSTALLER_CERTIFICATION"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY"
+      ]
+    },
+    {
+      "id": "PT_ENERGY_INCENTIVE_INQUIRY",
+      "name": "Energy incentive inquiry",
+      "classifier": {
+        "fact": "energy_incentive_interest",
+        "op": "stated"
+      },
       "may_require": [],
-      "may_qualify_for": ["INC_ACT60_GREEN_ENERGY", "INC_ACT60_GREEN_ENERGY_DEDUCTION"] }
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY",
+        "INC_ACT60_GREEN_ENERGY_DEDUCTION"
+      ]
+    }
   ],
   "processes": [
-    { "id": "PR_ENERGY_DG_INTERCONNECTION", "name": "Distributed-generation interconnection with LUMA", "process_type": "interconnection", "domain": "energy",
-      "administered_by": ["luma"], "oversight_by": ["nepr"], "legacy_document_ids": ["DOC_LUMA_INTERCONNECTION"],
-      "source_ids": ["SRC_LUMA_NM_AGREEMENT_25KW", "SRC_PREPA_REG_8915", "SRC_LUMA_NM_STEPS", "SRC_PREB_DG_PROGRESS_2026Q2"],
+    {
+      "id": "PR_ENERGY_DG_INTERCONNECTION",
+      "name": "Distributed-generation interconnection with LUMA",
+      "process_type": "interconnection",
+      "domain": "energy",
+      "administered_by": [
+        "luma"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "legacy_document_ids": [
+        "DOC_LUMA_INTERCONNECTION"
+      ],
+      "source_ids": [
+        "SRC_LUMA_NM_AGREEMENT_25KW",
+        "SRC_PREPA_REG_8915",
+        "SRC_LUMA_NM_STEPS",
+        "SRC_PREB_DG_PROGRESS_2026Q2"
+      ],
       "applicability": [
-        { "id": "DGI_R1", "outcome": "REQUIRED", "trigger_summary": "The system will operate in parallel with (interconnected to) the LUMA grid.",
-          "trigger": { "any": [ { "fact": "parallel_operation", "op": "eq", "value": true }, { "fact": "interconnection_required", "op": "eq", "value": true } ] },
-          "ask": ["parallel_operation"],
-          "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "supporting_source_ids": ["SRC_PREPA_REG_8915"], "locator": "§ 6.1",
+        {
+          "id": "DGI_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The system will operate in parallel with (interconnected to) the LUMA grid.",
+          "trigger": {
+            "any": [
+              {
+                "fact": "parallel_operation",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "fact": "interconnection_required",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
+          "ask": [
+            "parallel_operation"
+          ],
+          "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+          "supporting_source_ids": [
+            "SRC_PREPA_REG_8915"
+          ],
+          "locator": "§ 6.1",
           "controlling_language": "GD Customers with a capacity of 25 kW or less may interconnect their system in parallel with the Authority's System, after completing the registration thereof, by filing the required documents through the Authority's electronic portal",
-          "confidence": "high", "status": "verified",
-          "notes": "Above 25 kW the same process applies under Regulation 8915 with additional LUMA technical review (LUMA Paso 4); those extra steps are not modeled." }
+          "confidence": "high",
+          "status": "verified",
+          "notes": "Above 25 kW the same process applies under Regulation 8915 with additional LUMA technical review (LUMA Paso 4); those extra steps are not modeled."
+        }
       ],
       "exceptions": [
-        { "id": "DGI_X1", "reason": "Off-grid only: systems that never operate in parallel with the grid are outside interconnection rules.",
-          "when": { "all": [ { "fact": "parallel_operation", "op": "eq", "value": false }, { "not": { "fact": "interconnection_required", "op": "stated" } } ] },
-          "source_id": "SRC_PREB_INTERCONNECTION_DRAFT", "locator": "Sección 1.04 (draft)",
+        {
+          "id": "DGI_X1",
+          "reason": "Off-grid only: systems that never operate in parallel with the grid are outside interconnection rules.",
+          "when": {
+            "all": [
+              {
+                "fact": "parallel_operation",
+                "op": "eq",
+                "value": false
+              },
+              {
+                "not": {
+                  "fact": "interconnection_required",
+                  "op": "stated"
+                }
+              }
+            ]
+          },
+          "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+          "locator": "Sección 1.04 (draft)",
           "controlling_language": "excepto aquellas que solo operan independiente del Sistema de Energía Eléctrica (i. e. las que no sean de Operación en Paralelo)",
-          "confidence": "medium", "status": "proposed_rule" }
+          "confidence": "medium",
+          "status": "proposed_rule"
+        }
       ],
-      "requirement_ids": ["REQ_DG_PORTAL_APPLICATION", "REQ_DG_CUSTOMER_ORIENTATION", "REQ_DG_EQUIPMENT_CERTIFICATIONS", "REQ_DG_CERTIFIED_DIAGRAM", "REQ_DG_INVERTER_SETTINGS", "REQ_DER_ELECTRICAL_INSTALLATION_CERT", "REQ_DER_TEST_CERTIFICATION", "REQ_INSTALLER_CERTIFICATION", "REQ_DG_INSURANCE_WAIVER", "REQ_DG_LIABILITY_INSURANCE"],
+      "requirement_ids": [
+        "REQ_DG_PORTAL_APPLICATION",
+        "REQ_DG_CUSTOMER_ORIENTATION",
+        "REQ_DG_EQUIPMENT_CERTIFICATIONS",
+        "REQ_DG_CERTIFIED_DIAGRAM",
+        "REQ_DG_INVERTER_SETTINGS",
+        "REQ_DER_ELECTRICAL_INSTALLATION_CERT",
+        "REQ_DER_TEST_CERTIFICATION",
+        "REQ_INSTALLER_CERTIFICATION",
+        "REQ_DG_INSURANCE_WAIVER",
+        "REQ_DG_LIABILITY_INSURANCE"
+      ],
       "prerequisites": [
-        { "process_id": "PR_ENERGY_CONSTRUCTION_APPROVAL", "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§ 6.1", "note": "Use Permit or Single Permit for those projects that require it." }
-      ] },
-    { "id": "PR_ENERGY_NET_METERING", "name": "Net-metering program enrollment (LUMA)", "process_type": "registration", "domain": "energy",
-      "administered_by": ["luma"], "oversight_by": ["nepr"], "legacy_document_ids": ["DOC_NET_METERING_AGREEMENT"],
-      "source_ids": ["SRC_LAW_114_2007", "SRC_LUMA_NM_STEPS", "SRC_LUMA_NM_AGREEMENT_25KW"],
-      "gate": { "any": [ { "fact": "parallel_operation", "op": "eq", "value": true }, { "fact": "interconnection_required", "op": "eq", "value": true } ] },
-      "gate_ask": ["parallel_operation"],
+        {
+          "process_id": "PR_ENERGY_CONSTRUCTION_APPROVAL",
+          "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+          "locator": "§ 6.1",
+          "note": "Use Permit or Single Permit for those projects that require it."
+        }
+      ],
+      "legacy_rule_ids": [
+        "RULE_0610"
+      ]
+    },
+    {
+      "id": "PR_ENERGY_NET_METERING",
+      "name": "Net-metering program enrollment (LUMA)",
+      "process_type": "registration",
+      "domain": "energy",
+      "administered_by": [
+        "luma"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "legacy_document_ids": [
+        "DOC_NET_METERING_AGREEMENT"
+      ],
+      "source_ids": [
+        "SRC_LAW_114_2007",
+        "SRC_LUMA_NM_STEPS",
+        "SRC_LUMA_NM_AGREEMENT_25KW"
+      ],
+      "gate": {
+        "any": [
+          {
+            "fact": "parallel_operation",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "interconnection_required",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "gate_ask": [
+        "parallel_operation"
+      ],
       "gate_reason": "Net metering exists only for systems interconnected in parallel with the grid.",
       "applicability": [
-        { "id": "NM_R1", "outcome": "REQUIRED", "trigger_summary": "You want net-metering credit for energy exported to the grid.",
-          "trigger": { "fact": "net_metering_requested", "op": "stated" },
-          "source_id": "SRC_LUMA_NM_STEPS", "supporting_source_ids": ["SRC_LAW_114_2007"], "locator": "Paso 2",
+        {
+          "id": "NM_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "You want net-metering credit for energy exported to the grid.",
+          "trigger": {
+            "fact": "net_metering_requested",
+            "op": "stated"
+          },
+          "source_id": "SRC_LUMA_NM_STEPS",
+          "supporting_source_ids": [
+            "SRC_LAW_114_2007"
+          ],
+          "locator": "Paso 2",
           "controlling_language": "El cliente solicita a LUMA para medición neta a través del portal de Generación Distribuida",
-          "confidence": "high", "status": "verified" },
-        { "id": "NM_R2", "outcome": "POTENTIALLY_REQUIRED", "trigger_summary": "A grid-connected renewable system may enroll in net metering; it is a voluntary program.",
-          "trigger": { "fact": "generation_technology", "op": "in", "value": ["solar", "wind", "hybrid", "other"] },
-          "ask": ["generation_technology"],
-          "source_id": "SRC_LAW_114_2007", "locator": "Art. 1",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "NM_R2",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "A grid-connected renewable system may enroll in net metering; it is a voluntary program.",
+          "trigger": {
+            "fact": "generation_technology",
+            "op": "in",
+            "value": [
+              "solar",
+              "wind",
+              "hybrid",
+              "other"
+            ]
+          },
+          "ask": [
+            "generation_technology"
+          ],
+          "source_id": "SRC_LAW_114_2007",
+          "locator": "Art. 1",
           "controlling_language": "establecer y mantener un programa de medición neta (net metering) que permita la interconexión a la red eléctrica para permitir la retroalimentación de electricidad a los clientes que hayan instalado un equipo solar eléctrico, molino de viento o cualquier otra fuente de energía renovable",
-          "confidence": "high", "status": "verified" }
+          "confidence": "high",
+          "status": "verified"
+        }
       ],
       "exceptions": [
-        { "id": "NM_X1", "reason": "Residential net metering is limited to 25 kW.",
-          "when": { "all": [ { "fact": "customer_class", "op": "eq", "value": "residential" }, { "fact": "generation_capacity_kw", "op": "gt", "value": 25 } ] },
-          "source_id": "SRC_LAW_114_2007", "locator": "Art. 2(a)", "controlling_language": "Poseer una capacidad generatriz no mayor de veinticinco kilovatios (25 kW) para clientes residenciales", "confidence": "high", "status": "verified" },
-        { "id": "NM_X2", "reason": "Non-residential net metering is limited to 1 MW at distribution voltage.",
-          "when": { "all": [ { "fact": "customer_class", "op": "in", "value": ["commercial", "industrial", "agricultural", "government", "educational", "medical"] }, { "fact": "generation_capacity_kw", "op": "gt", "value": 1000 }, { "fact": "interconnection_voltage", "op": "eq", "value": "distribution" } ] },
-          "source_id": "SRC_LAW_114_2007", "locator": "Art. 2(a)", "controlling_language": "un megavatio (1 MW) para clientes comerciales, gubernamentales e industriales o agrícolas, o instituciones educativas o facilidades médico-hospitalarias conectados a voltajes de distribución (hasta 13.2kV)", "confidence": "high", "status": "verified" },
-        { "id": "NM_X3", "reason": "Non-residential net metering is limited to 5 MW at sub-transmission/transmission voltage.",
-          "when": { "all": [ { "fact": "customer_class", "op": "in", "value": ["commercial", "industrial", "agricultural", "government", "educational", "medical"] }, { "fact": "generation_capacity_kw", "op": "gt", "value": 5000 } ] },
-          "source_id": "SRC_LAW_114_2007", "locator": "Art. 2(a)", "controlling_language": "cinco megavatios (5MW) para clientes comerciales, gubernamentales e industriales o agrícolas … conectados a voltajes de sub-transmisión o transmisión (38 kV o 115 kV)", "confidence": "high", "status": "verified" }
+        {
+          "id": "NM_X1",
+          "reason": "Residential net metering is limited to 25 kW.",
+          "when": {
+            "all": [
+              {
+                "fact": "customer_class",
+                "op": "eq",
+                "value": "residential"
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 25
+              }
+            ]
+          },
+          "source_id": "SRC_LAW_114_2007",
+          "locator": "Art. 2(a)",
+          "controlling_language": "Poseer una capacidad generatriz no mayor de veinticinco kilovatios (25 kW) para clientes residenciales",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "NM_X2",
+          "reason": "Non-residential net metering is limited to 1 MW at distribution voltage.",
+          "when": {
+            "all": [
+              {
+                "fact": "customer_class",
+                "op": "in",
+                "value": [
+                  "commercial",
+                  "industrial",
+                  "agricultural",
+                  "government",
+                  "educational",
+                  "medical"
+                ]
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 1000
+              },
+              {
+                "fact": "interconnection_voltage",
+                "op": "eq",
+                "value": "distribution"
+              }
+            ]
+          },
+          "source_id": "SRC_LAW_114_2007",
+          "locator": "Art. 2(a)",
+          "controlling_language": "un megavatio (1 MW) para clientes comerciales, gubernamentales e industriales o agrícolas, o instituciones educativas o facilidades médico-hospitalarias conectados a voltajes de distribución (hasta 13.2kV)",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "NM_X3",
+          "reason": "Non-residential net metering is limited to 5 MW at sub-transmission/transmission voltage.",
+          "when": {
+            "all": [
+              {
+                "fact": "customer_class",
+                "op": "in",
+                "value": [
+                  "commercial",
+                  "industrial",
+                  "agricultural",
+                  "government",
+                  "educational",
+                  "medical"
+                ]
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 5000
+              }
+            ]
+          },
+          "source_id": "SRC_LAW_114_2007",
+          "locator": "Art. 2(a)",
+          "controlling_language": "cinco megavatios (5MW) para clientes comerciales, gubernamentales e industriales o agrícolas … conectados a voltajes de sub-transmisión o transmisión (38 kV o 115 kV)",
+          "confidence": "high",
+          "status": "verified"
+        }
       ],
-      "requirement_ids": ["REQ_NM_AGREEMENT", "REQ_INSTALLER_CERTIFICATION", "REQ_NM_BIDIRECTIONAL_METER"],
+      "requirement_ids": [
+        "REQ_NM_AGREEMENT",
+        "REQ_INSTALLER_CERTIFICATION",
+        "REQ_NM_BIDIRECTIONAL_METER"
+      ],
       "prerequisites": [
-        { "process_id": "PR_ENERGY_DG_INTERCONNECTION", "source_id": "SRC_LUMA_NM_STEPS", "locator": "Pasos 4–7", "note": "LUMA validates and approves the interconnection before the net-metering agreement and meter change." }
-      ] },
-    { "id": "PR_ENERGY_MICROGRID_REGISTRATION", "name": "Microgrid registration with the Energy Bureau", "process_type": "registration", "domain": "energy",
-      "administered_by": ["nepr"], "source_ids": ["SRC_PREB_REG_9028", "SRC_LAW_17_2019"],
-      "gate": { "fact": "microgrid_configuration", "op": "eq", "value": true },
-      "gate_ask": ["microgrid_configuration"],
+        {
+          "process_id": "PR_ENERGY_DG_INTERCONNECTION",
+          "source_id": "SRC_LUMA_NM_STEPS",
+          "locator": "Pasos 4–7",
+          "note": "LUMA validates and approves the interconnection before the net-metering agreement and meter change."
+        }
+      ],
+      "legacy_rule_ids": [
+        "RULE_0611"
+      ],
+      "voluntary": true,
+      "voluntary_note": "Net metering is a voluntary program (Ley 114-2007 Art. 1): these steps apply only if you choose to enroll to receive credit for exported energy."
+    },
+    {
+      "id": "PR_ENERGY_MICROGRID_REGISTRATION",
+      "name": "Microgrid registration with the Energy Bureau",
+      "process_type": "registration",
+      "domain": "energy",
+      "administered_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_PREB_REG_9028",
+        "SRC_LAW_17_2019"
+      ],
+      "gate": {
+        "fact": "microgrid_configuration",
+        "op": "eq",
+        "value": true
+      },
+      "gate_ask": [
+        "microgrid_configuration"
+      ],
       "gate_reason": "PREB microgrid rules apply only to systems configured as microgrids.",
-      "ask": ["customers_served", "sells_energy_to_third_parties"],
+      "ask": [
+        "customers_served",
+        "sells_energy_to_third_parties"
+      ],
       "applicability": [
-        { "id": "MGR_R1", "outcome": "REQUIRED", "trigger_summary": "The microgrid will serve three or more customers (small or large system).",
-          "trigger": { "fact": "customers_served", "op": "gte", "value": 3 },
-          "source_id": "SRC_PREB_REG_9028", "locator": "§§ 2.01(C), 7.01",
+        {
+          "id": "MGR_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The microgrid will serve three or more separate customers (small or large system).",
+          "trigger": {
+            "all": [
+              {
+                "fact": "customers_served",
+                "op": "gte",
+                "value": 3
+              },
+              {
+                "not": {
+                  "fact": "common_ownership",
+                  "op": "stated"
+                }
+              }
+            ]
+          },
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§§ 2.01(C), 7.01",
           "controlling_language": "Small systems are those with at least three (3) and no more than ten (10) customers or customer-owners and total generating capacity of no more than 250 kW; or, Large systems are those with more than 10 customers or generating capacity over 250 kW.",
-          "confidence": "medium", "status": "partially_verified" },
-        { "id": "MGR_R2", "outcome": "REQUIRED", "trigger_summary": "The microgrid will sell energy or grid services to others (not self-supply).",
-          "trigger": { "fact": "sells_energy_to_third_parties", "op": "eq", "value": true },
-          "source_id": "SRC_PREB_REG_9028", "locator": "§§ 2.01(D), 6.01, 6.03",
+          "confidence": "medium",
+          "status": "partially_verified"
+        },
+        {
+          "id": "MGR_R2",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The microgrid will sell energy or grid services to others (not self-supply).",
+          "trigger": {
+            "fact": "sells_energy_to_third_parties",
+            "op": "eq",
+            "value": true
+          },
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§§ 2.01(D), 6.01, 6.03",
           "controlling_language": "Self-supply microgrids may not sell energy and/or other grid services outside of their self-supply system to entities other than PREPA.",
-          "confidence": "medium", "status": "partially_verified" },
-        { "id": "MGR_R3", "outcome": "REQUIRED", "trigger_summary": "The microgrid is owned by a customer cooperative or a municipality.",
-          "trigger": { "fact": "system_ownership", "op": "stated_in", "value": ["cooperative", "municipal"] },
-          "source_id": "SRC_PREB_REG_9028", "locator": "§§ 4.02, 6.03",
+          "confidence": "medium",
+          "status": "partially_verified"
+        },
+        {
+          "id": "MGR_R3",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The microgrid is owned by a customer cooperative or a municipality.",
+          "trigger": {
+            "fact": "system_ownership",
+            "op": "stated_in",
+            "value": [
+              "cooperative",
+              "municipal"
+            ]
+          },
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§§ 4.02, 6.03",
           "controlling_language": "Any person interested in developing a small cooperative microgrid must submit an application for registration as described in Article 7 of this Regulation.",
-          "confidence": "medium", "status": "partially_verified" }
+          "confidence": "medium",
+          "status": "partially_verified"
+        }
       ],
       "exceptions": [
-        { "id": "MGR_X1", "reason": "Individual self-supply microgrid (one or two customer-owners, no sales): no requirements under Regulation 9028.",
-          "when": { "all": [ { "fact": "customers_served", "op": "lte", "value": 2 }, { "fact": "sells_energy_to_third_parties", "op": "eq", "value": false } ] },
-          "source_id": "SRC_PREB_REG_9028", "locator": "§ 2.01(C)(1), (E)(1)",
-          "controlling_language": "Individual systems are those with one or two customer-owners … There are no requirements for individual self-supply systems under this Regulation.",
-          "confidence": "medium", "status": "partially_verified" },
-        { "id": "MGR_X2", "reason": "PREPA-owned systems are outside Regulation 9028.",
-          "when": { "fact": "system_ownership", "op": "stated_in", "value": ["prepa"] },
-          "source_id": "SRC_PREB_REG_9028", "locator": "§ 2.01(E)(6)",
+        {
+          "id": "MGR_X1",
+          "reason": "Individual self-supply microgrid (one or two customer-owners — e.g. one company serving only buildings it owns — and no sales): no requirements under Regulation 9028.",
+          "when": {
+            "all": [
+              {
+                "any": [
+                  {
+                    "fact": "customers_served",
+                    "op": "lte",
+                    "value": 2
+                  },
+                  {
+                    "fact": "common_ownership",
+                    "op": "eq",
+                    "value": true
+                  }
+                ]
+              },
+              {
+                "fact": "sells_energy_to_third_parties",
+                "op": "eq",
+                "value": false
+              }
+            ]
+          },
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§§ 1.08 (\"Customer\"), 2.01(C)(1), (D), (E)(1)",
+          "controlling_language": "“Customer” means any natural person or legal entity who consumes or uses electric power or energy services. … Individual systems are those with one or two customer-owners … There are no requirements for individual self-supply systems under this Regulation.",
+          "confidence": "medium",
+          "status": "needs_expert_validation",
+          "notes": "Treating one legal entity serving several buildings it owns as a single customer-owner follows the Customer definition; confirm with an energy-regulatory expert (a single for-profit owner is also the 'third-party' ownership class in § 2.01(B)(6), whose Article 6 registration duty is framed around sales to customers)."
+        },
+        {
+          "id": "MGR_X2",
+          "reason": "PREPA-owned systems are outside Regulation 9028.",
+          "when": {
+            "fact": "system_ownership",
+            "op": "stated_in",
+            "value": [
+              "prepa"
+            ]
+          },
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§ 2.01(E)(6)",
           "controlling_language": "The requirements for systems owned by PREPA are outside the scope of this Regulation.",
-          "confidence": "medium", "status": "partially_verified" }
+          "confidence": "medium",
+          "status": "partially_verified"
+        }
       ],
-      "requirement_ids": ["REQ_MG_REGISTRATION_FORM", "REQ_MG_OWNERSHIP_CONTACT", "REQ_MG_LOCATION", "REQ_MG_CUSTOMERS", "REQ_MG_RESOURCE_PLAN", "REQ_MG_VENDOR", "REQ_MG_ENGINEER_CERT", "REQ_MG_MODEL_CONTRACT", "REQ_MG_FILING_FEE"],
+      "requirement_ids": [
+        "REQ_MG_REGISTRATION_FORM",
+        "REQ_MG_OWNERSHIP_CONTACT",
+        "REQ_MG_LOCATION",
+        "REQ_MG_CUSTOMERS",
+        "REQ_MG_RESOURCE_PLAN",
+        "REQ_MG_VENDOR",
+        "REQ_MG_ENGINEER_CERT",
+        "REQ_MG_MODEL_CONTRACT",
+        "REQ_MG_FILING_FEE"
+      ],
       "prerequisites": [
-        { "process_id": "PR_ENERGY_ESC_CERTIFICATION", "source_id": "SRC_PREB_REG_9028", "locator": "§§ 6.02, 7.03(B)", "note": "A microgrid owner that is an electric service company must also comply with Regulation 8701 and show proof of its 8701 filing fee." }
-      ] },
-    { "id": "PR_ENERGY_MICROGRID_COMPLIANCE", "name": "Microgrid ongoing compliance (codes, reporting)", "process_type": "filing", "domain": "energy",
-      "administered_by": ["nepr"], "source_ids": ["SRC_PREB_REG_9028"],
+        {
+          "process_id": "PR_ENERGY_ESC_CERTIFICATION",
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§ 6.02",
+          "note": "Only a microgrid owner that is an electric service company under Regulation 8701 § 1.08(A)(5) — e.g. one that sells energy — must also meet Regulation 8701. A self-supply microgrid does not.",
+          "when": {
+            "any": [
+              {
+                "fact": "sells_energy_to_third_parties",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "fact": "sells_to_utility_under_ppa",
+                "op": "stated"
+              },
+              {
+                "fact": "proposed_energy_services",
+                "op": "stated_contains",
+                "value": [
+                  "generation_sale",
+                  "storage_service",
+                  "billing",
+                  "resale",
+                  "wheeling"
+                ]
+              }
+            ]
+          },
+          "controlling_language": "Any microgrid owner considered as an Electric Service Company, as such term is defined in Section 1.08(A)(5) of Regulation 8701, shall, in addition to complying with the requirements set forth in this Regulation, comply with any and all applicable requirements set forth in Regulation 8701."
+        }
+      ]
+    },
+    {
+      "id": "PR_ENERGY_MICROGRID_COMPLIANCE",
+      "name": "Microgrid ongoing compliance (codes, reporting)",
+      "process_type": "filing",
+      "domain": "energy",
+      "administered_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_PREB_REG_9028"
+      ],
       "follows_process": "PR_ENERGY_MICROGRID_REGISTRATION",
       "applicability": [
-        { "id": "MGC_R1", "outcome": "REQUIRED", "trigger_summary": "A registered microgrid must keep meeting PREB's technical standards and reporting duties.",
-          "trigger": { "fact": "microgrid_configuration", "op": "eq", "value": true },
-          "source_id": "SRC_PREB_REG_9028", "locator": "§§ 3.05, 5.06, 6.13",
+        {
+          "id": "MGC_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "A registered microgrid must keep meeting PREB's technical standards and reporting duties.",
+          "trigger": {
+            "fact": "microgrid_configuration",
+            "op": "eq",
+            "value": true
+          },
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§§ 3.05, 5.06, 6.13",
           "controlling_language": "Microgrids shall be compliant with existing safety standards … The cooperative shall submit an annual report on fuel usage, generation, and sales to the Commission.",
-          "confidence": "medium", "status": "partially_verified" }
+          "confidence": "medium",
+          "status": "partially_verified"
+        }
       ],
-      "requirement_ids": ["REQ_MG_CODES_STANDARDS", "REQ_MG_ANNUAL_REPORT", "REQ_MG_ENV_REPORTS"],
+      "requirement_ids": [
+        "REQ_MG_CODES_STANDARDS",
+        "REQ_MG_ANNUAL_REPORT",
+        "REQ_MG_ENV_REPORTS"
+      ],
       "prerequisites": [
-        { "process_id": "PR_ENERGY_MICROGRID_REGISTRATION", "source_id": "SRC_PREB_REG_9028", "locator": "§ 7.02", "note": "Ongoing obligations start once PREB grants permission to operate as a microgrid." }
-      ] },
-    { "id": "PR_ENERGY_ESC_CERTIFICATION", "name": "Electric service company certification (Energy Bureau)", "process_type": "certification", "domain": "energy",
-      "administered_by": ["nepr"], "source_ids": ["SRC_PREB_REG_8701", "SRC_PREB_ESC_FILINGS_PAGE"],
-      "gate": { "any": [
-        { "fact": "sells_energy_to_third_parties", "op": "eq", "value": true },
-        { "fact": "sells_to_utility_under_ppa", "op": "stated" },
-        { "fact": "proposed_energy_services", "op": "stated_contains", "value": ["generation_sale", "storage_service", "billing", "resale", "wheeling"] },
-        { "fact": "energy_applicant_role", "op": "stated_in", "value": ["energy_service_provider"] } ] },
-      "gate_ask": ["sells_energy_to_third_parties"],
+        {
+          "process_id": "PR_ENERGY_MICROGRID_REGISTRATION",
+          "source_id": "SRC_PREB_REG_9028",
+          "locator": "§ 7.02",
+          "note": "Ongoing obligations start once PREB grants permission to operate as a microgrid."
+        }
+      ]
+    },
+    {
+      "id": "PR_ENERGY_ESC_CERTIFICATION",
+      "name": "Electric service company certification (Energy Bureau)",
+      "process_type": "certification",
+      "domain": "energy",
+      "administered_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_PREB_REG_8701",
+        "SRC_PREB_ESC_FILINGS_PAGE"
+      ],
+      "gate": {
+        "any": [
+          {
+            "fact": "sells_energy_to_third_parties",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "sells_to_utility_under_ppa",
+            "op": "stated"
+          },
+          {
+            "fact": "proposed_energy_services",
+            "op": "stated_contains",
+            "value": [
+              "generation_sale",
+              "storage_service",
+              "billing",
+              "resale",
+              "wheeling"
+            ]
+          },
+          {
+            "fact": "energy_applicant_role",
+            "op": "stated_in",
+            "value": [
+              "energy_service_provider"
+            ]
+          }
+        ]
+      },
+      "gate_ask": [
+        "sells_energy_to_third_parties"
+      ],
       "gate_reason": "Generating for your own consumption (including net-metered distributed generation) is not an electric-service-company activity.",
-      "gate_source_id": "SRC_PREB_REG_8701", "gate_locator": "§ 1.08(A)(5)(b)",
+      "gate_source_id": "SRC_PREB_REG_8701",
+      "gate_locator": "§ 1.08(A)(5)(b)",
       "gate_controlling_language": "This shall not include persons that generate electric power for their own consumption by means of distributed generation that have net metering agreements with PREPA",
-      "ask": ["proposed_energy_services"],
+      "ask": [
+        "proposed_energy_services"
+      ],
       "applicability": [
-        { "id": "ESC_R1", "outcome": "REQUIRED", "trigger_summary": "Sells power generated by grid-interconnected distributed generators with 1 MW or more of aggregate capacity.",
-          "trigger": { "all": [ { "fact": "sells_energy_to_third_parties", "op": "eq", "value": true }, { "fact": "generation_capacity_kw", "op": "gte", "value": 1000 } ] },
-          "ask": ["generation_capacity_kw"],
-          "source_id": "SRC_PREB_REG_8701", "locator": "§ 1.08(A)(5)(c)(i)",
+        {
+          "id": "ESC_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Sells power generated by grid-interconnected distributed generators with 1 MW or more of aggregate capacity.",
+          "trigger": {
+            "all": [
+              {
+                "fact": "sells_energy_to_third_parties",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gte",
+                "value": 1000
+              }
+            ]
+          },
+          "ask": [
+            "generation_capacity_kw"
+          ],
+          "source_id": "SRC_PREB_REG_8701",
+          "locator": "§ 1.08(A)(5)(c)(i)",
           "controlling_language": "Electric power generation for sale in Puerto Rico through distributed generators that are interconnected to the PREPA power grid with an aggregate capacity of one megawatt (1 MW) or more",
-          "confidence": "high", "status": "verified" },
-        { "id": "ESC_R2", "outcome": "REQUIRED", "trigger_summary": "Sells power to PREPA/LUMA or another electric service company under a power purchase agreement.",
-          "trigger": { "fact": "sells_to_utility_under_ppa", "op": "stated" },
-          "source_id": "SRC_PREB_REG_8701", "locator": "§ 1.08(A)(5)(b)",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "ESC_R2",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Sells power to PREPA/LUMA or another electric service company under a power purchase agreement.",
+          "trigger": {
+            "fact": "sells_to_utility_under_ppa",
+            "op": "stated"
+          },
+          "source_id": "SRC_PREB_REG_8701",
+          "locator": "§ 1.08(A)(5)(b)",
           "controlling_language": "Any natural or legal person that generates electric power through the use of fossil fuels or renewable energy sources for sale to PREPA or any other electric service company in accordance with a power purchase agreement.",
-          "confidence": "high", "status": "verified" },
-        { "id": "ESC_R3", "outcome": "REQUIRED", "trigger_summary": "Offers electric power billing, resale, or transmission (wheeling) service.",
-          "trigger": { "fact": "proposed_energy_services", "op": "contains", "value": ["billing", "resale", "wheeling"] },
-          "ask": ["proposed_energy_services"],
-          "source_id": "SRC_PREB_REG_8701", "locator": "§ 1.08(A)(5)(c)(iii)–(iv), (d)",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "ESC_R3",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Offers electric power billing, resale, or transmission (wheeling) service.",
+          "trigger": {
+            "fact": "proposed_energy_services",
+            "op": "contains",
+            "value": [
+              "billing",
+              "resale",
+              "wheeling"
+            ]
+          },
+          "ask": [
+            "proposed_energy_services"
+          ],
+          "source_id": "SRC_PREB_REG_8701",
+          "locator": "§ 1.08(A)(5)(c)(iii)–(iv), (d)",
           "controlling_language": "Electric power billing; or Electric power resale. … Any natural or legal person that that carries out or offers electric power transmission (wheeling) service.",
-          "confidence": "high", "status": "verified" },
-        { "id": "ESC_R4", "outcome": "REQUIRED", "trigger_summary": "Offers electric power storage with at least one unit of 1 MW or more.",
-          "trigger": { "all": [ { "fact": "proposed_energy_services", "op": "stated_contains", "value": ["storage_service"] }, { "fact": "storage_capacity_kw", "op": "gte", "value": 1000 } ] },
-          "ask": ["storage_capacity_kw"],
-          "source_id": "SRC_PREB_REG_8701", "locator": "§ 1.08(A)(5)(c)(ii)",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "ESC_R4",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Offers electric power storage with at least one unit of 1 MW or more.",
+          "trigger": {
+            "all": [
+              {
+                "fact": "proposed_energy_services",
+                "op": "stated_contains",
+                "value": [
+                  "storage_service"
+                ]
+              },
+              {
+                "fact": "storage_capacity_kw",
+                "op": "gte",
+                "value": 1000
+              }
+            ]
+          },
+          "ask": [
+            "storage_capacity_kw"
+          ],
+          "source_id": "SRC_PREB_REG_8701",
+          "locator": "§ 1.08(A)(5)(c)(ii)",
           "controlling_language": "Electric power storage, where at least one storage unit has a nominal capacity of one megawatt (1 MW) or more",
-          "confidence": "high", "status": "verified" }
+          "confidence": "high",
+          "status": "verified"
+        }
       ],
-      "requirement_ids": ["REQ_ESC_PERSONAL_INFO", "REQ_ESC_OPERATIONAL_REPORT", "REQ_ESC_CERT_REQUEST", "REQ_ESC_SUPPORTING_DOCS", "REQ_ESC_FINANCIAL_CAPACITY", "REQ_ESC_GROSS_REVENUE"],
-      "prerequisites": [] },
-    { "id": "PR_ENERGY_INSTALLER_CERTIFICATION", "name": "Renewable-systems installer certification (DDEC-PPPE)", "process_type": "certification", "domain": "energy",
-      "administered_by": ["oppe"], "legacy_document_ids": ["DOC_OPPE_INSTALLER_REG"], "source_ids": ["SRC_LAW_114_2007", "SRC_PPPE_INSTALLER_FORM"],
+      "requirement_ids": [
+        "REQ_ESC_PERSONAL_INFO",
+        "REQ_ESC_OPERATIONAL_REPORT",
+        "REQ_ESC_CERT_REQUEST",
+        "REQ_ESC_SUPPORTING_DOCS",
+        "REQ_ESC_FINANCIAL_CAPACITY",
+        "REQ_ESC_GROSS_REVENUE"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_ENERGY_INSTALLER_CERTIFICATION",
+      "name": "Renewable-systems installer certification (DDEC-PPPE)",
+      "process_type": "certification",
+      "domain": "energy",
+      "administered_by": [
+        "oppe"
+      ],
+      "legacy_document_ids": [
+        "DOC_OPPE_INSTALLER_REG"
+      ],
+      "source_ids": [
+        "SRC_LAW_114_2007",
+        "SRC_PPPE_INSTALLER_FORM"
+      ],
       "applicability": [
-        { "id": "INST_R1", "outcome": "REQUIRED", "trigger_summary": "Your company installs renewable generation for net-metering customers.",
-          "trigger": { "any": [ { "fact": "energy_applicant_role", "op": "stated_in", "value": ["installer"] }, { "fact": "proposed_energy_services", "op": "stated_contains", "value": ["installation"] } ] },
-          "source_id": "SRC_LAW_114_2007", "supporting_source_ids": ["SRC_PPPE_INSTALLER_FORM"], "locator": "Art. 2(e)",
+        {
+          "id": "INST_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Your company installs renewable generation for net-metering customers.",
+          "trigger": {
+            "any": [
+              {
+                "fact": "energy_applicant_role",
+                "op": "stated_in",
+                "value": [
+                  "installer"
+                ]
+              },
+              {
+                "fact": "proposed_energy_services",
+                "op": "stated_contains",
+                "value": [
+                  "installation"
+                ]
+              }
+            ]
+          },
+          "source_id": "SRC_LAW_114_2007",
+          "supporting_source_ids": [
+            "SRC_PPPE_INSTALLER_FORM"
+          ],
+          "locator": "Art. 2(e)",
           "controlling_language": "Ser instalado por un ingeniero licenciado o un perito electricista licenciado … debiendo registrarse tal profesional en la Oficina Estatal de Política Pública Energética",
-          "confidence": "high", "status": "verified",
-          "notes": "The statute conditions net-metering eligibility of the installed system on a registered installer; the certification attaches to the installing professional." }
+          "confidence": "high",
+          "status": "verified",
+          "notes": "The statute conditions net-metering eligibility of the installed system on a registered installer; the certification attaches to the installing professional."
+        }
       ],
-      "requirement_ids": ["REQ_PPPE_APPLICATION", "REQ_PPPE_COURSE", "REQ_PPPE_LICENSE"],
-      "prerequisites": [] },
-    { "id": "PR_ENERGY_CONSTRUCTION_APPROVAL", "name": "Construction / use permit for the energy installation", "process_type": "permit", "domain": "construction",
-      "administered_by": ["ogpe", "municipio_permisos"], "legacy_document_ids": ["DOC_OGPE_CONSTRUCTION_PERMIT"],
+      "requirement_ids": [
+        "REQ_PPPE_APPLICATION",
+        "REQ_PPPE_COURSE",
+        "REQ_PPPE_LICENSE"
+      ],
+      "prerequisites": [],
+      "legacy_rule_ids": [
+        "RULE_0605"
+      ]
+    },
+    {
+      "id": "PR_ENERGY_CONSTRUCTION_APPROVAL",
+      "name": "Construction / use permit for the energy installation",
+      "process_type": "permit",
+      "domain": "construction",
+      "administered_by": [
+        "ogpe",
+        "municipio_permisos"
+      ],
+      "legacy_document_ids": [
+        "DOC_OGPE_CONSTRUCTION_PERMIT"
+      ],
       "jurisdiction_note": "Filed with OGPe, or with the municipal permits office where the municipality holds delegated permitting authority. SmartPR does not yet hold the delegation list — confirm with the municipality.",
-      "source_ids": ["SRC_LUMA_NM_AGREEMENT_25KW", "SRC_SMARTPR_KB_EXISTING_RULES"],
+      "source_ids": [
+        "SRC_LUMA_NM_AGREEMENT_25KW",
+        "SRC_SMARTPR_KB_EXISTING_RULES"
+      ],
       "applicability": [
-        { "id": "CONS_R1", "outcome": "REQUIRED", "trigger_summary": "Ground-mounted installation, or generation above 1 MW (existing SmartPR permit rules).",
-          "trigger": { "any": [ { "fact": "mounting_type", "op": "eq", "value": "ground" }, { "fact": "generation_capacity_kw", "op": "gt", "value": 1000 } ] },
+        {
+          "id": "CONS_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Ground-mounted installation, generation above 1 MW, or structural work (existing SmartPR permit rules).",
+          "trigger": {
+            "any": [
+              {
+                "fact": "mounting_type",
+                "op": "eq",
+                "value": "ground"
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 1000
+              },
+              {
+                "fact": "structural_work",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
           "ask": [],
-          "source_id": "SRC_SMARTPR_KB_EXISTING_RULES", "locator": "RULE_0612 (Ground-mounted), RULE_0613 (Over 1 MW)",
-          "controlling_language": "Existing SmartPR rules: Q_SOLAR_MOUNTING = Ground-mounted → DOC_OGPE_CONSTRUCTION_PERMIT; Q_SOLAR_SIZE = Over 1 MW → DOC_OGPE_CONSTRUCTION_PERMIT (citation Ley 161-2009).",
-          "confidence": "low", "status": "needs_expert_validation" },
-        { "id": "CONS_R2", "outcome": "POTENTIALLY_REQUIRED", "trigger_summary": "LUMA conditions interconnection on any use/single permit the project needs.",
-          "trigger": { "any": [ { "fact": "generation_technology", "op": "in", "value": ["solar", "wind", "storage", "hybrid", "other"] }, { "fact": "battery_storage", "op": "stated" }, { "fact": "microgrid_configuration", "op": "stated" } ] },
-          "source_id": "SRC_LUMA_NM_AGREEMENT_25KW", "locator": "§§ 6.1, 6.10",
+          "source_id": "SRC_SMARTPR_KB_EXISTING_RULES",
+          "locator": "RULE_0612 (Ground-mounted), RULE_0613 (Over 1 MW), RULE_0645 (structural work)",
+          "controlling_language": "Existing SmartPR rules: Q_SOLAR_MOUNTING = Ground-mounted → DOC_OGPE_CONSTRUCTION_PERMIT; Q_SOLAR_SIZE = Over 1 MW → DOC_OGPE_CONSTRUCTION_PERMIT; structural_work = true → DOC_OGPE_CONSTRUCTION_PERMIT (citation Ley 161-2009).",
+          "confidence": "low",
+          "status": "needs_expert_validation"
+        },
+        {
+          "id": "CONS_R2",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "LUMA conditions interconnection on any use/single permit the project needs.",
+          "trigger": {
+            "any": [
+              {
+                "fact": "generation_technology",
+                "op": "in",
+                "value": [
+                  "solar",
+                  "wind",
+                  "storage",
+                  "hybrid",
+                  "other"
+                ]
+              },
+              {
+                "fact": "battery_storage",
+                "op": "stated"
+              },
+              {
+                "fact": "microgrid_configuration",
+                "op": "stated"
+              }
+            ]
+          },
+          "source_id": "SRC_LUMA_NM_AGREEMENT_25KW",
+          "locator": "§§ 6.1, 6.10",
           "controlling_language": "Customer will obtain and maintain all permits and inspections indicating that the GD complies with all applicable building and safety codes.",
-          "confidence": "medium", "status": "verified" }
+          "confidence": "medium",
+          "status": "verified"
+        }
       ],
-      "requirement_ids": ["REQ_CONSTRUCTION_PERMIT", "REQ_CERTIFIED_ELECTRICAL_DRAWINGS"],
-      "prerequisites": [] },
-    { "id": "PR_ENERGY_BESS_FIRE_REVIEW", "name": "Fire-safety review for battery energy storage", "process_type": "inspection", "domain": "energy",
-      "administered_by": ["bomberos"], "legacy_document_ids": ["DOC_FIRE_CERT"], "source_ids": ["SRC_SMARTPR_KB_EXISTING_RULES"],
+      "requirement_ids": [
+        "REQ_CONSTRUCTION_PERMIT",
+        "REQ_CERTIFIED_ELECTRICAL_DRAWINGS"
+      ],
+      "prerequisites": [],
+      "legacy_rule_ids": [
+        "RULE_0612",
+        "RULE_0613"
+      ]
+    },
+    {
+      "id": "PR_ENERGY_BESS_FIRE_REVIEW",
+      "name": "Fire-safety review for battery energy storage",
+      "process_type": "inspection",
+      "domain": "energy",
+      "administered_by": [
+        "bomberos"
+      ],
+      "legacy_document_ids": [
+        "DOC_FIRE_CERT"
+      ],
+      "source_ids": [
+        "SRC_SMARTPR_KB_EXISTING_RULES"
+      ],
       "applicability": [
-        { "id": "BESS_R1", "outcome": "POTENTIALLY_REQUIRED", "trigger_summary": "Battery energy storage is part of the project (existing SmartPR battery rule).",
-          "trigger": { "any": [ { "fact": "battery_storage", "op": "stated" }, { "fact": "generation_technology", "op": "stated_in", "value": ["storage", "hybrid"] } ] },
+        {
+          "id": "BESS_R1",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "Battery energy storage is part of the project (existing SmartPR battery rule).",
+          "trigger": {
+            "any": [
+              {
+                "fact": "battery_storage",
+                "op": "stated"
+              },
+              {
+                "fact": "generation_technology",
+                "op": "stated_in",
+                "value": [
+                  "storage",
+                  "hybrid"
+                ]
+              }
+            ]
+          },
           "ask": [],
-          "source_id": "SRC_SMARTPR_KB_EXISTING_RULES", "locator": "RULE_0615",
+          "source_id": "SRC_SMARTPR_KB_EXISTING_RULES",
+          "locator": "RULE_0615",
           "controlling_language": "Existing SmartPR rule: Q_SOLAR_BATTERY = true → DOC_FIRE_CERT (citation Ley 20-2017).",
-          "confidence": "low", "status": "needs_expert_validation" }
+          "confidence": "low",
+          "status": "needs_expert_validation"
+        }
       ],
-      "requirement_ids": ["REQ_FIRE_SAFETY_CERT"],
-      "prerequisites": [] }
+      "requirement_ids": [
+        "REQ_FIRE_SAFETY_CERT"
+      ],
+      "prerequisites": [],
+      "legacy_rule_ids": [
+        "RULE_0615"
+      ]
+    }
   ],
   "incentives": [
-    { "id": "INC_ACT60_GREEN_ENERGY", "name": "Act 60-2019 green-energy incentives decree (4% income tax rate)", "process_type": "incentive",
-      "program_id": "PR_ACT60_ENERGY", "administered_by": ["ddec"], "source_ids": ["SRC_ACT60_2019_GREEN_ENERGY"],
-      "eligibility": { "any": [
-        { "all": [ { "fact": "sells_energy_to_third_parties", "op": "eq", "value": true },
-                   { "any": [ { "fact": "generation_technology", "op": "in", "value": ["solar", "wind", "hybrid", "other"] }, { "fact": "microgrid_configuration", "op": "stated" } ] } ] },
-        { "fact": "energy_applicant_role", "op": "stated_in", "value": ["installer", "developer", "energy_service_provider"] },
-        { "fact": "proposed_energy_services", "op": "stated_contains", "value": ["installation", "generation_sale"] } ] },
-      "ask": ["sells_energy_to_third_parties", "energy_applicant_role"],
+    {
+      "id": "INC_ACT60_GREEN_ENERGY",
+      "name": "Act 60-2019 green-energy incentives decree (4% income tax rate)",
+      "process_type": "incentive",
+      "program_id": "PR_ACT60_ENERGY",
+      "administered_by": [
+        "ddec"
+      ],
+      "source_ids": [
+        "SRC_ACT60_2019_GREEN_ENERGY"
+      ],
+      "eligibility": {
+        "any": [
+          {
+            "all": [
+              {
+                "fact": "sells_energy_to_third_parties",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "any": [
+                  {
+                    "fact": "generation_technology",
+                    "op": "in",
+                    "value": [
+                      "solar",
+                      "wind",
+                      "hybrid",
+                      "other"
+                    ]
+                  },
+                  {
+                    "fact": "microgrid_configuration",
+                    "op": "stated"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "fact": "energy_applicant_role",
+            "op": "stated_in",
+            "value": [
+              "installer",
+              "developer",
+              "energy_service_provider"
+            ]
+          },
+          {
+            "fact": "proposed_energy_services",
+            "op": "stated_contains",
+            "value": [
+              "installation",
+              "generation_sale"
+            ]
+          }
+        ]
+      },
+      "ask": [
+        "sells_energy_to_third_parties",
+        "energy_applicant_role"
+      ],
       "eligibility_summary": "Businesses producing or selling green energy at a commercial level in Puerto Rico, or assembling/installing green-energy equipment, may apply for a decree.",
       "ineligible_reason": "Generating solely for your own consumption is not listed as an eligible Act 60 green-energy activity.",
       "locator": "§§ 2071.01(6)–(9), 2072.01(d)(1)",
       "controlling_language": "Exempt Businesses with a Decree granted under this Chapter shall be subject to a preferential fixed income tax rate of four percent (4%)",
-      "eligibility_requirement_ids": ["REQ_ACT60_ELIGIBLE_ACTIVITY", "REQ_ACT60_DECREE_APPLICATION"],
-      "confidence": "high", "status": "verified" },
-    { "id": "INC_ACT60_GREEN_ENERGY_DEDUCTION", "name": "Act 60 special deduction for investment in green-energy buildings and equipment", "process_type": "incentive",
-      "program_id": "PR_ACT60_RENEWABLE_INVESTMENT", "administered_by": ["ddec"], "source_ids": ["SRC_ACT60_2019_GREEN_ENERGY"],
+      "eligibility_requirement_ids": [
+        "REQ_ACT60_ELIGIBLE_ACTIVITY",
+        "REQ_ACT60_DECREE_APPLICATION"
+      ],
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "INC_ACT60_GREEN_ENERGY_DEDUCTION",
+      "name": "Act 60 special deduction for investment in green-energy buildings and equipment",
+      "process_type": "incentive",
+      "program_id": "PR_ACT60_RENEWABLE_INVESTMENT",
+      "administered_by": [
+        "ddec"
+      ],
+      "source_ids": [
+        "SRC_ACT60_2019_GREEN_ENERGY"
+      ],
       "requires_incentive": "INC_ACT60_GREEN_ENERGY",
-      "eligibility": { "fact": "energy_project_status", "op": "eq", "value": "proposed" },
-      "ask": ["energy_project_status"],
+      "eligibility": {
+        "fact": "energy_project_status",
+        "op": "eq",
+        "value": "proposed"
+      },
+      "ask": [
+        "energy_project_status"
+      ],
       "eligibility_summary": "A decree holder may elect to deduct, in the year incurred, expenses for new (not previously used in PR) buildings, structures, machinery and equipment.",
       "ineligible_reason": "Applies to newly acquired/constructed assets not previously used or depreciated in Puerto Rico.",
       "locator": "§ 2072.06(a)",
       "controlling_language": "Any Exempt Business holding a Decree granted under this Chapter shall be granted the option of deducting in the Taxable Year in which they are incurred, instead of any capitalization, the total expenses incurred after the Effective Date of the Decree in the purchase, acquisition, or construction of buildings, structures, machinery, and equipment",
-      "eligibility_requirement_ids": ["REQ_ACT60_DECREE_HELD"],
-      "confidence": "medium", "status": "needs_expert_validation",
-      "notes": "SmartPR's incentive catalog entry PR_ACT60_RENEWABLE_INVESTMENT describes eligibility as 'any business'; the statute limits it to decree holders. Catalog text should be reviewed." }
+      "eligibility_requirement_ids": [
+        "REQ_ACT60_DECREE_HELD"
+      ],
+      "confidence": "medium",
+      "status": "needs_expert_validation",
+      "notes": "Available only to an Exempt Business holding an Act 60 green-energy decree (§ 2072.06(a)); SmartPR's incentive catalog entry PR_ACT60_RENEWABLE_INVESTMENT was corrected to say so."
+    }
   ]
 }

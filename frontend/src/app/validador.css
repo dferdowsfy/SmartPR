@@ -2707,3 +2707,11 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .rq-energy-incentives { margin-top: 12px; border-left: 3px solid #b8860b; padding-left: 10px; }
 .rq-energy-incentive { background: color-mix(in oklab, #b8860b 7%, var(--surface)); margin-bottom: 8px; }
 .rq-energy-badge-incentive { background: color-mix(in oklab, #b8860b 20%, transparent); }
+
+/* "Other checks for your business" — collapsed low-signal conditional items */
+.rq-group-other-checks > summary { cursor: pointer; list-style: revert; }
+.rq-other-checks { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.rq-other-checks li { border-top: 1px solid color-mix(in oklab, #161616 10%, transparent); padding-top: 8px; }
+.rq-other-q { font-weight: 600; }
+.rq-other-docs { font-size: 0.85em; opacity: 0.75; margin: 2px 0 6px; }
+.rq-energy-legacy-action { background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; font: inherit; color: inherit; }

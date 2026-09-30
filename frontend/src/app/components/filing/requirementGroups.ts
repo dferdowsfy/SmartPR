@@ -66,11 +66,15 @@ export function groupRequirements(
       .filter((r) => !r.done && r.documentId && !CONDITIONAL.has(r.applicability ?? "") && !r.awaitingAnswer)
       .map((r) => r.documentId as string)
   );
+  // A registration the business already holds (verify_existing) does not
+  // wait on a new filing: an operating warehouse's Permiso Único must not
+  // list a proposed construction permit as its prerequisite.
+  const held = (r: GroupableRequirement) => r.applicability === "verify_existing";
   return reqs.map((r) => {
     const deps = prerequisitesOf(r.documentId, documents);
-    const waitingOn = deps.filter((d) => pending.has(d));
+    const waitingOn = held(r) ? [] : deps.filter((d) => pending.has(d));
     const neededBefore = reqs
-      .filter((o) => o !== r && !o.done && o.documentId && prerequisitesOf(o.documentId, documents).includes(r.documentId ?? ""))
+      .filter((o) => o !== r && !o.done && !held(o) && o.documentId && prerequisitesOf(o.documentId, documents).includes(r.documentId ?? ""))
       .map((o) => o.documentId as string);
     const a = r.applicability ?? "";
     let group: RequirementGroupId;
@@ -111,4 +115,53 @@ export function claraSupportFor(
   if (launchable) return { support: "file", config: launchable };
   if (configs.length) return { support: "prepare", config: configs[0] };
   return { support: "instructions", config: null };
+}
+
+// ---------------------------------------------------------------------------
+// "Other checks for your business"
+// ---------------------------------------------------------------------------
+
+/** Deferred discovery questions that describe the project itself, not the
+ * business — they stay in the main conditional group. */
+export const PROJECT_SCOPE_QUESTION_IDS: ReadonlySet<string> = new Set(["Q_RENOVATIONS"]);
+
+export interface OtherCheckCandidate {
+  group: RequirementGroupId;
+  /** Unanswered discovery question that alone keeps the card conditional. */
+  triggerQuestionId?: string | null;
+}
+
+export interface OtherCheckQuestion<T> {
+  questionId: string;
+  /** Every card this one answer decides — asked once, not once per card. */
+  cards: T[];
+}
+
+/**
+ * For an EXISTING business, conditional cards that exist only because a
+ * generic discovery question is unanswered (employees? signage? vehicles?)
+ * are low-relevance noise next to the project the user described. They move
+ * to a collapsed "Other checks for your business" group, ranked after the
+ * project/energy items, with one question per distinct trigger question.
+ * Nothing is dropped: answering Yes still produces the requirement.
+ */
+export function splitOtherChecks<T extends OtherCheckCandidate>(
+  cards: readonly T[],
+  opts: { projectIntent?: string | null }
+): { main: T[]; otherChecks: OtherCheckQuestion<T>[] } {
+  if (opts.projectIntent !== "existing_business") return { main: [...cards], otherChecks: [] };
+  const main: T[] = [];
+  const byQuestion = new Map<string, T[]>();
+  for (const c of cards) {
+    const q = c.triggerQuestionId;
+    if (c.group === "conditional" && q && !PROJECT_SCOPE_QUESTION_IDS.has(q)) {
+      byQuestion.set(q, [...(byQuestion.get(q) ?? []), c]);
+    } else {
+      main.push(c);
+    }
+  }
+  const otherChecks = [...byQuestion.entries()]
+    .map(([questionId, cs]) => ({ questionId, cards: cs }))
+    .sort((a, b) => b.cards.length - a.cards.length || a.questionId.localeCompare(b.questionId));
+  return { main, otherChecks };
 }

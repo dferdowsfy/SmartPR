@@ -96,7 +96,10 @@ export interface Prerequisite {
   process_id: string;
   source_id?: string;
   locator?: string;
+  controlling_language?: string;
   note?: string;
+  /** The prerequisite only applies when this holds (unknown → shown as conditional). */
+  when?: Condition;
 }
 
 export interface RegulatoryProcess {
@@ -107,6 +110,9 @@ export interface RegulatoryProcess {
   administered_by: string[];
   oversight_by?: string[];
   legacy_document_ids?: string[];
+  /** Legacy KB rules this process supersedes: a legacy card produced only by
+   * these rules is rendered through the process instead (one source of truth). */
+  legacy_rule_ids?: string[];
   source_ids: string[];
   jurisdiction_note?: string;
   gate?: Condition;
@@ -117,6 +123,10 @@ export interface RegulatoryProcess {
   gate_controlling_language?: string;
   /** Fallback clarifying facts when no rule decides. */
   ask?: string[];
+  /** Voluntary program (e.g. net metering): never presented as mandatory and
+   * excluded from overall readiness. */
+  voluntary?: boolean;
+  voluntary_note?: string;
   /** Only applicable when this other process is REQUIRED (e.g. ongoing compliance after registration). */
   follows_process?: string;
   applicability: ApplicabilityRule[];
@@ -170,7 +180,12 @@ export interface FactDefinition {
   label: string;
   type: "enum" | "boolean" | "number" | "string" | "list";
   options?: string[];
+  /** Plain-English labels for enum/list options. */
+  option_labels?: Record<string, string>;
   question: string;
+  /** Context-aware wording: the first variant whose `when` holds replaces
+   * `question`; `{fact_key}` placeholders interpolate known fact values. */
+  question_variants?: { when: Condition; question: string }[];
   why: string;
 }
 

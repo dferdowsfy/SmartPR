@@ -5,13 +5,14 @@
 // project's extracted facts — no answers are hardcoded in the UI. Incentives
 // render in a visually separate block and are never counted as requirements.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Zap, ExternalLink, HelpCircle, Gift } from "lucide-react";
-import { loadEnergyProcessGraph } from "../../processes/kb";
-import { evaluateProcesses, type ClarifyingQuestion, type IncentiveEvaluation, type ProcessEvaluation, type RequirementEvaluation } from "../../processes/engine";
-import { energyFactsFromProjectContext, hasEnergySignal } from "../../processes/energyFacts";
-import type { ProjectContext, ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
-import type { ProcessState } from "../../processes/types";
+import { optionLabel, type ClarifyingQuestion, type IncentiveEvaluation, type ProcessAssessment, type ProcessEvaluation, type RequirementEvaluation } from "../../processes/engine";
+import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
+import type { FactDefinition, ProcessState } from "../../processes/types";
+
+/** Legacy requirement card rendered through its energy process (upload path kept). */
+export interface EnergyLegacyCard { name: string; actionLabel?: string; onAction?: () => void }
 
 type Language = "en" | "es";
 
@@ -30,37 +31,25 @@ const REQ_STATE_COPY: Record<RequirementEvaluation["state"], { en: string; es: s
 };
 
 export function EnergyProcessesSection({
-  projectContext,
-  municipality,
-  providedEvidenceIds,
-  legacyDocumentIds,
+  assessment,
+  legacyCards,
+  factDefinitions,
   language,
   onAnswer,
 }: {
-  projectContext: ProjectContext;
-  municipality?: string | null;
-  /** DOC_* ids with uploaded evidence (requirement uploads / locker tags). */
-  providedEvidenceIds: string[];
-  /** Document ids already shown as requirement cards above. */
-  legacyDocumentIds: string[];
+  /** Computed by the caller (processes/view.ts) so legacy cards can be deduped. */
+  assessment: ProcessAssessment;
+  /** Legacy cards superseded by an energy process, keyed by document id. */
+  legacyCards: Record<string, EnergyLegacyCard>;
+  factDefinitions: FactDefinition[];
   language: Language;
   onAnswer: (key: ProjectContextKey, fact: ProjectContextFact) => void;
 }) {
   const es = language === "es";
-  const graph = useMemo(() => loadEnergyProcessGraph(), []);
-  const { facts, evidence } = useMemo(
-    () => energyFactsFromProjectContext(projectContext, graph.kb, { municipality }),
-    [projectContext, graph, municipality]
-  );
-  const assessment = useMemo(
-    () => (hasEnergySignal(facts) ? evaluateProcesses(graph, facts, { factEvidence: evidence, providedEvidenceIds }) : null),
-    [graph, facts, evidence, providedEvidenceIds]
-  );
-  if (!assessment || (assessment.processes.length === 0 && assessment.incentives.length === 0)) return null;
-
   const shown = assessment.processes.filter((p) => p.state !== "NOT_REQUIRED");
   const notTriggered = assessment.processes.filter((p) => p.state === "NOT_REQUIRED");
-  const legacy = new Set(legacyDocumentIds);
+  const defs = new Map(factDefinitions.map((f) => [f.key, f]));
+  const factLabel = (k: string) => defs.get(k)?.label ?? k.replace(/_/g, " ");
 
   return (
     <section className="rq-group rq-group-energy" data-testid="req-group-energy">
@@ -75,7 +64,7 @@ export function EnergyProcessesSection({
         {assessment.readiness && (
           <strong className="rq-energy-readiness">
             {" "}
-            {es ? "Preparación" : "Readiness"}: {Math.round(assessment.readiness.score * 100)}% ({assessment.readiness.satisfied}/{assessment.readiness.total})
+            {es ? "Preparación (solo procesos requeridos)" : "Readiness (required processes only)"}: {Math.round(assessment.readiness.score * 100)}% — {assessment.readiness.satisfied}/{assessment.readiness.total} {es ? "evidencias" : "evidence items"}
           </strong>
         )}
       </p>
@@ -91,7 +80,13 @@ export function EnergyProcessesSection({
 
       <div className="rq-list">
         {shown.map((p) => (
-          <EnergyProcessCard key={p.process_id} p={p} language={language} alsoListedAbove={p.legacy_document_ids.some((d) => legacy.has(d))} />
+          <EnergyProcessCard
+            key={p.process_id}
+            p={p}
+            language={language}
+            factLabel={factLabel}
+            legacy={p.legacy_document_ids.map((d) => legacyCards[d]).filter((c): c is EnergyLegacyCard => !!c)}
+          />
         ))}
       </div>
 
@@ -140,7 +135,7 @@ function EnergyQuestion({ q, language, onAnswer }: { q: ClarifyingQuestion; lang
           </>
         )}
         {q.type === "enum" && q.options?.map((o) => (
-          <button type="button" key={o} onClick={() => answer(o)}>{o.replace(/_/g, " ")}</button>
+          <button type="button" key={o} onClick={() => answer(o)}>{q.option_labels?.[o] ?? optionLabel(undefined, o)}</button>
         ))}
         {(q.type === "number" || q.type === "string" || q.type === "list") && (
           <form
@@ -163,13 +158,18 @@ function EnergyQuestion({ q, language, onAnswer }: { q: ClarifyingQuestion; lang
   );
 }
 
-function EnergyProcessCard({ p, language, alsoListedAbove }: { p: ProcessEvaluation; language: Language; alsoListedAbove: boolean }) {
+function EnergyProcessCard({ p, language, legacy, factLabel }: { p: ProcessEvaluation; language: Language; legacy: EnergyLegacyCard[]; factLabel: (k: string) => string }) {
   const es = language === "es";
   const st = STATE_COPY[p.state];
+  const badge = p.voluntary
+    ? p.state === "REQUIRED"
+      ? (es ? "Programa opcional — requerido si te inscribes" : "Optional program — required only if you enroll")
+      : (es ? "Programa opcional" : "Optional program")
+    : es ? st.es : st.en;
   return (
     <article className={`rq-energy-card rq-energy-${st.tone}`} data-testid={`energy-process-${p.process_id}`}>
       <header>
-        <span className={`rq-energy-badge rq-energy-badge-${st.tone}`}>{es ? st.es : st.en}</span>
+        <span className={`rq-energy-badge rq-energy-badge-${p.voluntary ? "potential" : st.tone}`}>{badge}</span>
         <span className="rq-energy-type">{p.process_type}</span>
         <h4>{p.name}</h4>
         <div className="rq-energy-agency">
@@ -178,12 +178,18 @@ function EnergyProcessCard({ p, language, alsoListedAbove }: { p: ProcessEvaluat
         </div>
       </header>
       <p className="rq-energy-reason">{p.reason}</p>
+      {p.voluntary && p.voluntary_note && <p className="rq-energy-alias">{p.voluntary_note}</p>}
       {p.state === "NEEDS_FACT" && p.missing_facts.length > 0 && (
-        <p className="rq-energy-missing-facts">{es ? "Dato pendiente" : "Pending fact"}: {p.missing_facts.join(", ").replace(/_/g, " ")}</p>
+        <p className="rq-energy-missing-facts">{es ? "Dato pendiente" : "Pending fact"}: {p.missing_facts.map(factLabel).join(", ")}</p>
       )}
-      {alsoListedAbove && (
-        <p className="rq-energy-alias">{es ? "También aparece arriba como tarjeta de requisito." : "Also listed above as a requirement card."}</p>
-      )}
+      {legacy.map((c) => (
+        <p className="rq-energy-alias" key={c.name}>
+          {es ? "Incluye" : "Covers"}: {c.name}
+          {c.onAction && c.actionLabel && (
+            <> — <button type="button" className="rq-energy-legacy-action" onClick={c.onAction}>{c.actionLabel}</button></>
+          )}
+        </p>
+      ))}
       <details>
         <summary>{es ? "¿Por qué aplica?" : "Why does this apply?"}</summary>
         <ol className="rq-energy-path">
@@ -222,7 +228,13 @@ function EnergyProcessCard({ p, language, alsoListedAbove }: { p: ProcessEvaluat
       {p.prerequisites.length > 0 && (
         <div className="rq-energy-prereqs">
           {es ? "Prerrequisitos" : "Prerequisites"}:{" "}
-          {p.prerequisites.map((pre) => `${pre.name} (${es ? STATE_COPY[pre.state as ProcessState]?.es ?? pre.state : STATE_COPY[pre.state as ProcessState]?.en ?? pre.state})`).join("; ")}
+          {p.prerequisites
+            .map((pre) => {
+              const s = STATE_COPY[pre.state as ProcessState];
+              const label = `${pre.name} (${s ? (es ? s.es : s.en) : pre.state})`;
+              return pre.conditional ? `${label} — ${es ? "solo si" : "only if"}: ${pre.note ?? ""}` : label;
+            })
+            .join("; ")}
         </div>
       )}
       {p.readiness && (
