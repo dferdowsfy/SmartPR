@@ -2105,9 +2105,10 @@ export default function SmartPRIntake() {
   // reasoning, Agency Assist briefs, and the passport can use them.
   const [projectContext, setProjectContext] = useState<ProjectContext>({});
   // Energy "Project questions" answered by hand in intake: the question
-  // leaves the pending list once its fact is set, so the keys are kept here
-  // to keep each selected answer visible instead of vanishing.
-  const [answeredEnergyKeys, setAnsweredEnergyKeys] = useState<string[]>([]);
+  // leaves the pending list once its fact is set, so the answered question
+  // (text + selected label) is captured here at answer time to keep each
+  // selected answer visible instead of vanishing.
+  const [answeredEnergyQs, setAnsweredEnergyQs] = useState<Array<{ key: string; text: string; valueLabel: string }>>([]);
   // Semantic scenario: SmartPR's factual model of the described situation
   // (ai/intake/scenario). The rules engine still decides requirements; the
   // scenario drives what is understood, what is uncertain, and which
@@ -5989,7 +5990,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const secondaryRegistrations = groupedCards.find((g) => g.id === 'registrations') ?? null;
   const onEnergyAnswer = (key: ProjectContextKey, fact: ProjectContextFact) => {
     setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }));
-    setAnsweredEnergyKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    // Capture the question while it is still pending: after the fact is set
+    // the engine drops it from the checklist, so the text/label must be
+    // snapshotted here to stay visible.
+    const q = energyChecklist?.questions.find((item) => item.fact === key);
+    const valueLabel = q?.type === 'boolean'
+      ? (fact.value ? t('yes') : t('no'))
+      : (q?.options?.find((o) => o.value === String(fact.value))?.label ?? String(fact.value ?? ''));
+    const entry = { key, text: q?.text ?? key, valueLabel };
+    setAnsweredEnergyQs((prev) => (prev.some((a) => a.key === key) ? prev.map((a) => (a.key === key ? entry : a)) : [...prev, entry]));
   };
   /** Clearing an energy answer brings its question back to the pending list. */
   const clearEnergyAnswer = (key: ProjectContextKey) => {
@@ -5998,26 +6007,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       delete next[key];
       return next;
     });
-    setAnsweredEnergyKeys((prev) => prev.filter((k) => k !== key));
+    setAnsweredEnergyQs((prev) => prev.filter((a) => a.key !== key));
   };
   const energyIntakeQuestions: SummaryQuestion[] = energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : [];
   /** Answered energy questions stay visible with the selected answer. */
-  const answeredEnergyQuestions = (energyAssessment?.questions ?? [])
-    .filter((q) => answeredEnergyKeys.includes(q.fact) && projectContext[q.fact as ProjectContextKey] !== undefined)
-    .map((q) => {
-      const value = projectContext[q.fact as ProjectContextKey]?.value;
-      const valueLabel = typeof value === 'boolean'
-        ? (value ? t('yes') : t('no'))
-        : (language === 'es'
-            ? (q.short_option_labels?.[String(value)]?.es ?? q.option_labels?.[String(value)] ?? String(value ?? ''))
-            : (q.short_option_labels?.[String(value)]?.en ?? q.option_labels?.[String(value)] ?? String(value ?? '')));
-      return {
-        id: q.fact,
-        text: language === 'es' ? (q.short_question?.es ?? q.question) : (q.short_question?.en ?? q.question),
-        valueLabel,
-        onChange: () => clearEnergyAnswer(q.fact as ProjectContextKey),
-      };
-    });
+  const answeredEnergyQuestions = answeredEnergyQs
+    .filter((a) => projectContext[a.key as ProjectContextKey] !== undefined)
+    .map((a) => ({ id: a.key, text: a.text, valueLabel: a.valueLabel, onChange: () => clearEnergyAnswer(a.key as ProjectContextKey) }));
   // Steps = energy process steps + required business items shown open.
   const mainCardCount = openStepCount(mainGroups);
   const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
