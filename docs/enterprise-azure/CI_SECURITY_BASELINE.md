@@ -33,7 +33,7 @@ is not met.
 |---|---|---|
 | `typecheck` | `npx tsc --noEmit` | Any type error |
 | `build` | `npm run build` | The build fails |
-| `tests (security / voice / config)` | `npm run test:<suite>` | Any test fails |
+| `tests (security / voice / config / ai)` | `npm run test:<suite>` | Any test fails |
 | `regulatory` | Runs the suite with TAP output, then `scripts/ci/regulatory-baseline.mjs` | See the Golden baseline section |
 | `lint` | Full `eslint .` report, then `scripts/ci/lint-baseline.mjs` | See the lint baseline section |
 | `secrets` | `gitleaks git . --redact` over the full history | Any finding not on the allowlist |

@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-import { isXaiConfigured, requestXaiText } from "../../ai/xai";
+import { generateText, isAiConfigured } from "../../../lib/ai/router";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -22,7 +22,7 @@ type ChatPayload = {
 };
 
 export async function POST(req: Request) {
-  if (!isXaiConfigured()) {
+  if (!isAiConfigured("chat")) {
     return Response.json({ reply: "AI assistant is not available." }, { status: 503 });
   }
 
@@ -95,7 +95,7 @@ INSTRUCTIONS:
   setTimeout(() => controller.abort(), 25_000);
 
   try {
-    const reply = await requestXaiText({
+    const reply = await generateText("chat", {
       input: [
         { role: "system", content: systemPrompt },
         ...(messages ?? []).map((m) => ({

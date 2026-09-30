@@ -8,12 +8,10 @@ import { getCurrentUser } from "../../../../lib/supabase/server";
 import { getPool, isEnabled } from "../../../graph/db";
 import { ensureSchema, resolveBusinessUuid } from "../../../graph/store";
 import {
-  isXaiConfigured,
   requestXaiStt,
-  requestXaiText,
   XaiApiError,
-  XAI_MODEL,
 } from "../../../ai/xai";
+import { aiModelFor, generateText, isAiConfigured } from "../../../../lib/ai/router";
 import type { BusinessPassportJson } from "../../../forms/engine/businessPassport";
 import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 
@@ -61,7 +59,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: "unauthorized" }, { status: 401 });
 
-  if (!isXaiConfigured()) {
+  if (!isAiConfigured("passport_extract")) {
     return Response.json(
       { error: "XAI_API_KEY is not configured on the server." },
       { status: 503 }
@@ -148,7 +146,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const text = await requestXaiText({
+    const text = await generateText("passport_extract", {
       input: [
         { role: "system", content: passportExtractionPrompt() },
         {
@@ -177,7 +175,7 @@ export async function POST(request: Request) {
       summary,
       proposals,
       count: proposals.length,
-      ai_model: XAI_MODEL,
+      ai_model: aiModelFor("passport_extract"),
       stt: { duration: sttDuration, language: sttLanguage },
     });
   } catch (e) {
