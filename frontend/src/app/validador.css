@@ -1523,6 +1523,9 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   color: var(--spr-copy);
   font-size: 21px;
   line-height: 1.35;
+  /* Reserve two lines so the Yes/No buttons stay anchored when the next
+     question wraps differently — answering must not move the cursor target. */
+  min-height: 2.7em;
 }
 .spr-question-context {
   margin: -4px 0 16px;
@@ -3027,6 +3030,8 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .spr-guided-intake-shell .spr-scn-questions { background: transparent; border: 0; border-top: 1px solid #d7dedc; border-radius: 0; padding: 24px 0 0; }
 .spr-guided-intake-shell .spr-scn-questions > h3 { color: #657e86; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 18px; }
 .spr-guided-intake-shell .spr-follow-up { padding: 0; border: 0; background: transparent; }
+/* Same anchoring for the larger guided-intake question title (26px/1.25). */
+.spr-guided-intake-shell .spr-follow-up h2 { min-height: 2.5em; }
 .spr-guided-intake-shell .spr-follow-up h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 26px; font-weight: 500; line-height: 1.25; color: #183b41; }
 .spr-guided-intake-shell .spr-answer-row { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .spr-guided-intake-shell .spr-answer-row button { min-height: 60px; padding: 16px 20px; background: #fff; border: 1px solid #c6d2d8; border-radius: 6px; justify-content: flex-start; text-align: left; color: #183b41; font-size: 16px; }
