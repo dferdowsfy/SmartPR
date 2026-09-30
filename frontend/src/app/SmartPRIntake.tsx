@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import JSZip from 'jszip';
 import { L } from './i18n';
-import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, agencySiteUrl, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
+import { computeRequirementsFromKB, requirementForProcessDocument, documentIdForCode, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, agencySiteUrl, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
@@ -115,18 +115,19 @@ import {
 import { MunicipalityMapButton } from './components/intake/MunicipalityMapButton';
 import { normalizeMunicipio } from './locations/geo';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
-import { claraSupportFor, groupRequirements, splitOtherChecks, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
+import { claraSupportFor, groupRequirements, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
 import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
+import { requirementRowActions } from './components/checklist/rowActions';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
 import { IncentivesSidebar } from './components/incentives/IncentivesSidebar';
-import { EnergyProcessesSection, energySummaryQuestions } from './components/energy/EnergyProcessesSection';
+import { EnergyProcessesSection, energySummaryQuestions, type EnergyLegacyCard } from './components/energy/EnergyProcessesSection';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
@@ -205,6 +206,8 @@ interface Finding {
 }
 
 interface Requirement {
+  /** Built for a document an energy process owns (the rules engine did not emit it). */
+  processOwned?: boolean;
   code: string;
   name: string;
   mandatory: boolean;
@@ -3950,7 +3953,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // business's Evidence Locker, tagged with the requirement it satisfies,
     // so Clara's filing readiness sees it and never asks for it again.
     const evidenceBusinessId = me && businessId && !businessId.startsWith('local-') ? businessId : null;
-    const evidenceTag = requirements.find((r) => r.code === reqCode)?.document_id;
+    // A card an energy process owns may not be in `requirements` (the graph
+    // decided it): its code still names the KB document.
+    const evidenceTag = requirements.find((r) => r.code === reqCode)?.document_id ?? documentIdForCode(reqCode);
     if (evidenceBusinessId && evidenceTag) {
       const form = new FormData();
       form.append('file', file);
@@ -5179,10 +5184,50 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     return ids;
   }, [requirements, canonicalApplication]);
 
+  // Energy process graph (src/app/processes): uploaded requirement evidence
+  // (DOC_* ids — the evidence-locker tag vocabulary) feeds it, and legacy
+  // energy cards it supersedes (LUMA interconnection, net metering, battery
+  // fire review) render through the Energy section only — one source of
+  // truth instead of a "verify existing" card that contradicts it.
+  const energyProvidedEvidenceIds = [
+    ...requirements
+      .filter((r) => r.document_id && (r.status === 'uploaded' || r.status === 'passed'))
+      .map((r) => r.document_id as string),
+    // Uploads on process-owned cards (not in `requirements`) that passed review.
+    ...uploadedDocs
+      .filter((d) => d.ai_analysis?.extraction?.validation_result === 'PASS' && !requirements.some((r) => r.code === d.requirement_code))
+      .map((d) => documentIdForCode(d.requirement_code))
+      .filter((id): id is string => !!id),
+  ];
+  const { graph: energyGraph, assessment: energyAssessment } = computeEnergyAssessment({
+    projectContext,
+    municipality: profile.municipality,
+    answers: discoveryAnswers,
+    providedEvidenceIds: energyProvidedEvidenceIds,
+  });
+  // A proposed energy project applies for its energy approvals: no energy
+  // item reads "verify existing" (legacy cards the graph did not absorb).
+  const energyProposed = isProposedEnergyProject(energyAssessment);
+  // A process that owns a document the rules engine did not emit (the graph
+  // decided it: LUMA interconnection for a rooftop system, the construction
+  // permit for a solar farm) still offers that document's actions — the
+  // official form, the upload, the filing link — through the same card logic.
+  const processOwnedDocs = (energyAssessment?.processes ?? [])
+    .filter((p) => p.state !== 'NOT_REQUIRED')
+    .flatMap((p) => p.legacy_document_ids.map((doc) => ({ doc, state: p.state, mandatory: p.state === 'REQUIRED' && !p.voluntary, reason: p.reason })))
+    .filter(({ doc }, i, all) => all.findIndex((x) => x.doc === doc) === i && !requirements.some((r) => r.document_id === doc));
+  const processOwnedKey = JSON.stringify(processOwnedDocs);
+
+  // Documents an energy process owns (the graph decided them) are present too.
+  const presentWithProcessDocs = useMemo(
+    () => new Set([...presentRequirementIds, ...processOwnedDocs.map((d) => d.doc)]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [presentRequirementIds, processOwnedKey]
+  );
   // Resolve the single applicable government-form entry for a requirement.
   const govFormEntryForReq = (req: Requirement) => {
     if (!req.document_id) return null;
-    const entry = selectFormForRequirement(req.document_id, canonicalApplication, presentRequirementIds);
+    const entry = selectFormForRequirement(req.document_id, canonicalApplication, presentWithProcessDocs);
     if (!entry) return null;
     const template = getTemplate(entry.officialFormNumber);
     // Customer-facing builders must be backed by the agency's real PDF. Never
@@ -5197,7 +5242,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const govFormEntriesForReq = (req: Requirement): RegistryEntry[] => {
     if (!req.document_id) return [];
     const entries: RegistryEntry[] = [];
-    for (const entry of selectEntriesForRequirement(req.document_id, canonicalApplication, presentRequirementIds)) {
+    for (const entry of selectEntriesForRequirement(req.document_id, canonicalApplication, presentWithProcessDocs)) {
       const template = getTemplate(entry.officialFormNumber);
       if (template && isOfficialArtifact(template)) entries.push(entry);
     }
@@ -5819,38 +5864,33 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     };
   };
 
-  // Energy process graph (src/app/processes): uploaded requirement evidence
-  // (DOC_* ids — the evidence-locker tag vocabulary) feeds it, and legacy
-  // energy cards it supersedes (LUMA interconnection, net metering, battery
-  // fire review) render through the Energy section only — one source of
-  // truth instead of a "verify existing" card that contradicts it.
-  const energyProvidedEvidenceIds = requirements
-    .filter((r) => r.document_id && (r.status === 'uploaded' || r.status === 'passed'))
-    .map((r) => r.document_id as string);
-  const { graph: energyGraph, assessment: energyAssessment } = computeEnergyAssessment({
-    projectContext,
-    municipality: profile.municipality,
-    answers: discoveryAnswers,
-    providedEvidenceIds: energyProvidedEvidenceIds,
-  });
-  // A proposed energy project applies for its energy approvals: no energy
-  // item reads "verify existing" (legacy cards the graph did not absorb).
-  const energyProposed = isProposedEnergyProject(energyAssessment);
   const viewRequirements = useMemo(
     () => withoutEnergyVerifyExisting(energyGraph, energyProposed, requirements),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [requirements, energyProposed]
   );
-  const reqCards = useMemo(
-    () => viewRequirements
+  const processOwnedReqs = useMemo(
+    () => processOwnedDocs.flatMap(({ doc, state, mandatory, reason }) => {
+      const req = requirementForProcessDocument(doc, { applicability: state === 'REQUIRED' ? 'required' : 'likely_required', mandatory, reason });
+      return req ? [req as Requirement] : [];
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [processOwnedKey]
+  );
+  // One card builder for both: engine requirements and process-owned documents.
+  const allReqCards = useMemo(
+    () => viewRequirements.concat(processOwnedReqs)
       .filter(r => r.applicability !== 'not_applicable')
       .map(computeReqCard),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [viewRequirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds, claraBusinessId]
+    [viewRequirements, processOwnedKey, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds, claraBusinessId]
   );
+  const reqCards = allReqCards.filter((c) => !c.req.processOwned);
+  const processOwnedCards = allReqCards.filter((c) => c.req.processOwned).map((card) => ({ doc: card.req.document_id as string, card }));
+
   const energySuperseded = supersededLegacyCards(energyGraph, energyAssessment, requirements);
   const visibleReqCards = reqCards.filter((c) => !energySuperseded.has(c.req.document_id ?? ''));
-  const energyLegacyCards: Record<string, { name: string; actionLabel?: string; onAction?: () => void }> = {};
+  const energyLegacyCards: Record<string, EnergyLegacyCard> = {};
   const energySuppressed = [...energySuperseded.values()].filter((x) => x.suppressed);
   const energyLegacyNames: Record<string, string> = {};
   for (const c of reqCards) {
@@ -5860,7 +5900,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     if (energySuperseded.get(doc)!.suppressed) continue;
     const primary = (c.action.kind === 'upload' || c.action.kind === 'form') && c.action.onClick ? { actionLabel: c.action.label, onAction: c.action.onClick } : null;
     const secondary = c.secondary ? { actionLabel: c.secondary.label, onAction: c.secondary.onClick } : null;
-    energyLegacyCards[doc] = { name: c.name, ...(primary ?? secondary ?? {}) };
+    // The energy row's inline actions are this card's own (same handlers).
+    const rowActions = requirementRowActions({ action: c.action, filing: c.filing, download: c.download, secondary: c.secondary, secondaryOnCompleted: c.secondaryOnCompleted, answerPrompt: c.answerPrompt }, language);
+    energyLegacyCards[doc] = { name: c.name, ...(primary ?? secondary ?? {}), rowActions };
+  }
+  for (const { doc, card: c } of processOwnedCards) {
+    if (energyLegacyCards[doc]) continue;
+    const rowActions = requirementRowActions({ action: c.action, filing: c.filing, download: c.download, secondary: c.secondary, secondaryOnCompleted: c.secondaryOnCompleted }, language);
+    energyLegacyCards[doc] = { name: c.name, processOwned: true, rowActions };
   }
 
   const tabNeedsActionCount = visibleReqCards.filter(c => c.bucket === 'needs_action').length;
@@ -5886,6 +5933,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     visibleReqCards.map((c) => ({ documentId: c.req.document_id, applicability: c.req.applicability, stage: c.req.stage, mandatory: c.req.mandatory, done: c.state === 'done', awaitingAnswer: c.awaitingAnswer })),
     kbDocs
   );
+  // A developer company with a proposed energy project already exists: its
+  // business registrations are secondary (collapsed), and it is not a
+  // "New Business Formation" matter even before the intent is settled.
+  const energyDeveloper = isEnergyDeveloperCompany({ projectIntent, energyProposed, applicantRole: projectContext?.energy_applicant_role?.value });
+  const displayIntent = energyDeveloper ? 'existing_business' : projectIntent;
   const nameByDoc = new Map(visibleReqCards.map((c) => [c.req.document_id, c.name]));
   // Existing business: conditional cards held open only by a generic
   // discovery question (employees? signage? vehicles?) collapse into "Other
@@ -5893,9 +5945,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const { main: mainGroupedCards, otherChecks } = splitOtherChecks(
     tabFilteredCards.map((c) => {
       const g = grouping[visibleReqCards.indexOf(c)];
-      return { c, g, group: g.group, triggerQuestionId: c.triggerQuestionId };
+      return { c, g, group: developerGroup(g.group, c.req.stage, energyDeveloper), triggerQuestionId: c.triggerQuestionId };
     }),
-    { projectIntent }
+    { projectIntent: displayIntent }
   );
   const groupedCards = REQUIREMENT_GROUP_ORDER.map((groupId) => ({
     id: groupId,
@@ -5932,7 +5984,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     cardSummaryQuestions.push({ id: c.req.code, text: c.answerPrompt.prompt, options: [{ label: c.answerPrompt.yesLabel, onClick: c.answerPrompt.onYes }, { label: c.answerPrompt.noLabel, onClick: c.answerPrompt.onNo }] });
   }
   const summaryQuestions = [...(energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : []), ...cardSummaryQuestions].slice(0, 3);
-  const mainCardCount = mainGroups.reduce((n, g) => n + g.cards.length, 0);
+  // Steps = energy process steps + required business items shown open.
+  const mainCardCount = openStepCount(mainGroups);
   const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
   // The energy project IS the matter when it is utility-scale or a proposed
   // installation: the line names it ("Rooftop solar, Guaynabo").
@@ -5951,6 +6004,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       legacyCards={energyLegacyCards}
       suppressedLegacy={energySuppressed}
       language={language}
+      onAnswer={onEnergyAnswer}
     />
   ) : null;
   const summaryReadiness = (() => {
@@ -6423,7 +6477,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               (language === 'es' ? 'Proyecto de propiedad' : 'Property project')
             // A developer (existing company) with a proposed energy project is a
             // new project, not an "existing business" matter.
-            : projectIntent === 'existing_business' && energyProposed
+            : displayIntent === 'existing_business' && energyProposed
               ? (language === 'es' ? 'Proyecto nuevo de energía' : 'New energy project')
             : projectIntent === 'existing_business'
               ? (language === 'es' ? 'Negocio existente' : 'Existing Business')
@@ -7051,6 +7105,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       whySentence={c.whySentence}
                       extraInBody={c.extraInBody}
                       fullReasoningLabel={L('Show full reasoning', language)}
+                      verifyExisting={c.req.applicability === 'verify_existing'}
+                      language={language}
                     />
                   ))}
                   {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
@@ -7103,6 +7159,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     whySentence={c.whySentence}
                     extraInBody={c.extraInBody}
                     fullReasoningLabel={L('Show full reasoning', language)}
+                    verifyExisting={c.req.applicability === 'verify_existing'}
+                    language={language}
                   />
                 ))}
               </div>

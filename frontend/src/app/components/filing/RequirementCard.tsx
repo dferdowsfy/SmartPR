@@ -3,6 +3,8 @@
 import { useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
+import { RowActions, RowQuestion } from "../checklist/RowActions";
+import { requirementRowActions } from "../checklist/rowActions";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
 
@@ -135,6 +137,10 @@ export interface RequirementCardProps {
   /** When true `extra` renders inside the expanded details (e.g. an expiry
    * capture); otherwise it stays visible (processing, AI findings). */
   extraInBody?: boolean;
+  /** "Verify existing": the collapsed row leads with "Confirm". */
+  verifyExisting?: boolean;
+  /** Language of the inline row actions' short labels. */
+  language?: "en" | "es";
 }
 
 function ActionButton({ action }: { action: RequirementAction }) {
@@ -196,11 +202,16 @@ export function RequirementCard({
   whySentence,
   fullReasoningLabel,
   extraInBody,
+  verifyExisting,
+  language = "en",
 }: RequirementCardProps) {
   // Checklist line by default: number · name · who handles it · status, plus
   // the primary action. Details expand on click; the full rationale and the
   // fact strip sit one level deeper, behind "Show full reasoning".
   const [open, setOpen] = useState(false);
+  // Answer-only rows open just their question, not the details.
+  const [askOpen, setAskOpen] = useState(false);
+  const rowActions = requirementRowActions({ action, filing, download, secondary, secondaryOnCompleted, answerPrompt, verifyExisting }, language);
   const whyRef = useRef<HTMLDetailsElement>(null);
   const openInstructions = () => {
     setOpen(true);
@@ -217,17 +228,17 @@ export function RequirementCard({
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
           <span className="ck-num">{index}</span>
-          <span className="ck-name">{name}</span>
+          <span className="ck-name" title={name}>{name}</span>
           {agency && <span className="ck-agency">{agency}</span>}
           {badge && <span className={`ck-pill rq-badge-${badge.tone}`}>{badge.label}</span>}
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
         </button>
-        {action.kind !== "none" && (
-          <div className="ck-card-action">
-            <ActionButton action={action} />
-          </div>
-        )}
+        {/* The primary action(s) on the collapsed line — same handlers as below. */}
+        <RowActions model={rowActions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
       </div>
+      {askOpen && !open && answerPrompt && (
+        <RowQuestion {...answerPrompt} onYes={() => { setAskOpen(false); answerPrompt.onYes(); }} onNo={() => { setAskOpen(false); answerPrompt.onNo(); }} />
+      )}
 
       {open && (
         <div className="ck-row-body" id={bodyId}>
@@ -247,6 +258,7 @@ export function RequirementCard({
             </div>
           )}
           <div className="ck-card-actions">
+            {action.kind !== "none" && <ActionButton action={action} />}
             {filing && action.kind !== "completed" && (
               <div className="rq-filing" data-filing={filing.kind}>
                 {filing.href ? (

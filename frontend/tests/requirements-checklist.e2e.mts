@@ -42,7 +42,8 @@ const snapshot = {
     profile: { ...G.profile },
     discoveryAnswers: G.answers ?? {},
     projectContext: context,
-    projectIntent: G.projectIntent,
+    // E2E_INTENT=none restores an unsettled intent (the developer guard must hold anyway).
+    projectIntent: process.env.E2E_INTENT === "none" ? null : (process.env.E2E_INTENT ?? G.projectIntent ?? null),
     currentStep: 3,
   },
 };
@@ -133,6 +134,38 @@ for (const bad of [/Air and Maritime/i, /Export Logistics/i, /International Trad
 check("green energy incentive kept", /Green Energy|energ/i.test(incText));
 await page.locator('[data-testid="req-group-incentives"] > summary').click().catch(() => undefined);
 
+// Every Required energy row shows its action on the collapsed line.
+{
+  const rows = page.locator('[data-testid="req-group-energy"] .ck-row');
+  const missing: string[] = [];
+  let required = 0;
+  for (let i = 0; i < (await rows.count()); i++) {
+    const r = rows.nth(i);
+    const pill = (await r.locator(".ck-pill").first().innerText().catch(() => "")).trim();
+    if (!/^(Required|Requerido)$/.test(pill)) continue;
+    required++;
+    const cta = r.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-testid="row-cta"]').first();
+    if (!((await cta.count()) > 0 && (await cta.isVisible()))) missing.push((await r.locator(".ck-name").first().innerText()).trim());
+  }
+  check("every Required energy row has a visible inline action", required > 0 && missing.length === 0, `${required} required, missing: ${missing.join(" | ") || "none"}`);
+}
+
+// An energy developer is an existing company: a "New energy project", its
+// business registrations collapsed, and the step count = energy steps +
+// required business items shown open.
+if (G.modelProjectContext?.energy_applicant_role?.value === "developer") {
+  const header = await page.locator(".spr-shell, body").first().innerText();
+  check("developer: matter reads 'New energy project'", /New energy project/.test(header) && !/New Business Formation/.test(header));
+  const openBiz = await main.evaluate((root) => Array.from(root.querySelectorAll(":scope > section.rq-group:not(.rq-group-energy)"))
+    .flatMap((g) => Array.from(g.querySelectorAll(".ck-name")).map((n) => n.textContent ?? ""))
+    .filter((n) => /Merchant|Comerciante|Patente|EIN|Incorporation|Incorporación|Organization|Organización/.test(n)));
+  check("developer: no business-formation item is shown open", openBiz.length === 0, openBiz.join(" | "));
+  const energyItems = await page.locator('[data-testid="req-group-energy"] .ck-row').count();
+  const openRequired = await page.locator('[data-testid="req-group-required_now"] .ck-card, [data-testid="req-group-prerequisites"] .ck-card').count();
+  const steps = Number(/(\d+) (steps?|pasos?)/.exec(line)?.[1] ?? NaN);
+  check("summary step count = energy steps + required items shown open", steps === energyItems + openRequired, `${steps} vs ${energyItems}+${openRequired}`);
+}
+
 // Questions render their options.
 const qs = page.locator(".ck-questions > [role=listitem]");
 for (let i = 0; i < (await qs.count()); i++) {
@@ -141,6 +174,138 @@ for (let i = 0; i < (await qs.count()); i++) {
   const opts = await q.locator("button, input, select").count();
   check(`question ${i + 1} renders options`, opts >= 2 || (await q.locator("input, select").count()) > 0, text.slice(0, 90));
 }
+
+// ---- Inline row actions: act without expanding a row ----
+// Every row whose expanded card offers an action shows it on the collapsed
+// line; clicking it runs that flow and never toggles the row.
+await page.context().route(/^https?:\/\/(?!localhost)/, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<title>external</title>" }));
+for (const g of ["req-group-registrations"]) {
+  const s = page.locator(`[data-testid="${g}"] > summary`);
+  if (await s.count()) await s.click();
+}
+await page.waitForTimeout(200);
+await page.screenshot({ path: path.join(OUT, `${tag}_requirements_inline.png`), fullPage: true });
+const rowSel = '.spr-requirements-main .ck-row:not(:has(> .ck-row-static)), .spr-requirements-main .ck-card';
+const rowCount = await page.locator(rowSel).count();
+let actionable = 0;
+let clicked = 0;
+for (let i = 0; i < rowCount; i++) {
+  const row = page.locator(rowSel).nth(i);
+  if (!(await row.isVisible())) continue;
+  const head = row.locator(":scope > .ck-card-line > .ck-row-head").first();
+  const name = (await row.locator(".ck-name").first().innerText()).trim();
+  const lineCta = row.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-testid="row-cta"]').first();
+  const lineDone = row.locator(':scope > .ck-card-line [data-testid="row-done"]');
+  const hasCta = (await lineCta.count()) > 0 && (await lineCta.isVisible());
+  // What the expanded card offers (then collapse again).
+  await head.click();
+  const body = row.locator(".ck-row-body");
+  const bodyActions = await body.locator('.ck-card-actions a, .ck-card-actions button, .ck-action, .rq-answer-prompt button').evaluateAll((els) =>
+    els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => (e.textContent ?? "").trim()).filter(Boolean));
+  await head.click();
+  const offers = bodyActions.length > 0;
+  const kind = hasCta ? await lineCta.getAttribute("data-cta") : null;
+  const status = (await row.locator(".ck-pill").first().innerText().catch(() => "")).trim();
+  console.log(`row: ${name} [${status}] cta=${kind ?? (await lineDone.count() ? "done" : "none")} body=${JSON.stringify(bodyActions)}`);
+  if (offers) {
+    actionable++;
+    check(`"${name}": inline action visible without expanding`, hasCta || (await lineDone.count()) > 0, kind ?? "none");
+  } else if (kind && kind !== "answer" && kind !== "start") {
+    check(`"${name}": no inline button without a card action`, false, kind);
+  }
+  if (!hasCta) continue;
+  clicked++;
+  const expandedBefore = await head.getAttribute("aria-expanded");
+  const label = (await lineCta.innerText()).trim();
+  let flow = "none";
+  if (kind === "answer") {
+    await lineCta.click();
+    flow = (await row.locator('[data-testid="row-question"]').isVisible()) ? "question" : "none";
+    check(`"${name}": Answer opens only the question`, flow === "question" && !(await body.isVisible().catch(() => false)));
+    await lineCta.click();
+  } else if (kind === "upload" || kind === "confirm") {
+    const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => "filechooser").catch(() => "none");
+    await lineCta.click();
+    flow = await chooser;
+    check(`"${name}": ${label} opens the upload flow`, flow === "filechooser");
+  } else if (kind === "start") {
+    await lineCta.click();
+    flow = (await row.locator('[data-testid="row-checklist"]').isVisible()) ? "checklist" : "none";
+    check(`"${name}": Start opens only the prepared checklist`, flow === "checklist" && !(await body.isVisible().catch(() => false)));
+    await lineCta.click();
+  } else if (kind === "download" || kind === "instructions" || kind === "portal" || kind === "site") {
+    const popup = page.waitForEvent("popup", { timeout: 4000 }).then(async (p) => { const u = p.url(); await p.close(); return u; }).catch(() => "");
+    await lineCta.click();
+    flow = await popup;
+    check(`"${name}": ${label} opens the official document`, !!flow, flow);
+  } else if (kind === "assist" && (await lineCta.getAttribute("href"))) {
+    // A link: the same destination as the expanded card's filing link.
+    const href = await lineCta.getAttribute("href");
+    await head.click();
+    const bodyHref = await body.locator(".rq-filing a").first().getAttribute("href").catch(() => null);
+    await head.click();
+    flow = `link ${href}`;
+    check(`"${name}": ${label} links where the card links`, !!href && href === bodyHref, `${href} vs ${bodyHref}`);
+  } else {
+    await lineCta.click();
+    const dialog = page.locator('[role="dialog"][aria-modal="true"]').first();
+    flow = (await dialog.waitFor({ timeout: 5000 }).then(() => "dialog").catch(() => "none"));
+    const requirement = await dialog.getAttribute("data-requirement").catch(() => null);
+    check(`"${name}": ${label} opens its form`, flow === "dialog", requirement ?? "");
+    if (flow === "dialog") {
+      await page.screenshot({ path: path.join(OUT, `${tag}_row_cta_flow.png`) }).catch(() => undefined);
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(200);
+      if (await dialog.isVisible().catch(() => false)) {
+        const close = dialog.getByRole("button", { name: /close|cerrar|×|✕/i }).first();
+        if (await close.count()) await close.click();
+      }
+      await dialog.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
+    }
+  }
+  check(`"${name}": clicking "${label}" does not expand the row`, (await head.getAttribute("aria-expanded")) === expandedBefore && expandedBefore === "false");
+}
+check("at least one actionable row checked", actionable > 0 && clicked > 0, `${actionable} actionable, ${clicked} clicked`);
+// Overflow (⋯): the other actions of a row, same handlers, row stays closed.
+const moreBtn = page.locator('.spr-requirements-main [data-testid="row-more"]').first();
+if (await moreBtn.count() && await moreBtn.isVisible()) {
+  const row = moreBtn.locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' ck-card ') or contains(concat(' ', normalize-space(@class), ' '), ' ck-row ')][1]");
+  const head = row.locator(":scope > .ck-card-line > .ck-row-head").first();
+  await moreBtn.click();
+  const items = row.locator('[data-testid="row-more-item"]');
+  const labels = await items.allInnerTexts();
+  check("overflow menu lists the other actions", labels.length > 0, labels.join(" | "));
+  const upload = row.locator('[data-testid="row-more-item"][data-cta="upload"]').first();
+  if (await upload.count()) {
+    const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => true).catch(() => false);
+    await upload.click();
+    check("overflow upload opens the upload flow", await chooser);
+  } else {
+    await page.keyboard.press("Escape");
+  }
+  check("overflow menu closes", (await items.count()) === 0);
+  check("overflow does not expand the row", (await head.getAttribute("aria-expanded")) === "false");
+}
+for (const g of ["req-group-registrations"]) {
+  const s = page.locator(`[data-testid="${g}"] > summary`);
+  if (await s.count()) await s.click();
+}
+// Mobile: the CTA wraps under the name and stays visible.
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForTimeout(300);
+await page.screenshot({ path: path.join(OUT, `${tag}_requirements_mobile.png`), fullPage: true });
+// Width relative to the row line; the action wraps below the name.
+const mobileCtas = await page.locator('.spr-requirements-main [data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
+  const line = e.closest(".ck-card-line") as HTMLElement;
+  const name = line.querySelector(".ck-name") as HTMLElement;
+  return { ratio: e.getBoundingClientRect().width / line.getBoundingClientRect().width, below: e.getBoundingClientRect().top >= name.getBoundingClientRect().bottom - 1 };
+}));
+check("mobile: inline actions wrap under the name, full width", mobileCtas.every((m) => m.ratio > 0.85 && m.below), mobileCtas.map((m) => `${m.ratio.toFixed(2)}${m.below ? "↓" : "→"}`).join(","));
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.waitForTimeout(300);
+// Desktop: one line per row (the line is no taller than two text lines).
+const tall = await page.locator('.spr-requirements-main .ck-card-line').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && (e as HTMLElement).getBoundingClientRect().height > 64).length);
+check("desktop: rows stay one line", tall === 0, `${tall} tall rows`);
 
 // Reasoning: open the first energy row and its full reasoning; no empty <li>.
 const firstRow = page.locator('[data-testid="req-group-energy"] .ck-row').first();

@@ -147,6 +147,8 @@ export interface UIRequirement {
   downloadUrl?: string | null;
   downloadKind?: string | null;
   downloadNote?: string | null;
+  /** Built for a document an energy process owns (the rules engine did not emit it). */
+  processOwned?: boolean;
 }
 
 // Minimal view of the app profile this adapter reads.
@@ -1291,4 +1293,52 @@ export function computeRequirementsFromKB(
     passportKeys: options.passportKeys,
     aiPrefilledKeys: options.aiPrefilledKeys,
   });
+}
+
+/**
+ * The requirement card for a KB document an energy process owns when the
+ * rules engine did not emit it (the process graph decided the matter, e.g. a
+ * LUMA interconnection for a rooftop system the legacy rules never saw).
+ * Same metadata as an engine requirement — code, agency, filing links — so
+ * the card offers exactly the actions (official form, upload, filing link)
+ * the requirement would have had.
+ */
+export function requirementForProcessDocument(
+  documentId: string,
+  opts: { applicability: Applicability; mandatory: boolean; reason: string }
+): UIRequirement | null {
+  const d = (KB.documents as Array<KBDocument & { agency_url?: string | null; agency_note?: string; download_url?: string | null; download_kind?: string; download_note?: string }>)
+    .find((x) => x.id === documentId);
+  if (!d) return null;
+  const name = d.name || documentId;
+  const category = d.category || "";
+  return {
+    code: kbMeta.legacyCode[documentId] || documentId.toLowerCase(),
+    name,
+    mandatory: opts.mandatory,
+    status: "pending",
+    agency: d.agency ?? "",
+    reason: opts.reason,
+    document_id: documentId,
+    category,
+    applicability: opts.applicability,
+    kind: kindForDocument(documentId, name, category),
+    stage: stageForDocument(documentId, name, category),
+    triggerFacts: [`process_document:${documentId}`],
+    acceptsOfficialUpload: true,
+    processOwned: true,
+    agencyUrl: d.agency_url ?? null,
+    agencyNote: d.agency_note ?? null,
+    downloadUrl: d.download_url ?? null,
+    downloadKind: d.download_kind ?? null,
+    downloadNote: d.download_note ?? null,
+  };
+}
+
+/** KB document id for a requirement code (inverse of the legacy-code map). */
+export function documentIdForCode(code: string): string | null {
+  const hit = Object.entries(kbMeta.legacyCode).find(([, c]) => c === code)?.[0];
+  if (hit) return hit;
+  const d = (KB.documents as KBDocument[]).find((x) => x.id.toLowerCase() === code);
+  return d?.id ?? null;
 }

@@ -1,11 +1,12 @@
 {
   "id": "E06",
   "title": "Developer: ~15 MW solar + 30 MWh batteries in Guayama, selling to LUMA (Darius's live test of #116)",
-  "source": "Darius's live prompt, 2026-09-30 09:16 ET. Model output is a fixture reproducing the live extraction: no generation_technology (so the old view asked 'What will generate or store the energy?').",
+  "source": "Darius's live prompt, 2026-09-30 09:16 ET. Model output is a fixture reproducing the live extraction: no generation_technology (so the old view asked 'What will generate or store the energy?'). In the live app this prompt resolves to projectIntent existing_business ('We develop solar farms': an existing company; the matter was titled 'New energy project'); the e2e harness restores that intent.",
   "description": "We develop solar farms in Puerto Rico that include battery storage, and we need to know every requirement to connect them to the LUMA grid. Our current project is about 15 MW of solar with 30 MWh of batteries in Guayama, and we plan to sell the power to LUMA.",
   "profile": {
     "municipality": "Guayama"
   },
+  "projectIntent": "existing_business",
   "legacyCards": [
     { "document_id": "DOC_LUMA_INTERCONNECTION", "source_rule": "RULE_0610", "name": "LUMA Interconnection Registration" },
     { "document_id": "DOC_NET_METERING_AGREEMENT", "source_rule": "RULE_0611", "name": "Net Metering Agreement" },

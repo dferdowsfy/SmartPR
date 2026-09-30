@@ -136,6 +136,8 @@ export interface RegulatoryProcess {
   short_name_es?: string;
   summary?: string;
   summary_es?: string;
+  /** Official online filing portal for this process ("Open portal" on the row). */
+  portal?: { url: string; label: string; label_es?: string; verified: string };
   applicability: ApplicabilityRule[];
   exceptions?: ProcessException[];
   requirement_ids: string[];
