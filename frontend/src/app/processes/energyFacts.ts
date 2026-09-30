@@ -1,0 +1,59 @@
+// ProjectContext (validated LLM extraction + guided answers) → engine fact map.
+//
+// Only facts at or above the "applies" confidence band (0.60) are used, and
+// every fact keeps its evidence quote so explanations can show where it came
+// from. Nothing is inferred here beyond two mechanical normalizations:
+//   - `proposed_energy_services` arrives as a comma-separated string;
+//   - `interconnection_required` is the plain-language form of
+//     `parallel_operation` (both are read by the graph rules).
+import type { ProjectContext } from "../ai/intake/projectContext.ts";
+import type { FactEvidence, FactMap, FactValue, ProcessKB } from "./types.ts";
+
+export const MIN_FACT_CONFIDENCE = 0.6;
+
+function normalizeToken(s: string): string {
+  return s.trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+export function energyFactsFromProjectContext(
+  context: ProjectContext | null | undefined,
+  kb: Pick<ProcessKB, "facts">,
+  extra?: { municipality?: string | null }
+): { facts: FactMap; evidence: FactEvidence } {
+  const facts: FactMap = {};
+  const evidence: FactEvidence = {};
+  const defs = new Map(kb.facts.map((f) => [f.key, f]));
+  const raw = (context ?? {}) as Record<string, { value: string | number | boolean; confidence: number; evidence?: string } | undefined>;
+  for (const [key, def] of defs) {
+    const fact = raw[key];
+    if (!fact || fact.value === undefined || fact.value === null || fact.value === "") continue;
+    if (fact.confidence < MIN_FACT_CONFIDENCE) continue;
+    let value: FactValue = fact.value;
+    if (def.type === "list") {
+      value = String(fact.value).split(/[,;/]| and /).map(normalizeToken).filter(Boolean);
+    } else if (def.type === "enum" && typeof value === "string") {
+      value = normalizeToken(value);
+    } else if (def.type === "boolean" && typeof value === "string") {
+      const l = value.trim().toLowerCase();
+      if (l === "true" || l === "yes") value = true;
+      else if (l === "false" || l === "no") value = false;
+      else continue;
+    }
+    facts[key] = value;
+    evidence[key] = { quote: fact.evidence, confidence: fact.confidence, origin: "project_context" };
+  }
+  if (facts.parallel_operation === undefined && typeof facts.interconnection_required === "boolean") {
+    facts.parallel_operation = facts.interconnection_required;
+    evidence.parallel_operation = { ...evidence.interconnection_required, origin: "alias:interconnection_required" };
+  }
+  if (facts.municipality === undefined && extra?.municipality) {
+    facts.municipality = extra.municipality;
+    evidence.municipality = { origin: "intake_field" };
+  }
+  return { facts, evidence };
+}
+
+/** True when the project context mentions anything energy-related at all. */
+export function hasEnergySignal(facts: FactMap): boolean {
+  return Object.keys(facts).some((k) => k !== "municipality" && facts[k] !== undefined);
+}

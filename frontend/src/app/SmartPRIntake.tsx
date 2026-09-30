@@ -116,6 +116,7 @@ import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
 import { IncentivesSidebar } from './components/incentives/IncentivesSidebar';
+import { EnergyProcessesSection } from './components/energy/EnergyProcessesSection';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
@@ -5853,6 +5854,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Environmental review is an open question, not a requirement, when the
   // activity is industrial and the equipment/emissions/waste facts are
   // unknown: the graph decides once they are answered.
+  // Energy process graph inputs: uploaded requirement evidence (DOC_* ids —
+  // the same tag vocabulary as the evidence locker) and the legacy document
+  // ids already rendered as cards above, so aliased processes can say so.
+  const energyProvidedEvidenceIds = requirements
+    .filter((r) => r.document_id && (r.status === 'uploaded' || r.status === 'passed'))
+    .map((r) => r.document_id as string);
+  const energyLegacyDocumentIds = requirements.map((r) => r.document_id).filter((d): d is string => !!d);
   const envOpenItem = (() => {
     if (!mergedScenario || !scenarioActive) return false;
     const act = mergedScenario.operations.activity?.value ?? mergedScenario.property.proposedUse?.value;
@@ -6943,6 +6951,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               <div className="rq-list"><EnvironmentalOpenItem language={language} /></div>
             </section>
           )}
+
+          {/* ENERGY — regulatory process graph (src/app/processes). Renders
+              only when the project context carries energy facts. */}
+          <EnergyProcessesSection
+            projectContext={projectContext}
+            municipality={profile.municipality}
+            providedEvidenceIds={energyProvidedEvidenceIds}
+            legacyDocumentIds={energyLegacyDocumentIds}
+            language={language}
+            onAnswer={(key, fact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }))}
+          />
 
           {/* Recommendation panel — advisory historical insights (never mandatory) */}
           {advisory && advisory.enabled && advisory.similarCount > 0 &&
