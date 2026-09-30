@@ -12,6 +12,7 @@ import { createHash, randomUUID } from "crypto";
 import { getPool, isEnabled } from "./db";
 import { COMPLIANCE_SCHEMA_SQL } from "../compliance/schema";
 import { LOCATIONS_SCHEMA_SQL } from "../locations/schema";
+import { CLARA_SKILLS_SCHEMA_SQL } from "../../lib/agency-runs/skills/schema";
 import { splitSqlStatements } from "./sqlStatements";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../compliance/dates";
 import { renewalMetadataForDocuments, scheduleObligationNotifications } from "../compliance/server";
@@ -223,7 +224,7 @@ async function applySchema(pool: NonNullable<ReturnType<typeof getPool>>): Promi
   await pool.query("SELECT 1");
 
   const failures: SchemaStatementFailure[] = [];
-  for (const statement of splitSqlStatements(`${SCHEMA_SQL}\n${COMPLIANCE_SCHEMA_SQL}\n${LOCATIONS_SCHEMA_SQL}`)) {
+  for (const statement of splitSqlStatements(`${SCHEMA_SQL}\n${COMPLIANCE_SCHEMA_SQL}\n${LOCATIONS_SCHEMA_SQL}\n${CLARA_SKILLS_SCHEMA_SQL}`)) {
     try {
       await pool.query(statement);
     } catch (e) {

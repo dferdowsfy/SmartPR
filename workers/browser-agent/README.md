@@ -19,6 +19,9 @@ Next.js client already calls (`POST/GET /api/v3/sessions`,
 - `GET /api/v4/runs/{id}/events?after=&limit=` — run events with `nextAfter` cursor
 - `POST /api/v4/sessions/{id}/queue` `{text, interrupt?}` — follow-up run on the session
 - `GET /api/v4/browsers?agentSessionId=` — Cloud-shaped browser listing with `liveUrl`
+- `POST /api/v4/teach` `{startUrl, allowedDomains, recorderScript}` — Teach Clara: open a plain Playwright browser (no agent) with SmartPR's structure-only recorder injected; returns `{sessionId, liveUrl}`
+- `GET /api/v4/teach/{id}/events?after=` — recorder events (labels, roles, selectors, page order, value *kind* — never values) with `nextAfter` cursor
+- `POST /api/v4/teach/{id}/stop` — close the teach browser
 - `GET /vnc/vnc.html?token=` — token-gated live viewer (noVNC, interactive)
 - `WS /vnc/websock?token=` — bridges the viewer to the session's browser
 
@@ -51,6 +54,24 @@ owner-gated API — the same privacy posture as the Cloud viewer.
 
    Omit `AGENT_PROVIDER` (or set `browser_use_cloud`) to keep using Browser
    Use Cloud with `BROWSER_USE_MODEL` (default `gpt-5.6-luna`).
+
+## Teach Clara sessions
+
+Teach mode lets a person walk a filing once in the live viewer while the
+recorder notes the screens (see `frontend/src/lib/agency-runs/teach/`). The
+person signs in themselves; the worker never types anything. Top-level
+navigation outside `allowedDomains` is blocked. Only whitelisted event keys
+are queued, and SmartPR's server sanitizes every event again.
+
+| Var | Value |
+|---|---|
+| `TEACH_TIMEOUT_MIN` | `45` (optional) — maximum length of a teach session; the browser closes after it |
+| `CHROMIUM_PATH` | optional — a specific Chromium build for Playwright |
+| `TEACH_IGNORE_HTTPS_ERRORS` | development only (local self-signed fixtures); never set in production |
+
+On the Next.js side, `TEACH_APPROVED_DOMAINS` (comma-separated hosts) lists
+non-government sites anyone may teach on; government domains are always
+allowed, and admins may teach on any HTTPS site.
 
 ## Pilot constraints
 

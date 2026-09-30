@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Portal de Permisos (fixture)</title>
+<style>
+  section { display: none; } section.on { display: block; }
+  .dd { position: relative; display: inline-block; } .dd ul { display: none; list-style: none; margin: 0; padding: 0; border: 1px solid #999; }
+  .dd.open ul { display: block; } .dd li { padding: 2px 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+<!-- Five-screen SPA used by recorder.e2e.test.ts: login → datos → dueño → empleados → revisión. -->
+<section id="s-login" class="on">
+  <h1>Iniciar sesión</h1>
+  <label for="user">Usuario</label> <input id="user" type="text">
+  <label for="pass">Contraseña</label> <input id="pass" type="password">
+  <button id="go" type="button" onclick="show('datos')">Entrar</button>
+</section>
+
+<section id="s-datos">
+  <h1>Datos del negocio</h1>
+  <p><label for="legal">Nombre legal</label> <input id="legal" type="text" required></p>
+  <p><label>Teléfono <input id="tel" type="tel" required></label></p>
+  <p><label for="email">Correo electrónico</label> <input id="email" type="email"></p>
+  <p><span id="muni-label">Municipio</span>
+    <span class="dd" id="muni-dd">
+      <span id="muni" role="combobox" aria-labelledby="muni-label" tabindex="0" onclick="toggleDd()">Seleccione</span>
+      <ul role="listbox">
+        <li role="option" id="muni-1" onclick="pick(this)">San Juan</li>
+        <li role="option" id="muni-2" onclick="pick(this)">Bayamón</li>
+        <li role="option" id="muni-3" onclick="pick(this)">Ponce</li>
+      </ul>
+    </span></p>
+  <p><label for="tipo">Tipo de solicitud</label>
+    <select id="tipo"><option value="">Seleccione</option><option value="pu">Permiso de Uso</option><option value="pc">Permiso de Construcción</option></select></p>
+  <p><label for="proj">Nombre del proyecto</label> <input id="proj" type="text"></p>
+  <button id="next1" type="button" onclick="show('dueno')">Continuar</button>
+</section>
+
+<section id="s-dueno">
+  <h1>¿A nombre de quién sale el permiso?</h1>
+  <label><input type="radio" name="owner" id="r1"> Usted</label>
+  <label><input type="radio" name="owner" id="r2"> De una compañía</label>
+  <button id="next2" type="button" onclick="show('empleados')">Continuar</button>
+</section>
+
+<section id="s-empleados">
+  <h1>Empleados</h1>
+  <label for="emp">Cantidad de empleados</label> <input id="emp" type="number">
+  <button id="next3" type="button" onclick="show('revision')">Continuar</button>
+</section>
+
+<section id="s-revision">
+  <h1>Revisión</h1>
+  <label><input type="checkbox" id="cert"> Certifico bajo juramento que la información es correcta</label>
+  <button id="radicar" type="button" onclick="document.body.dataset.submitted='1'">Radicar</button>
+</section>
+
+<script>
+  function show(id) {
+    document.querySelectorAll('section').forEach(function (s) { s.classList.toggle('on', s.id === 's-' + id); });
+    history.pushState({}, '', '#' + id);
+  }
+  function toggleDd() { document.getElementById('muni-dd').classList.toggle('open'); }
+  function pick(li) { document.getElementById('muni').textContent = li.textContent; toggleDd(); }
+</script>
+</body>
+</html>

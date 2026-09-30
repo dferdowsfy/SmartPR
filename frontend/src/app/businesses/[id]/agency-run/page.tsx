@@ -52,6 +52,7 @@ import {
 } from "../../../../lib/agency-runs/sensitiveFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
+import { TeachClaraEntry } from "./TeachClaraEntry";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import { filingReadinessKey, type FilingReadinessSummary } from "../../../../lib/agency-runs/filingReadiness";
@@ -1257,6 +1258,7 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
                 {L("File", "Radicación", lang)}
               </li>
             </ol>
+            <TeachClaraEntry businessId={businessId} filingType={run?.filing_type ?? null} lang={lang} variant="button" />
             {/* Language toggle lives here now that the global nav (which
                 used to carry it) is removed on this route. */}
             <div
@@ -1323,6 +1325,9 @@ export default function AgencyRunPage({ params }: { params: Promise<{ id: string
             ))}
           </div>
         </header>
+        {run && (
+          <TeachClaraEntry businessId={businessId} filingType={run.filing_type} lang={lang} variant="offer" />
+        )}
 
         {error && (
           <div className="mt-2 shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-[15px] text-rose-800">

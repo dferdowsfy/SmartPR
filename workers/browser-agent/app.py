@@ -13,6 +13,9 @@ client uses, so switching providers is an env change, not a rewrite:
   GET    /api/v3/sessions/{id}/screenshot  ?token=      (latest PNG, token-gated)
   GET    /vnc/vnc.html?token=              custom noVNC viewer (token-gated)
   WS     /vnc/websock?token=               browser websocket <-> x11vnc bridge
+  POST   /api/v4/teach                     {startUrl, allowedDomains, recorderScript}
+  GET    /api/v4/teach/{id}/events         ?after=     (recorder events, structure only)
+  POST   /api/v4/teach/{id}/stop
 
 Live view: Chromium renders on Xvfb :99, x11vnc exports it on 127.0.0.1:5900,
 and the /vnc/websock endpoint bridges the noVNC client straight to x11vnc.
@@ -131,6 +134,13 @@ class AgentSession:
     runs: list[AgentRun] = field(default_factory=list)
     current_run_id: Optional[str] = None
     event_seq: int = 0
+    # Teach mode (Teach Clara): a plain Playwright browser with the
+    # structure-only recorder injected, instead of a browser-use agent.
+    kind: str = "agent"  # agent|teach
+    teach_events: list[dict] = field(default_factory=list)
+    teach_seq: int = 0
+    teach_handles: dict = field(default_factory=dict)
+    teach_allowed: list[str] = field(default_factory=list)
 
     def push_log(self, role: str, text: str) -> SessionLog:
         self.event_seq += 1
@@ -741,6 +751,200 @@ async def v4_browsers(
         "pageNumber": 1,
         "pageSize": pageSize,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Teach mode — the user walks a filing in this browser; the injected recorder
+# reports structure only (labels, roles, selectors, page order, value KIND —
+# never values). SmartPR's server re-sanitizes every event. Navigation is
+# held to the allowed domains; the user signs in themselves via the viewer.
+# --------------------------------------------------------------------------- #
+
+TEACH_TIMEOUT_MIN = float(os.environ.get("TEACH_TIMEOUT_MIN", "45") or 45)
+# Optional: a specific Chromium build for Playwright (default: its bundled one).
+CHROMIUM_PATH = os.environ.get("CHROMIUM_PATH", "").strip() or None
+# Development only (local HTTPS fixtures with self-signed certs). Never set in production.
+TEACH_IGNORE_HTTPS_ERRORS = (os.environ.get("TEACH_IGNORE_HTTPS_ERRORS", "") or "").lower() in ("1", "true", "yes")
+TEACH_MAX_EVENTS = 5000
+TEACH_MAX_EVENT_BYTES = 4000
+TEACH_MAX_SCRIPT_BYTES = 100_000
+_TEACH_EVENT_KEYS = {
+    "kind", "url", "title", "heading", "hasPassword", "hasCaptcha", "hasFileInput",
+    "role", "label", "selector", "inputType", "valueKind", "required", "optionText",
+}
+
+
+class TeachCreate(BaseModel):
+    startUrl: str
+    allowedDomains: list[str] = []
+    recorderScript: str
+
+
+def _host_allowed(url: str, patterns: list[str]) -> bool:
+    from urllib.parse import urlparse
+
+    try:
+        host = (urlparse(url).hostname or "").lower()
+    except Exception:
+        return False
+    if not host:
+        return False
+    for pattern in patterns:
+        p = pattern.lower()
+        if p.startswith("*."):
+            p = p[2:]
+        if host == p or host.endswith("." + p):
+            return True
+    return False
+
+
+def _teach_record(sess: AgentSession, payload: Any) -> None:
+    """Binding target for window.__claraRecord — keep whitelisted keys only."""
+    import json
+
+    if len(sess.teach_events) >= TEACH_MAX_EVENTS:
+        return
+    try:
+        text = payload if isinstance(payload, str) else json.dumps(payload)
+        if len(text) > TEACH_MAX_EVENT_BYTES:
+            return
+        raw = json.loads(text)
+    except Exception:
+        return
+    if not isinstance(raw, dict):
+        return
+    event = {k: v for k, v in raw.items() if k in _TEACH_EVENT_KEYS}
+    sess.teach_seq += 1
+    sess.teach_events.append({"seq": sess.teach_seq, "event": event})
+
+
+async def _teach_close(sess: AgentSession) -> None:
+    handles = sess.teach_handles
+    sess.teach_handles = {}
+    for key in ("context", "browser"):
+        obj = handles.get(key)
+        if obj is not None:
+            try:
+                await obj.close()
+            except Exception:
+                pass
+    pw = handles.get("pw")
+    if pw is not None:
+        try:
+            await pw.stop()
+        except Exception:
+            pass
+    task = handles.get("timer")
+    if task is not None and not task.done():
+        task.cancel()
+
+
+async def _teach_screenshot_loop(sess: AgentSession) -> None:
+    while sess.status == "running" and sess.kind == "teach":
+        try:
+            ctx = sess.teach_handles.get("context")
+            pages = ctx.pages if ctx is not None else []
+            if pages:
+                sess.shot = bytes(await pages[-1].screenshot(type="png"))
+                sess.shot_at = time.time()
+        except Exception:
+            pass
+        await asyncio.sleep(2.5)
+
+
+async def _teach_timeout(sess: AgentSession) -> None:
+    await asyncio.sleep(TEACH_TIMEOUT_MIN * 60)
+    if sess.status == "running":
+        sess.status = "timed_out"
+        sess.push_log("system", "Teach session timed out.")
+        await _teach_close(sess)
+
+
+@app.post("/api/v4/teach", dependencies=[Depends(require_api_token)])
+async def teach_create(body: TeachCreate):
+    busy = active_session()
+    if busy:
+        raise HTTPException(status_code=409, detail=f"pilot limit: session {busy.id} is still active; stop it first")
+    if not body.startUrl.startswith("https://"):
+        raise HTTPException(status_code=400, detail="startUrl must be https")
+    allowed = [d for d in body.allowedDomains if isinstance(d, str) and d.strip()][:20]
+    if not allowed or not _host_allowed(body.startUrl, allowed):
+        raise HTTPException(status_code=400, detail="startUrl is outside allowedDomains")
+    if not body.recorderScript or len(body.recorderScript) > TEACH_MAX_SCRIPT_BYTES:
+        raise HTTPException(status_code=400, detail="recorderScript missing or too large")
+
+    sess = AgentSession(id=f"teach_{uuid.uuid4().hex[:12]}", token=uuid.uuid4().hex, model="teach")
+    sess.kind = "teach"
+    sess.status = "running"
+    sess.title = "Teach Clara"
+    sess.teach_allowed = allowed
+    SESSIONS[sess.id] = sess
+    try:
+        from playwright.async_api import async_playwright
+
+        pw = await async_playwright().start()
+        sess.teach_handles["pw"] = pw
+        browser = await pw.chromium.launch(
+            headless=False,
+            executable_path=CHROMIUM_PATH,
+            args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--start-maximized"],
+        )
+        sess.teach_handles["browser"] = browser
+        context = await browser.new_context(
+            viewport={"width": 1280, "height": 760}, ignore_https_errors=TEACH_IGNORE_HTTPS_ERRORS
+        )
+        sess.teach_handles["context"] = context
+        await context.expose_binding("__claraRecord", lambda _source, payload: _teach_record(sess, payload))
+        await context.add_init_script(script=body.recorderScript)
+
+        async def guard(route, request):
+            frame = request.frame
+            is_top = frame is not None and frame.parent_frame is None
+            if request.is_navigation_request() and is_top and not _host_allowed(request.url, sess.teach_allowed):
+                sess.push_log("system", "Blocked navigation outside the allowed sites.")
+                await route.abort("blockedbyclient")
+                return
+            await route.continue_()
+
+        await context.route("**/*", guard)
+        page = await context.new_page()
+        try:
+            await page.goto(body.startUrl, wait_until="domcontentloaded", timeout=45_000)
+        except Exception as exc:  # the user can still navigate from the viewer
+            sess.push_log("system", f"Start page load issue: {type(exc).__name__}")
+    except Exception as exc:  # noqa: BLE001
+        log.exception("teach browser launch failed")
+        sess.status = "error"
+        await _teach_close(sess)
+        raise HTTPException(status_code=500, detail=f"teach browser launch failed: {type(exc).__name__}")
+
+    sess.teach_handles["timer"] = asyncio.create_task(_teach_timeout(sess))
+    asyncio.create_task(_teach_screenshot_loop(sess))
+    sess.push_log("system", "Teach session started.")
+    live_url = f"{_base()}/vnc/vnc.html?token={sess.token}&autoconnect=true" if _base() else None
+    return JSONResponse({"sessionId": sess.id, "liveUrl": live_url}, status_code=201)
+
+
+@app.get("/api/v4/teach/{session_id}/events", dependencies=[Depends(require_api_token)])
+async def teach_events(session_id: str, after: int = Query(default=0, ge=0)):
+    sess = SESSIONS.get(session_id)
+    if not sess or sess.kind != "teach":
+        raise HTTPException(status_code=404, detail="teach session not found")
+    items = [e for e in sess.teach_events if e["seq"] > after][:500]
+    next_after = items[-1]["seq"] if items else after
+    return {"items": items, "nextAfter": next_after, "status": sess.status}
+
+
+@app.post("/api/v4/teach/{session_id}/stop", dependencies=[Depends(require_api_token)])
+async def teach_stop(session_id: str):
+    sess = SESSIONS.get(session_id)
+    if not sess or sess.kind != "teach":
+        raise HTTPException(status_code=404, detail="teach session not found")
+    if sess.status == "running":
+        sess.status = "stopped"
+        sess.push_log("system", "Teach session stopped.")
+    await _teach_close(sess)
+    return {"sessionId": sess.id, "status": sess.status}
 
 
 # --------------------------------------------------------------------------- #
