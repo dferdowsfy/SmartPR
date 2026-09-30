@@ -7,6 +7,7 @@ import { OpportunitiesDrawer } from "./OpportunitiesDrawer";
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from "../../incentives/types";
 import type { IncentiveEvaluation } from "../../processes/engine";
 import { unifiedIncentives, shortAgency } from "../../processes/presentation";
+import { relevantIncentiveOpportunities } from "../../incentives/relevance";
 
 type Language = "en" | "es";
 
@@ -134,8 +135,10 @@ export function IncentivesSidebar({
   const questionCount = assessment?.followUpQuestions.length ?? 0;
 
   if (variant === "section") {
-    const { extra } = unifiedIncentives(opportunities, extraIncentives);
-    const count = opportunities.length + extra.length;
+    // Only programs with a real signal for this project; the drawer keeps the full list.
+    const relevant = relevantIncentiveOpportunities(opportunities);
+    const { extra } = unifiedIncentives(relevant, extraIncentives);
+    const count = relevant.length + extra.length;
     return (
       <details className="rq-group ck-group rq-group-incentives" data-testid="req-group-incentives">
         <style>{`
@@ -151,31 +154,31 @@ export function IncentivesSidebar({
         </summary>
         <p className="rq-group-sub">{es ? "No son requisitos. Revisa si te interesan." : "Not requirements. Review them if you are interested."}</p>
         {!loading && count === 0 && <p className="rq-group-sub">{es ? "Aún no hay coincidencias publicadas para este perfil." : "No published matches for this profile yet."}</p>}
-        <ul className="ck-rows">
-          {opportunities.map((item) => {
+        <div role="list" className="ck-rows">
+          {relevant.map((item) => {
             const status = statusPresentation(item, language);
             const isPursued = pursuedIncentives.some((p) => p.programId === item.programId);
             return (
-              <li key={item.programId} className="ck-row" data-testid={`incentive-${item.programId}`}>
+              <div role="listitem" key={item.programId} className="ck-row" data-testid={`incentive-${item.programId}`}>
                 <div className="ck-row-head ck-row-static">
                   <span className="ck-name">{item.programName}{isPursued && <span className="inc-pursued-chip"><Check size={11} aria-hidden="true" /> {es ? "Añadido" : "Added"}</span>}</span>
                   <span className={`ck-pill ck-pill-inc-${status.tone}`}>{status.label}</span>
                   <button type="button" className="ck-action" onClick={() => onReview(item)}>{es ? "Revisar" : "Review"} <ArrowRight size={12} aria-hidden="true" /></button>
                 </div>
-              </li>
+              </div>
             );
           })}
           {extra.map((i) => (
-            <li key={i.incentive_id} className="ck-row" data-testid={`incentive-${i.incentive_id}`}>
+            <div role="listitem" key={i.incentive_id} className="ck-row" data-testid={`incentive-${i.incentive_id}`}>
               <div className="ck-row-head ck-row-static">
                 <span className="ck-name">{i.program_name ?? i.name}</span>
                 <span className="ck-agency">{i.agencies.map(shortAgency).join(" / ")}</span>
                 <span className="ck-pill ck-pill-may_apply">{i.state === "POTENTIALLY_ELIGIBLE" ? (es ? "Posiblemente elegible" : "Possibly eligible") : (es ? "Falta información" : "More information needed")}</span>
                 <a className="ck-source-link" href={i.citation.url} target="_blank" rel="noreferrer">{es ? "Fuente" : "Source"}</a>
               </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
         {!loading && questionCount > 0 && (
           <button type="button" className="inc-improve" onClick={() => setShowAll(true)}>
             <HelpCircle size={15} aria-hidden="true" />

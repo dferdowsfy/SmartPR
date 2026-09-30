@@ -265,6 +265,8 @@ export interface ProcessDisplay {
   segment_labels?: Record<string, Bilingual>;
   technology_labels?: Record<string, Bilingual>;
   offtaker_labels?: Record<string, Bilingual>;
+  /** Where an on-site system sits, for the summary line ("Rooftop solar"). */
+  mounting_labels?: Record<string, Bilingual>;
 }
 
 // ---------------------------------------------------------------- graph ----

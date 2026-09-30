@@ -1061,6 +1061,7 @@ export const ES: Record<string, string> = {
   "None — needed before": "Ninguno — necesario antes de",
   "Other checks for your business": "Otras verificaciones para tu negocio",
   "Show full reasoning": "Ver razonamiento completo",
+  "View options": "Opciones de vista",
   "Business registrations your company already holds — confirm they are current.": "Registros que tu compañía ya tiene — confirma que estén vigentes.",
   "Nothing in your description points to these. Answer once to confirm or clear them.": "Nada en tu descripción apunta a estas. Contesta una vez para confirmarlas o descartarlas.",
   "Decides": "Decide",

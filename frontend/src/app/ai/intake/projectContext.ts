@@ -157,6 +157,24 @@ function newConstructionClaimed(key: string, value: unknown): boolean {
   return false;
 }
 
+// A microgrid and a sale of energy are regulated relationships (PREB
+// Reg. 9028; Law 57-2014), not properties of solar panels. The model may
+// only claim them when the user's own words do: "rooftop solar
+// installation" is neither a microgrid nor a sale of energy.
+const MICROGRID_STATED_RE = /\bmicro[-\s]?(?:grids?|red(?:es)?)\b|\bisland(?:ing|ed|able)\b|\bisland\s+mode\b|\bmodo\s+isla\b|\b(?:operar|funcionar|operaci[oó]n)\s+(?:en\s+)?(?:forma\s+)?aislad[oa]\b|\baislamiento\b/i;
+const SALE_STATED_RE = /\b(?:sell(?:s|ing)?|sold|sale|resell\w*|vend(?:er|emos|o|e|en|ido|iendo)|venta|revend\w*|ppa|power\s+purchase|compraventa|third[-\s]part(?:y|ies)|terceros)\b/i;
+
+/** Why an energy claim is dropped, or null when the description supports it. */
+function unstatedEnergyClaim(key: string, value: unknown, description: string): string | null {
+  if (key === "microgrid_configuration" && value === true && !MICROGRID_STATED_RE.test(description)) {
+    return "microgrid claim dropped: the description never mentions a microgrid or islanding";
+  }
+  if (key === "sells_energy_to_third_parties" && value === true && !SALE_STATED_RE.test(description)) {
+    return "energy sale claim dropped: the description never mentions selling energy";
+  }
+  return null;
+}
+
 function renovationClaimed(key: string, value: unknown): boolean {
   if (key === "renovation" && value === true) return true;
   if (key === "project_type" && typeof value === "string") {
@@ -267,6 +285,11 @@ export function validateProjectContext(raw: unknown, description?: string): {
       // The model's evidence must be a real quote from the description.
       if (!evidence || !evidenceInText(evidence, description)) {
         discarded.push({ field, reason: "evidence is not a quote from the description" });
+        continue;
+      }
+      const unstated = unstatedEnergyClaim(key, value, description);
+      if (unstated) {
+        discarded.push({ field, reason: unstated });
         continue;
       }
       if (newConstructionClaimed(key, value) && !newConstructionStated(description)) {

@@ -1,0 +1,19 @@
+{
+  "id": "E07",
+  "title": "Rooftop solar installation, Guaynabo: model over-reads a four-word prompt (installer, microgrid, energy sale)",
+  "source": "Darius live test of PR #118 on www.getsmartpr.com, 2026-09-30 ~10:20 ET (page pasted as text: 'New energy project · Guaynabo', 10 steps, Microgrid registration/compliance Required, 'Which energy services will you offer?'). Model output is a reconstructed fixture that reproduces that page (no live LLM in CI).",
+  "description": "rooftop solar installation, Guaynabo",
+  "profile": { "business_type": "Solar Installer", "industry": "Energy & Utilities", "municipality": "Guaynabo" },
+  "projectIntent": "existing_business",
+  "answers": { "Q_RENEWABLE_INSTALL": true, "Q_SOLAR_MOUNTING": "Roof-mounted" },
+  "modelProjectContext": {
+    "municipality": { "value": "Guaynabo", "confidence": 0.95, "evidence": "Guaynabo" },
+    "generation_technology": { "value": "solar", "confidence": 0.9, "evidence": "rooftop solar" },
+    "mounting_type": { "value": "roof", "confidence": 0.9, "evidence": "rooftop" },
+    "energy_applicant_role": { "value": "installer", "confidence": 0.7, "evidence": "solar installation" },
+    "parallel_operation": { "value": true, "confidence": 0.6, "evidence": "rooftop solar installation" },
+    "microgrid_configuration": { "value": true, "confidence": 0.6, "evidence": "solar installation" },
+    "sells_energy_to_third_parties": { "value": true, "confidence": 0.6, "evidence": "solar installation" },
+    "energy_project_status": { "value": "proposed", "confidence": 0.8, "evidence": "installation" }
+  }
+}

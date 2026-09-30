@@ -40,8 +40,14 @@ export function energySummaryQuestions(
         : q.type === "enum"
           ? q.options?.map((o) => ({ label: o.label, onClick: () => answer(q.fact, o.value) }))
           : undefined,
+    // List facts with published options are multi-select chips; the fact
+    // is stored comma-separated, as the intake model writes it.
+    multi:
+      q.type === "list" && q.options?.length
+        ? { options: q.options, onSubmit: (values: string[]) => answer(q.fact, values.join(",")) }
+        : undefined,
     input:
-      q.type === "number" || q.type === "string" || q.type === "list"
+      q.type === "number" || q.type === "string" || (q.type === "list" && !q.options?.length)
         ? {
             numeric: q.type === "number",
             onSubmit: (v: string) => {
@@ -61,7 +67,7 @@ export function EnergyProcessesSection({
   legacyCards,
   suppressedLegacy = [],
   language,
-  startIndex = 0,
+  defaultOpen = [],
 }: {
   /** Computed by the caller (processes/view.ts) so legacy cards can be deduped. */
   assessment: ProcessAssessment;
@@ -73,14 +79,15 @@ export function EnergyProcessesSection({
   /** Legacy cards that do not apply at all (listed under "Checked — doesn't apply"). */
   suppressedLegacy?: LegacySupersession[];
   language: Language;
-  /** Flat (unstaged) lists continue the page's numbering after this many lines. */
-  startIndex?: number;
+  /** Process ids whose row (and full reasoning) start expanded — deep links and tests. */
+  defaultOpen?: string[];
 }) {
   const es = language === "es";
   const checklist = given ?? processChecklist(assessment, graph, language, { suppressedLegacy });
   const byId = new Map(assessment.processes.map((p) => [p.process_id, p]));
   const flat = checklist.stages.length === 1 && checklist.stages[0].step === null;
-  let n = startIndex;
+  // Numbering restarts at 1 in every group of the page.
+  let n = 0;
   return (
     <section className="rq-group rq-group-energy ck-group" data-testid="req-group-energy">
       <div className="rq-group-head">
@@ -90,24 +97,26 @@ export function EnergyProcessesSection({
       {!flat && (
         <p className="rq-group-sub">{es ? "Orden típico; algunos pasos pueden correr en paralelo." : "Typical order; some steps can run in parallel."}</p>
       )}
-      <ol className={`ck-stages ${flat ? "ck-stages-flat" : ""}`} data-testid="energy-sequence">
+      {/* Rows carry their own number badge, so lists are role="list" divs,
+          never <ol>/<li>: no second (browser or copy/paste) number. */}
+      <div role="list" className={`ck-stages ${flat ? "ck-stages-flat" : ""}`} data-testid="energy-sequence">
         {checklist.stages.map((s) =>
           flat ? (
             s.items.map((it) => (
-              <EnergyRow key={it.id} item={it} num={++n} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
             ))
           ) : (
-            <li key={s.id} className="ck-stage" data-testid={`energy-step-${s.step}`}>
+            <div role="listitem" key={s.id} className="ck-stage" data-testid={`energy-step-${s.step}`}>
               <div className="ck-stage-head"><span className="ck-num">{s.step}</span> {s.name}</div>
-              <ul className="ck-rows">
+              <div role="list" className="ck-rows">
                 {s.items.map((it) => (
-                  <EnergyRow key={it.id} item={it} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
                 ))}
-              </ul>
-            </li>
+              </div>
+            </div>
           )
         )}
-      </ol>
+      </div>
 
       {checklist.not_applicable.length > 0 && (
         <details className="ck-not" data-testid="energy-not-applicable">
@@ -130,11 +139,11 @@ function legacyFor(p: ProcessEvaluation, cards: Record<string, EnergyLegacyCard>
   return p.legacy_document_ids.map((d) => cards[d]).filter((c): c is EnergyLegacyCard => !!c);
 }
 
-function EnergyRow({ item, p, num, legacy, language }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; language: Language }) {
+function EnergyRow({ item, p, num, legacy, language, startOpen = false }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; language: Language; startOpen?: boolean }) {
   const es = language === "es";
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(startOpen);
   return (
-    <li className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
+    <div role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
       <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {num !== undefined && <span className="ck-num">{num}</span>}
         <span className="ck-name">{item.name}</span>
@@ -150,13 +159,13 @@ function EnergyRow({ item, p, num, legacy, language }: { item: ChecklistItem; p:
           {item.needs.length > 0 && (
             <div className="ck-block">
               <div className="ck-label">{es ? "Lo que necesitarás" : "What you'll need"}</div>
-              <ul>{item.needs.map((x) => <li key={x}>{x}</li>)}</ul>
+              <ul>{item.needs.filter((x) => x.trim()).map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}
           {item.agency_steps.length > 0 && (
             <div className="ck-block">
               <div className="ck-label">{es ? "Lo que hace la agencia" : "What the agency does"}</div>
-              <ul>{item.agency_steps.map((x) => <li key={x}>{x}</li>)}</ul>
+              <ul>{item.agency_steps.filter((x) => x.trim()).map((x) => <li key={x}>{x}</li>)}</ul>
             </div>
           )}
           {item.before.length > 0 && (
@@ -175,18 +184,54 @@ function EnergyRow({ item, p, num, legacy, language }: { item: ChecklistItem; p:
               {item.expert && <span className="ck-expert">{es ? "requiere revisión experta" : "needs expert check"}</span>}
             </div>
           )}
-          <FullReasoning language={language}>
-            <RawTrace p={p} legacy={legacy} language={language} />
+          <FullReasoning language={language} open={startOpen}>
+            <ProcessReasoning p={p} legacy={legacy} language={language} />
           </FullReasoning>
         </div>
       )}
-    </li>
+    </div>
   );
 }
 
+/** One line of the auditor trace; null when it would carry no text. */
+interface TraceLine { kind: string; text: string; href?: string; detail?: string; title?: string }
+
+function traceText(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string") return v.trim();
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return "";
+}
+
+/**
+ * The auditor trace as plain lines: every fact, trigger, classification,
+ * source, agency, dependency and requirement (rule ids, evidence ids,
+ * quotes, citations). A line with no text is dropped instead of rendering
+ * as an empty bullet, and nothing is rendered as a list item, so copying
+ * the page never yields blank or doubled list markers.
+ */
+export function processTraceLines(p: ProcessEvaluation): TraceLine[] {
+  const lines: TraceLine[] = [];
+  for (const s of p.explanation) {
+    const text = traceText(s.label);
+    const detail = traceText(s.detail) || undefined;
+    if (!text && !detail) continue;
+    lines.push({ kind: s.kind, text: text || detail!, href: s.url || undefined, detail: text ? detail : undefined });
+  }
+  for (const r of p.requirements) {
+    const name = traceText(r.name);
+    if (!name) continue;
+    const ids = [r.id, ...r.evidence_ids].filter(Boolean).join(" · ");
+    const cite = [traceText(r.citation?.locator) || traceText(r.citation?.title), traceText(r.citation?.confidence), traceText(r.citation?.status).replace(/_/g, " ")].filter(Boolean).join(" · ");
+    lines.push({ kind: r.state, text: `${name} (${ids})`, detail: cite || undefined, href: r.citation?.url || undefined, title: r.citation?.controlling_language || undefined });
+  }
+  return lines;
+}
+
 /** Auditor view: every fact, trigger, rule id, quote and citation — unchanged data. */
-function RawTrace({ p, legacy, language }: { p: ProcessEvaluation; legacy: EnergyLegacyCard[]; language: Language }) {
+export function ProcessReasoning({ p, legacy = [], language }: { p: ProcessEvaluation; legacy?: EnergyLegacyCard[]; language: Language }) {
   const es = language === "es";
+  const lines = processTraceLines(p);
   return (
     <>
       <dl className="ck-trace">
@@ -197,29 +242,20 @@ function RawTrace({ p, legacy, language }: { p: ProcessEvaluation; legacy: Energ
         {p.readiness && <div><dt>{es ? "Preparación" : "Readiness"}</dt><dd>{p.readiness.satisfied}/{p.readiness.total}</dd></div>}
         {legacy.length > 0 && <div><dt>{es ? "Incluye" : "Covers"}</dt><dd>{legacy.map((c) => c.name).join(" · ")}</dd></div>}
         {p.jurisdiction_note && <div><dt>{es ? "Jurisdicción" : "Jurisdiction"}</dt><dd>{p.jurisdiction_note}</dd></div>}
+        {p.citation && (
+          <div><dt>{es ? "Fuente" : "Source"}</dt><dd>{p.citation.title}{p.citation.locator ? `, ${p.citation.locator}` : ""}{p.citation.citation ? ` — ${p.citation.citation}` : ""} · {p.citation.confidence} · {p.citation.status.replace(/_/g, " ")} · {es ? "verificado" : "verified"} {p.citation.date_last_verified}</dd></div>
+        )}
       </dl>
-      <ul className="ck-trace-steps">
-        {p.explanation.map((s, i) => (
-          <li key={i}>
-            <span className="ck-trace-kind">{s.kind}</span> {s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.label}</a> : s.label}
-            {s.detail && <div className="ck-trace-detail">{s.detail}</div>}
-          </li>
-        ))}
-      </ul>
-      {p.citation && (
-        <div className="ck-trace-detail">
-          {p.citation.title}{p.citation.locator ? `, ${p.citation.locator}` : ""}{p.citation.citation ? ` — ${p.citation.citation}` : ""} · {p.citation.confidence} · {p.citation.status.replace(/_/g, " ")} · {es ? "verificado" : "verified"} {p.citation.date_last_verified}
-        </div>
-      )}
-      {p.requirements.length > 0 && (
-        <ul className="ck-trace-steps">
-          {p.requirements.map((r) => (
-            <li key={r.id}>
-              <span className="ck-trace-kind">{r.state}</span> {r.name} ({r.id}{r.evidence_ids.length ? ` · ${r.evidence_ids.join(", ")}` : ""}) —{" "}
-              <a href={r.citation.url} target="_blank" rel="noreferrer" title={r.citation.controlling_language}>{r.citation.locator ?? r.citation.title}</a> · {r.citation.confidence} · {r.citation.status.replace(/_/g, " ")}
-            </li>
+      {lines.length > 0 && (
+        <div className="ck-trace-steps" data-testid="trace-lines">
+          {lines.map((l, i) => (
+            <p key={i} className="ck-trace-line">
+              <span className="ck-trace-kind">{l.kind}</span>{" "}
+              {l.href ? <a href={l.href} target="_blank" rel="noreferrer" title={l.title}>{l.text}</a> : l.text}
+              {l.detail && <span className="ck-trace-detail"> — {l.detail}</span>}
+            </p>
           ))}
-        </ul>
+        </div>
       )}
     </>
   );

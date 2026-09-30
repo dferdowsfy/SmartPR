@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30.2",
+  "version": "2026-09-30.3",
   "domain": "energy",
   "jurisdiction": "Puerto Rico",
   "agencies": [
@@ -5457,6 +5457,20 @@
       "self": {
         "en": "self-supply",
         "es": "autoconsumo"
+      }
+    },
+    "mounting_labels": {
+      "roof": {
+        "en": "Rooftop",
+        "es": "en techo"
+      },
+      "carport": {
+        "en": "Carport",
+        "es": "en estacionamiento techado"
+      },
+      "ground": {
+        "en": "Ground-mounted",
+        "es": "en terreno"
       }
     }
   }
