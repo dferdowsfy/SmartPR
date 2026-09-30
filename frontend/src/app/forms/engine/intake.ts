@@ -80,31 +80,58 @@ export const INTAKE_FIELDS: IntakeFieldSpec[] = [
 ];
 
 /**
- * Map the existing SmartPR `business_structure` string onto a canonical
- * EntityType so the legacy intake continues to seed the canonical model without
- * a breaking migration.
+ * Resolve the canonical entity type preferring the stored profile value,
+ * falling back to a Q_BUSINESS_STRUCTURE discovery answer. The profile wins
+ * when set; the answer fills the gap the guided intake leaves (business_structure
+ * is tiered filing_specific, so live drafts often carry null even after the
+ * user answered the structure question).
+ */
+export function entityTypeFromProfileOrAnswers(
+  structure: string | undefined,
+  qbAnswer: unknown
+): EntityType {
+  const fromProfile = entityTypeFromLegacyStructure(structure);
+  if (fromProfile !== "other" || !qbAnswer) return fromProfile;
+  const fromAnswer = entityTypeFromLegacyStructure(String(qbAnswer));
+  return fromAnswer;
+}
+
+/**
+ * Map a business_structure string onto a canonical EntityType so the legacy
+ * intake continues to seed the canonical model without a breaking migration.
+ *
+ * Accepts the stored snake_case values AND the Q_BUSINESS_STRUCTURE answer
+ * labels ("Sole Proprietorship", "LLC", …) — normalized so display strings,
+ * spaces, and casing never silently become "other" (REG-SOLEPROP-DUALFORMATION-001:
+ * an unrecognized entity disabled every excluded_entity_types rule, showing
+ * both incorporation and LLC certificates to a sole proprietor).
  */
 export function entityTypeFromLegacyStructure(structure: string | undefined): EntityType {
-  switch ((structure || "").toLowerCase()) {
+  const norm = (structure || "").toLowerCase().replace(/[^a-z]/g, "");
+  switch (norm) {
     case "corporation":
+    case "stockcorporation":
       return "stock_corporation";
-    case "professional_corporation":
+    case "professionalcorporation":
       return "professional_corporation";
     case "nonprofit":
-    case "nonprofit_nonstock_corporation":
+    case "nonprofitnonstockcorporation":
       return "nonprofit_nonstock_corporation";
-    case "close_corporation":
+    case "closecorporation":
       return "close_corporation";
     case "llp":
-    case "limited_liability_partnership":
+    case "limitedliabilitypartnership":
       return "limited_liability_partnership";
     case "llc":
+    case "limitedliabilitycompany":
       return "limited_liability_company";
-    case "sole_proprietorship":
+    case "soleproprietorship":
+    case "soleproprietor":
+    case "soleprop":
       return "sole_proprietorship";
     case "partnership":
       return "partnership";
-    case "foreign_corporation":
+    case "foreigncorporation":
       return "foreign_corporation";
     default:
       return "other";
