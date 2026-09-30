@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smartpr.app/schemas/clara-skill.schema.json",
+  "title": "Clara filing skill",
+  "description": "Teach Clara spec §4. A reusable agency-portal filing skill: page sequence, clicks, portal_field → passport_path mappings, conditional branches and human gates. Structure only — never credentials, MFA codes or entered values; values come from the Business Passport at replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "skill_id",
+    "version",
+    "portal",
+    "form",
+    "taught_by",
+    "scope",
+    "status",
+    "steps",
+    "gates"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "skill_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+\\.[a-z0-9_]+$",
+      "description": "<agency>.<form>, e.g. ogpe.permiso_unico. Stored as <skill_id>.v<version>.json."
+    },
+    "version": { "type": "integer", "minimum": 1 },
+    "portal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "base_url"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "base_url": { "type": "string", "pattern": "^https://[a-z0-9.-]+/" }
+      }
+    },
+    "form": { "type": "string", "minLength": 1 },
+    "filing_type_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Extension, optional: link to a hand-written AGENCY_FILING_CONFIGS entry when one exists. Skills for any other government site omit it; they are matched by portal.base_url host + form."
+    },
+    "taught_by": { "enum": ["admin", "partner", "user"] },
+    "scope": { "enum": ["shared", "private"] },
+    "status": {
+      "enum": ["draft", "in_review", "approved", "rejected", "needs_reteach"]
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/gate" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "passportPath": {
+      "type": "string",
+      "pattern": "^[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)+$"
+    },
+    "fallback": {
+      "enum": ["pause_and_ask", "skip_step", "abort_run"],
+      "description": "What Clara does when this can't be done as recorded. Unknown states pause; they never improvise."
+    },
+    "transform": {
+      "enum": [null, "trim", "strip_formatting", "digits_only", "uppercase"]
+    },
+    "bilingualText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["en", "es"],
+      "properties": {
+        "en": { "type": "string", "minLength": 1 },
+        "es": { "type": "string", "minLength": 1 }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "label_contains"],
+      "description": "Selectors are hints, not contracts: matching tries role + label, then selector, and pauses when none match.",
+      "properties": {
+        "role": {
+          "enum": ["button", "link", "radio", "checkbox", "combobox", "option", "tab"]
+        },
+        "label_contains": { "type": "string", "minLength": 1 },
+        "selector": { "type": ["string", "null"] }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target", "fallback"],
+      "properties": {
+        "type": { "const": "click" },
+        "target": { "$ref": "#/$defs/target" },
+        "rule": { "type": "string", "minLength": 1 },
+        "fallback": { "$ref": "#/$defs/fallback" }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["portal_field", "passport_path", "transform", "required", "fallback"],
+      "properties": {
+        "portal_field": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["label"],
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "selector": { "type": ["string", "null"] },
+            "role": { "enum": ["textbox", "combobox"] }
+          }
+        },
+        "passport_path": {
+          "type": ["string", "null"],
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*)+$",
+          "description": "null = no mapping: Clara never fills it — she pauses and asks (see ask)."
+        },
+        "ask": { "$ref": "#/$defs/bilingualText" },
+        "transform": { "$ref": "#/$defs/transform" },
+        "required": { "type": "boolean" },
+        "rule": { "type": "string", "minLength": 1 },
+        "fallback": { "$ref": "#/$defs/fallback" }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["when", "goto_step"],
+      "properties": {
+        "when": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passport_has"],
+          "properties": {
+            "passport_has": { "$ref": "#/$defs/passportPath" },
+            "equals": { "type": ["string", "number", "boolean"] }
+          }
+        },
+        "goto_step": { "$ref": "#/$defs/id" },
+        "note": { "type": "string" }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": {
+          "enum": ["human", "pause"],
+          "description": "human = only the human acts, in their own browser. pause = Clara stops and asks the human to confirm or supply something before continuing."
+        },
+        "note": { "type": "string" },
+        "handoff": { "$ref": "#/$defs/bilingualText" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "page_match", "observed", "fallback", "actions", "fields"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/bilingualText" },
+        "page_match": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url_contains": { "type": "string", "minLength": 1 },
+            "title_contains": { "type": "string", "minLength": 1 }
+          }
+        },
+        "gate": {
+          "$ref": "#/$defs/id",
+          "description": "Extension: the gate this screen is. Gate screens carry no actions or fields."
+        },
+        "observed": {
+          "type": "boolean",
+          "description": "Extension: true only when this screen was seen in a live run. Manual-derived steps are false."
+        },
+        "fallback": {
+          "$ref": "#/$defs/fallback",
+          "description": "Extension: what Clara does when page_match fails on this step (unexpected screen)."
+        },
+        "rules": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Extension: step-wide rules, e.g. the POST-LOGIN SWEEP."
+        },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+        "branches": { "type": "array", "items": { "$ref": "#/$defs/branch" } },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["gate"] },
+          "then": {
+            "properties": {
+              "actions": { "maxItems": 0 },
+              "fields": { "maxItems": 0 }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

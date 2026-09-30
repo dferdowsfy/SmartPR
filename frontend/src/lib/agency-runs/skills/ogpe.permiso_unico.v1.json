@@ -1,0 +1,394 @@
+{
+  "$schema": "./skill.schema.json",
+  "skill_id": "ogpe.permiso_unico",
+  "version": 1,
+  "portal": {
+    "name": "OGPe Single Business Portal",
+    "base_url": "https://sbp.ogpe.pr.gov/"
+  },
+  "form": "Permiso Único",
+  "filing_type_id": "OGPE_PERMISO_UNICO",
+  "taught_by": "admin",
+  "scope": "shared",
+  "status": "draft",
+  "steps": [
+    {
+      "id": "portal-home",
+      "label": { "en": "Open the Single Business Portal", "es": "Abrir el Single Business Portal" },
+      "page_match": { "url_contains": "sbp.ogpe.pr.gov" },
+      "observed": true,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Pre-login screens live-verified."
+    },
+    {
+      "id": "login",
+      "label": { "en": "Sign in", "es": "Iniciar sesión" },
+      "page_match": { "title_contains": "Iniciar sesión" },
+      "gate": "login",
+      "observed": true,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Hard login gate before any application step. Screen seen in the 2026-09-28 QA run; exact heading not recorded — confirm title_contains on the next walk."
+    },
+    {
+      "id": "mfa",
+      "label": { "en": "Email verification code", "es": "Código de verificación por email" },
+      "page_match": { "title_contains": "código" },
+      "gate": "mfa",
+      "observed": true,
+      "fallback": "abort_run",
+      "actions": [],
+      "fields": [],
+      "note": "Code arrives from DoNotReply@ddec.pr.gov. If no code arrives, stop — never invent or reuse a code. QA-mode OTP assist is a runner feature for test businesses, not part of this skill. Exact heading not recorded — confirm on the next walk."
+    },
+    {
+      "id": "crear-solicitud",
+      "label": { "en": "Start a Permiso Único application", "es": "Crear una solicitud de Permiso Único" },
+      "page_match": { "title_contains": "Solicitud" },
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "rules": [
+        "POST-LOGIN SWEEP: the first screen after login/MFA is a NEW step, never a continuation of login. If it asks profile, identity or project questions, fill every non-sensitive blank from the passport first, then ask the rest in chat. Never skip a question batch because login had none.",
+        "Fill every mapped field from the passport before pausing for anything the passport cannot supply."
+      ],
+      "actions": [
+        {
+          "type": "click",
+          "target": { "role": "button", "label_contains": "Crear Solicitud", "selector": null },
+          "fallback": "pause_and_ask"
+        },
+        {
+          "type": "click",
+          "target": { "role": "combobox", "label_contains": "Tipo de solicitud", "selector": null },
+          "rule": "CUSTOM DROPDOWNS: SBP dropdowns are not native <select>. Click the control to open the list, then click the option. Read the shown value back; if it still shows the placeholder, open it and click once more.",
+          "fallback": "pause_and_ask"
+        },
+        {
+          "type": "click",
+          "target": { "role": "option", "label_contains": "Permiso Único", "selector": null },
+          "rule": "If 'Permiso Único' is not in the list, stop and report what the list shows.",
+          "fallback": "pause_and_ask"
+        }
+      ],
+      "fields": [],
+      "note": "From OGPe's official Permiso Único manual. If the wizard asks whether to attach an existing project or create one, ask the human."
+    },
+    {
+      "id": "proyecto-dueno",
+      "label": { "en": "Who the project is filed under", "es": "A nombre de quién sale el proyecto" },
+      "page_match": { "title_contains": "¿A nombre de quién deben salir los trámites" },
+      "observed": true,
+      "fallback": "pause_and_ask",
+      "actions": [
+        {
+          "type": "click",
+          "target": { "role": "radio", "label_contains": "Usted", "selector": null },
+          "rule": "Always choose 'Usted'; never 'De una compañía'. The Compañías selector is empty on new accounts and Clara never invents a company. If the filing must be in the company's name, the human picks it in the browser.",
+          "fallback": "pause_and_ask"
+        }
+      ],
+      "fields": [],
+      "note": "Observed in the 2026-09-28 live QA run (options: Usted / De otra persona / De una compañía)."
+    },
+    {
+      "id": "proyecto-detalles",
+      "label": { "en": "Project details", "es": "Detalles del proyecto" },
+      "page_match": { "title_contains": "Proyecto" },
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [
+        {
+          "portal_field": { "label": "Nombre del proyecto", "selector": null, "role": "textbox" },
+          "passport_path": null,
+          "ask": {
+            "en": "What do you want to call this project? For example, the store's name and town.",
+            "es": "¿Qué nombre le quieres poner a este proyecto? Por ejemplo, el nombre del local y el pueblo."
+          },
+          "transform": null,
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Nombre legal", "selector": null, "role": "textbox" },
+          "passport_path": "business.legalName",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Nombre comercial", "selector": null, "role": "textbox" },
+          "passport_path": "business.tradeName",
+          "transform": "trim",
+          "required": false,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Tipo de entidad", "selector": null, "role": "combobox" },
+          "passport_path": "business.entityType",
+          "transform": null,
+          "required": true,
+          "rule": "CUSTOM DROPDOWNS: open the list, click the option whose visible text matches the passport entity type, read it back. Never pick an option that isn't listed — ask instead.",
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Dirección física", "selector": null, "role": "textbox" },
+          "passport_path": "addresses.principalPhysical.line1",
+          "transform": "trim",
+          "required": true,
+          "rule": "The portal rejects PO boxes and unverifiable addresses — report its message instead of retrying.",
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Dirección física línea 2", "selector": null, "role": "textbox" },
+          "passport_path": "addresses.principalPhysical.line2",
+          "transform": "trim",
+          "required": false,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Municipio", "selector": null, "role": "combobox" },
+          "passport_path": "addresses.municipality",
+          "transform": null,
+          "required": true,
+          "rule": "CUSTOM DROPDOWNS: open the list, click the matching municipio, read it back.",
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Código postal", "selector": null, "role": "textbox" },
+          "passport_path": "addresses.principalPhysical.postalCode",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Nombre de contacto", "selector": null, "role": "textbox" },
+          "passport_path": "contact.fullName",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Email de contacto", "selector": null, "role": "textbox" },
+          "passport_path": "contact.email",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Teléfono de contacto", "selector": null, "role": "textbox" },
+          "passport_path": "contact.phone",
+          "transform": "strip_formatting",
+          "required": true,
+          "fallback": "pause_and_ask"
+        }
+      ],
+      "note": "From OGPe's official Permiso Único manual — not yet observed live."
+    },
+    {
+      "id": "localizacion",
+      "label": { "en": "Property location (parcel)", "es": "Localización (parcela)" },
+      "page_match": { "title_contains": "Localización" },
+      "gate": "parcel",
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Requires Número de Catastro plus zona inundable, floodway and calificación, all 'Requerido'. The intended path is picking the parcel on the map ('buscar sobre el mapa'), which fills them. No passport path exists for catastro. Recorded as a filingTypes quirk but not in the 2026-09-28 verification evidence — confirm on the walk."
+    },
+    {
+      "id": "permiso-unico",
+      "label": { "en": "Permiso Único application", "es": "Solicitud de Permiso Único" },
+      "page_match": { "title_contains": "Permiso Único" },
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [
+        {
+          "portal_field": { "label": "Nombre legal", "selector": null, "role": "textbox" },
+          "passport_path": "business.legalName",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Dirección del local", "selector": null, "role": "textbox" },
+          "passport_path": "addresses.principalPhysical.line1",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Municipio", "selector": null, "role": "combobox" },
+          "passport_path": "addresses.municipality",
+          "transform": null,
+          "required": true,
+          "rule": "CUSTOM DROPDOWNS: open the list, click the matching municipio, read it back.",
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Código postal", "selector": null, "role": "textbox" },
+          "passport_path": "addresses.principalPhysical.postalCode",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Email de contacto", "selector": null, "role": "textbox" },
+          "passport_path": "contact.email",
+          "transform": "trim",
+          "required": true,
+          "fallback": "pause_and_ask"
+        },
+        {
+          "portal_field": { "label": "Teléfono de contacto", "selector": null, "role": "textbox" },
+          "passport_path": "contact.phone",
+          "transform": "strip_formatting",
+          "required": true,
+          "fallback": "pause_and_ask"
+        }
+      ],
+      "note": "From OGPe's official Permiso Único manual — not yet observed live."
+    },
+    {
+      "id": "anejos",
+      "label": { "en": "Required documents", "es": "Anejos (documentos requeridos)" },
+      "page_match": { "title_contains": "Anejos" },
+      "gate": "upload",
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Required uploads block progress before payment. Max 5 MB per file. Never observed."
+    },
+    {
+      "id": "certificacion",
+      "label": { "en": "\"Bajo juramento\" certification", "es": "Certificación \"Bajo juramento\"" },
+      "page_match": { "title_contains": "juramento" },
+      "gate": "certification",
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "The legal certification act — human only. Never observed."
+    },
+    {
+      "id": "radicar",
+      "label": { "en": "Review and file (Radicar)", "es": "Revisar y Radicar" },
+      "page_match": { "title_contains": "Radicar" },
+      "gate": "submit",
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Never observed. Whether Radicar comes before or after payment is unknown; the gate applies wherever the control appears."
+    },
+    {
+      "id": "pago",
+      "label": { "en": "Payment", "es": "Pago" },
+      "page_match": { "title_contains": "Pago" },
+      "gate": "payment",
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Card or ACH per the manual. Regular evaluation: 10% initially, 90% after analyst validation; ministerial: 100% initially. Non-refundable. Never observed."
+    },
+    {
+      "id": "confirmacion",
+      "label": { "en": "Confirmation", "es": "Confirmación" },
+      "page_match": { "title_contains": "Número de Trámite" },
+      "observed": false,
+      "fallback": "pause_and_ask",
+      "actions": [],
+      "fields": [],
+      "note": "Clara only reads the Número de Trámite / Número de Permiso and reports it. Never observed."
+    }
+  ],
+  "gates": [
+    {
+      "id": "login",
+      "type": "human",
+      "note": "User signs in with their own portal account.",
+      "handoff": {
+        "en": "Sign in to the Single Business Portal yourself in the browser. SmartPR never sees or types your password.",
+        "es": "Entra tú al Single Business Portal en el navegador. SmartPR nunca ve ni escribe tu contraseña."
+      }
+    },
+    {
+      "id": "mfa",
+      "type": "human",
+      "note": "User enters the MFA code.",
+      "handoff": {
+        "en": "OGPe just emailed you a code from DoNotReply@ddec.pr.gov. Type it into the portal, then tell me to continue.",
+        "es": "OGPe te acaba de enviar un código por email desde DoNotReply@ddec.pr.gov. Escríbelo en el portal y me dices para seguir."
+      }
+    },
+    {
+      "id": "captcha",
+      "type": "human",
+      "note": "Clara never solves CAPTCHAs.",
+      "handoff": {
+        "en": "The portal is showing a CAPTCHA. Solve it yourself, then tell me to continue.",
+        "es": "El portal está pidiendo un CAPTCHA. Resuélvelo tú y me dices para seguir."
+      }
+    },
+    {
+      "id": "parcel",
+      "type": "pause",
+      "note": "Parcel/catastro needs verified data — confirm before continuing.",
+      "handoff": {
+        "en": "OGPe needs your property's parcel (Número de Catastro). The easiest way is to find your property on the map — that fills the fields for you. Pick it, then tell me to continue.",
+        "es": "OGPe necesita la parcela de tu propiedad (Número de Catastro). Lo más fácil es buscarla en el mapa — eso llena los campos solo. Escógela y me dices para seguir."
+      }
+    },
+    {
+      "id": "upload",
+      "type": "pause",
+      "note": "Uploads come in through the chat (INLINE channel).",
+      "handoff": {
+        "en": "OGPe needs your supporting documents (site plan, photo ID, entity certificates — max 5 MB each). Upload them here in the chat.",
+        "es": "OGPe necesita tus documentos de apoyo (plano del local, ID con foto, certificados de la entidad — máx. 5 MB c/u). Súbelos aquí en el chat."
+      }
+    },
+    {
+      "id": "certification",
+      "type": "human",
+      "note": "Attestation under penalty of perjury — Clara never checks this.",
+      "handoff": {
+        "en": "This is the \"Bajo juramento\" certification — a legal statement only you can make. Read it and check it yourself.",
+        "es": "Esta es la certificación \"Bajo juramento\" — una declaración legal que solo tú puedes hacer. Léela y márcala tú."
+      }
+    },
+    {
+      "id": "signature",
+      "type": "human",
+      "note": "Including a typed name used as a signature.",
+      "handoff": {
+        "en": "The portal is asking for your signature. Only you can sign.",
+        "es": "El portal está pidiendo tu firma. Solo tú puedes firmar."
+      }
+    },
+    {
+      "id": "payment",
+      "type": "human",
+      "note": "SmartPR never touches payment details.",
+      "handoff": {
+        "en": "Time to pay OGPe. Check the amount and pay in the portal yourself. The payment is non-refundable.",
+        "es": "Te toca pagarle a OGPe. Verifica el monto y paga tú en el portal. El pago no es reembolsable."
+      }
+    },
+    {
+      "id": "submit",
+      "type": "human",
+      "note": "Final radicar — always human, after review.",
+      "handoff": {
+        "en": "Everything is filled in. Review every screen, and when you're sure, press Radicar yourself. Nothing is filed until you do.",
+        "es": "Ya está todo lleno. Revisa cada pantalla y, cuando estés seguro, dale tú a Radicar. No se radica nada hasta que tú lo hagas."
+      }
+    }
+  ]
+}
