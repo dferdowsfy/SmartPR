@@ -110,7 +110,7 @@ export function ChecklistSummary({
       )}
       {questions.length > 0 && (
         <div role="list" className="ck-questions" aria-label={es ? "Preguntas por responder" : "Questions to answer"}>
-          {questions.slice(0, 3).map((q) => <QuestionLine key={q.id} q={q} language={language} />)}
+          {questions.map((q) => <QuestionLine key={q.id} q={q} language={language} />)}
         </div>
       )}
     </section>

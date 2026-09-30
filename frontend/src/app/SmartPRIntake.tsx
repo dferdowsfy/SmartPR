@@ -2894,9 +2894,6 @@ export default function SmartPRIntake() {
   const isProjectOnly = projectIntent === 'project_only';
   const guidedQuestionsAnswered = guidedQuestions
     .filter((q) => discoveryAnswers[q.id] !== undefined).length;
-  const activeGuidedQuestionNumber = activeQuestionIndex < questionList.length
-    ? guidedQuestions.findIndex((q) => q.id === questionList[activeQuestionIndex].id) + 1
-    : guidedQuestions.length;
 
   const handleQuestionAnswer = (value: boolean | string) => {
     const q = questionList[activeQuestionIndex];
@@ -4989,6 +4986,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     }
   }, [profile, discoveryAnswers, potentialDecisions]);
 
+  // Some conditional rule questions are outside the business type's guided
+  // list. Ask those here too, using the same write keys as the rule engine.
+  const intakeRuleQuestions = liveReqs.reduce<Array<{ id: string; writeKey: string; text: string }>>((pending, req) => {
+    const id = req.unansweredTriggerQuestionId;
+    if (!id || questionList.some((question) => question.id === id)) return pending;
+    const writeKey = req.unansweredTriggerWriteKey
+      ?? UNANSWERED_TRIGGER_QUESTIONS.find((question) => question.questionId === id)?.writeKey;
+    if (!writeKey || discoveryAnswers[writeKey] !== undefined || pending.some((question) => question.writeKey === writeKey)) return pending;
+    pending.push({ id, writeKey, text: (KB.questions as Array<{ id: string; question?: string }>).find((question) => question.id === id)?.question ?? id });
+    return pending;
+  }, []);
+
   const liveConfirmedPotentialItems = potentialItems.filter(
     (item) => potentialDecisions[item.flag] === 'applies'
   );
@@ -5011,11 +5020,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Totals count only questions SmartPR still needs. A question it can already
   // answer is not work the user has to do, so it must not inflate the progress
   // denominator either.
-  // Description-driven intake: discovery questions are deferred to the
-  // requirements page, so progress counts only the required-now facts.
-  const intakeQuestionTotal = scenarioActive ? 0 : guidedQuestions.length + potentialItems.length;
+  const intakeQuestionTotal = guidedQuestions.length + potentialItems.length + intakeRuleQuestions.length;
   const intakeTotal = requiredNowFields.length + intakeQuestionTotal;
-  const intakeDone = intakeFieldsDone + (scenarioActive ? 0 : guidedQuestionsAnswered + answeredPotentialCount);
+  const intakeDone = intakeFieldsDone + guidedQuestionsAnswered + answeredPotentialCount;
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
   // project_only readiness is the project name + municipality: without this
   // branch the "See my requirements" button could never enable for a
@@ -5056,7 +5063,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // or when an incomplete submit flags missing fields. Questions are asked
   // when needed — the top question box handles them one at a time, and the
   // submit-attention path expands this block for whatever's still missing.
-  const showProfileSummary = !profileFormExpanded;
   const firstMissingField = intakePlan.missingRequired[0];
   // Industry is only a filter for the business catalog. Show it before the
   // type when needed; otherwise ask only one required-now field at a time.
@@ -5978,12 +5984,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const mainGroups = groupedCards.filter((g) => g.id !== 'registrations');
   const secondaryRegistrations = groupedCards.find((g) => g.id === 'registrations') ?? null;
   const onEnergyAnswer = (key: ProjectContextKey, fact: ProjectContextFact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }));
-  const cardSummaryQuestions: SummaryQuestion[] = [];
-  for (const g of mainGroups) for (const c of g.cards) {
-    if (!c.answerPrompt || cardSummaryQuestions.some((q) => q.text === c.answerPrompt!.prompt)) continue;
-    cardSummaryQuestions.push({ id: c.req.code, text: c.answerPrompt.prompt, options: [{ label: c.answerPrompt.yesLabel, onClick: c.answerPrompt.onYes }, { label: c.answerPrompt.noLabel, onClick: c.answerPrompt.onNo }] });
-  }
-  const summaryQuestions = [...(energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : []), ...cardSummaryQuestions].slice(0, 3);
+  const energyIntakeQuestions: SummaryQuestion[] = energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : [];
   // Steps = energy process steps + required business items shown open.
   const mainCardCount = openStepCount(mainGroups);
   const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
@@ -5995,7 +5996,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         (projectPassport ? projectPassportTitle(projectPassport) : null) ?? (profile.business_type ? L(profile.business_type, language) : null) ?? profile.name,
         profile.municipality,
       ].filter(Boolean).join(', ');
-  const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, summaryQuestions.length, language)}`;
+  const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, 0, language)}`;
   const energySection = energyAssessment && energyChecklist ? (
     <EnergyProcessesSection
       assessment={energyAssessment}
@@ -6004,7 +6005,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       legacyCards={energyLegacyCards}
       suppressedLegacy={energySuppressed}
       language={language}
-      onAnswer={onEnergyAnswer}
     />
   ) : null;
   const summaryReadiness = (() => {
@@ -6026,10 +6026,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // (a derivation losing to a user answer) are deliberately not shown.
   const intakeConflicts = intakeFacts.conflicts.filter((c) => c.requiresUser);
 
-  // Questions the interpreter answered, in the order they appear in the flow.
-  const answeredFromDescription = questionList
-    .filter((q) => aiPrefilledKeys.includes(q.id) && discoveryAnswers[q.id] !== undefined)
-    .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string }));
+  // Keep answered questions visible in Intake, including answers entered by
+  // hand. A selected Yes/No must not vanish when the next question appears.
+  const answeredIntakeQuestions = questionList
+    .filter((q) => discoveryAnswers[q.id] !== undefined)
+    .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }))
+    .concat(UNANSWERED_TRIGGER_QUESTIONS
+      .filter((q) => !questionList.some((guided) => guided.id === q.questionId) && discoveryAnswers[q.writeKey] !== undefined)
+      .map((q) => ({ id: q.questionId, text: (KB.questions as Array<{ id: string; question?: string }>).find((item) => item.id === q.questionId)?.question ?? q.questionId, value: discoveryAnswers[q.writeKey] as boolean | string, writeKey: q.writeKey })));
 
   /** Let the user correct something the interpreter got wrong. */
   const reopenAnsweredQuestion = (questionId: string) => {
@@ -6050,25 +6054,23 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const currentPotentialQuestion = !baseProfileReady || currentQuestion
     ? null
     : potentialItems.find((item) => !potentialDecisions[item.flag]) ?? null;
-  const currentPotentialQuestionIndex = currentPotentialQuestion
-    ? potentialItems.findIndex((item) => item.flag === currentPotentialQuestion.flag)
-    : -1;
-  // A description-driven intake asks only the scenario's controlling facts;
-  // the business type's discovery questions are deferred to the requirements
-  // page, where the engine lists only those that would change the path.
-  const deferGuidedQuestions = scenarioActive;
-  const intakeQuestionsComplete = deferGuidedQuestions || activeQuestionIndex >= questionList.length
-    && answeredPotentialCount === potentialItems.length;
+  // A description can prefill discovery answers, but unanswered questions
+  // still belong to Intake. Requirements only presents the resulting path.
+  const intakeQuestionsComplete = activeQuestionIndex >= questionList.length
+    && answeredPotentialCount === potentialItems.length
+    && intakeRuleQuestions.length === 0
+    && (scenarioEval?.questions.length ?? 0) === 0;
   // One question UI at a time in the consolidated top area: the knowledge
   // graph's controlling question first, then the guided question, then the
   // municipality follow-up — never two question sets stacked. When the
   // scenario has no pending question but still exists, its idle panel
   // ("nothing else to ask right now") keeps the informational state.
   const scenarioNextQuestion = scenarioEval?.questions[0] ?? null;
-  const topQuestionKind: 'scenario' | 'guided' | 'potential' | null =
+  const topQuestionKind: 'scenario' | 'guided' | 'potential' | 'rule' | null =
     scenarioNextQuestion ? 'scenario'
-    : currentQuestion && !deferGuidedQuestions ? 'guided'
-    : currentPotentialQuestion && !deferGuidedQuestions ? 'potential'
+    : currentQuestion ? 'guided'
+    : currentPotentialQuestion ? 'potential'
+    : intakeRuleQuestions.length > 0 ? 'rule'
     : scenarioEval ? 'scenario'
     : null;
   const questionsHeading =
@@ -6446,7 +6448,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       : (language === 'es' ? 'En progreso' : 'In Progress');
 
   const hasProjectRequest = scenarioActive || anyProfileValue;
-  const remainingIntakeItems = intakePlan.missingRequired.length + (scenarioActive ? (scenarioEval?.questions.length ?? 0) : Math.max(0, intakeQuestionTotal - guidedQuestionsAnswered - answeredPotentialCount));
+  const remainingIntakeItems = intakePlan.missingRequired.length + Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -6484,17 +6486,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               : (language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation')
         }
         matterStatus={matterStatus}
-        headerControl={view === 'intake' && !isProjectOnly ? (
-          <div className="spr-intake-header-control">
-            <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
-            <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
-              <option value="">{t('selectLocationType')}</option>
-              {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => (
-                <option key={lt} value={lt}>{lt}</option>
-              ))}
-            </select>
-          </div>
-        ) : null}
         stage={view}
         availableStages={availableStages}
         language={language}
@@ -6536,7 +6527,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   ].filter((item) => item.value).map((item) => (
                     <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>
                   ))}
-                  <button type="button" className="spr-link" onClick={() => setProfileFormExpanded((value) => !value)} aria-expanded={profileFormExpanded}>{L('Edit', language)}</button>
+                  <button type="button" className="spr-profile-done" onClick={() => { setProfileFormExpanded((value) => !value); setSubmitAttempted(false); }} aria-expanded={profileFormExpanded} aria-controls="spr-business-details">{profileFormExpanded ? L('Minimize details', language) : L('Expand details', language)}</button>
                 </div>
               )}
 
@@ -6602,6 +6593,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     </div>
                   )}
                 </div>}
+
+                {!isProjectOnly && (
+                  <div className="spr-field full spr-location-type-field">
+                    <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
+                    <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
+                      <option value="">{t('selectLocationType')}</option>
+                      {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => <option key={lt} value={lt}>{lt}</option>)}
+                    </select>
+                  </div>
+                )}
 
                 {/* Existing-business picker: when the intent is
                     existing_business and no ?business= id is attached, offer
@@ -6682,14 +6683,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   className={`spr-field full${questionsNeedAttention ? ' spr-attention' : ''}`}
                   ref={questionsPanelRef}
                 >
-                  {(topQuestionKind === 'guided' || topQuestionKind === 'potential') ? (
+                  {(topQuestionKind === 'guided' || topQuestionKind === 'potential' || topQuestionKind === 'rule') ? (
                     <section className="spr-scn-questions" aria-live="polite">
                       <h3>{questionsHeading}</h3>
                       {topQuestionKind === 'guided' && currentQuestion && (
                         <IntakeQuestion
                           language={language}
-                          questionNumber={activeGuidedQuestionNumber}
-                          questionTotal={intakeQuestionTotal}
                           title={L(currentQuestion.text, language)}
                           contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
                           contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
@@ -6700,13 +6699,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       {topQuestionKind === 'potential' && currentPotentialQuestion && (
                         <IntakeQuestion
                           language={language}
-                          questionNumber={guidedQuestions.length + currentPotentialQuestionIndex + 1}
-                          questionTotal={intakeQuestionTotal}
                           title={L(currentPotentialQuestion.followUp, language)}
                           contextTitle={L(currentPotentialQuestion.document, language)}
                           contextBody={L(currentPotentialQuestion.why, language)}
                           onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
                           onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
+                        />
+                      )}
+                      {topQuestionKind === 'rule' && intakeRuleQuestions[0] && (
+                        <IntakeQuestion
+                          language={language}
+                          title={L(intakeRuleQuestions[0].text, language)}
+                          onAnswer={(value) => answerTriggerQuestion(intakeRuleQuestions[0].writeKey, value === true)}
                         />
                       )}
                     </section>
@@ -6724,31 +6728,72 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
+              {/* Keep each selected answer visible after the next prompt loads. */}
+              {answeredIntakeQuestions.length > 0 && (
+                <section className="spr-answered spr-saved-answers" aria-label={L('Answered questions', language)}>
+                  <div className="spr-kicker">
+                    {L('Answered questions', language)} · {answeredIntakeQuestions.length}
+                  </div>
+                  <ul className="spr-answered-list">
+                    {answeredIntakeQuestions.map((item) => (
+                      <li key={item.id}>
+                        <CheckCircle className="i" style={{ width: 14, height: 14 }} />
+                        <span className="spr-answered-text">{L(item.text, language)}</span>
+                        {confirmationsNeeded[item.id] && (
+                          <span className="spr-confirm-badge">{L('Needs confirmation', language)}</span>
+                        )}
+                        {typeof item.value === 'boolean' ? (
+                          <span className="spr-answer-options" role="group" aria-label={L(item.text, language)}>
+                            {[true, false].map((choice) => <span key={String(choice)} className={`spr-answer-option${item.value === choice ? ' selected' : ''}`}>{choice ? t('yes') : t('no')}</span>)}
+                          </span>
+                        ) : <span className="spr-answered-value">{String(item.value)}</span>}
+                        <button
+                          type="button"
+                          className="spr-answered-change"
+                          onClick={() => item.writeKey === item.id ? reopenAnsweredQuestion(item.id) : setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; })}
+                        >
+                          {L('Change', language)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {energyIntakeQuestions.length > 0 && (
+                <ChecklistSummary
+                  line={L('Project questions', language)}
+                  questions={energyIntakeQuestions}
+                  language={language}
+                />
+              )}
+
                 {/* Business-details block: filled fields minimize into the
                     compact summary (tap to edit); fields still needing input
                     stay visible. An incomplete submit expands everything and
                     scrolls here. */}
                 <span ref={profileFieldsRef} aria-hidden="true" className="spr-anchor" />
-                {showProfileSummary && !hasProjectRequest && (
+                {!hasProjectRequest && (
                 <div className="spr-field full">
                   <span className="spr-profile-summary-label">{L('Business details', language)}</span>
                   <button
                     type="button"
                     className="spr-profile-summary"
-                    onClick={() => setProfileFormExpanded(true)}
-                    aria-expanded="false"
+                    onClick={() => { setProfileFormExpanded((value) => !value); setSubmitAttempted(false); }}
+                    aria-expanded={profileFormExpanded}
+                    aria-controls="spr-business-details"
                   >
                     <span className="spr-profile-summary-text">
-                      {anyProfileValue ? profileSummary : L('Add your business details', language)}
+                      {profileFormExpanded ? L('Business details', language) : anyProfileValue ? profileSummary : L('Add your business details', language)}
                     </span>
                     <span className="spr-profile-summary-edit">
-                      {anyProfileValue ? L('Edit', language) : L('Add', language)}
+                      {profileFormExpanded ? L('Minimize details', language) : L('Expand details', language)}
                     </span>
                   </button>
                 </div>
                 )}
 
-
+                <div id="spr-business-details" className="spr-business-details-fields">
                 {!passportKnownFields.has('name') && profileFieldVisible('name') && (
                 <div className={`spr-field full${profileAttentionCls}`}>
                   <label htmlFor="spr-business-name">
@@ -6889,58 +6934,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   />
                 </div>
                 )}
-                {profileFormExpanded && (
-                <div className="spr-field full">
-                  <button
-                    type="button"
-                    className="spr-profile-done"
-                    onClick={() => {
-                      // Done collapses the block AND retires the incomplete-
-                      // submit attention state — otherwise the highlight keeps
-                      // the fields expanded and the tap looks like a no-op.
-                      setProfileFormExpanded(false);
-                      setSubmitAttempted(false);
-                    }}
-                  >
-                    {L('Done', language)}
-                  </button>
-                </div>
-                )}
                 </>)}
+                </div>
               </div>
-
-              {/* Questions already answered from the description — shown as
-                  completed so the user can see what was understood (and change
-                  it) instead of silently losing them. */}
-              {answeredFromDescription.length > 0 && (
-                <details className="spr-answered spr-saved-answers">
-                  <summary>{language === 'es' ? 'Ver respuestas guardadas' : 'View saved answers'}</summary>
-                  <div className="spr-kicker">
-                    {L('Answered from your description', language)} · {answeredFromDescription.length}
-                  </div>
-                  <ul className="spr-answered-list">
-                    {answeredFromDescription.map((item) => (
-                      <li key={item.id}>
-                        <CheckCircle className="i" style={{ width: 14, height: 14 }} />
-                        <span className="spr-answered-text">{L(item.text, language)}</span>
-                        {confirmationsNeeded[item.id] && (
-                          <span className="spr-confirm-badge">{L('Needs confirmation', language)}</span>
-                        )}
-                        <span className="spr-answered-value">
-                          {item.value === true ? t('yes') : item.value === false ? t('no') : String(item.value)}
-                        </span>
-                        <button
-                          type="button"
-                          className="spr-answered-change"
-                          onClick={() => reopenAnsweredQuestion(item.id)}
-                        >
-                          {L('Change', language)}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
 
               {/* Two things the user told us cannot both be true. SmartPR never
                   picks a winner between explicit answers — it says what clashes
@@ -6987,7 +6983,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   onClick={handleSubmitTap}
                   disabled={isLoading}
                 >
-                  {L('See my requirements', language)}
+                  {isLoading ? L('Preparing requirements…', language) : L('See my requirements', language)}
                   {isLoading || submitPulse ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
                 </button>
               </div>
@@ -7024,7 +7020,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <div className="spr-requirements-layout spr-requirements-layout-single">
           <div className="spr-requirements-main">
           {requirements.length > 0 && (
-            <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={summaryQuestions} language={language} />
+            <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={[]} language={language} />
           )}
           {requirements.length === 0 && (
             <div style={{ padding: 24 }}>
@@ -7094,7 +7090,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       whyLabel={L('Why do I need this?', language)}
                       why={c.why}
                       action={c.action}
-                      answerPrompt={c.answerPrompt}
+                      answerPrompt={undefined}
                       secondary={c.secondary}
                       secondaryOnCompleted={c.secondaryOnCompleted}
                       download={c.download}
@@ -7148,7 +7144,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     whyLabel={L('Why do I need this?', language)}
                     why={c.why}
                     action={c.action}
-                    answerPrompt={c.answerPrompt}
+                    answerPrompt={undefined}
                     secondary={c.secondary}
                     secondaryOnCompleted={c.secondaryOnCompleted}
                     download={c.download}
@@ -7173,22 +7169,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 {L('Other checks for your business', language)}
                 <span className="rq-critical-count">{otherChecks.length}</span>
               </summary>
-              <p className="rq-group-sub">{L('Nothing in your description points to these. Answer once to confirm or clear them.', language)}</p>
-              {/* One line per question; the requirement names each answer decides
-                  sit behind the (i), not printed inline. */}
+              <p className="rq-group-sub">{L('Return to Intake to confirm which of these apply.', language)}</p>
               <div role="list" className="rq-other-checks">
                 {otherChecks.map((q) => {
                   const first = q.cards[0].c;
                   return (
                     <div role="listitem" key={q.questionId} className="ck-q" data-testid={`other-check-${q.questionId}`}>
-                      <span className="ck-q-text rq-other-q">{first.answerPrompt?.prompt ?? q.questionId}</span>
+                      <span className="ck-q-text rq-other-q">{q.cards.map(({ c }) => c.name).join(' · ')}</span>
                       <InfoTip text={`${L('Decides', language)}: ${q.cards.map(({ c }) => c.name).join(' · ')}`} language={language} />
-                      {first.answerPrompt && (
-                        <span className="ck-q-actions">
-                          <button type="button" onClick={first.answerPrompt.onYes}>{first.answerPrompt.yesLabel}</button>
-                          <button type="button" onClick={first.answerPrompt.onNo}>{first.answerPrompt.noLabel}</button>
-                        </span>
-                      )}
+                      {first.answerPrompt && <button type="button" className="spr-answered-change" onClick={() => goTo('intake')}>{L('Answer in Intake', language)}</button>}
                     </div>
                   );
                 })}

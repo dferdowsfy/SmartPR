@@ -20,8 +20,6 @@ export interface IntakeQuestionOption {
  */
 export function IntakeQuestion({
   language,
-  questionNumber,
-  questionTotal,
   title,
   contextTitle,
   contextBody,
@@ -30,8 +28,6 @@ export function IntakeQuestion({
   onNotSure,
 }: {
   language: Language;
-  questionNumber: number;
-  questionTotal: number;
   title: string;
   contextTitle?: string;
   contextBody?: string;
@@ -44,7 +40,7 @@ export function IntakeQuestion({
   const es = language === "es";
   return (
     <div className="spr-follow-up">
-      <div className="spr-kicker">{L("Question", language)} {questionNumber} {L("of", language)} {questionTotal}</div>
+      <div className="spr-kicker">{es ? "Pregunta por confirmar" : "Question to confirm"}</div>
       <h2>{title}</h2>
       {contextBody && (
         <p className="spr-question-context">

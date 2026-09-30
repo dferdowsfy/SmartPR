@@ -166,14 +166,11 @@ if (G.modelProjectContext?.energy_applicant_role?.value === "developer") {
   check("summary step count = energy steps + required items shown open", steps === energyItems + openRequired, `${steps} vs ${energyItems}+${openRequired}`);
 }
 
-// Questions render their options.
+// Regulatory questions are answered in Intake; this page only shows the
+// resulting requirements and never repeats the Yes/No controls.
 const qs = page.locator(".ck-questions > [role=listitem]");
-for (let i = 0; i < (await qs.count()); i++) {
-  const q = qs.nth(i);
-  const text = (await q.innerText()).replace(/\s+/g, " ");
-  const opts = await q.locator("button, input, select").count();
-  check(`question ${i + 1} renders options`, opts >= 2 || (await q.locator("input, select").count()) > 0, text.slice(0, 90));
-}
+check("no questions repeated on Requirements", (await qs.count()) === 0);
+check("no inline requirement Yes/No", (await page.locator(".rq-answer-prompt").count()) === 0);
 
 // ---- Inline row actions: act without expanding a row ----
 // Every row whose expanded card offers an action shows it on the collapsed

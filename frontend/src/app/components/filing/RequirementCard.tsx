@@ -170,12 +170,18 @@ function ActionButton({ action }: { action: RequirementAction }) {
   if (action.kind === "none") return null;
 
   const isForm = action.kind === "form";
+  const spanish = /^(completar|continuar|revisar|subir|cargar|adjuntar)/i.test(action.label);
+  const shortLabel = isForm
+    ? /continu(e|ar)/i.test(action.label) ? (spanish ? "Continuar" : "Continue")
+      : /review|revisar/i.test(action.label) ? (spanish ? "Revisar" : "Review")
+      : (spanish ? "Iniciar" : "Start form")
+    : (spanish ? "Subir" : "Upload proof");
 
   return (
-    <button type="button" className={`rq-cta rq-cta-${action.kind}`} onClick={action.onClick}>
+    <button type="button" className={`rq-cta rq-cta-${action.kind}`} onClick={action.onClick} aria-label={action.label} title={action.label}>
       {action.kind === "upload" && <Upload size={15} />}
       {isForm && <ClipboardList size={15} />}
-      <span>{action.label}</span>
+      <span>{shortLabel}</span>
       {isForm && action.locked ? <Lock size={15} aria-hidden="true" /> : isForm ? <ArrowRight size={15} /> : null}
     </button>
   );

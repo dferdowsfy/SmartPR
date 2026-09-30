@@ -49,7 +49,7 @@ export function summaryQuestionFor(
   language: Language,
   onAnswer: (key: ProjectContextKey, fact: ProjectContextFact) => void
 ): SummaryQuestion {
-  const evidence = language === "es" ? "Confirmado por el usuario en la lista de requisitos." : "Confirmed by user in the requirements checklist.";
+  const evidence = language === "es" ? "Confirmado por el usuario durante la admisión." : "Confirmed by user during intake.";
   const answer = (fact: string, value: string | number | boolean) => onAnswer(fact as ProjectContextKey, { value, confidence: 1, evidence });
   return ({
     id: q.fact,

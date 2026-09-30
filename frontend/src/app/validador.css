@@ -1660,11 +1660,12 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 }
 .spr-profile-summary-edit {
   flex: 0 0 auto;
-  color: #287ca9;
+  color: #fff;
+  background: #245c5c;
+  border-radius: 7px;
+  padding: 9px 12px;
   font-size: 14px;
   font-weight: 690;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 /* Prominent "enter once" value line under the business-details block. */
 .spr-enter-once {
@@ -1677,15 +1678,15 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-profile-done {
   justify-self: start;
   padding: 12px 28px;
-  border: 1px solid #d2dbe1;
-  border-radius: 4px;
-  background: #fff;
-  color: #60717e;
+  border: 1px solid #245c5c;
+  border-radius: 8px;
+  background: #245c5c;
+  color: #fff;
   font-size: 15px;
   font-weight: 690;
   cursor: pointer;
 }
-.spr-profile-done:hover { border-color: #c7d1d8; color: var(--spr-copy); }
+.spr-profile-done:hover { background: #184747; }
 
 /* ---- Incomplete-submit attention: pulse ring on what's missing ---- */
 @keyframes spr-attention-pulse {
@@ -2029,7 +2030,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
               0 3px 14px rgba(15, 35, 50, .06);
 }
 .spr-nl-go {
-  position: absolute; right: 12px; bottom: 14px;
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   width: 44px; height: 44px; border-radius: 999px;
   border: none; background: var(--spr-ink, #0f2332); color: #fff;
   font-size: 19px; line-height: 1; cursor: pointer;
@@ -2037,7 +2038,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   box-shadow: 0 2px 8px rgba(15, 35, 50, .18);
   transition: opacity .18s ease, transform .18s ease;
 }
-.spr-nl-go:hover:not(:disabled) { transform: translateX(1px); }
+.spr-nl-go:hover:not(:disabled) { transform: translate(1px, -50%); }
 .spr-nl-go:disabled { opacity: .3; cursor: default; box-shadow: none; }
 /* While interpreting, the whole textbox visibly works: a shimmer sweeps
    across it and the border pulses, so it's obvious something is happening. */
@@ -3069,16 +3070,25 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .spr-guided-intake-shell .spr-scn-q-btn.primary { background: #eff7f6; color: #245c5c; border-color: #245c5c; }
 .spr-guided-intake-shell .spr-scn-q-btn:hover { background: #eff7f6; border-color: #245c5c; }
 
-/* Intake clarity: keep one progress indicator and surface the primary location selector beneath the matter title. */
+/* Intake clarity: keep one progress indicator. Location is in the form. */
 .spr-matter-identity > div { min-width: 0; }
 .spr-guided-intake-shell .spr-matter-header { align-items: flex-start; }
 .spr-guided-intake-shell .spr-matter-identity { align-items: flex-start; }
 .spr-guided-intake-shell .spr-matter-identity p { font-size: 15px; line-height: 1.4; }
 .spr-guided-intake-shell .spr-matter-status { font-size: 11px; }
-.spr-intake-header-control { display: grid; gap: 6px; width: min(420px, 70vw); margin-top: 10px; }
-.spr-intake-header-control label { color: #536c74; font-size: 14px; font-weight: 650; }
-.spr-intake-header-control select { width: 100%; min-height: 48px; padding: 8px 14px; border: 1px solid #c8d4d5; border-radius: 8px; background: #fff; color: #183b41; font: inherit; font-size: 16px; }
-.spr-intake-header-control select:focus-visible { outline: 3px solid rgba(36, 92, 92, .24); outline-offset: 2px; }
+.spr-guided-intake-shell .spr-location-type-field { max-width: 460px; }
+.spr-business-details-fields { display: contents; }
+.spr-guided-intake-shell .spr-project-brief .spr-profile-done { flex: none; font-size: 13px; white-space: nowrap; padding: 10px 14px; }
+.spr-answer-options { display: inline-flex; gap: 6px; }
+.spr-answer-option { min-width: 56px; padding: 7px 12px; border: 1px solid #c6d2d8; border-radius: 8px; background: #fff; color: #183b41; text-align: center; }
+.spr-answer-option.selected { background: #245c5c; border-color: #245c5c; color: #fff; font-weight: 700; }
+.spr-answered-list li { align-items: center; }
+.ck-line-actions { width: 194px; justify-content: flex-end; }
+.ck-line-actions > .ck-cta { flex: 1; justify-content: center; min-width: 0; min-height: 48px; }
+@keyframes spr-stage-arrive { from { opacity: .35; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spr-stage-progress { from { transform: scaleX(0); opacity: 1; } to { transform: scaleX(1); opacity: 0; } }
+.spr-stage-enter { animation: spr-stage-arrive .38s cubic-bezier(.2,.75,.3,1) both; }
+.spr-stage-enter::before { content: ''; position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 4px; background: #245c5c; transform-origin: left; pointer-events: none; animation: spr-stage-progress .55s ease-out both; }
 .spr-guided-intake-shell .spr-field label { font-size: 13px; line-height: 1.25; }
 .spr-guided-intake-shell .spr-project-brief span { font-size: 12px; }
 .spr-guided-intake-shell .spr-project-brief strong { font-size: 16px; }
@@ -3102,6 +3112,9 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .spr-guided-intake-shell .spr-form-footer > span { font-size: 13px; }
 @media (max-width: 820px) {
   .spr-guided-intake-shell .spr-matter-header { align-items: flex-start; }
-  .spr-intake-header-control { width: min(100%, 440px); }
+  .ck-line-actions { width: 100%; }
   .spr-guided-intake-shell .spr-form-footer > span { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spr-stage-enter, .spr-stage-enter::before { animation: none; }
 }

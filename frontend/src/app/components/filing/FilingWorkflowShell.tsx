@@ -74,7 +74,6 @@ interface FilingWorkflowShellProps {
   municipality?: string | null;
   matterTitle: string;
   matterStatus: string;
-  headerControl?: ReactNode;
   stage: FilingStage;
   availableStages: FilingStage[];
   language: "en" | "es";
@@ -354,7 +353,6 @@ export function FilingWorkflowShell({
   municipality,
   matterTitle,
   matterStatus,
-  headerControl,
   stage,
   availableStages,
   language,
@@ -439,7 +437,6 @@ export function FilingWorkflowShell({
                     <span className="spr-matter-status">{matterStatus}</span>
                   </div>
                   <p>{matterTitle}{municipality ? ` · ${municipality}` : ""}</p>
-                  {headerControl}
                 </div>
               </div>
               {actions}
@@ -455,7 +452,7 @@ export function FilingWorkflowShell({
       </div>
       {!stickyHeader && <div className="spr-stepper-bar-sticky">{stepperBar}</div>}
 
-      <div className={`spr-workflow-grid${showSidebar ? "" : " single"}`}>
+      <div key={stage} className={`spr-workflow-grid spr-stage-enter${showSidebar ? "" : " single"}`}>
         <section className="spr-main-workarea">{children}</section>
         {showSidebar ? (sidebar ?? <SmartPRLivePanel data={intelligence} language={language} />) : null}
       </div>
