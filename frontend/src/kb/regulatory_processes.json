@@ -3005,6 +3005,12 @@
         "SRC_LUMA_NM_STEPS",
         "SRC_PREB_DG_PROGRESS_2026Q2"
       ],
+      "portal": {
+        "url": "https://prep-luma.lumapr.com/prepaGD/login/auth",
+        "label": "LUMA distributed-generation portal",
+        "label_es": "Portal de generación distribuida de LUMA",
+        "verified": "2026-09-30"
+      },
       "applicability": [
         {
           "id": "DGI_R1",
@@ -3111,6 +3117,12 @@
         "SRC_LUMA_NM_STEPS",
         "SRC_LUMA_NM_AGREEMENT_25KW"
       ],
+      "portal": {
+        "url": "https://prep-luma.lumapr.com/prepaGD/login/auth",
+        "label": "LUMA distributed-generation portal",
+        "label_es": "Portal de generación distribuida de LUMA",
+        "verified": "2026-09-30"
+      },
       "gate": {
         "any": [
           {
@@ -3326,6 +3338,12 @@
         "SRC_PREB_REG_9028",
         "SRC_LAW_17_2019"
       ],
+      "portal": {
+        "url": "https://radicacion.energia.pr.gov/",
+        "label": "PREB online filing (Radicación en línea)",
+        "label_es": "Radicación en línea del Negociado de Energía",
+        "verified": "2026-09-30"
+      },
       "gate": {
         "fact": "microgrid_configuration",
         "op": "eq",
@@ -3510,6 +3528,12 @@
       "source_ids": [
         "SRC_PREB_REG_9028"
       ],
+      "portal": {
+        "url": "https://radicacion.energia.pr.gov/",
+        "label": "PREB online filing (Radicación en línea)",
+        "label_es": "Radicación en línea del Negociado de Energía",
+        "verified": "2026-09-30"
+      },
       "follows_process": "PR_ENERGY_MICROGRID_REGISTRATION",
       "applicability": [
         {
@@ -3558,6 +3582,12 @@
         "SRC_PREB_REG_8701",
         "SRC_PREB_ESC_FILINGS_PAGE"
       ],
+      "portal": {
+        "url": "https://radicacion.energia.pr.gov/",
+        "label": "PREB online filing (Radicación en línea)",
+        "label_es": "Radicación en línea del Negociado de Energía",
+        "verified": "2026-09-30"
+      },
       "gate": {
         "any": [
           {
@@ -3876,6 +3906,12 @@
         "SRC_LUMA_NM_AGREEMENT_25KW",
         "SRC_SMARTPR_KB_EXISTING_RULES"
       ],
+      "portal": {
+        "url": "https://www.sbp.pr.gov/",
+        "label": "OGPe Single Business Portal (SBP)",
+        "label_es": "Single Business Portal de OGPe (SBP)",
+        "verified": "2026-09-30"
+      },
       "applicability": [
         {
           "id": "CONS_R1",
@@ -4234,6 +4270,12 @@
       "source_ids": [
         "SRC_LAW_57_2014"
       ],
+      "portal": {
+        "url": "https://radicacion.energia.pr.gov/",
+        "label": "PREB online filing (Radicación en línea)",
+        "label_es": "Radicación en línea del Negociado de Energía",
+        "verified": "2026-09-30"
+      },
       "gate": {
         "fact": "energy_market_segment",
         "op": "eq",
@@ -4487,6 +4529,12 @@
         "SRC_RC_2023",
         "SRC_LAW_161_2009"
       ],
+      "portal": {
+        "url": "https://www.sbp.pr.gov/",
+        "label": "OGPe Single Business Portal (SBP)",
+        "label_es": "Single Business Portal de OGPe (SBP)",
+        "verified": "2026-09-30"
+      },
       "jurisdiction_note": "Autonomous municipalities with hierarchy I–III may evaluate instead of OGPe (Reglamento Conjunto § 9.4.1.5(b)).",
       "stage": "site",
       "applicability": [
@@ -4622,6 +4670,12 @@
         "SRC_LAW_416_2004",
         "SRC_LAW_161_2009"
       ],
+      "portal": {
+        "url": "https://www.sbp.pr.gov/",
+        "label": "OGPe Single Business Portal (SBP)",
+        "label_es": "Single Business Portal de OGPe (SBP)",
+        "verified": "2026-09-30"
+      },
       "stage": "site",
       "applicability": [
         {
@@ -4700,6 +4754,12 @@
       "source_ids": [
         "SRC_RC_2023"
       ],
+      "portal": {
+        "url": "https://www.sbp.pr.gov/",
+        "label": "OGPe Single Business Portal (SBP)",
+        "label_es": "Single Business Portal de OGPe (SBP)",
+        "verified": "2026-09-30"
+      },
       "jurisdiction_note": "Autonomous municipalities with hierarchy I–III may issue the permit instead of OGPe.",
       "gate": {
         "fact": "energy_market_segment",
@@ -5025,6 +5085,12 @@
       "source_ids": [
         "SRC_FAA_14CFR77_9"
       ],
+      "portal": {
+        "url": "https://oeaaa.faa.gov/",
+        "label": "FAA OE/AAA filing portal",
+        "label_es": "Portal de radicación OE/AAA de la FAA",
+        "verified": "2026-09-30"
+      },
       "stage": "site",
       "applicability": [
         {

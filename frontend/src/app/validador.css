@@ -2889,3 +2889,7 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 @media (min-width: 721px) {
   .ck-card-line .ck-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+.ck-row-checklist { margin: 4px 0 8px 36px; padding: 8px 12px; border-left: 3px solid var(--brand); background: #fff; border-radius: 6px; font-size: 14px; }
+.ck-row-checklist ul { margin: 4px 0 0; padding-left: 18px; }
+.ck-row-checklist li { list-style: disc; }
+@media (max-width: 720px) { .ck-row-checklist { margin-left: 0; } }

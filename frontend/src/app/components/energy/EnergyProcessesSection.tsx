@@ -13,11 +13,12 @@ import { ChevronDown, ExternalLink, Zap } from "lucide-react";
 import type { ProcessAssessment, ProcessEvaluation } from "../../processes/engine";
 import type { ProcessGraph } from "../../processes/graph";
 import type { LegacySupersession } from "../../processes/legacyCards";
+import type { RegulatoryProcess } from "../../processes/types";
 import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
 import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
 import { ActionList, RowActions } from "../checklist/RowActions";
-import { EMPTY_ROW_ACTIONS, mergeRowActions, type RowActionsModel } from "../checklist/rowActions";
+import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActions";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
 export interface EnergyLegacyCard {
@@ -26,6 +27,9 @@ export interface EnergyLegacyCard {
   onAction?: () => void;
   /** The card's inline row actions (same handlers as the card). */
   rowActions?: RowActionsModel;
+  /** Built for a document the process owns (the rules engine did not emit it):
+   * its actions show on the row, but it is not a superseded legacy card. */
+  processOwned?: boolean;
 }
 
 type Language = "en" | "es";
@@ -129,14 +133,14 @@ export function EnergyProcessesSection({
         {checklist.stages.map((s) =>
           flat ? (
             s.items.map((it) => (
-              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
             ))
           ) : (
             <div role="listitem" key={s.id} className="ck-stage" data-testid={`energy-step-${s.step}`}>
               <div className="ck-stage-head"><span className="ck-num">{s.step}</span> {s.name}</div>
               <div role="list" className="ck-rows">
                 {s.items.map((it) => (
-                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
                 ))}
               </div>
             </div>
@@ -165,16 +169,26 @@ function legacyFor(p: ProcessEvaluation, cards: Record<string, EnergyLegacyCard>
   return p.legacy_document_ids.map((d) => cards[d]).filter((c): c is EnergyLegacyCard => !!c);
 }
 
-function EnergyRow({ item, p, num, legacy, language, startOpen = false, question = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; language: Language; startOpen?: boolean; question?: SummaryQuestion | null }) {
+function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, startOpen = false, question = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; portal?: RegulatoryProcess["portal"] | null; language: Language; startOpen?: boolean; question?: SummaryQuestion | null }) {
   const es = language === "es";
   const [open, setOpen] = useState(startOpen);
   const [askOpen, setAskOpen] = useState(false);
-  // Inline actions: the covered legacy cards' own actions; an answer-only
-  // row gets "Answer"; "May apply" / expert-check rows without a form get none.
-  const fromCards = mergeRowActions(legacy.map((c) => c.rowActions ?? EMPTY_ROW_ACTIONS));
-  const actions: RowActionsModel = fromCards.primary || fromCards.done || fromCards.more.length
-    ? fromCards
-    : question ? { ...EMPTY_ROW_ACTIONS, answer: { prompt: question.text } } : EMPTY_ROW_ACTIONS;
+  const [needsOpen, setNeedsOpen] = useState(false);
+  // An expert-check row does not get actions invented for it: only a
+  // superseded card's own actions (none built from the process documents).
+  const legacy = item.status === "expert" ? allCards.filter((c) => !c.processOwned) : allCards;
+  const needs = item.needs.filter((x) => x.trim());
+  // Inline actions: the covered cards' own actions (same handlers as the
+  // expanded view), then the official portal, else "Start" (the prepared
+  // checklist); answer rows lead with "Answer". Rows with nothing to do
+  // (May apply without a form or portal, expert checks) get none.
+  const actions: RowActionsModel = energyRowActions({
+    status: item.status,
+    cards: mergeRowActions(legacy.map((c) => c.rowActions ?? EMPTY_ROW_ACTIONS)),
+    portal,
+    onStart: needs.length ? () => setNeedsOpen((o) => !o) : null,
+    question: question ? { prompt: question.text } : null,
+  }, language);
   return (
     <div role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
       <div className="ck-card-line">
@@ -188,6 +202,12 @@ function EnergyRow({ item, p, num, legacy, language, startOpen = false, question
         <RowActions model={actions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
       </div>
       {askOpen && question && <QuestionLine q={question} language={language} standalone />}
+      {needsOpen && !open && (
+        <div className="ck-row-checklist" data-testid="row-checklist">
+          <div className="ck-label">{es ? "Lo que necesitarás" : "What you'll need"}</div>
+          <ul>{needs.map((x) => <li key={x}>{x}</li>)}</ul>
+        </div>
+      )}
       {open && (
         <div className="ck-row-body">
           <p className="ck-why">{item.why}</p>
@@ -215,6 +235,13 @@ function EnergyRow({ item, p, num, legacy, language, startOpen = false, question
           {legacy.map((c) => c.rowActions
             ? <ActionList key={c.name} model={c.rowActions} />
             : c.onAction && c.actionLabel ? <button key={c.name} type="button" className="ck-action" onClick={c.onAction}>{c.actionLabel}</button> : null)}
+          {portal && item.status !== "expert" && !legacy.some((c) => [c.rowActions?.primary, ...(c.rowActions?.more ?? [])].some((x) => x?.href === portal.url)) && (
+            <div className="ck-card-actions">
+              <a className="ck-action" data-testid="card-action" data-cta="portal" href={portal.url} target="_blank" rel="noopener noreferrer">
+                {(es ? portal.label_es : null) ?? portal.label} <ExternalLink size={11} />
+              </a>
+            </div>
+          )}
           {item.source && (
             <div className="ck-source">
               {es ? "Fuente" : "Source"}: <a href={item.source.url} target="_blank" rel="noreferrer">{item.source.title} <ExternalLink size={11} /></a>{" "}
@@ -223,7 +250,7 @@ function EnergyRow({ item, p, num, legacy, language, startOpen = false, question
             </div>
           )}
           <FullReasoning language={language} open={startOpen}>
-            <ProcessReasoning p={p} legacy={legacy} language={language} />
+            <ProcessReasoning p={p} legacy={allCards.filter((c) => !c.processOwned)} language={language} />
           </FullReasoning>
         </div>
       )}

@@ -5,7 +5,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { mergeRowActions, requirementRowActions, shortCtaLabel, EMPTY_ROW_ACTIONS } from "./rowActions.ts";
+import { energyRowActions, mergeRowActions, requirementRowActions, shortCtaLabel, EMPTY_ROW_ACTIONS } from "./rowActions.ts";
+import { developerGroup, isEnergyDeveloperCompany, openStepCount } from "../filing/requirementGroups.ts";
 import { RequirementCard } from "../filing/RequirementCard.tsx";
 
 const noop = () => {};
@@ -96,4 +97,57 @@ test("collapsed RequirementCard renders the CTA on its line (outside the toggle)
     action: { kind: "completed", label: "Completed", onClick: noop }, language: "es",
   }));
   assert.match(done, /data-cta="view"[^>]*>.*Ver</);
+});
+
+const PORTAL = { url: "https://www.sbp.pr.gov/", label: "OGPe Single Business Portal (SBP)", label_es: "Single Business Portal de OGPe (SBP)" };
+
+test("energy row: card actions lead, the official portal ranks above 'agency site', Start only as the fallback", () => {
+  const onForm = () => "form";
+  const cards = requirementRowActions({
+    action: { kind: "form", label: "Complete LUMA form", onClick: onForm },
+    filing: { kind: "instructions", label: "View filing instructions", agencySite: { label: "Open agency site", url: "https://lumapr.com/miluma/" } },
+  }, "en");
+  const m = energyRowActions({ status: "required", cards, portal: PORTAL, onStart: noop }, "en");
+  assert.equal(m.primary?.onClick, onForm, "same handler as the card");
+  assert.deepEqual(m.more.map((c) => c.kind), ["portal", "site"], "no Start when there is a real action");
+  const only = energyRowActions({ status: "required", cards: EMPTY_ROW_ACTIONS, portal: PORTAL, onStart: noop }, "es");
+  assert.equal(only.primary?.kind, "portal");
+  assert.equal(only.primary?.label, "Abrir portal");
+  assert.equal(only.primary?.title, "Single Business Portal de OGPe (SBP)");
+  assert.equal(only.primary?.href, PORTAL.url);
+  const onStart = () => "start";
+  const start = energyRowActions({ status: "required", cards: EMPTY_ROW_ACTIONS, onStart }, "en");
+  assert.equal(start.primary?.kind, "start");
+  assert.equal(start.primary?.label, "Start");
+  assert.equal(start.primary?.onClick, onStart);
+});
+
+test("energy row: Answer leads a question row; expert and bare may-apply rows get nothing invented", () => {
+  const q = energyRowActions({ status: "question", cards: EMPTY_ROW_ACTIONS, portal: PORTAL, onStart: noop, question: { prompt: "Is it a microgrid?" } }, "en");
+  assert.equal(q.answer?.prompt, "Is it a microgrid?");
+  assert.equal(q.primary, null);
+  assert.deepEqual(q.more.map((c) => c.kind), ["portal"]);
+  assert.deepEqual(energyRowActions({ status: "expert", cards: EMPTY_ROW_ACTIONS, portal: PORTAL, onStart: noop }, "en"), EMPTY_ROW_ACTIONS);
+  assert.equal(energyRowActions({ status: "may_apply", cards: EMPTY_ROW_ACTIONS, onStart: noop }, "en").primary, null);
+  assert.equal(energyRowActions({ status: "may_apply", cards: EMPTY_ROW_ACTIONS, portal: PORTAL }, "en").primary?.kind, "portal");
+  const onForm = () => "form";
+  const expertWithForm = energyRowActions({ status: "expert", cards: requirementRowActions({ action: { kind: "form", label: "Complete application", onClick: onForm } }, "en"), portal: PORTAL }, "en");
+  assert.equal(expertWithForm.primary?.onClick, onForm, "an expert row keeps its card's own form");
+  assert.equal(expertWithForm.more.length, 0, "no portal added to an expert row");
+});
+
+test("energy developer: an existing company — business formation items are secondary, steps count only required items shown open", () => {
+  assert.equal(isEnergyDeveloperCompany({ projectIntent: null, energyProposed: true, applicantRole: "developer" }), true, "unset intent: still a company");
+  assert.equal(isEnergyDeveloperCompany({ projectIntent: "existing_business", energyProposed: true, applicantRole: "developer" }), true);
+  assert.equal(isEnergyDeveloperCompany({ projectIntent: "new_business", energyProposed: true, applicantRole: "developer" }), false, "an explicit new business stays one");
+  assert.equal(isEnergyDeveloperCompany({ projectIntent: null, energyProposed: true, applicantRole: "end_use_customer" }), false);
+  assert.equal(isEnergyDeveloperCompany({ projectIntent: null, energyProposed: false, applicantRole: "developer" }), false);
+  for (const stage of ["tax_registration", "municipal", "entity_formation", "employment"]) {
+    assert.equal(developerGroup("required_now", stage, true), "registrations", stage);
+    assert.equal(developerGroup("conditional", stage, true), "registrations", stage);
+  }
+  assert.equal(developerGroup("conditional", "operating_permits", true), "conditional", "a lease question is not business formation");
+  assert.equal(developerGroup("required_now", "tax_registration", false), "required_now");
+  assert.equal(developerGroup("completed", "tax_registration", true), "completed");
+  assert.equal(openStepCount([{ id: "required_now", cards: [1, 2] }, { id: "conditional", cards: [1, 2, 3] }, { id: "prerequisites", cards: [1] }, { id: "supporting", cards: [1] }]), 3);
 });

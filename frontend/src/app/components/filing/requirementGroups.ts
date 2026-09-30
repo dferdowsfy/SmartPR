@@ -165,3 +165,42 @@ export function splitOtherChecks<T extends OtherCheckCandidate>(
     .sort((a, b) => b.cards.length - a.cards.length || a.questionId.localeCompare(b.questionId));
   return { main, otherChecks };
 }
+
+// ---------------------------------------------------------------------------
+// Energy developer: business registrations are secondary
+// ---------------------------------------------------------------------------
+
+/** Stages of business formation / registration (not project approvals). */
+export const BUSINESS_FORMATION_STAGES: ReadonlySet<string> = new Set(["entity_formation", "tax_registration", "municipal", "employment"]);
+
+/**
+ * A company that develops energy projects ("We develop solar farms") filing
+ * for a proposed project already exists: it is not forming a business. True
+ * unless the user explicitly chose a new business (or a project with no
+ * business) — an unset intent does not turn a developer into a startup.
+ */
+export function isEnergyDeveloperCompany(o: { projectIntent?: string | null; energyProposed: boolean; applicantRole?: unknown }): boolean {
+  return o.energyProposed && o.applicantRole === "developer" && o.projectIntent !== "new_business" && o.projectIntent !== "project_only";
+}
+
+/**
+ * For an energy developer company, open business-formation items (merchant
+ * registration, patente, EIN, incorporation) move to the collapsed
+ * registrations group: the energy approvals are the matter.
+ */
+export function developerGroup(group: RequirementGroupId, stage: string | null | undefined, developer: boolean): RequirementGroupId {
+  if (!developer || group === "completed" || group === "registrations") return group;
+  return BUSINESS_FORMATION_STAGES.has(stage ?? "") ? "registrations" : group;
+}
+
+/** Groups whose cards are steps to take now (the summary's step count). */
+const STEP_GROUPS: ReadonlySet<RequirementGroupId> = new Set(["required_now", "prerequisites"]);
+
+/**
+ * Business items the summary counts as steps: required items shown open.
+ * Conditional ("may apply"), supporting evidence, collapsed registrations and
+ * completed items are not steps (the questions line covers what decides them).
+ */
+export function openStepCount(groups: ReadonlyArray<{ id: RequirementGroupId; cards: readonly unknown[] }>): number {
+  return groups.reduce((n, g) => n + (STEP_GROUPS.has(g.id) ? g.cards.length : 0), 0);
+}

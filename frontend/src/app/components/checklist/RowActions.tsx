@@ -6,7 +6,7 @@
 // toggle (stopPropagation) and run the card's own handlers.
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, HelpCircle, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActions";
 
 type Language = "en" | "es";
@@ -22,7 +22,9 @@ function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
     case "assist": return <Sparkles size={14} aria-hidden="true" />;
     case "download": return <Download size={14} aria-hidden="true" />;
     case "instructions": return <FileText size={14} aria-hidden="true" />;
-    case "site": return <ExternalLink size={14} aria-hidden="true" />;
+    case "site":
+    case "portal": return <ExternalLink size={14} aria-hidden="true" />;
+    case "start": return <ListChecks size={14} aria-hidden="true" />;
     default: return <ArrowRight size={14} aria-hidden="true" />;
   }
 }
@@ -45,7 +47,7 @@ function CtaControl({ c, className, role, onDone, testId = "row-cta" }: { c: Row
     return (
       <a {...common} href={c.href} onClick={click} target={c.external ? "_blank" : undefined} rel={c.external ? "noopener noreferrer" : undefined}>
         <Icon kind={c.kind} locked={c.locked} /> <span>{c.label}</span>
-        {c.external && c.kind !== "site" && <ExternalLink size={12} aria-hidden="true" />}
+        {c.external && c.kind !== "site" && c.kind !== "portal" && <ExternalLink size={12} aria-hidden="true" />}
       </a>
     );
   }

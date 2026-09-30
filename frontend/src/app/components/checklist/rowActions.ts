@@ -14,7 +14,7 @@ import type {
 
 type Language = "en" | "es";
 
-export type RowCtaKind = "form" | "upload" | "assist" | "download" | "instructions" | "site" | "confirm" | "view";
+export type RowCtaKind = "form" | "upload" | "assist" | "download" | "instructions" | "site" | "portal" | "start" | "confirm" | "view";
 
 export interface RowCta {
   id: string;
@@ -50,6 +50,8 @@ const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
   download: { en: "Download", es: "Descargar" },
   instructions: { en: "Instructions", es: "Instrucciones" },
   site: { en: "Agency site", es: "Sitio de la agencia" },
+  portal: { en: "Open portal", es: "Abrir portal" },
+  start: { en: "Start", es: "Empezar" },
   confirm: { en: "Confirm", es: "Confirmar" },
   view: { en: "View", es: "Ver" },
 };
@@ -144,4 +146,46 @@ export function mergeRowActions(models: RowActionsModel[]): RowActionsModel {
   if (!open.length) return { primary: null, more: live.flatMap((m) => m.more), done: live[0].done, answer: null };
   const ctas = open.flatMap((m) => [m.primary, ...m.more]).filter((c): c is RowCta => !!c);
   return { primary: ctas[0] ?? null, more: ctas.slice(1), done: null, answer: ctas.length ? null : open.find((m) => m.answer)?.answer ?? null };
+}
+
+/** An energy process's official filing portal (regulatory_processes.json `portal`). */
+export interface ProcessPortal { url: string; label: string; label_es?: string }
+
+/**
+ * Inline actions for an energy process row. The covered legacy cards' own
+ * actions come first (same handlers as the expanded card); a process with an
+ * official portal adds "Open portal"; a process with only a list of what to
+ * prepare gets "Start", which opens that prepared checklist under the row.
+ *   - question rows: "Answer" leads; the rest go in the ⋯ menu.
+ *   - expert rows: only real card actions (no expert-request handler exists).
+ *   - may-apply rows: card actions and the portal, never a bare "Start".
+ */
+export function energyRowActions(
+  input: {
+    status: string;
+    cards: RowActionsModel;
+    portal?: ProcessPortal | null;
+    /** Opens the prepared checklist ("What you'll need") under the row. */
+    onStart?: (() => void) | null;
+    question?: { prompt: string } | null;
+  },
+  language: Language
+): RowActionsModel {
+  const { status, cards, portal, onStart, question } = input;
+  const es = language === "es";
+  if (cards.done) return cards;
+  const fromCards = [cards.primary, ...cards.more].filter((c): c is RowCta => !!c);
+  if (status === "expert") return { primary: fromCards[0] ?? null, more: fromCards.slice(1), done: null, answer: null };
+  // The official portal ranks above a generic "agency site" link.
+  const list = fromCards.filter((c) => c.kind !== "site");
+  if (portal?.url && !fromCards.some((c) => c.href === portal.url)) {
+    const title = (es ? portal.label_es : null) ?? portal.label;
+    list.push({ id: "portal", kind: "portal", label: DEFAULT_SHORT.portal[language], title, href: portal.url, external: true });
+  }
+  list.push(...fromCards.filter((c) => c.kind === "site"));
+  if (onStart && !list.length && status !== "may_apply" && status !== "question") {
+    list.push({ id: "start", kind: "start", label: DEFAULT_SHORT.start[language], title: es ? "Abrir la lista preparada" : "Open the prepared checklist", onClick: onStart });
+  }
+  if (status === "question" && question) return { primary: null, more: list, done: null, answer: question };
+  return { primary: list[0] ?? null, more: list.slice(1), done: null, answer: null };
 }

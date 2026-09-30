@@ -265,7 +265,7 @@ test("incentives: only programs with a real signal show for a solar installer (E
   assert.ok(extra.some((i) => /ENERGY/.test(i.program_id ?? i.incentive_id)), "energy incentive from the process graph");
 });
 
-test("energy rows: inline CTA from the covered card, Answer on answer-only rows, nothing on May apply (E01)", async () => {
+test("energy rows: inline CTA from the covered card, Answer on answer-only rows, May apply only with a portal (E01)", async () => {
   const { requirementRowActions } = await import("../components/checklist/rowActions.ts");
   const r = run("E01_warehouse_rooftop_solar_caguas.json");
   const onForm = () => {};
@@ -281,7 +281,32 @@ test("energy rows: inline CTA from the covered card, Answer on answer-only rows,
   for (const i of items(r.ck)) {
     const row = rowOf(i.id);
     if (i.status === "question") assert.match(row, /data-cta="answer"/, `${i.id} Answer`);
-    if (i.status === "may_apply") assert.ok(!/row-cta/.test(row), `${i.id} no button`);
+    // May apply: a button only when there is something to do (the official portal).
+    if (i.status === "may_apply") assert.equal(/row-cta/.test(row), !!r.graph.processes.get(i.process_id)?.portal, `${i.id} button iff portal`);
   }
   assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
+});
+
+test("every Required energy row shows an inline action without expanding (E01, E06, E07)", () => {
+  for (const file of ["E01_warehouse_rooftop_solar_caguas.json", "E06_developer_solar_bess_guayama.json", "E07_rooftop_solar_installation_guaynabo.json"]) {
+    const r = run(file);
+    const html = renderToStaticMarkup(createElement(EnergyProcessesSection, {
+      assessment: r.a, graph: r.graph, checklist: r.ck, legacyCards: {}, suppressedLegacy: [...r.sup.values()], language: "en", onAnswer: () => {},
+    }));
+    const starts = [...html.matchAll(/data-testid="energy-process-([^"]+)"/g)].map((m) => ({ id: m[1], at: m.index! }));
+    const rowOf = (id: string) => { const i = starts.findIndex((s) => s.id === id); return html.slice(starts[i].at, starts[i + 1]?.at); };
+    for (const it of items(r.ck)) {
+      const row = rowOf(it.id);
+      if (it.status === "required") assert.match(row, /data-testid="row-cta"/, `${file}: ${it.name} has an inline action`);
+      if (it.status === "expert") assert.ok(!/row-cta/.test(row), `${file}: ${it.name} (expert, no handler) gets none`);
+    }
+    assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
+  }
+  // The official portals: LUMA DG portal, OGPe SBP, PREB e-filing.
+  const e06 = run("E06_developer_solar_bess_guayama.json");
+  const html06 = renderToStaticMarkup(createElement(EnergyProcessesSection, { assessment: e06.a, graph: e06.graph, checklist: e06.ck, legacyCards: {}, language: "en" }));
+  assert.match(html06, /href="https:\/\/www\.sbp\.pr\.gov\/"[^>]*data-testid="row-cta"|data-testid="row-cta"[^>]*data-cta="portal"/);
+  assert.match(html06, /radicacion\.energia\.pr\.gov/);
+  const e07 = run("E07_rooftop_solar_installation_guaynabo.json");
+  assert.match(renderToStaticMarkup(createElement(EnergyProcessesSection, { assessment: e07.a, graph: e07.graph, checklist: e07.ck, legacyCards: {}, language: "en" })), /prep-luma\.lumapr\.com/);
 });
