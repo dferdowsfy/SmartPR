@@ -372,3 +372,25 @@ export function locationAddressLine(location: Pick<
     .filter((part) => Boolean(part && String(part).trim()))
     .join(", ");
 }
+
+/** Human labels for the KB's municipality designations. */
+export const DESIGNATION_LABELS: Record<string, { en: string; es: string }> = {
+  coastal: { en: "Coastal municipio", es: "Municipio costero" },
+  tourism: { en: "Tourism zone", es: "Zona turística" },
+  metro: { en: "San Juan metro area", es: "Área metropolitana de San Juan" },
+  industrial_port: { en: "Industrial / port municipio", es: "Municipio industrial / portuario" },
+  historic: { en: "Historic district present", es: "Tiene distrito histórico" },
+  airport_host: { en: "Airport host municipio", es: "Municipio con aeropuerto" },
+  island: { en: "Island municipio (Vieques/Culebra)", es: "Municipio isla (Vieques/Culebra)" },
+  capital: { en: "Capital", es: "Capital" },
+};
+
+/** Municipio name comparison key: accent-, case- and suffix-insensitive. */
+export function normalizeMunicipio(name: string | null | undefined): string {
+  return (name ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+(municipio|municipality)$/, "")
+    .trim();
+}

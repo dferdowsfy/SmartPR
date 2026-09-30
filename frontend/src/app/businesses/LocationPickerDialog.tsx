@@ -91,18 +91,66 @@ function coordinateErrorText(error: CoordinateError, lang: Lang): string {
   }
 }
 
+/** Deterministic Census placement of the selected point (/api/locations/resolve). */
+export interface ResolvedPlacement {
+  municipality: { fips: string; name: string };
+  barrio: { geoid: string; name: string; barrio_pueblo: boolean } | null;
+  near_boundary: boolean;
+  boundary_distance_m: number;
+  source: { id: string; name: string; version: string; url: string };
+}
+
+/** What pick mode hands back to the caller (e.g. the intake). */
+export interface PickedSite {
+  latitude: number;
+  longitude: number;
+  coordinate_source: CoordinateSource;
+  formatted_address: string | null;
+  placement: ResolvedPlacement;
+  designations: string[];
+  /** Set when the site was also saved to the business's Passport. */
+  savedLocation: PassportLocationWithGeographies | null;
+}
+
 export interface LocationPickerDialogProps {
-  businessId: string;
+  /** Business whose Passport the location is saved to (required in save mode). */
+  businessId?: string | null;
   lang: Lang;
+  /**
+   * "save" (default): add/edit a Passport location.
+   * "pick": choose a site for a question that needs a location (intake); the
+   * result is returned via onPicked, optionally also saved to the Passport.
+   */
+  mode?: "save" | "pick";
   /** Existing location to edit; omit to add a new one. */
   existing?: PassportLocationWithGeographies | null;
   /** Default name for a new location (e.g. the first one is the main premises). */
   defaultName?: string;
+  /** Pick mode: offer "also save to the Passport" (needs businessId). */
+  offerSave?: boolean;
   onClose: () => void;
-  onSaved: (location: PassportLocationWithGeographies, warnings: string[]) => void;
+  onSaved?: (location: PassportLocationWithGeographies, warnings: string[]) => void;
+  onPicked?: (site: PickedSite) => void;
 }
 
-export function LocationPickerDialog({ businessId, lang, existing, defaultName, onClose, onSaved }: LocationPickerDialogProps) {
+type PlacementState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; placement: ResolvedPlacement | null; designations: string[] }
+  | { status: "error" };
+
+export function LocationPickerDialog({
+  businessId,
+  lang,
+  mode = "save",
+  existing,
+  defaultName,
+  offerSave = false,
+  onClose,
+  onSaved,
+  onPicked,
+}: LocationPickerDialogProps) {
+  const pickMode = mode === "pick";
   const titleId = useId();
   const latId = useId();
   const lngId = useId();
@@ -148,6 +196,9 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
   const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [placement, setPlacement] = useState<PlacementState>(existing ? { status: "loading" } : { status: "idle" });
+  const [saveToPassport, setSaveToPassport] = useState(true);
+  const placementSeq = useRef(0);
 
   const lookupSeq = useRef(0);
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -227,6 +278,40 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
     [lang]
   );
 
+  /** Census municipio/barrio for the point — local and fast, never blocks. */
+  const resolvePlacement = useCallback(async (p: MapPoint) => {
+    const seq = ++placementSeq.current;
+    setPlacement({ status: "loading" });
+    try {
+      const res = await fetch(`/api/locations/resolve?lat=${encodeURIComponent(p.latitude)}&lng=${encodeURIComponent(p.longitude)}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { placement: ResolvedPlacement | null; designations: string[] };
+      if (seq === placementSeq.current) setPlacement({ status: "ready", placement: data.placement, designations: data.designations ?? [] });
+    } catch {
+      if (seq === placementSeq.current) setPlacement({ status: "error" });
+    }
+  }, []);
+
+  // An existing pin (edit) is described immediately.
+  useEffect(() => {
+    if (!existing) return;
+    // Initial state is already "loading" for an existing pin.
+    const seq = ++placementSeq.current;
+    fetch(`/api/locations/resolve?lat=${encodeURIComponent(existing.latitude)}&lng=${encodeURIComponent(existing.longitude)}`, {
+      cache: "no-store",
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as { placement: ResolvedPlacement | null; designations: string[] };
+        if (seq === placementSeq.current) setPlacement({ status: "ready", placement: data.placement, designations: data.designations ?? [] });
+      })
+      .catch(() => {
+        if (seq === placementSeq.current) setPlacement({ status: "error" });
+      });
+  }, [existing]);
+
   /** Any change of point: the previous address no longer describes it. */
   const movePoint = useCallback(
     (p: MapPoint, source: CoordinateSource, lookupAddress: boolean) => {
@@ -242,13 +327,14 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
       setLngText(String(next.longitude));
       setCoordErrors([]);
       setSaveError(null);
+      void resolvePlacement(next);
       if (lookupAddress) {
         setAddress(NO_ADDRESS);
         setAddressText("");
         void reverseLookup(next);
       }
     },
-    [reverseLookup]
+    [reverseLookup, resolvePlacement]
   );
 
   const onMapPick = useCallback((p: MapPoint) => movePoint(p, "MAP_PIN", true), [movePoint]);
@@ -334,10 +420,9 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
     setAddress({ ...NO_ADDRESS, formatted_address: value.trim() || null, address_source: value.trim() ? "USER_PROVIDED" : "NONE" });
   };
 
-  const save = async () => {
-    if (!point) return;
-    setSaving(true);
-    setSaveError(null);
+  /** Persist to the Passport; returns the saved location, or null (error shown). */
+  const persist = async (): Promise<{ location: PassportLocationWithGeographies; warnings: string[] } | null> => {
+    if (!point || !businessId) return null;
     try {
       const body = {
         name: name.trim() || null,
@@ -368,11 +453,41 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
                 ? L("Fix the coordinates and try again.", "Corrija las coordenadas e intente de nuevo.", lang)
                 : L("The location could not be saved. Try again.", "No se pudo guardar la ubicación. Intente de nuevo.", lang)
         );
-        return;
+        return null;
       }
-      onSaved(data.location as PassportLocationWithGeographies, (data.warnings as string[]) ?? []);
+      return { location: data.location as PassportLocationWithGeographies, warnings: (data.warnings as string[]) ?? [] };
     } catch {
       setSaveError(L("The location could not be saved. Check your connection and try again.", "No se pudo guardar la ubicación. Verifique su conexión e intente de nuevo.", lang));
+      return null;
+    }
+  };
+
+  const save = async () => {
+    if (!point) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      if (pickMode) {
+        if (placement.status !== "ready" || !placement.placement) return;
+        let savedLocation: PassportLocationWithGeographies | null = null;
+        if (offerSave && businessId && saveToPassport) {
+          const saved = await persist();
+          if (!saved) return;
+          savedLocation = saved.location;
+        }
+        onPicked?.({
+          latitude: point.latitude,
+          longitude: point.longitude,
+          coordinate_source: coordinateSource,
+          formatted_address: address.formatted_address,
+          placement: placement.placement,
+          designations: placement.designations,
+          savedLocation,
+        });
+        return;
+      }
+      const saved = await persist();
+      if (saved) onSaved?.(saved.location, saved.warnings);
     } finally {
       setSaving(false);
     }
@@ -399,7 +514,11 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
             <h3 id={titleId} className="text-base font-bold text-[#161616]">
-              {existing ? L("Edit location", "Editar ubicación", lang) : L("Add location", "Agregar ubicación", lang)}
+              {pickMode
+                ? L("Find the site on the map", "Busque el lugar en el mapa", lang)
+                : existing
+                  ? L("Edit location", "Editar ubicación", lang)
+                  : L("Add location", "Agregar ubicación", lang)}
             </h3>
             <p className="mt-0.5 text-xs text-slate-500">
               {L(
@@ -421,21 +540,24 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
+          {(!pickMode || (offerSave && businessId && saveToPassport)) && (
+            <div className="mb-4">
           <label htmlFor={nameId} className="block text-xs font-semibold text-slate-600">
-            {L("Location name", "Nombre de la ubicación", lang)}
-            <span className="font-normal text-slate-400"> {L("(optional)", "(opcional)", lang)}</span>
-          </label>
-          <input
-            id={nameId}
-            ref={firstFieldRef}
-            value={name}
-            maxLength={120}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={L("e.g. Guaynabo Manufacturing Facility", "p. ej. Planta de manufactura en Guaynabo", lang)}
-            className={inputCls}
-          />
-
-          <form onSubmit={search} className="mt-4" role="search">
+              {L("Location name", "Nombre de la ubicación", lang)}
+              <span className="font-normal text-slate-400"> {L("(optional)", "(opcional)", lang)}</span>
+            </label>
+            <input
+              id={nameId}
+              ref={firstFieldRef}
+              value={name}
+              maxLength={120}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={L("e.g. Guaynabo Manufacturing Facility", "p. ej. Planta de manufactura en Guaynabo", lang)}
+              className={inputCls}
+            />
+            </div>
+          )}
+          <form onSubmit={search} role="search">
             <label htmlFor={searchId} className="block text-xs font-semibold text-slate-600">
               {L("Search address or place", "Buscar dirección o lugar", lang)}
             </label>
@@ -514,6 +636,35 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
                     {addressText}
                   </div>
                 )}
+                <div className="mt-1 text-xs text-slate-700" data-testid="location-selected-placement">
+                  {placement.status === "loading" && L("Finding the municipio…", "Buscando el municipio…", lang)}
+                  {placement.status === "error" &&
+                    L("The municipio couldn't be determined right now.", "No se pudo determinar el municipio ahora.", lang)}
+                  {placement.status === "ready" &&
+                    (placement.placement ? (
+                      <>
+                        <span className="font-semibold">
+                          {L("Municipio", "Municipio", lang)}: {placement.placement.municipality.name}
+                        </span>
+                        {placement.placement.barrio && (
+                          <>
+                            <span className="mx-1.5 text-slate-300" aria-hidden="true">·</span>
+                            {L("Barrio", "Barrio", lang)}: {placement.placement.barrio.name}
+                            {placement.placement.barrio.barrio_pueblo ? L(" (pueblo)", " (pueblo)", lang) : ""}
+                          </>
+                        )}
+                        <span className="block text-[11px] text-slate-500">
+                          {L("From U.S. Census boundaries", "Según los límites del Censo de EE. UU.", lang)} ({placement.placement.source.version})
+                          {placement.placement.near_boundary &&
+                            L(" — very close to a boundary, confirm the pin", " — muy cerca de un límite, confirme el pin", lang)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="font-medium text-amber-800">
+                        {L("This point isn't inside a Puerto Rico municipio.", "Este punto no está dentro de un municipio de Puerto Rico.", lang)}
+                      </span>
+                    ))}
+                </div>
               </>
             ) : (
               <p className="text-sm text-slate-600">
@@ -633,6 +784,24 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
             </div>
           </fieldset>
 
+          {pickMode && offerSave && businessId && (
+            <label className="mt-4 flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={saveToPassport}
+                onChange={(e) => setSaveToPassport(e.target.checked)}
+                className="mt-0.5 h-4 w-4"
+              />
+              <span>
+                {L(
+                  "Also save this site to the business's Passport locations, so projects and filings can reuse it.",
+                  "Guardar también este lugar en las ubicaciones del Pasaporte del negocio, para reutilizarlo en proyectos y trámites.",
+                  lang
+                )}
+              </span>
+            </label>
+          )}
+
           {saveError && (
             <p role="alert" className="mt-3 text-sm font-medium text-red-700">
               {saveError}
@@ -653,6 +822,12 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
                     ? L("Looking up address…", "Buscando dirección…", lang)
                     : addressText || L("No street address", "Sin dirección", lang)}
                 </div>
+                {placement.status === "ready" && placement.placement && (
+                  <div className="truncate font-semibold text-[#161616]">
+                    {placement.placement.barrio ? `${placement.placement.barrio.name}, ` : ""}
+                    {placement.placement.municipality.name}
+                  </div>
+                )}
               </>
             ) : (
               <span>{L("Tap the map to choose a point", "Toque el mapa para escoger un punto", lang)}</span>
@@ -669,7 +844,13 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
           <button
             type="button"
             onClick={() => void save()}
-            disabled={!point || saving || lookup.status === "loading"}
+            disabled={
+              !point ||
+              saving ||
+              lookup.status === "loading" ||
+              // Pick mode hands back a municipio, so it needs one.
+              (pickMode && (placement.status !== "ready" || !placement.placement))
+            }
             className="min-h-11 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-[#f6f3ea] disabled:opacity-40"
             data-testid="location-confirm"
           >
@@ -677,7 +858,9 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
               ? L("Saving…", "Guardando…", lang)
               : lookup.status === "loading"
                 ? L("Finding address…", "Buscando dirección…", lang)
-                : L("Use this location", "Usar esta ubicación", lang)}
+                : pickMode
+                  ? L("Use this site", "Usar este lugar", lang)
+                  : L("Use this location", "Usar esta ubicación", lang)}
           </button>
         </div>
       </div>

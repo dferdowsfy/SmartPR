@@ -15,6 +15,7 @@ import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
+import { MatterSiteSelect } from "../MatterSiteSelect";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
 import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
@@ -32,7 +33,7 @@ interface BusinessRecord {
   notes: string | null; created_at: string | null;
   passport_json?: Record<string, unknown> | null;
 }
-interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null }
+interface Matter { id: string; matter_type: string; title: string; status: string; readiness_score: number | null; opened_at: string; completed_at: string | null; submission_id: string | null; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; location_id?: string | null }
 interface Obligation { id: string; name: string; agency: string | null; matter_id?: string | null; matter_title: string | null; requirement_id?: string | null; form_id?: string | null; status: ObligationStatus; due_date: string | null; due_date_source: DueDateSource; source_reference: string | null; next_action: string; downloaded_at?: string | null }
 interface Evidence { id: string; obligation_id: string | null; original_filename: string; obligation_name: string | null; review_status: string; created_at: string; requirement_tags?: string[] | null; mime_type?: string | null; size_bytes?: number | null; document_type?: string | null }
 interface Submission { id: string; created_at: string; business_type: string | null; municipality: string | null; readiness_score: number | null }
@@ -860,7 +861,13 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                   <div className="space-y-2">
                     {derived.activeMatters.map((matter) => (
                       <div key={matter.id} className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3 sm:flex-row sm:items-center">
-                        <div><div className="font-semibold text-[#161616]">{matter.title}</div><div className="text-xs text-slate-500">{matter.matter_type.replaceAll("_", " ")} · {L("Opened", lang)} {fmtDate(matter.opened_at)}</div></div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[#161616]">{matter.title}</div>
+                          <div className="text-xs text-slate-500">{matter.matter_type.replaceAll("_", " ")} · {L("Opened", lang)} {fmtDate(matter.opened_at)}</div>
+                          <div className="mt-1.5">
+                            <MatterSiteSelect businessId={shortId} matterId={matter.id} locationId={matter.location_id ?? null} lang={lang} />
+                          </div>
+                        </div>
                         <div className="flex flex-wrap items-center gap-3">
                           <StatusBadge status={matter.status === "READY" ? "CURRENT" : matter.status === "DRAFT" ? "IN_PROGRESS" : matter.status as ObligationStatus} lang={lang} />
                           <ScorePill score={matter.readiness_score} />

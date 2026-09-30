@@ -25,6 +25,9 @@ import os from "node:os";
 import path from "node:path";
 import { ensureSignedIn } from "./e2e-auth.mjs";
 import { parseLocationInput, type PassportLocationWithGeographies } from "../src/app/locations/geo";
+import { boundaryDeterminations } from "../src/app/locations/boundaries";
+import { evaluateLocationRequirements } from "../src/app/locations/requirements";
+import { KB } from "../src/app/kb";
 
 const OUT = process.argv[2] || os.tmpdir();
 const base = process.env.BASE_URL || "http://localhost:3000";
@@ -41,6 +44,7 @@ function check(name: string, ok: boolean, detail = "") {
 const store: PassportLocationWithGeographies[] = [];
 let geocodeMode: "unavailable" | "none" | "results" = "unavailable";
 let failNextSave = false;
+let passportMunicipality: string | null = "San Juan";
 const bodies: Record<string, unknown>[] = [];
 
 const STYLE = {
@@ -59,7 +63,7 @@ async function installStubs(page: Page) {
     const req = route.request();
     const url = new URL(req.url());
     const p = url.pathname;
-    if (p === `/api/businesses/${BIZ}`) {
+    if (p === `/api/businesses/${BIZ}` && req.method() === "GET") {
       return json(route, 200, {
         business: { id: BIZ_UUID, public_id: BIZ, name: "Caribe Precision Manufacturing, LLC", legal_name: "Caribe Precision Manufacturing, LLC", municipality: "Guaynabo", passport_json: {} },
         passport: { filled: [], empty: [], canonical: {} },
@@ -92,11 +96,39 @@ async function installStubs(page: Page) {
         confirmed_at: now,
         created_at: existing?.created_at ?? now,
         updated_at: now,
-        geographies: [],
+        // Same deterministic Census determination the server records.
+        geographies: boundaryDeterminations(fields.latitude, fields.longitude).map((d, i) => ({
+          ...d,
+          id: `${id}-g${i}`,
+          location_id: id,
+          determined_at: now,
+        })),
       };
       if (existing) store.splice(store.indexOf(existing), 1, location);
       else store.push(location);
       return json(route, req.method() === "POST" ? 201 : 200, { location, warnings: [] });
+    }
+    // Real server code: the Census municipio/barrio lookup on the dev server.
+    if (p === "/api/locations/resolve") return route.continue();
+    const reqMatch = /^\/api\/businesses\/[^/]+\/locations\/([^/]+)\/requirements$/.exec(p);
+    if (reqMatch) {
+      const loc = store.find((l) => l.id === reqMatch[1]);
+      if (!loc) return json(route, 404, { error: "not_found" });
+      return json(
+        route,
+        200,
+        evaluateLocationRequirements(
+          KB,
+          loc,
+          { business_type: "Restaurant", onboarding_mode: "NEW", passport_municipality: passportMunicipality, tracked_requirement_ids: new Set() },
+          "BUNDLED_KB"
+        )
+      );
+    }
+    if (p === `/api/businesses/${BIZ}` && req.method() === "PATCH") {
+      const body = req.postDataJSON() as { passport?: { addresses?: { municipality?: string } }; mergePassport?: boolean };
+      passportMunicipality = body.passport?.addresses?.municipality ?? passportMunicipality;
+      return json(route, 200, { business: { id: BIZ_UUID } });
     }
     if (p === "/api/geocode") {
       if (geocodeMode === "unavailable") return json(route, 503, { error: "geocoding_not_configured" });
@@ -206,6 +238,9 @@ try {
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.getByRole("button", { name: /123 Calle Ejemplo, Guaynabo/ }).click();
   check("choosing a search result fills the address", (await page.getByLabel(/Address or site description/).inputValue()).startsWith("123 Calle Ejemplo"));
+  await page.getByTestId("location-selected-placement").getByText("Pueblo Viejo").waitFor({ timeout: 10000 });
+  check("the dialog shows the Census municipio and barrio for the pin",
+    (await page.getByTestId("location-selected-placement").innerText()).includes("Municipio: Guaynabo"));
   check("the address shows right under the map with the coordinates",
     (await page.getByTestId("location-selected-address").innerText()).startsWith("123 Calle Ejemplo"));
   const footer = await page.getByTestId("location-footer-summary").innerText();
@@ -226,8 +261,25 @@ try {
   await page.getByTestId("location-coordinates").waitFor();
   check("saved coordinates render on the Passport", (await page.getByTestId("location-coordinates").innerText()).includes("18.391230, -66.117840"));
   check("saved name renders", (await page.getByTestId("location-name").innerText()).includes("Guaynabo Manufacturing Facility"));
-  check("unknown geography reads 'Not yet determined' (nothing invented)", (await section.getByText("Not yet determined").count()) === 3);
-  check("address-derived municipality is labeled as not boundary-verified", await section.getByText("From address lookup — not boundary-verified").isVisible());
+  check("parcel and zoning read 'Not yet determined' (nothing invented)", (await section.getByText("Not yet determined").count()) === 2);
+  check("barrio is determined from Census boundaries", await section.getByText("Pueblo Viejo").first().isVisible());
+  check("municipality comes from the boundary, not the address text",
+    (await section.getByText("From address lookup — not boundary-verified").count()) === 0);
+  const panel = page.getByTestId("location-requirements");
+  await panel.waitFor({ timeout: 15000 });
+  const panelText = await panel.innerText();
+  check("requirements panel explains the pin's municipio and barrio",
+    panelText.includes("Guaynabo") && panelText.includes("Pueblo Viejo") && panelText.includes("Census"), panelText.slice(0, 160).replace(/\n/g, " "));
+  check("requirements panel shows the municipio's KB designation", panelText.includes("San Juan metro area"));
+  check("requirements panel lists the patente for the pinned municipio",
+    panelText.includes("Municipio de Guaynabo"));
+  const mismatch = page.getByTestId("location-passport-mismatch");
+  check("Passport/pin municipality mismatch is flagged", await mismatch.isVisible());
+  await mismatch.getByRole("button", { name: /Use Guaynabo in the Passport/ }).click();
+  await mismatch.waitFor({ state: "hidden", timeout: 15000 });
+  await page.getByTestId("location-requirements").waitFor({ timeout: 15000 });
+  check("one click sets the Passport municipality from the pin",
+    passportMunicipality === "Guaynabo" && (await page.getByTestId("location-passport-mismatch").count()) === 0);
   check("map preview renders with the saved pin", await section.getByTestId("location-map-preview").isVisible() && (await section.locator(".maplibregl-marker").count()) === 1);
   await section.screenshot({ path: path.join(OUT, "loc-3-saved.png") });
 
@@ -273,6 +325,25 @@ try {
   await mobile.getByTestId("location-picker-dialog").waitFor({ state: "hidden" });
   check("mobile: Escape closes without saving", bodies.length === 3);
   await mobile.close();
+  // ----------------------------------------------------------- intake --
+  // A property/project intake: the site's municipio comes from the pin.
+  const intake = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  await intake.route(/tiles\.openfreemap\.org|\/styles\//, (route) => json(route, 200, STYLE));
+  await intake.goto(`${base}/?entry=new-business`, { waitUntil: "domcontentloaded" });
+  await intake.getByRole("button", { name: "Property / project only" }).click();
+  await intake.getByRole("button", { name: /Add your business details/ }).click();
+  await intake.getByTestId("intake-find-on-map").first().click();
+  await intake.getByText("Loading map…").waitFor({ state: "hidden", timeout: 30000 });
+  await intake.getByTestId("location-latitude").fill("18.1263");
+  await intake.getByTestId("location-longitude").fill("-65.4401");
+  await intake.getByRole("button", { name: "Place pin" }).click();
+  await intake.getByTestId("location-selected-placement").getByText("Vieques").waitFor({ timeout: 15000 });
+  await intake.getByRole("button", { name: "Use this site" }).click();
+  await intake.getByTestId("location-picker-dialog").waitFor({ state: "hidden" });
+  check("intake: the pin sets the municipality from Census boundaries",
+    (await intake.locator("#spr-municipality").inputValue()) === "Vieques");
+  check("intake: the pinned barrio is shown", (await intake.getByTestId("intake-map-note").innerText()).includes("Puerto Ferro"));
+  await intake.close();
 } finally {
   await browser.close();
 }
