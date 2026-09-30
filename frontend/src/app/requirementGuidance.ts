@@ -4,6 +4,7 @@ import { runRulesEngine, type EngineInput, type KnowledgeBase } from "./rulesEng
 import { isHomeBasedLocation, isOnlineOnlyLocation } from "./locationTypes.ts";
 import { duplicateGuidanceIds, validateGuidanceConcept, type GuidanceConcept, type GuidanceFactKey, type GuidanceSource } from "./guidance/model.ts";
 import type { LangCode } from "./jurisdictions/types";
+import { L } from "./i18n";
 
 export interface TriggerFact {
   key: GuidanceFactKey;
@@ -489,4 +490,33 @@ export function sourceRowValue(
     return displayCitation(docCitation);
   }
   return "—";
+}
+
+/**
+ * "Why this applies to THIS project" line for location-scoped requirements on a
+ * new premises of an existing business (REG-NEW-PREMISES-MUNICIPALITY-001).
+ *
+ * projectMunicipality is the NEW premises' municipality (what the requirement
+ * card title uses); passportMunicipality is the business's REGISTERED
+ * municipality from the linked passport. The new location is named first —
+ * never the registered one (2026-09-30 QA, live S308: a Cataño patente card
+ * read "New location for your business in Bayamón — not covered by your
+ * registered location" because the label read the passport's municipality
+ * instead of the matter's).
+ */
+export function newPremisesContextLabel(
+  triggerFacts: string[] | undefined,
+  projectMunicipality: string | null | undefined,
+  passportMunicipality: string | null | undefined,
+  language: LangCode,
+): string | null {
+  const facts = triggerFacts ?? [];
+  if (facts.includes("new_premises:other_municipality")) {
+    const where = projectMunicipality ?? passportMunicipality ?? "";
+    return `${L("New location for your business in", language)} ${where} — ${L("not covered by your registered location", language)}`;
+  }
+  if (facts.includes("new_premises")) {
+    return L("Required for the new premises — your existing permits cover your current location only", language);
+  }
+  return null;
 }

@@ -7,7 +7,7 @@ import { computeRequirementsFromKB, runRulesEngineForProfile, buildEngineInput, 
 import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
-import { buildRequirementGuidance, legalBasisFor, sourceRowValue, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
+import { buildRequirementGuidance, legalBasisFor, sourceRowValue, newPremisesContextLabel, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
@@ -5301,10 +5301,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // derived from the authorized use.
   const projectContextLabel = (req: Requirement): string | null => {
     const facts = req.triggerFacts ?? [];
-    const where = mergedScenario?.property.municipality?.value ?? profile.municipality;
+    // The new premises' municipality names the new location — the passport's
+    // municipality is the business's REGISTERED location, never the new one.
+    // (REG-NEW-PREMISES-MUNICIPALITY-001, 2026-09-30 QA live S308.)
+    const where = profile.municipality ?? mergedScenario?.property.municipality?.value;
     const parts: string[] = [];
-    if (facts.includes('new_premises:other_municipality')) parts.push(`${L('New location for your business in', language)} ${where} — ${L('not covered by your registered location', language)}`);
-    else if (facts.includes('new_premises')) parts.push(L('Required for the new premises — your existing permits cover your current location only', language));
+    const newPremises = newPremisesContextLabel(facts, where, mergedScenario?.property.municipality?.value, language);
+    if (newPremises) parts.push(newPremises);
     const change = mergedScenario?.project.possibleChangeOfUse;
     if (req.document_id === 'DOC_PERMISO_UNICO' && change?.value === true) {
       parts.push(`${L('Includes the use authorization', language)}: ${change.evidenceText.replace(/^Answered:\s*/, '')}`);
