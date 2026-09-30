@@ -6595,7 +6595,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>}
 
                 {!isProjectOnly && (
-                  <div className="spr-field full spr-location-type-field">
+                  <div className={`spr-field spr-location-type-field${profileAttentionCls}`}>
                     <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
                     <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
                       <option value="">{t('selectLocationType')}</option>

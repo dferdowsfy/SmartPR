@@ -1618,7 +1618,11 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .spr-spin { animation: vspin .7s linear infinite; }
 
 /* ---- Consolidated intake: minimized business-details block ---- */
-.spr-anchor { display: block; height: 0; width: 0; overflow: hidden; }.spr-profile-summary-label {
+/* Invisible scroll target for incomplete submits. Absolutely positioned so it
+   never occupies a cell in the two-column .spr-form grid (a 0x0 in-flow grid
+   item still takes a cell, which staggered the municipality field into the
+   second column one row down). */
+.spr-anchor { display: block; height: 0; width: 0; overflow: hidden; position: absolute; }.spr-profile-summary-label {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   text-transform: uppercase;
   letter-spacing: .075em;
@@ -3076,7 +3080,6 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .spr-guided-intake-shell .spr-matter-identity { align-items: flex-start; }
 .spr-guided-intake-shell .spr-matter-identity p { font-size: 15px; line-height: 1.4; }
 .spr-guided-intake-shell .spr-matter-status { font-size: 11px; }
-.spr-guided-intake-shell .spr-location-type-field { max-width: 460px; }
 .spr-business-details-fields { display: contents; }
 .spr-guided-intake-shell .spr-project-brief .spr-profile-done { flex: none; font-size: 13px; white-space: nowrap; padding: 10px 14px; }
 .spr-answer-options { display: inline-flex; gap: 6px; }
