@@ -1,0 +1,76 @@
+{
+  "id": "E04",
+  "title": "Industrial behind-the-meter 3 MW ground solar + 2 MW / 8 MWh battery for self-consumption (stays DG)",
+  "source": "SmartPR utility-scale golden; model output is a fixture",
+  "description": "Our pharmaceutical plant in Barceloneta will install 3 MW of ground-mounted solar and a 2 MW / 8 MWh battery, all for self-consumption behind the meter, interconnected with LUMA at 38 kV.",
+  "profile": {
+    "municipality": "Barceloneta"
+  },
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.95,
+      "evidence": "ground-mounted solar"
+    },
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.95,
+      "evidence": "8 MWh battery"
+    },
+    "generation_capacity_kw": {
+      "value": "3 MW",
+      "confidence": 0.95,
+      "evidence": "3 MW of ground-mounted solar"
+    },
+    "storage_capacity_kw": {
+      "value": "2 MW",
+      "confidence": 0.9,
+      "evidence": "2 MW / 8 MWh battery"
+    },
+    "storage_energy_mwh": {
+      "value": "8 MWh",
+      "confidence": 0.9,
+      "evidence": "8 MWh battery"
+    },
+    "mounting_type": {
+      "value": "ground",
+      "confidence": 0.95,
+      "evidence": "ground-mounted"
+    },
+    "power_offtaker": {
+      "value": "self",
+      "confidence": 0.95,
+      "evidence": "self-consumption"
+    },
+    "grid_position": {
+      "value": "behind_the_meter",
+      "confidence": 0.95,
+      "evidence": "behind the meter"
+    },
+    "energy_facility_type": {
+      "value": "onsite_system",
+      "confidence": 0.85,
+      "evidence": "Our pharmaceutical plant"
+    },
+    "customer_class": {
+      "value": "industrial",
+      "confidence": 0.85,
+      "evidence": "pharmaceutical plant"
+    },
+    "parallel_operation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "interconnected with LUMA"
+    },
+    "interconnection_voltage": {
+      "value": "subtransmission",
+      "confidence": 0.9,
+      "evidence": "38 kV"
+    },
+    "municipality": {
+      "value": "Barceloneta",
+      "confidence": 0.95,
+      "evidence": "Barceloneta"
+    }
+  }
+}

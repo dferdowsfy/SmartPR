@@ -7,8 +7,8 @@
 // Strict operators (eq, neq, in, gte, gt, lte, lt, contains, known) are
 // UNKNOWN when the fact is missing, so an unknown controlling fact keeps the
 // decision open (NEEDS_FACT). Lenient operators (stated, stated_in,
-// stated_contains) are FALSE when the fact is missing: they only add positive
-// signals and never hold a decision open.
+// stated_contains, stated_gt, stated_gte) are FALSE when the fact is missing:
+// they only add positive signals and never hold a decision open.
 
 import type { Condition, FactMap, FactValue } from "./types.ts";
 
@@ -64,6 +64,14 @@ function leaf(fact: string, op: string, expected: FactValue | undefined, facts: 
     }
     case "known":
       return !missing;
+    case "stated_gt":
+    case "stated_gte": {
+      if (missing) return false;
+      const a = num(actual);
+      const e = num(expected);
+      if (a === null || e === null) return false;
+      return op === "stated_gt" ? a > e : a >= e;
+    }
   }
   if (missing) return null;
   switch (op) {

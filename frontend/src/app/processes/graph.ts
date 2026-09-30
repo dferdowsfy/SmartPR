@@ -19,6 +19,7 @@
 
 import type {
   AgencyRef,
+  Condition,
   EvidenceType,
   GraphEdge,
   IncentiveLink,
@@ -109,9 +110,74 @@ export function buildProcessGraph(input: BuildGraphInput): ProcessGraph {
     for (const r of inc.eligibility_requirement_ids) { need(requirements.has(r), `${inc.id} unknown requirement ${r}`); edges.push({ from: inc.id, kind: "has_eligibility_requirement", to: r }); }
     for (const s of inc.source_ids) need(sources.has(s), `${inc.id} cites unknown source ${s}`);
   }
+  // Every condition must read a declared (or derived) fact, so a typo in KB
+  // data can never silently turn a trigger into "unknown" forever.
+  const factKeys = new Set([...kb.facts.map((f) => f.key), ...(kb.derived_facts ?? []).map((d) => d.key)]);
+  const checkCond = (c: Condition | undefined, where: string): void => {
+    if (!c) return;
+    if ("all" in c) c.all.forEach((x) => checkCond(x, where));
+    else if ("any" in c) c.any.forEach((x) => checkCond(x, where));
+    else if ("not" in c) checkCond(c.not, where);
+    else need(factKeys.has(c.fact), `${where} reads undeclared fact ${c.fact}`);
+  };
+  const stageIds = new Set((kb.stages ?? []).map((st) => st.id));
+  for (const d of kb.derived_facts ?? []) {
+    for (const c of d.cases) { checkCond(c.when, `${d.key}/${c.id}`); need(sources.has(c.source_id), `${d.key}/${c.id} cites unknown source ${c.source_id}`); }
+    for (const f of d.ask_via) need(factKeys.has(f) && f !== d.key, `${d.key} ask_via unknown fact ${f}`);
+  }
+  for (const pt of kb.project_types) {
+    checkCond(pt.classifier, pt.id);
+    checkCond(pt.signals, pt.id);
+    for (const f of pt.ask ?? []) need(factKeys.has(f), `${pt.id} asks unknown fact ${f}`);
+  }
+  for (const p of kb.processes) {
+    checkCond(p.gate, `${p.id} gate`);
+    for (const f of [...(p.gate_ask ?? []), ...(p.ask ?? [])]) need(factKeys.has(f), `${p.id} asks unknown fact ${f}`);
+    for (const r of p.applicability) { checkCond(r.trigger, r.id); for (const f of r.ask ?? []) need(factKeys.has(f), `${r.id} asks unknown fact ${f}`); }
+    for (const x of p.exceptions ?? []) checkCond(x.when, x.id);
+    for (const pre of p.prerequisites) checkCond(pre.when, `${p.id} prerequisite ${pre.process_id}`);
+    if (p.stage) need(stageIds.has(p.stage), `${p.id} unknown stage ${p.stage}`);
+    if (p.gate_source_id) need(sources.has(p.gate_source_id), `${p.id} gate cites unknown source ${p.gate_source_id}`);
+  }
+  for (const r of kb.requirements) checkCond(r.applies_when, r.id);
+  for (const inc of kb.incentives) checkCond(inc.eligibility, inc.id);
+  checkCond(kb.incentive_questions_when, "incentive_questions_when");
   if (problems.length) throw new Error(`Invalid regulatory process KB:\n- ${problems.join("\n- ")}`);
 
   return { kb, sources, agencies, processes, requirements, evidence, projectTypes, incentives, incentiveCatalog, edges, legacyDocumentIndex };
+}
+
+/**
+ * Merge several KB packs (one per regulated domain, e.g. energy, telecom)
+ * into one graph input. New domains are added as data packs; duplicate ids
+ * across packs are rejected by buildProcessGraph's index().
+ */
+export function mergeProcessKBs(packs: ProcessKB[]): ProcessKB {
+  if (packs.length === 1) return packs[0];
+  const cat = <K extends keyof ProcessKB>(k: K) => packs.flatMap((p) => (p[k] as unknown[] | undefined) ?? []);
+  const facts = new Map<string, ProcessKB["facts"][number]>();
+  for (const f of cat("facts") as ProcessKB["facts"]) {
+    const prev = facts.get(f.key);
+    if (prev && prev.type !== f.type) throw new Error(`Fact ${f.key} declared with conflicting types across packs`);
+    if (!prev) facts.set(f.key, f);
+  }
+  return {
+    version: packs.map((p) => p.version).join("+"),
+    domain: packs.map((p) => p.domain).join("+"),
+    jurisdiction: packs[0].jurisdiction,
+    agencies: cat("agencies") as ProcessKB["agencies"],
+    facts: [...facts.values()],
+    evidence_types: cat("evidence_types") as ProcessKB["evidence_types"],
+    requirements: cat("requirements") as ProcessKB["requirements"],
+    project_types: cat("project_types") as ProcessKB["project_types"],
+    processes: cat("processes") as ProcessKB["processes"],
+    incentives: cat("incentives") as ProcessKB["incentives"],
+    derived_facts: cat("derived_facts") as NonNullable<ProcessKB["derived_facts"]>,
+    stages: cat("stages") as NonNullable<ProcessKB["stages"]>,
+    incentive_questions_when: packs.some((p) => p.incentive_questions_when)
+      ? { any: packs.map((p) => p.incentive_questions_when).filter((c): c is Condition => !!c) }
+      : undefined,
+  };
 }
 
 export function edgesFrom(graph: ProcessGraph, from: string, kind: GraphEdge["kind"]): string[] {

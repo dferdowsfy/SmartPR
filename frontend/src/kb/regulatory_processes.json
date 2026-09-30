@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-29.1",
+  "version": "2026-09-30.1",
   "domain": "energy",
   "jurisdiction": "Puerto Rico",
   "agencies": [
@@ -8,6 +8,26 @@
       "name": "Negociado de Energía de Puerto Rico (Puerto Rico Energy Bureau, PREB)",
       "url": "https://energia.pr.gov/",
       "note": "Not yet in kb/agencies.json; defined here so the process graph can name it."
+    },
+    {
+      "id": "prepa",
+      "name": "Autoridad de Energía Eléctrica (PREPA)",
+      "url": "https://aeepr.com"
+    },
+    {
+      "id": "jp",
+      "name": "Junta de Planificación de Puerto Rico",
+      "url": "https://jp.pr.gov"
+    },
+    {
+      "id": "usace",
+      "name": "U.S. Army Corps of Engineers — Jacksonville District (Antilles Permits Section)",
+      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/"
+    },
+    {
+      "id": "faa",
+      "name": "Federal Aviation Administration (Obstruction Evaluation / Airport Airspace Analysis)",
+      "url": "https://oeaaa.faa.gov"
     }
   ],
   "facts": [
@@ -46,14 +66,16 @@
       "label": "Generation capacity (kW)",
       "type": "number",
       "question": "What is the total generating capacity, in kW (1 MW = 1,000 kW)?",
-      "why": "Capacity thresholds (25 kW, 300 kW, 1 MW, 5 MW) change net-metering eligibility, insurance, and whether PREB certification applies."
+      "why": "Capacity thresholds (25 kW, 300 kW, 1 MW, 5 MW) change net-metering eligibility, insurance, and whether PREB certification applies.",
+      "unit": "kW"
     },
     {
       "key": "storage_capacity_kw",
       "label": "Storage unit capacity (kW)",
       "type": "number",
       "question": "What is the nominal capacity of the largest storage unit, in kW?",
-      "why": "Offering storage service with a unit of 1 MW or more makes the operator an electric service company under PREB Regulation 8701."
+      "why": "Offering storage service with a unit of 1 MW or more makes the operator an electric service company under PREB Regulation 8701.",
+      "unit": "kW"
     },
     {
       "key": "customer_class",
@@ -277,7 +299,18 @@
         "distribution": "Distribution (up to 13.2 kV)",
         "subtransmission": "Sub-transmission (38 kV)",
         "transmission": "Transmission (115 kV)"
-      }
+      },
+      "question_priority": 3,
+      "question_variants": [
+        {
+          "when": {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          "question": "Where will the plant connect to the grid — at 38 kV sub-transmission or 115 kV transmission (for example, which substation or line), or at distribution voltage?"
+        }
+      ]
     },
     {
       "key": "mounting_type",
@@ -309,6 +342,207 @@
       "type": "boolean",
       "question": "Will the installation require structural work (roof reinforcement, new supports or foundations)?",
       "why": "Structural work is one of the conditions SmartPR's existing rules use to require an OGPe construction permit."
+    },
+    {
+      "key": "power_offtaker",
+      "label": "Who buys the power",
+      "type": "enum",
+      "options": [
+        "self",
+        "luma_prepa",
+        "third_party"
+      ],
+      "option_labels": {
+        "self": "We use it ourselves (on-site consumption)",
+        "luma_prepa": "Sold to PREPA/LUMA (power purchase agreement / procurement)",
+        "third_party": "Sold to another company or customer"
+      },
+      "question": "Who will use or buy the electricity — your own facility, PREPA/LUMA under a power purchase agreement, or another buyer?",
+      "why": "Selling output to the grid makes the project an independent power producer (Ley 57-2014 art. 1.3(m)); self-supply makes it distributed generation (art. 1.3(aa)). The two follow different processes.",
+      "question_priority": 5,
+      "chip": {
+        "values": {
+          "self": "Self-supply",
+          "luma_prepa": "Sells to PREPA/LUMA",
+          "third_party": "Sells to third party"
+        }
+      },
+      "extraction": {
+        "en": "\"power_offtaker\" :: \"self\" | \"luma_prepa\" | \"third_party\" — who uses or buys the output. \"luma_prepa\" only when the plant sells its output to LUMA/PREPA (PPA/PPOA, RFP/procurement, \"sell power to LUMA\"); exporting excess under net metering is \"self\".",
+        "es": "\"power_offtaker\" :: \"self\" | \"luma_prepa\" | \"third_party\" — quién usa o compra la energía. \"luma_prepa\" solo si la planta vende su producción a LUMA/AEE (PPA/PPOA, RFP/subasta, \"venderle energía a LUMA\"); exportar sobrantes bajo medición neta es \"self\"."
+      }
+    },
+    {
+      "key": "grid_position",
+      "label": "Grid position",
+      "type": "enum",
+      "options": [
+        "behind_the_meter",
+        "front_of_meter"
+      ],
+      "option_labels": {
+        "behind_the_meter": "Behind the meter (serves on-site load)",
+        "front_of_meter": "Front of the meter (connects directly to the grid)"
+      },
+      "question": "Will the system sit behind your facility’s meter, or connect directly to the grid in front of the meter?",
+      "why": "Front-of-meter plants are wholesale generators; behind-the-meter systems are customer-side distributed generation.",
+      "question_priority": 1,
+      "extraction": {
+        "en": "\"grid_position\" :: \"behind_the_meter\" | \"front_of_meter\", only when stated (e.g. \"behind the meter\", \"utility-scale plant connected to the grid\").",
+        "es": "\"grid_position\" :: \"behind_the_meter\" | \"front_of_meter\", solo si se dice (p. ej. \"detrás del contador\", \"planta conectada directamente a la red\")."
+      }
+    },
+    {
+      "key": "energy_facility_type",
+      "label": "Facility type",
+      "type": "enum",
+      "options": [
+        "onsite_system",
+        "standalone_plant"
+      ],
+      "option_labels": {
+        "onsite_system": "System at an existing facility",
+        "standalone_plant": "Standalone plant / solar farm"
+      },
+      "question": "Is this a system at an existing facility, or a standalone plant (solar farm / storage plant)?",
+      "why": "A standalone plant is not distributed generation for its own consumption.",
+      "extraction": {
+        "en": "\"energy_facility_type\" :: \"standalone_plant\" for a solar farm/park/plant, wind farm, or standalone storage plant; \"onsite_system\" for a system at an existing home/business facility.",
+        "es": "\"energy_facility_type\" :: \"standalone_plant\" para una finca/parque/planta solar, parque eólico o planta de almacenamiento independiente; \"onsite_system\" para un sistema en una instalación existente."
+      }
+    },
+    {
+      "key": "storage_energy_mwh",
+      "label": "Storage energy (MWh)",
+      "type": "number",
+      "unit": "MWh",
+      "question": "How much energy can the batteries store, in MWh?",
+      "why": "Storage size shapes MTR storage obligations and storage contracts.",
+      "chip": {
+        "template": "{value} MWh storage"
+      },
+      "extraction": {
+        "en": "\"storage_energy_mwh\" :: battery energy in MWh (\"40 MWh of batteries\" = 40). Never put MWh into storage_capacity_kw (that is power in kW).",
+        "es": "\"storage_energy_mwh\" :: energía de baterías en MWh (\"40 MWh de baterías\" = 40). Nunca pongas MWh en storage_capacity_kw (esa es potencia en kW)."
+      }
+    },
+    {
+      "key": "site_control",
+      "label": "Site control",
+      "type": "enum",
+      "options": [
+        "owned",
+        "leased",
+        "option_or_agreement",
+        "none"
+      ],
+      "option_labels": {
+        "owned": "We own the site",
+        "leased": "We lease the site",
+        "option_or_agreement": "Option / purchase or lease agreement",
+        "none": "No site control yet"
+      },
+      "question": "Do you own or lease the site, or hold an option on it?",
+      "why": "Procurement proposals are evaluated on site ownership or control.",
+      "extraction": {
+        "en": "\"site_control\" :: \"owned\" | \"leased\" | \"option_or_agreement\" | \"none\", only when stated for the project site.",
+        "es": "\"site_control\" :: \"owned\" | \"leased\" | \"option_or_agreement\" | \"none\", solo si se dice sobre el terreno del proyecto."
+      }
+    },
+    {
+      "key": "site_zoning",
+      "label": "Site land classification",
+      "type": "enum",
+      "options": [
+        "industrial",
+        "agricultural",
+        "specially_protected_rustic",
+        "other_rustic",
+        "urban",
+        "unzoned"
+      ],
+      "option_labels": {
+        "industrial": "Industrial district",
+        "agricultural": "Agricultural district",
+        "specially_protected_rustic": "Specially protected rustic land (SREP)",
+        "other_rustic": "Other rustic land",
+        "urban": "Urban (non-industrial)",
+        "unzoned": "Not zoned / unknown classification"
+      },
+      "question": "How is the site zoned — industrial, agricultural, specially protected rustic (SREP), other rustic, or urban?",
+      "why": "Ground-mounted solar on industrial land is exempt from a public hearing; on other land the Junta Adjudicativa/OGPe may hold one (Reglamento Conjunto § 9.4.1.5). Wind is ministerial only in agricultural or industrial districts (§ 9.3.2.2).",
+      "question_priority": 3,
+      "extraction": {
+        "en": "\"site_zoning\" :: \"industrial\" | \"agricultural\" | \"specially_protected_rustic\" | \"other_rustic\" | \"urban\" | \"unzoned\", only when the land classification/zoning is stated.",
+        "es": "\"site_zoning\" :: \"industrial\" | \"agricultural\" | \"specially_protected_rustic\" | \"other_rustic\" | \"urban\" | \"unzoned\", solo si se dice la calificación del terreno."
+      }
+    },
+    {
+      "key": "environmental_sensitivity",
+      "label": "Environmental sensitivity",
+      "type": "list",
+      "options": [
+        "wetlands",
+        "agricultural_reserve",
+        "coastal_zone",
+        "floodplain",
+        "protected_habitat",
+        "none"
+      ],
+      "option_labels": {
+        "wetlands": "Wetlands / waters",
+        "agricultural_reserve": "Agricultural reserve",
+        "coastal_zone": "Coastal zone",
+        "floodplain": "Flood zone",
+        "protected_habitat": "Protected habitat / species",
+        "none": "None known"
+      },
+      "question": "Is any part of the site in wetlands, an agricultural reserve, the coastal zone, a flood zone, or protected habitat?",
+      "why": "Each triggers its own review (Corps § 404, coastal consistency, Planning Regulation 13).",
+      "extraction": {
+        "en": "\"environmental_sensitivity\" :: comma-separated from wetlands, agricultural_reserve, coastal_zone, floodplain, protected_habitat, none — only what is stated about the site.",
+        "es": "\"environmental_sensitivity\" :: separados por comas entre wetlands, agricultural_reserve, coastal_zone, floodplain, protected_habitat, none — solo lo que se diga del terreno."
+      }
+    },
+    {
+      "key": "procurement_tranche",
+      "label": "In a PREB procurement tranche / RFP",
+      "type": "boolean",
+      "question": "Was the project selected in (or is it bidding into) a PREB-supervised procurement tranche / RFP?",
+      "why": "The approved IRP buys new renewable and storage capacity through RFP tranches; the contract path depends on it.",
+      "question_priority": 4,
+      "chip": {
+        "values": {
+          "true": "Procurement tranche"
+        }
+      },
+      "extraction": {
+        "en": "\"procurement_tranche\" :: true when the speaker says the project is in / was selected in / is bidding into a PREB or PREPA RFP or tranche; false only when they say it is not.",
+        "es": "\"procurement_tranche\" :: true si dice que el proyecto está / fue seleccionado / compite en un RFP o tramo (tranche) del NEPR o la AEE; false solo si dice que no."
+      }
+    },
+    {
+      "key": "structure_height_ft",
+      "label": "Tallest structure (ft)",
+      "type": "number",
+      "unit": "ft",
+      "question": "How tall is the tallest structure (e.g. wind turbine tip height), in feet?",
+      "why": "Structures taller than 200 ft need FAA notice (14 CFR 77.9).",
+      "extraction": {
+        "en": "\"structure_height_ft\" :: tallest structure height in feet, only when stated (convert meters × 3.28).",
+        "es": "\"structure_height_ft\" :: altura de la estructura más alta en pies, solo si se dice (metros × 3.28)."
+      }
+    },
+    {
+      "key": "near_airport",
+      "label": "Near an airport",
+      "type": "boolean",
+      "question": "Is the site near an airport or heliport?",
+      "why": "Structures within airport imaginary surfaces need FAA notice (14 CFR 77.9(b)).",
+      "extraction": {
+        "en": "\"near_airport\" :: true when the site is stated to be near an airport/heliport.",
+        "es": "\"near_airport\" :: true si se dice que el terreno está cerca de un aeropuerto o helipuerto."
+      }
     }
   ],
   "evidence_types": [
@@ -464,6 +698,106 @@
     {
       "id": "DOC_EVID_ACT60_DECREE_APPLICATION",
       "name": "Act 60 green-energy decree application (DDEC)"
+    },
+    {
+      "id": "DOC_EVID_RFP_PROPOSAL",
+      "name": "Procurement (RFP) proposal package"
+    },
+    {
+      "id": "DOC_EVID_SITE_CONTROL",
+      "name": "Site ownership, lease or option evidence"
+    },
+    {
+      "id": "DOC_EVID_ENV_PERMITTING_PLAN",
+      "name": "Environmental permitting plan (federal and local)"
+    },
+    {
+      "id": "DOC_EVID_TD_INTERCONNECTION_PLAN",
+      "name": "T&D interconnection plan (MTR and Reg. 8915/8916 compliance)"
+    },
+    {
+      "id": "DOC_EVID_PPOA_EXECUTED",
+      "name": "Executed PPOA / energy storage services agreement with PREPA"
+    },
+    {
+      "id": "DOC_EVID_NOI",
+      "name": "Notice of intent filed with the Energy Bureau"
+    },
+    {
+      "id": "DOC_EVID_INTERCONNECTION_REQUEST",
+      "name": "Interconnection request with point of interconnection and one-line diagram"
+    },
+    {
+      "id": "DOC_EVID_PSSE_MODEL",
+      "name": "PSS/E steady-state and dynamic models (and validation report)"
+    },
+    {
+      "id": "DOC_EVID_INTERCONNECTION_AGREEMENT",
+      "name": "Executed interconnection agreement"
+    },
+    {
+      "id": "DOC_EVID_MTR_COMPLIANCE_REPORT",
+      "name": "MTR compliance demonstration / report"
+    },
+    {
+      "id": "DOC_EVID_CONSULTA_UBICACION",
+      "name": "Consulta de ubicación filing / resolution"
+    },
+    {
+      "id": "DOC_EVID_LARGE_PV_SITE_PLANS",
+      "name": "Large-scale PV site and PE-signed construction plans"
+    },
+    {
+      "id": "DOC_EVID_PV_EMERGENCY_PLAN",
+      "name": "Emergency / fire contingency plan shared with Bomberos, Police and hospitals"
+    },
+    {
+      "id": "DOC_EVID_AEE_RECOMMENDATION",
+      "name": "AEE/LUMA interconnection evaluation request (recommendation)"
+    },
+    {
+      "id": "DOC_EVID_ENV_REA",
+      "name": "Environmental recommendation (REA)"
+    },
+    {
+      "id": "DOC_EVID_ENV_DOCUMENT",
+      "name": "Environmental document (EA / DIA) or categorical-exclusion certification"
+    },
+    {
+      "id": "DOC_EVID_CERTIFIED_CONSTRUCTION_PLANS",
+      "name": "Sealed, digitally signed construction plans"
+    },
+    {
+      "id": "DOC_EVID_JP_FLOOD_CERT",
+      "name": "Flood-zone certification (Junta de Planificación)"
+    },
+    {
+      "id": "DOC_EVID_COMMISSIONING_TESTS",
+      "name": "Acceptance / commissioning test results"
+    },
+    {
+      "id": "DOC_EVID_USE_PERMIT_ENERGY",
+      "name": "Permiso Único (use permit) for operation and energization"
+    },
+    {
+      "id": "DOC_EVID_PUBLIC_LIABILITY_INSURANCE",
+      "name": "Public liability insurance"
+    },
+    {
+      "id": "DOC_EVID_USACE_PERMIT",
+      "name": "Corps of Engineers permit or jurisdictional determination"
+    },
+    {
+      "id": "DOC_EVID_CZM_CONSISTENCY",
+      "name": "Coastal-zone consistency certification"
+    },
+    {
+      "id": "DOC_EVID_FLOOD_REG13_COMPLIANCE",
+      "name": "Planning Regulation 13 (flood) compliance"
+    },
+    {
+      "id": "DOC_EVID_FAA_7460",
+      "name": "FAA Form 7460-1 determination"
     }
   ],
   "requirements": [
@@ -998,33 +1332,708 @@
       "controlling_language": "Any Exempt Business holding a Decree granted under this Chapter shall be granted the option of deducting … provided, that these buildings, structures, machinery, and equipment: (1) Have not depreciated or been previously used by any other business or Person in Puerto Rico",
       "confidence": "high",
       "status": "verified"
-    }
-  ],
-  "project_types": [
+    },
     {
-      "id": "PT_ONSITE_GENERATION",
-      "name": "On-site generation or storage",
-      "classifier": {
+      "id": "REQ_RFP_PROPOSAL",
+      "name": "Submit a proposal that meets the RFP requirements (technology, capacity, MTR compliance strategy, grid connection point, COD, ownership)",
+      "evidence_ids": [
+        "DOC_EVID_RFP_PROPOSAL"
+      ],
+      "source_id": "SRC_JOINT_REG_8815",
+      "locator": "Joint Motion (2021-07-23), RFP proposal content",
+      "controlling_language": "(5) MTR compliance strategy; (6) grid connection point and electrical one-line diagrams; (7) ancillary service capabilities; (8) forecasted commercial operation date; and (9) ownership structure",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_RFP_SITE_CONTROL",
+      "name": "Show site ownership, lease or the ability to control the site before the guaranteed construction start",
+      "evidence_ids": [
+        "DOC_EVID_SITE_CONTROL"
+      ],
+      "source_id": "SRC_JOINT_REG_8815",
+      "locator": "Joint Motion (2021-07-23), evaluation criterion viii (Site Control)",
+      "controlling_language": "The Project Committee will assess whether a Proponent owns or leases the project site (and, in the case of a lease, will consider the alignment of the term of such lease with the term of the applicable Contract) or otherwise has the ability to obtain control over, and access to, such site",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_RFP_ENV_PERMITTING_PLAN",
+      "name": "Environmental permitting plan covering all potentially applicable federal and local permits",
+      "evidence_ids": [
+        "DOC_EVID_ENV_PERMITTING_PLAN"
+      ],
+      "source_id": "SRC_JOINT_REG_8815",
+      "locator": "Joint Motion (2021-07-23), proposal content (v)",
+      "controlling_language": "Environmental permitting plan addressing all potentially applicable environmental permits (federal and local)",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_RFP_TD_PLAN",
+      "name": "Transmission/distribution interconnection plan meeting the MTRs and Reg. 8915 or 8916",
+      "evidence_ids": [
+        "DOC_EVID_TD_INTERCONNECTION_PLAN"
+      ],
+      "source_id": "SRC_JOINT_REG_8815",
+      "locator": "Joint Motion (2021-07-23), proposal content (vi)",
+      "controlling_language": "Transmission or distribution upgrade plans, as applicable, demonstrating compliance with the requirements of Regulation 8915 or Regulation 8916, as applicable, status of interconnection or transmission service requests, and status of related agreements and approvals",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_PPOA_EXECUTED",
+      "name": "Negotiate the power purchase and operating agreement (PPOA) with PREPA",
+      "evidence_ids": [
+        "DOC_EVID_PPOA_EXECUTED"
+      ],
+      "applies_when": {
+        "not": {
+          "fact": "generation_technology",
+          "op": "stated_in",
+          "value": [
+            "storage"
+          ]
+        }
+      },
+      "source_id": "SRC_PREB_TRANCHE1_PPOA_2022",
+      "locator": "Resolution and Order (2022-07-08)",
+      "controlling_language": "the Energy Bureau ACCEPTS PREPA’s filing of these nine (9) executed PPOA contracts … Therefore, the Energy Bureau APPROVES the executed contracts in Attachment A.",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_ESSA_EXECUTED",
+      "name": "Negotiate the energy storage services agreement (ESSA) with PREPA",
+      "evidence_ids": [
+        "DOC_EVID_PPOA_EXECUTED"
+      ],
+      "applies_when": {
         "any": [
-          {
-            "fact": "generation_technology",
-            "op": "in",
-            "value": [
-              "solar",
-              "wind",
-              "storage",
-              "hybrid",
-              "other"
-            ]
-          },
           {
             "fact": "battery_storage",
             "op": "stated"
           },
           {
-            "fact": "generation_capacity_kw",
-            "op": "gt",
+            "fact": "generation_technology",
+            "op": "stated_in",
+            "value": [
+              "storage",
+              "hybrid"
+            ]
+          },
+          {
+            "fact": "storage_energy_mwh",
+            "op": "stated_gt",
             "value": 0
+          },
+          {
+            "fact": "storage_capacity_kw",
+            "op": "stated_gt",
+            "value": 0
+          }
+        ]
+      },
+      "source_id": "SRC_PREB_IRP_PROCUREMENT_2024",
+      "locator": "Resolución (2024-02-14), p. 5",
+      "controlling_language": "mediante evaluaciones independientes, se han aprobado varios contratos para la compra de energía y de servicios de almacenamiento de energía, ello, conforme a lo dispuesto en la Sección 6.32 de la Ley 57-2014.",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_PPOA_PREB_APPROVAL",
+      "name": "Energy Bureau evaluates and approves the contract before it is signed (PREPA files it)",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_LAW_57_2014",
+      "locator": "Art. 6.32(a) (22 LPRA § 1054ff)",
+      "controlling_language": "El Negociado de Energía evaluará y aprobará todos los contratos entre las compañías de servicio eléctrico, incluidos los productores independientes de energía, antes del otorgamiento de dichos contratos. Esto incluirá, pero no se limitará, a la evaluación y aprobación de los contratos de compraventa de energía mediante los cuales un productor independiente de energía se disponga a proveer energía a la compañía de servicio eléctrico responsable de operar el Sistema Eléctrico.",
+      "confidence": "high",
+      "status": "verified",
+      "supporting_source_ids": [
+        "SRC_LAW_17_2019"
+      ]
+    },
+    {
+      "id": "REQ_NOI_FILING",
+      "name": "File a notice of intent with the Energy Bureau before building (180-day response)",
+      "evidence_ids": [
+        "DOC_EVID_NOI"
+      ],
+      "source_id": "SRC_LAW_57_2014",
+      "locator": "Art. 6.34(a) (22 LPRA § 1054hh)",
+      "controlling_language": "Toda compañía de energía certificada que desee construir o expandir sus instalaciones deberá cumplir con la Ley de Política Pública Energética y presentar al Negociado una notificación de intención sobre el proyecto, conforme con las normas y reglamentos que esta establezca.",
+      "confidence": "medium",
+      "status": "needs_expert_validation",
+      "notes": "No implementing regulation for notices of intent was located; confirm whether PREB requires a separate notice for IPPs selected through an RFP."
+    },
+    {
+      "id": "REQ_STUDY_INTERCONNECTION_REQUEST",
+      "name": "Interconnection request with the grid connection point and one-line diagram",
+      "evidence_ids": [
+        "DOC_EVID_INTERCONNECTION_REQUEST"
+      ],
+      "source_id": "SRC_JOINT_REG_8815",
+      "locator": "Joint Motion (2021-07-23), proposal content (i)(6)",
+      "controlling_language": "(6) grid connection point and electrical one-line diagrams",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_STUDY_FEASIBILITY",
+      "name": "Optional feasibility study (only if you request it)",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+      "locator": "Sección 4.03(A) (draft)",
+      "controlling_language": "Se llevará a cabo un estudio de viabilidad solo a solicitud del Cliente de Interconexión, El Operador del SEE no requerirá un estudio de viabilidad.",
+      "confidence": "medium",
+      "status": "proposed_rule"
+    },
+    {
+      "id": "REQ_STUDY_SIS",
+      "name": "LUMA performs the System Impact Study",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_LUMA_TRANCHE1_STUDIES_2022",
+      "locator": "Motion in Compliance (2022-04-29), § 1.2.1",
+      "controlling_language": "This final technical interconnection study is composed of the following studies: the System Impact Study, the Point of Interconnection Facility Study, the Network Upgrades Facility Study (the latter two jointly, referred to as the “Facility Studies”) and the Minimum Technical Requirements (“MTR”) Compliance Study",
+      "confidence": "medium",
+      "status": "partially_verified",
+      "supporting_source_ids": [
+        "SRC_PREB_INTERCONNECTION_DRAFT"
+      ]
+    },
+    {
+      "id": "REQ_STUDY_TRANSMISSION_IMPACT",
+      "name": "Transmission System impact study (38 kV / 115 kV connections)",
+      "evidence_ids": [],
+      "applies_when": {
+        "fact": "interconnection_voltage",
+        "op": "in",
+        "value": [
+          "subtransmission",
+          "transmission"
+        ]
+      },
+      "kind": "agency_step",
+      "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+      "locator": "Sección 4.05(A)(1) (draft)",
+      "controlling_language": "Junto con los resultados del estudio de impacto al sistema o, de requerirse, del estudio de impacto al Sistema de Transmisión.",
+      "confidence": "medium",
+      "status": "proposed_rule",
+      "notes": "In the drafts, the Transmission System means the 38 kV sub-transmission and 115 kV transmission facilities."
+    },
+    {
+      "id": "REQ_STUDY_FACILITIES",
+      "name": "LUMA performs the Point-of-Interconnection and Network Upgrades Facility Studies (upgrade costs)",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_LUMA_TRANCHE1_STUDIES_2022",
+      "locator": "Motion in Compliance (2022-04-29), § 1.2.2",
+      "controlling_language": "This final technical interconnection study is composed of the following studies: the System Impact Study, the Point of Interconnection Facility Study, the Network Upgrades Facility Study (the latter two jointly, referred to as the “Facility Studies”) and the Minimum Technical Requirements (“MTR”) Compliance Study",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_STUDY_PSSE_MODEL",
+      "name": "Provide PSS/E steady-state and dynamic models of the facility",
+      "evidence_ids": [
+        "DOC_EVID_PSSE_MODEL"
+      ],
+      "source_id": "SRC_LUMA_TRANCHE1_STUDIES_2022",
+      "locator": "Motion in Compliance (2022-04-29), § 1.2.3",
+      "controlling_language": "an assessment of each proponent-provided electrical power system simulation file (PSS/E model) of their proposed facility, for both steady-state and dynamic conditions is performed.",
+      "confidence": "medium",
+      "status": "partially_verified",
+      "supporting_source_ids": [
+        "SRC_PREPA_RFP_APPENDIX_I"
+      ]
+    },
+    {
+      "id": "REQ_IA_EXECUTED",
+      "name": "Sign the interconnection agreement after the studies",
+      "evidence_ids": [
+        "DOC_EVID_INTERCONNECTION_AGREEMENT"
+      ],
+      "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+      "locator": "Sección 5.01(A) (draft)",
+      "controlling_language": "el Operador del SEE proveerá al Cliente de Interconexión un Acuerdo de Interconexión de acuerdo con el siguiente calendario: (1) Dentro cinco (5) Días Laborables a partir de que se complete el informe final del estudio de instalaciones.",
+      "confidence": "medium",
+      "status": "proposed_rule",
+      "notes": "For plants selling to PREPA, interconnection terms may be set in the PPOA instead; needs expert validation."
+    },
+    {
+      "id": "REQ_MTR_PV",
+      "name": "Meet the PV Minimum Technical Requirements (ride-through, voltage and reactive power, frequency response, ramp rate)",
+      "evidence_ids": [
+        "DOC_EVID_MTR_COMPLIANCE_REPORT"
+      ],
+      "applies_when": {
+        "fact": "generation_technology",
+        "op": "in",
+        "value": [
+          "solar",
+          "hybrid"
+        ]
+      },
+      "source_id": "SRC_PREPA_MTR_2020",
+      "locator": "Appendix H — MTRs for PV facilities (V3), preamble",
+      "controlling_language": "MINIMUM TECHNICAL REQUIREMENTS FOR INTERCONNECTION OF PHOTOVOLTAIC (PV) FACILITIES The Seller shall comply with the following minimum technical requirements",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MTR_PV_STORAGE",
+      "name": "PV MTRs require energy storage for frequency response (≥10% of contracted capacity for 9.5 min) and ramp-rate control (≥30% for 25 min)",
+      "evidence_ids": [
+        "DOC_EVID_MTR_COMPLIANCE_REPORT"
+      ],
+      "applies_when": {
+        "fact": "generation_technology",
+        "op": "in",
+        "value": [
+          "solar",
+          "hybrid"
+        ]
+      },
+      "source_id": "SRC_PREPA_MTR_2020",
+      "locator": "Appendix H — MTRs for PV facilities (V3), frequency response / ramp rate",
+      "controlling_language": "the energy storage system shall include, as a minimum: 10% of the contracted capacity for Frequency Response/Regulation for at least 9.5 minutes (see section 6 for details) and 30% of contracted capacity for Ramp Rate Control for at least 25 minutes.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MTR_WTG",
+      "name": "Meet the wind (WTG) Minimum Technical Requirements",
+      "evidence_ids": [
+        "DOC_EVID_MTR_COMPLIANCE_REPORT"
+      ],
+      "applies_when": {
+        "fact": "generation_technology",
+        "op": "eq",
+        "value": "wind"
+      },
+      "source_id": "SRC_PREPA_MTR_2020",
+      "locator": "Appendix H — MTRs for WTG projects (V3.1), preamble",
+      "controlling_language": "MINIMUM TECHNICAL REQUIREMENTS FOR INTERCONNECTION OF WIND TURBINE GENERATION (WTG) PROJECTS The Seller shall comply with the following minimum technical requirements",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MTR_BESS",
+      "name": "Meet the BESS Minimum Technical Requirements (frequency control, fast frequency response, reactive support, power quality)",
+      "evidence_ids": [
+        "DOC_EVID_MTR_COMPLIANCE_REPORT"
+      ],
+      "applies_when": {
+        "any": [
+          {
+            "fact": "battery_storage",
+            "op": "stated"
+          },
+          {
+            "fact": "generation_technology",
+            "op": "stated_in",
+            "value": [
+              "storage",
+              "hybrid"
+            ]
+          },
+          {
+            "fact": "storage_energy_mwh",
+            "op": "stated_gt",
+            "value": 0
+          },
+          {
+            "fact": "storage_capacity_kw",
+            "op": "stated_gt",
+            "value": 0
+          }
+        ]
+      },
+      "source_id": "SRC_PREPA_MTR_2020",
+      "locator": "Appendix H — MTRs for BESS facilities, preamble",
+      "controlling_language": "The Seller for BEES facilities shall comply with the following minimum technical requirements",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_MTR_MODEL_VALIDATION",
+      "name": "After commissioning tests, submit a certified PSS/E model and validation report",
+      "evidence_ids": [
+        "DOC_EVID_PSSE_MODEL"
+      ],
+      "source_id": "SRC_PREPA_MTR_2020",
+      "locator": "Appendix H — MTRs for PV facilities (V3), § 13 Modeling and Validation",
+      "controlling_language": "Once final adjustments and parameter settings related with commissioning and MTR compliance tests are completed, the Seller shall submit a PSS/e Siemens – PTI Certified mathematical model and validation report.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_LU_CONSULTA",
+      "name": "File a consulta de ubicación (land-use siting review) with OGPe / the Junta Adjudicativa",
+      "evidence_ids": [
+        "DOC_EVID_CONSULTA_UBICACION"
+      ],
+      "source_id": "SRC_LAW_161_2009",
+      "locator": "Art. 1.5(14)",
+      "controlling_language": "“Consulta de ubicación” — Es el procedimiento ante la Oficina de Gerencia de Permisos … para que evalúen, pasen juicio y tomen la determinación que estimen pertinente sobre propuestos usos de terrenos que no son permitidos ministerialmente",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_LU_PUBLIC_HEARING",
+      "name": "Possible public hearing (discretionary unless the site is zoned industrial)",
+      "evidence_ids": [],
+      "applies_when": {
+        "not": {
+          "fact": "site_zoning",
+          "op": "eq",
+          "value": "industrial"
+        }
+      },
+      "kind": "agency_step",
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.4.1.5(a)(2) and (b)",
+      "controlling_language": "Todos los sistemas solares fotovoltaicos a ser instalados sobre el terreno, incluyendo los de gran escala, que sean ubicados y construidos en distritos con calificación industrial. … Para las demás calificaciones la Junta Adjudicativa o la OGPe o los Municipios Autónomos con Jerarquía de la I a la III, se reservan la facultad de determinar si es necesaria la celebración de una vista pública",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_LU_LARGE_PV_DOCS",
+      "name": "Large-scale PV documents: property plan, PE-signed construction plans, electrical diagram, component documentation",
+      "evidence_ids": [
+        "DOC_EVID_LARGE_PV_SITE_PLANS"
+      ],
+      "applies_when": {
+        "fact": "generation_technology",
+        "op": "in",
+        "value": [
+          "solar",
+          "hybrid"
+        ]
+      },
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.4.2.3",
+      "controlling_language": "El proponente de la instalación solar fotovoltaica a gran escala deberá proveer los siguientes documentos",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_LU_EMERGENCY_PLAN",
+      "name": "Give Bomberos, Police and hospitals a project summary, schematics and fire contingency plan",
+      "evidence_ids": [
+        "DOC_EVID_PV_EMERGENCY_PLAN"
+      ],
+      "applies_when": {
+        "fact": "generation_technology",
+        "op": "in",
+        "value": [
+          "solar",
+          "hybrid"
+        ]
+      },
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.4.2.2(b)(2)",
+      "controlling_language": "El dueño u operador de la instalación solar fotovoltaica deberá proveer un resumen del proyecto, esquemáticos eléctricos, plan de contingencia para casos de incendio a las autoridades locales tales como el Negociado del Cuerpo de Bomberos, el Negociado de la Policía, y Hospitales.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_LU_AEE_RECOMMENDATION",
+      "name": "Request AEE/LUMA’s interconnection evaluation (distribution, or transmission/sub-transmission form)",
+      "evidence_ids": [
+        "DOC_EVID_AEE_RECOMMENDATION"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.1(b)",
+      "controlling_language": "Solicitud para evaluación de la AEE para los proyectos a interconectarse con su sistema eléctrico",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_LU_RUSTIC_LAND",
+      "name": "Specially protected rustic / agricultural land: heightened interdisciplinary review (specific restrictions not modeled)",
+      "evidence_ids": [],
+      "applies_when": {
+        "any": [
+          {
+            "fact": "site_zoning",
+            "op": "stated_in",
+            "value": [
+              "specially_protected_rustic",
+              "agricultural"
+            ]
+          },
+          {
+            "fact": "environmental_sensitivity",
+            "op": "stated_contains",
+            "value": [
+              "agricultural_reserve"
+            ]
+          }
+        ]
+      },
+      "kind": "agency_step",
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 3.2.1.2(e)",
+      "controlling_language": "Para todo suelo clasificado Suelo Rústico Especialmente Protegido (SREP) y áreas especiales con riesgo a inundación conforme designadas por la FEMA",
+      "confidence": "low",
+      "status": "needs_expert_validation",
+      "notes": "No primary source reviewed sets agricultural-reserve limits on solar; confirm with a land-use expert."
+    },
+    {
+      "id": "REQ_ENV_REA",
+      "name": "Obtain the environmental recommendation (REA) before filing an EA or DIA",
+      "evidence_ids": [
+        "DOC_EVID_ENV_REA"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "Sección 2.6.5.1(f)",
+      "controlling_language": "La REA es un requisito compulsorio previo a la radicación de una EA o DIA.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_ENV_DOCUMENT",
+      "name": "Environmental document — Environmental Assessment (EA), Environmental Impact Statement (DIA), or a sworn categorical-exclusion certification, as OGPe determines",
+      "evidence_ids": [
+        "DOC_EVID_ENV_DOCUMENT"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "Sección 2.6.2.1(a)",
+      "controlling_language": "El individuo o el profesional que prepare el documento ambiental o el formulario reclamando la aplicabilidad de una exclusión categórica, certificará, bajo juramento",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_ENV_DCA",
+      "name": "OGPe issues the environmental compliance determination (required before any final permit)",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_LAW_416_2004",
+      "locator": "Art. 4(B)(3)",
+      "controlling_language": "emitir, antes de efectuar cualquier acción o promulgar cualquier decisión gubernamental que afecte significativamente la calidad del medioambiente, una declaración escrita y detallada sobre: a) El impacto ambiental",
+      "confidence": "high",
+      "status": "verified",
+      "supporting_source_ids": [
+        "SRC_LAW_161_2009",
+        "SRC_RC_2023"
+      ]
+    },
+    {
+      "id": "REQ_UCP_PLANS",
+      "name": "Sealed, digitally signed construction plans (with DXF site polygon, NAD 83)",
+      "evidence_ids": [
+        "DOC_EVID_CERTIFIED_CONSTRUCTION_PLANS"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.2(a)–(b)",
+      "controlling_language": "Planos de construcción del proyecto, los cuales tendrán que estar sellados y firmados digitalmente por el profesional licenciado responsable del diseño de los mismos.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_UCP_PPOA_AEE_REQUIREMENTS",
+      "name": "Plans must include every requirement from the AEE evaluation (plants selling to AEE under a PPOA)",
+      "evidence_ids": [
+        "DOC_EVID_CERTIFIED_CONSTRUCTION_PLANS"
+      ],
+      "applies_when": {
+        "fact": "power_offtaker",
+        "op": "eq",
+        "value": "luma_prepa"
+      },
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.2(h)",
+      "controlling_language": "Cuando el propósito del sistema de generación sea exclusivamente la venta de energía a la AEE mediante un contrato de compra de energía (PPOA), los planos tienen que incluir todos los requisitos establecidos en el proceso de evaluación por la AEE para la adecuada construcción y operación del sistema.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_UCP_FLOOD_CERT",
+      "name": "Flood-zone certification from the Junta de Planificación",
+      "evidence_ids": [
+        "DOC_EVID_JP_FLOOD_CERT"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 3.2.1.2(c)",
+      "controlling_language": "Se deberá someter certificación de inundabilidad, emitida por la JP, en caso de obras de construcción.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_UCP_AEE_AUTHORIZATION",
+      "name": "AEE/LUMA evaluates and authorizes the interconnection before construction starts",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.4.1.3(c)",
+      "controlling_language": "Aquellos sistemas que se interconectarán con el sistema eléctrico de la AEE, sin importar su capacidad, requerirán una evaluación y autorización de dicha entidad antes de iniciarse el proceso de construcción.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_COD_ACCEPTANCE_TESTS",
+      "name": "Acceptance tests, inspection and installation certification after construction",
+      "evidence_ids": [
+        "DOC_EVID_COMMISSIONING_TESTS"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.5(a)",
+      "controlling_language": "Una vez el proyecto sea construido, se procederá a realizar las pruebas de aceptación, inspeccionar y certificar la instalación del sistema de energía renovable según aplique conforme a la reglamentación vigente de la AEE.",
+      "confidence": "medium",
+      "status": "partially_verified",
+      "supporting_source_ids": [
+        "SRC_PREB_INTERCONNECTION_DRAFT"
+      ]
+    },
+    {
+      "id": "REQ_COD_PERMISO_UNICO",
+      "name": "Permiso Único for operation and energization (installer, installation and inspector certifications; final system description)",
+      "evidence_ids": [
+        "DOC_EVID_USE_PERMIT_ENERGY"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.5(b)",
+      "controlling_language": "el dueño o su representante autorizado podrá solicitar a la OGPe o al Municipio Autónomo con Jerarquía de la I a la III, el permiso único correspondiente",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_COD_AEE_VERIFICATION",
+      "name": "AEE verifies the PPOA evaluation requirements before energizing",
+      "evidence_ids": [],
+      "applies_when": {
+        "fact": "power_offtaker",
+        "op": "eq",
+        "value": "luma_prepa"
+      },
+      "kind": "agency_step",
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.5(b)(4)(2)",
+      "controlling_language": "En caso de que el propósito del sistema de generación sea exclusivamente la venta de energía a la AEE mediante un contrato de compra de energía (PPOA), para energizar el proyecto, la AEE verificará que se cumpla con todos los requisitos establecidos por la AEE en el proceso de evaluación y certificación de planos",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_COD_INTERCONNECT_5_DAYS",
+      "name": "AEE/LUMA allows interconnection within 5 days after the Permiso Único (absent serious deficiencies)",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.5(b)(4)(3)",
+      "controlling_language": "ésta permitirá la interconexión del sistema en un periodo máximo de (5) días después de la emisión de este permiso",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_COD_PARALLEL_AUTH",
+      "name": "Written authorization before starting parallel operation",
+      "evidence_ids": [],
+      "kind": "agency_step",
+      "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+      "locator": "Sección 5.07 (draft)",
+      "controlling_language": "Autorización Requerida Antes de Comenzar la Operación en Paralelo",
+      "confidence": "medium",
+      "status": "proposed_rule"
+    },
+    {
+      "id": "REQ_COD_LIABILITY_INSURANCE",
+      "name": "Public liability insurance",
+      "evidence_ids": [
+        "DOC_EVID_PUBLIC_LIABILITY_INSURANCE"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 9.2.3.5(d)",
+      "controlling_language": "Seguro de Responsabilidad Pública.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_USACE_404",
+      "name": "Corps permit (or jurisdictional determination / general permit) for fill in waters or wetlands",
+      "evidence_ids": [
+        "DOC_EVID_USACE_PERMIT"
+      ],
+      "source_id": "SRC_USACE_33CFR323_3",
+      "locator": "33 CFR 323.3(a)",
+      "controlling_language": "DA permits will be required for the discharge of dredged or fill material into waters of the United States.",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_CZM_CERT",
+      "name": "Coastal-zone consistency certification with the federal permit application",
+      "evidence_ids": [
+        "DOC_EVID_CZM_CONSISTENCY"
+      ],
+      "source_id": "SRC_CZMA_15CFR930_57",
+      "locator": "15 CFR 930.57(a)",
+      "controlling_language": "all applicants for required federal licenses or permits subject to State agency review shall provide … a certification that the proposed activity complies with … the management program",
+      "confidence": "high",
+      "status": "verified"
+    },
+    {
+      "id": "REQ_FLOOD_REG13",
+      "name": "Comply with Planning Regulation 13 (flood zones)",
+      "evidence_ids": [
+        "DOC_EVID_FLOOD_REG13_COMPLIANCE"
+      ],
+      "source_id": "SRC_RC_2023",
+      "locator": "§ 3.2.1.2(d)",
+      "controlling_language": "Si el inmueble objeto de la solicitud ubica en un área susceptible a inundaciones, según el Mapa de Tasas del Seguro de Inundaciones, deberá cumplir con las disposiciones del Reglamento de Planificación Núm. 13 vigente.",
+      "confidence": "medium",
+      "status": "partially_verified"
+    },
+    {
+      "id": "REQ_FAA_7460",
+      "name": "File FAA Form 7460-1 notice and obtain the FAA determination",
+      "evidence_ids": [
+        "DOC_EVID_FAA_7460"
+      ],
+      "source_id": "SRC_FAA_14CFR77_9",
+      "locator": "14 CFR 77.9",
+      "controlling_language": "you must file notice with the FAA of: (a) Any construction or alteration that is more than 200 ft. AGL at its site.",
+      "confidence": "high",
+      "status": "verified"
+    }
+  ],
+  "project_types": [
+    {
+      "id": "PT_ONSITE_GENERATION",
+      "name": "On-site (customer-side) generation or storage",
+      "classifier": {
+        "all": [
+          {
+            "any": [
+              {
+                "fact": "generation_technology",
+                "op": "in",
+                "value": [
+                  "solar",
+                  "wind",
+                  "storage",
+                  "hybrid",
+                  "other"
+                ]
+              },
+              {
+                "fact": "battery_storage",
+                "op": "stated"
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "customer_side"
           }
         ]
       },
@@ -1036,7 +2045,53 @@
       ],
       "may_qualify_for": [
         "INC_ACT60_GREEN_ENERGY"
-      ]
+      ],
+      "signals": {
+        "all": [
+          {
+            "any": [
+              {
+                "fact": "generation_technology",
+                "op": "stated_in",
+                "value": [
+                  "solar",
+                  "wind",
+                  "storage",
+                  "hybrid",
+                  "other"
+                ]
+              },
+              {
+                "fact": "battery_storage",
+                "op": "stated"
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "stated_gt",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "not": {
+              "fact": "energy_market_segment",
+              "op": "stated_in",
+              "value": [
+                "wholesale"
+              ]
+            }
+          },
+          {
+            "not": {
+              "fact": "energy_facility_type",
+              "op": "stated_in",
+              "value": [
+                "standalone_plant"
+              ]
+            }
+          }
+        ]
+      }
     },
     {
       "id": "PT_MICROGRID",
@@ -1104,6 +2159,24 @@
               "energy_service_provider",
               "developer"
             ]
+          },
+          {
+            "all": [
+              {
+                "fact": "power_offtaker",
+                "op": "stated_in",
+                "value": [
+                  "luma_prepa"
+                ]
+              },
+              {
+                "fact": "energy_market_segment",
+                "op": "stated_in",
+                "value": [
+                  "wholesale"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -1155,6 +2228,397 @@
         "INC_ACT60_GREEN_ENERGY",
         "INC_ACT60_GREEN_ENERGY_DEDUCTION"
       ]
+    },
+    {
+      "id": "PT_UTILITY_SOLAR",
+      "name": "Utility-scale solar (wholesale)",
+      "classifier": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          {
+            "fact": "generation_technology",
+            "op": "eq",
+            "value": "solar"
+          },
+          {
+            "not": {
+              "any": [
+                {
+                  "fact": "battery_storage",
+                  "op": "stated"
+                },
+                {
+                  "fact": "generation_technology",
+                  "op": "stated_in",
+                  "value": [
+                    "storage",
+                    "hybrid"
+                  ]
+                },
+                {
+                  "fact": "storage_energy_mwh",
+                  "op": "stated_gt",
+                  "value": 0
+                },
+                {
+                  "fact": "storage_capacity_kw",
+                  "op": "stated_gt",
+                  "value": 0
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "signals": {
+        "any": [
+          {
+            "fact": "energy_facility_type",
+            "op": "stated_in",
+            "value": [
+              "standalone_plant"
+            ]
+          },
+          {
+            "fact": "generation_capacity_kw",
+            "op": "stated_gt",
+            "value": 5000
+          },
+          {
+            "fact": "energy_market_segment",
+            "op": "stated_in",
+            "value": [
+              "wholesale"
+            ]
+          }
+        ]
+      },
+      "ask": [
+        "power_offtaker",
+        "generation_capacity_kw"
+      ],
+      "may_require": [
+        "PR_UTILITY_PROCUREMENT_RFP",
+        "PR_UTILITY_PPOA_APPROVAL",
+        "PR_ENERGY_ESC_CERTIFICATION",
+        "PR_UTILITY_NOTICE_OF_INTENT",
+        "PR_UTILITY_INTERCONNECTION_STUDIES",
+        "PR_UTILITY_MTR_COMPLIANCE",
+        "PR_UTILITY_INTERCONNECTION_AGREEMENT",
+        "PR_ENV_COMPLIANCE_DETERMINATION",
+        "PR_LAND_USE_CONSULTA_UBICACION",
+        "PR_UTILITY_CONSTRUCTION_PERMIT",
+        "PR_UTILITY_COMMISSIONING_COD"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY"
+      ]
+    },
+    {
+      "id": "PT_UTILITY_HYBRID_SOLAR_BESS",
+      "name": "Utility-scale hybrid solar + battery storage (wholesale)",
+      "classifier": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          {
+            "any": [
+              {
+                "fact": "generation_technology",
+                "op": "eq",
+                "value": "hybrid"
+              },
+              {
+                "all": [
+                  {
+                    "fact": "generation_technology",
+                    "op": "eq",
+                    "value": "solar"
+                  },
+                  {
+                    "any": [
+                      {
+                        "fact": "battery_storage",
+                        "op": "stated"
+                      },
+                      {
+                        "fact": "generation_technology",
+                        "op": "stated_in",
+                        "value": [
+                          "storage",
+                          "hybrid"
+                        ]
+                      },
+                      {
+                        "fact": "storage_energy_mwh",
+                        "op": "stated_gt",
+                        "value": 0
+                      },
+                      {
+                        "fact": "storage_capacity_kw",
+                        "op": "stated_gt",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "signals": {
+        "any": [
+          {
+            "fact": "energy_facility_type",
+            "op": "stated_in",
+            "value": [
+              "standalone_plant"
+            ]
+          },
+          {
+            "fact": "generation_capacity_kw",
+            "op": "stated_gt",
+            "value": 5000
+          },
+          {
+            "fact": "energy_market_segment",
+            "op": "stated_in",
+            "value": [
+              "wholesale"
+            ]
+          }
+        ]
+      },
+      "ask": [
+        "power_offtaker",
+        "generation_capacity_kw"
+      ],
+      "may_require": [
+        "PR_UTILITY_PROCUREMENT_RFP",
+        "PR_UTILITY_PPOA_APPROVAL",
+        "PR_ENERGY_ESC_CERTIFICATION",
+        "PR_UTILITY_NOTICE_OF_INTENT",
+        "PR_UTILITY_INTERCONNECTION_STUDIES",
+        "PR_UTILITY_MTR_COMPLIANCE",
+        "PR_UTILITY_INTERCONNECTION_AGREEMENT",
+        "PR_ENV_COMPLIANCE_DETERMINATION",
+        "PR_LAND_USE_CONSULTA_UBICACION",
+        "PR_UTILITY_CONSTRUCTION_PERMIT",
+        "PR_UTILITY_COMMISSIONING_COD",
+        "PR_ENERGY_BESS_FIRE_REVIEW"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY"
+      ]
+    },
+    {
+      "id": "PT_UTILITY_STANDALONE_BESS",
+      "name": "Standalone battery energy storage (wholesale)",
+      "classifier": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          {
+            "fact": "generation_technology",
+            "op": "eq",
+            "value": "storage"
+          }
+        ]
+      },
+      "signals": {
+        "any": [
+          {
+            "fact": "energy_facility_type",
+            "op": "stated_in",
+            "value": [
+              "standalone_plant"
+            ]
+          },
+          {
+            "fact": "storage_capacity_kw",
+            "op": "stated_gt",
+            "value": 5000
+          },
+          {
+            "fact": "energy_market_segment",
+            "op": "stated_in",
+            "value": [
+              "wholesale"
+            ]
+          }
+        ]
+      },
+      "ask": [
+        "power_offtaker",
+        "storage_capacity_kw"
+      ],
+      "may_require": [
+        "PR_UTILITY_PROCUREMENT_RFP",
+        "PR_UTILITY_PPOA_APPROVAL",
+        "PR_ENERGY_ESC_CERTIFICATION",
+        "PR_UTILITY_NOTICE_OF_INTENT",
+        "PR_UTILITY_INTERCONNECTION_STUDIES",
+        "PR_UTILITY_MTR_COMPLIANCE",
+        "PR_UTILITY_INTERCONNECTION_AGREEMENT",
+        "PR_ENV_COMPLIANCE_DETERMINATION",
+        "PR_LAND_USE_CONSULTA_UBICACION",
+        "PR_UTILITY_CONSTRUCTION_PERMIT",
+        "PR_UTILITY_COMMISSIONING_COD",
+        "PR_ENERGY_BESS_FIRE_REVIEW"
+      ],
+      "may_qualify_for": []
+    },
+    {
+      "id": "PT_UTILITY_OTHER_GENERATION",
+      "name": "Utility-scale wind or other generation (wholesale)",
+      "classifier": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          {
+            "fact": "generation_technology",
+            "op": "in",
+            "value": [
+              "wind",
+              "other"
+            ]
+          }
+        ]
+      },
+      "signals": {
+        "any": [
+          {
+            "fact": "energy_facility_type",
+            "op": "stated_in",
+            "value": [
+              "standalone_plant"
+            ]
+          },
+          {
+            "fact": "generation_capacity_kw",
+            "op": "stated_gt",
+            "value": 5000
+          },
+          {
+            "fact": "energy_market_segment",
+            "op": "stated_in",
+            "value": [
+              "wholesale"
+            ]
+          }
+        ]
+      },
+      "ask": [
+        "power_offtaker",
+        "generation_capacity_kw"
+      ],
+      "may_require": [
+        "PR_UTILITY_PROCUREMENT_RFP",
+        "PR_UTILITY_PPOA_APPROVAL",
+        "PR_ENERGY_ESC_CERTIFICATION",
+        "PR_UTILITY_NOTICE_OF_INTENT",
+        "PR_UTILITY_INTERCONNECTION_STUDIES",
+        "PR_UTILITY_MTR_COMPLIANCE",
+        "PR_UTILITY_INTERCONNECTION_AGREEMENT",
+        "PR_ENV_COMPLIANCE_DETERMINATION",
+        "PR_LAND_USE_CONSULTA_UBICACION",
+        "PR_UTILITY_CONSTRUCTION_PERMIT",
+        "PR_UTILITY_COMMISSIONING_COD",
+        "PR_ENERGY_BESS_FIRE_REVIEW"
+      ],
+      "may_qualify_for": [
+        "INC_ACT60_GREEN_ENERGY"
+      ]
+    },
+    {
+      "id": "PT_LARGE_GROUND_PV",
+      "name": "Ground-mounted solar over 1 MW (customer-side)",
+      "classifier": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "customer_side"
+          },
+          {
+            "fact": "generation_technology",
+            "op": "in",
+            "value": [
+              "solar",
+              "hybrid"
+            ]
+          },
+          {
+            "fact": "generation_capacity_kw",
+            "op": "gt",
+            "value": 1000
+          },
+          {
+            "fact": "mounting_type",
+            "op": "eq",
+            "value": "ground"
+          }
+        ]
+      },
+      "may_require": [
+        "PR_LAND_USE_CONSULTA_UBICACION",
+        "PR_ENV_COMPLIANCE_DETERMINATION"
+      ],
+      "may_qualify_for": []
+    },
+    {
+      "id": "PT_ENVIRONMENTALLY_SENSITIVE_SITE",
+      "name": "Environmentally sensitive site",
+      "classifier": {
+        "fact": "environmental_sensitivity",
+        "op": "stated_contains",
+        "value": [
+          "wetlands",
+          "coastal_zone",
+          "floodplain"
+        ]
+      },
+      "may_require": [
+        "PR_USACE_SECTION_404",
+        "PR_COASTAL_ZONE_CONSISTENCY",
+        "PR_FLOODPLAIN_REG13"
+      ],
+      "may_qualify_for": []
+    },
+    {
+      "id": "PT_TALL_STRUCTURE",
+      "name": "Tall structure / near an airport",
+      "classifier": {
+        "any": [
+          {
+            "fact": "structure_height_ft",
+            "op": "stated_gt",
+            "value": 200
+          },
+          {
+            "fact": "near_airport",
+            "op": "stated"
+          }
+        ]
+      },
+      "may_require": [
+        "PR_FAA_OBSTRUCTION_NOTICE"
+      ],
+      "may_qualify_for": []
     }
   ],
   "processes": [
@@ -1426,6 +2890,36 @@
           "source_id": "SRC_LAW_114_2007",
           "locator": "Art. 2(a)",
           "controlling_language": "cinco megavatios (5MW) para clientes comerciales, gubernamentales e industriales o agrícolas … conectados a voltajes de sub-transmisión o transmisión (38 kV o 115 kV)",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "NM_X4",
+          "reason": "Above 5 MW no customer class can enroll in net metering; the Act 114-2007 ceiling is 5 MW (25 kW for residential).",
+          "when": {
+            "fact": "generation_capacity_kw",
+            "op": "gt",
+            "value": 5000
+          },
+          "source_id": "SRC_LAW_114_2007",
+          "locator": "Art. 2(a)",
+          "controlling_language": "cinco megavatios (5MW) para clientes comerciales, gubernamentales e industriales o agrícolas … conectados a voltajes de sub-transmisión o transmisión (38 kV o 115 kV)",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "NM_X5",
+          "reason": "Wholesale plants that sell their output are independent power producers, not distributed generators, so net metering does not apply.",
+          "when": {
+            "fact": "energy_market_segment",
+            "op": "stated_in",
+            "value": [
+              "wholesale"
+            ]
+          },
+          "source_id": "SRC_LAW_57_2014",
+          "locator": "Art. 1.3(aa)",
+          "controlling_language": "“Generador distribuido” — Significará cualquier persona natural o jurídica, que tenga una instalación de generación eléctrica en Puerto Rico primordialmente para su propio consumo y que puede proveer electricidad generada en exceso de su consumo a la red eléctrica.",
           "confidence": "high",
           "status": "verified"
         }
@@ -1713,6 +3207,24 @@
             "value": [
               "energy_service_provider"
             ]
+          },
+          {
+            "all": [
+              {
+                "fact": "power_offtaker",
+                "op": "stated_in",
+                "value": [
+                  "luma_prepa"
+                ]
+              },
+              {
+                "fact": "energy_market_segment",
+                "op": "stated_in",
+                "value": [
+                  "wholesale"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -1818,6 +3330,76 @@
           "controlling_language": "Electric power storage, where at least one storage unit has a nominal capacity of one megawatt (1 MW) or more",
           "confidence": "high",
           "status": "verified"
+        },
+        {
+          "id": "ESC_R5",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Generates power for sale to PREPA/LUMA (independent power producer).",
+          "trigger": {
+            "all": [
+              {
+                "fact": "power_offtaker",
+                "op": "stated_in",
+                "value": [
+                  "luma_prepa"
+                ]
+              },
+              {
+                "fact": "energy_market_segment",
+                "op": "stated_in",
+                "value": [
+                  "wholesale"
+                ]
+              },
+              {
+                "not": {
+                  "fact": "generation_technology",
+                  "op": "stated_in",
+                  "value": [
+                    "storage"
+                  ]
+                }
+              }
+            ]
+          },
+          "source_id": "SRC_PREB_REG_8701",
+          "locator": "§ 1.08(A)(5)(b)",
+          "controlling_language": "Any natural or legal person that generates electric power through the use of fossil fuels or renewable energy sources for sale to PREPA or any other electric service company in accordance with a power purchase agreement.",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "ESC_R6",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Provides storage services of 1 MW or more to PREPA/LUMA.",
+          "trigger": {
+            "all": [
+              {
+                "fact": "generation_technology",
+                "op": "stated_in",
+                "value": [
+                  "storage"
+                ]
+              },
+              {
+                "fact": "power_offtaker",
+                "op": "stated_in",
+                "value": [
+                  "luma_prepa"
+                ]
+              },
+              {
+                "fact": "storage_capacity_kw",
+                "op": "gte",
+                "value": 1000
+              }
+            ]
+          },
+          "source_id": "SRC_PREB_REG_8701",
+          "locator": "§ 1.08(A)(5)(c)(ii)",
+          "controlling_language": "Electric power storage, where at least one storage unit has a nominal capacity of one megawatt (1 MW) or more",
+          "confidence": "high",
+          "status": "verified"
         }
       ],
       "requirement_ids": [
@@ -1828,7 +3410,8 @@
         "REQ_ESC_FINANCIAL_CAPACITY",
         "REQ_ESC_GROSS_REVENUE"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "stage": "certification"
     },
     {
       "id": "PR_ENERGY_INSTALLER_CERTIFICATION",
@@ -2031,6 +3614,999 @@
       "legacy_rule_ids": [
         "RULE_0615"
       ]
+    },
+    {
+      "id": "PR_UTILITY_PROCUREMENT_RFP",
+      "name": "Competitive procurement (PREB-supervised RFP tranche)",
+      "process_type": "approval",
+      "domain": "energy",
+      "administered_by": [
+        "prepa",
+        "luma"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_PREB_IRP_PROCUREMENT_2024",
+        "SRC_JOINT_REG_8815"
+      ],
+      "gate": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          {
+            "any": [
+              {
+                "fact": "power_offtaker",
+                "op": "eq",
+                "value": "luma_prepa"
+              },
+              {
+                "fact": "sells_to_utility_under_ppa",
+                "op": "stated"
+              },
+              {
+                "fact": "procurement_tranche",
+                "op": "stated"
+              }
+            ]
+          }
+        ]
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Only for plants that sell their output to PREPA/LUMA.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "offtake",
+      "applicability": [
+        {
+          "id": "PROC_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The project is in (or bidding into) a PREB-supervised procurement tranche.",
+          "trigger": {
+            "fact": "procurement_tranche",
+            "op": "eq",
+            "value": true
+          },
+          "ask": [
+            "procurement_tranche"
+          ],
+          "source_id": "SRC_PREB_IRP_PROCUREMENT_2024",
+          "locator": "Resolución (2024-02-14), p. 1",
+          "controlling_language": "el PIR Aprobado ordena a la Autoridad la confección de un plan de adquisición de recursos de energía renovable y almacenamiento de energía en baterías mediante requerimientos de propuestas (request for proposals o RFPs) en seis (6) fases o tramos (tranches).",
+          "confidence": "high",
+          "status": "verified",
+          "supporting_source_ids": [
+            "SRC_JOINT_REG_8815"
+          ]
+        },
+        {
+          "id": "PROC_R2",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "Selling new capacity to PREPA outside a tranche: PREB’s IRP order routes utility procurement through competitive RFPs; whether a PPOA is possible without one needs expert validation.",
+          "trigger": {
+            "fact": "procurement_tranche",
+            "op": "eq",
+            "value": false
+          },
+          "ask": [
+            "procurement_tranche"
+          ],
+          "source_id": "SRC_JOINT_REG_8815",
+          "locator": "IRP Final Order, as quoted in the Joint Motion (2021-07-23), § 3",
+          "controlling_language": "PREPA or the T&D Operator, with oversight by the Energy Bureau under the processes of Regulation 8815, shall run all competitive auctions",
+          "confidence": "low",
+          "status": "needs_expert_validation"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_RFP_PROPOSAL",
+        "REQ_RFP_SITE_CONTROL",
+        "REQ_RFP_ENV_PERMITTING_PLAN",
+        "REQ_RFP_TD_PLAN"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_UTILITY_PPOA_APPROVAL",
+      "name": "Power purchase (PPOA) / storage services (ESSA) contract — Energy Bureau approval",
+      "process_type": "approval",
+      "domain": "energy",
+      "administered_by": [
+        "nepr"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_LAW_57_2014",
+        "SRC_LAW_17_2019",
+        "SRC_PREB_TRANCHE1_PPOA_2022"
+      ],
+      "gate": {
+        "all": [
+          {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          {
+            "any": [
+              {
+                "fact": "power_offtaker",
+                "op": "eq",
+                "value": "luma_prepa"
+              },
+              {
+                "fact": "sells_to_utility_under_ppa",
+                "op": "stated"
+              },
+              {
+                "fact": "procurement_tranche",
+                "op": "stated"
+              }
+            ]
+          }
+        ]
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Only for plants that sell their output to PREPA/LUMA.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "offtake",
+      "applicability": [
+        {
+          "id": "PPOA_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The plant will sell energy or storage services to PREPA/LUMA; the Energy Bureau must approve the contract before it is signed.",
+          "trigger": {
+            "any": [
+              {
+                "fact": "power_offtaker",
+                "op": "eq",
+                "value": "luma_prepa"
+              },
+              {
+                "fact": "sells_to_utility_under_ppa",
+                "op": "eq",
+                "value": true
+              },
+              {
+                "fact": "procurement_tranche",
+                "op": "eq",
+                "value": true
+              }
+            ]
+          },
+          "ask": [
+            "power_offtaker"
+          ],
+          "source_id": "SRC_LAW_57_2014",
+          "locator": "Art. 6.32(a) (22 LPRA § 1054ff)",
+          "controlling_language": "El Negociado de Energía evaluará y aprobará todos los contratos entre las compañías de servicio eléctrico, incluidos los productores independientes de energía, antes del otorgamiento de dichos contratos. Esto incluirá, pero no se limitará, a la evaluación y aprobación de los contratos de compraventa de energía mediante los cuales un productor independiente de energía se disponga a proveer energía a la compañía de servicio eléctrico responsable de operar el Sistema Eléctrico.",
+          "confidence": "high",
+          "status": "verified",
+          "supporting_source_ids": [
+            "SRC_LAW_17_2019",
+            "SRC_PREB_IRP_PROCUREMENT_2024"
+          ]
+        }
+      ],
+      "requirement_ids": [
+        "REQ_PPOA_EXECUTED",
+        "REQ_ESSA_EXECUTED",
+        "REQ_PPOA_PREB_APPROVAL"
+      ],
+      "prerequisites": [
+        {
+          "process_id": "PR_UTILITY_PROCUREMENT_RFP",
+          "note": "Tranche projects negotiate the PPOA after RFP selection.",
+          "when": {
+            "fact": "procurement_tranche",
+            "op": "eq",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "PR_UTILITY_NOTICE_OF_INTENT",
+      "name": "Notice of intent to build generation (Energy Bureau)",
+      "process_type": "filing",
+      "domain": "energy",
+      "administered_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_LAW_57_2014"
+      ],
+      "gate": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Applies only to wholesale (utility-scale) plants that sell their output — not to customer-side systems.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "follows_process": "PR_ENERGY_ESC_CERTIFICATION",
+      "stage": "certification",
+      "applicability": [
+        {
+          "id": "NOI_R1",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "A certified energy company that builds or expands facilities must notify the Energy Bureau; the implementing procedure was not located.",
+          "trigger": {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          "source_id": "SRC_LAW_57_2014",
+          "locator": "Art. 6.34(a) (22 LPRA § 1054hh)",
+          "controlling_language": "Toda compañía de energía certificada que desee construir o expandir sus instalaciones deberá cumplir con la Ley de Política Pública Energética y presentar al Negociado una notificación de intención sobre el proyecto, conforme con las normas y reglamentos que esta establezca.",
+          "confidence": "medium",
+          "status": "needs_expert_validation",
+          "notes": "Art. 6.34(c): approval does not exempt the project from municipal, state or federal procedures."
+        }
+      ],
+      "requirement_ids": [
+        "REQ_NOI_FILING"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_UTILITY_INTERCONNECTION_STUDIES",
+      "name": "Utility-scale interconnection studies (LUMA)",
+      "process_type": "interconnection",
+      "domain": "energy",
+      "administered_by": [
+        "luma"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_LUMA_TRANCHE1_STUDIES_2022",
+        "SRC_PREB_INTERCONNECTION_DRAFT",
+        "SRC_PREB_INTERCONNECTION_DRAFT_2026"
+      ],
+      "gate": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Applies only to wholesale (utility-scale) plants that sell their output — not to customer-side systems.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "studies",
+      "applicability": [
+        {
+          "id": "STU_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "A wholesale plant connecting to the grid goes through LUMA’s technical interconnection studies.",
+          "trigger": {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          "source_id": "SRC_LUMA_TRANCHE1_STUDIES_2022",
+          "locator": "Motion in Compliance (2022-04-29), p. 1",
+          "controlling_language": "This final technical interconnection study is composed of the following studies: the System Impact Study, the Point of Interconnection Facility Study, the Network Upgrades Facility Study (the latter two jointly, referred to as the “Facility Studies”) and the Minimum Technical Requirements (“MTR”) Compliance Study",
+          "confidence": "medium",
+          "status": "partially_verified",
+          "supporting_source_ids": [
+            "SRC_PREB_INTERCONNECTION_DRAFT"
+          ],
+          "notes": "Describes LUMA’s practice for PREB-approved procurement projects. No regulation in force codifies utility-scale study steps: the 2021 draft (Art. 4) did; the 2026 draft covers only distributed generation. Needs expert validation outside a tranche."
+        }
+      ],
+      "requirement_ids": [
+        "REQ_STUDY_INTERCONNECTION_REQUEST",
+        "REQ_STUDY_FEASIBILITY",
+        "REQ_STUDY_SIS",
+        "REQ_STUDY_TRANSMISSION_IMPACT",
+        "REQ_STUDY_FACILITIES",
+        "REQ_STUDY_PSSE_MODEL"
+      ],
+      "prerequisites": [
+        {
+          "process_id": "PR_UTILITY_PROCUREMENT_RFP",
+          "note": "For tranche projects LUMA studies the selected proposals.",
+          "when": {
+            "fact": "procurement_tranche",
+            "op": "eq",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "PR_UTILITY_MTR_COMPLIANCE",
+      "name": "Minimum Technical Requirements (MTR) compliance",
+      "process_type": "approval",
+      "domain": "energy",
+      "administered_by": [
+        "luma"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_PREPA_MTR_2020",
+        "SRC_LUMA_TRANCHE1_STUDIES_2022"
+      ],
+      "gate": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Applies only to wholesale (utility-scale) plants that sell their output — not to customer-side systems.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "studies",
+      "applicability": [
+        {
+          "id": "MTR_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Utility-scale plants must meet PREPA’s Minimum Technical Requirements to interconnect.",
+          "trigger": {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          "source_id": "SRC_LUMA_TRANCHE1_STUDIES_2022",
+          "locator": "Motion in Compliance (2022-04-29), § 1.2.3",
+          "controlling_language": "A project that is not compliant with the MTRs will not be allowed to interconnect.",
+          "confidence": "medium",
+          "status": "partially_verified",
+          "supporting_source_ids": [
+            "SRC_PREPA_MTR_2020"
+          ],
+          "notes": "MTR text is the 2020 version attached to the RFP (PV V3, WTG V3.1); confirm the current LUMA version."
+        }
+      ],
+      "requirement_ids": [
+        "REQ_MTR_PV",
+        "REQ_MTR_PV_STORAGE",
+        "REQ_MTR_WTG",
+        "REQ_MTR_BESS",
+        "REQ_MTR_MODEL_VALIDATION"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_UTILITY_INTERCONNECTION_AGREEMENT",
+      "name": "Interconnection agreement (LUMA)",
+      "process_type": "interconnection",
+      "domain": "energy",
+      "administered_by": [
+        "luma"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_PREB_INTERCONNECTION_DRAFT"
+      ],
+      "gate": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Applies only to wholesale (utility-scale) plants that sell their output — not to customer-side systems.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "agreements",
+      "applicability": [
+        {
+          "id": "IA_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "After the studies, the plant signs interconnection terms with the grid operator.",
+          "trigger": {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+          "locator": "Sección 5.01(A) (draft)",
+          "controlling_language": "el Operador del SEE proveerá al Cliente de Interconexión un Acuerdo de Interconexión",
+          "confidence": "medium",
+          "status": "proposed_rule",
+          "notes": "Draft regulation; for PPOA sellers the terms may sit in the PPOA. Needs expert validation."
+        }
+      ],
+      "requirement_ids": [
+        "REQ_IA_EXECUTED"
+      ],
+      "prerequisites": [
+        {
+          "process_id": "PR_UTILITY_INTERCONNECTION_STUDIES",
+          "note": "The agreement follows the final facility study.",
+          "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
+          "locator": "Sección 5.01(A)(1) (draft)"
+        }
+      ]
+    },
+    {
+      "id": "PR_LAND_USE_CONSULTA_UBICACION",
+      "name": "Land-use siting review (consulta de ubicación)",
+      "process_type": "permit",
+      "domain": "energy",
+      "administered_by": [
+        "ogpe"
+      ],
+      "oversight_by": [
+        "jp"
+      ],
+      "source_ids": [
+        "SRC_RC_2023",
+        "SRC_LAW_161_2009"
+      ],
+      "jurisdiction_note": "Autonomous municipalities with hierarchy I–III may evaluate instead of OGPe (Reglamento Conjunto § 9.4.1.5(b)).",
+      "stage": "site",
+      "applicability": [
+        {
+          "id": "LU_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Ground-mounted solar larger than 1 MW is evaluated by the Junta Adjudicativa through a consulta de ubicación.",
+          "trigger": {
+            "all": [
+              {
+                "fact": "generation_technology",
+                "op": "in",
+                "value": [
+                  "solar",
+                  "hybrid"
+                ]
+              },
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 1000
+              },
+              {
+                "any": [
+                  {
+                    "fact": "mounting_type",
+                    "op": "eq",
+                    "value": "ground"
+                  },
+                  {
+                    "fact": "energy_facility_type",
+                    "op": "stated_in",
+                    "value": [
+                      "standalone_plant"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "ask": [
+            "generation_capacity_kw",
+            "mounting_type"
+          ],
+          "source_id": "SRC_RC_2023",
+          "locator": "§ 9.4.1.3(a)(2)",
+          "controlling_language": "Aquellas instalaciones solares fotovoltaicas, que sean instaladas sobre el terreno, cuya capacidad sea mayor de un megavatio (1 MW) serán evaluadas por la Junta Adjudicativa en el proceso de Consulta de Ubicación y por la OGPe para la otorgación de los permisos correspondientes.",
+          "confidence": "medium",
+          "status": "partially_verified"
+        },
+        {
+          "id": "LU_R2",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Wind outside agricultural or industrial districts (or on unzoned land) needs a consulta de ubicación.",
+          "trigger": {
+            "all": [
+              {
+                "fact": "generation_technology",
+                "op": "eq",
+                "value": "wind"
+              },
+              {
+                "not": {
+                  "fact": "site_zoning",
+                  "op": "in",
+                  "value": [
+                    "agricultural",
+                    "industrial"
+                  ]
+                }
+              }
+            ]
+          },
+          "ask": [
+            "site_zoning"
+          ],
+          "source_id": "SRC_RC_2023",
+          "locator": "§ 9.3.2.2(b)",
+          "controlling_language": "Los proyectos de ubicación, construcción, instalación y operación de sistemas de generación de energía eólica, sin importar su tamaño, a ser ubicados en distritos distintos a los previamente mencionados, o en áreas no calificadas, sólo podrán ser considerados mediante el mecanismo de Consulta de Ubicación.",
+          "confidence": "medium",
+          "status": "partially_verified"
+        },
+        {
+          "id": "LU_R3",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "Standalone battery storage is not a listed use in the Reglamento Conjunto; a use not permitted ministerially goes to consulta. Needs expert validation.",
+          "trigger": {
+            "fact": "generation_technology",
+            "op": "eq",
+            "value": "storage"
+          },
+          "source_id": "SRC_LAW_161_2009",
+          "locator": "Art. 1.5(14)",
+          "controlling_language": "sobre propuestos usos de terrenos que no son permitidos ministerialmente y que no pueden considerarse mediante otro mecanismo",
+          "confidence": "low",
+          "status": "needs_expert_validation"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_LU_CONSULTA",
+        "REQ_LU_PUBLIC_HEARING",
+        "REQ_LU_LARGE_PV_DOCS",
+        "REQ_LU_EMERGENCY_PLAN",
+        "REQ_LU_AEE_RECOMMENDATION",
+        "REQ_LU_RUSTIC_LAND"
+      ],
+      "prerequisites": [
+        {
+          "process_id": "PR_ENV_COMPLIANCE_DETERMINATION",
+          "note": "No final land-use determination until the environmental compliance determination is issued.",
+          "source_id": "SRC_RC_2023",
+          "locator": "Regla 2.6.1(e)"
+        }
+      ]
+    },
+    {
+      "id": "PR_ENV_COMPLIANCE_DETERMINATION",
+      "name": "Environmental compliance determination (Ley 416-2004 / OGPe)",
+      "process_type": "approval",
+      "domain": "energy",
+      "administered_by": [
+        "ogpe"
+      ],
+      "oversight_by": [
+        "drna"
+      ],
+      "source_ids": [
+        "SRC_RC_2023",
+        "SRC_LAW_416_2004",
+        "SRC_LAW_161_2009"
+      ],
+      "stage": "site",
+      "applicability": [
+        {
+          "id": "ENV_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "A wholesale plant or a ground-mounted system over 100 kW needs discretionary permits, and no final permit issues before the environmental compliance determination.",
+          "trigger": {
+            "any": [
+              {
+                "fact": "energy_market_segment",
+                "op": "eq",
+                "value": "wholesale"
+              },
+              {
+                "all": [
+                  {
+                    "any": [
+                      {
+                        "fact": "mounting_type",
+                        "op": "eq",
+                        "value": "ground"
+                      },
+                      {
+                        "fact": "energy_facility_type",
+                        "op": "stated_in",
+                        "value": [
+                          "standalone_plant"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "fact": "generation_capacity_kw",
+                    "op": "gt",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
+          },
+          "ask": [
+            "power_offtaker",
+            "generation_capacity_kw"
+          ],
+          "source_id": "SRC_RC_2023",
+          "locator": "Regla 2.6.1(e)",
+          "controlling_language": "Bajo ningún concepto se podrá emitir una determinación final hasta tanto se emita la determinación de cumplimiento ambiental.",
+          "confidence": "medium",
+          "status": "partially_verified",
+          "supporting_source_ids": [
+            "SRC_LAW_416_2004",
+            "SRC_LAW_161_2009"
+          ]
+        }
+      ],
+      "requirement_ids": [
+        "REQ_ENV_REA",
+        "REQ_ENV_DOCUMENT",
+        "REQ_ENV_DCA"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_UTILITY_CONSTRUCTION_PERMIT",
+      "name": "Construction permit for the plant (OGPe)",
+      "process_type": "permit",
+      "domain": "energy",
+      "administered_by": [
+        "ogpe",
+        "municipio_permisos"
+      ],
+      "source_ids": [
+        "SRC_RC_2023"
+      ],
+      "jurisdiction_note": "Autonomous municipalities with hierarchy I–III may issue the permit instead of OGPe.",
+      "gate": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Applies only to wholesale (utility-scale) plants that sell their output — not to customer-side systems.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "construction",
+      "applicability": [
+        {
+          "id": "UCP_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "Only rooftop PV up to 1 MW and ground systems up to 100 kW are exempt from a construction permit.",
+          "trigger": {
+            "any": [
+              {
+                "fact": "generation_capacity_kw",
+                "op": "gt",
+                "value": 100
+              },
+              {
+                "fact": "storage_capacity_kw",
+                "op": "gt",
+                "value": 100
+              }
+            ]
+          },
+          "ask": [
+            "generation_capacity_kw"
+          ],
+          "source_id": "SRC_RC_2023",
+          "locator": "§ 9.4.1.3(a)(1)",
+          "controlling_language": "Tampoco se requerirá un permiso de construcción para aquellos sistemas de hasta cien kilovatios (100 Kw) sobre suelo.",
+          "confidence": "medium",
+          "status": "partially_verified"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_UCP_PLANS",
+        "REQ_UCP_PPOA_AEE_REQUIREMENTS",
+        "REQ_UCP_FLOOD_CERT",
+        "REQ_UCP_AEE_AUTHORIZATION"
+      ],
+      "prerequisites": [
+        {
+          "process_id": "PR_LAND_USE_CONSULTA_UBICACION",
+          "note": "Siting approval comes before the construction permit."
+        },
+        {
+          "process_id": "PR_ENV_COMPLIANCE_DETERMINATION",
+          "note": "No final permit before the environmental compliance determination.",
+          "source_id": "SRC_RC_2023",
+          "locator": "Regla 2.6.1(e)"
+        },
+        {
+          "process_id": "PR_UTILITY_INTERCONNECTION_STUDIES",
+          "note": "AEE must evaluate and authorize the interconnection before construction starts.",
+          "source_id": "SRC_RC_2023",
+          "locator": "§ 9.4.1.3(c)"
+        }
+      ]
+    },
+    {
+      "id": "PR_UTILITY_COMMISSIONING_COD",
+      "name": "Testing, commissioning, Permiso Único and commercial operation (COD)",
+      "process_type": "approval",
+      "domain": "energy",
+      "administered_by": [
+        "luma",
+        "ogpe"
+      ],
+      "oversight_by": [
+        "nepr"
+      ],
+      "source_ids": [
+        "SRC_RC_2023",
+        "SRC_PREB_INTERCONNECTION_DRAFT"
+      ],
+      "gate": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "gate_ask": [
+        "power_offtaker"
+      ],
+      "gate_reason": "Applies only to wholesale (utility-scale) plants that sell their output — not to customer-side systems.",
+      "gate_source_id": "SRC_LAW_57_2014",
+      "gate_locator": "Art. 1.3(m)",
+      "gate_controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio.",
+      "stage": "commissioning",
+      "applicability": [
+        {
+          "id": "COD_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "After construction the plant must pass acceptance tests and obtain the Permiso Único before LUMA energizes it.",
+          "trigger": {
+            "fact": "energy_market_segment",
+            "op": "eq",
+            "value": "wholesale"
+          },
+          "source_id": "SRC_RC_2023",
+          "locator": "§ 9.2.3.5(a)",
+          "controlling_language": "Una vez el proyecto sea construido, se procederá a realizar las pruebas de aceptación, inspeccionar y certificar la instalación del sistema de energía renovable según aplique conforme a la reglamentación vigente de la AEE.",
+          "confidence": "medium",
+          "status": "partially_verified"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_COD_ACCEPTANCE_TESTS",
+        "REQ_COD_PERMISO_UNICO",
+        "REQ_COD_AEE_VERIFICATION",
+        "REQ_COD_INTERCONNECT_5_DAYS",
+        "REQ_COD_PARALLEL_AUTH",
+        "REQ_COD_LIABILITY_INSURANCE"
+      ],
+      "prerequisites": [
+        {
+          "process_id": "PR_UTILITY_INTERCONNECTION_AGREEMENT",
+          "note": "Signed interconnection terms."
+        },
+        {
+          "process_id": "PR_UTILITY_CONSTRUCTION_PERMIT",
+          "note": "Built under an approved construction permit."
+        },
+        {
+          "process_id": "PR_UTILITY_MTR_COMPLIANCE",
+          "note": "Non-MTR-compliant plants are not allowed to interconnect."
+        },
+        {
+          "process_id": "PR_UTILITY_PPOA_APPROVAL",
+          "note": "Energization verifies the PPOA evaluation requirements.",
+          "when": {
+            "fact": "power_offtaker",
+            "op": "eq",
+            "value": "luma_prepa"
+          }
+        },
+        {
+          "process_id": "PR_ENERGY_BESS_FIRE_REVIEW",
+          "note": "Battery fire-safety review.",
+          "when": {
+            "any": [
+              {
+                "fact": "battery_storage",
+                "op": "stated"
+              },
+              {
+                "fact": "generation_technology",
+                "op": "stated_in",
+                "value": [
+                  "storage",
+                  "hybrid"
+                ]
+              },
+              {
+                "fact": "storage_energy_mwh",
+                "op": "stated_gt",
+                "value": 0
+              },
+              {
+                "fact": "storage_capacity_kw",
+                "op": "stated_gt",
+                "value": 0
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "PR_USACE_SECTION_404",
+      "name": "Army Corps permit for fill in wetlands or waters (CWA § 404)",
+      "process_type": "permit",
+      "domain": "energy",
+      "administered_by": [
+        "usace"
+      ],
+      "source_ids": [
+        "SRC_USACE_33CFR323_3"
+      ],
+      "stage": "site",
+      "applicability": [
+        {
+          "id": "W_R1",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "Wetlands or waters on the site: a Corps permit is needed only if fill is discharged into waters of the U.S.",
+          "trigger": {
+            "fact": "environmental_sensitivity",
+            "op": "stated_contains",
+            "value": [
+              "wetlands"
+            ]
+          },
+          "source_id": "SRC_USACE_33CFR323_3",
+          "locator": "33 CFR 323.3(a)",
+          "controlling_language": "DA permits will be required for the discharge of dredged or fill material into waters of the United States.",
+          "confidence": "high",
+          "status": "verified",
+          "notes": "Nationwide/regional general permits and § 323.4 exemptions may apply; a jurisdictional determination decides coverage."
+        }
+      ],
+      "requirement_ids": [
+        "REQ_USACE_404"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_COASTAL_ZONE_CONSISTENCY",
+      "name": "Coastal-zone consistency certification",
+      "process_type": "approval",
+      "domain": "energy",
+      "administered_by": [
+        "jp"
+      ],
+      "source_ids": [
+        "SRC_CZMA_15CFR930_57",
+        "SRC_RC_2023"
+      ],
+      "stage": "site",
+      "applicability": [
+        {
+          "id": "CZ_R1",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "Coastal-zone site: a consistency certification is needed if the project requires a federal license or permit.",
+          "trigger": {
+            "fact": "environmental_sensitivity",
+            "op": "stated_contains",
+            "value": [
+              "coastal_zone"
+            ]
+          },
+          "source_id": "SRC_CZMA_15CFR930_57",
+          "locator": "15 CFR 930.57(a)",
+          "controlling_language": "all applicants for required federal licenses or permits subject to State agency review shall provide … a certification that the proposed activity complies with … the management program",
+          "confidence": "high",
+          "status": "verified"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_CZM_CERT"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_FLOODPLAIN_REG13",
+      "name": "Flood-zone compliance (Planning Regulation 13)",
+      "process_type": "permit",
+      "domain": "energy",
+      "administered_by": [
+        "jp",
+        "ogpe"
+      ],
+      "source_ids": [
+        "SRC_RC_2023"
+      ],
+      "stage": "site",
+      "applicability": [
+        {
+          "id": "FL_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "The site is in a flood-susceptible area.",
+          "trigger": {
+            "fact": "environmental_sensitivity",
+            "op": "stated_contains",
+            "value": [
+              "floodplain"
+            ]
+          },
+          "source_id": "SRC_RC_2023",
+          "locator": "§ 3.2.1.2(d)",
+          "controlling_language": "Si el inmueble objeto de la solicitud ubica en un área susceptible a inundaciones, según el Mapa de Tasas del Seguro de Inundaciones, deberá cumplir con las disposiciones del Reglamento de Planificación Núm. 13 vigente.",
+          "confidence": "medium",
+          "status": "partially_verified"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_FLOOD_REG13"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "PR_FAA_OBSTRUCTION_NOTICE",
+      "name": "FAA notice of proposed construction (Form 7460-1)",
+      "process_type": "filing",
+      "domain": "energy",
+      "administered_by": [
+        "faa"
+      ],
+      "source_ids": [
+        "SRC_FAA_14CFR77_9"
+      ],
+      "stage": "site",
+      "applicability": [
+        {
+          "id": "FAA_R1",
+          "outcome": "REQUIRED",
+          "trigger_summary": "A structure taller than 200 ft above ground.",
+          "trigger": {
+            "fact": "structure_height_ft",
+            "op": "gt",
+            "value": 200
+          },
+          "source_id": "SRC_FAA_14CFR77_9",
+          "locator": "14 CFR 77.9(a)",
+          "controlling_language": "you must file notice with the FAA of: (a) Any construction or alteration that is more than 200 ft. AGL at its site.",
+          "confidence": "high",
+          "status": "verified"
+        },
+        {
+          "id": "FAA_R2",
+          "outcome": "POTENTIALLY_REQUIRED",
+          "trigger_summary": "Near an airport: notice is required if the structure exceeds the airport’s imaginary surfaces.",
+          "trigger": {
+            "fact": "near_airport",
+            "op": "eq",
+            "value": true
+          },
+          "source_id": "SRC_FAA_14CFR77_9",
+          "locator": "14 CFR 77.9(b)",
+          "controlling_language": "Any construction or alteration that exceeds an imaginary surface extending outward and upward at any of the following slopes: (1) 100 to 1 for a horizontal distance of 20,000 ft. from the nearest point of the nearest runway",
+          "confidence": "high",
+          "status": "verified"
+        }
+      ],
+      "requirement_ids": [
+        "REQ_FAA_7460"
+      ],
+      "prerequisites": []
     }
   ],
   "incentives": [
@@ -2139,5 +4715,224 @@
       "status": "needs_expert_validation",
       "notes": "Available only to an Exempt Business holding an Act 60 green-energy decree (§ 2072.06(a)); SmartPR's incentive catalog entry PR_ACT60_RENEWABLE_INVESTMENT was corrected to say so."
     }
-  ]
+  ],
+  "derived_facts": [
+    {
+      "key": "energy_market_segment",
+      "label": "Market segment",
+      "notes": "Data-driven routing between customer-side distributed generation (DG, net metering) and wholesale / utility-scale generation. Never asked directly: questions go to power_offtaker.",
+      "ask_via": [
+        "power_offtaker"
+      ],
+      "cases": [
+        {
+          "id": "SEG_CUSTOMER_EXPLICIT",
+          "value": "customer_side",
+          "summary": "The output is for the owner’s own use (self-supply, behind the meter, net metering, or a rooftop/carport system of 5 MW or less).",
+          "when": {
+            "any": [
+              {
+                "fact": "power_offtaker",
+                "op": "stated_in",
+                "value": [
+                  "self"
+                ]
+              },
+              {
+                "fact": "grid_position",
+                "op": "stated_in",
+                "value": [
+                  "behind_the_meter"
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "fact": "net_metering_requested",
+                    "op": "stated"
+                  },
+                  {
+                    "not": {
+                      "fact": "generation_capacity_kw",
+                      "op": "stated_gt",
+                      "value": 5000
+                    }
+                  }
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "fact": "mounting_type",
+                    "op": "stated_in",
+                    "value": [
+                      "roof",
+                      "carport"
+                    ]
+                  },
+                  {
+                    "not": {
+                      "fact": "generation_capacity_kw",
+                      "op": "stated_gt",
+                      "value": 5000
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "source_id": "SRC_LAW_57_2014",
+          "locator": "Art. 1.3(aa)",
+          "controlling_language": "“Generador distribuido” — Significará cualquier persona natural o jurídica, que tenga una instalación de generación eléctrica en Puerto Rico primordialmente para su propio consumo y que puede proveer electricidad generada en exceso de su consumo a la red eléctrica."
+        },
+        {
+          "id": "SEG_WHOLESALE",
+          "value": "wholesale",
+          "summary": "The plant sells its output to PREPA/LUMA or another buyer, or connects in front of the meter (independent power producer).",
+          "when": {
+            "any": [
+              {
+                "fact": "power_offtaker",
+                "op": "stated_in",
+                "value": [
+                  "luma_prepa"
+                ]
+              },
+              {
+                "fact": "grid_position",
+                "op": "stated_in",
+                "value": [
+                  "front_of_meter"
+                ]
+              },
+              {
+                "fact": "sells_to_utility_under_ppa",
+                "op": "stated"
+              },
+              {
+                "fact": "procurement_tranche",
+                "op": "stated"
+              },
+              {
+                "all": [
+                  {
+                    "fact": "power_offtaker",
+                    "op": "stated_in",
+                    "value": [
+                      "third_party"
+                    ]
+                  },
+                  {
+                    "fact": "energy_facility_type",
+                    "op": "stated_in",
+                    "value": [
+                      "standalone_plant"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "source_id": "SRC_LAW_57_2014",
+          "locator": "Art. 1.3(m)",
+          "controlling_language": "“Productor independiente de energía”. — Significará toda persona, natural o jurídica, dedicada a la producción o generación de potencia eléctrica en Puerto Rico, para su venta mediante Contratos de Compraventa de Energía o cualquier otro negocio jurídico que autorice el Negocio."
+        },
+        {
+          "id": "SEG_CUSTOMER_ONSITE",
+          "value": "customer_side",
+          "summary": "A system at an existing facility.",
+          "when": {
+            "fact": "energy_facility_type",
+            "op": "stated_in",
+            "value": [
+              "onsite_system"
+            ]
+          },
+          "source_id": "SRC_LAW_57_2014",
+          "locator": "Art. 1.3(aa)",
+          "controlling_language": "“Generador distribuido” — Significará cualquier persona natural o jurídica, que tenga una instalación de generación eléctrica en Puerto Rico primordialmente para su propio consumo y que puede proveer electricidad generada en exceso de su consumo a la red eléctrica."
+        },
+        {
+          "id": "SEG_CUSTOMER_DEFAULT",
+          "value": "customer_side",
+          "summary": "Nothing indicates a standalone plant and the system is 5 MW or less — the ceiling for customer-side generation under Act 114-2007 and PREPA Reg. 8916.",
+          "when": {
+            "not": {
+              "any": [
+                {
+                  "fact": "energy_facility_type",
+                  "op": "stated_in",
+                  "value": [
+                    "standalone_plant"
+                  ]
+                },
+                {
+                  "fact": "generation_capacity_kw",
+                  "op": "stated_gt",
+                  "value": 5000
+                },
+                {
+                  "fact": "storage_capacity_kw",
+                  "op": "stated_gt",
+                  "value": 5000
+                }
+              ]
+            }
+          },
+          "source_id": "SRC_PREPA_REG_8916",
+          "locator": "Sección I, Art. A",
+          "controlling_language": "Las disposiciones de este Reglamento aplican a todo GD con capacidad máxima instalada de potencia de corriente alterna (AC) de 5 MW o menos que se interconecte con el sistema de transmisión o subtransmisión eléctrica de la Autoridad."
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "site",
+      "order": 1,
+      "name": "Site, land use & environmental",
+      "name_es": "Terreno, uso de suelo y ambiental"
+    },
+    {
+      "id": "offtake",
+      "order": 2,
+      "name": "Procurement & power sale contract",
+      "name_es": "Subasta y contrato de compraventa"
+    },
+    {
+      "id": "certification",
+      "order": 3,
+      "name": "Energy Bureau certification",
+      "name_es": "Certificación del Negociado de Energía"
+    },
+    {
+      "id": "studies",
+      "order": 4,
+      "name": "Interconnection studies & technical requirements",
+      "name_es": "Estudios de interconexión y requisitos técnicos"
+    },
+    {
+      "id": "agreements",
+      "order": 5,
+      "name": "Interconnection agreement",
+      "name_es": "Acuerdo de interconexión"
+    },
+    {
+      "id": "construction",
+      "order": 6,
+      "name": "Construction permit & build",
+      "name_es": "Permiso de construcción y obra"
+    },
+    {
+      "id": "commissioning",
+      "order": 7,
+      "name": "Testing, commissioning & commercial operation (COD)",
+      "name_es": "Pruebas, puesta en servicio y operación comercial (COD)"
+    }
+  ],
+  "incentive_questions_when": {
+    "fact": "energy_incentive_interest",
+    "op": "eq",
+    "value": true
+  }
 }

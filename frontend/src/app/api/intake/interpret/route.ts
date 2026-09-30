@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 import { clampCandidates, type KbCandidates } from "../../../ai/intake/kbCandidates";
 import { BUSINESS_STRUCTURE_VALUES } from "../../../ai/intake/validateInterpretation";
 import { validateProjectContext } from "../../../ai/intake/projectContext";
+import { kbExtractionPromptLines } from "../../../processes/extraction";
 import { combineScenario, interpretScenario, normalizeScenario } from "../../../ai/intake/scenario";
 import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 import {
@@ -375,6 +376,9 @@ applicability is decided by SmartPR's regulatory graph, never by you):
 - "interconnection_voltage" :: "distribution" | "subtransmission" |
   "transmission", only when stated.
 - "mounting_type" :: "roof" | "ground" | "carport".
+UTILITY-SCALE / WHOLESALE AND OTHER GRAPH FACTS (declared in the knowledge base;
+omit any not stated):
+${kbExtractionPromptLines("en")}
 
 SCENARIO — READ THE SITUATION AS A WHOLE, LIKE A PERMITTING INTAKE SPECIALIST.
 Before anything else, understand what the speaker is trying to accomplish and
@@ -761,6 +765,9 @@ Usa los mismos valores en inglés indicados:
 - "interconnection_voltage" :: "distribution" | "subtransmission" |
   "transmission", solo si se dice.
 - "mounting_type" :: "roof" | "ground" | "carport".
+UTILITY-SCALE / MERCADO MAYORISTA Y DEMÁS HECHOS DEL GRAFO (definidos en la base de
+conocimiento; omite los que no se digan):
+${kbExtractionPromptLines("es")}
 
 ESCENARIO — LEE LA SITUACIÓN COMPLETA, COMO UN ESPECIALISTA DE INTAKE DE PERMISOLOGÍA.
 Antes que nada, entiende qué intenta lograr el hablante y cómo se relacionan los
