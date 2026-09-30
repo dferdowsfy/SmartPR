@@ -15,7 +15,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if ("error" in r) return r.error;
   try {
     const locations = await listLocationsForBusiness(r.pool, r.business);
-    return Response.json({ locations }, { headers: NO_STORE });
+    return Response.json({ locations, can_edit: r.business.can_edit }, { headers: NO_STORE });
   } catch (err) {
     console.error("[locations] list failed:", (err as Error).message);
     return Response.json({ error: "query_failed" }, { status: 500 });
@@ -24,7 +24,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const r = await resolveBusinessAccess(id);
+  const r = await resolveBusinessAccess(id, { write: true });
   if ("error" in r) return r.error;
   let body: unknown;
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }

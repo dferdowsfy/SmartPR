@@ -28,7 +28,7 @@ const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
 type LoadState =
   | { status: "loading" }
-  | { status: "ready"; locations: PassportLocationWithGeographies[] }
+  | { status: "ready"; locations: PassportLocationWithGeographies[]; canEdit: boolean }
   | { status: "error" };
 
 const GEOGRAPHY_LABELS: Record<string, { en: string; es: string }> = {
@@ -153,8 +153,8 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
     fetch(`/api/businesses/${encodeURIComponent(businessId)}/locations`, { cache: "no-store" })
       .then(async (r) => {
         if (!r.ok) throw new Error(String(r.status));
-        const data = (await r.json()) as { locations: PassportLocationWithGeographies[] };
-        if (!cancelled) setState({ status: "ready", locations: data.locations });
+        const data = (await r.json()) as { locations: PassportLocationWithGeographies[]; can_edit?: boolean };
+        if (!cancelled) setState({ status: "ready", locations: data.locations, canEdit: data.can_edit !== false });
       })
       .catch(() => {
         if (!cancelled) setState({ status: "error" });
@@ -165,6 +165,9 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
   }, [businessId, reloadKey]);
 
   const locations = useMemo(() => (state.status === "ready" ? state.locations : []), [state]);
+  // Workspace viewers see saved locations but get no mutation controls
+  // (the API enforces the same rule).
+  const canEdit = state.status === "ready" && state.canEdit;
   const selected = locations.find((l) => l.id === selectedId) ?? locations[0] ?? null;
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
@@ -190,6 +193,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
       prev.status === "ready"
         ? {
             status: "ready",
+            canEdit: prev.canEdit,
             locations: [
               ...prev.locations
                 .filter((l) => l.id !== location.id)
@@ -258,7 +262,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
     <div className="mt-4 rounded-xl border border-slate-200 px-4 py-3" data-testid="passport-location-section">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm font-bold text-[#161616]">{L("Property / Location", "Propiedad / Ubicación", lang)}</div>
-        {state.status === "ready" && locations.length > 0 && (
+        {canEdit && locations.length > 0 && (
           <button
             type="button"
             onClick={() => setDialog({ mode: "add" })}
@@ -295,6 +299,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
               lang
             )}
           </p>
+          {canEdit ? (
           <button
             type="button"
             onClick={() => setDialog({ mode: "add" })}
@@ -304,6 +309,11 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
             <MapPin className="h-4 w-4" aria-hidden="true" />
             {L("Add location", "Agregar ubicación", lang)}
           </button>
+          ) : (
+            <p className="mt-2 text-xs italic text-slate-500">
+              {L("No location saved yet.", "Aún no hay una ubicación guardada.", lang)}
+            </p>
+          )}
         </div>
       )}
 
@@ -360,6 +370,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
                 </div>
               )}
             </div>
+            {canEdit && (
             <button
               type="button"
               onClick={() => setDialog({ mode: "edit", location: selected })}
@@ -368,6 +379,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
             >
               {L("Edit location", "Editar ubicación", lang)}
             </button>
+            )}
           </div>
 
           <PassportMap
@@ -417,6 +429,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
             ))}
           </div>
 
+          {canEdit && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
             {!selected.is_primary && (
               <button
@@ -456,6 +469,7 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
               </button>
             )}
           </div>
+          )}
         </div>
       )}
 

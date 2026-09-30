@@ -22,7 +22,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 export async function PATCH(req: Request, ctx: Ctx) {
   const { id, locationId } = await ctx.params;
-  const r = await resolveBusinessAccess(id);
+  const r = await resolveBusinessAccess(id, { write: true });
   if ("error" in r) return r.error;
   let body: unknown;
   try { body = await req.json(); } catch { return Response.json({ error: "bad_json" }, { status: 400 }); }
@@ -52,7 +52,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   const { id, locationId } = await ctx.params;
-  const r = await resolveBusinessAccess(id);
+  const r = await resolveBusinessAccess(id, { write: true });
   if ("error" in r) return r.error;
   try {
     const result = await deleteLocation(r.pool, r.business, locationId);

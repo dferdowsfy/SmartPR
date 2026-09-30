@@ -10,6 +10,7 @@
 
 import { randomUUID } from "crypto";
 import type { Pool, PoolClient } from "pg";
+import { canEditWorkspace } from "../../lib/admin";
 import { writeAuditEvent } from "../../lib/enterprise-permissions";
 import { resolveBusinessUuid } from "../graph/store";
 import {
@@ -32,6 +33,15 @@ export function isUuid(value: unknown): value is string {
 export interface AccessibleBusiness {
   id: string;
   workspace_id: string | null;
+  /**
+   * May mutate this business's locations: the business owner, or a workspace
+   * member whose role allows edits (canEditWorkspace — VIEWER may not).
+   */
+  can_edit: boolean;
+}
+
+function editable(isOwner: unknown, role: unknown): boolean {
+  return isOwner === true || canEditWorkspace(typeof role === "string" ? role : null);
 }
 
 /** Resolve a business id (public id or UUID) the user may access, else null. */
@@ -42,13 +52,14 @@ export async function accessibleBusiness(
 ): Promise<AccessibleBusiness | null> {
   const uuid = await resolveBusinessUuid(db, rawBusinessId);
   if (!uuid) return null;
-  const { rows } = await db.query<AccessibleBusiness>(
-    `SELECT b.id, b.workspace_id FROM businesses b
+  const { rows } = await db.query<{ id: string; workspace_id: string | null; is_owner: boolean; role: string | null }>(
+    `SELECT b.id, b.workspace_id, (b.user_id=$2) AS is_owner, wm.role FROM businesses b
        LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$2
       WHERE b.id=$1 AND b.archived=false AND (b.user_id=$2 OR wm.user_id IS NOT NULL)`,
     [uuid, userId]
   );
-  return rows[0] ?? null;
+  const row = rows[0];
+  return row ? { id: row.id, workspace_id: row.workspace_id, can_edit: editable(row.is_owner, row.role) } : null;
 }
 
 const LOCATION_COLUMNS = `l.id, l.business_id, l.name, l.is_primary, l.latitude, l.longitude,
@@ -373,6 +384,8 @@ export interface AccessibleMatter {
   business_id: string;
   workspace_id: string | null;
   location_id: string | null;
+  /** Same rule as AccessibleBusiness.can_edit, for the matter's business. */
+  can_edit: boolean;
 }
 
 /**
@@ -382,15 +395,23 @@ export interface AccessibleMatter {
  */
 export async function accessibleMatter(db: Db, matterId: string, userId: string): Promise<AccessibleMatter | null> {
   if (!isUuid(matterId)) return null;
-  const { rows } = await db.query<AccessibleMatter>(
-    `SELECT m.id, m.business_id, b.workspace_id, m.location_id
+  const { rows } = await db.query<Omit<AccessibleMatter, "can_edit"> & { is_owner: boolean; role: string | null }>(
+    `SELECT m.id, m.business_id, b.workspace_id, m.location_id, (b.user_id=$2) AS is_owner, wm.role
        FROM matters m
        JOIN businesses b ON b.id = m.business_id
        LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$2
       WHERE m.id=$1 AND b.archived=false AND (b.user_id=$2 OR wm.user_id IS NOT NULL)`,
     [matterId, userId]
   );
-  return rows[0] ?? null;
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    id: row.id,
+    business_id: row.business_id,
+    workspace_id: row.workspace_id,
+    location_id: row.location_id,
+    can_edit: editable(row.is_owner, row.role),
+  };
 }
 
 /**
@@ -428,7 +449,11 @@ export async function assignLocationToMatter(
  */
 export async function locationContextForMatter(db: Db, matter: AccessibleMatter): Promise<LocationContext | null> {
   if (!matter.location_id) return null;
-  const location = await getLocation(db, { id: matter.business_id, workspace_id: matter.workspace_id }, matter.location_id);
+  const location = await getLocation(
+    db,
+    { id: matter.business_id, workspace_id: matter.workspace_id, can_edit: matter.can_edit },
+    matter.location_id
+  );
   return location ? buildLocationContext(location, location.geographies) : null;
 }
 

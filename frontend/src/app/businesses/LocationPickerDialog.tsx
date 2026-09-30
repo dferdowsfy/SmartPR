@@ -321,6 +321,10 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
   };
 
   const onAddressEdit = (value: string) => {
+    // The user's own text wins: cancel any in-flight reverse lookup so a late
+    // provider result can never overwrite it (or relabel its provenance).
+    lookupSeq.current += 1;
+    setLookup((prev) => (prev.status === "loading" ? { status: "idle" } : prev));
     setAddressText(value);
     // A hand-edited address is user-provided text; provider parts no longer apply.
     setAddress({ ...NO_ADDRESS, formatted_address: value.trim() || null, address_source: value.trim() ? "USER_PROVIDED" : "NONE" });

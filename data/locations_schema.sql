@@ -177,16 +177,27 @@ BEGIN
   ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
   ALTER TABLE location_geographies ENABLE ROW LEVEL SECURITY;
   ALTER TABLE geo_datasets ENABLE ROW LEVEL SECURITY;
+  -- Read: owner or any workspace member. Write: owner or an edit-capable
+  -- workspace role (OWNER/ADMIN/MEMBER — mirrors canEditWorkspace; VIEWER reads only).
   DROP POLICY IF EXISTS smartpr_locations_member ON locations;
-  CREATE POLICY smartpr_locations_member ON locations FOR ALL TO authenticated
+  DROP POLICY IF EXISTS smartpr_locations_read ON locations;
+  DROP POLICY IF EXISTS smartpr_locations_write ON locations;
+  CREATE POLICY smartpr_locations_read ON locations FOR SELECT TO authenticated
     USING (EXISTS (
       SELECT 1 FROM businesses b
       LEFT JOIN workspace_members wm ON wm.workspace_id = b.workspace_id AND wm.user_id = auth.uid()
-      WHERE b.id = locations.business_id AND b.archived = false AND (b.user_id = auth.uid() OR wm.user_id IS NOT NULL)))
+      WHERE b.id = locations.business_id AND b.archived = false AND (b.user_id = auth.uid() OR wm.user_id IS NOT NULL)));
+  CREATE POLICY smartpr_locations_write ON locations FOR ALL TO authenticated
+    USING (EXISTS (
+      SELECT 1 FROM businesses b
+      LEFT JOIN workspace_members wm ON wm.workspace_id = b.workspace_id AND wm.user_id = auth.uid()
+      WHERE b.id = locations.business_id AND b.archived = false
+        AND (b.user_id = auth.uid() OR wm.role IN ('OWNER','ADMIN','MEMBER'))))
     WITH CHECK (EXISTS (
       SELECT 1 FROM businesses b
       LEFT JOIN workspace_members wm ON wm.workspace_id = b.workspace_id AND wm.user_id = auth.uid()
-      WHERE b.id = locations.business_id AND b.archived = false AND (b.user_id = auth.uid() OR wm.user_id IS NOT NULL)));
+      WHERE b.id = locations.business_id AND b.archived = false
+        AND (b.user_id = auth.uid() OR wm.role IN ('OWNER','ADMIN','MEMBER'))));
   DROP POLICY IF EXISTS smartpr_location_geographies_member ON location_geographies;
   CREATE POLICY smartpr_location_geographies_member ON location_geographies FOR SELECT TO authenticated
     USING (EXISTS (
