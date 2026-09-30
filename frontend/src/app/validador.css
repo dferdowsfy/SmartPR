@@ -2675,3 +2675,35 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .rq-agency-site { display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; color: var(--muted); text-decoration: underline; }
 
 .rq-open-item { border-style: dashed; }
+
+/* ---- Energy regulatory processes (components/energy/EnergyProcessesSection) ---- */
+.rq-group-energy .rq-energy-readiness { margin-left: 6px; }
+.rq-energy-subhead { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 10px 0 6px; display: flex; gap: 6px; align-items: center; }
+.rq-energy-questions { border: 1px dashed var(--border-strong); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.rq-energy-q { padding: 6px 0; }
+.rq-energy-q-text { font-weight: 600; }
+.rq-energy-q-why { font-size: 12px; color: var(--muted); }
+.rq-energy-q-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.rq-energy-q-actions button, .rq-energy-q-actions input { border: 1px solid var(--border-strong); border-radius: 6px; padding: 3px 10px; background: var(--surface); font-size: 13px; }
+.rq-energy-q-actions form { display: flex; gap: 6px; }
+.rq-energy-card, .rq-energy-incentive { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.rq-energy-card header h4, .rq-energy-incentive header h4 { margin: 4px 0 2px; font-size: 15px; }
+.rq-energy-badge { font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; border: 1px solid var(--border-strong); }
+.rq-energy-badge-required { background: color-mix(in oklab, var(--brand) 14%, transparent); }
+.rq-energy-badge-needs { background: color-mix(in oklab, #c58a00 16%, transparent); }
+.rq-energy-badge-potential { background: color-mix(in oklab, #161616 6%, transparent); }
+.rq-energy-type { font-size: 11px; color: var(--muted); margin-left: 8px; text-transform: uppercase; }
+.rq-energy-agency, .rq-energy-source, .rq-energy-prereqs, .rq-energy-proc-readiness, .rq-energy-jurisdiction, .rq-energy-alias, .rq-energy-missing-facts { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.rq-energy-reason { margin: 6px 0; font-size: 13px; }
+.rq-energy-path { font-size: 12px; margin: 6px 0; padding-left: 18px; }
+.rq-energy-path em { font-style: normal; text-transform: uppercase; font-size: 10px; color: var(--muted); margin-right: 4px; }
+.rq-energy-step-detail { color: var(--muted); }
+.rq-energy-reqs { font-size: 13px; margin: 8px 0 0; padding-left: 18px; }
+.rq-energy-req-state { font-size: 11px; font-weight: 600; }
+.rq-energy-req-missing .rq-energy-req-state { color: #a33; }
+.rq-energy-req-satisfied .rq-energy-req-state { color: var(--brand); }
+.rq-energy-req-ev, .rq-energy-conf { font-size: 11px; color: var(--muted); }
+.rq-energy-not { font-size: 12px; color: var(--muted); margin: 8px 0; }
+.rq-energy-incentives { margin-top: 12px; border-left: 3px solid #b8860b; padding-left: 10px; }
+.rq-energy-incentive { background: color-mix(in oklab, #b8860b 7%, var(--surface)); margin-bottom: 8px; }
+.rq-energy-badge-incentive { background: color-mix(in oklab, #b8860b 20%, transparent); }

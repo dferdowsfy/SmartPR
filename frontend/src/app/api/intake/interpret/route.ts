@@ -326,6 +326,43 @@ determine:
   Omit when not stated.
 - "property_tenure" :: "owned" when the speaker owns the property, "leased"
   when they lease it. Omit when not stated — never infer tenure.
+ENERGY FACTS (only when the speaker describes generation, storage, a
+microgrid, energy services, or energy incentives; omit every key not stated —
+applicability is decided by SmartPR's regulatory graph, never by you):
+- "generation_technology" :: "solar" | "wind" | "storage" | "hybrid" | "other".
+- "battery_storage" :: true when batteries / energy storage are included.
+- "generation_capacity_kw" :: total generating capacity as a number in kW
+  (2 MW = 2000). Omit when no size is stated.
+- "storage_capacity_kw" :: storage power rating in kW, when stated.
+- "customer_class" :: "residential" | "commercial" | "industrial" |
+  "agricultural" | "government" | "educational" | "medical".
+- "system_ownership" :: "owner" | "third_party" | "lease_ppa" | "cooperative"
+  | "municipal" — only when the speaker says who owns the system.
+- "properties_served" :: number of separate properties/facilities served.
+- "customers_served" :: number of separate electric customers served.
+- "sells_energy_to_third_parties" :: true only when the speaker says energy
+  will be sold to others; false only when they say it is for their own use.
+  Never assume a sale.
+- "sells_to_utility_under_ppa" :: true only when a power purchase agreement
+  with LUMA/PREPA or another utility is stated.
+- "parallel_operation" :: true when the system will be connected to / tied to
+  the LUMA grid; false when stated off-grid only.
+- "interconnection_required" :: true when the speaker says they need to
+  interconnect with LUMA.
+- "microgrid_configuration" :: true only when the speaker calls it a
+  microgrid or describes a system serving loads that can island from the grid.
+  Never infer a microgrid from solar panels alone.
+- "energy_project_status" :: "existing" | "proposed".
+- "energy_applicant_role" :: "end_use_customer" | "developer" |
+  "energy_service_provider" | "installer".
+- "proposed_energy_services" :: comma-separated from generation_sale,
+  storage_service, billing, resale, wheeling, installation, consulting.
+- "energy_incentive_interest" :: true when the speaker asks about energy
+  incentives, credits, or tax benefits.
+- "net_metering_requested" :: true when the speaker wants net metering.
+- "interconnection_voltage" :: "distribution" | "subtransmission" |
+  "transmission", only when stated.
+- "mounting_type" :: "roof" | "ground" | "carport".
 
 SCENARIO — READ THE SITUATION AS A WHOLE, LIKE A PERMITTING INTAKE SPECIALIST.
 Before anything else, understand what the speaker is trying to accomplish and
@@ -665,6 +702,41 @@ determinar:
   Omite cuando no se diga.
 - "property_tenure" :: "owned" cuando el hablante sea dueño de la propiedad, "leased"
   cuando la alquile. Omite cuando no se diga — nunca infieras la tenencia.
+HECHOS DE ENERGÍA (solo cuando el hablante describa generación, almacenamiento,
+una microred, servicios de energía o incentivos energéticos; omite toda clave que
+no se diga — la aplicabilidad la decide el grafo regulatorio de SmartPR, nunca tú).
+Usa los mismos valores en inglés indicados:
+- "generation_technology" :: "solar" | "wind" | "storage" | "hybrid" | "other".
+- "battery_storage" :: true cuando incluya baterías / almacenamiento.
+- "generation_capacity_kw" :: capacidad total como número en kW (2 MW = 2000).
+- "storage_capacity_kw" :: capacidad de almacenamiento en kW, si se dice.
+- "customer_class" :: "residential" | "commercial" | "industrial" |
+  "agricultural" | "government" | "educational" | "medical".
+- "system_ownership" :: "owner" | "third_party" | "lease_ppa" | "cooperative"
+  | "municipal" — solo si se dice quién es dueño del sistema.
+- "properties_served" :: número de propiedades/instalaciones servidas.
+- "customers_served" :: número de clientes eléctricos distintos servidos.
+- "sells_energy_to_third_parties" :: true solo si dice que venderá energía a
+  otros; false solo si dice que es para consumo propio. Nunca asumas una venta.
+- "sells_to_utility_under_ppa" :: true solo si se menciona un contrato de
+  compraventa de energía (PPA) con LUMA/AEE u otra utilidad.
+- "parallel_operation" :: true si estará conectado a la red de LUMA; false si
+  se dice que es solo fuera de la red.
+- "interconnection_required" :: true si dice que necesita interconectarse con LUMA.
+- "microgrid_configuration" :: true solo si lo llama microred o describe un
+  sistema que sirve cargas y puede aislarse de la red. Nunca infieras una
+  microred solo por placas solares.
+- "energy_project_status" :: "existing" | "proposed".
+- "energy_applicant_role" :: "end_use_customer" | "developer" |
+  "energy_service_provider" | "installer".
+- "proposed_energy_services" :: separados por comas entre generation_sale,
+  storage_service, billing, resale, wheeling, installation, consulting.
+- "energy_incentive_interest" :: true si pregunta por incentivos, créditos o
+  beneficios contributivos de energía.
+- "net_metering_requested" :: true si quiere medición neta.
+- "interconnection_voltage" :: "distribution" | "subtransmission" |
+  "transmission", solo si se dice.
+- "mounting_type" :: "roof" | "ground" | "carport".
 
 ESCENARIO — LEE LA SITUACIÓN COMPLETA, COMO UN ESPECIALISTA DE INTAKE DE PERMISOLOGÍA.
 Antes que nada, entiende qué intenta lograr el hablante y cómo se relacionan los

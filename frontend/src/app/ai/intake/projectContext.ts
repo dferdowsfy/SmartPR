@@ -55,6 +55,29 @@ export const PROJECT_CONTEXT_KEYS = [
   "parking_changes",
   "loading_changes",
   "property_tenure",
+  // Energy-sector facts (regulatory process graph, src/app/processes). The
+  // model extracts them; applicability comes only from graph rules in
+  // kb/regulatory_processes.json.
+  "generation_technology",
+  "battery_storage",
+  "generation_capacity_kw",
+  "storage_capacity_kw",
+  "customer_class",
+  "system_ownership",
+  "properties_served",
+  "customers_served",
+  "sells_energy_to_third_parties",
+  "sells_to_utility_under_ppa",
+  "parallel_operation",
+  "interconnection_required",
+  "microgrid_configuration",
+  "energy_project_status",
+  "energy_applicant_role",
+  "proposed_energy_services",
+  "energy_incentive_interest",
+  "net_metering_requested",
+  "interconnection_voltage",
+  "mounting_type",
 ] as const;
 
 export type ProjectContextKey = (typeof PROJECT_CONTEXT_KEYS)[number];
@@ -73,7 +96,14 @@ const NUMERIC_KEYS: ReadonlySet<string> = new Set([
   "employee_count",
   "estimated_project_value",
   "land_disturbance_acres",
+  "generation_capacity_kw",
+  "storage_capacity_kw",
+  "properties_served",
+  "customers_served",
 ]);
+
+/** Capacity keys are stored in kW; a stated "2 MW" becomes 2000. */
+const KW_KEYS: ReadonlySet<string> = new Set(["generation_capacity_kw", "storage_capacity_kw"]);
 
 // ---------------------------------------------------------------------------
 // Validation (defensive: one malformed entry never destroys the rest)
@@ -153,7 +183,10 @@ export function validateProjectContext(raw: unknown, description?: string): {
         discarded.push({ field, reason: "not a number" });
         continue;
       }
-      value = n;
+      value =
+        KW_KEYS.has(key) && typeof e.value === "string" && /(\d|\s)mw\b|megawatt/i.test(e.value)
+          ? n * 1000
+          : n;
     } else if (typeof value === "string") {
       const trimmed = value.trim();
       if (!trimmed) {
@@ -595,6 +628,38 @@ function projectFactChipLabel(key: ProjectContextKey, value: string | number | b
       return value === "owned" ? "Property owned" : value === "leased" ? "Property leased" : null;
     case "known_permitting_issue":
       return "Permitting issues noted";
+    case "generation_technology":
+      return value === "none" ? null : `Energy: ${String(value)}`;
+    case "battery_storage":
+      return value === true ? "Battery storage" : null;
+    case "generation_capacity_kw":
+      return `${Number(value).toLocaleString("en-US")} kW`;
+    case "storage_capacity_kw":
+      return `${Number(value).toLocaleString("en-US")} kW storage`;
+    case "microgrid_configuration":
+      return value === true ? "Microgrid" : null;
+    case "parallel_operation":
+    case "interconnection_required":
+      return value === true ? "Grid-connected" : value === false ? "Off-grid" : null;
+    case "sells_energy_to_third_parties":
+      return value === true ? "Sells energy" : null;
+    case "customers_served":
+      return `Serves ${value} customers`;
+    case "energy_incentive_interest":
+      return value === true ? "Energy incentives" : null;
+    case "net_metering_requested":
+      return value === true ? "Net metering" : null;
+    // No chip: internal classification details shown in the Energy section.
+    case "customer_class":
+    case "system_ownership":
+    case "properties_served":
+    case "sells_to_utility_under_ppa":
+    case "energy_project_status":
+    case "energy_applicant_role":
+    case "proposed_energy_services":
+    case "interconnection_voltage":
+    case "mounting_type":
+      return null;
     // No chip: already covered by the business-level municipality chip.
     case "municipality":
     // No chip: long-form notes live in the Project Passport, not the strip.
