@@ -22,7 +22,7 @@ import type { PotentialDecision } from "./potentialRequirements";
 import { classifyEngineRequirements, kindForDocument, stageForDocument, type Applicability, type RequirementKind, type RequirementStage } from "./requirementApplicability";
 import { filterEffective } from "./temporal";
 import type { EntityType } from "./forms/engine/types";
-import { entityTypeFromLegacyStructure } from "./forms/engine/intake.ts";
+import { entityTypeFromLegacyStructure, entityTypeFromProfileOrAnswers } from "./forms/engine/intake.ts";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
 import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
@@ -869,9 +869,17 @@ export function buildEngineInput(
     // stay silent for legal forms they can never apply to. "other" means the
     // user hasn't picked a known form — rules treat that as unknown, and the
     // classifier marks the resulting items conditional rather than required.
+    // REG-SOLEPROP-DUALFORMATION-001: the guided intake tiers business_structure
+    // as filing_specific, so live drafts often carry a null structure even
+    // when the user answered Q_BUSINESS_STRUCTURE. Fall back to that answer
+    // (labels like "Sole Proprietorship" normalize via entityTypeFromLegacyStructure)
+    // before giving up — a known entity must reach the engine.
     entityType: projectOnly
       ? null
-      : entityTypeFromLegacyStructure(p.business_structure as string | undefined),
+      : entityTypeFromProfileOrAnswers(
+          p.business_structure as string | undefined,
+          answers?.["Q_BUSINESS_STRUCTURE"]
+        ),
     businessStatus,
     entityNotFormed: entityNotFormedForIntent(projectIntent),
     projectFacts,
