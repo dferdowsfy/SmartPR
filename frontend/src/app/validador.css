@@ -2846,3 +2846,20 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   .ck-card-line { flex-wrap: wrap; padding: 0 12px 10px 0; }
   .ck-stage .ck-rows { padding-left: 0; }
 }
+
+/* ---- Checklist fixes (live Guaynabo test) ---- */
+.spr-requirements-main [role="list"] { list-style: none; margin: 0; padding: 0; }
+.ck-trace-steps { padding-left: 0; display: grid; gap: 4px; }
+.ck-trace-line { margin: 0; overflow-wrap: anywhere; }
+.ck-q-multi { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.ck-q-actions .ck-chip { border-radius: 999px; }
+.ck-q-actions .ck-chip-on { background: var(--brand-soft, #e7f5f1); border-color: var(--brand, #0f766e); color: var(--brand, #0f766e); font-weight: 600; }
+.ck-q-actions .ck-q-save:disabled { opacity: .5; cursor: default; }
+.rq-other-checks .ck-q { border-top: 1px solid var(--border); }
+.rq-group-tools > summary { cursor: pointer; }
+.rq-group-tools .rq-tabs { margin-top: 10px; }
+/* Collapsed groups show a disclosure chevron. */
+details.rq-group > summary.rq-group-head { cursor: pointer; list-style: none; }
+details.rq-group > summary.rq-group-head::-webkit-details-marker { display: none; }
+details.rq-group > summary.rq-group-head::after { content: ""; display: inline-block; width: 7px; height: 7px; margin-left: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); opacity: .6; transition: transform .15s; }
+details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg); }

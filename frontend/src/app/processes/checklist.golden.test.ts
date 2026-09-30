@@ -16,7 +16,12 @@ import { computeEnergyAssessment } from "./view.ts";
 import { processChecklist, unifiedIncentives, type ProcessChecklist } from "./presentation.ts";
 import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting, type LegacyCardRef } from "./legacyCards.ts";
 import type { ProcessAssessment } from "./engine.ts";
-import { EnergyProcessesSection } from "../components/energy/EnergyProcessesSection.tsx";
+import { EnergyProcessesSection, ProcessReasoning, energySummaryQuestions, processTraceLines } from "../components/energy/EnergyProcessesSection.tsx";
+import { ChecklistSummary } from "../components/checklist/ChecklistParts.tsx";
+import { evaluateIncentives } from "../incentives/engine.ts";
+import { PR_ACT60_CATALOG } from "../incentives/prCatalog.ts";
+import { normalizeProjectProfileForIncentives } from "../incentives/profile.ts";
+import { relevantIncentiveOpportunities } from "../incentives/relevance.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const load = (f: string) => JSON.parse(readFileSync(join(here, "goldens", f), "utf8"));
@@ -84,7 +89,7 @@ test("E06 Guayama (Darius's live prompt): hybrid resolved from the text, one pro
   for (const p of r.a.processes) assert.ok(!p.explanation.some((s) => s.kind === "classification" && /^Possibly /.test(s.label)), `${p.process_id} lists no 'possibly' types`);
   assertWholesaleLegacy(r, "E06");
   assertPresentationInvariants(r, "E06");
-  assert.equal(r.ck.summary, "Utility-scale solar + battery, 15 MW / 30 MWh, Guayama, selling to LUMA. 12 steps, 3 questions to answer.");
+  assert.equal(r.ck.summary, "Utility-scale solar + battery, 15 MW / 30 MWh, Guayama, selling to LUMA. 12 steps, 3 questions.");
   assert.deepEqual(r.ck.questions.map((q) => q.text), ["Is it in a PREB procurement round (RFP)?", "What voltage will it connect at?", "How is the land zoned?"]);
   assert.deepEqual(r.ck.stages.map((s) => s.name), ["Site, land use & environmental", "Procurement & power sale contract", "Energy Bureau certification", "Interconnection studies & technical requirements", "Interconnection agreement", "Construction permit & build", "Testing, commissioning & commercial operation (COD)"]);
   const names = items(r.ck).map((i) => `${i.name} · ${i.agency} · ${i.status}`);
@@ -100,7 +105,7 @@ test("E06 Guayama (Darius's live prompt): hybrid resolved from the text, one pro
   assert.ok(!u.extra.some((i) => i.program_id === "PR_ACT60_ENERGY"));
   // Spanish labels work end to end.
   const es = run("E06_developer_solar_bess_guayama.json", "es").ck;
-  assert.equal(es.summary, "A escala de utilidad solar + baterías, 15 MW / 30 MWh, Guayama, venta a LUMA. 12 pasos, 3 preguntas por responder.");
+  assert.equal(es.summary, "A escala de utilidad solar + baterías, 15 MW / 30 MWh, Guayama, venta a LUMA. 12 pasos, 3 preguntas.");
   assert.ok(items(es).some((i) => i.name === "Contrato de compraventa (PPOA) — aprobación del NEPR"));
   assert.ok(es.questions.every((q) => q.text.startsWith("¿")));
 });
@@ -123,7 +128,7 @@ test("E02 Salinas: no legacy DG/net-metering cards, one construction item, one p
   assert.deepEqual(singleType(r.a), [["PT_UTILITY_HYBRID_SOLAR_BESS", "has_type"]]);
   assertWholesaleLegacy(r, "E02");
   assertPresentationInvariants(r, "E02");
-  assert.match(r.ck.summary, /^Utility-scale solar \+ battery, 20 MW \/ 40 MWh, Salinas, selling to LUMA\. \d+ steps, 3 questions to answer\.$/);
+  assert.match(r.ck.summary, /^Utility-scale solar \+ battery, 20 MW \/ 40 MWh, Salinas, selling to LUMA\. \d+ steps, 3 questions\.$/);
 });
 
 test("E05 'we want to build a solar farm': nothing required, technology resolved, legacy DG cards never 'verify existing'", () => {
@@ -151,5 +156,111 @@ test("E01 rooftop (DG path): same assessment, now a flat numbered checklist", ()
   // Customer-side DG keeps its cards absorbed by the DG processes (not suppressed).
   assert.equal(r.sup.get("DOC_LUMA_INTERCONNECTION")?.process_id, "PR_ENERGY_DG_INTERCONNECTION");
   assert.equal(r.sup.get("DOC_LUMA_INTERCONNECTION")?.suppressed, undefined);
-  assert.match(r.ck.summary, /^On-site solar \+ battery, 400 kW, Caguas\. \d+ steps, \d questions? to answer\.$/);
+  assert.match(r.ck.summary, /^Rooftop solar \+ battery, 400 kW, Caguas\. \d+ steps, \d questions?\.$/);
+});
+
+// ---- E07: Darius's live test of #118 ("rooftop solar installation, Guaynabo") ----
+
+/** Every process row rendered expanded with its full reasoning open. */
+function expandedHtml(r: ReturnType<typeof run>) {
+  return renderToStaticMarkup(createElement(EnergyProcessesSection, {
+    assessment: r.a, graph: r.graph, checklist: r.ck, legacyCards: {}, suppressedLegacy: [...r.sup.values()], language: "en",
+    defaultOpen: r.a.processes.map((p) => p.process_id),
+  }));
+}
+
+test("E07 rooftop solar installation: no microgrid or energy sale read into four words", () => {
+  const r = run("E07_rooftop_solar_installation_guaynabo.json");
+  const G = r.G;
+  const { discarded } = validateProjectContext(G.modelProjectContext, G.description);
+  assert.equal(r.context.microgrid_configuration, undefined, "microgrid claim dropped");
+  assert.equal(r.context.sells_energy_to_third_parties, undefined, "energy sale claim dropped");
+  assert.ok(discarded.some((d) => d.field === "projectContext.microgrid_configuration" && /microgrid/.test(d.reason)));
+  assert.ok(discarded.some((d) => d.field === "projectContext.sells_energy_to_third_parties" && /selling/.test(d.reason)));
+  assert.ok(!r.a.processes.some((p) => /MICROGRID/.test(p.process_id) && p.state === "REQUIRED"), "microgrid never Required");
+  assert.ok(!items(r.ck).some((i) => /MICROGRID|ESC_CERTIFICATION/.test(i.process_id)), "no microgrid / ESC rows");
+  assert.ok(!r.ck.questions.some((q) => q.fact === "proposed_energy_services"), "no energy-services question");
+  assert.ok(r.ck.summary.startsWith("Rooftop solar, Guaynabo."), r.ck.summary);
+  assert.deepEqual(items(r.ck).map((i) => `${i.name} · ${i.status}`), [
+    "LUMA interconnection (distributed generation) · required",
+    "Installer certification · required",
+    "Construction permit · may_apply",
+    "Net metering (optional) · optional",
+  ]);
+  assertPresentationInvariants(r, "E07");
+});
+
+test("E07 intake guard keeps microgrids and sales the user actually states", () => {
+  const G = load("E07_rooftop_solar_installation_guaynabo.json");
+  const said = "rooftop solar installation with a microgrid that can island, and we will sell power to our tenants, Guaynabo";
+  const model = {
+    microgrid_configuration: { value: true, confidence: 0.9, evidence: "microgrid that can island" },
+    sells_energy_to_third_parties: { value: true, confidence: 0.9, evidence: "sell power to our tenants" },
+  };
+  const { context } = validateProjectContext(model, said);
+  assert.equal(context.microgrid_configuration?.value, true);
+  assert.equal(context.sells_energy_to_third_parties?.value, true);
+  const es = validateProjectContext({ microgrid_configuration: { value: true, confidence: 0.9, evidence: "microred" } }, "instalación solar en techo con microred, Guaynabo");
+  assert.equal(es.context.microgrid_configuration?.value, true, "Spanish 'microred'");
+  const island = validateProjectContext({ microgrid_configuration: { value: true, confidence: 0.9, evidence: "solar" } }, "rooftop solar for a business on the island of Puerto Rico");
+  assert.equal(island.context.microgrid_configuration, undefined, "'the island' is not islanding");
+  assert.ok(G, "fixture loads");
+});
+
+test("DG process rows: full reasoning has real content and no empty or list items (E01, E05, E07)", () => {
+  for (const f of ["E01_warehouse_rooftop_solar_caguas.json", "E05_insufficient_solar_farm.json", "E07_rooftop_solar_installation_guaynabo.json"]) {
+    const r = run(f);
+    const html = expandedHtml(r);
+    assert.ok(/Show full reasoning/.test(html) && /ck-trace-line/.test(html), `${f}: reasoning rendered`);
+    assert.ok(!/<li[^>]*>\s*<\/li>/.test(html), `${f}: no empty <li>`);
+    assert.ok(!/<ol/.test(html), `${f}: no <ol> (rows carry their own number)`);
+    assert.ok(!/<p class="ck-trace-line"><span class="ck-trace-kind">[^<]*<\/span> <\/p>/.test(html), `${f}: no trace line without text`);
+    for (const p of r.a.processes) {
+      const lines = processTraceLines(p);
+      assert.ok(lines.length > 0, `${f}: ${p.process_id} has trace lines`);
+      for (const l of lines) assert.ok(l.text.trim(), `${f}: ${p.process_id} ${l.kind} line has text`);
+      const one = renderToStaticMarkup(createElement(ProcessReasoning, { p, language: "en" }));
+      assert.ok(!/<li/.test(one), `${f}: ${p.process_id} reasoning is copy-safe (no list items)`);
+      for (const req of p.requirements) assert.ok(one.includes(req.id), `${f}: ${p.process_id} reasoning keeps ${req.id}`);
+    }
+    // Numbers: one badge per flat row, from 1.
+    const nums = [...html.matchAll(/<span class="ck-num">(\d+)<\/span>/g)].map((m) => Number(m[1]));
+    assert.deepEqual(nums, nums.map((_, i) => i + 1), `${f}: numbered from 1, consecutive`);
+  }
+});
+
+test("list questions render their options as multi-select chips", () => {
+  // The unguarded E07 reading (installer who "sells energy") asks which services.
+  const G = load("E07_rooftop_solar_installation_guaynabo.json");
+  const { context } = validateProjectContext(G.modelProjectContext);
+  const { graph, assessment } = computeEnergyAssessment({ projectContext: context, municipality: "Guaynabo", answers: G.answers });
+  const ck = processChecklist(assessment!, graph, "en");
+  const q = ck.questions.find((x) => x.fact === "proposed_energy_services");
+  assert.ok(q, "services question asked for the unguarded reading");
+  let saved: unknown = null;
+  const qs = energySummaryQuestions(ck, "en", (_k, fact) => { saved = fact.value; });
+  const sq = qs.find((x) => x.id === "proposed_energy_services")!;
+  assert.ok(sq.multi && !sq.input, "multi-select, not a free-text box");
+  assert.deepEqual(sq.multi!.options.map((o) => o.value), ["generation_sale", "storage_service", "billing", "resale", "wheeling", "installation", "consulting"]);
+  sq.multi!.onSubmit(["installation", "consulting"]);
+  assert.equal(saved, "installation,consulting", "stored comma-separated like the intake model");
+  const html = renderToStaticMarkup(createElement(ChecklistSummary, { line: "x", questions: [sq], language: "en" }));
+  for (const o of sq.multi!.options) assert.ok(html.includes(`>${o.label}</button>`), `chip ${o.label}`);
+  assert.ok(/aria-pressed="false"/.test(html) && />Save<\/button>/.test(html));
+});
+
+test("incentives: only programs with a real signal show for a solar installer (E07)", () => {
+  const profile = normalizeProjectProfileForIncentives({ name: "", municipality: "Guaynabo", industry: "Energy & Utilities", business_type: "Solar Installer" } as never, {});
+  const all = evaluateIncentives(profile, PR_ACT60_CATALOG).opportunities;
+  const shown = relevantIncentiveOpportunities(all).map((o) => o.programName);
+  for (const bad of [/Air and Maritime/, /Export Logistics/, /International Trading/]) assert.ok(!shown.some((n) => bad.test(n)), `${bad.source} hidden (${shown.join(" | ")})`);
+  assert.ok(shown.some((n) => /Green Energy/i.test(n)), `green energy kept (${shown.join(" | ")})`);
+  // Unknown industry: the engine program has no signal, the process-graph
+  // green-energy incentive still shows once.
+  const bare = normalizeProjectProfileForIncentives({ name: "", municipality: "Guaynabo" } as never, {});
+  const shownBare = relevantIncentiveOpportunities(evaluateIncentives(bare, PR_ACT60_CATALOG).opportunities);
+  assert.ok(!shownBare.some((o) => /Air and Maritime|Export Logistics|International Trading/.test(o.programName)));
+  const r = run("E07_rooftop_solar_installation_guaynabo.json");
+  const { extra } = unifiedIncentives(shownBare, r.a.incentives);
+  assert.ok(extra.some((i) => /ENERGY/.test(i.program_id ?? i.incentive_id)), "energy incentive from the process graph");
 });

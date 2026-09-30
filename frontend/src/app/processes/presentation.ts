@@ -143,7 +143,11 @@ export function projectSummaryLine(assessment: ProcessAssessment, graph: Process
   if (techKey === "solar" && f.battery_storage === true) techKey = "hybrid";
   if (!techKey && f.battery_storage === true) techKey = "storage";
   const tech = techKey ? t(d.technology_labels?.[techKey], lang) : undefined;
-  const head = [segment, tech ?? (lang === "es" ? "proyecto de energía" : "energy project")].filter(Boolean).join(" ");
+  // On-site systems read by where they sit: "Rooftop solar", "Solar en techo".
+  const mount = f.energy_market_segment === "customer_side" && typeof f.mounting_type === "string" ? d.mounting_labels?.[f.mounting_type] : undefined;
+  const head = mount && tech
+    ? (lang === "es" ? `${tech} ${mount.es}` : `${mount.en} ${tech}`)
+    : [segment, tech ?? (lang === "es" ? "proyecto de energía" : "energy project")].filter(Boolean).join(" ");
   const parts: string[] = [head.charAt(0).toUpperCase() + head.slice(1)];
   const size: string[] = [];
   if (typeof f.generation_capacity_kw === "number") size.push(f.generation_capacity_kw >= 1000 ? `${fmtNumber(f.generation_capacity_kw / 1000, lang)} MW` : `${fmtNumber(f.generation_capacity_kw, lang)} kW`);
@@ -156,11 +160,18 @@ export function projectSummaryLine(assessment: ProcessAssessment, graph: Process
   return parts.join(", ");
 }
 
+/** "10 steps, 1 question." — short counts for the summary line. */
 export function countsLine(steps: number, questions: number, lang: Lang): string {
   const es = lang === "es";
   const s = es ? `${steps} ${steps === 1 ? "paso" : "pasos"}` : `${steps} ${steps === 1 ? "step" : "steps"}`;
-  const q = questions === 0 ? "" : es ? `, ${questions} ${questions === 1 ? "pregunta" : "preguntas"} por responder` : `, ${questions} ${questions === 1 ? "question" : "questions"} to answer`;
+  const q = questions === 0 ? "" : es ? `, ${questions} ${questions === 1 ? "pregunta" : "preguntas"}` : `, ${questions} ${questions === 1 ? "question" : "questions"}`;
   return `${s}${q}.`;
+}
+
+/** Sentence case for a summary headline ("rooftop solar installation" → "Rooftop solar installation"). */
+export function capitalizeFirst(text: string): string {
+  const t = text.trim();
+  return t ? t.charAt(0).toLocaleUpperCase() + t.slice(1) : t;
 }
 
 export function checklistQuestion(q: ClarifyingQuestion, lang: Lang): ChecklistQuestion {

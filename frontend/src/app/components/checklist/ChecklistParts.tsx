@@ -37,18 +37,40 @@ export interface SummaryQuestion {
   options?: { label: string; onClick: () => void }[];
   /** Free-text / number answer. */
   input?: { numeric: boolean; onSubmit: (value: string) => void };
+  /** Multi-select (list facts): toggle chips, then Save. */
+  multi?: { options: { value: string; label: string }[]; onSubmit: (values: string[]) => void };
 }
 
 function QuestionLine({ q, language }: { q: SummaryQuestion; language: Language }) {
   const [text, setText] = useState("");
+  const [picked, setPicked] = useState<string[]>([]);
+  const toggle = (v: string) => setPicked((cur) => (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]));
   return (
-    <li className="ck-q" data-testid={`summary-q-${q.id}`}>
+    <div role="listitem" className="ck-q" data-testid={`summary-q-${q.id}`}>
       <span className="ck-q-text">{q.text}</span>
       {q.why && <InfoTip text={q.why} language={language} />}
       <span className="ck-q-actions">
         {q.options?.map((o) => (
           <button type="button" key={o.label} onClick={o.onClick}>{o.label}</button>
         ))}
+        {q.multi && (
+          <span className="ck-q-multi" role="group" aria-label={q.text}>
+            {q.multi.options.map((o) => (
+              <button
+                type="button"
+                key={o.value}
+                className={`ck-chip ${picked.includes(o.value) ? "ck-chip-on" : ""}`}
+                aria-pressed={picked.includes(o.value)}
+                onClick={() => toggle(o.value)}
+              >
+                {o.label}
+              </button>
+            ))}
+            <button type="button" className="ck-q-save" disabled={picked.length === 0} onClick={() => q.multi!.onSubmit(picked)}>
+              {language === "es" ? "Guardar" : "Save"}
+            </button>
+          </span>
+        )}
         {q.input && (
           <form
             onSubmit={(e) => {
@@ -62,7 +84,7 @@ function QuestionLine({ q, language }: { q: SummaryQuestion; language: Language 
           </form>
         )}
       </span>
-    </li>
+    </div>
   );
 }
 
@@ -87,18 +109,18 @@ export function ChecklistSummary({
         </p>
       )}
       {questions.length > 0 && (
-        <ol className="ck-questions" aria-label={es ? "Preguntas por responder" : "Questions to answer"}>
+        <div role="list" className="ck-questions" aria-label={es ? "Preguntas por responder" : "Questions to answer"}>
           {questions.slice(0, 3).map((q) => <QuestionLine key={q.id} q={q} language={language} />)}
-        </ol>
+        </div>
       )}
     </section>
   );
 }
 
 /** "Show full reasoning" — raw trace for auditors, collapsed by default. */
-export function FullReasoning({ language, children }: { language: Language; children: ReactNode }) {
+export function FullReasoning({ language, children, open = false }: { language: Language; children: ReactNode; open?: boolean }) {
   return (
-    <details className="ck-full">
+    <details className="ck-full" open={open || undefined}>
       <summary>{language === "es" ? "Ver razonamiento completo" : "Show full reasoning"}</summary>
       <div className="ck-full-body">{children}</div>
     </details>

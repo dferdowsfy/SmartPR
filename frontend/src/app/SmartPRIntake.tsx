@@ -117,8 +117,8 @@ import { RequirementCard, type RequirementAction, type RequirementBadge, type Re
 import { claraSupportFor, groupRequirements, splitOtherChecks, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
 import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
-import { processChecklist, countsLine, projectSummaryLine } from './processes/presentation';
-import { ChecklistSummary, type SummaryQuestion } from './components/checklist/ChecklistParts';
+import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
+import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
@@ -5923,8 +5923,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // A wholesale plant is the project itself: energy leads, business
   // registrations the developer already holds move to the secondary area.
   const energyPrimary = energyAssessment?.facts.energy_market_segment === 'wholesale';
-  const mainGroups = energyPrimary ? groupedCards.filter((g) => g.id !== 'registrations') : groupedCards;
-  const secondaryRegistrations = energyPrimary ? groupedCards.find((g) => g.id === 'registrations') ?? null : null;
+  // Registrations / licenses are never items to file now (verify-existing
+  // or not-yet-required registrations), so they always sit in a collapsed
+  // group at the bottom, after energy — never first, never open.
+  const mainGroups = groupedCards.filter((g) => g.id !== 'registrations');
+  const secondaryRegistrations = groupedCards.find((g) => g.id === 'registrations') ?? null;
   const onEnergyAnswer = (key: ProjectContextKey, fact: ProjectContextFact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }));
   const cardSummaryQuestions: SummaryQuestion[] = [];
   for (const g of mainGroups) for (const c of g.cards) {
@@ -5934,13 +5937,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const summaryQuestions = [...(energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : []), ...cardSummaryQuestions].slice(0, 3);
   const mainCardCount = mainGroups.reduce((n, g) => n + g.cards.length, 0);
   const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
-  const summaryHeadline = energyPrimary && energyAssessment
+  // The energy project IS the matter when it is utility-scale or a proposed
+  // installation: the line names it ("Rooftop solar, Guaynabo").
+  const summaryHeadline = energyAssessment && (energyPrimary || energyProposed)
     ? projectSummaryLine(energyAssessment, energyGraph, language)
     : [
         (projectPassport ? projectPassportTitle(projectPassport) : null) ?? (profile.business_type ? L(profile.business_type, language) : null) ?? profile.name,
         profile.municipality,
       ].filter(Boolean).join(', ');
-  const summaryLine = `${summaryHeadline ? `${summaryHeadline}. ` : ''}${countsLine(summaryStepCount, summaryQuestions.length, language)}`;
+  const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, summaryQuestions.length, language)}`;
   const energySection = energyAssessment && energyChecklist ? (
     <EnergyProcessesSection
       assessment={energyAssessment}
@@ -5949,7 +5954,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       legacyCards={energyLegacyCards}
       suppressedLegacy={energySuppressed}
       language={language}
-      startIndex={energyPrimary ? 0 : mainCardCount}
     />
   ) : null;
   const summaryReadiness = (() => {
@@ -6966,22 +6970,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           {requirements.length > 0 && (
             <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={summaryQuestions} language={language} />
           )}
-          {/* Filter tabs */}
-          <div className="rq-tabs" role="tablist">
-            <button role="tab" aria-selected={reqFilter === 'all'} className={`rq-tab ${reqFilter === 'all' ? 'active' : ''}`} onClick={() => setReqFilter('all')}>
-              {L('All', language)} <span className="rq-tab-count">{reqCards.length}</span>
-            </button>
-            <button role="tab" aria-selected={reqFilter === 'needs_action'} className={`rq-tab ${reqFilter === 'needs_action' ? 'active' : ''}`} onClick={() => setReqFilter('needs_action')}>
-              {L('Needs Action', language)} <span className="rq-tab-count">{tabNeedsActionCount}</span>
-            </button>
-            <button role="tab" aria-selected={reqFilter === 'in_progress'} className={`rq-tab ${reqFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setReqFilter('in_progress')}>
-              {L('In Progress', language)} <span className="rq-tab-count">{tabInProgressCount}</span>
-            </button>
-            <button role="tab" aria-selected={reqFilter === 'completed'} className={`rq-tab ${reqFilter === 'completed' ? 'active' : ''}`} onClick={() => setReqFilter('completed')}>
-              {L('Completed', language)} <span className="rq-tab-count">{tabCompletedCount}</span>
-            </button>
-          </div>
-
           {requirements.length === 0 && (
             <div style={{ padding: 24 }}>
               <button className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={loadRequirements}>
@@ -7023,8 +7011,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               prerequisite, supporting documents, registrations already held,
               and what is done. Critical-path items lead the first group. */}
           {energyPrimary && energySection}
-          {mainGroups.map((group, gi) => {
-            const offset = (energyPrimary ? energyChecklist?.item_count ?? 0 : 0) + mainGroups.slice(0, gi).reduce((n, g) => n + g.cards.length, 0);
+          {mainGroups.map((group) => {
             const meta = REQUIREMENT_GROUP_COPY[group.id];
             const cards = group.id === 'required_now'
               ? [...group.cards.filter(isCriticalPath), ...group.cards.filter((c) => !isCriticalPath(c))]
@@ -7041,7 +7028,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     <RequirementCard
                       key={c.req.code}
                       id={`req-row-${c.req.code}`}
-                      index={offset + i + 1}
+                      index={i + 1}
                       icon={c.icon}
                       iconTone={c.iconTone}
                       name={c.name}
@@ -7127,23 +7114,25 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 <span className="rq-critical-count">{otherChecks.length}</span>
               </summary>
               <p className="rq-group-sub">{L('Nothing in your description points to these. Answer once to confirm or clear them.', language)}</p>
-              <ul className="rq-other-checks">
+              {/* One line per question; the requirement names each answer decides
+                  sit behind the (i), not printed inline. */}
+              <div role="list" className="rq-other-checks">
                 {otherChecks.map((q) => {
                   const first = q.cards[0].c;
                   return (
-                    <li key={q.questionId} data-testid={`other-check-${q.questionId}`}>
-                      <div className="rq-other-q">{first.answerPrompt?.prompt ?? q.questionId}</div>
-                      <div className="rq-other-docs">{L('Decides', language)}: {q.cards.map(({ c }) => c.name).join(' · ')}</div>
+                    <div role="listitem" key={q.questionId} className="ck-q" data-testid={`other-check-${q.questionId}`}>
+                      <span className="ck-q-text rq-other-q">{first.answerPrompt?.prompt ?? q.questionId}</span>
+                      <InfoTip text={`${L('Decides', language)}: ${q.cards.map(({ c }) => c.name).join(' · ')}`} language={language} />
                       {first.answerPrompt && (
-                        <div className="rq-energy-q-actions">
+                        <span className="ck-q-actions">
                           <button type="button" onClick={first.answerPrompt.onYes}>{first.answerPrompt.yesLabel}</button>
                           <button type="button" onClick={first.answerPrompt.onNo}>{first.answerPrompt.noLabel}</button>
-                        </div>
+                        </span>
                       )}
-                    </li>
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             </details>
           )}
 
@@ -7164,16 +7153,38 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             extraIncentives={energyAssessment?.incentives ?? []}
           />
 
-          {/* Recommendation panel — advisory historical insights (never mandatory) */}
-          {advisory && advisory.enabled && advisory.similarCount > 0 &&
-            (advisory.potentiallyOverlooked.length > 0 || advisory.commonValidationFailures.length > 0) && (
-            <div className="rq-recommendations">
-              <Sparkles size={16} className="rq-recommendations-icon" />
-              <div>
-                <strong>{L('Recommendations', language)}</strong>
-                <p>{L('Based on', language)} {advisory.similarCount} {L('similar businesses processed before. Suggestions only — these never change what the rules require.', language)}</p>
-              </div>
+          {/* View options: the status filter and advisory recommendations sit
+              below the collapsed groups, closed, so they never crowd the
+              checklist. The filter still narrows every group when used. */}
+          {requirements.length > 0 && (
+            <details className="rq-group rq-group-tools" data-testid="req-group-tools" open={reqFilter !== 'all' || undefined}>
+              <summary className="rq-group-head">{L('View options', language)}</summary>
+            <div className="rq-tabs" role="tablist">
+              <button role="tab" aria-selected={reqFilter === 'all'} className={`rq-tab ${reqFilter === 'all' ? 'active' : ''}`} onClick={() => setReqFilter('all')}>
+                {L('All', language)} <span className="rq-tab-count">{reqCards.length}</span>
+              </button>
+              <button role="tab" aria-selected={reqFilter === 'needs_action'} className={`rq-tab ${reqFilter === 'needs_action' ? 'active' : ''}`} onClick={() => setReqFilter('needs_action')}>
+                {L('Needs Action', language)} <span className="rq-tab-count">{tabNeedsActionCount}</span>
+              </button>
+              <button role="tab" aria-selected={reqFilter === 'in_progress'} className={`rq-tab ${reqFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setReqFilter('in_progress')}>
+                {L('In Progress', language)} <span className="rq-tab-count">{tabInProgressCount}</span>
+              </button>
+              <button role="tab" aria-selected={reqFilter === 'completed'} className={`rq-tab ${reqFilter === 'completed' ? 'active' : ''}`} onClick={() => setReqFilter('completed')}>
+                {L('Completed', language)} <span className="rq-tab-count">{tabCompletedCount}</span>
+              </button>
             </div>
+            {/* Recommendation panel — advisory historical insights (never mandatory) */}
+            {advisory && advisory.enabled && advisory.similarCount > 0 &&
+              (advisory.potentiallyOverlooked.length > 0 || advisory.commonValidationFailures.length > 0) && (
+              <div className="rq-recommendations">
+                <Sparkles size={16} className="rq-recommendations-icon" />
+                <div>
+                  <strong>{L('Recommendations', language)}</strong>
+                  <p>{L('Based on', language)} {advisory.similarCount} {L('similar businesses processed before. Suggestions only — these never change what the rules require.', language)}</p>
+                </div>
+              </div>
+            )}
+            </details>
           )}
 
           {/* Municipal notices */}
