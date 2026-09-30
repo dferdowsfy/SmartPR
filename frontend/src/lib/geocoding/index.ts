@@ -212,9 +212,21 @@ export function nominatimProvider(config: NominatimConfig): GeocodingProvider {
 // Throttle + cache (process-wide)
 // ---------------------------------------------------------------------------
 
+/**
+ * Reserves the next upstream request slot and returns how long (ms) the
+ * caller must wait before sending. Shared reservers (see slots.ts) coordinate
+ * every server instance; returning null or throwing falls back to the
+ * per-process reservation.
+ */
+export type SlotReserver = () => Promise<number | null>;
+
 export interface PoliteOptions {
   /** Minimum spacing between upstream requests (ms). */
   minIntervalMs: number;
+  /** Cross-instance slot reservation (e.g. Postgres). Optional. */
+  reserve?: SlotReserver;
+  /** Give up (error) instead of queueing longer than this (ms). */
+  maxWaitMs?: number;
   cacheTtlMs?: number;
   cacheMax?: number;
   now?: () => number;
@@ -222,9 +234,12 @@ export interface PoliteOptions {
 }
 
 /**
- * Wrap a provider so upstream calls are serialized at most one per
- * `minIntervalMs`, and identical queries (reverse lookups rounded to ~1 m)
- * are answered from an in-memory cache. Failures are not cached.
+ * Wrap a provider so upstream calls are spaced at least `minIntervalMs`
+ * apart — across all instances when a shared `reserve` is given, otherwise
+ * within this process — and identical queries (reverse lookups rounded to
+ * ~1 m) are answered from an in-memory cache. Failures are not cached. A
+ * call that would queue longer than `maxWaitMs` fails fast with
+ * `GeocodingError("rate_limited")` instead of hanging the request.
  */
 export function politeProvider(inner: GeocodingProvider, opts: PoliteOptions): GeocodingProvider {
   const now = opts.now ?? (() => Date.now());
@@ -232,20 +247,41 @@ export function politeProvider(inner: GeocodingProvider, opts: PoliteOptions): G
   const ttl = opts.cacheTtlMs ?? 24 * 60 * 60 * 1000;
   const max = opts.cacheMax ?? 1000;
   const cache = new Map<string, { at: number; value: unknown }>();
-  let chain: Promise<unknown> = Promise.resolve();
-  let lastCall = -Infinity;
+  const maxWait = opts.maxWaitMs ?? 10_000;
+  let nextLocalSlot = -Infinity;
+
+  /** Per-process reservation: claim the next free slot synchronously. */
+  function reserveLocal(): number {
+    const slot = Math.max(nextLocalSlot, now());
+    nextLocalSlot = slot + opts.minIntervalMs;
+    return slot - now();
+  }
+
+  async function reserve(): Promise<number> {
+    if (opts.reserve) {
+      try {
+        const wait = await opts.reserve();
+        if (wait !== null && Number.isFinite(wait)) {
+          // Keep the local schedule at least as strict as the shared one.
+          nextLocalSlot = Math.max(nextLocalSlot, now() + Math.max(wait, 0) + opts.minIntervalMs);
+          return wait;
+        }
+      } catch {
+        // Shared limiter unavailable: fall back to this process's schedule.
+      }
+    }
+    return reserveLocal();
+  }
 
   function cached<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     const hit = cache.get(key);
     if (hit && now() - hit.at < ttl) return Promise.resolve(hit.value as T);
-    const run = chain.then(async () => {
-      const wait = lastCall + opts.minIntervalMs - now();
+    const run = (async () => {
+      const wait = await reserve();
+      if (wait > maxWait) throw new GeocodingError("rate_limited");
       if (wait > 0) await sleep(wait);
-      lastCall = now();
       return fetcher();
-    });
-    // Keep the queue alive after failures; the caller still sees the error.
-    chain = run.catch(() => undefined);
+    })();
     return run.then((value) => {
       cache.delete(key);
       cache.set(key, { at: now(), value });
@@ -275,7 +311,10 @@ let singleton: { key: string; provider: GeocodingProvider } | null = null;
  * disabled with MAP_GEOCODING_PROVIDER=off. Returns a process-wide instance
  * so the throttle and cache are shared by every request.
  */
-export function geocoderFromEnv(env: Record<string, string | undefined> = process.env): GeocodingProvider | null {
+export function geocoderFromEnv(
+  env: Record<string, string | undefined> = process.env,
+  opts: { reserve?: SlotReserver } = {}
+): GeocodingProvider | null {
   const provider = (env.MAP_GEOCODING_PROVIDER || "nominatim").trim().toLowerCase();
   if (provider !== "nominatim") return null;
   const baseUrl = env.MAP_GEOCODING_BASE_URL?.trim() || OSMF_PUBLIC;
@@ -285,12 +324,17 @@ export function geocoderFromEnv(env: Record<string, string | undefined> = proces
     userAgent: env.MAP_GEOCODING_USER_AGENT?.trim() || "SmartPR/1.0 (+https://www.getsmartpr.com)",
     email: env.MAP_GEOCODING_EMAIL?.trim() || null,
   };
-  const key = JSON.stringify(config);
+  const key = JSON.stringify(config) + (opts.reserve ? "|shared" : "");
   if (singleton?.key === key) return singleton.provider;
-  // The public OSMF instance allows at most 1 request/second; own or
-  // commercial endpoints get a lighter default spacing.
-  const minIntervalMs = baseUrl.replace(/\/+$/, "") === OSMF_PUBLIC ? 1100 : 100;
-  const wrapped = politeProvider(nominatimProvider(config), { minIntervalMs });
+  // The public OSMF instance allows at most 1 request/second for the whole
+  // application, so its slots are reserved through the shared reserver (all
+  // instances) when one is provided. Own or commercial endpoints get a
+  // lighter per-process spacing.
+  const isPublic = baseUrl.replace(/\/+$/, "") === OSMF_PUBLIC;
+  const wrapped = politeProvider(nominatimProvider(config), {
+    minIntervalMs: isPublic ? 1100 : 100,
+    reserve: isPublic ? opts.reserve : undefined,
+  });
   singleton = { key, provider: wrapped };
   return wrapped;
 }

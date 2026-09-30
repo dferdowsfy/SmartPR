@@ -88,6 +88,14 @@ CREATE TABLE IF NOT EXISTS geo_datasets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Shared request-slot schedule for rate-limited geocoding providers (the
+-- public Nominatim allows 1 request/second for the whole application, not per
+-- server instance). See lib/geocoding/slots.ts.
+CREATE TABLE IF NOT EXISTS geocoding_throttle (
+  id TEXT PRIMARY KEY,
+  next_slot TIMESTAMPTZ NOT NULL
+);
+
 -- Projects (matters) reference a Passport location by stable id instead of
 -- copying address data. SET NULL keeps the project if a location is removed.
 ALTER TABLE matters ADD COLUMN IF NOT EXISTS location_id UUID REFERENCES locations(id) ON DELETE SET NULL;

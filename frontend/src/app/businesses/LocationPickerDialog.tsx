@@ -179,7 +179,11 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
     };
   }, []);
 
-  /** Describe the new point with a reverse lookup. Never blocks saving. */
+  /**
+   * Describe the new point with a reverse lookup. Confirmation waits for it
+   * (so the save carries the address the summary shows), but only briefly: a
+   * slow or failed lookup ends in "couldn't be looked up" and saving resumes.
+   */
   const reverseLookup = useCallback(
     async (p: MapPoint) => {
       const seq = ++lookupSeq.current;
@@ -187,7 +191,7 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
       try {
         const res = await fetch(
           `/api/geocode?lat=${encodeURIComponent(p.latitude)}&lng=${encodeURIComponent(p.longitude)}&lang=${lang}`,
-          { cache: "no-store" }
+          { cache: "no-store", signal: AbortSignal.timeout(12_000) }
         );
         if (seq !== lookupSeq.current) return;
         if (res.status === 503) {
@@ -665,11 +669,15 @@ export function LocationPickerDialog({ businessId, lang, existing, defaultName, 
           <button
             type="button"
             onClick={() => void save()}
-            disabled={!point || saving}
+            disabled={!point || saving || lookup.status === "loading"}
             className="min-h-11 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-[#f6f3ea] disabled:opacity-40"
             data-testid="location-confirm"
           >
-            {saving ? L("Saving…", "Guardando…", lang) : L("Use this location", "Usar esta ubicación", lang)}
+            {saving
+              ? L("Saving…", "Guardando…", lang)
+              : lookup.status === "loading"
+                ? L("Finding address…", "Buscando dirección…", lang)
+                : L("Use this location", "Usar esta ubicación", lang)}
           </button>
         </div>
       </div>

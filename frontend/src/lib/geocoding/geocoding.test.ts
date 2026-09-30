@@ -105,35 +105,53 @@ test("geocoding defaults to Nominatim and can be switched off", () => {
 });
 
 test("polite provider spaces upstream calls and caches repeats", async () => {
-  let clock = 0;
+  const clock = 0;
   const sleeps: number[] = [];
   const calls: string[] = [];
   const inner = {
     id: "fake",
     async search(q: string) {
-      calls.push(`s:${q}@${clock}`);
+      calls.push(`s:${q}`);
       return [];
     },
     async reverse(lat: number, lng: number) {
-      calls.push(`r:${lat},${lng}@${clock}`);
+      calls.push(`r:${lat},${lng}`);
       return null;
     },
   };
-  const p = politeProvider(inner, {
-    minIntervalMs: 1000,
-    now: () => clock,
-    sleep: async (ms) => {
-      sleeps.push(ms);
-      clock += ms;
-    },
-  });
+  const p = politeProvider(inner, { minIntervalMs: 1000, now: () => clock, sleep: async (ms) => void sleeps.push(ms) });
+  // Three concurrent calls claim slots 0, 1000 and 2000 ms from now.
   await Promise.all([p.reverse(18.391231, -66.117841), p.reverse(18.2, -66.5), p.search("Guaynabo")]);
-  assert.deepEqual(calls, ["r:18.391231,-66.117841@0", "r:18.2,-66.5@1000", "s:Guaynabo@2000"]);
-  assert.deepEqual(sleeps, [1000, 1000]);
+  assert.deepEqual(sleeps, [1000, 2000]);
+  assert.equal(calls.length, 3);
   // Same point (to ~1 m) and same query: served from cache, no upstream call.
   await p.reverse(18.391232, -66.117842);
   await p.search("  guaynabo ");
   assert.equal(calls.length, 3);
+});
+
+test("a shared (cross-instance) reserver decides the wait; it falls back locally when unavailable", async () => {
+  const sleeps: number[] = [];
+  const inner = { id: "fake", async search() { return []; }, async reverse() { return null; } };
+  const shared = politeProvider(inner, { minIntervalMs: 1000, reserve: async () => 750, now: () => 0, sleep: async (ms) => void sleeps.push(ms) });
+  await shared.reverse(18.1, -66.1);
+  assert.deepEqual(sleeps, [750], "the shared schedule's wait is honored");
+
+  sleeps.length = 0;
+  const down = politeProvider(inner, {
+    minIntervalMs: 1000,
+    reserve: async () => { throw new Error("db down"); },
+    now: () => 0,
+    sleep: async (ms) => void sleeps.push(ms),
+  });
+  await Promise.all([down.reverse(18.1, -66.1), down.reverse(18.2, -66.2)]);
+  assert.deepEqual(sleeps, [1000], "per-process spacing still applies without the database");
+});
+
+test("an overloaded queue fails fast instead of hanging the request", async () => {
+  const inner = { id: "fake", async search() { return []; }, async reverse() { return null; } };
+  const p = politeProvider(inner, { minIntervalMs: 1000, maxWaitMs: 5000, reserve: async () => 60_000, sleep: async () => {} });
+  await assert.rejects(p.reverse(18.1, -66.1), (e: unknown) => e instanceof GeocodingError && e.message === "rate_limited");
 });
 
 test("polite provider does not cache failures and keeps serving after one", async () => {
