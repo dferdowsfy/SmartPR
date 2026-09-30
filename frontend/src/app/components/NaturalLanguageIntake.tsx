@@ -407,7 +407,7 @@ export function NaturalLanguageIntake({
       <label className="spr-nl-label" htmlFor="spr-nl-input">
         {L("What are you looking to open?", "¿Qué desea abrir?")}
       </label>
-      <div className="spr-nl-row">
+      <div className={status === "loading" ? "spr-nl-row spr-nl-loading" : "spr-nl-row"}>
         <textarea
           id="spr-nl-input"
           className="spr-nl-input"
@@ -415,6 +415,7 @@ export function NaturalLanguageIntake({
           rows={2}
           value={text}
           placeholder={L("Describe your business...", "Describa su negocio...")}
+          aria-busy={status === "loading"}
           onChange={(e) => {
             textRef.current = e.target.value;
             setText(e.target.value);
@@ -434,9 +435,14 @@ export function NaturalLanguageIntake({
           disabled={status === "loading" || text.trim() === ""}
           aria-label={L("Interpret description", "Interpretar descripción")}
         >
-          {status === "loading" ? "…" : "→"}
+          {status === "loading" ? <span className="spr-nl-spinner" aria-hidden="true" /> : "→"}
         </button>
       </div>
+      {status === "loading" && (
+        <p className="spr-nl-status" role="status">
+          {L("Analyzing your description…", "Analizando su descripción…")}
+        </p>
+      )}
 
       <p className="spr-nl-example">
         {L(

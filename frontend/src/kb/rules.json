@@ -5025,7 +5025,15 @@
     "change": "compliance_mode set to verify_existing",
     "date": "2026-09-18",
     "reason": "Existing-business nuance: an operating business that triggers this obligation (DACO contractor license (Ley 146-1995)) should verify its existing registration/license is current rather than be instructed to obtain a new one. New businesses keep the required posture via the classifier's businessStatus mapping."
+   },
+   {
+    "date": "2026-09-30",
+    "change": "negated_fact_keys=['Q_OFFERS_CONSTRUCTION_SERVICES']",
+    "reason": "2026-09-30 12:00 QA cycle (S321, Trujillo Alto solar sales co): a solar company that SELLS and DESIGNS systems but subcontracts all installations (explicit No on the activity question) was shown the installer/contractor obligation as REQUIRED via the BT-keyed rule — §19 owner≠contractor violation. Uses the engine's canonical negated_fact_keys mechanism (strict mode only, per REG-ALCOHOL-NEGATED-001: suppression requires an EXPLICIT, provenance-admissible No from the current session; on()-derived falses from unanswered questions never suppress). Unknown (undefined) facts keep the heuristic BT-keyed behavior; genuine installers still get the card REQUIRED via this rule and RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES=true)."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_OFFERS_CONSTRUCTION_SERVICES"
   ]
  },
  {
@@ -6575,7 +6583,15 @@
     "date": "2026-09-18",
     "change": "compliance_mode=verify_existing (QA 18:00 sweep)",
     "reason": "Existing solar installers verify their standing PPPE renewable-installer certification rather than applying as new. New installers keep REQUIRED via the classifier businessStatus mapping. Same defect class as the LUMA/net-metering sweeps: RULE_0605 was the one sibling the 15:00 sweep missed (it points at DOC_OPPE_INSTALLER_REG, not DOC_LUMA_INTERCONNECTION/DOC_NET_METERING_AGREEMENT). Sole rule for the document; no missing_fact_keys (RULE_0664 lesson); citation is statute-confidence (PPPE-DDEC, Ley 17-2019, official docs.pr.gov form)."
+   },
+   {
+    "date": "2026-09-30",
+    "change": "negated_fact_keys=['Q_RENEWABLE_INSTALL']",
+    "reason": "2026-09-30 12:00 QA cycle (S321, Trujillo Alto solar sales co): a solar company that SELLS and DESIGNS systems but subcontracts all installations (explicit No on the activity question) was shown the installer/contractor obligation as REQUIRED via the BT-keyed rule — §19 owner≠contractor violation. Uses the engine's canonical negated_fact_keys mechanism (strict mode only, per REG-ALCOHOL-NEGATED-001: suppression requires an EXPLICIT, provenance-admissible No from the current session; on()-derived falses from unanswered questions never suppress). Unknown (undefined) facts keep the heuristic BT-keyed behavior; genuine installers still get the card REQUIRED via this rule and RULE_0642 (Q_OFFERS_CONSTRUCTION_SERVICES=true)."
    }
+  ],
+  "negated_fact_keys": [
+   "Q_RENEWABLE_INSTALL"
   ]
  },
  {
