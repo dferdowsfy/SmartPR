@@ -57,9 +57,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
          FROM deliverables WHERE business_id = $1 AND user_id = $2 ORDER BY generated_at DESC`,
       [businessUuid, user.id]),
       pool.query(
-        `SELECT id, matter_type, title, status, readiness_score, opened_at, due_date::text,
-                due_date_source, source_reference, completed_at, submission_id, created_at
-           FROM matters WHERE business_id=$1 ORDER BY created_at DESC`, [businessUuid]),
+        // location_id is read via to_jsonb so this page never depends on the
+        // locations migration having run (a missing column reads as null).
+        `SELECT m.id, m.matter_type, m.title, m.status, m.readiness_score, m.opened_at, m.due_date::text,
+                m.due_date_source, m.source_reference, m.completed_at, m.submission_id, m.created_at,
+                to_jsonb(m)->>'location_id' AS location_id
+           FROM matters m WHERE m.business_id=$1 ORDER BY m.created_at DESC`, [businessUuid]),
       pool.query(
         `SELECT o.*, o.due_date::text AS due_date,
                 CASE

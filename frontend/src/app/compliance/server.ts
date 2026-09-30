@@ -84,7 +84,7 @@ export async function userCanAccessBusiness(db: Db, userId: string, businessId: 
   return Boolean(result.rows[0]);
 }
 
-async function loadPublishedSnapshot(db: Db): Promise<SnapshotShape | null> {
+export async function loadPublishedSnapshot(db: Db): Promise<SnapshotShape | null> {
   try {
     const row = (
       await db.query(`SELECT kb_json FROM rk_kb_snapshots WHERE is_active LIMIT 1`)

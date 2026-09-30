@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { PassportMap } from "../components/map/PassportMap";
 import { LocationPickerDialog } from "./LocationPickerDialog";
+import { LocationRequirementsPanel } from "./LocationRequirementsPanel";
 import {
   currentGeography,
   formatCoordinate,
@@ -79,10 +80,15 @@ function GeographyFact({
         <>
           <div className="mt-0.5 break-words text-sm font-semibold text-[#161616]">
             {value}
-            {geography.geography_code && geography.geography_name ? (
-              <span className="ml-1 font-normal text-slate-500">({geography.geography_code})</span>
-            ) : null}
+            {geography.metadata?.barrio_pueblo === true && (
+              <span className="ml-1 font-normal text-slate-500">({L("barrio-pueblo", "barrio-pueblo", lang)})</span>
+            )}
           </div>
+          {geography.metadata?.near_boundary === true && (
+            <div className="mt-0.5 text-[11px] font-medium text-amber-800">
+              {L("Very close to a boundary — confirm the pin", "Muy cerca de un límite — confirme el pin", lang)}
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -139,7 +145,16 @@ function GeographyFact({
   );
 }
 
-export function PassportLocationSection({ businessId, lang }: { businessId: string; lang: Lang }) {
+export function PassportLocationSection({
+  businessId,
+  lang,
+  onPassportUpdated,
+}: {
+  businessId: string;
+  lang: Lang;
+  /** Called after this section updates the Passport (e.g. municipality from the pin). */
+  onPassportUpdated?: () => void;
+}) {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -428,6 +443,16 @@ export function PassportLocationSection({ businessId, lang }: { businessId: stri
               <GeographyFact key={g.id} label={geographyLabel(g.geography_type, lang)} geography={g} lang={lang} />
             ))}
           </div>
+
+          <LocationRequirementsPanel
+            businessId={businessId}
+            locationId={selected.id}
+            version={selected.updated_at}
+            isPrimary={selected.is_primary}
+            canEdit={canEdit}
+            lang={lang}
+            onPassportUpdated={onPassportUpdated}
+          />
 
           {canEdit && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">

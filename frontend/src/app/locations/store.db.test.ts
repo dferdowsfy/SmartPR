@@ -146,7 +146,15 @@ describe("Passport locations on PostgreSQL", { skip }, () => {
     assert.equal(first.is_primary, true, "a business's first location is its primary");
     assert.equal(first.business_id, BIZ_A);
     assert.equal(first.coordinate_system, "EPSG:4326");
-    assert.deepEqual(first.geographies, [], "no geography is invented");
+    // The only geography recorded is the deterministic Census boundary lookup.
+    assert.deepEqual(
+      first.geographies.map((g) => [g.geography_type, g.geography_name, g.determination_method, g.source_version]).sort(),
+      [
+        ["barrio", "Pueblo Viejo", "SPATIAL_INTERSECTION", "TIGER2024"],
+        ["municipality", "Guaynabo", "SPATIAL_INTERSECTION", "TIGER2024"],
+      ]
+    );
+    assert.equal(first.geographies.find((g) => g.geography_type === "municipality")?.geography_code, "061");
     const raw = await pool.query(`SELECT created_by_user_id, workspace_id FROM locations WHERE id=$1`, [first.id]);
     assert.equal(raw.rows[0].created_by_user_id, USER_A);
   });
@@ -189,14 +197,21 @@ describe("Passport locations on PostgreSQL", { skip }, () => {
     assert.ok(renamed);
     assert.equal(renamed.moved, false);
     assert.deepEqual(renamed.changed, ["name"]);
-    assert.equal(renamed.location.geographies.length, 1, "a rename keeps geography facts");
+    assert.equal(renamed.location.geographies.length, 3, "a rename keeps geography facts (user barrio + Census municipio/barrio)");
 
     const moved = await store.updateLocation(pool, bizA, USER_A, first.id, input({ name: "Plant 1", latitude: 18.4, longitude: -66.12 }));
     assert.ok(moved);
     assert.equal(moved.moved, true);
     assert.equal(moved.location.latitude, 18.4);
-    assert.equal(moved.location.geographies.length, 0, "facts about the old point no longer apply");
-    const history = await pool.query(`SELECT superseded_at FROM location_geographies WHERE location_id=$1`, [first.id]);
+    assert.ok(
+      moved.location.geographies.every((g) => g.source_id.startsWith("census-tiger-")),
+      "facts about the old point no longer apply; only the new point's Census determination is current"
+    );
+    assert.ok(moved.location.geographies.some((g) => g.geography_type === "municipality"));
+    const history = await pool.query(
+      `SELECT superseded_at FROM location_geographies WHERE location_id=$1 AND source_id='user'`,
+      [first.id]
+    );
     assert.equal(history.rows.length, 1);
     assert.ok(history.rows[0].superseded_at, "history is kept, not deleted");
     assert.equal(moved.location.id, first.id, "the id is stable across edits");
@@ -378,9 +393,10 @@ describe("Spatial enrichment with PostGIS", { skip }, () => {
     assert.equal(cols.rows.length, 1, "geometry column created when PostGIS exists");
     const bizA = (await store.accessibleBusiness(p, BIZ_A, USER_A))!;
 
-    // No datasets loaded → nothing determined (never invented).
+    const fixtureRows = <T extends { source_id: string }>(gs: T[]): T[] => gs.filter((g) => g.source_id === "test-fixture-municipios");
+    // No datasets loaded → nothing determined from datasets (never invented).
     const bare = await store.createLocation(p, bizA, USER_A, input({ latitude: 18.39, longitude: -66.11 }));
-    assert.deepEqual(bare.geographies, []);
+    assert.deepEqual(fixtureRows(bare.geographies), []);
 
     // TEST FIXTURE ONLY: a synthetic square, not a real boundary.
     await p.query(`INSERT INTO geo_datasets (id, geography_type, name, publisher, source_url, version)
@@ -392,8 +408,8 @@ describe("Spatial enrichment with PostGIS", { skip }, () => {
       [randomUUID()]
     );
     const inside = await store.createLocation(p, bizA, USER_A, input({ latitude: 18.39123, longitude: -66.11784 }));
-    assert.equal(inside.geographies.length, 1);
-    const g = inside.geographies[0];
+    assert.equal(fixtureRows(inside.geographies).length, 1);
+    const g = fixtureRows(inside.geographies)[0];
     assert.equal(g.geography_type, "municipality");
     assert.equal(g.geography_name, "Fixture Municipio");
     assert.equal(g.determination_method, "SPATIAL_INTERSECTION");
@@ -403,20 +419,21 @@ describe("Spatial enrichment with PostGIS", { skip }, () => {
 
     const { buildLocationContext, locationEngineFacts } = await import("./locationContext.ts");
     const facts = locationEngineFacts(buildLocationContext(inside, inside.geographies)).projectFacts;
-    assert.equal(facts["location.municipality"], "T01");
     assert.equal(facts["location.municipality.fixture_municipio"], true);
+    assert.equal(facts["location.municipality.guaynabo"], true, "the Census determination is a fact too");
 
     const outside = await store.createLocation(p, bizA, USER_A, input({ latitude: 18.0111, longitude: -66.6141 }));
-    assert.deepEqual(outside.geographies, []);
+    assert.deepEqual(fixtureRows(outside.geographies), []);
 
     // Moving the pin out of the boundary supersedes the determination.
     const moved = await store.updateLocation(p, bizA, USER_A, inside.id, input({ latitude: 18.0111, longitude: -66.6141 }));
-    assert.deepEqual(moved?.location.geographies, []);
+    assert.deepEqual(fixtureRows(moved?.location.geographies ?? []), []);
     // Re-evaluation against the current dataset is repeatable.
     await store.updateLocation(p, bizA, USER_A, inside.id, input({ latitude: 18.39123, longitude: -66.11784 }));
     assert.equal(await store.enrichLocationFromDatasets(p, inside.id), 1);
     const current = await p.query(
-      `SELECT count(*)::int AS n FROM location_geographies WHERE location_id=$1 AND superseded_at IS NULL`,
+      `SELECT count(*)::int AS n FROM location_geographies
+        WHERE location_id=$1 AND superseded_at IS NULL AND source_id='test-fixture-municipios'`,
       [inside.id]
     );
     assert.equal(current.rows[0].n, 1, "re-running enrichment never duplicates current facts");

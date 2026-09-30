@@ -87,6 +87,11 @@ CREATE TABLE IF NOT EXISTS location_geographies (
   CHECK (geography_code IS NOT NULL OR geography_name IS NOT NULL)
 );
 CREATE INDEX IF NOT EXISTS idx_location_geographies_current ON location_geographies (location_id, geography_type) WHERE superseded_at IS NULL;
+-- One current determination per (location, source, type, feature): makes
+-- concurrent re-determination (e.g. lazy backfill on read) race-safe.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_location_geographies_current
+  ON location_geographies (location_id, source_id, geography_type, COALESCE(geography_code, geography_name))
+  WHERE superseded_at IS NULL;
 
 -- Versioned reference datasets for spatial lookup (municipal boundaries,
 -- barrios, zoning, FEMA flood zones, ...). Global reference data, not

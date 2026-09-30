@@ -109,6 +109,8 @@ import {
   type FilingStage,
   type SmartPRLiveData,
 } from './components/filing/FilingWorkflowShell';
+import { MunicipalityMapButton } from './components/intake/MunicipalityMapButton';
+import { normalizeMunicipio } from './locations/geo';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
 import { claraSupportFor, groupRequirements, splitOtherChecks, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
@@ -6641,6 +6643,23 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     <option value="">{t('selectMunicipality')}</option>
                     {municipalityOptions.map((m: string) => <option key={m} value={m}>{m}</option>)}
                   </select>
+                  {/* Sites (construction, energy projects, new premises) often
+                      have no clean address: the municipio comes from the pin
+                      via official Census boundaries, not from typed text. */}
+                  <MunicipalityMapButton
+                    lang={language}
+                    currentMunicipality={profile.municipality}
+                    businessId={me && businessId && !businessId.startsWith('local-') ? businessId : null}
+                    onPicked={(site) => {
+                      const option = municipalityOptions.find(
+                        (m: string) => normalizeMunicipio(m) === normalizeMunicipio(site.placement.municipality.name)
+                      );
+                      if (!option) return;
+                      setProfile((current) => ({ ...current, municipality: option }));
+                      setPotentialDecisions({});
+                      markUserTouched('municipality');
+                    }}
+                  />
                 </div>
                 )}
                 {/* project_only asks zero business-formation questions: industry,
