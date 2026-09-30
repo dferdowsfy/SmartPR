@@ -405,12 +405,15 @@ export function classifyEngineRequirements(
             ? "derived from your answers"
             : prov.source === "admin"
               ? "SmartPR data"
-              : "current intake";
+              : prov.source === "location"
+                ? "passport location"
+                : "current intake";
       const identity = [
         `source: ${src}`,
         `scope: ${prov.scope}`,
         ...(prov.sessionId ? [`session: ${prov.sessionId}`] : []),
         ...(prov.businessId ? [`business: ${prov.businessId}`] : []),
+        ...(prov.locationId ? [`location: ${prov.locationId}`] : []),
       ].join(", ");
       triggerFacts.push(`fact:${prov.key}=${String(prov.value)} [${identity}]`);
     }

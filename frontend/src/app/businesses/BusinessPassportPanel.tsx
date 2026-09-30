@@ -19,6 +19,7 @@ import type { IntakeFieldSpec } from "../forms/engine/intake";
 import type { CanonicalAddress, CanonicalApplicationData, Lang } from "../forms/engine/types";
 import { localize } from "../forms/engine/types";
 import { FilingFeeCardSettings } from "./FilingFeeCardSettings";
+import { PassportLocationSection } from "./PassportLocationSection";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -365,6 +366,7 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
         </div>
       )}
 
+      {!editing && <PassportLocationSection businessId={businessId} lang={lang} />}
       {!editing && <FilingFeeCardSettings businessId={businessId} lang={lang} />}
 
       {message && <p className="mt-3 text-xs font-medium text-emerald-700">{message}</p>}
