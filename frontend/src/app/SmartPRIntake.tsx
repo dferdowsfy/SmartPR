@@ -6983,7 +6983,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   onClick={handleSubmitTap}
                   disabled={isLoading}
                 >
-                  {isLoading ? L('Preparing requirements…', language) : L('See my requirements', language)}
+                  {isLoading ? L('Preparing requirements…', language) : L('Continue', language)}
                   {isLoading || submitPulse ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
                 </button>
               </div>
