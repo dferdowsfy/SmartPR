@@ -5,7 +5,7 @@
 //         business's saved locations by stable id, or clear it.
 
 import { locationEngineFacts } from "../../../../locations/locationContext";
-import { NO_STORE, resolveUser } from "../../../../locations/routeAccess";
+import { FORBIDDEN, NO_STORE, resolveUser } from "../../../../locations/routeAccess";
 import {
   accessibleMatter,
   assignLocationToMatter,
@@ -46,6 +46,7 @@ export async function PUT(req: Request, ctx: Ctx) {
   if ("error" in r) return r.error;
   const matter = await accessibleMatter(r.pool, id, r.userId);
   if (!matter) return Response.json({ error: "not_found" }, { status: 404 });
+  if (!matter.can_edit) return FORBIDDEN();
   const result = await assignLocationToMatter(r.pool, matter, locationId);
   // Same answer for "no such location" and "location of another business".
   if (!result.ok) return Response.json({ error: "location_not_found" }, { status: 404 });

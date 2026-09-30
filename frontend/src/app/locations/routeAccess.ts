@@ -21,12 +21,21 @@ export async function resolveUser(): Promise<ResolvedUser | { error: Response }>
   return { pool, userId: user.id };
 }
 
+export const FORBIDDEN = () =>
+  Response.json({ error: "forbidden", detail: "your role does not allow editing" }, { status: 403 });
+
+/**
+ * `write: true` additionally requires an edit-capable role (owner, or a
+ * workspace role allowed by canEditWorkspace). Viewers may read only.
+ */
 export async function resolveBusinessAccess(
-  rawBusinessId: string
+  rawBusinessId: string,
+  opts: { write?: boolean } = {}
 ): Promise<(ResolvedUser & { business: AccessibleBusiness }) | { error: Response }> {
   const resolved = await resolveUser();
   if ("error" in resolved) return resolved;
   const business = await accessibleBusiness(resolved.pool, rawBusinessId, resolved.userId);
   if (!business) return { error: Response.json({ error: "not_found" }, { status: 404 }) };
+  if (opts.write && !business.can_edit) return { error: FORBIDDEN() };
   return { ...resolved, business };
 }

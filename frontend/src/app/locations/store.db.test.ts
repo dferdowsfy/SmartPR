@@ -31,6 +31,7 @@ const USER_A = randomUUID(); // owns business A
 const USER_B = randomUUID(); // owns business B (another tenant)
 const USER_C = randomUUID(); // member of workspace W (not owner of business W)
 const USER_W = randomUUID(); // owner of workspace W / business W
+const USER_V = randomUUID(); // VIEWER in workspace W (read-only)
 const BIZ_A = randomUUID();
 const BIZ_B = randomUUID();
 const BIZ_W = randomUUID();
@@ -53,11 +54,10 @@ async function seedPreLocationsSchema(p: Pool) {
     await p.query(statement).catch(() => {}); // pre-existing statement failures are not this feature's
   }
   await p.query(`INSERT INTO workspaces (id, owner_user_id, name) VALUES ($1, $2, 'W')`, [WS, USER_W]);
-  await p.query(`INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, 'OWNER'), ($1, $3, 'MEMBER')`, [
-    WS,
-    USER_W,
-    USER_C,
-  ]);
+  await p.query(
+    `INSERT INTO workspace_members (workspace_id, user_id, role) VALUES ($1, $2, 'OWNER'), ($1, $3, 'MEMBER'), ($1, $4, 'VIEWER')`,
+    [WS, USER_W, USER_C, USER_V]
+  );
   await p.query(
     `INSERT INTO businesses (id, user_id, name, passport_json, public_id) VALUES
        ($1, $2, 'A', $3::jsonb, 'bizaaaaa'), ($4, $5, 'B', '{}'::jsonb, 'bizbbbbb')`,
@@ -223,7 +223,23 @@ describe("Passport locations on PostgreSQL", { skip }, () => {
     const asMember = await store.accessibleBusiness(pool, BIZ_W, USER_C);
     assert.ok(asMember);
     assert.equal(asMember.workspace_id, WS);
+    assert.equal(asMember.can_edit, true, "MEMBER may edit");
+    assert.equal((await store.accessibleBusiness(pool, BIZ_W, USER_W))?.can_edit, true, "owner may edit");
     assert.equal((await store.listLocationsForBusiness(pool, asMember)).length, 1);
+  });
+
+  test("workspace viewers can read locations but may not mutate them", async () => {
+    const asViewer = await store.accessibleBusiness(pool, BIZ_W, USER_V);
+    assert.ok(asViewer, "viewers can see the business");
+    assert.equal(asViewer.can_edit, false, "VIEWER may not edit (canEditWorkspace)");
+    assert.equal((await store.listLocationsForBusiness(pool, asViewer)).length, 1);
+    const matterW = randomUUID();
+    await pool.query(
+      `INSERT INTO matters (id, business_id, user_id, matter_type, title) VALUES ($1, $2, $3, 'NEW_BUSINESS_FORMATION', 'W project')`,
+      [matterW, BIZ_W, USER_W]
+    );
+    assert.equal((await store.accessibleMatter(pool, matterW, USER_V))?.can_edit, false);
+    assert.equal((await store.accessibleMatter(pool, matterW, USER_C))?.can_edit, true);
   });
 
   let second: Awaited<ReturnType<typeof store.createLocation>>;
