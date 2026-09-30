@@ -9,7 +9,8 @@
 // process graph has evaluated the process that supersedes a legacy card, the
 // card is rendered through the process (Energy section) instead.
 import type { ProcessGraph } from "./graph.ts";
-import type { ProcessAssessment } from "./engine.ts";
+import { citationFor, type CitationView, type ProcessAssessment } from "./engine.ts";
+import { evaluateCondition } from "./conditions.ts";
 import type { ProcessState } from "./types.ts";
 
 export interface LegacyCardRef {
@@ -23,6 +24,9 @@ export interface LegacySupersession {
   process_id: string;
   process_name: string;
   state: ProcessState;
+  /** Set when no process absorbs the card because it does not apply at all
+   * (KB legacy_suppressions, e.g. DG registrations for a wholesale plant). */
+  suppressed?: { id: string; reason: string; reason_es?: string; citation: CitationView };
 }
 
 /** Every rule that produced the card (source rule + all matched bases). */
@@ -63,6 +67,44 @@ export function supersededLegacyCards(
         break;
       }
     }
+    if (out.has(doc)) continue;
+    for (const x of graph.kb.legacy_suppressions ?? []) {
+      if (!rules.every((r) => x.rule_ids.includes(r))) continue;
+      if (evaluateCondition(x.when, assessment.facts).value !== true) continue;
+      out.set(doc, {
+        document_id: doc, process_id: "", process_name: "", state: "NOT_REQUIRED",
+        suppressed: { id: x.id, reason: x.reason, reason_es: x.reason_es, citation: citationFor(graph, x.source_id, { locator: x.locator }) },
+      });
+      break;
+    }
   }
   return out;
+}
+
+/**
+ * A proposed energy project (or a wholesale plant not stated as operating)
+ * applies for its energy approvals — none of them is "already held".
+ */
+export function isProposedEnergyProject(assessment: ProcessAssessment | null | undefined): boolean {
+  const f = assessment?.facts;
+  if (!f) return false;
+  return f.energy_project_status === "proposed" || (f.energy_market_segment === "wholesale" && f.energy_project_status !== "existing");
+}
+
+/**
+ * Energy items never say "verify existing" for a proposed energy project: a
+ * legacy energy card (a document some process aliases) that the graph did not
+ * absorb is shown as "may apply" instead of "already held".
+ */
+export function withoutEnergyVerifyExisting<T extends { document_id?: string | null; applicability?: string | null }>(
+  graph: ProcessGraph,
+  proposed: boolean,
+  requirements: readonly T[]
+): T[] {
+  if (!proposed) return [...requirements];
+  return requirements.map((r) =>
+    r.document_id && r.applicability === "verify_existing" && graph.legacyDocumentIndex.has(r.document_id)
+      ? { ...r, applicability: "conditional" }
+      : r
+  );
 }

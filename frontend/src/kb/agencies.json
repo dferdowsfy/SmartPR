@@ -6,7 +6,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://hacienda.pr.gov/"
+    "url": "https://hacienda.pr.gov/",
+    "short_name": "Hacienda"
   },
   {
     "id": "estado",
@@ -17,7 +18,8 @@
     "aliases": [
       "Department of State"
     ],
-    "url": "https://www.estado.pr.gov/formularios-para-corporaciones"
+    "url": "https://www.estado.pr.gov/formularios-para-corporaciones",
+    "short_name": "State Dept."
   },
   {
     "id": "juntas",
@@ -39,7 +41,8 @@
     "aliases": [
       "Departamento de Asuntos del Consumidor (DACO)"
     ],
-    "url": "https://www.daco.pr.gov/"
+    "url": "https://www.daco.pr.gov/",
+    "short_name": "DACO"
   },
   {
     "id": "crim",
@@ -48,7 +51,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://www.crimpr.net/"
+    "url": "https://www.crimpr.net/",
+    "short_name": "CRIM"
   },
   {
     "id": "asume",
@@ -59,7 +63,8 @@
     "aliases": [
       "Administración para el Sustento de Menores (ASUME)"
     ],
-    "url": "https://www.familia.pr.gov/"
+    "url": "https://www.familia.pr.gov/",
+    "short_name": "ASUME"
   },
   {
     "id": "turismo",
@@ -68,7 +73,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://tourism.pr.gov/"
+    "url": "https://tourism.pr.gov/",
+    "short_name": "Tourism"
   },
   {
     "id": "dtrh",
@@ -79,7 +85,8 @@
     "aliases": [
       "Departamento del Trabajo y Recursos Humanos (DTRH)"
     ],
-    "url": "https://patronos.trabajo.pr.gov/"
+    "url": "https://patronos.trabajo.pr.gov/",
+    "short_name": "DTRH"
   },
   {
     "id": "cfse",
@@ -88,7 +95,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://www.cfse.pr.gov/en"
+    "url": "https://www.cfse.pr.gov/en",
+    "short_name": "CFSE"
   },
   {
     "id": "salud",
@@ -97,7 +105,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://www.salud.pr.gov/"
+    "url": "https://www.salud.pr.gov/",
+    "short_name": "Salud"
   },
   {
     "id": "familia",
@@ -117,7 +126,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://bomberos.pr.gov/permisos"
+    "url": "https://bomberos.pr.gov/permisos",
+    "short_name": "Bomberos"
   },
   {
     "id": "policia",
@@ -126,7 +136,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://policia.pr.gov/"
+    "url": "https://policia.pr.gov/",
+    "short_name": "Police"
   },
   {
     "id": "ogpe",
@@ -135,7 +146,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://www.permisos.ddec.pr.gov/"
+    "url": "https://www.permisos.ddec.pr.gov/",
+    "short_name": "OGPe"
   },
   {
     "id": "drna",
@@ -153,7 +165,8 @@
       "Junta de Calidad Ambiental (JCA)",
       "Autoridad de Desperdicios Sólidos (ADS)"
     ],
-    "succession_note": "Absorbed JCA and ADS functions under Law 171-2018; historical JCA/ADS references resolve here."
+    "succession_note": "Absorbed JCA and ADS functions under Law 171-2018; historical JCA/ADS references resolve here.",
+    "short_name": "DRNA"
   },
   {
     "id": "dtop",
@@ -164,7 +177,8 @@
     "aliases": [
       "Departamento de Transportación y Obras Públicas (DTOP) / Municipal Engineering"
     ],
-    "url": "https://dtop.pr.gov/"
+    "url": "https://dtop.pr.gov/",
+    "short_name": "DTOP"
   },
   {
     "id": "agricultura",
@@ -173,7 +187,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://www.agricultura.gobierno.pr/"
+    "url": "https://www.agricultura.gobierno.pr/",
+    "short_name": "Agriculture"
   },
   {
     "id": "ntsp",
@@ -215,7 +230,8 @@
     "role": "government",
     "level": "Municipal",
     "jurisdiction": "Puerto Rico",
-    "aliases": []
+    "aliases": [],
+    "short_name": "Municipality"
   },
   {
     "id": "municipio_permisos",
@@ -223,7 +239,8 @@
     "role": "government",
     "level": "Municipal",
     "jurisdiction": "Puerto Rico",
-    "aliases": []
+    "aliases": [],
+    "short_name": "Municipality"
   },
   {
     "id": "san_juan",
@@ -245,7 +262,8 @@
     "aliases": [
       "Property Registry"
     ],
-    "url": "http://ridpr.pr.gov/"
+    "url": "http://ridpr.pr.gov/",
+    "short_name": "Property Registry"
   },
   {
     "id": "oppe",
@@ -256,7 +274,8 @@
     "aliases": [
       "OPPE"
     ],
-    "url": "https://ddec.pr.gov/"
+    "url": "https://ddec.pr.gov/",
+    "short_name": "DDEC-PPPE"
   },
   {
     "id": "irs",
@@ -265,7 +284,8 @@
     "level": "Federal",
     "jurisdiction": "Federal",
     "aliases": [],
-    "url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online"
+    "url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+    "short_name": "IRS"
   },
   {
     "id": "cbp",
@@ -274,7 +294,8 @@
     "level": "Federal",
     "jurisdiction": "Federal",
     "aliases": [],
-    "url": "https://www.cbp.gov/"
+    "url": "https://www.cbp.gov/",
+    "short_name": "CBP"
   },
   {
     "id": "tsa",
@@ -283,7 +304,8 @@
     "level": "Federal",
     "jurisdiction": "Federal",
     "aliases": [],
-    "url": "https://www.tsa.gov/"
+    "url": "https://www.tsa.gov/",
+    "short_name": "TSA"
   },
   {
     "id": "luma",
@@ -292,7 +314,8 @@
     "level": "Commonwealth",
     "jurisdiction": "Puerto Rico",
     "aliases": [],
-    "url": "https://lumapr.com/miluma/"
+    "url": "https://lumapr.com/miluma/",
+    "short_name": "LUMA"
   },
   {
     "id": "icp",
@@ -355,7 +378,8 @@
     "url": "https://www.ddec.pr.gov/",
     "aliases": [
       "Department of Economic Development and Commerce"
-    ]
+    ],
+    "short_name": "DDEC"
   },
   {
     "id": "ocif",
@@ -366,7 +390,8 @@
     "url": "https://www.ocif.pr.gov/",
     "aliases": [
       "Office of the Commissioner of Financial Institutions"
-    ]
+    ],
+    "short_name": "OCIF"
   },
   {
     "id": "sam_gov",

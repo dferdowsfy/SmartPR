@@ -52,6 +52,8 @@ import {
   projectIsActive,
   validateProjectContext,
   type ProjectContext,
+  type ProjectContextFact,
+  type ProjectContextKey,
 } from './ai/intake/projectContext';
 import {
   applyScenarioAnswer,
@@ -114,13 +116,16 @@ import { normalizeMunicipio } from './locations/geo';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
 import { claraSupportFor, groupRequirements, splitOtherChecks, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
-import { supersededLegacyCards } from './processes/legacyCards';
+import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
+import { processChecklist, countsLine, projectSummaryLine } from './processes/presentation';
+import { ChecklistSummary, type SummaryQuestion } from './components/checklist/ChecklistParts';
+import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
 import { IncentivesSidebar } from './components/incentives/IncentivesSidebar';
-import { EnergyProcessesSection } from './components/energy/EnergyProcessesSection';
+import { EnergyProcessesSection, energySummaryQuestions } from './components/energy/EnergyProcessesSection';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
@@ -5795,7 +5800,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       name,
       icon: docIconFor(name),
       iconTone: iconToneFor(name),
-      agency: req.agency ? L(req.agency, language) : null,
+      agency: req.agency ? (shortAgencyName(req.agency) !== req.agency ? shortAgencyName(req.agency) : L(req.agency, language)) : null,
       description: trReqReason(req),
       badge,
       why,
@@ -5810,17 +5815,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       // Not filed until the deciding answer is in — no filing link yet.
       download: triggerQuestion ? undefined : download,
       extra: hasExtra ? extra : undefined,
+      // Processing and AI findings stay visible; everything else waits for a click.
+      extraInBody: !(processingStates[req.code] || state === 'review' || reviewingCode === req.code),
+      whySentence: guidance.whyThisApplies,
       contextLabel: req.incentiveLabel ?? projectContextLabel(req),
     };
   };
 
-  const reqCards = useMemo(
-    () => requirements
-      .filter(r => r.applicability !== 'not_applicable')
-      .map(computeReqCard),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds, claraBusinessId]
-  );
   // Energy process graph (src/app/processes): uploaded requirement evidence
   // (DOC_* ids — the evidence-locker tag vocabulary) feeds it, and legacy
   // energy cards it supersedes (LUMA interconnection, net metering, battery
@@ -5835,12 +5836,31 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     answers: discoveryAnswers,
     providedEvidenceIds: energyProvidedEvidenceIds,
   });
+  // A proposed energy project applies for its energy approvals: no energy
+  // item reads "verify existing" (legacy cards the graph did not absorb).
+  const energyProposed = isProposedEnergyProject(energyAssessment);
+  const viewRequirements = useMemo(
+    () => withoutEnergyVerifyExisting(energyGraph, energyProposed, requirements),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [requirements, energyProposed]
+  );
+  const reqCards = useMemo(
+    () => viewRequirements
+      .filter(r => r.applicability !== 'not_applicable')
+      .map(computeReqCard),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [viewRequirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds, claraBusinessId]
+  );
   const energySuperseded = supersededLegacyCards(energyGraph, energyAssessment, requirements);
   const visibleReqCards = reqCards.filter((c) => !energySuperseded.has(c.req.document_id ?? ''));
   const energyLegacyCards: Record<string, { name: string; actionLabel?: string; onAction?: () => void }> = {};
+  const energySuppressed = [...energySuperseded.values()].filter((x) => x.suppressed);
+  const energyLegacyNames: Record<string, string> = {};
   for (const c of reqCards) {
     const doc = c.req.document_id;
     if (!doc || !energySuperseded.has(doc)) continue;
+    energyLegacyNames[doc] = c.name;
+    if (energySuperseded.get(doc)!.suppressed) continue;
     const primary = (c.action.kind === 'upload' || c.action.kind === 'form') && c.action.onClick ? { actionLabel: c.action.label, onAction: c.action.onClick } : null;
     const secondary = c.secondary ? { actionLabel: c.secondary.label, onAction: c.secondary.onClick } : null;
     energyLegacyCards[doc] = { name: c.name, ...(primary ?? secondary ?? {}) };
@@ -5896,6 +5916,48 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Environmental review is an open question, not a requirement, when the
   // activity is industrial and the equipment/emissions/waste facts are
   // unknown: the graph decides once they are answered.
+  // ---- Checklist presentation (summary line, ≤ 3 questions, numbered steps) ----
+  const energyChecklist = energyAssessment
+    ? processChecklist(energyAssessment, energyGraph, language, { suppressedLegacy: energySuppressed, legacyNames: energyLegacyNames })
+    : null;
+  // A wholesale plant is the project itself: energy leads, business
+  // registrations the developer already holds move to the secondary area.
+  const energyPrimary = energyAssessment?.facts.energy_market_segment === 'wholesale';
+  const mainGroups = energyPrimary ? groupedCards.filter((g) => g.id !== 'registrations') : groupedCards;
+  const secondaryRegistrations = energyPrimary ? groupedCards.find((g) => g.id === 'registrations') ?? null : null;
+  const onEnergyAnswer = (key: ProjectContextKey, fact: ProjectContextFact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }));
+  const cardSummaryQuestions: SummaryQuestion[] = [];
+  for (const g of mainGroups) for (const c of g.cards) {
+    if (!c.answerPrompt || cardSummaryQuestions.some((q) => q.text === c.answerPrompt!.prompt)) continue;
+    cardSummaryQuestions.push({ id: c.req.code, text: c.answerPrompt.prompt, options: [{ label: c.answerPrompt.yesLabel, onClick: c.answerPrompt.onYes }, { label: c.answerPrompt.noLabel, onClick: c.answerPrompt.onNo }] });
+  }
+  const summaryQuestions = [...(energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : []), ...cardSummaryQuestions].slice(0, 3);
+  const mainCardCount = mainGroups.reduce((n, g) => n + g.cards.length, 0);
+  const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
+  const summaryHeadline = energyPrimary && energyAssessment
+    ? projectSummaryLine(energyAssessment, energyGraph, language)
+    : [
+        (projectPassport ? projectPassportTitle(projectPassport) : null) ?? (profile.business_type ? L(profile.business_type, language) : null) ?? profile.name,
+        profile.municipality,
+      ].filter(Boolean).join(', ');
+  const summaryLine = `${summaryHeadline ? `${summaryHeadline}. ` : ''}${countsLine(summaryStepCount, summaryQuestions.length, language)}`;
+  const energySection = energyAssessment && energyChecklist ? (
+    <EnergyProcessesSection
+      assessment={energyAssessment}
+      graph={energyGraph}
+      checklist={energyChecklist}
+      legacyCards={energyLegacyCards}
+      suppressedLegacy={energySuppressed}
+      language={language}
+      startIndex={energyPrimary ? 0 : mainCardCount}
+    />
+  ) : null;
+  const summaryReadiness = (() => {
+    const done = visibleReqCards.filter((c) => c.state === 'done').length + (energyAssessment?.readiness?.satisfied ?? 0);
+    const total = visibleReqCards.filter((c) => c.req.mandatory).length + (energyAssessment?.readiness?.total ?? 0);
+    return total > 0 ? { satisfied: Math.min(done, total), total } : null;
+  })();
+
   const envOpenItem = (() => {
     if (!mergedScenario || !scenarioActive) return false;
     const act = mergedScenario.operations.activity?.value ?? mergedScenario.property.proposedUse?.value;
@@ -6354,6 +6416,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           isProjectOnly
             ? (projectPassport ? projectPassportTitle(projectPassport) : null) ??
               (language === 'es' ? 'Proyecto de propiedad' : 'Property project')
+            // A developer (existing company) with a proposed energy project is a
+            // new project, not an "existing business" matter.
+            : projectIntent === 'existing_business' && energyProposed
+              ? (language === 'es' ? 'Proyecto nuevo de energía' : 'New energy project')
             : projectIntent === 'existing_business'
               ? (language === 'es' ? 'Negocio existente' : 'Existing Business')
               : (language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation')
@@ -6895,8 +6961,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             />
           )}
 
-          <div className="spr-requirements-layout">
+          <div className="spr-requirements-layout spr-requirements-layout-single">
           <div className="spr-requirements-main">
+          {requirements.length > 0 && (
+            <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={summaryQuestions} language={language} />
+          )}
           {/* Filter tabs */}
           <div className="rq-tabs" role="tablist">
             <button role="tab" aria-selected={reqFilter === 'all'} className={`rq-tab ${reqFilter === 'all' ? 'active' : ''}`} onClick={() => setReqFilter('all')}>
@@ -6953,14 +7022,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               apply (and the fact that decides it), what waits on a
               prerequisite, supporting documents, registrations already held,
               and what is done. Critical-path items lead the first group. */}
-          {groupedCards.map((group, gi) => {
-            const offset = groupedCards.slice(0, gi).reduce((n, g) => n + g.cards.length, 0);
+          {energyPrimary && energySection}
+          {mainGroups.map((group, gi) => {
+            const offset = (energyPrimary ? energyChecklist?.item_count ?? 0 : 0) + mainGroups.slice(0, gi).reduce((n, g) => n + g.cards.length, 0);
             const meta = REQUIREMENT_GROUP_COPY[group.id];
             const cards = group.id === 'required_now'
               ? [...group.cards.filter(isCriticalPath), ...group.cards.filter((c) => !isCriticalPath(c))]
               : group.cards;
             return (
-              <section key={group.id} className={`rq-group rq-group-${group.id}`} data-testid={`req-group-${group.id}`}>
+              <section key={group.id} className={`rq-group ck-group rq-group-${group.id}`} data-testid={`req-group-${group.id}`}>
                 <div className="rq-group-head">
                   {group.id === 'required_now' && <Star size={13} />} {L(meta.title, language)}
                   <span className="rq-critical-count">{group.cards.length}</span>
@@ -6989,6 +7059,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       facts={c.facts}
                       extra={c.extra}
                       contextLabel={c.contextLabel}
+                      whySentence={c.whySentence}
+                      extraInBody={c.extraInBody}
+                      fullReasoningLabel={L('Show full reasoning', language)}
                     />
                   ))}
                   {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
@@ -7006,14 +7079,45 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
           {/* ENERGY — regulatory process graph (src/app/processes). Renders
               only when the project context carries energy facts. */}
-          {energyAssessment && (
-            <EnergyProcessesSection
-              assessment={energyAssessment}
-              legacyCards={energyLegacyCards}
-              factDefinitions={energyGraph.kb.facts}
-              language={language}
-              onAnswer={(key, fact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }))}
-            />
+          {!energyPrimary && energySection}
+
+          {secondaryRegistrations && (
+            <details className="rq-group ck-group rq-group-registrations rq-group-secondary" data-testid="req-group-registrations">
+              <summary className="rq-group-head">
+                {L(REQUIREMENT_GROUP_COPY.registrations.title, language)}
+                <span className="rq-critical-count">{secondaryRegistrations.cards.length}</span>
+              </summary>
+              <p className="rq-group-sub">{L('Business registrations your company already holds — confirm they are current.', language)}</p>
+              <div className="rq-list">
+                {secondaryRegistrations.cards.map((c, i) => (
+                  <RequirementCard
+                    key={c.req.code}
+                    id={`req-row-${c.req.code}`}
+                    index={i + 1}
+                    icon={c.icon}
+                    iconTone={c.iconTone}
+                    name={c.name}
+                    agency={c.agency}
+                    description={c.description}
+                    badge={c.badge}
+                    whyLabel={L('Why do I need this?', language)}
+                    why={c.why}
+                    action={c.action}
+                    answerPrompt={c.answerPrompt}
+                    secondary={c.secondary}
+                    secondaryOnCompleted={c.secondaryOnCompleted}
+                    download={c.download}
+                    filing={c.filing}
+                    facts={c.facts}
+                    extra={c.extra}
+                    contextLabel={c.contextLabel}
+                    whySentence={c.whySentence}
+                    extraInBody={c.extraInBody}
+                    fullReasoningLabel={L('Show full reasoning', language)}
+                  />
+                ))}
+              </div>
+            </details>
           )}
 
           {otherChecks.length > 0 && (
@@ -7042,6 +7146,23 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               </ul>
             </details>
           )}
+
+          {/* Incentives render in ONE place: a small collapsed section. The
+              incentive engine's opportunities come first; process-graph energy
+              incentives are added only when their program is not already listed. */}
+          <IncentivesSidebar
+            variant="section"
+            profile={profile}
+            facts={incentiveFacts}
+            language={language}
+            initialAssessment={incentiveAssessmentHistory.at(-1) ?? null}
+            pursuedIncentives={pursuedIncentives}
+            onAssessmentChange={recordIncentiveAssessment}
+            onFactChange={(key, value) => setIncentiveFacts((current) => ({ ...current, [key]: value }))}
+            onReview={handleReviewIncentive}
+            onRemovePursued={handleRemovePursuedIncentive}
+            extraIncentives={energyAssessment?.incentives ?? []}
+          />
 
           {/* Recommendation panel — advisory historical insights (never mandatory) */}
           {advisory && advisory.enabled && advisory.similarCount > 0 &&
@@ -7103,19 +7224,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </div>
           </div>
 
-          <div className="spr-requirements-sidebar">
-            <IncentivesSidebar
-              profile={profile}
-              facts={incentiveFacts}
-              language={language}
-              initialAssessment={incentiveAssessmentHistory.at(-1) ?? null}
-              pursuedIncentives={pursuedIncentives}
-              onAssessmentChange={recordIncentiveAssessment}
-              onFactChange={(key, value) => setIncentiveFacts((current) => ({ ...current, [key]: value }))}
-              onReview={handleReviewIncentive}
-              onRemovePursued={handleRemovePursuedIncentive}
-            />
-          </div>
           </div>
 
           <SmartPRChatbot

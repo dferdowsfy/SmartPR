@@ -109,6 +109,11 @@ export interface ProcessEvaluation {
   /** Lifecycle stage (KB `stages`), for sequential processes. */
   stage?: { id: string; name: string; name_es?: string; order: number };
   explanation: ExplanationStep[];
+  /** Plain-language display name / one-line description (EN/ES), from the KB. */
+  short_name?: string;
+  short_name_es?: string;
+  summary?: string;
+  summary_es?: string;
 }
 
 export interface IncentiveEvaluation {
@@ -137,6 +142,9 @@ export interface ClarifyingQuestion {
   option_labels?: Record<string, string>;
   /** Process / incentive ids whose decision this fact controls. */
   resolves: string[];
+  /** One-line question and short button labels (EN/ES) for the checklist view. */
+  short_question?: { en: string; es: string };
+  short_option_labels?: Record<string, { en: string; es: string }>;
 }
 
 export interface Gap {
@@ -169,7 +177,7 @@ export interface EvaluateOptions {
 
 const STATE_ORDER: Record<ProcessState, number> = { REQUIRED: 0, NEEDS_FACT: 1, POTENTIALLY_REQUIRED: 2, NOT_REQUIRED: 3 };
 
-function citationFor(graph: ProcessGraph, sourceId: string, extra: { locator?: string; controlling_language?: string; confidence?: Confidence; status?: SourceStatus }): CitationView {
+export function citationFor(graph: ProcessGraph, sourceId: string, extra: { locator?: string; controlling_language?: string; confidence?: Confidence; status?: SourceStatus }): CitationView {
   const s = graph.sources.get(sourceId);
   if (!s) throw new Error(`Unknown source ${sourceId}`);
   return {
@@ -250,6 +258,24 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
       const s = evaluateCondition(pt.signals, facts);
       if (s.value === true) projectTypes.push({ id: pt.id, name: pt.name, status: "possible", facts: s.usedFacts });
     }
+  }
+
+  // 1b. Resolve to the best-matching type: a confirmed type drops its
+  // alternatives (same exclusive_group) and any generic type it subsumes, so
+  // "solar + battery, wholesale" is one project type, not four "possibly"s.
+  // Incentives of a subsumed type still get evaluated (its facts still hold).
+  const absorbedIncentives: string[] = [];
+  {
+    const confirmed = new Set(projectTypes.filter((m) => m.status === "has_type").map((m) => m.id));
+    const def = (id: string) => graph.projectTypes.get(id)!;
+    const confirmedGroups = new Set([...confirmed].map((id) => def(id).exclusive_group).filter(Boolean));
+    const keep = projectTypes.filter((m) => {
+      const d = def(m.id);
+      if ((d.subsumed_by ?? []).some((t) => confirmed.has(t))) { absorbedIncentives.push(...d.may_qualify_for); return false; }
+      if (m.status === "possible" && d.exclusive_group && confirmedGroups.has(d.exclusive_group)) return false;
+      return true;
+    });
+    projectTypes.splice(0, projectTypes.length, ...keep);
   }
 
   // 2. may_require → candidates
@@ -393,8 +419,11 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
     for (const f of d.used) explanation.push(factStep(f));
     if (d.summary) explanation.push({ kind: "trigger", label: d.summary, detail: d.decided_by.id });
     else if (d.decided_by.kind !== "none") explanation.push({ kind: d.decided_by.kind === "exception" ? "exception" : d.decided_by.kind === "gate" ? "gate" : "dependency", label: d.reason, detail: d.decided_by.id });
-    for (const t of types) {
-      const m = projectTypes.find((x) => x.id === t)!;
+    // Only the types that actually lead here: confirmed ones when any exist.
+    const typeMatches = types.map((t) => projectTypes.find((x) => x.id === t)!);
+    const shownTypes = typeMatches.some((m) => m.status === "has_type") ? typeMatches.filter((m) => m.status === "has_type") : typeMatches;
+    for (const m of shownTypes) {
+      const t = m.id;
       explanation.push({ kind: "classification", label: `${m.status === "possible" ? "Possibly " : ""}${m.name}`, detail: t });
     }
     explanation.push({ kind: "process", label: p.name, detail: `${p.process_type} · ${d.state}` });
@@ -432,7 +461,11 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
       legacy_document_ids: p.legacy_document_ids ?? [],
       jurisdiction_note: p.jurisdiction_note,
       ...(p.stage && stageDefs.has(p.stage) ? { stage: stageDefs.get(p.stage)! } : {}),
-      explanation,
+      explanation: explanation.filter((s) => s.label.trim() !== ""),
+      ...(p.short_name ? { short_name: p.short_name } : {}),
+      ...(p.short_name_es ? { short_name_es: p.short_name_es } : {}),
+      ...(p.summary ? { summary: p.summary } : {}),
+      ...(p.summary_es ? { summary_es: p.summary_es } : {}),
     });
   }
 
@@ -455,7 +488,7 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
   evaluations.sort((a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state] || a.name.localeCompare(b.name));
 
   // 5. incentives — separate category
-  const incentiveCandidates = uniq(projectTypes.flatMap((m) => graph.projectTypes.get(m.id)!.may_qualify_for));
+  const incentiveCandidates = uniq([...projectTypes.flatMap((m) => graph.projectTypes.get(m.id)!.may_qualify_for), ...absorbedIncentives]);
   const incDecisions = new Map<string, { state: IncentiveState; reason: string; missing: string[] }>();
   const decideIncentive = (id: string): { state: IncentiveState; reason: string; missing: string[] } => {
     const hit = incDecisions.get(id);
@@ -551,6 +584,8 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
         options: def?.options,
         option_labels: def?.options ? Object.fromEntries(def.options.map((o) => [o, optionLabel(def, o)])) : undefined,
         resolves: [...resolves],
+        ...(def?.short_question ? { short_question: def.short_question } : {}),
+        ...(def?.short_option_labels ? { short_option_labels: def.short_option_labels } : {}),
       };
     });
 

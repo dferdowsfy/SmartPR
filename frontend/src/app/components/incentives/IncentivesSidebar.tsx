@@ -5,6 +5,8 @@ import { ArrowRight, Check, HelpCircle, Lightbulb } from "lucide-react";
 import { normalizeProjectProfileForIncentives, type ExistingSmartPrProfile } from "../../incentives/profile";
 import { OpportunitiesDrawer } from "./OpportunitiesDrawer";
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from "../../incentives/types";
+import type { IncentiveEvaluation } from "../../processes/engine";
+import { unifiedIncentives, shortAgency } from "../../processes/presentation";
 
 type Language = "en" | "es";
 
@@ -40,6 +42,8 @@ export function IncentivesSidebar({
   onFactChange,
   onReview,
   onRemovePursued,
+  variant = "sidebar",
+  extraIncentives = [],
 }: {
   profile: ExistingSmartPrProfile;
   facts: Record<string, ProjectFactValue>;
@@ -50,6 +54,11 @@ export function IncentivesSidebar({
   onFactChange: (key: string, value: ProjectFactValue) => void;
   onReview: (result: IncentiveEligibilityResult) => void;
   onRemovePursued: (programId: string) => void;
+  /** "section": one small collapsed "Possible incentives (optional)" block in
+   * the requirements list — the single place incentives render. */
+  variant?: "sidebar" | "section";
+  /** Process-graph incentives (energy); shown only when their program is not already listed. */
+  extraIncentives?: IncentiveEvaluation[];
 }) {
   const es = language === "es";
   const normalizedProfile = useMemo(() => normalizeProjectProfileForIncentives(profile, facts), [profile, facts]);
@@ -94,6 +103,7 @@ export function IncentivesSidebar({
   // offset as a CSS var the media query below consumes. Also measure the
   // trigger itself so the main column can reserve space for it.
   useEffect(() => {
+    if (variant === "section") return;
     const bar = document.querySelector(".spr-stepper-bar-sticky");
     if (!bar) return;
     const apply = () => {
@@ -117,11 +127,87 @@ export function IncentivesSidebar({
       observer.disconnect();
       window.removeEventListener("resize", apply);
     };
-  }, []);
+  }, [variant]);
 
   const opportunities = assessment?.opportunities ?? [];
   const topMatches = opportunities.slice(0, 2);
   const questionCount = assessment?.followUpQuestions.length ?? 0;
+
+  if (variant === "section") {
+    const { extra } = unifiedIncentives(opportunities, extraIncentives);
+    const count = opportunities.length + extra.length;
+    return (
+      <details className="rq-group ck-group rq-group-incentives" data-testid="req-group-incentives">
+        <style>{`
+          .rq-group-incentives .inc-pursued-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:3px 8px;font-size:var(--rq-text-sm,14px);font-weight:700;margin-left:8px;background:#e7f5f1;color:#0f766e;vertical-align:middle}
+          .rq-group-incentives .inc-improve{display:flex;align-items:center;gap:7px;margin-top:10px;border:1px dashed var(--border,#d9d4ca);background:var(--surface-2,#faf8f2);border-radius:10px;padding:9px 11px;font:inherit;font-size:var(--rq-text-sm,14px);color:var(--muted,#69665f);cursor:pointer;text-align:left}
+          .rq-group-incentives .inc-pursuing-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0}
+          .rq-group-incentives .inc-pursuing-remove{background:none;border:none;padding:0;cursor:pointer;color:var(--muted,#69665f);font-size:var(--rq-text-sm,14px);text-decoration:underline}
+          .rq-group-incentives .ck-rows{margin-top:8px}
+        `}</style>
+        <summary className="rq-group-head">
+          <Lightbulb size={14} aria-hidden="true" /> {es ? "Posibles incentivos (opcional)" : "Possible incentives (optional)"}
+          <span className="rq-critical-count">{loading && count === 0 ? "…" : count}</span>
+        </summary>
+        <p className="rq-group-sub">{es ? "No son requisitos. Revisa si te interesan." : "Not requirements. Review them if you are interested."}</p>
+        {!loading && count === 0 && <p className="rq-group-sub">{es ? "Aún no hay coincidencias publicadas para este perfil." : "No published matches for this profile yet."}</p>}
+        <ul className="ck-rows">
+          {opportunities.map((item) => {
+            const status = statusPresentation(item, language);
+            const isPursued = pursuedIncentives.some((p) => p.programId === item.programId);
+            return (
+              <li key={item.programId} className="ck-row" data-testid={`incentive-${item.programId}`}>
+                <div className="ck-row-head ck-row-static">
+                  <span className="ck-name">{item.programName}{isPursued && <span className="inc-pursued-chip"><Check size={11} aria-hidden="true" /> {es ? "Añadido" : "Added"}</span>}</span>
+                  <span className={`ck-pill ck-pill-inc-${status.tone}`}>{status.label}</span>
+                  <button type="button" className="ck-action" onClick={() => onReview(item)}>{es ? "Revisar" : "Review"} <ArrowRight size={12} aria-hidden="true" /></button>
+                </div>
+              </li>
+            );
+          })}
+          {extra.map((i) => (
+            <li key={i.incentive_id} className="ck-row" data-testid={`incentive-${i.incentive_id}`}>
+              <div className="ck-row-head ck-row-static">
+                <span className="ck-name">{i.program_name ?? i.name}</span>
+                <span className="ck-agency">{i.agencies.map(shortAgency).join(" / ")}</span>
+                <span className="ck-pill ck-pill-may_apply">{i.state === "POTENTIALLY_ELIGIBLE" ? (es ? "Posiblemente elegible" : "Possibly eligible") : (es ? "Falta información" : "More information needed")}</span>
+                <a className="ck-source-link" href={i.citation.url} target="_blank" rel="noreferrer">{es ? "Fuente" : "Source"}</a>
+              </div>
+            </li>
+          ))}
+        </ul>
+        {!loading && questionCount > 0 && (
+          <button type="button" className="inc-improve" onClick={() => setShowAll(true)}>
+            <HelpCircle size={15} aria-hidden="true" />
+            {es
+              ? `Responde ${questionCount} pregunta${questionCount === 1 ? "" : "s"} para mejorar las coincidencias`
+              : `Answer ${questionCount} question${questionCount === 1 ? "" : "s"} to improve matches`}
+          </button>
+        )}
+        {pursuedIncentives.length > 0 && (
+          <div className="ck-block">
+            <div className="ck-label">{es ? "Persiguiendo" : "Pursuing"} · {pursuedIncentives.length}</div>
+            {pursuedIncentives.map((item) => (
+              <div key={item.programId} className="inc-pursuing-row">
+                <button type="button" className="ck-action" onClick={() => onReview(item)}>{item.programName}</button>
+                <button type="button" className="inc-pursuing-remove" onClick={() => onRemovePursued(item.programId)}>{es ? "Eliminar" : "Remove"}</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {showAll && (
+          <OpportunitiesDrawer
+            assessment={assessment}
+            language={language}
+            facts={facts}
+            onFactChange={onFactChange}
+            onReview={(result) => { onReview(result); setShowAll(false); }}
+            onClose={() => setShowAll(false)}
+          />
+        )}
+      </details>
+    );
+  }
 
   return (
     <aside className="inc-sidebar" aria-label={es ? "Oportunidades" : "Opportunities"}>

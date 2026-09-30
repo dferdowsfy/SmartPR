@@ -1,0 +1,57 @@
+{
+  "id": "E06",
+  "title": "Developer: ~15 MW solar + 30 MWh batteries in Guayama, selling to LUMA (Darius's live test of #116)",
+  "source": "Darius's live prompt, 2026-09-30 09:16 ET. Model output is a fixture reproducing the live extraction: no generation_technology (so the old view asked 'What will generate or store the energy?').",
+  "description": "We develop solar farms in Puerto Rico that include battery storage, and we need to know every requirement to connect them to the LUMA grid. Our current project is about 15 MW of solar with 30 MWh of batteries in Guayama, and we plan to sell the power to LUMA.",
+  "profile": {
+    "municipality": "Guayama"
+  },
+  "legacyCards": [
+    { "document_id": "DOC_LUMA_INTERCONNECTION", "source_rule": "RULE_0610", "name": "LUMA Interconnection Registration" },
+    { "document_id": "DOC_NET_METERING_AGREEMENT", "source_rule": "RULE_0611", "name": "Net Metering Agreement" },
+    { "document_id": "DOC_OGPE_CONSTRUCTION_PERMIT", "source_rule": "RULE_0613", "name": "OGPe Construction Permit" },
+    { "document_id": "DOC_FIRE_CERT", "source_rule": "RULE_0615", "name": "Fire Safety Certification" }
+  ],
+  "modelProjectContext": {
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.95,
+      "evidence": "include battery storage"
+    },
+    "generation_capacity_kw": {
+      "value": "15 MW",
+      "confidence": 0.9,
+      "evidence": "about 15 MW of solar"
+    },
+    "storage_energy_mwh": {
+      "value": "30 MWh",
+      "confidence": 0.9,
+      "evidence": "30 MWh of batteries"
+    },
+    "power_offtaker": {
+      "value": "luma_prepa",
+      "confidence": 0.95,
+      "evidence": "sell the power to LUMA"
+    },
+    "parallel_operation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "connect them to the LUMA grid"
+    },
+    "municipality": {
+      "value": "Guayama",
+      "confidence": 0.95,
+      "evidence": "Guayama"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "Our current project"
+    },
+    "energy_applicant_role": {
+      "value": "developer",
+      "confidence": 0.9,
+      "evidence": "We develop solar farms"
+    }
+  }
+}
