@@ -2874,6 +2874,8 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .ck-summary-line { margin: 0; font-size: var(--rq-text-heading); font-weight: 600; line-height: 1.4; color: var(--ink); }
 .ck-summary-readiness { margin: 6px 0 0; font-size: var(--rq-text-sm); color: var(--muted); }
 .ck-questions { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: ckq; }
+/* Answered questions stay visible under the pending ones, selection kept. */
+.ck-answered { margin-top: 10px; }
 .ck-q { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-top: 8px; border-top: 1px solid var(--border); }
 .ck-q-text { font-weight: 600; }
 .ck-q-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }

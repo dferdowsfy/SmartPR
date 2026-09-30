@@ -2104,6 +2104,10 @@ export default function SmartPRIntake() {
   // scope, square footage, …). Preserved alongside the intake so requirements
   // reasoning, Agency Assist briefs, and the passport can use them.
   const [projectContext, setProjectContext] = useState<ProjectContext>({});
+  // Energy "Project questions" answered by hand in intake: the question
+  // leaves the pending list once its fact is set, so the keys are kept here
+  // to keep each selected answer visible instead of vanishing.
+  const [answeredEnergyKeys, setAnsweredEnergyKeys] = useState<string[]>([]);
   // Semantic scenario: SmartPR's factual model of the described situation
   // (ai/intake/scenario). The rules engine still decides requirements; the
   // scenario drives what is understood, what is uncertain, and which
@@ -5983,8 +5987,37 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // group at the bottom, after energy — never first, never open.
   const mainGroups = groupedCards.filter((g) => g.id !== 'registrations');
   const secondaryRegistrations = groupedCards.find((g) => g.id === 'registrations') ?? null;
-  const onEnergyAnswer = (key: ProjectContextKey, fact: ProjectContextFact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }));
+  const onEnergyAnswer = (key: ProjectContextKey, fact: ProjectContextFact) => {
+    setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }));
+    setAnsweredEnergyKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  };
+  /** Clearing an energy answer brings its question back to the pending list. */
+  const clearEnergyAnswer = (key: ProjectContextKey) => {
+    setProjectContext((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setAnsweredEnergyKeys((prev) => prev.filter((k) => k !== key));
+  };
   const energyIntakeQuestions: SummaryQuestion[] = energyChecklist ? energySummaryQuestions(energyChecklist, language, onEnergyAnswer) : [];
+  /** Answered energy questions stay visible with the selected answer. */
+  const answeredEnergyQuestions = (energyAssessment?.questions ?? [])
+    .filter((q) => answeredEnergyKeys.includes(q.fact) && projectContext[q.fact as ProjectContextKey] !== undefined)
+    .map((q) => {
+      const value = projectContext[q.fact as ProjectContextKey]?.value;
+      const valueLabel = typeof value === 'boolean'
+        ? (value ? t('yes') : t('no'))
+        : (language === 'es'
+            ? (q.short_option_labels?.[String(value)]?.es ?? q.option_labels?.[String(value)] ?? String(value ?? ''))
+            : (q.short_option_labels?.[String(value)]?.en ?? q.option_labels?.[String(value)] ?? String(value ?? '')));
+      return {
+        id: q.fact,
+        text: language === 'es' ? (q.short_question?.es ?? q.question) : (q.short_question?.en ?? q.question),
+        valueLabel,
+        onChange: () => clearEnergyAnswer(q.fact as ProjectContextKey),
+      };
+    });
   // Steps = energy process steps + required business items shown open.
   const mainCardCount = openStepCount(mainGroups);
   const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
@@ -6760,10 +6793,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </section>
               )}
 
-              {energyIntakeQuestions.length > 0 && (
+              {(energyIntakeQuestions.length > 0 || answeredEnergyQuestions.length > 0) && (
                 <ChecklistSummary
                   line={L('Project questions', language)}
                   questions={energyIntakeQuestions}
+                  answered={answeredEnergyQuestions}
                   language={language}
                 />
               )}

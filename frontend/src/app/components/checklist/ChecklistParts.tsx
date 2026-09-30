@@ -6,7 +6,7 @@
 // longer rationale instead of printing it inline.
 
 import { useState, type ReactNode } from "react";
-import { Info } from "lucide-react";
+import { CheckCircle, Info } from "lucide-react";
 import { CHECKLIST_STATUS_LABELS, type ChecklistStatus } from "../../processes/presentation";
 
 type Language = "en" | "es";
@@ -92,11 +92,14 @@ export function ChecklistSummary({
   line,
   readiness,
   questions,
+  answered,
   language,
 }: {
   line: string;
   readiness?: { satisfied: number; total: number } | null;
   questions: SummaryQuestion[];
+  /** Already-answered questions stay visible with their selected answer. */
+  answered?: { id: string; text: string; valueLabel: string; onChange: () => void }[];
   language: Language;
 }) {
   const es = language === "es";
@@ -112,6 +115,20 @@ export function ChecklistSummary({
         <div role="list" className="ck-questions" aria-label={es ? "Preguntas por responder" : "Questions to answer"}>
           {questions.map((q) => <QuestionLine key={q.id} q={q} language={language} />)}
         </div>
+      )}
+      {answered && answered.length > 0 && (
+        <ul className="spr-answered-list ck-answered" aria-label={es ? "Preguntas respondidas" : "Answered questions"}>
+          {answered.map((a) => (
+            <li key={a.id}>
+              <CheckCircle className="i" style={{ width: 14, height: 14 }} />
+              <span className="spr-answered-text">{a.text}</span>
+              <span className="spr-answered-value">{a.valueLabel}</span>
+              <button type="button" className="spr-answered-change" onClick={a.onChange}>
+                {es ? "Cambiar" : "Change"}
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );
