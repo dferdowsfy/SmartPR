@@ -5,20 +5,53 @@
  */
 import schemaJson from "./skill.schema.json";
 import { validateJsonSchema, type JsonSchema, type SchemaError } from "./jsonSchema";
-import { REQUIRED_HUMAN_GATES, type Skill, type SkillTarget } from "./skill";
+import { REQUIRED_HUMAN_GATES, type Skill, type SkillField, type SkillTarget } from "./skill";
 
 export const SKILL_SCHEMA = schemaJson as JsonSchema;
 
 /** Visible text that marks a final-submit control on PR portals. */
 const SUBMIT_LABEL = /\b(radicar|enviar|someter|submit)\b/i;
+/**
+ * Selectors that point at a submit control. Selectors are a replay
+ * fallback, so a generic label ("Continuar") must not hide a submit
+ * selector (`button[type=submit]`, `#btnRadicar`). Deliberately broad.
+ */
+const SUBMIT_SELECTOR = /(submit|radicar|enviar|someter)/i;
 /** Controls Clara must never click: certification / attestation boxes. */
-const ATTESTATION_LABEL = /\b(juramento|certific|attest|perjur)/i;
-/** Fields Clara must never fill, whatever they are mapped to. */
-const SECRET_LABEL = /\b(contrase[ñn]a|password|c[óo]digo de verificaci[óo]n|mfa|otp|captcha|ssn|seguro social|tarjeta|card number|cvv|routing|cuenta bancaria|firma|signature)\b/i;
+const ATTESTATION = /(juramento|certific|attest|perjur)/i;
+/** Fields Clara must never fill, whatever they are mapped to (EN + ES). */
+const SECRET_LABEL = new RegExp(
+  [
+    "contrase[ñn]a", "password", "passcode", "\\bpin\\b",
+    "c[óo]digo (de )?(verificaci[óo]n|seguridad|acceso|confirmaci[óo]n)",
+    "(verification|security|access|confirmation|one[- ]time) code", "\\b(mfa|otp|2fa)\\b", "captcha",
+    "\\bssn\\b", "social security", "seguro social", "\\bitin\\b",
+    "tarjeta", "(credit|debit) card", "card number", "\\b(cvv|cvc)\\b", "expiration", "vencimiento",
+    "routing", "account number", "bank account", "n[úu]mero de cuenta", "cuenta bancaria",
+    "firma", "signature",
+  ].join("|"),
+  "i"
+);
+/** Selectors for human-only inputs. */
+const SECRET_SELECTOR = /(type=["']?password|passw|pwd|otp|mfa|captcha|(^|[^a-z])pin|pin($|[^a-z])|cvv|cvc|ssn|card)/i;
 
 /** True when clicking this target would file the application. */
 export function isSubmitTarget(target: SkillTarget): boolean {
-  return SUBMIT_LABEL.test(target.label_contains);
+  return (
+    SUBMIT_LABEL.test(target.label_contains) ||
+    (target.selector != null && SUBMIT_SELECTOR.test(target.selector))
+  );
+}
+
+/** True when the control is a certification / attestation. */
+function isAttestationTarget(target: SkillTarget): boolean {
+  return ATTESTATION.test(target.label_contains) || (target.selector != null && ATTESTATION.test(target.selector));
+}
+
+/** True when the field is a credential, code, identity or payment input. */
+export function isSecretField(field: SkillField): boolean {
+  const { label, selector } = field.portal_field;
+  return SECRET_LABEL.test(label) || (selector != null && SECRET_SELECTOR.test(selector));
 }
 
 /** Cross-reference invariants (spec §3) and the §8 sanitization check. */
@@ -48,13 +81,13 @@ function checkInvariants(skill: Skill): SchemaError[] {
       if (isSubmitTarget(action.target)) {
         errors.push({ path: `${at}/actions/${j}`, message: `automates final submit ("${action.target.label_contains}")` });
       }
-      if (ATTESTATION_LABEL.test(action.target.label_contains)) {
+      if (isAttestationTarget(action.target)) {
         errors.push({ path: `${at}/actions/${j}`, message: `clicks a certification control ("${action.target.label_contains}")` });
       }
     });
     step.fields.forEach((field, j) => {
       const fat = `${at}/fields/${j}`;
-      if (SECRET_LABEL.test(field.portal_field.label)) {
+      if (isSecretField(field)) {
         errors.push({ path: fat, message: `field "${field.portal_field.label}" is human-only and cannot be in a skill` });
       }
       if (field.passport_path === null) {

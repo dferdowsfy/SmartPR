@@ -57,6 +57,18 @@ describe("skill schema validator", () => {
     assert.ok(validateSkill(bad).some((e) => /final submit/.test(e.message)));
   });
 
+  it("rejects a generic label whose selector is a submit control", () => {
+    for (const selector of ["button[type=submit]", "#btnRadicar", "#Enviar"]) {
+      const bad = clone(ogpe);
+      stepWithActions(bad).actions.push({
+        type: "click",
+        target: { role: "button", label_contains: "Continuar", selector },
+        fallback: "pause_and_ask",
+      });
+      assert.ok(validateSkill(bad).some((e) => /final submit/.test(e.message)), selector);
+    }
+  });
+
   it("rejects a Clara click on a certification checkbox", () => {
     const bad = clone(ogpe);
     stepWithActions(bad).actions.push({
@@ -68,10 +80,29 @@ describe("skill schema validator", () => {
   });
 
   it("rejects a password or payment field in a skill", () => {
-    for (const label of ["Contraseña", "Número de tarjeta", "Código de verificación"]) {
+    for (const label of [
+      "Contraseña",
+      "Número de tarjeta",
+      "Código de verificación",
+      "Verification code",
+      "Security code",
+      "PIN",
+      "Social Security Number",
+      "Bank account number",
+      "Código de seguridad",
+      "Número de cuenta",
+    ]) {
       const bad = clone(ogpe);
       stepWithFields(bad).fields[0].portal_field.label = label;
       assert.ok(validateSkill(bad).some((e) => /human-only/.test(e.message)), label);
+    }
+  });
+
+  it("rejects a generic label whose selector is a secret input", () => {
+    for (const selector of ["#txtPwd", "#txtPin", "#otpCode"]) {
+      const bad = clone(ogpe);
+      stepWithFields(bad).fields[1].portal_field.selector = selector;
+      assert.ok(validateSkill(bad).some((e) => /human-only/.test(e.message)), selector);
     }
   });
 
