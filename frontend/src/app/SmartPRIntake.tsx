@@ -6392,7 +6392,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       : (language === 'es' ? 'En progreso' : 'In Progress');
 
   const hasProjectRequest = scenarioActive || anyProfileValue;
-  const guidedIntakeStage = !hasProjectRequest ? 0 : baseProfileReady && intakeQuestionsComplete && !scenarioNextQuestion && !Object.values(confirmationsNeeded).some(Boolean) ? 2 : 1;
   const remainingIntakeItems = intakePlan.missingRequired.length + (scenarioActive ? (scenarioEval?.questions.length ?? 0) : Math.max(0, intakeQuestionTotal - guidedQuestionsAnswered - answeredPotentialCount));
 
   return (
@@ -6431,6 +6430,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               : (language === 'es' ? 'Formación de negocio nuevo' : 'New Business Formation')
         }
         matterStatus={matterStatus}
+        headerControl={view === 'intake' && !isProjectOnly ? (
+          <div className="spr-intake-header-control">
+            <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
+            <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
+              <option value="">{t('selectLocationType')}</option>
+              {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => (
+                <option key={lt} value={lt}>{lt}</option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         stage={view}
         availableStages={availableStages}
         language={language}
@@ -6455,13 +6465,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       {view === 'intake' && (
           <section className="spr-intake-panel">
             <div className="spr-intake-scroll">
-              <nav className="spr-guided-steps" aria-label={language === 'es' ? 'Pasos del perfil' : 'Intake steps'}>
-                {(language === 'es' ? ['Proyecto', 'Confirmar detalles', 'Revisar'] : ['Project', 'Confirm details', 'Review']).map((label, index) => (
-                  <span key={label} className={index === guidedIntakeStage ? 'active' : index < guidedIntakeStage ? 'complete' : ''} aria-current={index === guidedIntakeStage ? 'step' : undefined}>
-                    <b>{index < guidedIntakeStage ? <CheckCircle size={16} /> : index + 1}</b>{label}
-                  </span>
-                ))}
-              </nav>
               <h1>{language === 'es'
                 ? (hasProjectRequest ? 'Unos detalles y verás tus requisitos.' : 'Cuéntanos sobre tu proyecto.')
                 : (hasProjectRequest ? 'A few details, then your requirements.' : 'Tell us about your project.')}</h1>
@@ -6783,18 +6786,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   </select>
                 </div>
                 )}
-                {profileFieldVisible('location_type') && (
-                <div className={`spr-field${profileAttentionCls}`}>
-                  <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
-                  <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
-                    <option value="">{t('selectLocationType')}</option>
-                    {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => (
-                      <option key={lt} value={lt}>{lt}</option>
-                    ))}
-                  </select>
-                </div>
-                )}
-
                 {!passportKnownFields.has('business_structure') && profileFieldVisible('business_structure') && (
                 <div className={`spr-field spr-field-static${profileAttentionCls}`}>
                   <label htmlFor="spr-structure">{t('businessStructure')}{confirmationBadge('business_structure')}</label>

@@ -74,6 +74,7 @@ interface FilingWorkflowShellProps {
   municipality?: string | null;
   matterTitle: string;
   matterStatus: string;
+  headerControl?: ReactNode;
   stage: FilingStage;
   availableStages: FilingStage[];
   language: "en" | "es";
@@ -353,6 +354,7 @@ export function FilingWorkflowShell({
   municipality,
   matterTitle,
   matterStatus,
+  headerControl,
   stage,
   availableStages,
   language,
@@ -437,6 +439,7 @@ export function FilingWorkflowShell({
                     <span className="spr-matter-status">{matterStatus}</span>
                   </div>
                   <p>{matterTitle}{municipality ? ` · ${municipality}` : ""}</p>
+                  {headerControl}
                 </div>
               </div>
               {actions}
