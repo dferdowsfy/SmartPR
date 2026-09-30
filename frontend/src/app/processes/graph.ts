@@ -142,6 +142,12 @@ export function buildProcessGraph(input: BuildGraphInput): ProcessGraph {
   for (const r of kb.requirements) checkCond(r.applies_when, r.id);
   for (const inc of kb.incentives) checkCond(inc.eligibility, inc.id);
   checkCond(kb.incentive_questions_when, "incentive_questions_when");
+  for (const pt of kb.project_types) for (const t of pt.subsumed_by ?? []) need(projectTypes.has(t) && t !== pt.id, `${pt.id} subsumed_by unknown ${t}`);
+  for (const x of kb.legacy_suppressions ?? []) {
+    checkCond(x.when, x.id);
+    need(sources.has(x.source_id), `${x.id} cites unknown source ${x.source_id}`);
+    need(x.rule_ids.length > 0, `${x.id} suppresses no rules`);
+  }
   if (problems.length) throw new Error(`Invalid regulatory process KB:\n- ${problems.join("\n- ")}`);
 
   return { kb, sources, agencies, processes, requirements, evidence, projectTypes, incentives, incentiveCatalog, edges, legacyDocumentIndex };
@@ -177,6 +183,8 @@ export function mergeProcessKBs(packs: ProcessKB[]): ProcessKB {
     incentive_questions_when: packs.some((p) => p.incentive_questions_when)
       ? { any: packs.map((p) => p.incentive_questions_when).filter((c): c is Condition => !!c) }
       : undefined,
+    legacy_suppressions: cat("legacy_suppressions") as NonNullable<ProcessKB["legacy_suppressions"]>,
+    display: Object.assign({}, ...packs.map((p) => p.display ?? {})),
   };
 }
 

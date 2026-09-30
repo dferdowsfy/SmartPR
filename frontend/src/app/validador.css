@@ -2724,3 +2724,125 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .rq-other-q { font-weight: 600; }
 .rq-other-docs { font-size: 0.85em; opacity: 0.75; margin: 2px 0 6px; }
 .rq-energy-legacy-action { background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; font: inherit; color: inherit; }
+
+/* ============================================================
+   REQUIREMENTS CHECKLIST (summary · ≤3 questions · numbered lines ·
+   expand for details · full reasoning behind a toggle). One type scale for
+   the whole requirements view, on the Tailwind scale: body text-base
+   (16px), item titles text-lg (18px), headings text-xl (20px), meta
+   text-sm (14px) — never smaller.
+   ============================================================ */
+.spr-requirements-main {
+  --rq-text-sm: var(--text-sm, 0.875rem);
+  --rq-text-body: var(--text-base, 1rem);
+  --rq-text-title: var(--text-lg, 1.125rem);
+  --rq-text-heading: var(--text-xl, 1.25rem);
+  font-size: var(--rq-text-body);
+  line-height: 1.55;
+}
+.spr-requirements-layout-single { grid-template-columns: minmax(0, 1fr); max-width: 980px; }
+.spr-requirements-main .rq-group-head { font-size: var(--rq-text-sm); letter-spacing: .05em; }
+.spr-requirements-main .rq-group-sub,
+.spr-requirements-main .rq-card-desc,
+.spr-requirements-main .rq-why-body,
+.spr-requirements-main .rq-fact dd,
+.spr-requirements-main .rq-other-q,
+.spr-requirements-main .rq-answer-prompt-q { font-size: var(--rq-text-body); }
+.spr-requirements-main .rq-facts,
+.spr-requirements-main .rq-fact dt,
+.spr-requirements-main .rq-other-docs,
+.spr-requirements-main .rq-cta-helper,
+.spr-requirements-main .rq-context-label,
+.spr-requirements-main .rq-agency-site { font-size: var(--rq-text-sm); }
+.spr-requirements-main .rq-cta,
+.spr-requirements-main .rq-filing-btn,
+.spr-requirements-main .rq-download-btn,
+.spr-requirements-main .rq-secondary-btn,
+.spr-requirements-main .rq-answer-btn { font-size: var(--rq-text-sm); }
+.spr-requirements-main .rq-card-title-row h3 { font-size: var(--rq-text-title); }
+
+/* Summary */
+.ck-summary { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 16px 20px; margin: 4px 0 20px; }
+.ck-summary-line { margin: 0; font-size: var(--rq-text-heading); font-weight: 600; line-height: 1.4; color: var(--ink); }
+.ck-summary-readiness { margin: 6px 0 0; font-size: var(--rq-text-sm); color: var(--muted); }
+.ck-questions { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; counter-reset: ckq; }
+.ck-q { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+.ck-q-text { font-weight: 600; }
+.ck-q-actions { display: inline-flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.ck-q-actions button, .ck-q-actions input { font: inherit; font-size: var(--rq-text-sm); border: 1px solid var(--border-strong); border-radius: 8px; padding: 5px 12px; background: #fff; cursor: pointer; }
+.ck-q-actions button:hover { border-color: var(--brand); color: var(--brand); }
+.ck-q-actions form { display: inline-flex; gap: 6px; }
+.ck-q-actions input { width: 9rem; cursor: text; }
+.ck-info { position: relative; display: inline-flex; align-items: center; }
+.ck-info-btn { border: 0; background: none; padding: 2px; color: var(--muted); cursor: pointer; display: inline-flex; }
+.ck-info-text { display: block; flex-basis: 100%; margin-top: 4px; font-size: var(--rq-text-sm); color: var(--muted); max-width: 60ch; }
+.ck-q:has(.ck-info-text) .ck-info { flex-wrap: wrap; }
+
+/* Lines */
+.ck-group .rq-list { gap: 8px; }
+.ck-stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.ck-stages-flat { gap: 8px; }
+.ck-stage-head { display: flex; align-items: center; gap: 10px; font-size: var(--rq-text-title); font-weight: 650; margin-bottom: 6px; }
+.ck-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ck-stage .ck-rows { padding-left: 38px; }
+.ck-row, .ck-card { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.ck-card { padding: 0; }
+.ck-card-line { display: flex; align-items: center; gap: 12px; padding-right: 12px; }
+.ck-card-line .ck-row-head { flex: 1; }
+.ck-card-action .rq-cta, .ck-card-action .rq-completed, .ck-card-action .rq-waiting { white-space: nowrap; padding: 7px 14px; }
+.ck-row-head { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: 10px; }
+.ck-row-static { cursor: default; }
+.ck-row-head:hover:not(.ck-row-static) { background: color-mix(in oklab, var(--brand) 5%, transparent); }
+.ck-row-head:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ck-num { flex: none; width: 28px; height: 28px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: var(--rq-text-sm); font-weight: 700; background: color-mix(in oklab, var(--brand) 14%, transparent); color: var(--brand); }
+.ck-name { flex: 1; min-width: 0; font-size: var(--rq-text-title); font-weight: 600; line-height: 1.35; color: var(--ink); }
+.ck-agency { flex: none; font-size: var(--rq-text-sm); color: var(--muted); font-weight: 600; }
+.ck-chevron { flex: none; color: var(--muted); transition: transform .15s ease; }
+.ck-row-open .ck-chevron { transform: rotate(180deg); }
+.ck-pill { flex: none; font-size: var(--rq-text-sm); font-weight: 650; border-radius: 999px; padding: 3px 10px; border: 1px solid transparent; white-space: nowrap; }
+.ck-pill-required { background: #fdecd3; color: #7a4a00; }
+.ck-pill-question { background: #e6eefc; color: #1f4b99; }
+.ck-pill-may_apply { background: #eeeeea; color: #444; }
+.ck-pill-expert { background: #f7e3ef; color: #7d2458; }
+.ck-pill-optional { background: #eeeeea; color: #444; }
+.ck-pill-done { background: #e2f1ec; color: #0f6b52; }
+.ck-pill.rq-badge-amber { background: #fdecd3; color: #7a4a00; }
+.ck-pill.rq-badge-blue { background: #e6eefc; color: #1f4b99; }
+.ck-pill.rq-badge-gray { background: #eeeeea; color: #444; }
+.ck-pill-inc-strong, .ck-pill-inc-likely { background: #e2f1ec; color: #0f6b52; }
+.ck-pill-inc-possible, .ck-pill-inc-info { background: #fff5df; color: #7a5a00; }
+.ck-pill-inc-low, .ck-pill-inc-no { background: #eeeeea; color: #444; }
+.ck-row-body { padding: 0 16px 14px 54px; display: grid; gap: 10px; }
+.ck-stage .ck-row-body, .rq-group-incentives .ck-row-body { padding-left: 16px; }
+.ck-why { margin: 0; font-size: var(--rq-text-body); color: var(--ink); }
+.ck-what { margin: 0; font-size: var(--rq-text-body); color: var(--muted); }
+.ck-block ul { margin: 2px 0 0; padding-left: 20px; }
+.ck-label { font-size: var(--rq-text-sm); font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.ck-source { font-size: var(--rq-text-sm); color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ck-source a, .ck-source-link { color: var(--brand); }
+.ck-conf { font-size: var(--rq-text-sm); font-weight: 600; border-radius: 999px; padding: 1px 8px; background: #eeeeea; color: #444; }
+.ck-conf-high { background: #e2f1ec; color: #0f6b52; }
+.ck-conf-low { background: #fdecd3; color: #7a4a00; }
+.ck-expert { font-size: var(--rq-text-sm); font-weight: 650; color: #7d2458; }
+.ck-action { justify-self: start; font: inherit; font-size: var(--rq-text-sm); font-weight: 650; border: 1px solid var(--brand); color: var(--brand); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.ck-card-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ck-card-actions .rq-filing { width: auto; margin: 0; }
+.ck-full > summary { cursor: pointer; font-size: var(--rq-text-sm); color: var(--muted); font-weight: 600; }
+.ck-full-body, .ck-full .rq-why-body { margin-top: 8px; font-size: var(--rq-text-sm); color: var(--ink-2); }
+.ck-trace { display: grid; gap: 4px; margin: 0 0 8px; }
+.ck-trace > div { display: grid; grid-template-columns: 9rem 1fr; gap: 8px; }
+.ck-trace dt { color: var(--muted); }
+.ck-trace dd { margin: 0; overflow-wrap: anywhere; }
+.ck-trace-steps { margin: 6px 0; padding-left: 18px; }
+.ck-trace-kind { text-transform: uppercase; font-size: 0.75rem; color: var(--muted); margin-right: 4px; letter-spacing: .04em; }
+.ck-trace-detail { color: var(--muted); overflow-wrap: anywhere; }
+.ck-not { margin-top: 12px; font-size: var(--rq-text-sm); color: var(--muted); }
+.ck-not > summary, .rq-group-secondary > summary, .rq-group-incentives > summary { cursor: pointer; }
+.rq-group-secondary, .rq-group-incentives { border-top: 1px solid var(--border); padding-top: 12px; }
+@media (max-width: 720px) {
+  .ck-row-head { flex-wrap: wrap; }
+  .ck-name { flex-basis: calc(100% - 44px); }
+  .ck-row-body { padding-left: 16px; }
+  .ck-card-line { flex-wrap: wrap; padding: 0 12px 10px 0; }
+  .ck-stage .ck-rows { padding-left: 0; }
+}

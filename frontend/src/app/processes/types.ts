@@ -131,6 +131,11 @@ export interface RegulatoryProcess {
   follows_process?: string;
   /** Lifecycle stage id (ProcessKB.stages) — orders sequential processes in the UI. */
   stage?: string;
+  /** Plain-language display name and one-line description (EN/ES) for the checklist view. */
+  short_name?: string;
+  short_name_es?: string;
+  summary?: string;
+  summary_es?: string;
   applicability: ApplicabilityRule[];
   exceptions?: ProcessException[];
   requirement_ids: string[];
@@ -157,6 +162,10 @@ export interface ProjectType {
   ask?: string[];
   may_require: string[];
   may_qualify_for: string[];
+  /** Types in the same group are alternatives: once one is confirmed, the others are dropped. */
+  exclusive_group?: string;
+  /** Dropped when any of these types is confirmed (their processes cover this one's). */
+  subsumed_by?: string[];
 }
 
 export interface IncentiveLink {
@@ -200,6 +209,9 @@ export interface FactDefinition {
   question_priority?: number;
   /** Chip text for the intake strip: `{value}` interpolates; `values` maps enum options. */
   chip?: { template?: string; values?: Record<string, string> };
+  /** One-line question and short button labels for the checklist view (EN/ES). */
+  short_question?: { en: string; es: string };
+  short_option_labels?: Record<string, { en: string; es: string }>;
 }
 
 /** A fact the engine derives from other facts (never asked, never extracted).
@@ -215,7 +227,7 @@ export interface DerivedFact {
 
 export interface ProcessStage { id: string; name: string; name_es?: string; order: number; description?: string }
 
-export interface AgencyRef { id: string; name: string; url?: string | null }
+export interface AgencyRef { id: string; name: string; url?: string | null; short_name?: string }
 
 export interface ProcessKB {
   version: string;
@@ -232,6 +244,27 @@ export interface ProcessKB {
   stages?: ProcessStage[];
   /** Incentive-eligibility facts are asked only when this holds. */
   incentive_questions_when?: Condition;
+  /** Legacy rule cards that never apply when `when` holds (e.g. DG registrations for a wholesale plant). */
+  legacy_suppressions?: LegacySuppression[];
+  /** Plain-language labels for the checklist summary line. */
+  display?: ProcessDisplay;
+}
+
+export interface LegacySuppression {
+  id: string;
+  rule_ids: string[];
+  when: Condition;
+  reason: string;
+  reason_es?: string;
+  source_id: string;
+  locator?: string;
+}
+
+type Bilingual = { en: string; es: string };
+export interface ProcessDisplay {
+  segment_labels?: Record<string, Bilingual>;
+  technology_labels?: Record<string, Bilingual>;
+  offtaker_labels?: Record<string, Bilingual>;
 }
 
 // ---------------------------------------------------------------- graph ----

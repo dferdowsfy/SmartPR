@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
 
@@ -127,6 +127,14 @@ export interface RequirementCardProps {
   /** e.g. "Added for International Trading Incentive" — set only when an
    * incentive pursuit is what put this requirement on the list. */
   contextLabel?: string | null;
+  /** One plain sentence shown when the line is expanded (the rest of `why`
+   * and the fact strip sit behind "Show full reasoning"). */
+  whySentence?: string | null;
+  /** "Show full reasoning" label, already localized. */
+  fullReasoningLabel?: string;
+  /** When true `extra` renders inside the expanded details (e.g. an expiry
+   * capture); otherwise it stays visible (processing, AI findings). */
+  extraInBody?: boolean;
 }
 
 function ActionButton({ action }: { action: RequirementAction }) {
@@ -169,8 +177,6 @@ function ActionButton({ action }: { action: RequirementAction }) {
 
 export function RequirementCard({
   index,
-  icon,
-  iconTone,
   name,
   agency,
   description,
@@ -187,44 +193,46 @@ export function RequirementCard({
   secondaryOnCompleted,
   facts,
   filing,
+  whySentence,
+  fullReasoningLabel,
+  extraInBody,
 }: RequirementCardProps) {
+  // Checklist line by default: number · name · who handles it · status, plus
+  // the primary action. Details expand on click; the full rationale and the
+  // fact strip sit one level deeper, behind "Show full reasoning".
+  const [open, setOpen] = useState(false);
   const whyRef = useRef<HTMLDetailsElement>(null);
   const openInstructions = () => {
-    if (whyRef.current) {
-      whyRef.current.open = true;
-      whyRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
+    setOpen(true);
+    requestAnimationFrame(() => {
+      if (whyRef.current) {
+        whyRef.current.open = true;
+        whyRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
   };
+  const bodyId = id ? `${id}-body` : undefined;
   return (
-    <div id={id} className="rq-card">
-      <div className="rq-card-row">
-        <div className="rq-card-left">
-          <span className="rq-card-num">{index}</span>
-          <span className={`rq-card-icon rq-icon-${iconTone}`}>{icon}</span>
-        </div>
-
-        <div className="rq-card-center">
-          <div className="rq-card-title-row">
-            <h3>{name}</h3>
-            {agency && <span className="tag agency">{agency}</span>}
-            {badge && <span className={`rq-badge rq-badge-${badge.tone}`}>{badge.label}</span>}
+    <div id={id} className={`rq-card ck-card ${open ? "ck-row-open" : ""}`}>
+      <div className="ck-card-line">
+        <button type="button" className="ck-row-head" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
+          <span className="ck-num">{index}</span>
+          <span className="ck-name">{name}</span>
+          {agency && <span className="ck-agency">{agency}</span>}
+          {badge && <span className={`ck-pill rq-badge-${badge.tone}`}>{badge.label}</span>}
+          <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
+        </button>
+        {action.kind !== "none" && (
+          <div className="ck-card-action">
+            <ActionButton action={action} />
           </div>
-          {contextLabel && <div className="rq-context-label">{contextLabel}</div>}
-          <p className="rq-card-desc">{description}</p>
-          {facts && facts.length > 0 && (
-            <dl className="rq-facts">
-              {facts.map((f) => (
-                <div key={f.label} className="rq-fact">
-                  <dt>{f.label}</dt>
-                  <dd>{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-        </div>
+        )}
+      </div>
 
-        <div className="rq-card-right">
-          <ActionButton action={action} />
+      {open && (
+        <div className="ck-row-body" id={bodyId}>
+          {contextLabel && <div className="rq-context-label">{contextLabel}</div>}
+          <p className="ck-why">{whySentence || description}</p>
           {answerPrompt && (
             <div className="rq-answer-prompt" role="group" aria-label={answerPrompt.prompt}>
               <div className="rq-answer-prompt-q">{answerPrompt.prompt}</div>
@@ -238,77 +246,90 @@ export function RequirementCard({
               </div>
             </div>
           )}
-          {filing && action.kind !== "completed" && (
-            <div className="rq-filing" data-filing={filing.kind}>
-              {filing.href ? (
+          <div className="ck-card-actions">
+            {filing && action.kind !== "completed" && (
+              <div className="rq-filing" data-filing={filing.kind}>
+                {filing.href ? (
+                  <a
+                    className={`rq-filing-btn rq-filing-${filing.kind}`}
+                    href={filing.href}
+                    onClick={filing.onClick}
+                    target={filing.kind === "instructions" ? "_blank" : undefined}
+                    rel={filing.kind === "instructions" ? "noopener noreferrer" : undefined}
+                  >
+                    {filing.kind === "instructions" ? <FileText size={15} /> : <Sparkles size={15} />}
+                    <span>{filing.label}</span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className={`rq-filing-btn rq-filing-${filing.kind}`}
+                    onClick={filing.onClick ?? (filing.kind === "instructions" ? openInstructions : undefined)}
+                  >
+                    {filing.kind === "instructions" ? <FileText size={15} /> : <Sparkles size={15} />}
+                    <span>{filing.label}</span>
+                  </button>
+                )}
+                {filing.hint && <span className="rq-cta-helper">{filing.hint}</span>}
+                {filing.agencySite && (
+                  <a className="rq-agency-site" href={filing.agencySite.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink size={13} /> {filing.agencySite.label}
+                  </a>
+                )}
+              </div>
+            )}
+            {!filing && download && action.kind !== "completed" && (
+              <>
                 <a
-                  className={`rq-filing-btn rq-filing-${filing.kind}`}
-                  href={filing.href}
-                  onClick={filing.onClick}
-                  target={filing.kind === "instructions" ? "_blank" : undefined}
-                  rel={filing.kind === "instructions" ? "noopener noreferrer" : undefined}
+                  href={download.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rq-download-btn"
+                  onClick={download.onDownload}
                 >
-                  {filing.kind === "instructions" ? <FileText size={15} /> : <Sparkles size={15} />}
-                  <span>{filing.label}</span>
+                  {download.downloaded ? <CheckCircle2 size={15} /> : <ExternalLink size={15} />}
+                  <span>{download.label}</span>
                 </a>
-              ) : (
-                <button
-                  type="button"
-                  className={`rq-filing-btn rq-filing-${filing.kind}`}
-                  onClick={filing.onClick ?? (filing.kind === "instructions" ? openInstructions : undefined)}
-                >
-                  {filing.kind === "instructions" ? <FileText size={15} /> : <Sparkles size={15} />}
-                  <span>{filing.label}</span>
-                </button>
-              )}
-              {filing.hint && <span className="rq-cta-helper">{filing.hint}</span>}
-              {filing.agencySite && (
-                <a className="rq-agency-site" href={filing.agencySite.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink size={13} /> {filing.agencySite.label}
-                </a>
-              )}
-            </div>
-          )}
-          {!filing && download && action.kind !== "completed" && (
-            <>
-              <a
-                href={download.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rq-download-btn"
-                onClick={download.onDownload}
-              >
-                {download.downloaded ? <CheckCircle2 size={15} /> : <ExternalLink size={15} />}
-                <span>{download.label}</span>
-              </a>
-              {download.downloaded && (
-                <span className="rq-downloaded-hint">{download.downloadedHint}</span>
-              )}
-            </>
-          )}
-          {action.helper && (action.kind === "form" || action.kind === "upload") && (
-            <span className="rq-cta-helper">{action.helper}</span>
-          )}
-          {secondary && (action.kind !== "completed" || secondaryOnCompleted) && (
-            <>
-              <span className="rq-or">OR</span>
+                {download.downloaded && (
+                  <span className="rq-downloaded-hint">{download.downloadedHint}</span>
+                )}
+              </>
+            )}
+            {action.helper && (action.kind === "form" || action.kind === "upload") && (
+              <span className="rq-cta-helper">{action.helper}</span>
+            )}
+            {secondary && (action.kind !== "completed" || secondaryOnCompleted) && (
               <button type="button" className="rq-secondary-btn" onClick={secondary.onClick} aria-label={secondary.prompt}>
                 <CloudUpload size={15} />
                 <span>{secondary.label}</span>
               </button>
-            </>
-          )}
+            )}
+          </div>
+
+          <details className="rq-why ck-full" ref={whyRef}>
+            <summary>
+              {fullReasoningLabel ?? whyLabel} <ChevronDown size={13} className="rq-why-chevron" />
+            </summary>
+            <div className="rq-why-body">
+              {whySentence && description && <p className="rq-card-desc">{description}</p>}
+              {why}
+              {facts && facts.length > 0 && (
+                <dl className="rq-facts">
+                  {facts.map((f) => (
+                    <div key={f.label} className="rq-fact">
+                      <dt>{f.label}</dt>
+                      <dd>{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          </details>
+          {extra && extraInBody && <div className="rq-card-extra">{extra}</div>}
         </div>
-      </div>
+      )}
 
-      <details className="rq-why" ref={whyRef}>
-        <summary>
-          {whyLabel} <ChevronDown size={13} className="rq-why-chevron" />
-        </summary>
-        <div className="rq-why-body">{why}</div>
-      </details>
-
-      {extra && <div className="rq-card-extra">{extra}</div>}
+      {extra && !extraInBody && <div className="rq-card-extra">{extra}</div>}
     </div>
   );
 }

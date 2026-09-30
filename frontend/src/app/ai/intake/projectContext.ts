@@ -239,6 +239,13 @@ export function validateProjectContext(raw: unknown, description?: string): {
         KW_KEYS.has(key) && typeof e.value === "string" && /(\d|\s)mw\b|megawatt/i.test(e.value)
           ? n * 1000
           : n;
+    } else if (key === "generation_technology") {
+      const tech = normalizeGenerationTechnology(value);
+      if (!tech) {
+        discarded.push({ field, reason: "not an allowed option" });
+        continue;
+      }
+      value = tech;
     } else if (typeof value === "string") {
       const trimmed = value.trim();
       if (!trimmed) {
@@ -282,7 +289,62 @@ export function validateProjectContext(raw: unknown, description?: string): {
     if (evidence) fact.evidence = evidence;
     (context as Record<string, ProjectContextFact>)[key] = fact;
   }
+  if (description) backfillEnergyTechnology(context, description);
   return { context, discarded };
+}
+
+const GENERATION_TECHNOLOGIES = ["solar", "wind", "storage", "hybrid", "other", "none"] as const;
+const GENERATION_TECH_SYNONYMS: Record<string, string> = {
+  pv: "solar", solar_pv: "solar", photovoltaic: "solar", fotovoltaica: "solar", fotovoltaico: "solar",
+  solar_storage: "hybrid", solar_plus_storage: "hybrid", "solar+storage": "hybrid", "solar_+_storage": "hybrid", solar_and_storage: "hybrid",
+  solar_battery: "hybrid", "solar+battery": "hybrid", "solar_+_battery": "hybrid", solar_and_battery: "hybrid", solar_bess: "hybrid", "solar+bess": "hybrid", pv_bess: "hybrid",
+  battery: "storage", batteries: "storage", bess: "storage", battery_storage: "storage", energy_storage: "storage",
+};
+
+/** Model output → a KB technology option ("solar + storage" → hybrid), or null. */
+export function normalizeGenerationTechnology(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const t = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const v = GENERATION_TECH_SYNONYMS[t] ?? t;
+  return (GENERATION_TECHNOLOGIES as readonly string[]).includes(v) ? v : null;
+}
+
+// "solar" alone is also Spanish for a plot of land, so solar is recognized
+// only in energy phrases ("solar farm", "15 MW of solar", "paneles solares").
+const SOLAR_RE = /\b(?:solar\s+(?:farms?|panels?|pv|plants?|parks?|projects?|arrays?|energy|power|systems?|installations?|generation|capacity|facilit(?:y|ies)|modules?)|photovoltaic|fotovoltaic[oa]s?|\d[\d.,]*\s*(?:mw|kw|megawatts?|kilowatts?)\s+(?:of\s+)?solar|(?:paneles|placas|energ[ií]a|plantas?|parques?|fincas?|sistemas?|proyectos?|granjas?|m[oó]dulos)\s+solar(?:es)?)\b/i;
+const SOLAR_FARM_RE = /\b(?:solar\s+(?:farms?|parks?|plants?)|(?:parques?|fincas?|granjas?|plantas?)\s+solar(?:es)?)\b/i;
+const WIND_RE = /\b(?:wind\s+(?:farms?|turbines?|power|energy|projects?)|e[oó]lic[oa]s?|aerogeneradores?)\b/i;
+const BATTERY_RE = /\b(?:batter(?:y|ies)|bess|energy\s+storage|bater[ií]as?|almacenamiento\s+(?:de\s+energ[ií]a|en\s+bater[ií]as))\b|\d[\d.,]*\s*mwh\b/i;
+const OTHER_GEN_RE = /\b(?:generators?|diesel|natural\s+gas|turbines?|generadores?|cogenera\w*|chp)\b/i;
+
+/**
+ * Deterministic backstop for the technology facts, read only from the user's
+ * own words: "solar farms that include battery storage" is hybrid even when
+ * the model left generation_technology out (it would otherwise be asked).
+ * Never overrides a validated model fact.
+ */
+export function backfillEnergyTechnology(context: ProjectContext, description: string): void {
+  const ctx = context as Record<string, ProjectContextFact>;
+  const solar = SOLAR_RE.exec(description);
+  const wind = WIND_RE.exec(description);
+  const battery = BATTERY_RE.exec(description);
+  if (battery && ctx.battery_storage === undefined) {
+    ctx.battery_storage = { value: true, confidence: 0.9, evidence: battery[0] };
+  }
+  // A solar farm / park / plant is a standalone, ground-mounted plant.
+  const farm = SOLAR_FARM_RE.exec(description);
+  if (farm) {
+    if (ctx.energy_facility_type === undefined) ctx.energy_facility_type = { value: "standalone_plant", confidence: 0.85, evidence: farm[0] };
+    if (ctx.mounting_type === undefined) ctx.mounting_type = { value: "ground", confidence: 0.85, evidence: farm[0] };
+  }
+  if (ctx.generation_technology !== undefined) return;
+  let value: string | null = null;
+  let evidence: string | undefined;
+  if (solar && battery) { value = "hybrid"; evidence = `${solar[0]} … ${battery[0]}`; }
+  else if (solar && !wind) { value = "solar"; evidence = solar[0]; }
+  else if (wind && !solar && !battery) { value = "wind"; evidence = wind[0]; }
+  else if (battery && !solar && !wind && !OTHER_GEN_RE.test(description)) { value = "storage"; evidence = battery[0]; }
+  if (value) ctx.generation_technology = { value, confidence: 0.9, evidence };
 }
 
 /** True when a fact exists and carries a non-empty value. */

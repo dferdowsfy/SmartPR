@@ -1,5 +1,5 @@
 {
-  "version": "2026-09-30.1",
+  "version": "2026-09-30.2",
   "domain": "energy",
   "jurisdiction": "Puerto Rico",
   "agencies": [
@@ -7,27 +7,32 @@
       "id": "nepr",
       "name": "Negociado de Energía de Puerto Rico (Puerto Rico Energy Bureau, PREB)",
       "url": "https://energia.pr.gov/",
-      "note": "Not yet in kb/agencies.json; defined here so the process graph can name it."
+      "note": "Not yet in kb/agencies.json; defined here so the process graph can name it.",
+      "short_name": "PREB"
     },
     {
       "id": "prepa",
       "name": "Autoridad de Energía Eléctrica (PREPA)",
-      "url": "https://aeepr.com"
+      "url": "https://aeepr.com",
+      "short_name": "PREPA"
     },
     {
       "id": "jp",
       "name": "Junta de Planificación de Puerto Rico",
-      "url": "https://jp.pr.gov"
+      "url": "https://jp.pr.gov",
+      "short_name": "JP"
     },
     {
       "id": "usace",
       "name": "U.S. Army Corps of Engineers — Jacksonville District (Antilles Permits Section)",
-      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/"
+      "url": "https://www.saj.usace.army.mil/Missions/Regulatory/",
+      "short_name": "USACE"
     },
     {
       "id": "faa",
       "name": "Federal Aviation Administration (Obstruction Evaluation / Airport Airspace Analysis)",
-      "url": "https://oeaaa.faa.gov"
+      "url": "https://oeaaa.faa.gov",
+      "short_name": "FAA"
     }
   ],
   "facts": [
@@ -52,6 +57,36 @@
         "hybrid": "Solar + storage / hybrid",
         "other": "Other",
         "none": "None"
+      },
+      "short_question": {
+        "en": "What will produce or store the energy?",
+        "es": "¿Qué producirá o almacenará la energía?"
+      },
+      "short_option_labels": {
+        "solar": {
+          "en": "Solar",
+          "es": "Solar"
+        },
+        "wind": {
+          "en": "Wind",
+          "es": "Eólica"
+        },
+        "storage": {
+          "en": "Batteries only",
+          "es": "Solo baterías"
+        },
+        "hybrid": {
+          "en": "Solar + batteries",
+          "es": "Solar + baterías"
+        },
+        "other": {
+          "en": "Other",
+          "es": "Otra"
+        },
+        "none": {
+          "en": "None",
+          "es": "Ninguna"
+        }
       }
     },
     {
@@ -59,7 +94,11 @@
       "label": "Battery storage",
       "type": "boolean",
       "question": "Will the project include battery energy storage?",
-      "why": "Battery storage can bring separate fire-safety review and, above 1 MW of storage service, PREB certification."
+      "why": "Battery storage can bring separate fire-safety review and, above 1 MW of storage service, PREB certification.",
+      "short_question": {
+        "en": "Will it include batteries?",
+        "es": "¿Incluirá baterías?"
+      }
     },
     {
       "key": "generation_capacity_kw",
@@ -67,7 +106,11 @@
       "type": "number",
       "question": "What is the total generating capacity, in kW (1 MW = 1,000 kW)?",
       "why": "Capacity thresholds (25 kW, 300 kW, 1 MW, 5 MW) change net-metering eligibility, insurance, and whether PREB certification applies.",
-      "unit": "kW"
+      "unit": "kW",
+      "short_question": {
+        "en": "How big is it (kW or MW)?",
+        "es": "¿De qué tamaño es (kW o MW)?"
+      }
     },
     {
       "key": "storage_capacity_kw",
@@ -75,7 +118,11 @@
       "type": "number",
       "question": "What is the nominal capacity of the largest storage unit, in kW?",
       "why": "Offering storage service with a unit of 1 MW or more makes the operator an electric service company under PREB Regulation 8701.",
-      "unit": "kW"
+      "unit": "kW",
+      "short_question": {
+        "en": "Largest battery unit size (kW)?",
+        "es": "¿Tamaño de la unidad de batería más grande (kW)?"
+      }
     },
     {
       "key": "customer_class",
@@ -100,6 +147,40 @@
         "government": "Government",
         "educational": "Educational",
         "medical": "Medical / hospital"
+      },
+      "short_question": {
+        "en": "What kind of electric account is it?",
+        "es": "¿Qué tipo de cuenta eléctrica es?"
+      },
+      "short_option_labels": {
+        "residential": {
+          "en": "Residential",
+          "es": "Residencial"
+        },
+        "commercial": {
+          "en": "Commercial",
+          "es": "Comercial"
+        },
+        "industrial": {
+          "en": "Industrial",
+          "es": "Industrial"
+        },
+        "agricultural": {
+          "en": "Agricultural",
+          "es": "Agrícola"
+        },
+        "government": {
+          "en": "Government",
+          "es": "Gobierno"
+        },
+        "educational": {
+          "en": "School",
+          "es": "Educativa"
+        },
+        "medical": {
+          "en": "Medical",
+          "es": "Médica"
+        }
       }
     },
     {
@@ -123,6 +204,36 @@
         "cooperative": "A customer cooperative",
         "municipal": "A municipality",
         "prepa": "PREPA"
+      },
+      "short_question": {
+        "en": "Who will own the system?",
+        "es": "¿Quién será dueño del sistema?"
+      },
+      "short_option_labels": {
+        "owner": {
+          "en": "We will",
+          "es": "Nosotros"
+        },
+        "third_party": {
+          "en": "A third party",
+          "es": "Un tercero"
+        },
+        "lease_ppa": {
+          "en": "Lease / PPA",
+          "es": "Arrendamiento / PPA"
+        },
+        "cooperative": {
+          "en": "A cooperative",
+          "es": "Una cooperativa"
+        },
+        "municipal": {
+          "en": "A municipality",
+          "es": "Un municipio"
+        },
+        "prepa": {
+          "en": "PREPA",
+          "es": "AEE"
+        }
       }
     },
     {
@@ -130,14 +241,22 @@
       "label": "Properties/facilities served",
       "type": "number",
       "question": "How many separate buildings or properties will the system serve, including your own?",
-      "why": "A system serving several facilities may be a microgrid rather than a single-site installation."
+      "why": "A system serving several facilities may be a microgrid rather than a single-site installation.",
+      "short_question": {
+        "en": "How many buildings will it serve?",
+        "es": "¿A cuántos edificios servirá?"
+      }
     },
     {
       "key": "common_ownership",
       "label": "All served buildings have the same owner",
       "type": "boolean",
       "question": "Are all the buildings the system will serve owned by your company?",
-      "why": "Under Regulation 9028 a microgrid serving only its owner (one or two customer-owners) that sells nothing is an individual self-supply system with no PREB requirements."
+      "why": "Under Regulation 9028 a microgrid serving only its owner (one or two customer-owners) that sells nothing is an individual self-supply system with no PREB requirements.",
+      "short_question": {
+        "en": "Does your company own all those buildings?",
+        "es": "¿Tu compañía es dueña de todos esos edificios?"
+      }
     },
     {
       "key": "customers_served",
@@ -154,7 +273,11 @@
           },
           "question": "Besides your own buildings, will the system serve any other electric customers (tenants or other businesses)? If so, how many?"
         }
-      ]
+      ],
+      "short_question": {
+        "en": "How many electric customers will it serve?",
+        "es": "¿A cuántos clientes eléctricos servirá?"
+      }
     },
     {
       "key": "sells_energy_to_third_parties",
@@ -171,28 +294,44 @@
           },
           "question": "Sharing power among buildings you own is not a sale. Will you also sell electricity to anyone else, such as tenants or other businesses?"
         }
-      ]
+      ],
+      "short_question": {
+        "en": "Will you sell energy to anyone else?",
+        "es": "¿Venderás energía a otros?"
+      }
     },
     {
       "key": "sells_to_utility_under_ppa",
       "label": "Sells to PREPA/LUMA under a PPA",
       "type": "boolean",
       "question": "Will you sell power to PREPA/LUMA or another electric company under a power purchase agreement?",
-      "why": "Generators selling under a PPA are electric service companies under PREB Regulation 8701."
+      "why": "Generators selling under a PPA are electric service companies under PREB Regulation 8701.",
+      "short_question": {
+        "en": "Will you sell power to LUMA/PREPA under a contract?",
+        "es": "¿Venderás energía a LUMA/AEE bajo contrato?"
+      }
     },
     {
       "key": "parallel_operation",
       "label": "Grid-connected (parallel operation)",
       "type": "boolean",
       "question": "Will the system operate connected to (in parallel with) the LUMA grid?",
-      "why": "Only systems that operate in parallel with the grid go through LUMA interconnection; fully off-grid systems do not."
+      "why": "Only systems that operate in parallel with the grid go through LUMA interconnection; fully off-grid systems do not.",
+      "short_question": {
+        "en": "Will it run connected to the LUMA grid?",
+        "es": "¿Operará conectado a la red de LUMA?"
+      }
     },
     {
       "key": "interconnection_required",
       "label": "Interconnection with LUMA required",
       "type": "boolean",
       "question": "Will the system need to interconnect with LUMA?",
-      "why": "Interconnection is the controlling fact for LUMA's distributed-generation process."
+      "why": "Interconnection is the controlling fact for LUMA's distributed-generation process.",
+      "short_question": {
+        "en": "Will it connect to LUMA?",
+        "es": "¿Se conectará a LUMA?"
+      }
     },
     {
       "key": "microgrid_configuration",
@@ -209,7 +348,11 @@
           },
           "question": "Will the {properties_served} buildings share power through their own distribution lines and controls (a microgrid), or will each building connect to LUMA separately?"
         }
-      ]
+      ],
+      "short_question": {
+        "en": "Is it a microgrid?",
+        "es": "¿Es una microrred?"
+      }
     },
     {
       "key": "energy_project_status",
@@ -224,6 +367,20 @@
       "option_labels": {
         "existing": "Already installed",
         "proposed": "Planned / proposed"
+      },
+      "short_question": {
+        "en": "Is it already operating?",
+        "es": "¿Ya está operando?"
+      },
+      "short_option_labels": {
+        "existing": {
+          "en": "Operating",
+          "es": "Operando"
+        },
+        "proposed": {
+          "en": "Planned",
+          "es": "Planificado"
+        }
       }
     },
     {
@@ -243,6 +400,28 @@
         "developer": "Project developer / owner",
         "energy_service_provider": "Energy service provider",
         "installer": "Installer / contractor"
+      },
+      "short_question": {
+        "en": "What is your role in the project?",
+        "es": "¿Cuál es tu rol en el proyecto?"
+      },
+      "short_option_labels": {
+        "end_use_customer": {
+          "en": "We use the power",
+          "es": "Usamos la energía"
+        },
+        "developer": {
+          "en": "Developer / owner",
+          "es": "Desarrollador / dueño"
+        },
+        "energy_service_provider": {
+          "en": "Energy service provider",
+          "es": "Proveedor de servicios de energía"
+        },
+        "installer": {
+          "en": "Installer",
+          "es": "Instalador"
+        }
       }
     },
     {
@@ -268,6 +447,10 @@
         "wheeling": "Wheeling (transmission)",
         "installation": "Installation",
         "consulting": "Consulting"
+      },
+      "short_question": {
+        "en": "Which energy services will you offer?",
+        "es": "¿Qué servicios de energía ofrecerás?"
       }
     },
     {
@@ -275,14 +458,22 @@
       "label": "Interested in energy incentives",
       "type": "boolean",
       "question": "Are you interested in renewable-energy incentives?",
-      "why": "Incentives are optional; SmartPR only evaluates them when you want them."
+      "why": "Incentives are optional; SmartPR only evaluates them when you want them.",
+      "short_question": {
+        "en": "Interested in energy incentives?",
+        "es": "¿Te interesan los incentivos de energía?"
+      }
     },
     {
       "key": "net_metering_requested",
       "label": "Wants net metering",
       "type": "boolean",
       "question": "Do you want to enroll in LUMA net metering (credit for energy exported to the grid)?",
-      "why": "Net metering is a voluntary program — it is required only if you want export credits."
+      "why": "Net metering is a voluntary program — it is required only if you want export credits.",
+      "short_question": {
+        "en": "Do you want net metering?",
+        "es": "¿Quieres medición neta?"
+      }
     },
     {
       "key": "interconnection_voltage",
@@ -310,7 +501,25 @@
           },
           "question": "Where will the plant connect to the grid — at 38 kV sub-transmission or 115 kV transmission (for example, which substation or line), or at distribution voltage?"
         }
-      ]
+      ],
+      "short_question": {
+        "en": "What voltage will it connect at?",
+        "es": "¿A qué voltaje se conectará?"
+      },
+      "short_option_labels": {
+        "distribution": {
+          "en": "Up to 13.2 kV",
+          "es": "Hasta 13.2 kV"
+        },
+        "subtransmission": {
+          "en": "38 kV",
+          "es": "38 kV"
+        },
+        "transmission": {
+          "en": "115 kV",
+          "es": "115 kV"
+        }
+      }
     },
     {
       "key": "mounting_type",
@@ -327,6 +536,24 @@
         "roof": "Rooftop",
         "ground": "Ground-mounted",
         "carport": "Carport / canopy"
+      },
+      "short_question": {
+        "en": "Roof, ground or carport?",
+        "es": "¿Techo, suelo o marquesina?"
+      },
+      "short_option_labels": {
+        "roof": {
+          "en": "Roof",
+          "es": "Techo"
+        },
+        "ground": {
+          "en": "Ground",
+          "es": "Suelo"
+        },
+        "carport": {
+          "en": "Carport",
+          "es": "Marquesina"
+        }
       }
     },
     {
@@ -334,14 +561,22 @@
       "label": "Municipality",
       "type": "string",
       "question": "In which municipality is the project?",
-      "why": "Permitting jurisdiction (OGPe or a municipality with delegated permitting) depends on the municipality."
+      "why": "Permitting jurisdiction (OGPe or a municipality with delegated permitting) depends on the municipality.",
+      "short_question": {
+        "en": "Which municipality?",
+        "es": "¿En qué municipio?"
+      }
     },
     {
       "key": "structural_work",
       "label": "Structural work",
       "type": "boolean",
       "question": "Will the installation require structural work (roof reinforcement, new supports or foundations)?",
-      "why": "Structural work is one of the conditions SmartPR's existing rules use to require an OGPe construction permit."
+      "why": "Structural work is one of the conditions SmartPR's existing rules use to require an OGPe construction permit.",
+      "short_question": {
+        "en": "Does it need structural work?",
+        "es": "¿Requiere trabajo estructural?"
+      }
     },
     {
       "key": "power_offtaker",
@@ -370,6 +605,24 @@
       "extraction": {
         "en": "\"power_offtaker\" :: \"self\" | \"luma_prepa\" | \"third_party\" — who uses or buys the output. \"luma_prepa\" only when the plant sells its output to LUMA/PREPA (PPA/PPOA, RFP/procurement, \"sell power to LUMA\"); exporting excess under net metering is \"self\".",
         "es": "\"power_offtaker\" :: \"self\" | \"luma_prepa\" | \"third_party\" — quién usa o compra la energía. \"luma_prepa\" solo si la planta vende su producción a LUMA/AEE (PPA/PPOA, RFP/subasta, \"venderle energía a LUMA\"); exportar sobrantes bajo medición neta es \"self\"."
+      },
+      "short_question": {
+        "en": "Who buys the power?",
+        "es": "¿Quién compra la energía?"
+      },
+      "short_option_labels": {
+        "self": {
+          "en": "We use it",
+          "es": "La usamos nosotros"
+        },
+        "luma_prepa": {
+          "en": "LUMA / PREPA",
+          "es": "LUMA / AEE"
+        },
+        "third_party": {
+          "en": "Another buyer",
+          "es": "Otro comprador"
+        }
       }
     },
     {
@@ -390,6 +643,20 @@
       "extraction": {
         "en": "\"grid_position\" :: \"behind_the_meter\" | \"front_of_meter\", only when stated (e.g. \"behind the meter\", \"utility-scale plant connected to the grid\").",
         "es": "\"grid_position\" :: \"behind_the_meter\" | \"front_of_meter\", solo si se dice (p. ej. \"detrás del contador\", \"planta conectada directamente a la red\")."
+      },
+      "short_question": {
+        "en": "Behind your meter or in front of it?",
+        "es": "¿Detrás de tu contador o frente a él?"
+      },
+      "short_option_labels": {
+        "behind_the_meter": {
+          "en": "Behind the meter",
+          "es": "Detrás del contador"
+        },
+        "front_of_meter": {
+          "en": "In front of the meter",
+          "es": "Frente al contador"
+        }
       }
     },
     {
@@ -409,6 +676,20 @@
       "extraction": {
         "en": "\"energy_facility_type\" :: \"standalone_plant\" for a solar farm/park/plant, wind farm, or standalone storage plant; \"onsite_system\" for a system at an existing home/business facility.",
         "es": "\"energy_facility_type\" :: \"standalone_plant\" para una finca/parque/planta solar, parque eólico o planta de almacenamiento independiente; \"onsite_system\" para un sistema en una instalación existente."
+      },
+      "short_question": {
+        "en": "At an existing facility or a standalone plant?",
+        "es": "¿En una instalación existente o una planta independiente?"
+      },
+      "short_option_labels": {
+        "onsite_system": {
+          "en": "At a facility",
+          "es": "En una instalación"
+        },
+        "standalone_plant": {
+          "en": "Standalone plant",
+          "es": "Planta independiente"
+        }
       }
     },
     {
@@ -424,6 +705,10 @@
       "extraction": {
         "en": "\"storage_energy_mwh\" :: battery energy in MWh (\"40 MWh of batteries\" = 40). Never put MWh into storage_capacity_kw (that is power in kW).",
         "es": "\"storage_energy_mwh\" :: energía de baterías en MWh (\"40 MWh de baterías\" = 40). Nunca pongas MWh en storage_capacity_kw (esa es potencia en kW)."
+      },
+      "short_question": {
+        "en": "How much can the batteries store (MWh)?",
+        "es": "¿Cuánto almacenan las baterías (MWh)?"
       }
     },
     {
@@ -447,6 +732,28 @@
       "extraction": {
         "en": "\"site_control\" :: \"owned\" | \"leased\" | \"option_or_agreement\" | \"none\", only when stated for the project site.",
         "es": "\"site_control\" :: \"owned\" | \"leased\" | \"option_or_agreement\" | \"none\", solo si se dice sobre el terreno del proyecto."
+      },
+      "short_question": {
+        "en": "Do you own, lease or hold an option on the site?",
+        "es": "¿Eres dueño, arrendatario o tienes opción sobre el terreno?"
+      },
+      "short_option_labels": {
+        "owned": {
+          "en": "Own",
+          "es": "Dueño"
+        },
+        "leased": {
+          "en": "Lease",
+          "es": "Arriendo"
+        },
+        "option_or_agreement": {
+          "en": "Option / agreement",
+          "es": "Opción / acuerdo"
+        },
+        "none": {
+          "en": "Not yet",
+          "es": "Todavía no"
+        }
       }
     },
     {
@@ -475,6 +782,36 @@
       "extraction": {
         "en": "\"site_zoning\" :: \"industrial\" | \"agricultural\" | \"specially_protected_rustic\" | \"other_rustic\" | \"urban\" | \"unzoned\", only when the land classification/zoning is stated.",
         "es": "\"site_zoning\" :: \"industrial\" | \"agricultural\" | \"specially_protected_rustic\" | \"other_rustic\" | \"urban\" | \"unzoned\", solo si se dice la calificación del terreno."
+      },
+      "short_question": {
+        "en": "How is the land zoned?",
+        "es": "¿Cómo está calificado el terreno?"
+      },
+      "short_option_labels": {
+        "industrial": {
+          "en": "Industrial",
+          "es": "Industrial"
+        },
+        "agricultural": {
+          "en": "Agricultural",
+          "es": "Agrícola"
+        },
+        "specially_protected_rustic": {
+          "en": "Protected rustic",
+          "es": "Rústico protegido"
+        },
+        "other_rustic": {
+          "en": "Other rustic",
+          "es": "Otro rústico"
+        },
+        "urban": {
+          "en": "Urban",
+          "es": "Urbano"
+        },
+        "unzoned": {
+          "en": "Not sure",
+          "es": "No sé"
+        }
       }
     },
     {
@@ -502,6 +839,10 @@
       "extraction": {
         "en": "\"environmental_sensitivity\" :: comma-separated from wetlands, agricultural_reserve, coastal_zone, floodplain, protected_habitat, none — only what is stated about the site.",
         "es": "\"environmental_sensitivity\" :: separados por comas entre wetlands, agricultural_reserve, coastal_zone, floodplain, protected_habitat, none — solo lo que se diga del terreno."
+      },
+      "short_question": {
+        "en": "Any wetlands, coast or flood zone on the site?",
+        "es": "¿Hay humedales, costa o zona inundable en el terreno?"
       }
     },
     {
@@ -519,6 +860,10 @@
       "extraction": {
         "en": "\"procurement_tranche\" :: true when the speaker says the project is in / was selected in / is bidding into a PREB or PREPA RFP or tranche; false only when they say it is not.",
         "es": "\"procurement_tranche\" :: true si dice que el proyecto está / fue seleccionado / compite en un RFP o tramo (tranche) del NEPR o la AEE; false solo si dice que no."
+      },
+      "short_question": {
+        "en": "Is it in a PREB procurement round (RFP)?",
+        "es": "¿Está en una subasta del NEPR (RFP)?"
       }
     },
     {
@@ -531,6 +876,10 @@
       "extraction": {
         "en": "\"structure_height_ft\" :: tallest structure height in feet, only when stated (convert meters × 3.28).",
         "es": "\"structure_height_ft\" :: altura de la estructura más alta en pies, solo si se dice (metros × 3.28)."
+      },
+      "short_question": {
+        "en": "Tallest structure height (ft)?",
+        "es": "¿Altura de la estructura más alta (pies)?"
       }
     },
     {
@@ -542,6 +891,10 @@
       "extraction": {
         "en": "\"near_airport\" :: true when the site is stated to be near an airport/heliport.",
         "es": "\"near_airport\" :: true si se dice que el terreno está cerca de un aeropuerto o helipuerto."
+      },
+      "short_question": {
+        "en": "Is the site near an airport?",
+        "es": "¿Está cerca de un aeropuerto?"
       }
     }
   ],
@@ -2186,6 +2539,12 @@
       "may_qualify_for": [
         "INC_ACT60_GREEN_ENERGY",
         "INC_ACT60_GREEN_ENERGY_DEDUCTION"
+      ],
+      "subsumed_by": [
+        "PT_UTILITY_SOLAR",
+        "PT_UTILITY_HYBRID_SOLAR_BESS",
+        "PT_UTILITY_STANDALONE_BESS",
+        "PT_UTILITY_OTHER_GENERATION"
       ]
     },
     {
@@ -2316,7 +2675,8 @@
       ],
       "may_qualify_for": [
         "INC_ACT60_GREEN_ENERGY"
-      ]
+      ],
+      "exclusive_group": "utility_technology"
     },
     {
       "id": "PT_UTILITY_HYBRID_SOLAR_BESS",
@@ -2417,7 +2777,8 @@
       ],
       "may_qualify_for": [
         "INC_ACT60_GREEN_ENERGY"
-      ]
+      ],
+      "exclusive_group": "utility_technology"
     },
     {
       "id": "PT_UTILITY_STANDALONE_BESS",
@@ -2477,7 +2838,8 @@
         "PR_UTILITY_COMMISSIONING_COD",
         "PR_ENERGY_BESS_FIRE_REVIEW"
       ],
-      "may_qualify_for": []
+      "may_qualify_for": [],
+      "exclusive_group": "utility_technology"
     },
     {
       "id": "PT_UTILITY_OTHER_GENERATION",
@@ -2542,7 +2904,8 @@
       ],
       "may_qualify_for": [
         "INC_ACT60_GREEN_ENERGY"
-      ]
+      ],
+      "exclusive_group": "utility_technology"
     },
     {
       "id": "PT_LARGE_GROUND_PV",
@@ -2723,7 +3086,11 @@
       ],
       "legacy_rule_ids": [
         "RULE_0610"
-      ]
+      ],
+      "short_name": "LUMA interconnection (distributed generation)",
+      "short_name_es": "Interconexión con LUMA (generación distribuida)",
+      "summary": "Register the system with LUMA before it runs connected to the grid.",
+      "summary_es": "Registra el sistema con LUMA antes de operarlo conectado a la red."
     },
     {
       "id": "PR_ENERGY_NET_METERING",
@@ -2941,7 +3308,11 @@
         "RULE_0611"
       ],
       "voluntary": true,
-      "voluntary_note": "Net metering is a voluntary program (Ley 114-2007 Art. 1): these steps apply only if you choose to enroll to receive credit for exported energy."
+      "voluntary_note": "Net metering is a voluntary program (Ley 114-2007 Art. 1): these steps apply only if you choose to enroll to receive credit for exported energy.",
+      "short_name": "Net metering (optional)",
+      "short_name_es": "Medición neta (opcional)",
+      "summary": "Optional LUMA program that credits the energy you export.",
+      "summary_es": "Programa opcional de LUMA que acredita la energía que exportas."
     },
     {
       "id": "PR_ENERGY_MICROGRID_REGISTRATION",
@@ -3122,7 +3493,11 @@
           },
           "controlling_language": "Any microgrid owner considered as an Electric Service Company, as such term is defined in Section 1.08(A)(5) of Regulation 8701, shall, in addition to complying with the requirements set forth in this Regulation, comply with any and all applicable requirements set forth in Regulation 8701."
         }
-      ]
+      ],
+      "short_name": "Microgrid registration",
+      "short_name_es": "Registro de microrred",
+      "summary": "Register the microgrid with the Energy Bureau.",
+      "summary_es": "Registra la microrred con el Negociado de Energía."
     },
     {
       "id": "PR_ENERGY_MICROGRID_COMPLIANCE",
@@ -3165,7 +3540,11 @@
           "locator": "§ 7.02",
           "note": "Ongoing obligations start once PREB grants permission to operate as a microgrid."
         }
-      ]
+      ],
+      "short_name": "Microgrid ongoing compliance",
+      "short_name_es": "Cumplimiento continuo de la microrred",
+      "summary": "Codes, standards and annual reporting after registration.",
+      "summary_es": "Códigos, normas e informes anuales después del registro."
     },
     {
       "id": "PR_ENERGY_ESC_CERTIFICATION",
@@ -3411,7 +3790,11 @@
         "REQ_ESC_GROSS_REVENUE"
       ],
       "prerequisites": [],
-      "stage": "certification"
+      "stage": "certification",
+      "short_name": "Energy Bureau certification",
+      "short_name_es": "Certificación del Negociado de Energía",
+      "summary": "Companies that sell power or storage services must be certified by the Energy Bureau.",
+      "summary_es": "Las compañías que venden energía o servicios de almacenamiento deben certificarse con el Negociado."
     },
     {
       "id": "PR_ENERGY_INSTALLER_CERTIFICATION",
@@ -3470,7 +3853,11 @@
       "prerequisites": [],
       "legacy_rule_ids": [
         "RULE_0605"
-      ]
+      ],
+      "short_name": "Installer certification",
+      "short_name_es": "Certificación de instalador",
+      "summary": "Renewable-system installers must be certified by DDEC-PPPE.",
+      "summary_es": "Los instaladores de sistemas renovables deben certificarse con DDEC-PPPE."
     },
     {
       "id": "PR_ENERGY_CONSTRUCTION_APPROVAL",
@@ -3562,7 +3949,11 @@
       "legacy_rule_ids": [
         "RULE_0612",
         "RULE_0613"
-      ]
+      ],
+      "short_name": "Construction permit",
+      "short_name_es": "Permiso de construcción",
+      "summary": "A construction or use permit for the installation, when the project needs one.",
+      "summary_es": "Permiso de construcción o uso para la instalación, cuando el proyecto lo requiere."
     },
     {
       "id": "PR_ENERGY_BESS_FIRE_REVIEW",
@@ -3613,7 +4004,12 @@
       "prerequisites": [],
       "legacy_rule_ids": [
         "RULE_0615"
-      ]
+      ],
+      "short_name": "Fire-safety review (batteries)",
+      "short_name_es": "Revisión de seguridad contra incendios (baterías)",
+      "summary": "Bomberos reviews battery storage installations.",
+      "summary_es": "Bomberos revisa las instalaciones de almacenamiento en baterías.",
+      "stage": "construction"
     },
     {
       "id": "PR_UTILITY_PROCUREMENT_RFP",
@@ -3712,7 +4108,11 @@
         "REQ_RFP_ENV_PERMITTING_PLAN",
         "REQ_RFP_TD_PLAN"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "Competitive procurement (RFP)",
+      "short_name_es": "Subasta competitiva (RFP)",
+      "summary": "Utility power contracts are normally awarded through a PREB-supervised procurement round.",
+      "summary_es": "Los contratos de venta a la utilidad normalmente se adjudican en una subasta supervisada por el NEPR."
     },
     {
       "id": "PR_UTILITY_PPOA_APPROVAL",
@@ -3817,7 +4217,11 @@
             "value": true
           }
         }
-      ]
+      ],
+      "short_name": "Power purchase contract (PPOA) — PREB approval",
+      "short_name_es": "Contrato de compraventa (PPOA) — aprobación del NEPR",
+      "summary": "The Energy Bureau must approve the power (or storage) contract before it is signed.",
+      "summary_es": "El Negociado debe aprobar el contrato de energía (o almacenamiento) antes de firmarse."
     },
     {
       "id": "PR_UTILITY_NOTICE_OF_INTENT",
@@ -3865,7 +4269,11 @@
       "requirement_ids": [
         "REQ_NOI_FILING"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "Notice of intent to build",
+      "short_name_es": "Aviso de intención de construir",
+      "summary": "Notify the Energy Bureau before building new generation.",
+      "summary_es": "Notifica al Negociado antes de construir generación nueva."
     },
     {
       "id": "PR_UTILITY_INTERCONNECTION_STUDIES",
@@ -3935,7 +4343,11 @@
             "value": true
           }
         }
-      ]
+      ],
+      "short_name": "LUMA interconnection studies",
+      "short_name_es": "Estudios de interconexión de LUMA",
+      "summary": "LUMA studies how the plant affects the grid and what upgrades it needs.",
+      "summary_es": "LUMA estudia cómo la planta afecta la red y qué mejoras necesita."
     },
     {
       "id": "PR_UTILITY_MTR_COMPLIANCE",
@@ -3993,7 +4405,11 @@
         "REQ_MTR_BESS",
         "REQ_MTR_MODEL_VALIDATION"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "LUMA technical requirements (MTR)",
+      "short_name_es": "Requisitos técnicos de LUMA (MTR)",
+      "summary": "The plant must meet LUMA's minimum technical requirements.",
+      "summary_es": "La planta debe cumplir los requisitos técnicos mínimos de LUMA."
     },
     {
       "id": "PR_UTILITY_INTERCONNECTION_AGREEMENT",
@@ -4050,7 +4466,11 @@
           "source_id": "SRC_PREB_INTERCONNECTION_DRAFT",
           "locator": "Sección 5.01(A)(1) (draft)"
         }
-      ]
+      ],
+      "short_name": "Interconnection agreement",
+      "short_name_es": "Acuerdo de interconexión",
+      "summary": "Sign the interconnection agreement with LUMA after the studies.",
+      "summary_es": "Firma el acuerdo de interconexión con LUMA después de los estudios."
     },
     {
       "id": "PR_LAND_USE_CONSULTA_UBICACION",
@@ -4180,7 +4600,11 @@
           "source_id": "SRC_RC_2023",
           "locator": "Regla 2.6.1(e)"
         }
-      ]
+      ],
+      "short_name": "Site / land-use review",
+      "short_name_es": "Revisión de ubicación / uso de suelo",
+      "summary": "OGPe reviews whether the site can host the plant (consulta de ubicación).",
+      "summary_es": "OGPe evalúa si el terreno puede acoger la planta (consulta de ubicación)."
     },
     {
       "id": "PR_ENV_COMPLIANCE_DETERMINATION",
@@ -4258,7 +4682,11 @@
         "REQ_ENV_DOCUMENT",
         "REQ_ENV_DCA"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "Environmental review",
+      "short_name_es": "Evaluación ambiental",
+      "summary": "OGPe must issue an environmental determination before any final permit.",
+      "summary_es": "OGPe debe emitir una determinación ambiental antes de cualquier permiso final."
     },
     {
       "id": "PR_UTILITY_CONSTRUCTION_PERMIT",
@@ -4338,6 +4766,17 @@
           "source_id": "SRC_RC_2023",
           "locator": "§ 9.4.1.3(c)"
         }
+      ],
+      "short_name": "Construction permit",
+      "short_name_es": "Permiso de construcción",
+      "summary": "A construction permit for the plant.",
+      "summary_es": "Permiso de construcción para la planta.",
+      "legacy_document_ids": [
+        "DOC_OGPE_CONSTRUCTION_PERMIT"
+      ],
+      "legacy_rule_ids": [
+        "RULE_0612",
+        "RULE_0613"
       ]
     },
     {
@@ -4446,7 +4885,11 @@
             ]
           }
         }
-      ]
+      ],
+      "short_name": "Testing & start of operation",
+      "short_name_es": "Pruebas e inicio de operación",
+      "summary": "Acceptance tests, Permiso Único and LUMA authorization before commercial operation.",
+      "summary_es": "Pruebas de aceptación, Permiso Único y autorización de LUMA antes de la operación comercial."
     },
     {
       "id": "PR_USACE_SECTION_404",
@@ -4483,7 +4926,11 @@
       "requirement_ids": [
         "REQ_USACE_404"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "Army Corps wetlands permit",
+      "short_name_es": "Permiso del Cuerpo de Ingenieros (humedales)",
+      "summary": "Filling wetlands or waters needs a U.S. Army Corps permit.",
+      "summary_es": "Rellenar humedales o cuerpos de agua requiere permiso del Cuerpo de Ingenieros."
     },
     {
       "id": "PR_COASTAL_ZONE_CONSISTENCY",
@@ -4520,7 +4967,11 @@
       "requirement_ids": [
         "REQ_CZM_CERT"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "Coastal-zone review",
+      "short_name_es": "Revisión de zona costanera",
+      "summary": "Projects in the coastal zone need a consistency certification.",
+      "summary_es": "Los proyectos en la zona costanera necesitan una certificación de compatibilidad."
     },
     {
       "id": "PR_FLOODPLAIN_REG13",
@@ -4557,7 +5008,11 @@
       "requirement_ids": [
         "REQ_FLOOD_REG13"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "Flood-zone compliance",
+      "short_name_es": "Cumplimiento en zona inundable",
+      "summary": "Sites in a flood zone must meet Planning Regulation 13.",
+      "summary_es": "Los terrenos en zona inundable deben cumplir el Reglamento 13."
     },
     {
       "id": "PR_FAA_OBSTRUCTION_NOTICE",
@@ -4606,7 +5061,11 @@
       "requirement_ids": [
         "REQ_FAA_7460"
       ],
-      "prerequisites": []
+      "prerequisites": [],
+      "short_name": "FAA height notice",
+      "short_name_es": "Aviso de altura a la FAA",
+      "summary": "Tall structures or sites near airports need an FAA notice.",
+      "summary_es": "Estructuras altas o cerca de aeropuertos requieren aviso a la FAA."
     }
   ],
   "incentives": [
@@ -4934,5 +5393,71 @@
     "fact": "energy_incentive_interest",
     "op": "eq",
     "value": true
+  },
+  "legacy_suppressions": [
+    {
+      "id": "LS_WHOLESALE_NOT_DG",
+      "rule_ids": [
+        "RULE_0610",
+        "RULE_0611"
+      ],
+      "when": {
+        "fact": "energy_market_segment",
+        "op": "eq",
+        "value": "wholesale"
+      },
+      "reason": "Wholesale plants that sell their output are independent power producers, not distributed generation, so the DG interconnection and net-metering registrations do not apply.",
+      "reason_es": "Las plantas que venden su producción son productores independientes, no generación distribuida: la interconexión de GD y la medición neta no aplican.",
+      "source_id": "SRC_LAW_57_2014",
+      "locator": "Art. 1.3(m), 1.3(aa)"
+    }
+  ],
+  "display": {
+    "segment_labels": {
+      "wholesale": {
+        "en": "Utility-scale",
+        "es": "A escala de utilidad"
+      },
+      "customer_side": {
+        "en": "On-site",
+        "es": "En sitio"
+      }
+    },
+    "technology_labels": {
+      "solar": {
+        "en": "solar",
+        "es": "solar"
+      },
+      "hybrid": {
+        "en": "solar + battery",
+        "es": "solar + baterías"
+      },
+      "storage": {
+        "en": "battery storage",
+        "es": "almacenamiento en baterías"
+      },
+      "wind": {
+        "en": "wind",
+        "es": "eólica"
+      },
+      "other": {
+        "en": "generation",
+        "es": "generación"
+      }
+    },
+    "offtaker_labels": {
+      "luma_prepa": {
+        "en": "selling to LUMA",
+        "es": "venta a LUMA"
+      },
+      "third_party": {
+        "en": "selling to a third party",
+        "es": "venta a un tercero"
+      },
+      "self": {
+        "en": "self-supply",
+        "es": "autoconsumo"
+      }
+    }
   }
 }
