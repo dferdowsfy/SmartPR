@@ -277,7 +277,12 @@ test("energy rows: inline CTA from the covered card, Answer on answer-only rows,
   }));
   const rowOf = (id: string) => { const i = html.indexOf(`data-testid="energy-process-${id}"`); return html.slice(i, html.indexOf('data-testid="energy-process-', i + 10) === -1 ? undefined : html.indexOf('data-testid="energy-process-', i + 10)); };
   const byProcess = new Map(items(r.ck).map((i) => [i.process_id, i.id]));
-  assert.match(rowOf(byProcess.get("PR_ENERGY_DG_INTERCONNECTION")!), /data-cta="form"[^>]*>.*Complete LUMA form/);
+  const dgRow = rowOf(byProcess.get("PR_ENERGY_DG_INTERCONNECTION")!);
+  // Compact visible label is deliberate (rowActionModel shortCtaLabel: "Complete LUMA
+  // form" -> "Complete form" since the card already names LUMA); the covered legacy
+  // card's CTA still flows into the row via the full accessible name.
+  assert.match(dgRow, /aria-label="Complete LUMA form"[^>]*data-cta="form"/);
+  assert.match(dgRow, />Complete form</);
   for (const i of items(r.ck)) {
     const row = rowOf(i.id);
     if (i.status === "question") assert.match(row, /data-cta="answer"/, `${i.id} Answer`);
