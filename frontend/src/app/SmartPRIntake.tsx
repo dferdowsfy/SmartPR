@@ -5059,13 +5059,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const profileFieldVisible = (key: string) => profileFormExpanded || key === nextProfileField;
   // Highlight ring on the fields after an incomplete submit tap.
   const profileAttentionCls = profileNeedsAttention ? ' spr-attention' : '';
-  const intakeDisplayTotal = intakeTotal;
-  const intakeDisplayDone = intakeDone + (
-    baseProfileReady && intakeDone === intakeTotal
-      ? Math.max(0, intakeDisplayTotal - intakeTotal)
-      : 0
-  );
-
   const missingCount = requirements.filter(r => r.mandatory && r.status === 'pending').length;
   const reviewCount = requirements.filter(r => r.mandatory && r.status === 'warning').length;
 
