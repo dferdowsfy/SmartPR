@@ -6,10 +6,11 @@
 // render in a visually separate block and are never counted as requirements.
 
 import { useState } from "react";
-import { Zap, ExternalLink, HelpCircle, Gift } from "lucide-react";
+import { Zap, ExternalLink, HelpCircle, Gift, ListOrdered } from "lucide-react";
 import { optionLabel, type ClarifyingQuestion, type IncentiveEvaluation, type ProcessAssessment, type ProcessEvaluation, type RequirementEvaluation } from "../../processes/engine";
 import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
 import type { FactDefinition, ProcessState } from "../../processes/types";
+import { needsExpertValidation, processSequence, stepIndex, type SequenceStep } from "../../processes/sequence";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
 export interface EnergyLegacyCard { name: string; actionLabel?: string; onAction?: () => void }
@@ -50,6 +51,12 @@ export function EnergyProcessesSection({
   const notTriggered = assessment.processes.filter((p) => p.state === "NOT_REQUIRED");
   const defs = new Map(factDefinitions.map((f) => [f.key, f]));
   const factLabel = (k: string) => defs.get(k)?.label ?? k.replace(/_/g, " ");
+  // Sequential regimes (utility-scale) get a numbered order; DG has no stages.
+  const sequence = processSequence(assessment);
+  const steps = stepIndex(sequence);
+  const ordered = sequence
+    ? [...shown].sort((a, b) => (steps.get(a.process_id)?.step ?? 99) - (steps.get(b.process_id)?.step ?? 99))
+    : shown;
 
   return (
     <section className="rq-group rq-group-energy" data-testid="req-group-energy">
@@ -78,11 +85,14 @@ export function EnergyProcessesSection({
         </div>
       )}
 
+      {sequence && <EnergySequence steps={sequence} language={language} />}
+
       <div className="rq-list">
-        {shown.map((p) => (
+        {ordered.map((p) => (
           <EnergyProcessCard
             key={p.process_id}
             p={p}
+            step={steps.get(p.process_id)}
             language={language}
             factLabel={factLabel}
             legacy={p.legacy_document_ids.map((d) => legacyCards[d]).filter((c): c is EnergyLegacyCard => !!c)}
@@ -158,7 +168,44 @@ function EnergyQuestion({ q, language, onAnswer }: { q: ClarifyingQuestion; lang
   );
 }
 
-function EnergyProcessCard({ p, language, legacy, factLabel }: { p: ProcessEvaluation; language: Language; legacy: EnergyLegacyCard[]; factLabel: (k: string) => string }) {
+function EnergySequence({ steps, language }: { steps: SequenceStep[]; language: Language }) {
+  const es = language === "es";
+  return (
+    <div className="rq-energy-sequence" data-testid="energy-sequence">
+      <div className="rq-energy-subhead"><ListOrdered size={12} /> {es ? "Orden del proceso" : "Process order"}</div>
+      <p className="rq-energy-seq-note">
+        {es
+          ? "Secuencia típica; algunos pasos pueden correr en paralelo. Cada paso muestra lo que debe estar listo antes."
+          : "Typical sequence; some steps can run in parallel. Each step lists what must be in place first."}
+      </p>
+      <ol className="rq-energy-seq">
+        {steps.map((s) => (
+          <li key={s.stage_id} data-testid={`energy-step-${s.step}`}>
+            <span className="rq-energy-seq-num">{s.step}</span>
+            <div>
+              <strong>{es ? s.name_es ?? s.name : s.name}</strong>
+              <ul>
+                {s.processes.map((p) => (
+                  <li key={p.process_id}>
+                    {p.name} <span className="rq-energy-seq-state">({es ? STATE_COPY[p.state].es : STATE_COPY[p.state].en})</span>
+                    {p.needs_expert_validation && <span className="rq-energy-expert"> · {es ? "requiere validación experta" : "needs expert validation"}</span>}
+                    {p.waits_on.length > 0 && (
+                      <div className="rq-energy-seq-waits">
+                        {es ? "Después de" : "After"}: {p.waits_on.map((w) => `${w.name}${w.conditional ? (es ? " (si aplica)" : " (if applicable)") : ""}`).join("; ")}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function EnergyProcessCard({ p, language, legacy, factLabel, step }: { p: ProcessEvaluation; language: Language; legacy: EnergyLegacyCard[]; factLabel: (k: string) => string; step?: SequenceStep }) {
   const es = language === "es";
   const st = STATE_COPY[p.state];
   const badge = p.voluntary
@@ -171,6 +218,8 @@ function EnergyProcessCard({ p, language, legacy, factLabel }: { p: ProcessEvalu
       <header>
         <span className={`rq-energy-badge rq-energy-badge-${p.voluntary ? "potential" : st.tone}`}>{badge}</span>
         <span className="rq-energy-type">{p.process_type}</span>
+        {step && <span className="rq-energy-step-badge">{es ? "Paso" : "Step"} {step.step} · {es ? step.name_es ?? step.name : step.name}</span>}
+        {needsExpertValidation(p) && <span className="rq-energy-expert">{es ? "Requiere validación experta" : "Needs expert validation"}</span>}
         <h4>{p.name}</h4>
         <div className="rq-energy-agency">
           {es ? "Administra" : "Administered by"}: {p.agencies.map((a) => a.name).join(" · ")}
@@ -221,6 +270,7 @@ function EnergyProcessCard({ p, language, legacy, factLabel }: { p: ProcessEvalu
                 {r.citation.locator ?? r.citation.title}
               </a>
               {r.citation.confidence !== "high" && <span className="rq-energy-conf"> · {r.citation.confidence} {es ? "confianza" : "confidence"}</span>}
+              {r.citation.status === "needs_expert_validation" && <span className="rq-energy-expert"> · {es ? "requiere validación experta" : "needs expert validation"}</span>}
             </li>
           ))}
         </ul>

@@ -43,7 +43,7 @@ export type FactEvidence = Record<string, { quote?: string; confidence?: number;
 
 export type ConditionOp =
   | "eq" | "neq" | "in" | "gte" | "gt" | "lte" | "lt" | "contains" | "known"
-  | "stated" | "stated_in" | "stated_contains";
+  | "stated" | "stated_in" | "stated_contains" | "stated_gt" | "stated_gte";
 
 export type Condition =
   | { fact: string; op: ConditionOp; value?: FactValue }
@@ -129,6 +129,8 @@ export interface RegulatoryProcess {
   voluntary_note?: string;
   /** Only applicable when this other process is REQUIRED (e.g. ongoing compliance after registration). */
   follows_process?: string;
+  /** Lifecycle stage id (ProcessKB.stages) — orders sequential processes in the UI. */
+  stage?: string;
   applicability: ApplicabilityRule[];
   exceptions?: ProcessException[];
   requirement_ids: string[];
@@ -151,6 +153,8 @@ export interface ProjectType {
   name: string;
   classifier: Condition;
   signals?: Condition;
+  /** Facts to ask when the type is only "possible" (classifier unknown, signals true). */
+  ask?: string[];
   may_require: string[];
   may_qualify_for: string[];
 }
@@ -187,7 +191,29 @@ export interface FactDefinition {
    * `question`; `{fact_key}` placeholders interpolate known fact values. */
   question_variants?: { when: Condition; question: string }[];
   why: string;
+  /** Unit of a number fact ("kW", "MWh", "ft"): the intake validator converts stated units. */
+  unit?: "kW" | "MWh" | "ft";
+  /** Extraction hint for the intake model (EN/ES). Facts with a hint are
+   * added to the interpretation prompt and accepted by the validator. */
+  extraction?: { en: string; es: string };
+  /** Tie-break when ranking clarifying questions of equal weight (higher first). */
+  question_priority?: number;
+  /** Chip text for the intake strip: `{value}` interpolates; `values` maps enum options. */
+  chip?: { template?: string; values?: Record<string, string> };
 }
+
+/** A fact the engine derives from other facts (never asked, never extracted).
+ * The first case whose `when` holds sets the value; when none holds the fact
+ * stays unknown and questions are routed to `ask_via`. */
+export interface DerivedFact {
+  key: string;
+  label: string;
+  cases: { id: string; value: FactValue; when: Condition; summary: string; source_id: string; locator?: string; controlling_language?: string }[];
+  ask_via: string[];
+  notes?: string;
+}
+
+export interface ProcessStage { id: string; name: string; name_es?: string; order: number; description?: string }
 
 export interface AgencyRef { id: string; name: string; url?: string | null }
 
@@ -202,6 +228,10 @@ export interface ProcessKB {
   project_types: ProjectType[];
   processes: RegulatoryProcess[];
   incentives: IncentiveLink[];
+  derived_facts?: DerivedFact[];
+  stages?: ProcessStage[];
+  /** Incentive-eligibility facts are asked only when this holds. */
+  incentive_questions_when?: Condition;
 }
 
 // ---------------------------------------------------------------- graph ----

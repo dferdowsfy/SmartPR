@@ -2707,6 +2707,15 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 .rq-energy-incentives { margin-top: 12px; border-left: 3px solid #b8860b; padding-left: 10px; }
 .rq-energy-incentive { background: color-mix(in oklab, #b8860b 7%, var(--surface)); margin-bottom: 8px; }
 .rq-energy-badge-incentive { background: color-mix(in oklab, #b8860b 20%, transparent); }
+.rq-energy-sequence { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; background: var(--surface); }
+.rq-energy-seq-note { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.rq-energy-seq { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rq-energy-seq > li { display: flex; gap: 10px; align-items: flex-start; }
+.rq-energy-seq > li ul { margin: 2px 0 0; padding-left: 16px; font-size: 13px; }
+.rq-energy-seq-num { flex: 0 0 22px; height: 22px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; border: 1px solid var(--border-strong); background: color-mix(in oklab, var(--brand) 14%, transparent); }
+.rq-energy-seq-state, .rq-energy-seq-waits { font-size: 11px; color: var(--muted); }
+.rq-energy-step-badge { font-size: 11px; font-weight: 600; margin-left: 8px; color: var(--muted); }
+.rq-energy-expert { font-size: 11px; font-weight: 600; color: #8a5a00; margin-left: 8px; }
 
 /* "Other checks for your business" — collapsed low-signal conditional items */
 .rq-group-other-checks > summary { cursor: pointer; list-style: revert; }

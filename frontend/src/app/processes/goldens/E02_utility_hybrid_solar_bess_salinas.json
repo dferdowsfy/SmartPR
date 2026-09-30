@@ -1,0 +1,61 @@
+{
+  "id": "E02",
+  "title": "Utility-scale 20 MW solar farm + 40 MWh BESS in Salinas selling power to LUMA (Rosa)",
+  "source": "Darius's utility-scale acceptance prompt, 2026-09-30; model output is a fixture (no live LLM in CI)",
+  "description": "We're developing a 20 MW solar farm with 40 MWh of batteries in Salinas to sell power to LUMA",
+  "profile": {
+    "municipality": "Salinas"
+  },
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.95,
+      "evidence": "solar farm"
+    },
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.95,
+      "evidence": "40 MWh of batteries"
+    },
+    "generation_capacity_kw": {
+      "value": "20 MW",
+      "confidence": 0.95,
+      "evidence": "20 MW solar farm"
+    },
+    "storage_energy_mwh": {
+      "value": "40 MWh",
+      "confidence": 0.95,
+      "evidence": "40 MWh of batteries"
+    },
+    "energy_facility_type": {
+      "value": "standalone_plant",
+      "confidence": 0.9,
+      "evidence": "solar farm"
+    },
+    "power_offtaker": {
+      "value": "luma_prepa",
+      "confidence": 0.95,
+      "evidence": "sell power to LUMA"
+    },
+    "municipality": {
+      "value": "Salinas",
+      "confidence": 0.95,
+      "evidence": "Salinas"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "We're developing"
+    },
+    "energy_applicant_role": {
+      "value": "developer",
+      "confidence": 0.9,
+      "evidence": "We're developing"
+    },
+    "site_zoning": {
+      "value": "industrial",
+      "confidence": 0.9,
+      "evidence": "zoned industrial"
+    }
+  }
+}

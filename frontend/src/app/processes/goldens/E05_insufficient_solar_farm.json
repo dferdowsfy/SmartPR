@@ -1,0 +1,24 @@
+{
+  "id": "E05",
+  "title": "Insufficient information: \"we want to build a solar farm\"",
+  "source": "SmartPR utility-scale golden; model output is a fixture",
+  "description": "We want to build a solar farm.",
+  "profile": {},
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.9,
+      "evidence": "solar farm"
+    },
+    "energy_facility_type": {
+      "value": "standalone_plant",
+      "confidence": 0.85,
+      "evidence": "solar farm"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.85,
+      "evidence": "want to build"
+    }
+  }
+}

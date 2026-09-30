@@ -22,6 +22,7 @@ import type {
   FactEvidence,
   FactMap,
   IncentiveState,
+  ProcessKB,
   ProcessState,
   ProcessType,
   RegulatoryProcess,
@@ -105,6 +106,8 @@ export interface ProcessEvaluation {
   readiness: { satisfied: number; total: number; score: number } | null;
   legacy_document_ids: string[];
   jurisdiction_note?: string;
+  /** Lifecycle stage (KB `stages`), for sequential processes. */
+  stage?: { id: string; name: string; name_es?: string; order: number };
   explanation: ExplanationStep[];
 }
 
@@ -194,10 +197,36 @@ function uniq<T>(xs: T[]): T[] {
   return [...new Set(xs)];
 }
 
-export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: EvaluateOptions = {}): ProcessAssessment {
+/**
+ * Apply KB `derived_facts`: each derived key is recomputed from the input
+ * facts (any stale value passed in is discarded). First case that holds wins;
+ * if none holds the derived fact stays unknown.
+ */
+export function deriveFacts(kb: Pick<ProcessKB, "derived_facts">, input: FactMap): { facts: FactMap; evidence: FactEvidence } {
+  const facts: FactMap = { ...input };
+  const evidence: FactEvidence = {};
+  for (const d of kb.derived_facts ?? []) delete facts[d.key];
+  for (const d of kb.derived_facts ?? []) {
+    const hit = d.cases.find((c) => evaluateCondition(c.when, facts).value === true);
+    if (hit) {
+      facts[d.key] = hit.value;
+      evidence[d.key] = { origin: `derived:${hit.id}`, quote: hit.summary };
+    }
+  }
+  return { facts, evidence };
+}
+
+export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts: EvaluateOptions = {}): ProcessAssessment {
   const provided = new Set(opts.providedEvidenceIds ?? []);
-  const factEvidence = opts.factEvidence ?? {};
+  const derived = deriveFacts(graph.kb, inputFacts);
+  const facts = derived.facts;
+  const factEvidence = { ...(opts.factEvidence ?? {}), ...derived.evidence };
   const factDefs = new Map(graph.kb.facts.map((f) => [f.key, f]));
+  const derivedDefs = new Map((graph.kb.derived_facts ?? []).map((d) => [d.key, d]));
+  const stageDefs = new Map((graph.kb.stages ?? []).map((st) => [st.id, st]));
+  /** Derived facts are never asked directly: route to their askable inputs. */
+  const expandAsk = (keys: string[]): string[] =>
+    uniq(keys.flatMap((k) => { const d = derivedDefs.get(k); return d ? d.ask_via.filter((f) => facts[f] === undefined) : [k]; }));
   const agencyList = (ids: string[] = []) => ids.map((id) => graph.agencies.get(id)).filter((a): a is AgencyRef => !!a);
 
   const factStep = (key: string): ExplanationStep => {
@@ -206,7 +235,7 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
     const ev = factEvidence[key];
     return {
       kind: "fact",
-      label: `${def?.label ?? key}: ${Array.isArray(v) ? v.join(", ") : String(v)}`,
+      label: `${def?.label ?? derivedDefs.get(key)?.label ?? key}: ${Array.isArray(v) ? v.join(", ") : String(v)}`,
       detail: ev?.quote ? `"${ev.quote}"` : ev?.origin,
     };
   };
@@ -338,7 +367,7 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
       evidence_ids: req.evidence_ids,
       provided_evidence_ids: providedIds,
       missing_evidence_ids: kind === "agency_step" ? [] : missingIds,
-      missing_facts: aw.unknownFacts,
+      missing_facts: expandAsk(aw.unknownFacts),
       citation: citationFor(graph, req.source_id, req),
       notes: req.notes,
     };
@@ -396,12 +425,13 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
       via_project_types: types,
       agencies,
       oversight: agencyList(p.oversight_by),
-      missing_facts: d.missing_facts,
+      missing_facts: expandAsk(d.missing_facts),
       requirements,
       prerequisites: [],
       readiness: d.state === "REQUIRED" ? readinessOf(requirements) : null,
       legacy_document_ids: p.legacy_document_ids ?? [],
       jurisdiction_note: p.jurisdiction_note,
+      ...(p.stage && stageDefs.has(p.stage) ? { stage: stageDefs.get(p.stage)! } : {}),
       explanation,
     });
   }
@@ -439,7 +469,7 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
       const r = evaluateCondition(inc.eligibility, facts);
       if (r.value === true) out = { state: "POTENTIALLY_ELIGIBLE", reason: inc.eligibility_summary, missing: [] };
       else if (r.value === false) out = { state: "NOT_ELIGIBLE", reason: inc.ineligible_reason ?? "Eligibility conditions are not met by the known facts.", missing: [] };
-      else out = { state: "NEEDS_FACT", reason: inc.eligibility_summary, missing: uniq((inc.ask ?? r.unknownFacts).filter((f) => facts[f] === undefined)) };
+      else out = { state: "NEEDS_FACT", reason: inc.eligibility_summary, missing: expandAsk(uniq((inc.ask ?? r.unknownFacts).filter((f) => facts[f] === undefined))) };
     }
     incDecisions.set(id, out);
     return out;
@@ -497,12 +527,19 @@ export function evaluateProcesses(graph: ProcessGraph, facts: FactMap, opts: Eva
     if (e.state === "NEEDS_FACT") e.missing_facts.forEach((f) => bump(f, 3, e.process_id));
     if (e.state === "REQUIRED") e.requirements.forEach((r) => r.missing_facts.forEach((f) => bump(f, 1, r.id)));
   }
-  const incentiveInterest = facts.energy_incentive_interest === true;
+  // Incentive questions only when the KB's interest condition holds (never by default).
+  const incentiveInterest = !!graph.kb.incentive_questions_when && evaluateCondition(graph.kb.incentive_questions_when, facts).value === true;
   for (const i of incentives) {
     if (i.state === "NEEDS_FACT" && incentiveInterest) i.missing_facts.forEach((f) => bump(f, 2, i.incentive_id));
   }
+  // A project type that is only "possible" asks the facts that would confirm it.
+  for (const m of projectTypes) {
+    if (m.status !== "possible") continue;
+    for (const f of expandAsk(graph.projectTypes.get(m.id)!.ask ?? [])) bump(f, 2, m.id);
+  }
+  const prio = (f: string) => factDefs.get(f)?.question_priority ?? 0;
   const questions: ClarifyingQuestion[] = [...weight.entries()]
-    .sort((a, b) => b[1].w - a[1].w || b[1].resolves.size - a[1].resolves.size || a[0].localeCompare(b[0]))
+    .sort((a, b) => b[1].w - a[1].w || prio(b[0]) - prio(a[0]) || b[1].resolves.size - a[1].resolves.size || a[0].localeCompare(b[0]))
     .slice(0, opts.maxQuestions ?? 3)
     .map(([fact, { resolves }]) => {
       const def = factDefs.get(fact);

@@ -1,0 +1,51 @@
+{
+  "id": "E03",
+  "title": "Standalone 50 MW / 200 MWh BESS in Guayama providing storage services to LUMA at 115 kV",
+  "source": "SmartPR utility-scale golden; model output is a fixture",
+  "description": "We plan a 50 MW / 200 MWh standalone battery storage plant in Guayama that will provide storage services to LUMA, connected at 115 kV.",
+  "profile": {
+    "municipality": "Guayama"
+  },
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "storage",
+      "confidence": 0.95,
+      "evidence": "standalone battery storage plant"
+    },
+    "storage_capacity_kw": {
+      "value": "50 MW",
+      "confidence": 0.9,
+      "evidence": "50 MW / 200 MWh"
+    },
+    "storage_energy_mwh": {
+      "value": "200 MWh",
+      "confidence": 0.9,
+      "evidence": "200 MWh"
+    },
+    "energy_facility_type": {
+      "value": "standalone_plant",
+      "confidence": 0.9,
+      "evidence": "standalone battery storage plant"
+    },
+    "power_offtaker": {
+      "value": "luma_prepa",
+      "confidence": 0.9,
+      "evidence": "provide storage services to LUMA"
+    },
+    "proposed_energy_services": {
+      "value": "storage_service",
+      "confidence": 0.9,
+      "evidence": "provide storage services to LUMA"
+    },
+    "interconnection_voltage": {
+      "value": "transmission",
+      "confidence": 0.9,
+      "evidence": "connected at 115 kV"
+    },
+    "municipality": {
+      "value": "Guayama",
+      "confidence": 0.95,
+      "evidence": "Guayama"
+    }
+  }
+}

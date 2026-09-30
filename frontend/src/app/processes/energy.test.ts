@@ -26,7 +26,7 @@ const asked = (a: ProcessAssessment) => a.questions.map((q) => q.fact);
 test("KB integrity: every rule, exception and requirement carries a verified-dated primary source", () => {
   for (const s of graph.sources.values()) {
     assert.ok(/^https?:\/\//.test(s.url), `${s.id} url`);
-    assert.equal(s.date_last_verified, "2026-09-29", `${s.id} date_last_verified`);
+    assert.ok(["2026-09-29", "2026-09-30"].includes(s.date_last_verified), `${s.id} date_last_verified`);
     assert.ok(s.title && s.authority, `${s.id} title/authority`);
     assert.ok(["high", "medium", "low"].includes(s.confidence));
   }

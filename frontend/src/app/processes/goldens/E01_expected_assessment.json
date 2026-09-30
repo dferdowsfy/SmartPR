@@ -1,0 +1,256 @@
+{
+  "project_types": [
+    {
+      "id": "PT_ONSITE_GENERATION",
+      "status": "has_type"
+    },
+    {
+      "id": "PT_MICROGRID",
+      "status": "possible"
+    },
+    {
+      "id": "PT_ENERGY_INCENTIVE_INQUIRY",
+      "status": "has_type"
+    }
+  ],
+  "processes": [
+    {
+      "id": "PR_ENERGY_DG_INTERCONNECTION",
+      "state": "REQUIRED",
+      "reason": "The system will operate in parallel with (interconnected to) the LUMA grid.",
+      "decided_by": {
+        "kind": "rule",
+        "id": "DGI_R1"
+      },
+      "missing_facts": [],
+      "voluntary": false,
+      "requirements": [
+        {
+          "id": "REQ_DG_PORTAL_APPLICATION",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DG_CUSTOMER_ORIENTATION",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DG_EQUIPMENT_CERTIFICATIONS",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DG_CERTIFIED_DIAGRAM",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DG_INVERTER_SETTINGS",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DER_ELECTRICAL_INSTALLATION_CERT",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DER_TEST_CERTIFICATION",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_INSTALLER_CERTIFICATION",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_DG_LIABILITY_INSURANCE",
+          "state": "MISSING"
+        }
+      ],
+      "prerequisites": [
+        {
+          "id": "PR_ENERGY_CONSTRUCTION_APPROVAL",
+          "state": "POTENTIALLY_REQUIRED",
+          "blocking": false,
+          "conditional": false
+        }
+      ],
+      "readiness": {
+        "satisfied": 0,
+        "total": 9,
+        "score": 0
+      }
+    },
+    {
+      "id": "PR_ENERGY_ESC_CERTIFICATION",
+      "state": "NEEDS_FACT",
+      "reason": "Generating for your own consumption (including net-metered distributed generation) is not an electric-service-company activity.",
+      "decided_by": {
+        "kind": "gate"
+      },
+      "missing_facts": [
+        "sells_energy_to_third_parties"
+      ],
+      "voluntary": false,
+      "requirements": [],
+      "prerequisites": [],
+      "readiness": null
+    },
+    {
+      "id": "PR_ENERGY_MICROGRID_COMPLIANCE",
+      "state": "NEEDS_FACT",
+      "reason": "Depends on whether \"Microgrid registration with the Energy Bureau\" is required.",
+      "decided_by": {
+        "kind": "follows",
+        "id": "PR_ENERGY_MICROGRID_REGISTRATION"
+      },
+      "missing_facts": [
+        "microgrid_configuration"
+      ],
+      "voluntary": false,
+      "requirements": [],
+      "prerequisites": [
+        {
+          "id": "PR_ENERGY_MICROGRID_REGISTRATION",
+          "state": "NEEDS_FACT",
+          "blocking": false,
+          "conditional": false
+        }
+      ],
+      "readiness": null
+    },
+    {
+      "id": "PR_ENERGY_MICROGRID_REGISTRATION",
+      "state": "NEEDS_FACT",
+      "reason": "PREB microgrid rules apply only to systems configured as microgrids.",
+      "decided_by": {
+        "kind": "gate"
+      },
+      "missing_facts": [
+        "microgrid_configuration"
+      ],
+      "voluntary": false,
+      "requirements": [],
+      "prerequisites": [
+        {
+          "id": "PR_ENERGY_ESC_CERTIFICATION",
+          "state": "NEEDS_FACT",
+          "blocking": false,
+          "conditional": true
+        }
+      ],
+      "readiness": null
+    },
+    {
+      "id": "PR_ENERGY_CONSTRUCTION_APPROVAL",
+      "state": "POTENTIALLY_REQUIRED",
+      "reason": "LUMA conditions interconnection on any use/single permit the project needs.",
+      "decided_by": {
+        "kind": "rule",
+        "id": "CONS_R2"
+      },
+      "missing_facts": [],
+      "voluntary": false,
+      "requirements": [
+        {
+          "id": "REQ_CONSTRUCTION_PERMIT",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_CERTIFIED_ELECTRICAL_DRAWINGS",
+          "state": "MISSING"
+        }
+      ],
+      "prerequisites": [],
+      "readiness": null
+    },
+    {
+      "id": "PR_ENERGY_BESS_FIRE_REVIEW",
+      "state": "POTENTIALLY_REQUIRED",
+      "reason": "Battery energy storage is part of the project (existing SmartPR battery rule).",
+      "decided_by": {
+        "kind": "rule",
+        "id": "BESS_R1"
+      },
+      "missing_facts": [],
+      "voluntary": false,
+      "requirements": [
+        {
+          "id": "REQ_FIRE_SAFETY_CERT",
+          "state": "MISSING"
+        }
+      ],
+      "prerequisites": [],
+      "readiness": null
+    },
+    {
+      "id": "PR_ENERGY_NET_METERING",
+      "state": "POTENTIALLY_REQUIRED",
+      "reason": "A grid-connected renewable system may enroll in net metering; it is a voluntary program.",
+      "decided_by": {
+        "kind": "rule",
+        "id": "NM_R2"
+      },
+      "missing_facts": [],
+      "voluntary": true,
+      "requirements": [
+        {
+          "id": "REQ_NM_AGREEMENT",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_INSTALLER_CERTIFICATION",
+          "state": "MISSING"
+        },
+        {
+          "id": "REQ_NM_BIDIRECTIONAL_METER",
+          "state": "AGENCY_STEP"
+        }
+      ],
+      "prerequisites": [
+        {
+          "id": "PR_ENERGY_DG_INTERCONNECTION",
+          "state": "REQUIRED",
+          "blocking": true,
+          "conditional": false
+        }
+      ],
+      "readiness": null
+    }
+  ],
+  "incentives": [
+    {
+      "id": "INC_ACT60_GREEN_ENERGY",
+      "state": "NEEDS_FACT",
+      "missing": [
+        "sells_energy_to_third_parties"
+      ]
+    },
+    {
+      "id": "INC_ACT60_GREEN_ENERGY_DEDUCTION",
+      "state": "NEEDS_FACT",
+      "missing": [
+        "sells_energy_to_third_parties"
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "fact": "sells_energy_to_third_parties",
+      "question": "Sharing power among buildings you own is not a sale. Will you also sell electricity to anyone else, such as tenants or other businesses?",
+      "resolves": [
+        "PR_ENERGY_ESC_CERTIFICATION",
+        "INC_ACT60_GREEN_ENERGY",
+        "INC_ACT60_GREEN_ENERGY_DEDUCTION"
+      ]
+    },
+    {
+      "fact": "microgrid_configuration",
+      "question": "Will the 3 buildings share power through their own distribution lines and controls (a microgrid), or will each building connect to LUMA separately?",
+      "resolves": [
+        "PR_ENERGY_MICROGRID_COMPLIANCE",
+        "PR_ENERGY_MICROGRID_REGISTRATION"
+      ]
+    }
+  ],
+  "readiness": {
+    "satisfied": 0,
+    "total": 9,
+    "score": 0
+  }
+}

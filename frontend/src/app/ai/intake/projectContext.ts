@@ -111,6 +111,19 @@ const KW_KEYS: ReadonlySet<string> = new Set(["generation_capacity_kw", "storage
 // ---------------------------------------------------------------------------
 
 import { evidenceInText } from "./scenario/normalize.ts";
+import { kbExtractableFacts, kbFactChipLabel, toFactUnit } from "../../processes/extraction.ts";
+import type { FactDefinition } from "../../processes/types.ts";
+
+/**
+ * Facts declared (with an extraction hint) in the regulatory-process KB packs
+ * are accepted in addition to PROJECT_CONTEXT_KEYS, typed by the KB. New
+ * domains add facts as KB data, not validator code.
+ */
+let kbFactMap: Map<string, FactDefinition> | null = null;
+function kbFact(key: string): FactDefinition | undefined {
+  if (!kbFactMap) kbFactMap = new Map(kbExtractableFacts().map((f) => [f.key, f]));
+  return kbFactMap.get(key);
+}
 import { newConstructionStated, renovationStated } from "./scenario/interpret.ts";
 
 // ---------------------------------------------------------------------------
@@ -175,7 +188,8 @@ export function validateProjectContext(raw: unknown, description?: string): {
   }
   for (const [key, entry] of Object.entries(raw as Record<string, unknown>)) {
     const field = `projectContext.${key}`;
-    if (!KEY_SET.has(key)) {
+    const kbDef = KEY_SET.has(key) ? undefined : kbFact(key);
+    if (!KEY_SET.has(key) && !kbDef) {
       discarded.push({ field, reason: "unknown key" });
       continue;
     }
@@ -191,7 +205,28 @@ export function validateProjectContext(raw: unknown, description?: string): {
       continue;
     }
     const confidence = Math.min(1, Math.max(0, rawConfidence));
-    if (NUMERIC_KEYS.has(key)) {
+    if (kbDef?.type === "number") {
+      const n = toFactUnit(kbDef, value);
+      if (n === null) {
+        discarded.push({ field, reason: "not a number" });
+        continue;
+      }
+      value = n;
+    } else if (kbDef?.type === "enum") {
+      const token = String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+      if (!kbDef.options?.includes(token)) {
+        discarded.push({ field, reason: "not an allowed option" });
+        continue;
+      }
+      value = token;
+    } else if (kbDef?.type === "boolean" && typeof value !== "boolean") {
+      const l = String(value ?? "").trim().toLowerCase();
+      if (l !== "true" && l !== "false") {
+        discarded.push({ field, reason: "not a boolean" });
+        continue;
+      }
+      value = l === "true";
+    } else if (NUMERIC_KEYS.has(key)) {
       const n =
         typeof value === "number"
           ? value
@@ -653,8 +688,10 @@ function projectFactChipLabel(key: ProjectContextKey, value: string | number | b
       return value === "none" ? null : `Energy: ${String(value)}`;
     case "battery_storage":
       return value === true ? "Battery storage" : null;
-    case "generation_capacity_kw":
-      return `${Number(value).toLocaleString("en-US")} kW`;
+    case "generation_capacity_kw": {
+      const kw = Number(value);
+      return kw >= 1000 ? `${(kw / 1000).toLocaleString("en-US")} MW` : `${kw.toLocaleString("en-US")} kW`;
+    }
     case "storage_capacity_kw":
       return `${Number(value).toLocaleString("en-US")} kW storage`;
     case "microgrid_configuration":
@@ -694,7 +731,8 @@ function projectFactChipLabel(key: ProjectContextKey, value: string | number | b
     case "part_of_larger_common_plan":
       return null;
     default:
-      return null;
+      // KB-declared facts carry their own chip text (kb/regulatory_processes.json).
+      return kbFactChipLabel(key, value);
   }
 }
 
