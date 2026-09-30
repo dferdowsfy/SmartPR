@@ -21,6 +21,7 @@ import {
   type PassportLocationWithGeographies,
 } from "./geo";
 import { buildLocationContext, type LocationContext } from "./locationContext";
+import { BOUNDARY_SOURCE, boundaryDeterminations } from "./boundaries";
 
 type Db = Pool | PoolClient;
 
@@ -144,7 +145,62 @@ export async function listLocationsForBusiness(
     [business.id]
   );
   const locations = rows.map(toLocation);
-  return attach(locations, await currentGeographies(db, locations.map((l) => l.id)));
+  return attach(locations, await geographiesWithBoundaries(db, locations));
+}
+
+/**
+ * Current geographies for locations, first determining the bundled Census
+ * municipio/barrio for any location that lacks one from the current boundary
+ * version (saved before it existed, or before a data update). Idempotent and
+ * race-safe (unique current-row index + ON CONFLICT DO NOTHING).
+ */
+async function geographiesWithBoundaries(db: Db, locations: PassportLocation[]): Promise<LocationGeography[]> {
+  const ids = locations.map((l) => l.id);
+  let geographies = await currentGeographies(db, ids);
+  let wrote = false;
+  for (const l of locations) {
+    if (geographies.some((g) => g.location_id === l.id && g.source_id === BOUNDARY_SOURCE.id)) continue;
+    if (await recordBoundaryDeterminations(db, l.id, l.latitude, l.longitude)) wrote = true;
+  }
+  if (wrote) geographies = await currentGeographies(db, ids);
+  return geographies;
+}
+
+/**
+ * Record the bundled Census municipio/barrio determinations for a point,
+ * superseding earlier ones from the same source. Returns whether any row was
+ * written (none for points outside Puerto Rico).
+ */
+async function recordBoundaryDeterminations(db: Db, locationId: string, latitude: number, longitude: number): Promise<boolean> {
+  const determinations = boundaryDeterminations(latitude, longitude);
+  await db.query(
+    `UPDATE location_geographies SET superseded_at=now()
+      WHERE location_id=$1 AND source_id LIKE 'census-tiger-%' AND superseded_at IS NULL`,
+    [locationId]
+  );
+  for (const d of determinations) {
+    await db.query(
+      `INSERT INTO location_geographies
+         (id, location_id, geography_type, geography_code, geography_name, determination_method,
+          source_id, source_name, source_version, source_url, metadata)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb)
+       ON CONFLICT DO NOTHING`,
+      [
+        randomUUID(),
+        locationId,
+        d.geography_type,
+        d.geography_code,
+        d.geography_name,
+        d.determination_method,
+        d.source_id,
+        d.source_name,
+        d.source_version,
+        d.source_url,
+        JSON.stringify(d.metadata),
+      ]
+    );
+  }
+  return determinations.length > 0;
 }
 
 /** One location, only if it belongs to the (already authorized) business. */
@@ -160,7 +216,7 @@ export async function getLocation(
   );
   if (!rows[0]) return null;
   const location = toLocation(rows[0]);
-  return attach([location], await currentGeographies(db, [location.id]))[0];
+  return attach([location], await geographiesWithBoundaries(db, [location]))[0];
 }
 
 // ---------------------------------------------------------------------------
@@ -285,6 +341,7 @@ export async function createLocation(
        VALUES ($1, $2, $3, $4, $5, ${params})`,
       [id, business.id, business.workspace_id, userId, makePrimary, ...writeValues(input)]
     );
+    await recordBoundaryDeterminations(client, id, input.latitude, input.longitude);
   });
   await enrichLocationFromDatasets(pool, id);
   const created = await getLocation(pool, business, id);
@@ -336,6 +393,7 @@ export async function updateLocation(
         `UPDATE location_geographies SET superseded_at=now() WHERE location_id=$1 AND superseded_at IS NULL`,
         [locationId]
       );
+      await recordBoundaryDeterminations(client, locationId, input.latitude, input.longitude);
     }
     return { moved, changed };
   });
@@ -490,9 +548,12 @@ export async function enrichLocationFromDatasets(pool: Pool, locationId: string)
     const gis = await spatialSchema(pool);
     if (!gis) return 0;
     return await inTransaction(pool, async (client) => {
+      // Only this pipeline's own (loaded-dataset) determinations are replaced;
+      // bundled-boundary determinations are managed separately.
       await client.query(
         `UPDATE location_geographies SET superseded_at=now()
-          WHERE location_id=$1 AND determination_method='SPATIAL_INTERSECTION' AND superseded_at IS NULL`,
+          WHERE location_id=$1 AND determination_method='SPATIAL_INTERSECTION' AND superseded_at IS NULL
+            AND source_id IN (SELECT id FROM geo_datasets)`,
         [locationId]
       );
       const { rowCount } = await client.query(
@@ -505,7 +566,8 @@ export async function enrichLocationFromDatasets(pool: Pool, locationId: string)
            FROM locations l
            JOIN geo_features f ON ${quoteIdent(gis)}.ST_Covers(f.geom, l.geom)
            JOIN geo_datasets d ON d.id = f.dataset_id AND d.active
-          WHERE l.id = $1`,
+          WHERE l.id = $1
+         ON CONFLICT DO NOTHING`,
         [locationId]
       );
       return rowCount ?? 0;

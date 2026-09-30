@@ -366,7 +366,15 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
         </div>
       )}
 
-      {!editing && <PassportLocationSection businessId={businessId} lang={lang} />}
+      {!editing && (
+        <PassportLocationSection
+          businessId={businessId}
+          lang={lang}
+          // The section can set the Passport municipality from the pin; refresh
+          // the Passport (and the page) so every surface shows the new value.
+          onPassportUpdated={() => onSaved?.({ passport_json: null, denormalized: {} })}
+        />
+      )}
       {!editing && <FilingFeeCardSettings businessId={businessId} lang={lang} />}
 
       {message && <p className="mt-3 text-xs font-medium text-emerald-700">{message}</p>}

@@ -15,6 +15,38 @@ Saved location → exact coordinates → spatial lookup (versioned datasets)
 mean.** No permitting rule lives in the map, the picker, or the location
 store, and no LLM is ever asked whether a point falls inside a boundary.
 
+## What a saved location does
+
+1. **Municipio + barrio from official boundaries.** On save (and lazily for
+   older pins), the point is placed against bundled U.S. Census TIGER/Line
+   2024 county-subdivision boundaries for Puerto Rico (78 municipios, 900+
+   barrios; public domain) by deterministic point-in-polygon — no PostGIS,
+   provider or LLM. Stored as `SPATIAL_INTERSECTION` geographies with source
+   and version; points within 25 m of a boundary are flagged for the user to
+   confirm. Rebuild with `frontend/scripts/build-pr-boundaries.py`.
+2. **"What this location means for requirements"** (Passport → Property /
+   Location): runs the same rules engine and knowledge source as the
+   obligation pipeline (published snapshot, else bundled KB) with the pin's
+   municipio and shows
+   - the municipio's KB designations (coastal, tourism, metro, island, …),
+   - requirements those designations trigger for the business type
+     (`municipality_flag` rules, plus future `location.*` project-fact rules),
+     with the rule's citation,
+   - obligations issued for the specific site or municipio (Permiso Único,
+     fire/health certifications, patente),
+   - whether each is already in the business's checklist,
+   - a warning when the Passport municipality (used by municipal filings and
+     form autofill) differs from the primary location's pin, with a one-click
+     fix.
+   Re-evaluated on every view; nothing is stored.
+3. **Intake: "Find the site on the map"** next to the municipality question.
+   For construction/renovation sites, energy projects, new premises and
+   facilities, the municipio comes from the pin (Census boundaries), which
+   drives the intake's municipal and designation rules. Signed-in users with a
+   saved business can also save the site to the Passport.
+4. **Projects:** each active filing on the business page has a **Site**
+   selector that links it to a saved location by stable id.
+
 ## Where it lives
 
 | Surface | File |
@@ -28,6 +60,10 @@ store, and no LLM is ever asked whether a point falls inside a boundary.
 | Runtime schema (bootstrap) | `frontend/src/app/locations/schema.ts` |
 | Migration (explicit) | `data/locations_schema.sql` |
 | Geocoding provider abstraction | `frontend/src/lib/geocoding/index.ts` |
+| Census boundary lookup (server only) | `frontend/src/app/locations/boundaries.ts` + `frontend/src/kb/geo/pr_boundaries_tiger2024.json` |
+| Location → requirements evaluation | `frontend/src/app/locations/requirements.ts`, `LocationRequirementsPanel.tsx` |
+| Intake map button | `frontend/src/app/components/intake/MunicipalityMapButton.tsx` |
+| Project site selector | `frontend/src/app/businesses/MatterSiteSelect.tsx` |
 
 ## Data model
 
@@ -112,8 +148,7 @@ job is a natural follow-up). Mark superseded dataset versions `active=false`.
 None are bundled — each needs an authoritative source, license review and a
 loader:
 
-- Municipal boundaries (78 municipios) and barrios — e.g. US Census TIGER/Line
-  (county-equivalent and county-subdivision layers for PR).
+- ~~Municipal boundaries and barrios~~ — bundled (Census TIGER/Line 2024).
 - Parcels / cadastral — CRIM catastro.
 - Zoning / land-use districts and planning overlays — Junta de Planificación
   (calificación, special planning areas).
@@ -177,6 +212,8 @@ derived_from → Regulation edges belong to the regulatory graph.
 | DELETE | `/api/businesses/:id/locations/:locationId` | `deleteLocation` (projects keep existing, location unassigned) |
 | GET / PUT | `/api/matters/:id/location` | context / `assignLocationToProject` |
 | GET | `/api/geocode?q=` · `?lat=&lng=` | server-side search / reverse geocoding |
+| GET | `/api/businesses/:id/locations/:locationId/requirements` | what the location means for requirements |
+| GET | `/api/locations/resolve?lat=&lng=` | Census municipio/barrio + KB designations for a point (no account needed) |
 
 Coordinates are validated server-side (latitude −90…90, longitude −180…180,
 plain decimals only) and by database CHECK constraints. Points outside Puerto
