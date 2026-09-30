@@ -18,6 +18,7 @@ import {
 } from './potentialRequirements';
 import { buildExtraction, type ExtractionResult } from './documentFields';
 import { IntakeQuestion } from './components/intake/IntakeQuestion';
+import { PROJECT_ILLUSTRATIONS, selectProjectIllustration } from './components/intake/projectIllustrations';
 import {
   ISSUED_DOCUMENT_GUIDANCE,
   ISSUED_DOCUMENT_GUIDANCE_ES,
@@ -6302,6 +6303,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // once the user has given SmartPR something to work with.
   const liveBlank = intakeDone === 0;
   const stageIntelligence: SmartPRLiveData = view === 'intake' ? {
+    project: {
+      illustrationSrc: PROJECT_ILLUSTRATIONS[selectProjectIllustration({
+        businessType: profile.business_type,
+        industry: profile.industry,
+        locationType: profile.location_type,
+        answers: discoveryAnswers,
+      })],
+      title: profile.name.trim() || profile.business_type || (language === 'es' ? 'Nuevo proyecto' : 'New project'),
+      businessType: profile.business_type,
+      municipality: profile.municipality,
+      locationType: profile.location_type,
+    },
     statusText: scenarioEval
       ? (scenarioEval.questions.length
           ? (language === 'es' ? 'Entendí la situación. Faltan algunos hechos que cambian qué aplica.' : 'Situation understood. A few facts still change what applies.')

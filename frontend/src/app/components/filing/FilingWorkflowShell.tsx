@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
@@ -43,6 +44,13 @@ export interface SmartPRLiveData {
    * scenario, paths from knowledge-graph applicability.
    */
   scenario?: LiveScenario | null;
+  project?: {
+    illustrationSrc: string;
+    title: string;
+    businessType?: string | null;
+    municipality?: string | null;
+    locationType?: string | null;
+  };
 }
 
 export interface LiveScenarioPath {
@@ -139,6 +147,28 @@ function SignalIcon({ state }: { state: IntelligenceSignal["state"] }) {
 
 export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; language: "en" | "es" }) {
   const [expanded, setExpanded] = useState(false);
+  if (data.project) {
+    const { project } = data;
+    return (
+      <aside className="spr-project-summary" aria-label={language === "es" ? "Resumen de tu proyecto" : "Your project summary"}>
+        <div className="spr-project-summary-kicker">{language === "es" ? "Tu proyecto" : "Your project"}</div>
+        <Image src={project.illustrationSrc} alt="" width={240} height={146} loading="eager" className="spr-project-summary-art" />
+        <h2>{project.title}</h2>
+        <dl>
+          {project.businessType && <div><dt>{language === "es" ? "Negocio" : "Business"}</dt><dd>{project.businessType}</dd></div>}
+          {project.municipality && <div><dt>{language === "es" ? "Municipio" : "Municipality"}</dt><dd>{project.municipality}</dd></div>}
+          {project.locationType && <div><dt>{language === "es" ? "Ubicación" : "Location"}</dt><dd>{project.locationType}</dd></div>}
+        </dl>
+        <div className="spr-project-summary-next">
+          <strong>{language === "es" ? "Próximo paso" : "Next step"}</strong>
+          <p>{data.nextAction}</p>
+        </div>
+        <p className="spr-project-summary-note">{language === "es"
+          ? "Puedes completar los datos adicionales del negocio al preparar una solicitud."
+          : "You can complete additional business details when preparing a filing."}</p>
+      </aside>
+    );
+  }
   const copy = language === "es" ? {
     live: "SmartPR en vivo",
     readiness: "Preparación para comenzar",

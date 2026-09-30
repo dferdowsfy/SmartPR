@@ -2390,6 +2390,7 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
 
 .spr-workflow-grid {
   width: min(1440px, 100%);
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 16px 32px 54px;
   display: grid;
@@ -2453,6 +2454,62 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   border-radius: 16px;
   background: #f9fbfc;
   box-shadow: 0 2px 8px rgba(15, 35, 50, .03);
+}
+.spr-project-summary {
+  position: sticky;
+  top: 84px;
+  padding: 25px 27px;
+  border-left: 1px solid #d7dedc;
+  color: #183b41;
+}
+.spr-project-summary-kicker {
+  color: #657e86;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.spr-project-summary-art {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
+  margin: 12px auto 16px;
+  object-fit: contain;
+}
+.spr-project-summary h2 {
+  margin: 0 0 18px;
+  color: #152f35;
+  font-size: clamp(23px, 2.2vw, 30px);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.spr-project-summary dl { margin: 0; border-top: 1px solid #d7dedc; }
+.spr-project-summary dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid #d7dedc;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.spr-project-summary dt { color: #647985; }
+.spr-project-summary dd { margin: 0; max-width: 58%; text-align: right; font-weight: 650; }
+.spr-project-summary-next { padding-top: 19px; }
+.spr-project-summary-next strong {
+  color: #657e86;
+  font-size: 11px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.spr-project-summary-next p { margin: 7px 0 0; font-size: 14px; line-height: 1.5; }
+.spr-project-summary-note {
+  margin: 20px 0 0;
+  padding-top: 17px;
+  border-top: 1px solid #d7dedc;
+  color: #647985;
+  font-size: 12px;
+  line-height: 1.5;
 }
 .spr-live-body { padding: 24px; }
 .spr-live-heading {
@@ -2539,6 +2596,8 @@ button.rq-completed-clickable:hover { filter: brightness(0.85); }
   .spr-matter-name-row h1 { max-width: 70vw; }
   .spr-workflow-grid { grid-template-columns: 1fr; }
   .spr-smartpr-live { position: static; grid-row: 1; }
+  .spr-project-summary { position: static; grid-row: 1; border: 1px solid #d7dedc; border-radius: 12px; background: #fff; }
+  .spr-project-summary-art { width: min(100%, 160px); margin: 8px auto; }
   .spr-main-workarea { grid-row: 2; }
   /* The Requirements page's own readiness sidebar stacks below the
      requirement list instead of above it, unlike the default SmartPR Live
