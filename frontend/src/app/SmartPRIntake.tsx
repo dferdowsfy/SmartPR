@@ -110,7 +110,9 @@ import {
   type SmartPRLiveData,
 } from './components/filing/FilingWorkflowShell';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
-import { claraSupportFor, groupRequirements, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
+import { claraSupportFor, groupRequirements, splitOtherChecks, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
+import { computeEnergyAssessment } from './processes/view';
+import { supersededLegacyCards } from './processes/legacyCards';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
@@ -5795,6 +5797,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       action,
       answerPrompt,
       awaitingAnswer: !!triggerQuestion,
+      triggerQuestionId: triggerQuestion?.questionId ?? null,
       filing: triggerQuestion ? null : filingFor(req),
       baseFacts: requirementFacts(req, state, doc?.filename ?? null, !!prepared || !!samplePrepared, name),
       secondary,
@@ -5813,11 +5816,36 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [requirements, uploadedDocs, processingStates, reviewingCode, preparedGovApplications, govFormDrafts, sampleFormDrafts, preparedSampleApplications, language, profile.municipality, downloadedCodes, expiryDates, renewableDocumentIds, claraBusinessId]
   );
-  const tabNeedsActionCount = reqCards.filter(c => c.bucket === 'needs_action').length;
-  const tabInProgressCount = reqCards.filter(c => c.bucket === 'in_progress').length;
-  const tabCompletedCount = reqCards.filter(c => c.bucket === 'completed').length;
+  // Energy process graph (src/app/processes): uploaded requirement evidence
+  // (DOC_* ids — the evidence-locker tag vocabulary) feeds it, and legacy
+  // energy cards it supersedes (LUMA interconnection, net metering, battery
+  // fire review) render through the Energy section only — one source of
+  // truth instead of a "verify existing" card that contradicts it.
+  const energyProvidedEvidenceIds = requirements
+    .filter((r) => r.document_id && (r.status === 'uploaded' || r.status === 'passed'))
+    .map((r) => r.document_id as string);
+  const { graph: energyGraph, assessment: energyAssessment } = computeEnergyAssessment({
+    projectContext,
+    municipality: profile.municipality,
+    answers: discoveryAnswers,
+    providedEvidenceIds: energyProvidedEvidenceIds,
+  });
+  const energySuperseded = supersededLegacyCards(energyGraph, energyAssessment, requirements);
+  const visibleReqCards = reqCards.filter((c) => !energySuperseded.has(c.req.document_id ?? ''));
+  const energyLegacyCards: Record<string, { name: string; actionLabel?: string; onAction?: () => void }> = {};
+  for (const c of reqCards) {
+    const doc = c.req.document_id;
+    if (!doc || !energySuperseded.has(doc)) continue;
+    const primary = (c.action.kind === 'upload' || c.action.kind === 'form') && c.action.onClick ? { actionLabel: c.action.label, onAction: c.action.onClick } : null;
+    const secondary = c.secondary ? { actionLabel: c.secondary.label, onAction: c.secondary.onClick } : null;
+    energyLegacyCards[doc] = { name: c.name, ...(primary ?? secondary ?? {}) };
+  }
 
-  const tabFilteredCards = reqCards.filter(c =>
+  const tabNeedsActionCount = visibleReqCards.filter(c => c.bucket === 'needs_action').length;
+  const tabInProgressCount = visibleReqCards.filter(c => c.bucket === 'in_progress').length;
+  const tabCompletedCount = visibleReqCards.filter(c => c.bucket === 'completed').length;
+
+  const tabFilteredCards = visibleReqCards.filter(c =>
     reqFilter === 'all' ? true
     : reqFilter === 'needs_action' ? c.bucket === 'needs_action'
     : reqFilter === 'in_progress' ? c.bucket === 'in_progress'
@@ -5833,15 +5861,24 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // come from the KB's depends_on_document_ids among the present requirements.
   const kbDocs = KB.documents as unknown as Array<{ id: string; depends_on_document_ids?: string[] | null }>;
   const grouping = groupRequirements(
-    reqCards.map((c) => ({ documentId: c.req.document_id, applicability: c.req.applicability, stage: c.req.stage, mandatory: c.req.mandatory, done: c.state === 'done', awaitingAnswer: c.awaitingAnswer })),
+    visibleReqCards.map((c) => ({ documentId: c.req.document_id, applicability: c.req.applicability, stage: c.req.stage, mandatory: c.req.mandatory, done: c.state === 'done', awaitingAnswer: c.awaitingAnswer })),
     kbDocs
   );
-  const nameByDoc = new Map(reqCards.map((c) => [c.req.document_id, c.name]));
+  const nameByDoc = new Map(visibleReqCards.map((c) => [c.req.document_id, c.name]));
+  // Existing business: conditional cards held open only by a generic
+  // discovery question (employees? signage? vehicles?) collapse into "Other
+  // checks for your business", one question per trigger, after Energy.
+  const { main: mainGroupedCards, otherChecks } = splitOtherChecks(
+    tabFilteredCards.map((c) => {
+      const g = grouping[visibleReqCards.indexOf(c)];
+      return { c, g, group: g.group, triggerQuestionId: c.triggerQuestionId };
+    }),
+    { projectIntent }
+  );
   const groupedCards = REQUIREMENT_GROUP_ORDER.map((groupId) => ({
     id: groupId,
-    cards: tabFilteredCards
-      .map((c) => ({ c, g: grouping[reqCards.indexOf(c)] }))
-      .filter(({ g }) => g.group === groupId)
+    cards: mainGroupedCards
+      .filter(({ group }) => group === groupId)
       .map(({ c, g }) => ({
         ...c,
         facts: [
@@ -5854,13 +5891,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Environmental review is an open question, not a requirement, when the
   // activity is industrial and the equipment/emissions/waste facts are
   // unknown: the graph decides once they are answered.
-  // Energy process graph inputs: uploaded requirement evidence (DOC_* ids —
-  // the same tag vocabulary as the evidence locker) and the legacy document
-  // ids already rendered as cards above, so aliased processes can say so.
-  const energyProvidedEvidenceIds = requirements
-    .filter((r) => r.document_id && (r.status === 'uploaded' || r.status === 'passed'))
-    .map((r) => r.document_id as string);
-  const energyLegacyDocumentIds = requirements.map((r) => r.document_id).filter((d): d is string => !!d);
   const envOpenItem = (() => {
     if (!mergedScenario || !scenarioActive) return false;
     const act = mergedScenario.operations.activity?.value ?? mergedScenario.property.proposedUse?.value;
@@ -6954,14 +6984,42 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
           {/* ENERGY — regulatory process graph (src/app/processes). Renders
               only when the project context carries energy facts. */}
-          <EnergyProcessesSection
-            projectContext={projectContext}
-            municipality={profile.municipality}
-            providedEvidenceIds={energyProvidedEvidenceIds}
-            legacyDocumentIds={energyLegacyDocumentIds}
-            language={language}
-            onAnswer={(key, fact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }))}
-          />
+          {energyAssessment && (
+            <EnergyProcessesSection
+              assessment={energyAssessment}
+              legacyCards={energyLegacyCards}
+              factDefinitions={energyGraph.kb.facts}
+              language={language}
+              onAnswer={(key, fact) => setProjectContext((prev) => mergeProjectContext(prev, { [key]: fact }))}
+            />
+          )}
+
+          {otherChecks.length > 0 && (
+            <details className="rq-group rq-group-other-checks" data-testid="req-group-other-checks">
+              <summary className="rq-group-head">
+                {L('Other checks for your business', language)}
+                <span className="rq-critical-count">{otherChecks.length}</span>
+              </summary>
+              <p className="rq-group-sub">{L('Nothing in your description points to these. Answer once to confirm or clear them.', language)}</p>
+              <ul className="rq-other-checks">
+                {otherChecks.map((q) => {
+                  const first = q.cards[0].c;
+                  return (
+                    <li key={q.questionId} data-testid={`other-check-${q.questionId}`}>
+                      <div className="rq-other-q">{first.answerPrompt?.prompt ?? q.questionId}</div>
+                      <div className="rq-other-docs">{L('Decides', language)}: {q.cards.map(({ c }) => c.name).join(' · ')}</div>
+                      {first.answerPrompt && (
+                        <div className="rq-energy-q-actions">
+                          <button type="button" onClick={first.answerPrompt.onYes}>{first.answerPrompt.yesLabel}</button>
+                          <button type="button" onClick={first.answerPrompt.onNo}>{first.answerPrompt.noLabel}</button>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          )}
 
           {/* Recommendation panel — advisory historical insights (never mandatory) */}
           {advisory && advisory.enabled && advisory.similarCount > 0 &&

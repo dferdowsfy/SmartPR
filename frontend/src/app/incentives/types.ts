@@ -40,6 +40,7 @@ export interface NormalizedProjectProfile {
   manufacturing_activity?: boolean | null;
   research_and_development_activity?: boolean | null;
   renewable_energy_investment?: number | boolean | null;
+  green_energy_decree?: boolean | null;
   construction_or_rehabilitation_activity?: boolean | null;
   agricultural_activity?: boolean | null;
   business_size?: string | null;

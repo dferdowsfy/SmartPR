@@ -302,8 +302,15 @@
   },
   {
     "id": "PR_ACT60_RENEWABLE_INVESTMENT_b1",
-    "name": "IVU and excise exemption on equipment",
-    "description": "Exemption from Sales and Use Tax (IVU) and state excise taxes on qualifying renewable-generation or storage equipment purchased for the business's own operations.",
+    "name": "IVU and excise exemption on Green Energy equipment",
+    "description": "Decree holders only (Section 2072.05(a)(1)): full exemption from the Sales and Use Tax (IVU) and state excise taxes, during the decree's exemption period, on raw materials and on machinery, equipment, and accessories used for Green Energy production. Construction materials and electrical material affixed to structures are excluded (Section 2072.05(a)(2)).",
+    "benefit_type": "tax_incentive",
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "PR_ACT60_RENEWABLE_INVESTMENT_b2",
+    "name": "Special deduction for Green Energy investment",
+    "description": "Decree holders only (Section 2072.06(a)): option to deduct, in the year incurred, the cost of buildings, structures, machinery, and equipment used solely in the Section 2071.01(6)–(10) activities, instead of capitalizing it — provided the property has not been depreciated or previously used by another business or person in Puerto Rico. This accelerates the deduction; it is not an additional one (Section 2072.06(b)).",
     "benefit_type": "tax_incentive",
     "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
   },

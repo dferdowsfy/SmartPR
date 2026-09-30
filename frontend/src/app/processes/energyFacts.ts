@@ -18,7 +18,7 @@ function normalizeToken(s: string): string {
 export function energyFactsFromProjectContext(
   context: ProjectContext | null | undefined,
   kb: Pick<ProcessKB, "facts">,
-  extra?: { municipality?: string | null }
+  extra?: { municipality?: string | null; answers?: Record<string, unknown> | null }
 ): { facts: FactMap; evidence: FactEvidence } {
   const facts: FactMap = {};
   const evidence: FactEvidence = {};
@@ -45,6 +45,26 @@ export function energyFactsFromProjectContext(
   if (facts.parallel_operation === undefined && typeof facts.interconnection_required === "boolean") {
     facts.parallel_operation = facts.interconnection_required;
     evidence.parallel_operation = { ...evidence.interconnection_required, origin: "alias:interconnection_required" };
+  }
+  // Answers to the legacy solar discovery questions are user-provided facts
+  // too; they fill gaps the description left (never override it).
+  const answer = (id: string): unknown => {
+    const a = extra?.answers;
+    if (!a) return undefined;
+    return a[id] ?? a[id.replace(/^Q_/, "").toLowerCase()];
+  };
+  const battery = answer("Q_SOLAR_BATTERY");
+  if (facts.battery_storage === undefined && typeof battery === "boolean") {
+    facts.battery_storage = battery;
+    evidence.battery_storage = { origin: "discovery_answer:Q_SOLAR_BATTERY" };
+  }
+  const mounting = answer("Q_SOLAR_MOUNTING");
+  if (facts.mounting_type === undefined && typeof mounting === "string") {
+    const m = /ground/i.test(mounting) ? "ground" : /roof/i.test(mounting) ? "roof" : null;
+    if (m) {
+      facts.mounting_type = m;
+      evidence.mounting_type = { origin: "discovery_answer:Q_SOLAR_MOUNTING" };
+    }
   }
   if (facts.municipality === undefined && extra?.municipality) {
     facts.municipality = extra.municipality;
