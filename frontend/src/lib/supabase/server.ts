@@ -5,16 +5,23 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+function supabasePublicKey(): string | undefined {
+  return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+}
+
 export function isAuthConfigured(): boolean {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && supabasePublicKey());
 }
 
 export async function createSupabaseServer() {
-  if (!isAuthConfigured()) return null;
+  const key = supabasePublicKey();
+  if (!isAuthConfigured() || !key) return null;
+
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    key,
     {
       cookies: {
         getAll() {
@@ -24,7 +31,7 @@ export async function createSupabaseServer() {
           try {
             toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
           } catch {
-            // Setting cookies from a Server Component is a no-op; middleware refreshes.
+            // Setting cookies from a Server Component is a no-op; proxy refreshes.
           }
         },
       },
