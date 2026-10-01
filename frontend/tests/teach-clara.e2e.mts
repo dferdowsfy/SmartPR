@@ -70,6 +70,8 @@ async function handle(route: Route): Promise<void> {
   const m = url.pathname.match(/^\/api\/teach-sessions(?:\/([^/]+))?(?:\/(answer|mark|finish|save))?$/);
   try {
     if (url.pathname === "/api/me") return json(route, { configured: true, user: { id: viewer.userId, isAdmin: false } });
+    // The mocked worker below is the live recorder.
+    if (url.pathname === "/api/clara-playbooks") return json(route, { signed_in: true, live_recorder: true, playbooks: [] });
     if (!m) return route.continue();
     const [, id, action] = m;
     if (!id) {
@@ -127,7 +129,7 @@ async function main() {
   const clicks = { n: 0 };
 
   await page.goto(`${BASE}/businesses/b1/teach?url=${encodeURIComponent(SITE)}&form=${encodeURIComponent("Permiso de Uso")}&portal=${encodeURIComponent("Portal de Permisos")}`, { waitUntil: "networkidle" });
-  await page.getByText("Show Clara a filing once").waitFor();
+  await page.getByText("Teach Clara a filing once").waitFor();
   await shot(page, "1-setup");
   // Dev mode hydrates late: retry until the click lands.
   for (let i = 0; i < 10; i++) {
@@ -176,7 +178,7 @@ async function main() {
   // Spanish copy renders too.
   await page.goto(`${BASE}/businesses/b1/teach`, { waitUntil: "networkidle" });
   await page.getByRole("banner").getByRole("button", { name: "ES" }).first().click();
-  await page.getByText("Muéstrale a Clara un trámite una vez").waitFor();
+  await page.getByText("Enséñale a Clara un trámite una vez").waitFor();
   await shot(page, "5-setup-es");
 
   console.log(`PASS teach-clara UI e2e — ${clicks.n} teacher clicks for a 5-screen form`);

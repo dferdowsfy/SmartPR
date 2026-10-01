@@ -3,11 +3,37 @@
  *
  * Government domains (.gov, .pr.gov, .gov.pr, .mil) are open to every
  * teacher. Any other site must be approved: listed in a hand-written filing
- * config, listed in TEACH_APPROVED_DOMAINS (comma-separated hosts), or
- * taught by an admin — an admin teaching a site is the approval. HTTPS only;
- * IP literals and localhost are never allowed.
+ * config, an official portal in SmartPR's own requirement catalog
+ * (kb/regulatory_processes.json — e.g. LUMA's interconnection portal),
+ * listed in TEACH_APPROVED_DOMAINS (comma-separated hosts), or taught by an
+ * admin — an admin teaching a site is the approval. HTTPS only; IP literals
+ * and localhost are never allowed. A taught routine's replay is allowed only
+ * on its own portal's domain (plus government sign-in hosts).
  */
 import { AGENCY_FILING_CONFIGS } from "../filingTypes";
+import processesJson from "../../../kb/regulatory_processes.json";
+
+/** Official portal hosts from SmartPR's requirement catalog (curated data, not user input). */
+export function catalogPortalHosts(): string[] {
+  const hosts = new Set<string>();
+  const walk = (node: unknown, depth: number) => {
+    if (depth > 8 || node == null) return;
+    if (Array.isArray(node)) return node.forEach((n) => walk(n, depth + 1));
+    if (typeof node !== "object") return;
+    const portal = (node as { portal?: { url?: unknown } }).portal;
+    if (portal && typeof portal.url === "string") {
+      try {
+        const u = new URL(portal.url);
+        if (u.protocol === "https:") hosts.add(u.hostname.toLowerCase().replace(/^www\./, ""));
+      } catch {
+        /* skip */
+      }
+    }
+    for (const v of Object.values(node as Record<string, unknown>)) if (v && typeof v === "object") walk(v, depth + 1);
+  };
+  walk(processesJson, 0);
+  return [...hosts];
+}
 
 const GOV_SUFFIXES = [".gov", ".pr.gov", ".gov.pr", ".mil"];
 
@@ -23,7 +49,7 @@ function hostMatches(host: string, pattern: string): boolean {
 export function approvedTeachHosts(env: string | undefined = process.env.TEACH_APPROVED_DOMAINS): string[] {
   const fromEnv = (env ?? "").split(",").map((h) => h.trim().toLowerCase()).filter(Boolean);
   const fromConfigs = AGENCY_FILING_CONFIGS.flatMap((c) => c.domains.map((d) => d.toLowerCase()));
-  return [...new Set([...fromEnv, ...fromConfigs])];
+  return [...new Set([...fromEnv, ...fromConfigs, ...catalogPortalHosts()])];
 }
 
 export function isGovernmentHost(host: string): boolean {

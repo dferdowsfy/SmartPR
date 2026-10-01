@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./validador.css";
+import "./components/clara/clara-actions.css";
 import { AuthRecoveryRedirect } from "./components/AuthRecoveryRedirect";
 import { AnalyticsMount } from "./components/AnalyticsMount";
 import { BrandProvider } from "./components/brand/BrandProvider";

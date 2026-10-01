@@ -1,7 +1,7 @@
 /**
  * POST /api/teach-sessions — start a Teach Clara session.
  *
- * Body: { start_url, form, portal_name?, business_id? }
+ * Body: { start_url, form, portal_name?, business_id?, requirement_key? }
  * Opens the teacher's own browser session on the worker (the teacher signs
  * in themselves; Clara never sees credentials) with the structure-only
  * recorder injected. Admins teach into the shared library, everyone else
@@ -44,6 +44,7 @@ export async function POST(req: Request) {
       startUrl: String(body.start_url ?? ""),
       portalName: String(body.portal_name ?? ""),
       form: String(body.form ?? ""),
+      requirementKey: typeof body.requirement_key === "string" ? body.requirement_key : null,
     });
     return Response.json({ session }, { status: 201 });
   } catch (err) {

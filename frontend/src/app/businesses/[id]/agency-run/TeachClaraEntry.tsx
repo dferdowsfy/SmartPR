@@ -3,21 +3,26 @@
 /**
  * Teach Clara entry points on the filing view (Teach Clara spec §5).
  *
- *  variant="button" — header button: "Teach Clara" for admins (builds the
- *    shared library), "Show Clara" for everyone else (private skill).
- *  variant="offer"  — shown when the current filing's portal + form has no
- *    skill yet: "I haven't done this form before — show me once."
+ *  variant="button" — header button: "Teach Clara" (admins build the shared
+ *    library; everyone else teaches a private skill / playbook).
+ *  variant="offer"  — shown when Clara doesn't know the current filing's
+ *    portal yet (no skill and no described playbook): "Clara hasn't learned
+ *    this portal yet — Teach Clara."
  *
- * Both open /businesses/[id]/teach prefilled with the filing's portal
- * address and form name. Hidden when teaching isn't available here.
+ * Both open the record-first Teach Clara dialog on the filing's portal: it
+ * starts recording right away (live browser), validates the recording and
+ * saves it as a learned routine. When the live recorder isn't connected or
+ * on a phone, the dialog explains why and offers a screen-recording upload
+ * or typed steps instead.
  */
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GraduationCap } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
 import type { AgencyFilingType } from "../../../../lib/agency-runs/types";
+import { TeachRecordDialog } from "../../../components/clara/TeachRecordDialog";
+import type { GuidedSubject } from "../../../components/clara/guidedFormModel";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -25,20 +30,17 @@ interface MatchState {
   isAdmin: boolean;
   canTeach: boolean;
   hasSkill: boolean | null;
+  /** A described playbook (Teach Clara v1) exists for this portal. */
+  hasPlaybook: boolean;
   /** Replayable skill for the current filing, when Clara already knows it. */
   replayRef: string | null;
 }
 
-function teachHref(businessId: string, filingType: string | null): string {
-  const q = new URLSearchParams();
+/** What the record-first Teach dialog records for the current filing. */
+function teachSubject(filingType: string | null, lang: Lang): GuidedSubject {
   const cfg = filingType ? getFilingConfig(filingType as AgencyFilingType) : null;
-  if (cfg) {
-    q.set("url", cfg.startUrl);
-    q.set("form", cfg.labelEs);
-    q.set("portal", cfg.portalEs);
-  }
-  const s = q.toString();
-  return `/businesses/${encodeURIComponent(businessId)}/teach${s ? `?${s}` : ""}`;
+  if (!cfg) return { key: filingType ?? "agency-filing", name: lang === "es" ? "Trámite" : "Filing", agency: null, portalUrl: null };
+  return { key: cfg.requirementIds?.[0] ?? cfg.id, name: lang === "es" ? cfg.labelEs : cfg.labelEn, agency: cfg.portalEs, portalUrl: cfg.startUrl };
 }
 
 export function TeachClaraEntry(props: {
@@ -51,6 +53,8 @@ export function TeachClaraEntry(props: {
   const router = useRouter();
   const [state, setState] = useState<MatchState | null>(null);
   const [starting, setStarting] = useState(false);
+  const [teaching, setTeaching] = useState(false);
+  const dialog = teaching ? <TeachRecordDialog subject={teachSubject(filingType, lang)} language={lang === "es" ? "es" : "en"} businessId={businessId} onClose={() => setTeaching(false)} /> : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -64,13 +68,17 @@ export function TeachClaraEntry(props: {
         const res = await fetch(`/api/skills/match?${q}`, { cache: "no-store" });
         const match = res.ok ? await res.json() : null;
         const replay = cfg
-          ? await fetch(`/api/replays/match?filing_type=${encodeURIComponent(cfg.id)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null))
+          ? await fetch(`/api/replays/match?filing_type=${encodeURIComponent(cfg.id)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+          : null;
+        const playbooks = cfg
+          ? await fetch(`/api/clara-playbooks?portal_url=${encodeURIComponent(cfg.startUrl)}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
           : null;
         if (!cancelled) {
           setState({
             isAdmin,
             canTeach: Boolean(match?.can_teach),
             hasSkill: cfg ? Boolean(match?.skill || replay?.skill) : null,
+            hasPlaybook: Boolean(playbooks?.playbooks?.length),
             replayRef: replay?.skill && replay?.can_replay ? String(replay.skill.ref) : null,
           });
         }
@@ -108,14 +116,14 @@ export function TeachClaraEntry(props: {
       </div>
     );
   }
-  if (!state.canTeach) return null;
-  const href = teachHref(businessId, filingType);
-
   if (variant === "button") {
     return (
-      <Link
-        href={href}
-        className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10 lg:inline-flex"
+      <>
+      <button
+        type="button"
+        onClick={() => setTeaching(true)}
+        data-testid="teach-clara-button"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
         title={
           state.isAdmin
             ? L("Walk a filing once so Clara can do it for every business.", "Haz un trámite una vez para que Clara lo pueda hacer para cualquier negocio.", lang)
@@ -123,25 +131,28 @@ export function TeachClaraEntry(props: {
         }
       >
         <GraduationCap className="h-3.5 w-3.5" />
-        {state.isAdmin ? L("Teach Clara", "Enséñale a Clara", lang) : L("Show Clara", "Muéstrale a Clara", lang)}
-      </Link>
+        {L("Teach Clara", "Enséñale a Clara", lang)}
+      </button>
+      {dialog}
+      </>
     );
   }
 
-  if (state.hasSkill !== false) return null;
+  if (state.hasSkill !== false || state.hasPlaybook) return null;
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-3 rounded-2xl border border-[#2f6b4f] bg-[#1e4d38]/30 px-4 py-3 text-[14px] text-[#e8e1d0]">
+    <div data-testid="teach-clara-offer" className="mt-2 flex flex-wrap items-center gap-3 rounded-2xl border border-[#2f6b4f] bg-[#1e4d38]/30 px-4 py-3 text-[15px] text-[#e8e1d0]">
       <GraduationCap className="h-4 w-4 shrink-0 text-[#9fd3b4]" />
       <p className="min-w-0 flex-1">
         {L(
-          "I haven't done this form before. Show me once and next time I'll fill it in from your business info.",
-          "Todavía no he hecho este formulario. Muéstramelo una vez y la próxima vez lo lleno con la información de tu negocio.",
+          "Clara hasn't learned this portal yet. Do it once while she records — next time she follows exactly those steps with your business info.",
+          "Clara todavía no conoce este portal. Hazlo una vez mientras ella graba — la próxima vez sigue exactamente esos pasos con la información de tu negocio.",
           lang
         )}
       </p>
-      <Link href={href} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[13px] font-bold text-[#161616] hover:bg-white">
-        {state.isAdmin ? L("Teach Clara", "Enséñale a Clara", lang) : L("Show Clara", "Muéstrale a Clara", lang)}
-      </Link>
+      <button type="button" onClick={() => setTeaching(true)} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[14px] font-bold text-[#161616] hover:bg-white">
+        {L("Teach Clara", "Enséñale a Clara", lang)}
+      </button>
+      {dialog}
     </div>
   );
 }

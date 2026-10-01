@@ -15,6 +15,7 @@ client uses, so switching providers is an env change, not a rewrite:
   WS     /vnc/websock?token=               browser websocket <-> x11vnc bridge
   POST   /api/v4/teach                     {startUrl, allowedDomains, recorderScript}
   GET    /api/v4/teach/{id}/events         ?after=     (recorder events, structure only)
+  GET    /api/v4/teach/{id}/shots/{seq}  ?token=   (per-action screenshot, owner token)
   POST   /api/v4/teach/{id}/stop
   POST   /api/v4/drive                     {startUrl, allowedDomains, driverScript}  (skill replay)
   POST   /api/v4/drive/{id}/call           {op: snapshot|locate|fill|selectOption|click|settle, ...}
@@ -144,6 +145,8 @@ class AgentSession:
     teach_seq: int = 0
     teach_handles: dict = field(default_factory=dict)
     teach_allowed: list[str] = field(default_factory=list)
+    # Per-action screenshots for the teacher's own review (JPEG, owner-token gated).
+    teach_shots: dict = field(default_factory=dict)
 
     def push_log(self, role: str, text: str) -> SessionLog:
         self.event_seq += 1
@@ -819,6 +822,29 @@ def _teach_record(sess: AgentSession, payload: Any) -> None:
     event = {k: v for k, v in raw.items() if k in _TEACH_EVENT_KEYS}
     sess.teach_seq += 1
     sess.teach_events.append({"seq": sess.teach_seq, "event": event})
+    try:
+        asyncio.get_running_loop().create_task(_teach_event_shot(sess, sess.teach_seq))
+    except RuntimeError:
+        pass
+
+
+TEACH_MAX_SHOTS = 150
+
+
+async def _teach_event_shot(sess: AgentSession, seq: int) -> None:
+    """Screenshot right after a recorded action (lets the UI show each step)."""
+    await asyncio.sleep(0.4)
+    try:
+        ctx = sess.teach_handles.get("context")
+        pages = ctx.pages if ctx is not None else []
+        if not pages:
+            return
+        shot = bytes(await pages[-1].screenshot(type="jpeg", quality=45))
+        sess.teach_shots[seq] = shot
+        while len(sess.teach_shots) > TEACH_MAX_SHOTS:
+            sess.teach_shots.pop(next(iter(sess.teach_shots)))
+    except Exception:
+        pass
 
 
 async def _teach_close(sess: AgentSession) -> None:
@@ -942,7 +968,24 @@ async def teach_events(session_id: str, after: int = Query(default=0, ge=0)):
         raise HTTPException(status_code=404, detail="teach session not found")
     items = [e for e in sess.teach_events if e["seq"] > after][:500]
     next_after = items[-1]["seq"] if items else after
+    base = _base()
+    if base:
+        items = [
+            {**e, "screenshot": f"{base}/api/v4/teach/{sess.id}/shots/{e['seq']}?token={sess.token}"}
+            for e in items
+        ]
     return {"items": items, "nextAfter": next_after, "status": sess.status}
+
+
+@app.get("/api/v4/teach/{session_id}/shots/{seq}")
+async def teach_shot(session_id: str, seq: int, token: Optional[str] = Query(default=None)):
+    sess = SESSIONS.get(session_id)
+    if not sess or sess.kind != "teach" or sess.token != token:
+        raise HTTPException(status_code=403, detail="forbidden")
+    shot = sess.teach_shots.get(seq)
+    if not shot:
+        raise HTTPException(status_code=404, detail="no screenshot for that step")
+    return Response(content=shot, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=600"})
 
 
 @app.post("/api/v4/teach/{session_id}/stop", dependencies=[Depends(require_api_token)])

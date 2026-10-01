@@ -16,6 +16,7 @@
  *     starts an agency run. Responds 201 { run: AgencyRunPublic, brief }.
  *     No browser session starts without a specific filing objective.
  */
+import { playbookForRun, playbookRepo } from "../../../lib/agency-runs/teach/taughtPlaybooks";
 import { randomUUID } from "crypto";
 import {
   createRun,
@@ -257,6 +258,13 @@ export async function POST(request: Request) {
   };
 
   const passport = await loadFilingFactsForBusiness(businessId, user?.id ?? null);
+  // Teach Clara v1: steps the owner described for this requirement / portal
+  // ride along as guidance (never a prerequisite; lookup failure never blocks).
+  const taughtPlaybook = user?.id
+    ? await playbookRepo()
+        .then((repo) => playbookForRun(repo, user.id, { requirementKeys: [picked.requirement_id ?? "", ...(config.requirementIds ?? [])], portalUrl: config.startUrl }))
+        .catch(() => null)
+    : null;
   const run = await createRun({
     business_id: businessId,
     filing_type: action.filing_type,
@@ -265,6 +273,7 @@ export async function POST(request: Request) {
     goalBrief: brief,
     submissionObjective: objective,
     fields: sanitizePreflightFields(action, body.preflight_answers?.fields),
+    taughtPlaybook,
   });
   return Response.json({ run, brief }, { status: 201 });
 }

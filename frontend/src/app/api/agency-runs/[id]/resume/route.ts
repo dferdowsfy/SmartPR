@@ -5,6 +5,7 @@
  *   { fields?: Record<string, string>, credentials?: { email?, password?, mfa? } }
  * Credentials are merged into fields when both are sent. Values are ephemeral only.
  */
+import { learnedBindingsFromRun, playbookRepo, recordRunLearning } from "../../../../../lib/agency-runs/teach/taughtPlaybooks";
 import { assertRunOwner, peekRun, resumeRun } from "../../../../../lib/agency-runs/store";
 import {
   mergeResumeFields,
@@ -67,7 +68,16 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   }
 
   const merged = mergeResumeFields(fields, credentials);
+  // Teach Clara v1: remember which portal fields the person had to answer
+  // (labels only, never values or sensitive fields) on the run's playbook.
+  const pending = peek.pending_fields ?? [];
+  const ref = peek.taught_playbook_ref ?? null;
   const run = await resumeRun(id, { fields: merged });
+  if (ref && merged) {
+    await playbookRepo()
+      .then((repo) => recordRunLearning(repo, ref, learnedBindingsFromRun(pending, Object.keys(merged))))
+      .catch(() => null);
+  }
   if (!run) return Response.json({ error: "not_found" }, { status: 404 });
   return Response.json({ run });
 }

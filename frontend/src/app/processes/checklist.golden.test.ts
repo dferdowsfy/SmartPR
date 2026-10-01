@@ -307,11 +307,68 @@ test("every Required energy row shows an inline action without expanding (E01, E
     }
     assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
   }
-  // The official portals: LUMA DG portal, OGPe SBP, PREB e-filing.
-  const e06 = run("E06_developer_solar_bess_guayama.json");
-  const html06 = renderToStaticMarkup(createElement(EnergyProcessesSection, { assessment: e06.a, graph: e06.graph, checklist: e06.ck, legacyCards: {}, language: "en" }));
-  assert.match(html06, /href="https:\/\/www\.sbp\.pr\.gov\/"[^>]*data-testid="row-cta"|data-testid="row-cta"[^>]*data-cta="portal"/);
-  assert.match(html06, /radicacion\.energia\.pr\.gov/);
-  const e07 = run("E07_rooftop_solar_installation_guaynabo.json");
-  assert.match(renderToStaticMarkup(createElement(EnergyProcessesSection, { assessment: e07.a, graph: e07.graph, checklist: e07.ck, legacyCards: {}, language: "en" })), /prep-luma\.lumapr\.com/);
+  // The official portals (LUMA DG portal, OGPe SBP, PREB e-filing) are
+  // secondary: in the ⋯ menu / row details, never the inline primary.
+  const portals = (file: string) => {
+    const r = run(file);
+    return items(r.ck).map((i) => r.graph.processes.get(i.process_id)?.portal?.url).filter(Boolean).join(" ");
+  };
+  assert.match(portals("E06_developer_solar_bess_guayama.json"), /sbp\.pr\.gov/);
+  assert.match(portals("E06_developer_solar_bess_guayama.json"), /radicacion\.energia\.pr\.gov/);
+  assert.match(portals("E07_rooftop_solar_installation_guaynabo.json"), /prep-luma\.lumapr\.com/);
+});
+
+// Darius 2026-09-30: "a row whose only button takes the user OUT of the
+// platform is a no-go." No requirement in E01 / E06 / E07 — energy process
+// rows or the requirement cards beside them — resolves to an external-link
+// primary action, in EN or ES; every open row can reach Teach Clara.
+test("no requirement in E01/E06/E07 resolves to an external-link primary action (EN/ES)", async () => {
+  const { requirementRowActions, energyRowActions, mergeRowActions, isExternalCta, EMPTY_ROW_ACTIONS } = await import("../components/checklist/rowActionModel.ts");
+  const { claraSupportFor } = await import("../components/filing/requirementGroups.ts");
+  const noop = () => {};
+  const handlers = { onGuidedForm: noop, onTeach: noop };
+  const EXTERNAL_KINDS = new Set(["portal", "site", "instructions", "download"]);
+  for (const file of ["E01_warehouse_rooftop_solar_caguas.json", "E06_developer_solar_bess_guayama.json", "E07_rooftop_solar_installation_guaynabo.json"]) {
+    for (const lang of ["en", "es"] as const) {
+      const r = run(file, lang);
+      // Each legacy card as SmartPRIntake builds it: no SmartPR form, the
+      // Clara support level decides the filing action; unsupported ones
+      // carry only off-site links (instructions PDF + agency site).
+      const cardModel = (doc: string, withHandlers: boolean) => {
+        const { support } = claraSupportFor(doc);
+        const filing = support === "instructions"
+          ? { kind: "instructions" as const, label: "View filing instructions", href: `https://agency.pr.gov/${doc}.pdf`, agencySite: { label: "Open agency site", url: "https://agency.pr.gov" } }
+          : { kind: support, label: support === "file" ? "File with Clara" : "Prepare with Clara", onClick: noop, agencySite: { label: "Open agency site", url: "https://agency.pr.gov" } };
+        return requirementRowActions({ action: { kind: "none", label: "" }, filing, download: { label: "Download form", url: `https://agency.pr.gov/${doc}-form.pdf`, downloaded: false, downloadedHint: "", onDownload: noop }, ...(withHandlers ? handlers : {}) }, lang);
+      };
+      for (const c of r.cards) {
+        const m = cardModel(c.document_id!, true);
+        assert.ok(m.primary, `${file} ${lang}: ${c.name} has an inline action`);
+        assert.ok(!isExternalCta(m.primary), `${file} ${lang}: ${c.name} primary stays in SmartPR (${m.primary?.kind})`);
+        assert.ok(m.more.some((x) => x.kind === "teach"), `${file} ${lang}: ${c.name} can reach Teach Clara`);
+      }
+      const legacyCards = Object.fromEntries(r.cards.map((c) => [c.document_id!, { name: c.name, rowActions: cardModel(c.document_id!, false) }]));
+      for (const it of items(r.ck)) {
+        const p = r.a.processes.find((x) => x.process_id === it.process_id)!;
+        const cards = mergeRowActions(p.legacy_document_ids.map((d) => legacyCards[d]?.rowActions ?? EMPTY_ROW_ACTIONS));
+        const portal = r.graph.processes.get(it.process_id)?.portal ?? null;
+        const m = energyRowActions({ status: it.status, cards, portal, question: it.status === "question" ? { prompt: "?" } : null, ...handlers }, lang);
+        assert.ok(!isExternalCta(m.primary), `${file} ${lang}: ${it.name} primary stays in SmartPR (${m.primary?.kind} ${m.primary?.href ?? ""})`);
+        if (it.status === "required") assert.ok(m.primary, `${file} ${lang}: ${it.name} (Required) has an inline action`);
+        if (portal && it.status !== "expert") assert.ok(m.more.some((x) => x.kind === "portal" && x.href === portal.url), `${file} ${lang}: ${it.name} portal in ⋯`);
+        if (it.status !== "expert" && (m.primary || m.answer)) assert.ok(m.more.some((x) => x.kind === "teach"), `${file} ${lang}: ${it.name} can reach Teach Clara`);
+      }
+      // The rendered rows: the inline primary is a button (never an <a> out).
+      const html = renderToStaticMarkup(createElement(EnergyProcessesSection, {
+        assessment: r.a, graph: r.graph, checklist: r.ck, legacyCards, suppressedLegacy: [...r.sup.values()], language: lang, onAnswer: () => {},
+      }));
+      const primaries = [...html.matchAll(/<(a|button)\b[^>]*data-testid="row-cta"[^>]*data-cta="([a-z]+)"/g)];
+      assert.ok(primaries.length > 0, `${file} ${lang}: rows render inline actions`);
+      for (const m of primaries) {
+        assert.ok(!EXTERNAL_KINDS.has(m[2]), `${file} ${lang}: inline ${m[2]} is not an external link`);
+        assert.ok(!/target="_blank"/.test(m[0]), `${file} ${lang}: inline action opens no new tab`);
+      }
+      assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
+    }
+  }
 });
