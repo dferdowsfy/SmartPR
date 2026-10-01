@@ -62,10 +62,10 @@ button { font-family: inherit; }
    APP BAR (single navy row, tabs embedded)
    ============================================================ */
 .appbar {
+  /* Position, height, and glassmorphism are defined in the two-layer header
+     system at the end of this file (2026-10-01). */
   background: var(--navy);
   color: var(--on-navy);
-  height: 64px;
-  position: sticky; top: 0; z-index: 50;
   border-bottom: 1px solid var(--border);
   box-shadow: none;
 }
@@ -3251,3 +3251,139 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .spr-loc-fema { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin: 6px 0 0; font-size: var(--rq-text-sm, 14px); color: var(--muted, #69665f); }
 .spr-loc-fema-title { font-weight: 700; color: var(--ink); }
 .spr-loc-fema a { color: var(--brand); font-weight: 600; }
+
+/* ==========================================================================
+   Two-layer glass header system (2026-10-01)
+   Layer 1: global nav (scrolls away) — slightly more solid glass, ~58px
+   Layer 2: workflow stepper (sticky) — lighter glass, ~52px, absorbs utilities
+   ========================================================================== */
+
+/* --- Layer 1: global nav scrolls away naturally (no longer sticky) --- */
+.appbar {
+  position: relative;
+  height: 58px;
+  background: color-mix(in oklab, #f4f1ea 60%, transparent);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border-bottom: 1px solid color-mix(in oklab, #161616 7%, transparent);
+  box-shadow: none;
+  z-index: 50;
+}
+.appbar-inner {
+  height: 58px;
+}
+
+/* --- Layer 2: sticky stepper, lighter glass --- */
+.spr-filing-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  min-height: 52px;
+  background: color-mix(in oklab, #f4f1ea 45%, transparent);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  border-bottom: 1px solid color-mix(in oklab, #161616 6%, transparent);
+}
+.spr-filing-chrome {
+  background: transparent;
+  border-bottom: 0;
+}
+.spr-stepper-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 6px 32px;
+  min-height: 52px;
+}
+.spr-stepper-bar .spr-workflow-stepper {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+/* Tighten the stepper's own vertical rhythm for the 52px target */
+.spr-stepper-bar .spr-workflow-stepper .spr-steps {
+  padding-block: 4px;
+}
+
+/* --- Utility migration: reserved slot, crossfade on scroll --- */
+.spr-stepper-utilities {
+  flex: 0 0 auto;
+  min-width: 190px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-4px);
+  pointer-events: none !important;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 180ms;
+}
+html.nav-is-scrolled .spr-stepper-utilities {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0);
+  pointer-events: auto !important;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 0ms;
+}
+.spr-header-utilities {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Only one visible set of utilities at a time */
+.appbar .spr-header-utilities {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0);
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 0ms;
+}
+html.nav-is-scrolled .appbar .spr-header-utilities {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-4px);
+  pointer-events: none !important;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 180ms;
+}
+
+/* --- Reclaim vertical space: tighten the intake content top --- */
+.spr-guided-intake-shell .spr-workflow-grid {
+  padding-top: 18px;
+}
+.spr-guided-intake-shell .spr-intake-panel h1 {
+  margin-top: 18px;
+}
+
+/* --- Responsive: tablet --- */
+@media (max-width: 1024px) {
+  .spr-stepper-bar {
+    padding: 6px 20px;
+    gap: 12px;
+  }
+  .spr-stepper-utilities {
+    min-width: 150px;
+  }
+}
+
+/* --- Responsive: mobile — compact, priority-ordered --- */
+@media (max-width: 640px) {
+  .appbar-inner {
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .spr-stepper-bar {
+    padding: 4px 16px;
+    gap: 8px;
+    min-height: 48px;
+  }
+  .spr-stepper-utilities {
+    min-width: 0;
+  }
+  /* On small screens the language toggle yields to profile/bell/step */
+  .spr-stepper-utilities .spr-context-language {
+    display: none;
+  }
+}

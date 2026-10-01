@@ -27,7 +27,7 @@ import { ensureRkReady } from "./store";
 import { writeAudit } from "./audit";
 import { NODE_TYPE_CONFIGS } from "./registry";
 import type { NodeType, ProposalClassification, SourceSection } from "./types";
-import { isXaiConfigured, requestXaiText } from "../ai/xai";
+import { generateText, isAiConfigured } from "../../lib/ai/router";
 
 const MAX_SECTIONS = 150;
 const MAX_SECTION_CHARS = 6000;
@@ -166,7 +166,7 @@ async function extractWithLLM(
   catalog: string,
   sourceGraphEntityId: string
 ): Promise<ExtractedChange[] | null> {
-  if (!isXaiConfigured()) return null;
+  if (!isAiConfigured("regulatory_ingest")) return null;
 
   const system = `You are a Puerto Rico business-permitting and government-benefits regulatory analyst for SmartPR.
 You read one section of a regulatory source and extract PROPOSED changes to a knowledge graph
@@ -218,7 +218,7 @@ source explicitly establishes automatic eligibility; quote the provision
 in "explanation". Answer with JSON only.`;
 
   try {
-    const content = await requestXaiText({
+    const content = await generateText("regulatory_ingest", {
       input: [
         { role: "system", content: system },
         { role: "user", content: `Source: ${sourceTitle}\nSection ${sectionKey}:\n\n${sectionText.slice(0, 5000)}` },
@@ -347,7 +347,7 @@ export async function runIngestion(sourceId: string, actor?: string | null): Pro
   ).rows as { entity_id: string; node_type: string; label: string }[];
   const catalog = catalogRows.map((r) => `${r.entity_id} (${r.node_type}): ${r.label}`).join("\n");
 
-  const usedAI = isXaiConfigured();
+  const usedAI = isAiConfigured("regulatory_ingest");
   let proposalsCreated = 0;
   let sourceGraphEntityId = newEntityId("regulatory_source", source.title);
 

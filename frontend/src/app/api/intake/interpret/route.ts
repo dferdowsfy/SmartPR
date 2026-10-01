@@ -21,11 +21,9 @@ import { kbExtractionPromptLines } from "../../../processes/extraction";
 import { combineScenario, interpretScenario, normalizeScenario } from "../../../ai/intake/scenario";
 import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
 import {
-  isXaiConfigured,
-  requestXaiText,
   XaiApiError,
-  XAI_MODEL,
 } from "../../../ai/xai";
+import { aiModelFor, generateText, isAiConfigured } from "../../../../lib/ai/router";
 
 const MAX_DESCRIPTION_CHARS = 1200;
 
@@ -851,7 +849,7 @@ function stripUnknownIds(
 }
 
 export async function POST(request: Request) {
-  if (!isXaiConfigured()) {
+  if (!isAiConfigured("intake_interpret")) {
     return Response.json(
       { error: "XAI_API_KEY is not configured on the server." },
       { status: 503 }
@@ -891,7 +889,7 @@ export async function POST(request: Request) {
   const timer = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const text = await requestXaiText({
+    const text = await generateText("intake_interpret", {
       input: [
         {
           role: "system",
@@ -919,7 +917,7 @@ export async function POST(request: Request) {
       if (Array.isArray(discovery.profileValues)) {
         discovery.profileValues = discovery.profileValues.filter((p) => p && ["industry", "location_type", "number_of_vehicles", "number_of_rental_units"].includes(p.key));
       }
-      return Response.json({ interpretation: discovery, proposals: validatePassportProposals(parsed.proposals, description, isEs ? "es" : "en"), ai_model: XAI_MODEL, detected_lang: isEs ? "es" : "en" });
+      return Response.json({ interpretation: discovery, proposals: validatePassportProposals(parsed.proposals, description, isEs ? "es" : "en"), ai_model: aiModelFor("intake_interpret"), detected_lang: isEs ? "es" : "en" });
     }
     const stripped = stripUnknownIds(parsed, candidates);
     // Project-context facts are validated defensively: malformed entries are
@@ -935,7 +933,7 @@ export async function POST(request: Request) {
       projectContext,
       scenario,
       scenario_report: scenarioReport,
-      ai_model: XAI_MODEL,
+      ai_model: aiModelFor("intake_interpret"),
       detected_lang: isEs ? "es" : "en",
     });
   } catch (e) {

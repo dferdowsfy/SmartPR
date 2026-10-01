@@ -15,11 +15,9 @@ export const dynamic = "force-dynamic";
 import { buildExtraction } from "../../documentFields";
 import { ACTIVE_JURISDICTION } from "../../jurisdictions";
 import {
-  isXaiConfigured,
-  requestXaiText,
   XaiApiError,
-  XAI_MODEL,
 } from "../../ai/xai";
+import { aiModelFor, generateText, isAiConfigured } from "../../../lib/ai/router";
 
 type DocPayload = {
   filename?: string;
@@ -133,7 +131,7 @@ function parseAnalysis(raw: string) {
 }
 
 export async function POST(request: Request) {
-  if (!isXaiConfigured()) {
+  if (!isAiConfigured("document_analysis")) {
     return Response.json(
       { error: "XAI_API_KEY is not configured on the server." },
       { status: 503 }
@@ -171,7 +169,7 @@ Follow the SMARTPR DOCUMENT VALIDATION ENGINE rules exactly. Analyze and return 
   const timer = setTimeout(() => controller.abort(), 60000);
 
   try {
-    const text = await requestXaiText({
+    const text = await generateText("document_analysis", {
       input: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -203,7 +201,7 @@ Follow the SMARTPR DOCUMENT VALIDATION ENGINE rules exactly. Analyze and return 
 
     return Response.json({
       analysis,
-      ai_model: XAI_MODEL,
+      ai_model: aiModelFor("document_analysis"),
       message: "Document analyzed with AI.",
     });
   } catch (e) {

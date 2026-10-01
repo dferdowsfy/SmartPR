@@ -13,6 +13,7 @@ import {
   CircleHelp,
   Sparkles,
 } from "lucide-react";
+import { HeaderUtilities } from "../HeaderUtilities";
 
 export type FilingStage = "intake" | "requirements" | "deliverables";
 
@@ -400,29 +401,20 @@ export function FilingWorkflowShell({
     };
   }, [stickyHeader]);
 
-  const displayName = businessName && businessName.trim() && businessName !== "Untitled business"
-    ? businessName
-    : language === "es" ? "Negocio nuevo" : "New Business";
-  const labels = language === "es" ? {
-    profile: "Ver perfil del negocio",
-  } : {
-    profile: "View business profile",
-  };
-
-  const actions = (
-    <div className="spr-matter-actions">
-      {businessId && <Link href={`/businesses/${businessId}`} className="spr-business-profile-link">{labels.profile}<ArrowUpRight size={15} aria-hidden="true" /></Link>}
-    </div>
-  );
-
   const showSidebar = sidebar !== null;
   const stickyClass = stickyHeader ? `spr-filing-sticky${compact ? " compact" : ""}` : "spr-filing-static";
-  const collapseInert = stickyHeader && compact;
 
   const stepperBar = (
     <div className="spr-stepper-bar">
       <WorkflowStepper stage={stage} availableStages={availableStages} language={language} onChange={onStageChange} />
       {stepperRight}
+      {/* Utility cluster (EN/ES, bell, avatar) — hidden at page top, revealed
+          here once the global nav scrolls away. Visibility is driven by the
+          `nav-is-scrolled` class on <html>; the reserved width prevents the
+          stepper from jumping when the utilities appear. */}
+      <div className="spr-stepper-utilities">
+        <HeaderUtilities idPrefix="stepper" />
+      </div>
     </div>
   );
 
@@ -433,21 +425,10 @@ export function FilingWorkflowShell({
             avatar menu is never clipped by matter chrome / compact collapse. */}
         
         <div className="spr-filing-chrome">
-          <div className="spr-matter-header-collapse" inert={collapseInert ? true : undefined} aria-hidden={collapseInert}>
-            <header className="spr-matter-header">
-              <div className="spr-matter-identity">
-                <span className="spr-matter-icon"><Building2 size={18} /></span>
-                <div>
-                  <div className="spr-matter-name-row">
-                    <h1>{displayName}</h1>
-                    <span className="spr-matter-status">{matterStatus}</span>
-                  </div>
-                  <p>{matterTitle}{municipality ? ` · ${municipality}` : ""}</p>
-                </div>
-              </div>
-              {actions}
-            </header>
-          </div>
+          {/* The matter-identity header (business name / DRAFT / matter title)
+              was removed 2026-10-01: it duplicated information already shown
+              in the intake summary and served no purpose. The stepper below
+              remains the stage navigation. */}
           {/* When the header is sticky as a whole, the stepper bar lives
               inside it as before. When it isn't (Requirements), the stepper
               bar is hoisted out below so it can stick on its own — a sticky
