@@ -283,7 +283,7 @@ if (GOLDEN === "picker") {
     check("layers: done state replaces the loading state", doneShown);
     if (doneShown) {
       const txt = (await done.innerText()).replace(/\s+/g, " ");
-      check("layers: done state reads 'Site checked' with the chips", /Site checked on the official maps/.test(txt) && /Flood zone X/.test(txt), txt);
+      check("layers: done state reads 'Site checked' with grouped site intelligence", /Site checked against official data/.test(txt) && /Effective FIRM · Zone X/.test(txt) && /FLOOD/i.test(txt), txt);
       const sideLabel = await page.locator('[data-testid="summary-site-label"]').innerText().catch(() => "");
       check("sidebar Site row shows the confirmed site", /Guaynabo/.test(sideLabel), sideLabel);
       await done.evaluate((el) => el.scrollIntoView({ block: "center" }));
@@ -409,7 +409,7 @@ if (GOLDEN === "location") {
   const rulesFor = page.locator('[data-testid="location-rules-for"]').first();
   await rulesFor.waitFor({ timeout: 10000 });
   const rulesForText = await rulesFor.innerText();
-  check("intake shows 'Rules for: <address>'", /Rules for:\s*Calle José de Diego, Guaynabo/.test(rulesForText), rulesForText);
+  check("intake shows the site with 'Change location'", /Calle José de Diego, Guaynabo/.test(rulesForText) && /Change location/.test(rulesForText), rulesForText);
   const muni = await page.locator("#spr-municipality").inputValue().catch(() => "");
   const brief = await page.locator('[data-testid="guided-project-brief"]').innerText().catch(() => "");
   check("municipio set from the pin", muni === "Guaynabo" || /Guaynabo/.test(brief), muni || brief.replace(/\s+/g, " "));
@@ -440,7 +440,7 @@ if (GOLDEN === "location") {
   });
   await page.waitForTimeout(600);
   const summaryRules = await page.locator('.ck-summary [data-testid="location-rules-for"]').innerText().catch(() => "");
-  check("requirements summary shows 'Rules for: …' with Change", /Rules for:[\s\S]*Guaynabo/.test(summaryRules) && /Change/.test(summaryRules), summaryRules.replace(/\s+/g, " "));
+  check("requirements summary shows the site with Change location", /Guaynabo/.test(summaryRules) && /Change location/.test(summaryRules), summaryRules.replace(/\s+/g, " "));
   const reqText = async () => (await page.locator(".spr-requirements-main").innerText()).replace(/\s+/g, " ");
   let text = await reqText();
   check("patente municipal is listed", /Patente Municipal/i.test(text));
@@ -460,7 +460,7 @@ if (GOLDEN === "location") {
   await dialog.waitFor({ state: "detached", timeout: 10000 });
   await page.waitForTimeout(600);
   const summaryAfter = await page.locator('.ck-summary [data-testid="location-rules-for"]').innerText().catch(() => "");
-  check("summary now reads 'Rules for: … Adjuntas'", /Rules for:[\s\S]*Adjuntas/.test(summaryAfter), summaryAfter.replace(/\s+/g, " "));
+  check("summary now reads the Adjuntas site", /Adjuntas/.test(summaryAfter), summaryAfter.replace(/\s+/g, " "));
   text = await reqText();
   check("metro-only rules removed after moving the pin to Adjuntas", !/Used-Oil Generator/i.test(text) && !/Hazardous-Waste Generator/i.test(text));
   check("patente municipal still listed (every municipio)", /Patente Municipal/i.test(text));
@@ -564,11 +564,24 @@ if (GOLDEN === "flood") {
     throw e;
   });
   const chips = page.locator('.ck-summary [data-testid="location-layer-chips"]');
-  await page.waitForFunction(() => /Flood zone/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
+  await page.waitForFunction(() => /Effective FIRM/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
   const chipText = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
   check("layers fetched for the pin", layerQueries.includes(`${aeLat},${aeLng}`), layerQueries.join(" | "));
-  check("chips show what the pin resolved (Flood zone AE · Zoning C-R · Rustic)", /Flood zone AE/.test(chipText) && /Zoning C-R/.test(chipText) && /Rustic/.test(chipText), chipText);
-  check("unknown layer shown subtly (coastal zone unknown)", (await page.locator('.ck-summary .spr-loc-chip-unknown').filter({ hasText: /Coastal zone unknown/ }).count()) === 1);
+  check("site intelligence shows what the pin resolved (Effective FIRM · Zone AE · Zoning · C-R · Rustic)", /Effective FIRM · Zone AE/.test(chipText) && /Zoning · C-R/.test(chipText) && /rustic/i.test(chipText), chipText);
+  check("a material flood hazard is red and raised as a site consideration", (await page.locator('.ck-summary .spr-si-pill[data-layer="flood_zone"][data-tone="hazard"]').count()) === 1 && (await page.locator('.ck-summary [data-testid="site-consideration"]').filter({ hasText: /Special Flood Hazard Area/ }).count()) === 1);
+  check("an unanswered layer is gray and says so (coastal)", (await page.locator('.ck-summary .spr-si-pill[data-layer="coastal_zone"][data-tone="unknown"]').count()) === 1);
+  check("no prominent external FEMA link in the summary", (await page.locator('.ck-summary [data-testid="site-intelligence"] > a, .ck-summary .spr-si-groups a').count()) === 0);
+  {
+    const details = page.locator('.ck-summary [data-testid="site-details"]');
+    await details.locator(":scope > summary").click();
+    const dText = (await details.innerText()).replace(/\s+/g, " ");
+    check("site details: effective FIRM panel + why it matters", /Panel 72000C0330J/.test(dText) && /Why this matters/.test(dText), dText.slice(0, 300));
+    await details.locator('[data-testid="site-sources"] > summary').click();
+    const links = await details.locator('[data-testid="site-sources"] a[target="_blank"]').count();
+    check("Sources & details lists official sources (new tab)", links >= 4, String(links));
+    await page.screenshot({ path: path.join(OUT, "flood_site_details.png"), fullPage: true });
+    await details.locator(":scope > summary").click();
+  }
   await page.waitForTimeout(500);
   const reqText = async () => (await page.locator(".spr-requirements-main").innerText()).replace(/\s+/g, " ");
   let text = await reqText();
@@ -598,11 +611,11 @@ if (GOLDEN === "flood") {
   await page.waitForFunction(() => !(document.querySelector('[data-testid="location-confirm"]') as HTMLButtonElement | null)?.disabled, null, { timeout: 15000 });
   await dialog.locator('[data-testid="location-confirm"]').click();
   await dialog.waitFor({ state: "detached", timeout: 10000 });
-  await page.waitForFunction(() => /Flood zone X/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
+  await page.waitForFunction(() => /Effective FIRM · Zone X/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
   await page.waitForTimeout(600);
   const chipAfter = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
   check("layers re-read for the moved pin", layerQueries.includes(`${xLat},${xLng}`), layerQueries.join(" | "));
-  check("chips now read 'Flood zone X'", /Flood zone X/.test(chipAfter) && !/Flood zone AE/.test(chipAfter), chipAfter);
+  check("site intelligence now reads 'Effective FIRM · Zone X'", /Effective FIRM · Zone X/.test(chipAfter) && !/Zone AE/.test(chipAfter), chipAfter);
   text = await reqText();
   check("moving the pin out of the AE zone removes the flood-zone step", !/Flood-Zone Review \(Planning Regulation 13\)/.test(text));
   check("…and the rustic-land consulta (pueblo is not SREP)", !/Consulta de Ubicación/.test(text));
@@ -615,7 +628,7 @@ if (GOLDEN === "flood") {
     await langBtn.click();
     await page.waitForTimeout(500);
     const es = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
-    check("chips in Spanish (Zona inundable X)", /Zona inundable X/.test(es), es);
+    check("site intelligence in Spanish (FIRM vigente · Zona X)", /FIRM vigente · Zona X/.test(es) && /Lugar verificado con datos oficiales/.test(es), es);
     await page.screenshot({ path: path.join(OUT, "flood_chips_es.png"), fullPage: false });
   }
 

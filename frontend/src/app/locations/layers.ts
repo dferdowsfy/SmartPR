@@ -19,9 +19,46 @@
 
 import type { LocationGeography } from "./geo.ts";
 
-export type SiteLayerId = "flood_zone" | "coastal_zone" | "zoning" | "land_class" | "parcel" | "historic_zone" | "protected_area";
+export type SiteLayerId = "flood_zone" | "flood_advisory" | "coastal_zone" | "zoning" | "land_class" | "parcel" | "terrain" | "historic_zone" | "protected_area";
 
-export const SITE_LAYER_IDS: readonly SiteLayerId[] = ["flood_zone", "coastal_zone", "zoning", "land_class", "parcel", "historic_zone", "protected_area"];
+export const SITE_LAYER_IDS: readonly SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain", "historic_zone", "protected_area"];
+
+// ---------------------------------------------------------------------------
+// The canonical site point. SmartPR always carries { latitude, longitude };
+// an integration that needs another order (ArcGIS "x,y", the FEMA MSC
+// "longitude, latitude") converts inside its own adapter, never globally.
+// ---------------------------------------------------------------------------
+
+export interface SitePoint {
+  latitude: number;
+  longitude: number;
+}
+
+/** Puerto Rico's envelope (main island, Vieques, Culebra, Mona, Desecheo). */
+export const PR_LATITUDE_RANGE = [17.8, 18.62] as const;
+export const PR_LONGITUDE_RANGE = [-68.05, -65.15] as const;
+
+export type SitePointCheck = { ok: true } | { ok: false; reason: "coordinates_look_swapped" | "outside_puerto_rico" | "not_a_number" };
+
+/**
+ * Sanity check before any outbound government request. A valid point is never
+ * modified; an obviously swapped pair (latitude ≈ -66, longitude ≈ 18) is
+ * rejected and logged so it can't resolve to the Southern Hemisphere.
+ */
+export function checkSitePoint(p: SitePoint): SitePointCheck {
+  const { latitude, longitude } = p;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return { ok: false, reason: "not_a_number" };
+  const inLat = (v: number) => v >= PR_LATITUDE_RANGE[0] && v <= PR_LATITUDE_RANGE[1];
+  const inLng = (v: number) => v >= PR_LONGITUDE_RANGE[0] && v <= PR_LONGITUDE_RANGE[1];
+  if (inLat(latitude) && inLng(longitude)) return { ok: true };
+  if (inLat(longitude) && inLng(latitude)) return { ok: false, reason: "coordinates_look_swapped" };
+  return { ok: false, reason: "outside_puerto_rico" };
+}
+
+/** ArcGIS geometry string: x,y = longitude,latitude. */
+export function arcgisPointGeometry(p: SitePoint): string {
+  return `${p.longitude},${p.latitude}`;
+}
 
 /**
  * resolved: the point intersects a feature (code/name set).
@@ -106,6 +143,46 @@ export const LAYER_SOURCES = {
     layer: "LOMRs",
     dataset_date: null,
     reliability: "high",
+    verified: "2026-10-01",
+  },
+  jp_advisory_flood: {
+    id: "jp-fema-advisory-1pct",
+    name: "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones",
+    publisher: "FEMA; Junta de Planificación de Puerto Rico",
+    url: "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9",
+    layer: "Zona Inundable (1% advisory)",
+    dataset_date: "2019-07-08",
+    reliability: "medium",
+    verified: "2026-10-01",
+  },
+  jp_advisory_flood_02: {
+    id: "jp-fema-advisory-02pct",
+    name: "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 0.2% annual-chance flood hazard area",
+    publisher: "FEMA; Junta de Planificación de Puerto Rico",
+    url: "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/14",
+    layer: "0.2 PCT Área de Peligro de Inundación",
+    dataset_date: "2019-07-08",
+    reliability: "medium",
+    verified: "2026-10-01",
+  },
+  usgs_landslide: {
+    id: "usgs-pr-landslide-susceptibility",
+    name: "USGS — Puerto Rico Landslide Susceptibility",
+    publisher: "U.S. Geological Survey",
+    url: "https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer",
+    layer: "Landslide Susceptibility (cached map, zoom 14 ≈ 9 m pixels)",
+    dataset_date: null,
+    reliability: "medium",
+    verified: "2026-10-01",
+  },
+  usgs_elevation: {
+    id: "usgs-3dep-epqs",
+    name: "USGS 3DEP — Elevation Point Query Service",
+    publisher: "U.S. Geological Survey",
+    url: "https://epqs.nationalmap.gov/v1/json",
+    layer: "3DEP elevation (meters)",
+    dataset_date: null,
+    reliability: "medium",
     verified: "2026-10-01",
   },
   jp_calificacion: {
@@ -225,8 +302,13 @@ export interface ArcGisQueryResponse {
 
 /** Point-intersection query URL for an ArcGIS MapServer layer (WGS84 in). */
 export function arcgisPointQueryUrl(layerUrl: string, latitude: number, longitude: number, extra: Record<string, string> = {}): string {
+  return buildArcgisPointQuery(layerUrl, { latitude, longitude }, extra);
+}
+
+/** Point-intersection query for a site point (ArcGIS order handled here, and only here). */
+export function buildArcgisPointQuery(layerUrl: string, point: SitePoint, extra: Record<string, string> = {}): string {
   const p = new URLSearchParams({
-    geometry: `${longitude},${latitude}`,
+    geometry: arcgisPointGeometry(point),
     geometryType: "esriGeometryPoint",
     inSR: "4326",
     spatialRel: "esriSpatialRelIntersects",
@@ -318,7 +400,12 @@ export const LOMC_SEARCH_RADIUS_M = 100;
  * drops a Puerto Rico pin in Antarctica.
  */
 export function femaMscUrl(latitude: number, longitude: number): string {
-  return `https://msc.fema.gov/portal/search?AddressQuery=${encodeURIComponent(`${longitude.toFixed(6)}, ${latitude.toFixed(6)}`)}`;
+  return buildFemaMscQuery({ latitude, longitude });
+}
+
+/** FEMA MSC search for a site point: the MSC adapter is the only place the pair is written longitude-first. */
+export function buildFemaMscQuery(p: SitePoint): string {
+  return `https://msc.fema.gov/portal/search?AddressQuery=${encodeURIComponent(`${p.longitude.toFixed(6)}, ${p.latitude.toFixed(6)}`)}`;
 }
 
 /** Higher = more hazardous. When flood polygons overlap at a point, the most hazardous governs. */
@@ -459,6 +546,142 @@ export function parseFemaFlood(
     retrieval: "live",
     approximate: false,
     reason: panel ? null : "firm_panel_date_unavailable",
+    retrieved_at,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FEMA Puerto Rico advisory flood (ABFE) — a distinct signal from the
+// effective FIRM, never merged into it.
+// ---------------------------------------------------------------------------
+
+/**
+ * Advisory 1% zone at the point (layer 9, which also carries "X (0.2% ACF)"),
+ * plus whether the point falls in the advisory 0.2% hazard area (layer 14).
+ * Tags: SFHA (advisory A/AE/AH/AO/V/VE), MODERATE (0.2%-only). No polygon at
+ * a point the service answered for = "none" (outside the advisory flood areas).
+ */
+export function parseAdvisoryFlood(
+  onePct: ArcGisQueryResponse | string,
+  pointTwoPct: ArcGisQueryResponse | string | null,
+  retrieved_at: string
+): SiteLayerResult {
+  const src = LAYER_SOURCES.jp_advisory_flood;
+  if (typeof onePct === "string") return unknownLayer("flood_advisory", src, onePct, retrieved_at);
+  const err = arcgisError(onePct);
+  if (err) return unknownLayer("flood_advisory", src, err, retrieved_at);
+  const two = pointTwoPct && typeof pointTwoPct !== "string" && !arcgisError(pointTwoPct) ? pointTwoPct : null;
+  const inTwo = two ? (two.features ?? []).length > 0 : null;
+  const { attrs: a } = mostHazardous(onePct);
+  const base = { source: ref(src, src.dataset_date, null), retrieval: "live" as const, approximate: false, retrieved_at };
+  if (!a) {
+    if (inTwo) {
+      return { ...base, layer: "flood_advisory", status: "resolved", code: "0.2%", name: "Advisory 0.2% annual-chance flood area", tags: ["MODERATE"], attributes: { ADV_ZONE: null, IN_02PCT_AREA: true }, reason: null };
+    }
+    return { ...base, layer: "flood_advisory", status: "none", code: null, name: null, tags: [], attributes: { ADV_ZONE: null, IN_02PCT_AREA: inTwo }, reason: null };
+  }
+  const zone = str(a.FLD_ZONE);
+  if (!zone) return { ...unknownLayer("flood_advisory", src, "flood_zone_attribute_missing", retrieved_at), retrieval: "live" };
+  const z = zone.toUpperCase();
+  const sfha = /^(A|V)/.test(z);
+  const tags = sfha ? ["SFHA"] : /0\.2/.test(z) || inTwo ? ["MODERATE"] : [];
+  if (/^V/.test(z)) tags.push("COASTAL_HIGH_HAZARD");
+  return {
+    ...base,
+    layer: "flood_advisory",
+    status: "resolved",
+    code: zone,
+    name: sfha ? `Advisory zone ${zone}` : `Advisory ${zone}`,
+    tags,
+    attributes: {
+      ADV_ZONE: zone,
+      ADV_ZONE_SUBTY: str(a.ZONE_SUBTY),
+      ADV_BFE_M: num(a.ST_BFE_m),
+      ADV_DEPTH_M: num(a.Depth_m),
+      V_DATUM: str(a.V_DATUM),
+      IN_02PCT_AREA: inTwo,
+    },
+    reason: null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Terrain: USGS landslide susceptibility (read from the official cached map)
+// and USGS 3DEP elevation / slope. Nothing is estimated from map appearance.
+// ---------------------------------------------------------------------------
+
+export type LandslideClass = "Low" | "Moderate" | "High" | "Very High" | "Extremely High";
+
+/**
+ * The USGS map's legend colors (RGBA), read from its /legend on 2026-10-01.
+ * "Low" is drawn fully transparent; a pixel matching none of these means the
+ * map's style changed and the answer is unknown — never guessed.
+ */
+export const LANDSLIDE_LEGEND: ReadonlyArray<{ cls: LandslideClass; rgba: readonly [number, number, number, number] }> = [
+  { cls: "Low", rgba: [0, 0, 0, 0] },
+  { cls: "Moderate", rgba: [255, 255, 116, 128] },
+  { cls: "High", rgba: [255, 169, 0, 128] },
+  { cls: "Very High", rgba: [229, 0, 0, 128] },
+  { cls: "Extremely High", rgba: [0, 78, 221, 128] },
+];
+
+/** The cached zoom level the USGS map is published at (maxScale 36111.9). */
+export const LANDSLIDE_TILE_ZOOM = 14;
+
+/** Web-Mercator tile + pixel for a site point. */
+export function webMercatorTilePixel(p: SitePoint, zoom: number): { row: number; col: number; x: number; y: number } {
+  const n = 2 ** zoom;
+  const fx = ((p.longitude + 180) / 360) * n;
+  const lat = (p.latitude * Math.PI) / 180;
+  const fy = ((1 - Math.log(Math.tan(lat) + 1 / Math.cos(lat)) / Math.PI) / 2) * n;
+  const col = Math.floor(fx);
+  const row = Math.floor(fy);
+  return { row, col, x: Math.min(255, Math.floor((fx - col) * 256)), y: Math.min(255, Math.floor((fy - row) * 256)) };
+}
+
+/** Landslide class from the map pixel at the point; null when the color isn't on the legend. */
+export function landslideClassFromRgba(rgba: readonly number[]): LandslideClass | null {
+  const [r, g, b, a] = rgba;
+  if (a === 0) return "Low";
+  const hit = LANDSLIDE_LEGEND.find((e) => e.rgba[3] !== 0 && Math.abs(e.rgba[0] - r) <= 2 && Math.abs(e.rgba[1] - g) <= 2 && Math.abs(e.rgba[2] - b) <= 2);
+  return hit?.cls ?? null;
+}
+
+/** Slope (%) from four 3DEP elevations sampled `spacingM` east/west/north/south of the point. */
+export function slopePercent(e: { east: number; west: number; north: number; south: number }, spacingM: number): number {
+  const dzdx = (e.east - e.west) / (2 * spacingM);
+  const dzdy = (e.north - e.south) / (2 * spacingM);
+  return Math.round(Math.hypot(dzdx, dzdy) * 1000) / 10;
+}
+
+/**
+ * Terrain result. Landslide susceptibility leads (code/tags); elevation and
+ * slope ride along when the 3DEP service answered. Land with a transparent
+ * pixel is "Low"; the caller only reads the map for points on land.
+ */
+export function parseTerrain(
+  landslide: { rgba: readonly number[] } | string,
+  elevation: { centerM: number | null; slopePct: number | null } | null,
+  retrieved_at: string
+): SiteLayerResult {
+  const src = LAYER_SOURCES.usgs_landslide;
+  const elev = { ELEVATION_M: elevation?.centerM ?? null, SLOPE_PCT: elevation?.slopePct ?? null };
+  if (typeof landslide === "string") return { ...unknownLayer("terrain", src, landslide, retrieved_at), attributes: elev };
+  const cls = landslideClassFromRgba(landslide.rgba);
+  if (!cls) return { ...unknownLayer("terrain", src, `landslide_legend_mismatch_${landslide.rgba.join("_")}`, retrieved_at), attributes: elev, retrieval: "live" };
+  const tags = cls === "High" || cls === "Very High" || cls === "Extremely High" ? ["LANDSLIDE_HIGH"] : cls === "Moderate" ? ["LANDSLIDE_MODERATE"] : [];
+  if (cls === "Very High" || cls === "Extremely High") tags.push("LANDSLIDE_VERY_HIGH");
+  return {
+    layer: "terrain",
+    status: "resolved",
+    code: cls,
+    name: `${cls} landslide susceptibility`,
+    tags,
+    attributes: { LANDSLIDE_SUSCEPTIBILITY: cls, ...elev },
+    source: ref(src, null, `z${LANDSLIDE_TILE_ZOOM}`),
+    retrieval: "live",
+    approximate: false,
+    reason: null,
     retrieved_at,
   };
 }
@@ -724,6 +947,8 @@ export function parsePresence(
 /** Geography type each layer is recorded under (location.<type>.* facts). */
 export const LAYER_GEOGRAPHY_TYPE: Record<SiteLayerId, string> = {
   flood_zone: "flood_zone",
+  flood_advisory: "flood_advisory",
+  terrain: "terrain",
   coastal_zone: "coastal_zone",
   zoning: "zoning",
   land_class: "land_class",
@@ -1025,9 +1250,12 @@ export interface LayerCard {
 }
 
 /** Plain-language reason a layer is unknown, from the raw machine reason. */
-export function layerReasonText(reason: string | null | undefined, service: "FEMA" | "JP" | "CRIM" = "JP"): { text: Bi; retryable: boolean } {
+export function layerReasonText(reason: string | null | undefined, service: "FEMA" | "JP" | "CRIM" | "USGS" = "JP"): { text: Bi; retryable: boolean } {
   const r = reason ?? "";
-  const who = service === "FEMA" ? "FEMA" : service === "CRIM" ? "CRIM" : "Junta de Planificación";
+  const who = service === "FEMA" ? "FEMA" : service === "CRIM" ? "CRIM" : service === "USGS" ? "USGS" : "Junta de Planificación";
+  if (r === "coordinates_look_swapped") return { text: { en: "The coordinates look reversed (latitude and longitude swapped), so no map was queried.", es: "Las coordenadas parecen invertidas (latitud y longitud intercambiadas); no se consultó ningún mapa." }, retryable: false };
+  if (r === "not_on_land") return { text: { en: "The pin isn't on land, so terrain doesn't apply.", es: "El pin no está en tierra; el terreno no aplica." }, retryable: false };
+  if (r === "landslide_tile_not_published" || /^landslide_legend_mismatch/.test(r)) return { text: { en: "USGS's landslide map couldn't be read for this point.", es: "No se pudo leer el mapa de deslizamientos del USGS para este punto." }, retryable: false };
   if (/^timeout_/.test(r)) return { text: { en: `${who}'s map service didn't answer in time.`, es: `El servicio de mapas de ${who} no respondió a tiempo.` }, retryable: true };
   if (/^layers_service_unreachable|^no_layers/.test(r)) return { text: { en: "SmartPR couldn't reach the map lookup.", es: "SmartPR no pudo conectar con la consulta de mapas." }, retryable: true };
   if (/^network_error|^http_5\d\d$|^http_429$|unreachable|arcgis_error_5/.test(r)) return { text: { en: `${who}'s map service is temporarily unavailable.`, es: `El servicio de mapas de ${who} no está disponible por el momento.` }, retryable: true };
@@ -1104,7 +1332,7 @@ export function layerCards(layers: SiteLayers | null | undefined): LayerCard[] {
     const bits = [who, extra, r.source.dataset_date].filter(Boolean);
     return bits.join(" · ");
   };
-  const unknownCard = (r: SiteLayerResult, title: Bi, service: "FEMA" | "JP" | "CRIM", link: LayerCard["link"]) => {
+  const unknownCard = (r: SiteLayerResult, title: Bi, service: "FEMA" | "JP" | "CRIM" | "USGS", link: LayerCard["link"]) => {
     const why = layerReasonText(r.reason, service);
     out.push({ layer: r.layer, status: "unknown", title, value: { en: "Couldn't be checked", es: "No se pudo verificar" }, meaning: null, source: null, reason: why.text, retryable: why.retryable, link });
   };
@@ -1136,6 +1364,48 @@ export function layerCards(layers: SiteLayers | null | undefined): LayerCard[] {
       const link = mscLink ?? { url: femaMscUrl(layers!.latitude, layers!.longitude), label: { en: "Check on FEMA's Map Service Center", es: "Verificar en el Centro de Mapas de FEMA" } };
       unknownCard(flood, title, "FEMA", link);
     }
+  }
+  const adv = by.get("flood_advisory");
+  if (adv) {
+    const title = { en: "FEMA advisory flood (ABFE)", es: "Inundación asesora de FEMA (ABFE)" };
+    if (adv.status === "resolved") {
+      const sfha = adv.tags.includes("SFHA");
+      out.push({
+        layer: "flood_advisory",
+        status: "resolved",
+        title,
+        value: sfha ? { en: `Advisory zone ${adv.code}`, es: `Zona asesora ${adv.code}` } : { en: "Advisory 0.2% flood area", es: "Área asesora de inundación 0.2%" },
+        meaning: sfha
+          ? { en: "FEMA's Puerto Rico advisory maps (post-María) show a 1% annual-chance flood area here. They can show more flood exposure than the effective FIRM and may matter for planning and permitting.", es: "Los mapas asesores de FEMA para Puerto Rico (post-María) muestran un área de inundación de 1% anual aquí. Pueden mostrar más exposición que el FIRM vigente y pueden importar para la planificación y los permisos." }
+          : { en: "FEMA's advisory maps show a 0.2% annual-chance (moderate) flood area here.", es: "Los mapas asesores de FEMA muestran un área de inundación de 0.2% anual (moderada) aquí." },
+        source: dated(adv, "FEMA / JP"),
+        reason: null,
+        retryable: false,
+        link: null,
+      });
+    } else if (adv.status === "none") {
+      out.push({ layer: "flood_advisory", status: "none", title, value: { en: "Outside the advisory flood areas", es: "Fuera de las áreas inundables asesoras" }, meaning: { en: "Checked against FEMA's Puerto Rico advisory flood maps: no advisory flood area at this point.", es: "Verificado contra los mapas asesores de FEMA: no hay área asesora de inundación en este punto." }, source: dated(adv, "FEMA / JP"), reason: null, retryable: false, link: null });
+    } else unknownCard(adv, title, "JP", null);
+  }
+  const terr = by.get("terrain");
+  if (terr) {
+    const title = { en: "Terrain & slope", es: "Terreno y pendiente" };
+    if (terr.status === "resolved") {
+      const high = terr.tags.includes("LANDSLIDE_HIGH");
+      out.push({
+        layer: "terrain",
+        status: "resolved",
+        title,
+        value: { en: `${terr.code} landslide susceptibility`, es: `Susceptibilidad a deslizamientos: ${terr.code}` },
+        meaning: high
+          ? { en: "USGS rates this ground as prone to rainfall-triggered landslides. Grading, cuts and foundations may need geotechnical review.", es: "El USGS clasifica este terreno como propenso a deslizamientos por lluvia. El movimiento de tierra, cortes y cimientos pueden requerir revisión geotécnica." }
+          : { en: "USGS landslide susceptibility for this ground (rainfall-triggered).", es: "Susceptibilidad a deslizamientos por lluvia del USGS para este terreno." },
+        source: "USGS",
+        reason: null,
+        retryable: false,
+        link: null,
+      });
+    } else unknownCard(terr, title, "USGS", null);
   }
   const czm = by.get("coastal_zone");
   if (czm?.status === "resolved") {
@@ -1241,6 +1511,8 @@ export function restoreSiteLayers(raw: unknown, latitude: number, longitude: num
 export function unavailableSiteLayers(latitude: number, longitude: number, reason: string, at: string = new Date().toISOString()): SiteLayers {
   const src: Record<SiteLayerId, LayerSource> = {
     flood_zone: LAYER_SOURCES.fema_flood_zones,
+    flood_advisory: LAYER_SOURCES.jp_advisory_flood,
+    terrain: LAYER_SOURCES.usgs_landslide,
     coastal_zone: LAYER_SOURCES.jp_zona_costanera,
     zoning: LAYER_SOURCES.jp_calificacion,
     land_class: LAYER_SOURCES.jp_calificacion,
@@ -1248,6 +1520,6 @@ export function unavailableSiteLayers(latitude: number, longitude: number, reaso
     historic_zone: LAYER_SOURCES.jp_zonas_historicas,
     protected_area: LAYER_SOURCES.jp_areas_naturales,
   };
-  const core: SiteLayerId[] = ["flood_zone", "coastal_zone", "zoning", "land_class", "parcel"];
+  const core: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain"];
   return { latitude, longitude, resolved_at: at, results: core.map((l) => unknownLayer(l, src[l], reason, at)) };
 }

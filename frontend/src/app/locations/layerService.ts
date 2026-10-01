@@ -16,10 +16,17 @@ import {
   LAYER_SOURCES,
   CZM_BAND_M,
   arcgisError,
-  arcgisPointQueryUrl,
   parseCoastalZone,
   parseCrimParcel,
   parseFemaFlood,
+  parseAdvisoryFlood,
+  parseTerrain,
+  checkSitePoint,
+  buildArcgisPointQuery,
+  webMercatorTilePixel,
+  slopePercent,
+  unknownLayer,
+  LANDSLIDE_TILE_ZOOM,
   LOMC_SEARCH_RADIUS_M,
   parseJpCalificacion,
   parsePresence,
@@ -29,7 +36,18 @@ import {
   type SiteLayers,
 } from "./layers.ts";
 
-export type FetchLike = (url: string, init?: { signal?: AbortSignal; headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
+export type FetchLike = (url: string, init?: { signal?: AbortSignal; headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; arrayBuffer?(): Promise<ArrayBuffer> }>;
+
+/** Raw RGBA(ish) pixels of a decoded PNG. */
+export type DecodedImage = { width: number; height: number; channels: number; data: Uint8Array };
+export type PngDecoder = (png: ArrayBuffer) => Promise<DecodedImage>;
+
+/** Server default: sharp (already a dependency), loaded only when a tile is read. */
+const sharpDecoder: PngDecoder = async (png) => {
+  const sharp = (await import("sharp")).default;
+  const { data, info } = await sharp(Buffer.from(png)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  return { width: info.width, height: info.height, channels: info.channels, data: new Uint8Array(data) };
+};
 
 /** Shared (database) second level of the cache; every method is best-effort and never throws. */
 export interface LayerStore {
@@ -45,6 +63,10 @@ export interface ResolveLayersOptions {
   retries?: number;
   /** "Retry" from the UI: ignore remembered failures and ask the services again. */
   refresh?: boolean;
+  /** PNG decoder for the USGS landslide map tile (tests inject one). */
+  decodePng?: PngDecoder;
+  /** Point on land (municipio polygon)? A transparent landslide pixel means "Low" only on land. */
+  isOnLand?: (p: { latitude: number; longitude: number }) => boolean;
   retryDelayMs?: number;
   /** Per-query timeout override (ms). */
   timeoutMs?: Partial<Record<QueryKey, number>>;
@@ -54,7 +76,7 @@ export interface ResolveLayersOptions {
   skipOptional?: boolean;
 }
 
-type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "jp_calificacion" | "crim" | "czm_official" | "coastline" | "historic" | "protected";
+type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "coastline" | "historic" | "protected";
 
 /** Default timeouts (ms), sized from the latencies observed 2026-09-30 (JP ≈ 2.5–3 s, FEMA < 1 s). */
 export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
@@ -63,6 +85,10 @@ export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
   fema_community: 6000,
   fema_lomas: 6000,
   fema_lomrs: 6000,
+  advisory_1pct: 8000,
+  advisory_02pct: 8000,
+  landslide: 6000,
+  elevation: 6000,
   jp_calificacion: 8000,
   crim: 6000,
   czm_official: 3500,
@@ -146,6 +172,15 @@ async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: number, r
  */
 export async function resolveSiteLayers(latitude: number, longitude: number, opts: ResolveLayersOptions = {}): Promise<SiteLayers> {
   const fetchImpl: FetchLike = opts.fetchImpl ?? ((url, init) => fetch(url, { ...init, cache: "no-store" }) as ReturnType<FetchLike>);
+  const point = { latitude, longitude };
+  // Never send a swapped / non-Puerto-Rico pair to a government service.
+  const pointCheck = checkSitePoint(point);
+  if (!pointCheck.ok) {
+    if (pointCheck.reason === "coordinates_look_swapped") console.warn(`[layers] rejected swapped coordinates lat=${latitude} lng=${longitude}`);
+    const at0 = (opts.now ?? (() => new Date()))().toISOString();
+    const ids: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain"];
+    return { latitude, longitude, resolved_at: at0, results: ids.map((l) => unknownLayer(l, LAYER_SOURCES.fema_flood_zones, pointCheck.reason, at0)) };
+  }
   const cache = opts.cache ?? sharedCache;
   const now = opts.now ?? (() => new Date());
   const t = (k: QueryKey) => opts.timeoutMs?.[k] ?? LAYER_TIMEOUTS_MS[k];
@@ -153,12 +188,12 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const retries = opts.retries ?? 1;
   const retryDelayMs = opts.retryDelayMs ?? 250;
   const q = (k: QueryKey, url: string, extra?: Record<string, string>) =>
-    queryJson(fetchImpl, arcgisPointQueryUrl(url, latitude, longitude, extra), t(k), retries, retryDelayMs, k === "fema_zones" || k === "fema_panels");
+    queryJson(fetchImpl, buildArcgisPointQuery(url, point, extra), t(k), retries, retryDelayMs, k === "fema_zones" || k === "fema_panels" || k === "advisory_1pct");
 
   // Seed the in-memory cache from the shared store: a pin resolved before a
   // restart (or on another instance) is still served fresh / stale-on-failure.
   if (opts.store) {
-    const layers: SiteLayerId[] = ["flood_zone", "coastal_zone", "zoning", "land_class", "parcel", ...(opts.skipOptional ? [] : (["historic_zone", "protected_area"] as SiteLayerId[]))];
+    const layers: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain", ...(opts.skipOptional ? [] : (["historic_zone", "protected_area"] as SiteLayerId[]))];
     const missing = layers.filter((l) => !cache.get(cache.key(l, latitude, longitude)));
     if (missing.length) {
       try {
@@ -182,7 +217,10 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const want = (layers: SiteLayerId[]) => layers.some((l) => !fresh(l));
 
   const near = { distance: String(LOMC_SEARCH_RADIUS_M), units: "esriSRUnit_Meter" };
-  const [zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
+  const [advOne, landslide, elevation, zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
+    want(["flood_advisory"]) ? q("advisory_1pct", LAYER_SOURCES.jp_advisory_flood.url) : null,
+    want(["terrain"]) ? readLandslidePixel(fetchImpl, point, t("landslide"), retries, retryDelayMs, opts.decodePng ?? sharpDecoder, opts.isOnLand) : null,
+    want(["terrain"]) ? readElevation(fetchImpl, point, t("elevation")) : null,
     want(["flood_zone"]) ? q("fema_zones", LAYER_SOURCES.fema_flood_zones.url) : null,
     want(["flood_zone"]) ? q("fema_panels", LAYER_SOURCES.fema_firm_panels.url) : null,
     // MSC extras are best-effort: a miss never degrades the flood zone itself.
@@ -203,6 +241,13 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   if (zones !== null) {
     computed.flood_zone = parseFemaFlood(zones, panels, at, { community, lomas, lomrs });
   }
+  if (advOne !== null) {
+    // The 0.2% layer only matters where the 1% layer has no polygon: ask it then, sparing the JP host.
+    const outsideOnePct = typeof advOne !== "string" && !arcgisError(advOne) && (advOne.features ?? []).length === 0;
+    const advTwo = outsideOnePct ? await q("advisory_02pct", LAYER_SOURCES.jp_advisory_flood_02.url) : null;
+    computed.flood_advisory = parseAdvisoryFlood(advOne, advTwo, at);
+  }
+  if (landslide !== null) computed.terrain = parseTerrain(landslide, elevation, at);
   let jpCatastro: string | null = null;
   if (cali !== null) {
     const jp = parseJpCalificacion(cali, at);
@@ -215,7 +260,7 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   if (hist !== null) computed.historic_zone = parsePresence("historic_zone", LAYER_SOURCES.jp_zonas_historicas, hist, at, ["NOMBRE", "Nombre", "nombre", "ZONA", "Zona"]);
   if (prot !== null) computed.protected_area = parsePresence("protected_area", LAYER_SOURCES.jp_areas_naturales, prot, at, ["NOMBRE", "Nombre", "nombre", "AREA", "Name"]);
 
-  const order: SiteLayerId[] = ["flood_zone", "coastal_zone", "zoning", "land_class", "parcel", ...(opts.skipOptional ? [] : (["historic_zone", "protected_area"] as SiteLayerId[]))];
+  const order: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain", ...(opts.skipOptional ? [] : (["historic_zone", "protected_area"] as SiteLayerId[]))];
   const results: SiteLayerResult[] = [];
   const toPersist: Array<{ key: string; at: number; latitude: number; longitude: number; result: SiteLayerResult }> = [];
   for (const layer of order) {
@@ -251,4 +296,84 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
     }
   }
   return { latitude, longitude, resolved_at: at, results };
+}
+
+/**
+ * USGS landslide susceptibility at the point: the official map is published
+ * only as cached tiles, so read the pixel at the point (zoom 14, ≈ 9 m) and
+ * match it to the map's legend. Returns the RGBA or a failure reason.
+ */
+async function readLandslidePixel(
+  fetchImpl: FetchLike,
+  point: { latitude: number; longitude: number },
+  timeoutMs: number,
+  retries: number,
+  retryDelayMs: number,
+  decode: PngDecoder,
+  isOnLand?: (p: { latitude: number; longitude: number }) => boolean
+): Promise<{ rgba: number[] } | string> {
+  if (isOnLand && !isOnLand(point)) return "not_on_land";
+  const { row, col, x, y } = webMercatorTilePixel(point, LANDSLIDE_TILE_ZOOM);
+  const url = `${LAYER_SOURCES.usgs_landslide.url}/tile/${LANDSLIDE_TILE_ZOOM}/${row}/${col}`;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    let failure: string;
+    try {
+      const res = await fetchImpl(url, { signal: ctrl.signal });
+      if (res.status === 404) return "landslide_tile_not_published";
+      if (!res.ok || !res.arrayBuffer) failure = `http_${res.status}`;
+      else {
+        const img = await decode(await res.arrayBuffer());
+        const i = (y * img.width + x) * img.channels;
+        const px = Array.from(img.data.slice(i, i + img.channels));
+        return { rgba: img.channels >= 4 ? px.slice(0, 4) : [...px.slice(0, 3), 255] };
+      }
+    } catch (err) {
+      const e = err as Error;
+      failure = e?.name === "AbortError" ? `timeout_${timeoutMs}ms` : `network_error: ${e?.message ?? String(err)}`.slice(0, 160);
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!/^network_error|^http_5\d\d$|^http_429$|^timeout_/.test(failure) || attempt === retries) return failure;
+    if (retryDelayMs > 0) await new Promise((r) => setTimeout(r, retryDelayMs));
+  }
+  return "landslide_unavailable";
+}
+
+const ELEVATION_SPACING_M = 15;
+
+/**
+ * USGS 3DEP elevation at the point, and slope from four samples 15 m away.
+ * Best-effort: null when the service doesn't answer; slope only when all four
+ * neighbours answered. Never estimated.
+ */
+async function readElevation(fetchImpl: FetchLike, point: { latitude: number; longitude: number }, timeoutMs: number): Promise<{ centerM: number | null; slopePct: number | null } | null> {
+  const dLat = ELEVATION_SPACING_M / 111_320;
+  const dLng = ELEVATION_SPACING_M / (111_320 * Math.cos((point.latitude * Math.PI) / 180));
+  const at = async (lat: number, lng: number): Promise<number | null> => {
+    const u = `${LAYER_SOURCES.usgs_elevation.url}?${new URLSearchParams({ x: String(lng), y: String(lat), wkid: "4326", units: "Meters", includeDate: "false" })}`;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetchImpl(u, { signal: ctrl.signal, headers: { Accept: "application/json" } });
+      if (!res.ok) return null;
+      const v = Number((await res.json() as { value?: unknown })?.value);
+      return Number.isFinite(v) && v > -1000 ? v : null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const [c, e, w, n, s] = await Promise.all([
+    at(point.latitude, point.longitude),
+    at(point.latitude, point.longitude + dLng),
+    at(point.latitude, point.longitude - dLng),
+    at(point.latitude + dLat, point.longitude),
+    at(point.latitude - dLat, point.longitude),
+  ]);
+  if (c === null && [e, w, n, s].every((v) => v === null)) return null;
+  const slope = e !== null && w !== null && n !== null && s !== null ? slopePercent({ east: e, west: w, north: n, south: s }, ELEVATION_SPACING_M) : null;
+  return { centerM: c === null ? null : Math.round(c * 10) / 10, slopePct: slope };
 }

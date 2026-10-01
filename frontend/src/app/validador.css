@@ -3247,26 +3247,52 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
   .ck-card-line .ck-row-head .ck-pill { flex: 0 0 116px; display: inline-flex; justify-content: center; text-align: center; box-sizing: border-box; }
 }
 
-/* "What the maps say": one card per official-map layer under the site chips. */
-.spr-loc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 10px; }
-.spr-loc-card-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px 14px; border: 1px solid var(--border, #e4dfd3); border-radius: 12px; background: #fff; border-left: 4px solid var(--accent, #047f58); }
-.spr-loc-card-item header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.spr-loc-card-title { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted, #69665f); }
-.spr-loc-card-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent, #047f58); flex: none; }
-.spr-loc-card-value { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
-.spr-loc-card-meaning { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--muted, #5b5850); }
-.spr-loc-card-meta { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted, #5b5850); }
-.spr-loc-card-reason { margin: 0; font-size: 14px; line-height: 1.45; color: #7a4a00; }
-.spr-loc-card-item footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: auto; padding-top: 4px; }
-.spr-loc-card-source { font-size: 12px; color: var(--muted, #69665f); margin-right: auto; }
-.spr-loc-card-btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--brand); background: var(--brand); color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
-.spr-loc-card-btn:hover { filter: brightness(1.06); }
-.spr-loc-card-link { background: #fff; color: var(--brand); }
-.spr-loc-card-unknown { border-left-color: var(--warn, #b54708); background: #fffaf3; border-style: dashed; border-left-style: solid; }
-.spr-loc-card-unknown .spr-loc-card-dot { background: var(--warn, #b54708); }
-.spr-loc-card-unknown .spr-loc-card-value { color: #7a4a00; font-weight: 600; }
-.spr-loc-card-none { border-left-color: #b9b2a0; }
-.spr-loc-card-none .spr-loc-card-dot { background: #b9b2a0; }
+/* Site intelligence: grouped, semantic pills — color carries meaning
+   (green confirmed/ok · blue classification · amber attention · red material
+   hazard · gray unknown). Unknown never looks like a positive result. */
+.spr-loc-confidence { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; color: #166534; }
+.spr-si { display: flex; flex-direction: column; gap: 10px; }
+.spr-si-alerts { display: flex; flex-direction: column; gap: 6px; }
+.spr-si-alert { display: flex; gap: 8px; align-items: flex-start; padding: 9px 12px; border-radius: 10px; font-size: 14px; line-height: 1.45; }
+.spr-si-alert svg { flex: none; margin-top: 2px; }
+.spr-si-alert-attention { background: #fff7e6; border: 1px solid #f3d29a; color: #6b4300; }
+.spr-si-alert-hazard { background: #fdecec; border: 1px solid #f2b8b5; color: #8a1c1c; }
+.spr-si-groups { display: grid; gap: 6px; }
+.spr-si-group { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 4px 10px; }
+.spr-si-group-title { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #69665f); }
+.spr-si-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.spr-si-pill { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 2px 10px; border-radius: 999px; border: 1px solid; font-size: 13.5px; font-weight: 600; line-height: 1.25; max-width: 100%; }
+.spr-si-pill-icon { flex: none; }
+.spr-si-tone-ok { background: #e8f5ef; border-color: #b7dfca; color: #14532d; }
+.spr-si-tone-info { background: #eaf1fb; border-color: #c3d6f2; color: #1e3a6b; }
+.spr-si-tone-attention { background: #fff5e0; border-color: #f1cf8f; color: #6b4300; }
+.spr-si-tone-hazard { background: #fdeceb; border-color: #f0b4b0; color: #8a1c1c; }
+.spr-si-tone-unknown { background: #f3f2ef; border-color: #d8d4cb; border-style: dashed; color: #5f5b53; font-weight: 500; }
+.spr-si-retry-line { margin: 0; font-size: 13.5px; color: var(--muted, #5f5b53); }
+.spr-si-retry { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 8px; border: 1px solid var(--brand); background: #fff; color: var(--brand); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.spr-si-details > summary, .spr-si-sources > summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--brand); }
+.spr-si-details-body { display: grid; gap: 12px; margin-top: 10px; }
+.spr-si-detail-group h4 { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #69665f); }
+.spr-si-detail { padding: 10px 12px; border: 1px solid var(--border, #e4dfd3); border-radius: 10px; background: #fff; margin-bottom: 6px; }
+.spr-si-detail-head { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; font-size: 14.5px; color: var(--ink); }
+.spr-si-status { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.spr-si-status-confirmed { background: #e8f5ef; color: #14532d; }
+.spr-si-status-not_found { background: #eaf1fb; color: #1e3a6b; }
+.spr-si-status-unavailable, .spr-si-status-error { background: #f3f2ef; color: #5f5b53; }
+.spr-si-detail dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 14px; margin: 8px 0 0; }
+.spr-si-detail dt { font-size: 12px; color: var(--muted, #69665f); }
+.spr-si-detail dd { margin: 0; font-size: 14px; color: var(--ink); overflow-wrap: anywhere; }
+.spr-si-detail-reason { margin: 6px 0 0; font-size: 13.5px; color: #6b4300; }
+.spr-si-detail-meaning { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; color: var(--muted, #5b5850); }
+.spr-si-wetlands { margin: 0; font-size: 13px; color: var(--muted, #69665f); }
+.spr-si-sources ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.spr-si-sources li { display: flex; flex-direction: column; gap: 1px; font-size: 13px; }
+.spr-si-source-name { font-weight: 600; color: var(--ink); }
+.spr-si-source-meta { color: var(--muted, #69665f); }
+.spr-si-source-link { align-self: flex-start; display: inline-flex; align-items: center; gap: 3px; font-size: 12.5px; color: var(--brand); }
+@media (max-width: 640px) {
+  .spr-si-group { grid-template-columns: 1fr; }
+}
 
 /* ==========================================================================
    Two-layer glass header system (2026-10-01)

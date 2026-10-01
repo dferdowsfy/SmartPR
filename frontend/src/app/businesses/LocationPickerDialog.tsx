@@ -541,8 +541,8 @@ export function LocationPickerDialog({
             </h3>
             <p className="mt-0.5 text-xs text-slate-500">
               {L(
-                "Search for an address, or tap the map where the property is. Drag the pin to the exact spot.",
-                "Busque una dirección o toque el mapa donde está la propiedad. Arrastre el pin al lugar exacto.",
+                "Search for an address or drop a pin exactly where the site is.",
+                "Busque una dirección o coloque un pin exactamente donde está el lugar.",
                 lang
               )}
             </p>
@@ -644,7 +644,7 @@ export function LocationPickerDialog({
           <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3" aria-live="polite">
             {point ? (
               <>
-                <div className="text-[11px] font-medium text-slate-500">{L("Selected point", "Punto seleccionado", lang)}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{L("Selected site", "Lugar seleccionado", lang)}</div>
                 <div className="mt-0.5 break-words font-mono text-sm font-semibold text-[#161616]" data-testid="location-selected-coordinates">
                   {L("Latitude", "Latitud", lang)}: {formatCoordinate(point.latitude)}
                   <span className="mx-2 text-slate-300" aria-hidden="true">·</span>
@@ -655,6 +655,19 @@ export function LocationPickerDialog({
                     {addressText}
                   </div>
                 )}
+                {/* The pin, not the address, drives every map check: a dropped or dragged
+                    pin is exact even when the street address is imperfect or missing. */}
+                <div className="mt-1 text-xs" data-testid="location-confidence" data-source={coordinateSource}>
+                  {coordinateSource === "GEOCODED_ADDRESS" ? (
+                    <span className="font-medium text-amber-800">
+                      {L("Approximate address match — drag the pin onto the exact spot.", "Coincidencia aproximada de dirección — arrastre el pin al lugar exacto.", lang)}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-emerald-800">
+                      ✓ {L("Exact map location. The address is shown as a reference.", "Ubicación exacta en el mapa. La dirección se muestra como referencia.", lang)}
+                    </span>
+                  )}
+                </div>
                 <div className="mt-1 text-xs text-slate-700" data-testid="location-selected-placement">
                   {placement.status === "loading" && L("Finding the municipio…", "Buscando el municipio…", lang)}
                   {placement.status === "error" &&
