@@ -312,9 +312,13 @@ export function unknownLayer(layer: SiteLayerId, src: LayerSource, reason: strin
 /** Radius (m) around the pin searched for FEMA letters of map change (LOMA / LOMR). */
 export const LOMC_SEARCH_RADIUS_M = 100;
 
-/** Same search as the FEMA Map Service Center, for the same spot. */
+/**
+ * Same search as the FEMA Map Service Center, for the same spot. The MSC reads
+ * a coordinate pair as "longitude, latitude" (x, y): sending latitude first
+ * drops a Puerto Rico pin in Antarctica.
+ */
 export function femaMscUrl(latitude: number, longitude: number): string {
-  return `https://msc.fema.gov/portal/search?AddressQuery=${encodeURIComponent(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`)}`;
+  return `https://msc.fema.gov/portal/search?AddressQuery=${encodeURIComponent(`${longitude.toFixed(6)}, ${latitude.toFixed(6)}`)}`;
 }
 
 /** Higher = more hazardous. When flood polygons overlap at a point, the most hazardous governs. */
@@ -919,7 +923,8 @@ export function floodMapSummary(layers: SiteLayers | null | undefined): FloodMap
     communityId: s(a.COMMUNITY_CID),
     mapChangeCount: n(a.LOMC_COUNT),
     mapChangeCases: s(a.LOMC_CASES),
-    mscUrl: s(a.MSC_URL),
+    // Built from the pin each time: older saved results stored a link with the coordinates swapped.
+    mscUrl: femaMscUrl(layers!.latitude, layers!.longitude),
   };
 }
 

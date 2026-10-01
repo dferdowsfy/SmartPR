@@ -20,7 +20,6 @@ import {
   parseCoastalZone,
   parseCrimParcel,
   parseFemaFlood,
-  femaMscUrl,
   LOMC_SEARCH_RADIUS_M,
   parseJpCalificacion,
   parsePresence,
@@ -202,9 +201,7 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
 
   const computed: Partial<Record<SiteLayerId, SiteLayerResult>> = {};
   if (zones !== null) {
-    const flood = parseFemaFlood(zones, panels, at, { community, lomas, lomrs });
-    if (flood.status === "resolved") flood.attributes.MSC_URL = femaMscUrl(latitude, longitude);
-    computed.flood_zone = flood;
+    computed.flood_zone = parseFemaFlood(zones, panels, at, { community, lomas, lomrs });
   }
   let jpCatastro: string | null = null;
   if (cali !== null) {

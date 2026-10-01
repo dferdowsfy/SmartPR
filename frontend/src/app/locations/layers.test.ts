@@ -22,6 +22,7 @@ import {
   parseCrimParcel,
   parseFemaFlood,
   floodMapSummary,
+  femaMscUrl,
   layerCards,
   layerReasonText,
   parseJpCalificacion,
@@ -186,7 +187,10 @@ test("FEMA MSC parity: resolving a pin queries community + LOMA/LOMR and links t
   assert.equal(f.community, "Municipio de Guaynabo");
   assert.equal(f.communityId, "720000");
   assert.equal(f.mapChangeCount, 0);
-  assert.match(f.mscUrl ?? "", /^https:\/\/msc\.fema\.gov\/portal\/search\?AddressQuery=18\.\d+%2C%20-66\.\d+$/);
+  // The MSC reads "longitude, latitude": the western-hemisphere value comes first.
+  assert.match(f.mscUrl ?? "", /^https:\/\/msc\.fema\.gov\/portal\/search\?AddressQuery=-66\.\d+%2C%20\+?18\.\d+$/);
+  assert.equal(f.mscUrl, femaMscUrl(lat, lng));
+  assert.ok(!("MSC_URL" in layer(l, "flood_zone").attributes), "the link is built on read, never stored");
   // The extras failing never degrade the flood zone.
   const degraded = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch([], { fema_community: "down", fema_lomas: "down", fema_lomrs: "timeout" }), cache: new LayerCache(), timeoutMs: FAST, now: () => new Date(AT) });
   assert.equal(layer(degraded, "flood_zone").status, "resolved");
