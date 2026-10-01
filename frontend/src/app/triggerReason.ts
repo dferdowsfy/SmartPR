@@ -36,6 +36,13 @@ export function translateTriggerReason(
   reason: string,
   municipality: string,
   language: "en" | "es",
+  /**
+   * Explanations of the confirmed site's map-layer facts
+   * (locations/layers.layerFactDetails): a rule triggered by
+   * `location.flood_zone.sfha` reads "Because your pin is in flood zone AE
+   * (FEMA, 2009-11-18)".
+   */
+  locationDetails?: Record<string, { en: string; es: string }> | null,
 ): string | null {
   const flagMatch = reason.match(/^Municipality Flag = (.+?)(?: \+ Business Type = (.+))?$/);
   if (flagMatch) {
@@ -54,6 +61,8 @@ export function translateTriggerReason(
   }
   const projectFactMatch = reason.match(/^Project fact: (.+?) = (.+)$/);
   if (projectFactMatch) {
+    const locationDetail = projectFactMatch[1].startsWith("location.") ? locationDetails?.[projectFactMatch[1]] : undefined;
+    if (locationDetail) return language === "es" ? locationDetail.es : locationDetail.en;
     const label = PROJECT_FACT_LABELS[projectFactMatch[1]]?.[projectFactMatch[2]];
     if (!label) return null;
     return language === "es" ? label.es : label.en;

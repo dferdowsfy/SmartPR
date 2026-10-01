@@ -115,7 +115,8 @@ import {
 import { MunicipalityMapButton } from './components/intake/MunicipalityMapButton';
 import { normalizeMunicipio } from './locations/geo';
 import { LocationStepCard, intakeSiteFromPick } from './components/intake/LocationStepCard';
-import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteLabel, type IntakeSite } from './locations/intakeLocation';
+import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails, siteLabel, siteLayersCurrent, type IntakeSite } from './locations/intakeLocation';
+import { unavailableSiteLayers, type SiteLayers } from './locations/layers';
 import type { LocationEngineFacts } from './locations/locationContext';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
 import { claraSupportFor, groupRequirements, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
@@ -2614,7 +2615,7 @@ export default function SmartPRIntake() {
     // Raw engine trigger shapes (municipality-flag, business-type, and
     // project-fact reasons) are rendered by the shared pure helper in user
     // vocabulary in both languages (REG-TRIGGER-LABEL-001/002).
-    const triggerLabel = translateTriggerReason(req.reason, profile.municipality, language);
+    const triggerLabel = translateTriggerReason(req.reason, profile.municipality, language, siteFactDetails(intakeSite));
     if (triggerLabel) return triggerLabel;
     if (language === 'es') {
       // Municipality flag advisories (potential_*): the pack authors the
@@ -3836,6 +3837,45 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       })
       .catch(() => { intakeSiteSavingRef.current = null; });
   }, [intakeSite, me, businessId, projectIntent]);
+
+  // The confirmed site's map layers (FEMA flood zone, JP calificación and
+  // land class, CRIM parcel, coastal zone) load in the background: the
+  // intake never waits on them. A service that is down yields "unknown"
+  // layers (no facts), never a blocked step.
+  // When they arrive, requirements already on screen re-evaluate against the
+  // new location facts (latest state via a ref refreshed after each render).
+  const recomputeForSiteRef = useRef<((site: IntakeSite) => void) | null>(null);
+  useEffect(() => {
+    recomputeForSiteRef.current = (site: IntakeSite) => {
+      if (requirements.length === 0) return;
+      setRequirements(computeRequirements(profile, discoveryAnswers, potentialDecisions, { ...requirementOptions(), locationFacts: siteEngineFacts(site, businessId) }));
+    };
+  });
+  const intakeLayersFetchRef = useRef<string | null>(null);
+  useEffect(() => {
+    const site = intakeSite;
+    if (!site || siteLayersCurrent(site)) return;
+    const key = `${site.latitude},${site.longitude}`;
+    if (intakeLayersFetchRef.current === key) return;
+    intakeLayersFetchRef.current = key;
+    const apply = (layers: SiteLayers) => {
+      const cur = intakeSiteRef.current;
+      if (!cur || cur.latitude !== site.latitude || cur.longitude !== site.longitude) return;
+      const next = { ...cur, layers };
+      setIntakeSite(next);
+      recomputeForSiteRef.current?.(next);
+    };
+    fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
+      .then((data: { layers?: SiteLayers | null; reason?: string }) => {
+        apply(data.layers && Array.isArray(data.layers.results)
+          ? data.layers
+          : unavailableSiteLayers(site.latitude, site.longitude, data.reason ?? 'no_layers'));
+      })
+      .catch((err: unknown) => {
+        apply(unavailableSiteLayers(site.latitude, site.longitude, `layers_service_unreachable: ${(err as Error)?.message ?? 'error'}`));
+      });
+  }, [intakeSite]);
 
   // Answering the inline "more information needed" question on a requirement
   // card writes a REAL discovery answer — exactly what the wizard would have
@@ -5323,6 +5363,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     projectContext,
     municipality: profile.municipality,
     answers: discoveryAnswers,
+    // The pin's map layers answer siting questions (flood zone, coastal
+    // zone, land classification) the description left open.
+    location: intakeSite && siteLayersCurrent(intakeSite)
+      ? { facts: siteEngineFacts(intakeSite, businessId).projectFacts, details: siteFactDetails(intakeSite) }
+      : null,
     providedEvidenceIds: energyProvidedEvidenceIds,
   });
   // A proposed energy project applies for its energy approvals: no energy
@@ -5662,7 +5707,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // input and confirmed facts; unsupported rationale fails closed. Inside the
     // SAME "Why do I need this?" disclosure — no new panel/modal/drawer.
     const guidance = buildRequirementGuidance(
-      { document_id: req.document_id, code: req.code, name, agency: req.agency, reason: trReqReason(req), applicability: req.applicability, triggerFacts: req.triggerFacts },
+      { document_id: req.document_id, code: req.code, name, agency: req.agency, reason: trReqReason(req), applicability: req.applicability, triggerFacts: req.triggerFacts,
+        locationReason: /^Project fact: location\./.test(req.reason) ? translateTriggerReason(req.reason, profile.municipality, language, siteFactDetails(intakeSite)) : null },
       { language, municipality: profile.municipality, businessTypeName: profile.business_type, discoveryAnswers,
         profile: profile as unknown as Record<string, unknown>, entityType: entityTypeFromLegacyStructure(profile.business_structure), occupancyType: canonicalApplication.property.occupancyType, kb: KB,
         engineInput: buildEngineInput({ ...profile, number_of_employees: profile.number_of_employees ?? undefined }, discoveryAnswers, resolveFactsFor(profile, discoveryAnswers).questionValues, {

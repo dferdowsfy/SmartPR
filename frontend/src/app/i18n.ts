@@ -245,6 +245,9 @@ export const ES: Record<string, string> = {
   "Merchant Registration Certificate (Registro de Comerciante)":
     "Certificado de Registro de Comerciante",
   "Single Use Permit / Permiso Único": "Permiso Único",
+  "Flood-Zone Review (Planning Regulation 13)": "Revisión de zona inundable (Reglamento de Planificación 13)",
+  "Coastal-Zone Review (CZM Consistency)": "Revisión de zona costanera (compatibilidad PMZC)",
+  "Land-Use Siting Review (Consulta de Ubicación / Variance)": "Consulta de ubicación / variación (uso de terrenos)",
   "Health / Sanitary Permit": "Permiso de Salud / Sanitario",
   "Fire Safety Certification (Certificado de Bomberos)":
     "Certificación de Seguridad contra Incendios (Certificado de Bomberos)",

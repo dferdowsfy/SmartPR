@@ -18,6 +18,7 @@ import type { KBRule } from "../rulesEngine.ts";
 import { isHomeBasedLocation, isMobileLocation, isOnlineOnlyLocation } from "../locationTypes.ts";
 import { buildLocationContext, locationEngineFacts, type LocationEngineFacts } from "./locationContext.ts";
 import { normalizeMunicipio, type CoordinateSource, type LocationGeography, type PassportLocation } from "./geo.ts";
+import { layerFactDetails, layerGeographies, layerStatusFacts, restoreSiteLayers, type LayerFactDetail, type SiteLayers } from "./layers.ts";
 
 export type LocationNeedReason =
   /** The description names a Puerto Rico municipio. */
@@ -248,6 +249,23 @@ export interface IntakeSite {
   /** Saved Passport location id (null until saved to a business). */
   location_id: string | null;
   confirmed_at: string;
+  /**
+   * What the official map layers say about this exact point (flood zone,
+   * coastal zone, zoning, land class, parcel…). Absent while loading; layers
+   * that could not be read are `unknown` and produce no fact.
+   */
+  layers?: SiteLayers | null;
+}
+
+/** True when the site's layers were resolved for its current coordinates. */
+export function siteLayersCurrent(site: IntakeSite | null | undefined): boolean {
+  const l = site?.layers;
+  return !!site && !!l && Math.abs(l.latitude - site.latitude) < 1e-7 && Math.abs(l.longitude - site.longitude) < 1e-7;
+}
+
+/** "Because your pin is in flood zone AE (FEMA, …)" per location fact key. */
+export function siteFactDetails(site: IntakeSite | null | undefined): Record<string, LayerFactDetail> {
+  return site && siteLayersCurrent(site) ? layerFactDetails(site.layers) : {};
 }
 
 /** The id the engine binds this evaluation to (saved id, else a stable synthetic one). */
@@ -313,7 +331,15 @@ export function siteEngineFacts(site: IntakeSite, businessId: string | null = nu
   });
   const geographies: LocationGeography[] = [geo("municipality", site.municipality.fips, site.municipality.name)];
   if (site.barrio) geographies.push(geo("barrio", site.barrio.geoid, site.barrio.name));
+  // Map layers at the exact point (only for the site's current coordinates).
+  if (siteLayersCurrent(site)) geographies.push(...layerGeographies(site.layers, id, site.layers!.resolved_at));
   const facts = locationEngineFacts(buildLocationContext(location, geographies));
+  if (siteLayersCurrent(site)) {
+    for (const [key, status] of Object.entries(layerStatusFacts(site.layers))) {
+      facts.projectFacts[key] = status;
+      facts.factMeta[key] = { ...facts.factMeta["location.id"] };
+    }
+  }
   // KB designations of the municipio ride along as location facts too, so a
   // future `location.designation.coastal` project rule needs no code.
   for (const d of site.designations) {
@@ -346,5 +372,9 @@ export function restoreIntakeSite(raw: unknown): IntakeSite | null {
     boundary_source: s.boundary_source && typeof s.boundary_source.id === "string" ? s.boundary_source : null,
     location_id: typeof s.location_id === "string" ? s.location_id : null,
     confirmed_at: typeof s.confirmed_at === "string" ? s.confirmed_at : new Date().toISOString(),
+    ...(() => {
+      const layers = restoreSiteLayers(s.layers, lat, lng);
+      return layers ? { layers } : {};
+    })(),
   };
 }
