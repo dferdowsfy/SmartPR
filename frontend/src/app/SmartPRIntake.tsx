@@ -1856,6 +1856,13 @@ export default function SmartPRIntake() {
     setCurrentQuestionIndex(0);
     setAiPrefilledKeys([]);
     setCurrentStep(1);
+    // The project context (scope, project type, new_construction flags) must
+    // also reset — otherwise the SCOPE summary keeps showing the previous
+    // business's project ("new_construction, renovation") on a fresh intake
+    // (2026-10-01: stale SCOPE persisted across new submissions).
+    setProjectContext({});
+    projectContextRef.current = {};
+    interpretedContextKeysRef.current.clear();
     // Clear the previous business's identity too — otherwise the matter
     // created below is correct, but anything that saves before it resolves
     // (or reads businessIdRef in the meantime) could still target the old
@@ -6450,8 +6457,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   if (projectContext?.new_construction?.value === true) projectTypeParts.push(language === 'es' ? 'construcción nueva' : 'new construction');
   if (projectContext?.renovation?.value === true) projectTypeParts.push(language === 'es' ? 'renovación' : 'renovation');
   if (projectContext?.expansion?.value === true) projectTypeParts.push(language === 'es' ? 'ampliación' : 'expansion');
-  const projectTypeSignal = projectTypeParts.length > 0
-    ? { label: `${language === 'es' ? 'Proyecto' : 'Project'}: ${projectTypeParts.join(', ')}`, state: 'confirmed' as const }
+  // Deduplicate: the interpreter may set both proposed_use="new_construction"
+  // and new_construction=true, which would render "new_construction,
+  // new_construction". Normalize underscores/case before comparing.
+  const seenParts = new Set<string>();
+  const dedupedParts = projectTypeParts.filter((part) => {
+    const norm = part.toLowerCase().replace(/_/g, ' ');
+    if (seenParts.has(norm)) return false;
+    seenParts.add(norm);
+    return true;
+  });
+  const projectTypeSignal = dedupedParts.length > 0
+    ? { label: `${language === 'es' ? 'Proyecto' : 'Project'}: ${dedupedParts.join(', ')}`, state: 'confirmed' as const }
     : { label: language === 'es' ? 'Se necesita el tipo de proyecto' : 'Project type needed', state: 'needs-info' as const };
   const projectScopeSignal = projectFactKnown(projectContext, "square_footage")
     ? { label: `${language === 'es' ? 'Tamaño' : 'Size'}: ~${Number(projectContext?.square_footage?.value).toLocaleString('en-US')} ${language === 'es' ? 'pies cuadrados' : 'sq ft'}`, state: 'confirmed' as const }
