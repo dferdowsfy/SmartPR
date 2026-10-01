@@ -17,7 +17,10 @@
  *           only) so SmartPR can offer a one-time secure input card.
  *
  * Events go to window.__claraRecord(json) when the worker exposes that
- * binding, and are also appended to window.__claraEvents (tests read it).
+ * binding (push mode). Without it (a Browser Use cloud browser polled over
+ * CDP) they wait in a sessionStorage queue that window.__claraDrain()
+ * empties (pull mode). Every event is also appended to window.__claraEvents
+ * (tests read it).
  * Plain ES2017 in a string so no bundler helper leaks into the page. The
  * label/selector helpers are shared with the replay driver (domHelpers.ts).
  */
@@ -29,10 +32,23 @@ export const RECORDER_SCRIPT = String.raw`(function () {
   window.__claraEvents = window.__claraEvents || [];
 ${DOM_HELPERS_JS}
 
+  // Pull mode (a cloud browser polled over CDP): events wait in a queue that
+  // survives same-origin navigations (sessionStorage) until SmartPR drains it.
+  var QKEY = "__claraQ";
+  function readQ() { try { return JSON.parse(sessionStorage.getItem(QKEY) || "[]"); } catch (e) { return []; } }
+  function writeQ(q) { try { sessionStorage.setItem(QKEY, JSON.stringify(q.slice(-300))); } catch (e) {} }
+  window.__claraDrain = function () { var q = readQ(); writeQ([]); return q; };
+
   function send(ev) {
     ev.url = location.href;
     window.__claraEvents.push(ev);
-    try { if (typeof window.__claraRecord === "function") window.__claraRecord(JSON.stringify(ev)); } catch (e) {}
+    if (typeof window.__claraRecord === "function") {
+      try { window.__claraRecord(JSON.stringify(ev)); } catch (e) {}
+      return;
+    }
+    var q = readQ();
+    q.push(ev);
+    writeQ(q);
   }
 
   function isRequired(el) {

@@ -1,6 +1,8 @@
 /**
- * Teach Clara against a REAL browser worker (workers/browser-agent) — no
- * mocked worker. Proves the recorder path end to end: SmartPR's probe →
+ * Teach Clara against a REAL browser — the self-hosted worker
+ * (workers/browser-agent) or a Browser Use Cloud browser over CDP
+ * (BROWSER_USE_API_KEY; BROWSER_USE_BASE_URL may point at
+ * tests/fixtures/browser-use-stand-in.mjs locally) — no mocked recorder. Proves the recorder path end to end: SmartPR's probe →
  * worker launches Chromium with the recorder injected → events flow back →
  * sanitization + teach session → secure one-time input typed by the worker
  * → screenshots proxied without the viewer token → named save → strict
@@ -28,7 +30,8 @@ import {
   validateTeachSession,
   type TeachSessionView,
 } from "../src/lib/agency-runs/teach/teachSessions";
-import { fetchWorkerTeachEvents, fetchWorkerTeachShot, probeTeachWorker, secureFillWorker, startWorkerTeach, stopWorkerTeach } from "../src/lib/agency-runs/teach/teachWorkerClient";
+import { fetchWorkerTeachEvents, fetchWorkerTeachShot, probeTeachWorker, secureFillWorker, startWorkerTeach, stopWorkerTeach, teachBrowserProvider } from "../src/lib/agency-runs/teach/teachWorkerClient";
+import { CloudDriver, cloudTeachWorker, secureFillCloudDrive, startCloudDrive, stopCloudDrive } from "../src/lib/agency-runs/teach/cloudBrowser";
 import { listLearnedRoutines, routineForRow } from "../src/lib/agency-runs/teach/learnedRoutines";
 import { startWorkerDrive, stopWorkerDrive, WorkerDriver } from "../src/lib/agency-runs/replay/workerDriver";
 import { agentRelocator } from "../src/lib/agency-runs/replay/relocate";
@@ -50,7 +53,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 const portal = async (path: string) => (await fetch(`${PORTAL}${path.replace(/^\//, "")}`)).text();
 
-const worker = { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, shot: fetchWorkerTeachShot };
+// The deployment's teach browser: Browser Use Cloud (BROWSER_USE_API_KEY) or the self-hosted worker.
+const CLOUD = teachBrowserProvider() === "browser_use_cloud";
+console.log(`teach browser: ${CLOUD ? `Browser Use Cloud API at ${process.env.BROWSER_USE_BASE_URL || "https://api.browser-use.com"}` : `self-hosted worker ${process.env.SELF_HOSTED_AGENT_URL}`}`);
+const worker = CLOUD ? cloudTeachWorker : { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, shot: fetchWorkerTeachShot };
 const viewer = { userId: randomUUID(), isAdmin: false };
 
 const probe = await probeTeachWorker({ fresh: true });
@@ -94,7 +100,7 @@ const shotPaths = v.actions.map((a) => a.screenshot).filter(Boolean) as string[]
 check("per-step screenshots exist, as SmartPR proxy paths (no worker token)", shotPaths.length > 0 && shotPaths.every((p) => p.startsWith("/api/teach-sessions/")), shotPaths.slice(0, 2).join(" "));
 const firstSeq = Number(shotPaths[0]?.split("/").at(-1));
 const bytes = firstSeq ? await teachShot({ worker }, viewer, v.id, firstSeq) : null;
-check("a screenshot is fetched from the worker server-side with the bearer token", Boolean(bytes && bytes.byteLength > 1000), String(bytes?.byteLength));
+check("a step screenshot is fetched server-side (never by the page from the browser host)", Boolean(bytes && bytes.byteLength > 1000), String(bytes?.byteLength));
 check("no screenshot kept for the sensitive steps", v.actions.filter((a) => a.valueKind === "secret").every((a) => !a.screenshot), JSON.stringify(v.actions.filter((a) => a.valueKind === "secret").map((a) => a.label)));
 check("walkthrough: one step per screen (welcome, sign-in, identity, business, review)", v.steps.length >= 5, v.steps.map((s) => `${s.title}:${s.gate ?? "-"}`).join(" | "));
 check("sign-in and identity screens are the person's", v.steps.some((s) => s.gate === "login") && v.steps.some((s) => s.gate === "identity"));
@@ -118,7 +124,9 @@ check("routine retrieved for the requirement, named and versioned", routine?.nam
 // Replay for business B on the real drive endpoints.
 await portal("__mode?set=replay");
 await sleep(500);
-const deps: ReplayDeps = { repo, startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate: agentRelocator(null), secureFill: secureFillWorker };
+const deps: ReplayDeps = CLOUD
+  ? { repo, startDrive: startCloudDrive, stopDrive: stopCloudDrive, driver: (id) => new CloudDriver(id), relocate: agentRelocator(null), secureFill: secureFillCloudDrive }
+  : { repo, startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate: agentRelocator(null), secureFill: secureFillWorker };
 const plan = await planReplaySession(deps, viewer, { ref: routine!.ref, businessId: "biz-b", passport: B });
 check("preflight names B's missing Passport value (phone)", plan.plan.missingRequired.some((m) => m.field === "Teléfono"), JSON.stringify(plan.plan.missingRequired));
 let r = await startReplaySession(deps, viewer, plan.id);

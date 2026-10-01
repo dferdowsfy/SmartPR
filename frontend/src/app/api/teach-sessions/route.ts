@@ -10,7 +10,7 @@
  * recorder injected. Admins teach into the shared library, everyone else
  * into their private skills (enforced server side).
  */
-import { loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
+import { loadCanonicalPassportForBusiness as loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
 import { currentViewer, errorResponse, unauthorized, workerDeps } from "../../../lib/agency-runs/teach/routeContext";
 import { startTeachSession } from "../../../lib/agency-runs/teach/teachSessions";
 import { probeTeachWorker } from "../../../lib/agency-runs/teach/teachWorkerClient";

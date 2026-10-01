@@ -5,7 +5,7 @@
 // hiding the action. "Teach Clara" goes straight to the Clara workspace
 // (teach mode) for this requirement — no second explanatory step.
 
-import { ClipboardList, ExternalLink, GraduationCap, MessageCircle } from "lucide-react";
+import { ClipboardList, GraduationCap, MessageCircle } from "lucide-react";
 import { ClaraModal } from "./ClaraModal";
 import type { GuidedSubject } from "./guidedFormModel";
 import { openSmartPRChat } from "../chat/openChat";
@@ -37,11 +37,6 @@ export function ClaraExplainDialog({ subject, language, onClose, onGuidedForm, o
         <button type="button" className="cl-btn cl-btn-ghost" onClick={() => { onClose(); openSmartPRChat(es ? `¿Cómo completo: ${subject.name}?` : `How do I complete: ${subject.name}?`); }}>
           <MessageCircle size={16} aria-hidden="true" /> {es ? "Preguntarle a Clara" : "Ask Clara"}
         </button>
-        {subject.portalUrl && (
-          <a className="cl-btn cl-btn-ghost" href={subject.portalUrl} target="_blank" rel="noopener noreferrer">
-            <ExternalLink size={16} aria-hidden="true" /> {subject.portalLabel || (es ? "Sitio de la agencia" : "Agency site")}
-          </a>
-        )}
       </div>
     </ClaraModal>
   );

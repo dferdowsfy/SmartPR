@@ -182,7 +182,7 @@ export async function startReplaySession(deps: ReplayDeps, viewer: SkillViewer, 
     drive = await deps.startDrive({ startUrl: r.skillRef.skill.portal.base_url, allowedDomains: decision.allowedDomains });
   } catch (err) {
     const msg = String((err as Error)?.message ?? "");
-    if (/ 409:/.test(msg)) throw new ReplayError(409, "worker_busy", "Clara's browser is busy with another session. Try again in a few minutes.");
+    if (/ 409:/.test(msg) || (err as { status?: number })?.status === 409) throw new ReplayError(409, "worker_busy", "Clara's browser is busy with another session. Try again in a few minutes.");
     throw new ReplayError(503, "worker_unreachable", "Clara's browser didn't answer, so the replay couldn't start. Try again in a moment.");
   }
   r.driveSessionId = drive.sessionId;

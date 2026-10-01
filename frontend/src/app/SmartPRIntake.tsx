@@ -1665,6 +1665,8 @@ export default function SmartPRIntake() {
   // out). Autosave waits on it so a blank return-mount can never mint or
   // overwrite a submission with empty state before restore lands.
   const restoreAttemptedRef = useRef<boolean>(false);
+  /** Back from Clara: the saved intake is being restored (no empty-intake flash). */
+  const [restoringFromClara, setRestoringFromClara] = useState(false);
   // The business this assessment belongs to (when signed in + /?business=<id>).
   const businessIdRef = useRef<string | null>(null);
   // The regulatory matter this workflow belongs to. Older links without a
@@ -2072,6 +2074,8 @@ export default function SmartPRIntake() {
       return;
     }
     let cancelled = false;
+    // Show "restoring" instead of an empty intake while the snapshot loads.
+    setRestoringFromClara(true); // eslint-disable-line react-hooks/set-state-in-effect
     (async () => {
       try {
         const q = new URLSearchParams({ business_id: businessParam as string });
@@ -2083,7 +2087,10 @@ export default function SmartPRIntake() {
         if (snap.submission_id) submissionIdRef.current = snap.submission_id;
         hydrateFromSnapshot(snap.state, snap);
       } catch { /* stay on the fresh intake */ }
-      finally { if (!cancelled) restoreAttemptedRef.current = true; }
+      finally {
+        if (!cancelled) restoreAttemptedRef.current = true;
+        setRestoringFromClara(false);
+      }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -6779,8 +6786,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         ) : undefined}
       >
 
+      {restoringFromClara && view === 'intake' && (
+          <section className="spr-intake-panel" aria-busy="true" data-testid="intake-restoring">
+            <div className="spr-intake-scroll">
+              <p className="spr-subtitle">{language === 'es' ? 'Volviendo a tus requisitos…' : 'Taking you back to your requirements…'}</p>
+            </div>
+          </section>
+      )}
       {/* ====================== INTAKE ====================== */}
-      {view === 'intake' && (
+      {view === 'intake' && !restoringFromClara && (
           <section className="spr-intake-panel">
             <div className="spr-intake-scroll">
               <h1>{language === 'es'
@@ -6789,20 +6803,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               <p className="spr-subtitle">{language === 'es'
                 ? (hasProjectRequest ? 'Completamos lo que ya nos dijiste. Confirma solo lo que falta.' : 'Escribe o habla. SmartPR organiza los detalles y pregunta solo lo que falta.')
                 : (hasProjectRequest ? 'We filled in what you already told us. Confirm only what is missing.' : 'Speak or type. SmartPR organizes the details and asks only for what is missing.')}</p>
-
-              {hasProjectRequest && (
-                <div className="spr-project-brief" data-testid="guided-project-brief">
-                  {[
-                    { label: language === 'es' ? 'Proyecto' : 'Project', value: projectIntent ? projectIntentLabel(projectIntent, language) : null },
-                    { label: t('businessType'), value: profile.business_type },
-                    { label: t('municipality'), value: profile.municipality },
-                    { label: language === 'es' ? 'Alcance' : 'Scope', value: (projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null) || profile.location_type },
-                  ].filter((item) => item.value).map((item) => (
-                    <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>
-                  ))}
-                  <button type="button" className="spr-profile-done" onClick={() => { setProfileFormExpanded((value) => !value); setSubmitAttempted(false); }} aria-expanded={profileFormExpanded} aria-controls="spr-business-details">{profileFormExpanded ? L('Minimize details', language) : L('Expand details', language)}</button>
-                </div>
-              )}
 
               <div className="spr-form">
                 {/* Optional shortcut: describe the business in plain language and
@@ -6840,6 +6840,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       onConfirm={confirmIntakeSite}
                       onRetryLayers={retryIntakeLayers}
                     />
+                  </div>
+                )}
+
+                {/* Project summary + the one "Expand details" control, below the
+                    site so the location answer reads first. */}
+                {hasProjectRequest && (
+                  <div className="spr-project-brief" style={{ gridColumn: "1 / -1" }} data-testid="guided-project-brief">
+                    {[
+                      { label: language === 'es' ? 'Proyecto' : 'Project', value: projectIntent ? projectIntentLabel(projectIntent, language) : null },
+                      { label: t('businessType'), value: profile.business_type },
+                      { label: t('municipality'), value: profile.municipality },
+                      { label: language === 'es' ? 'Alcance' : 'Scope', value: (projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null) || profile.location_type },
+                    ].filter((item) => item.value).map((item) => (
+                      <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>
+                    ))}
+                    <button type="button" className="spr-profile-done" onClick={() => { setProfileFormExpanded((value) => !value); setSubmitAttempted(false); }} aria-expanded={profileFormExpanded} aria-controls="spr-business-details">{profileFormExpanded ? L('Minimize details', language) : L('Expand details', language)}</button>
                   </div>
                 )}
 

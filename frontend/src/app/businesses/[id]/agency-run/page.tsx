@@ -620,6 +620,10 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
     if (!requirementId) return;
     handoffDoneRef.current = true;
     const plan = planClaraHandoff(pickerState.groups, requirementId);
+    // One requirement was asked for: keep the chat on it, not every filing.
+    if (plan.kind !== "missing") {
+      setMsgs((ms) => ms.map((m) => (m.type === "filing-picker" ? { ...m, collapsed: true } : m)));
+    }
     if (plan.kind === "start" || plan.kind === "resume") {
       pushMsg({ id: `handoff-${Date.now()}`, type: "text", textEn: CLARA_HANDOFF_INTRO_EN, textEs: CLARA_HANDOFF_INTRO_ES, tone: "info" });
       if (plan.kind === "start") void startFiling(plan.filing);
@@ -1383,7 +1387,8 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
               transientHistory={transientHistory}
               scrollKey={scrollKey}
               scrollToLatestSignal={scrollToLatest}
-              onStartFiling={(filing) => void startFiling(filing)}
+              onExpandPicker={() => setMsgs((ms) => ms.map((m) => (m.type === "filing-picker" ? { ...m, collapsed: false } : m)))}
+            onStartFiling={(filing) => void startFiling(filing)}
               onResumeFiling={(filing) => void resumeFiling(filing)}
               filingBusyId={filingBusyId}
               onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}

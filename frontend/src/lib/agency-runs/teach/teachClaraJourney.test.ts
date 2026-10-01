@@ -33,7 +33,7 @@ import {
   type TeachWorker,
 } from "./teachSessions";
 import { listLearnedRoutines, routineForRow, summarizeRoutine } from "./learnedRoutines";
-import { probeTeachWorker, resetTeachProbeForTests, TeachWorkerError } from "./teachWorkerClient";
+import { probeTeachWorker, resetTeachProbeForTests, teachBrowserProvider, TeachWorkerError } from "./teachWorkerClient";
 import { defaultRoutineName, looksSensitiveLabel, replayPauseHeadline, secureCardFor, teachNarrative } from "./workspaceChat";
 import { VirtualPortal } from "../replay/virtualPortal";
 import type { PageSnapshot } from "../replay/engine";
@@ -276,6 +276,8 @@ describe("Teach Clara worker availability probe (real connectivity, not just con
   beforeEach(() => {
     resetTeachProbeForTests();
     process.env = { ...env, SELF_HOSTED_AGENT_URL: "https://worker.example", WORKER_API_TOKEN: "tok" };
+    delete process.env.BROWSER_USE_API_KEY;
+    delete process.env.TEACH_BROWSER_PROVIDER;
   });
   const caps = (body: Record<string, unknown>) => ({ teach: true, drive: true, secureFill: true, protocol: 2, browser: true, liveView: true, busy: false, ...body });
   const fetchWith = (health: number | "down", capsStatus: number, body: Record<string, unknown> = {}) =>
@@ -289,11 +291,11 @@ describe("Teach Clara worker availability probe (real connectivity, not just con
       return new Response(JSON.stringify(caps(body)), { status: capsStatus });
     }) as typeof fetch;
 
-  it("config: no worker address or token", async () => {
+  it("config: no Browser Use key and no worker", async () => {
     delete process.env.SELF_HOSTED_AGENT_URL;
     const p = await probeTeachWorker({ fresh: true, fetchImpl: fetchWith(200, 200) });
     assert.equal(p.reason, "config");
-    assert.match(p.operator_hint ?? "", /SELF_HOSTED_AGENT_URL/);
+    assert.match(p.operator_hint ?? "", /BROWSER_USE_API_KEY/);
   });
 
   it("the provider used for agent runs doesn't matter — only the worker does", async () => {
@@ -318,6 +320,33 @@ describe("Teach Clara worker availability probe (real connectivity, not just con
       assert.ok(!JSON.stringify(p).includes("tok"), "never echoes the token");
     });
   }
+
+  it("Browser Use Cloud: the app's BROWSER_USE_API_KEY is enough (no self-hosted worker needed)", async () => {
+    delete process.env.SELF_HOSTED_AGENT_URL;
+    delete process.env.WORKER_API_TOKEN;
+    process.env.BROWSER_USE_API_KEY = "bu-key";
+    const seen: string[] = [];
+    const cloud = (status: number) =>
+      (async (url: string | URL, init?: RequestInit) => {
+        seen.push(String(url));
+        assert.equal((init?.headers as Record<string, string>)["X-Browser-Use-API-Key"], "bu-key");
+        return new Response("{}", { status });
+      }) as typeof fetch;
+    assert.equal(teachBrowserProvider(), "browser_use_cloud");
+    assert.equal((await probeTeachWorker({ fresh: true, fetchImpl: cloud(200) })).ok, true);
+    assert.match(seen[0], /api\.browser-use\.com\/api\/v2\/billing\/account$/);
+    const bad = await probeTeachWorker({ fresh: true, fetchImpl: cloud(401) });
+    assert.equal(bad.reason, "unauthorized");
+    assert.match(bad.operator_hint ?? "", /BROWSER_USE_API_KEY/);
+    assert.ok(!JSON.stringify(bad).includes("bu-key"));
+    assert.equal((await probeTeachWorker({ fresh: true, fetchImpl: cloud(402) })).reason, "no_credits");
+    // Both configured: Browser Use by default; TEACH_BROWSER_PROVIDER can force the worker.
+    process.env.SELF_HOSTED_AGENT_URL = "https://worker.example";
+    process.env.WORKER_API_TOKEN = "tok";
+    assert.equal(teachBrowserProvider(), "browser_use_cloud");
+    process.env.TEACH_BROWSER_PROVIDER = "self_hosted";
+    assert.equal(teachBrowserProvider(), "self_hosted");
+  });
 
   it("ok (and busy is reported, not treated as down)", async () => {
     const p = await probeTeachWorker({ fresh: true, fetchImpl: fetchWith(200, 200, { busy: true, browser: null }) });

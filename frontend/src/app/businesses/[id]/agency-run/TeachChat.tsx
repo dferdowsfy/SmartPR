@@ -484,7 +484,6 @@ export function TeachChat({
       {phase === "unavailable" && recorder && (
         <UnavailableCard lang={lang} reason={recorder.reason} message={pick(recorder.message, lang) || T("My recording browser isn't available right now.", "Mi navegador de grabación no está disponible ahora.")} hint={recorder.operator_hint} onRetry={() => { setPhase(null); onRecheck(); }}>
           <button type="button" className={ghostBtn} onClick={() => setDescribing((d) => !d)} data-testid="ws-describe-instead">{T("Describe the steps instead", "Describir los pasos")}</button>
-          {ctx.portalUrl && <a className={ghostBtn} href={ctx.portalUrl} target="_blank" rel="noopener noreferrer">{T("Open the agency site", "Abrir el sitio de la agencia")}</a>}
         </UnavailableCard>
       )}
       {phase === "unavailable" && describing && (

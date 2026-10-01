@@ -3,7 +3,7 @@
  * for replaying a skill with this business's passport. Nothing opens until
  * the person confirms (POST /api/replays/[id]/start).
  */
-import { loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
+import { loadCanonicalPassportForBusiness as loadPassportForBusiness } from "../../../lib/agency-runs/passportLoader";
 import { planReplaySession } from "../../../lib/agency-runs/replay/replaySessions";
 import { currentViewer, errorResponse, replayDeps, unauthorized } from "../../../lib/agency-runs/teach/routeContext";
 

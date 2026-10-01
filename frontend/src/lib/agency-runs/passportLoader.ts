@@ -60,9 +60,58 @@ export async function loadFilingFactsForBusiness(
     import("./filingFacts"),
     import("./projectContextLoader"),
   ]);
-  const [passport, facts] = await Promise.all([
+  const [raw, canonical, facts] = await Promise.all([
     loadPassportForBusiness(businessId, userId),
+    loadCanonicalPassportForBusiness(businessId, userId),
     loadProjectFilingFactsForBusiness(businessId, userId),
   ]);
+  // The canonical Passport also carries the facts kept in the business row's
+  // columns (legal name, municipality, structure …); keep the raw keys and
+  // _denormalized for callers that read them.
+  const passport = raw || canonical ? { ...(raw ?? {}), ...(canonical ?? {}), ...(raw?._denormalized ? { _denormalized: raw._denormalized } : {}) } : null;
   return withProjectFacts(passport, facts);
+}
+
+/**
+ * The business's canonical Business Passport (CanonicalApplicationData):
+ * the business row's own columns (legal name, registry number, structure,
+ * municipality, address) merged with passport_json — the same shape the
+ * passport catalog paths (business.legalName, addresses.municipality …)
+ * read. Teach Clara, Fill with Clara and the workspace's Passport panel use
+ * this; the raw passport_json alone misses everything kept in columns.
+ * Owner/workspace-member gated; null when unavailable.
+ */
+export async function loadCanonicalPassportForBusiness(
+  businessId: string,
+  userId: string | null
+): Promise<Record<string, unknown> | null> {
+  if (!userId) return null;
+  try {
+    const { getPool, isEnabled } = await import("../../app/graph/db");
+    const { ensureSchema, resolveBusinessUuid } = await import("../../app/graph/store");
+    const { canonicalFromBusinessRow } = await import("../../app/forms/engine/businessPassport");
+    if (!isEnabled()) return null;
+    const pool = getPool();
+    if (!pool) return null;
+    await ensureSchema();
+    const businessUuid = await resolveBusinessUuid(pool, businessId);
+    if (!businessUuid) return null;
+    const { rows } = await pool.query(
+      `SELECT b.passport_json, b.legal_name, b.name, b.entity_number, b.business_structure,
+              b.municipality, b.physical_address, b.onboarding_mode
+         FROM businesses b
+         LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$2
+        WHERE b.id=$1 AND b.archived=false AND (b.user_id=$2 OR wm.user_id IS NOT NULL)`,
+      [businessUuid, userId]
+    );
+    const row = rows[0];
+    if (!row) return null;
+    const canonical = canonicalFromBusinessRow(row) as unknown as { business: Record<string, unknown> } & Record<string, unknown>;
+    // "other" is the empty placeholder, not a fact about the business.
+    if (canonical.business.entityType === "other") delete canonical.business.entityType;
+    if (!canonical.business.legalName && row.name) canonical.business.legalName = String(row.name);
+    return canonical;
+  } catch {
+    return null;
+  }
 }

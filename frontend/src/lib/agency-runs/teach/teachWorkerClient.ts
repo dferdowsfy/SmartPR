@@ -4,10 +4,11 @@
  * browser on the same display the live viewer already streams, injects
  * RECORDER_SCRIPT into every page, and queues the recorder's events.
  *
- * Teach mode (and strict replay) need the self-hosted worker: Browser Use
- * Cloud has no way to inject a recorder. That is independent of which
- * provider runs Clara's agent filings (AGENT_PROVIDER) — only the worker's
- * address and token matter here.
+ * Teach mode and strict replay run on a browser SmartPR can inject its
+ * recorder / driver into: a Browser Use Cloud browser over CDP (default when
+ * BROWSER_USE_API_KEY is set — see cloudBrowser.ts) or the self-hosted
+ * worker (when SELF_HOSTED_AGENT_URL + WORKER_API_TOKEN are set).
+ * TEACH_BROWSER_PROVIDER=browser_use_cloud|self_hosted forces one.
  *
  * `teachAvailability()` is the cheap config check; `probeTeachWorker()`
  * actually reaches the worker (health + authenticated capabilities: can it
@@ -15,8 +16,10 @@
  * what is wrong when it can't record.
  */
 import { RECORDER_SCRIPT } from "./recorderScript";
+import { cloudBrowserConfigured, probeCloudBrowser } from "./cloudBrowser";
 
-export type TeachUnavailableReason = "config" | "unreachable" | "unauthorized" | "outdated" | "no_browser" | "no_live_view";
+export type TeachUnavailableReason = "config" | "unreachable" | "unauthorized" | "outdated" | "no_browser" | "no_live_view" | "no_credits";
+export type TeachBrowserProvider = "browser_use_cloud" | "self_hosted";
 
 export type TeachAvailability = { ok: true } | { ok: false; reason: "config" };
 
@@ -32,9 +35,18 @@ function workerToken(): string | null {
   return process.env.WORKER_API_TOKEN?.trim() || null;
 }
 
+/** Which browser Teach Clara / Fill with Clara use here (null = none configured). */
+export function teachBrowserProvider(): TeachBrowserProvider | null {
+  const forced = process.env.TEACH_BROWSER_PROVIDER?.trim();
+  const selfHosted = Boolean(workerUrl() && workerToken());
+  if (forced === "self_hosted") return selfHosted ? "self_hosted" : null;
+  if (forced === "browser_use_cloud") return cloudBrowserConfigured() ? "browser_use_cloud" : null;
+  if (cloudBrowserConfigured()) return "browser_use_cloud";
+  return selfHosted ? "self_hosted" : null;
+}
+
 export function teachAvailability(): TeachAvailability {
-  if (!workerUrl() || !workerToken()) return { ok: false, reason: "config" };
-  return { ok: true };
+  return teachBrowserProvider() ? { ok: true } : { ok: false, reason: "config" };
 }
 
 export interface TeachProbe {
@@ -53,7 +65,12 @@ const MESSAGES: Record<TeachUnavailableReason, { en: string; es: string; hint: s
   config: {
     en: "Teach Clara needs SmartPR's recording browser, and it isn't connected on this site yet.",
     es: "Enseñarle a Clara necesita el navegador de grabación de SmartPR, y todavía no está conectado en este sitio.",
-    hint: "Set SELF_HOSTED_AGENT_URL and WORKER_API_TOKEN for the SmartPR app (the workers/browser-agent service).",
+    hint: "Set BROWSER_USE_API_KEY for the SmartPR app (Browser Use Cloud browsers), or SELF_HOSTED_AGENT_URL + WORKER_API_TOKEN for the workers/browser-agent service.",
+  },
+  no_credits: {
+    en: "Clara's recording browser is out of credits right now.",
+    es: "El navegador de grabación de Clara no tiene créditos ahora mismo.",
+    hint: "Browser Use returned 402 (insufficient credits or the API key's spend limit). Add credits or raise the limit in Browser Use Cloud.",
   },
   unreachable: {
     en: "Clara's recording browser isn't answering right now, so she can't watch you walk the portal.",
@@ -108,6 +125,15 @@ export async function probeTeachWorker(opts: { fresh?: boolean; fetchImpl?: type
 }
 
 async function runProbe(fetchImpl: typeof fetch, timeoutMs: number): Promise<TeachProbe> {
+  const provider = teachBrowserProvider();
+  if (!provider) return fail("config");
+  if (provider === "browser_use_cloud") {
+    const r = await probeCloudBrowser(fetchImpl, timeoutMs);
+    if (r.ok) return { ok: true, reason: null, busy: false, message: null, operator_hint: null, checked_at: new Date().toISOString() };
+    if (r.status === 401 || r.status === 403) return { ...fail("unauthorized"), operator_hint: "Browser Use rejected BROWSER_USE_API_KEY (401/403). Check the key in the SmartPR app's environment." };
+    if (r.status === 402) return fail("no_credits");
+    return { ...fail("unreachable"), operator_hint: `Browser Use (api.browser-use.com) didn't answer (${r.status === 0 ? "network error" : `HTTP ${r.status}`}).` };
+  }
   const url = workerUrl();
   const token = workerToken();
   if (!url || !token) return fail("config");

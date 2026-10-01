@@ -7,7 +7,7 @@
  * values are masked to their last 4 characters; nothing here is sent to a
  * model.
  */
-import { loadPassportForBusiness } from "../../../../lib/agency-runs/passportLoader";
+import { loadCanonicalPassportForBusiness as loadPassportForBusiness } from "../../../../lib/agency-runs/passportLoader";
 import { PASSPORT_CATALOG, readPassportPath } from "../../../../lib/agency-runs/teach/passportCatalog";
 import { currentViewer, unauthorized } from "../../../../lib/agency-runs/teach/routeContext";
 

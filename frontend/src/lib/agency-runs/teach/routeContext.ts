@@ -7,7 +7,8 @@ import { getCurrentUser } from "../../supabase/server";
 import { isUserAdmin } from "../../admin";
 import { MemorySkillRepo, PgSkillRepo, SkillLibraryError, type SkillRepo, type SkillViewer } from "../skills/skillLibrary";
 import { TeachSessionError, type TeachWorker } from "./teachSessions";
-import { fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach } from "./teachWorkerClient";
+import { fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach, teachBrowserProvider } from "./teachWorkerClient";
+import { CloudDriver, cloudTeachWorker, secureFillCloudDrive, startCloudDrive, stopCloudDrive } from "./cloudBrowser";
 import type { TeachTier } from "./teachSession";
 
 export interface RouteViewer extends SkillViewer {
@@ -57,8 +58,20 @@ export async function skillRepo(): Promise<SkillRepo> {
   return globalRepo.__smartprSkillMemoryRepo;
 }
 
+const selfHostedTeach: TeachWorker = { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, shot: fetchWorkerTeachShot };
+/** The teach browser for this deployment: Browser Use Cloud or the self-hosted worker. */
+function teachWorker(): TeachWorker {
+  return teachBrowserProvider() === "self_hosted" ? selfHostedTeach : cloudTeachWorker;
+}
+
 export const workerDeps: { worker: TeachWorker } = {
-  worker: { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, shot: fetchWorkerTeachShot },
+  worker: {
+    start: (i) => teachWorker().start(i),
+    events: (id, after) => teachWorker().events(id, after),
+    stop: (id) => teachWorker().stop(id),
+    secureFill: (id, i) => teachWorker().secureFill!(id, i),
+    shot: (id, seq) => teachWorker().shot!(id, seq),
+  },
 };
 
 export function unauthorized(): Response {
@@ -86,8 +99,11 @@ export function errorResponse(err: unknown): Response {
 export async function replayDeps(): Promise<import("../replay/replaySessions").ReplayDeps> {
   const { startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
   const { agentRelocator } = await import("../replay/relocate");
-  const { secureFillWorker } = await import("./teachWorkerClient");
-  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate: agentRelocator(await modelPrompter(80)), secureFill: secureFillWorker };
+  const relocate = agentRelocator(await modelPrompter(80));
+  if (teachBrowserProvider() !== "self_hosted") {
+    return { repo: await skillRepo(), startDrive: startCloudDrive, stopDrive: stopCloudDrive, driver: (id) => new CloudDriver(id), relocate, secureFill: secureFillCloudDrive };
+  }
+  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate, secureFill: secureFillWorker };
 }
 
 /**

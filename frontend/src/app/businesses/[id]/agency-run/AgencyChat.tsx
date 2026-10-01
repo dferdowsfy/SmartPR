@@ -86,6 +86,8 @@ export interface FilingPickerMsg {
   id: string;
   type: "filing-picker";
   groups: FilingGroup[];
+  /** Opened for one requirement (Fill with Clara): the full list stays one click away. */
+  collapsed?: boolean;
   /** Documents on file + per-filing readiness (null = unavailable / signed out). */
   readiness?: FilingReadinessSummary | null;
   loading: boolean;
@@ -1505,6 +1507,8 @@ export interface AgencyChatProps {
   scrollToLatestSignal?: number;
   /** Start pre-flight for a specific SmartPR filing (obligation-joined option). */
   onStartFiling: (filing: FilingOption) => void;
+  /** Show the full filing list again after a single-requirement handoff. */
+  onExpandPicker?: () => void;
   /** Reopen the existing run behind an in-progress filing (never starts over). */
   onResumeFiling: (filing: FilingOption) => void;
   filingBusyId: string | null;
@@ -1724,6 +1728,19 @@ export function AgencyChat(props: AgencyChatProps) {
       >
         <div ref={contentRef} className="space-y-4">
         {props.msgs.map((msg) => {
+          if (msg.type === "filing-picker" && msg.collapsed) {
+            return (
+              <div key={msg.id} data-testid="filing-picker-collapsed">
+                <button
+                  type="button"
+                  className="text-[13px] font-semibold text-slate-500 underline-offset-2 hover:underline"
+                  onClick={() => props.onExpandPicker?.()}
+                >
+                  {L("See your other filings", "Ver tus otros trámites", lang)}
+                </button>
+              </div>
+            );
+          }
           if (msg.type === "filing-picker") {
             const readiness = msg.readiness ?? null;
             const readinessFor = (f: FilingOption) =>
