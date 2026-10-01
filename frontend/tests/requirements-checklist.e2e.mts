@@ -572,15 +572,17 @@ if (GOLDEN === "flood") {
   check("an unanswered layer is gray and says so (coastal)", (await page.locator('.ck-summary .spr-si-pill[data-layer="coastal_zone"][data-tone="unknown"]').count()) === 1);
   check("no prominent external FEMA link in the summary", (await page.locator('.ck-summary [data-testid="site-intelligence"] > a, .ck-summary .spr-si-groups a').count()) === 0);
   {
-    const details = page.locator('.ck-summary [data-testid="site-details"]');
-    await details.locator(":scope > summary").click();
-    const dText = (await details.innerText()).replace(/\s+/g, " ");
-    check("site details: effective FIRM panel + why it matters", /Panel 72000C0330J/.test(dText) && /Why this matters/.test(dText), dText.slice(0, 300));
-    await details.locator('[data-testid="site-sources"] > summary').click();
-    const links = await details.locator('[data-testid="site-sources"] a[target="_blank"]').count();
-    check("Sources & details lists official sources (new tab)", links >= 4, String(links));
+    const btn = page.locator('.ck-summary [data-testid="site-sources-button"]');
+    check("a 'Sources' pill with the agencies' icons replaces 'View site details'", (await btn.innerText()).trim() === "Sources" && (await btn.locator("img").count()) >= 3 && (await page.locator('.ck-summary [data-testid="site-details"]').count()) === 0);
+    await btn.click();
+    const panel = page.locator('.ck-summary [data-testid="site-sources"]');
+    const pText = (await panel.innerText()).replace(/\s+/g, " ");
+    check("sources: what each dataset said (FIRM panel) + why it matters", /Panel: 72000C0330J/.test(pText) && /Why this matters/.test(pText), pText.slice(0, 300));
+    const links = await panel.locator('a[target="_blank"]').count();
+    check("sources: official links open in a new tab", links >= 4, String(links));
+    check("sources: each entry shows its agency's icon", (await panel.locator("img.spr-si-source-logo").count()) === (await panel.locator("article").count()));
     await page.screenshot({ path: path.join(OUT, "flood_site_details.png"), fullPage: true });
-    await details.locator(":scope > summary").click();
+    await btn.click();
   }
   await page.waitForTimeout(500);
   const reqText = async () => (await page.locator(".spr-requirements-main").innerText()).replace(/\s+/g, " ");

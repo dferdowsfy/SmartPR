@@ -205,6 +205,16 @@ export const LAYER_SOURCES = {
     reliability: "high",
     verified: "2026-09-30",
   },
+  noaa_czma: {
+    id: "noaa-czma-boundary",
+    name: "NOAA Office for Coastal Management — Coastal Zone Management Act boundary",
+    publisher: "NOAA",
+    url: "https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0",
+    layer: "Coastal Zone Management Act boundary",
+    dataset_date: null,
+    reliability: "high",
+    verified: "2026-10-01",
+  },
   jp_zona_costanera: {
     id: "jp-mipr-zona-costanera",
     name: "Junta de Planificación (MIPR) — Zona Costanera (PMZC)",
@@ -857,6 +867,20 @@ export const CZM_BAND_M = 1000;
  * extensions for key natural systems); outside → unknown, because the
  * official zone extends inland in places.
  */
+/**
+ * NOAA's official CZMA boundary at the point: a polygon = inside the coastal
+ * zone; an answered empty result = outside it (a real "no"). Null when NOAA
+ * didn't answer, so the JP sources are used instead.
+ */
+export function parseNoaaCoastalZone(resp: ArcGisQueryResponse | string | null, retrieved_at: string): SiteLayerResult | null {
+  if (!resp || typeof resp === "string" || arcgisError(resp)) return null;
+  const src = LAYER_SOURCES.noaa_czma;
+  const a = firstAttributes(resp);
+  const base = { layer: "coastal_zone" as const, source: ref(src, null, null), retrieval: "live" as const, approximate: false, reason: null, retrieved_at };
+  if (!a) return { ...base, status: "none", code: null, name: null, tags: [], attributes: {} };
+  return { ...base, status: "resolved", code: "CZM", name: "Coastal zone (CZMA boundary)", tags: [], attributes: { CZMA_DOMAIN: str(a.czmadomain) } };
+}
+
 export function parseCoastalZone(
   official: ArcGisQueryResponse | string | null,
   coastlineBand: ArcGisQueryResponse | string | null,

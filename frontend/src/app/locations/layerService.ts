@@ -19,6 +19,7 @@ import {
   parseCoastalZone,
   parseCrimParcel,
   parseFemaFlood,
+  parseNoaaCoastalZone,
   parseAdvisoryFlood,
   parseTerrain,
   checkSitePoint,
@@ -76,7 +77,7 @@ export interface ResolveLayersOptions {
   skipOptional?: boolean;
 }
 
-type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "coastline" | "historic" | "protected";
+type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "czm_noaa" | "coastline" | "historic" | "protected";
 
 /** Default timeouts (ms), sized from the latencies observed 2026-09-30 (JP ≈ 2.5–3 s, FEMA < 1 s). */
 export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
@@ -92,6 +93,7 @@ export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
   jp_calificacion: 8000,
   crim: 6000,
   czm_official: 3500,
+  czm_noaa: 5000,
   coastline: 6000,
   historic: 3500,
   protected: 3500,
@@ -217,7 +219,8 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const want = (layers: SiteLayerId[]) => layers.some((l) => !fresh(l));
 
   const near = { distance: String(LOMC_SEARCH_RADIUS_M), units: "esriSRUnit_Meter" };
-  const [advOne, landslide, elevation, zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
+  const [czmNoaa, advOne, landslide, elevation, zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
+    want(["coastal_zone"]) ? q("czm_noaa", LAYER_SOURCES.noaa_czma.url) : null,
     want(["flood_advisory"]) ? q("advisory_1pct", LAYER_SOURCES.jp_advisory_flood.url) : null,
     want(["terrain"]) ? readLandslidePixel(fetchImpl, point, t("landslide"), retries, retryDelayMs, opts.decodePng ?? sharpDecoder, opts.isOnLand) : null,
     want(["terrain"]) ? readElevation(fetchImpl, point, t("elevation")) : null,
@@ -256,7 +259,10 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
     jpCatastro = jp.catastro;
   }
   if (crim !== null) computed.parcel = parseCrimParcel(crim, at, jpCatastro);
-  if (czmOff !== null || coast !== null) computed.coastal_zone = parseCoastalZone(czmOff, coast, at);
+  // NOAA's official CZMA boundary leads; the JP layer / coastline band are the fallback.
+  const noaaCoastal = czmNoaa !== null ? parseNoaaCoastalZone(czmNoaa, at) : null;
+  if (noaaCoastal) computed.coastal_zone = noaaCoastal;
+  else if (czmOff !== null || coast !== null) computed.coastal_zone = parseCoastalZone(czmOff, coast, at);
   if (hist !== null) computed.historic_zone = parsePresence("historic_zone", LAYER_SOURCES.jp_zonas_historicas, hist, at, ["NOMBRE", "Nombre", "nombre", "ZONA", "Zona"]);
   if (prot !== null) computed.protected_area = parsePresence("protected_area", LAYER_SOURCES.jp_areas_naturales, prot, at, ["NOMBRE", "Nombre", "nombre", "AREA", "Name"]);
 

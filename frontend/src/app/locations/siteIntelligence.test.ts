@@ -205,6 +205,19 @@ test("site intelligence: grouped pills, advisory vs effective surfaced, unavaila
   assert.equal(down.context.advisoryFlood.value, null);
   assert.ok(si.sources.every((s) => s.retrievedAt && s.url.startsWith("https://")));
   assert.equal(new Set(si.sources.map((s) => s.url)).size, si.sources.length, "one source entry per dataset");
+  // Sources carry the agency (for its icon) and what the dataset said for the pin.
+  const fema = si.sources.find((x) => x.layer === "flood_zone")!;
+  assert.equal(fema.agencyKey, "fema");
+  assert.match(fema.answer!.en, /Zone: X · Panel: 72000C0345J/);
+  assert.equal(si.sources.find((x) => x.layer === "flood_advisory")!.agencyKey, "fema", "advisory maps are FEMA's (hosted by JP)");
+  assert.equal(si.sources.find((x) => x.layer === "terrain")!.agencyKey, "usgs");
+  // Inland pin: NOAA's CZMA boundary answered "outside" — a real no, shown as such.
+  const coastal = si.sources.find((x) => x.layer === "coastal_zone")!;
+  assert.equal(coastal.agencyKey, "noaa");
+  assert.equal(coastal.status, "not_found");
+  const czPill = si.groups[3].pills.find((p) => p.layer === "coastal_zone")!;
+  assert.equal(czPill.label.en, "Coastal · not identified");
+  assert.equal(czPill.tone, "ok");
 });
 
 test("new layers become rule facts (location.flood_advisory.sfha, location.terrain.landslide_high)", async () => {

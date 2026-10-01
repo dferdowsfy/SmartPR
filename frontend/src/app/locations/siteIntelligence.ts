@@ -53,9 +53,36 @@ export interface SiteConsideration {
   text: Bi;
 }
 
+/** Agency behind a dataset — drives the source icon. */
+export type SourceAgencyKey = "fema" | "jp" | "crim" | "usgs" | "noaa";
+
+const AGENCY_NAME: Record<SourceAgencyKey, string> = {
+  fema: "FEMA",
+  jp: "Junta de Planificación",
+  crim: "CRIM",
+  usgs: "USGS",
+  noaa: "NOAA",
+};
+
+/** Agency of a layer source id ("fema-…", "jp-fema-advisory-…" → FEMA, "noaa-…"). */
+export function agencyKeyOf(sourceId: string): SourceAgencyKey {
+  if (sourceId.startsWith("fema") || sourceId.startsWith("jp-fema")) return "fema";
+  if (sourceId.startsWith("noaa")) return "noaa";
+  if (sourceId.startsWith("usgs")) return "usgs";
+  if (sourceId.startsWith("crim")) return "crim";
+  return "jp";
+}
+
 export interface SiteSource {
   layer: SiteLayerId;
+  /** Every layer this dataset answered (zoning + land class share one). */
+  layers: SiteLayerId[];
+  agencyKey: SourceAgencyKey;
   agency: string;
+  /** What this dataset said for the pin, in one line. */
+  answer: Bi | null;
+  /** Why it matters (hedged). */
+  meaning: Bi | null;
   dataset: string;
   version: string | null;
   datasetDate: string | null;
@@ -115,17 +142,6 @@ const SERVICE: Record<SiteLayerId, "FEMA" | "JP" | "CRIM" | "USGS"> = {
   protected_area: "JP",
 };
 
-const AGENCY: Record<SiteLayerId, string> = {
-  flood_zone: "FEMA",
-  flood_advisory: "FEMA / Junta de Planificación",
-  coastal_zone: "Junta de Planificación",
-  zoning: "Junta de Planificación",
-  land_class: "Junta de Planificación",
-  parcel: "CRIM",
-  terrain: "USGS",
-  historic_zone: "Junta de Planificación",
-  protected_area: "Junta de Planificación / DRNA",
-};
 
 /** Provider status of one layer result. Unknown is never "not found". */
 export function providerStatus(r: SiteLayerResult | undefined): ProviderStatus {
@@ -142,7 +158,7 @@ function sourced<T>(r: SiteLayerResult | undefined, value: T | null): SourcedVal
   return {
     value: r?.status === "resolved" ? value : null,
     status: providerStatus(r),
-    sourceAgency: r ? AGENCY[r.layer] : "",
+    sourceAgency: r ? AGENCY_NAME[agencyKeyOf(r.source.id)] : "",
     sourceDataset: r?.source.name ?? "",
     sourceVersion: r?.source.version ?? null,
     sourceDate: r?.source.dataset_date ?? null,
@@ -335,18 +351,41 @@ export function buildSiteIntelligence(layers: SiteLayers, extra: { municipality?
   considerations.sort((a, b) => (a.tone === b.tone ? 0 : a.tone === "hazard" ? -1 : 1));
 
   // ---- Sources & provenance ------------------------------------------------
-  // One entry per dataset (zoning and land class come from the same JP layer).
-  const seenSource = new Set<string>();
-  const sources: SiteSource[] = layers.results.filter((r) => !seenSource.has(r.source.url) && !!seenSource.add(r.source.url)).map((r) => ({
-    layer: r.layer,
-    agency: AGENCY[r.layer],
-    dataset: r.source.name,
-    version: r.source.version,
-    datasetDate: r.source.dataset_date,
-    retrievedAt: r.retrieved_at,
-    status: providerStatus(r),
-    url: r.source.url,
-  }));
+  // One entry per dataset (zoning and land class come from the same JP layer),
+  // carrying what that dataset said for the pin.
+  const detailByLayer = new Map(groups.flatMap((g) => g.details.map((d) => [d.layer, d] as const)));
+  const pillByLayer = new Map(groups.flatMap((g) => g.pills.map((p) => [p.layer, p] as const)));
+  const answerFor = (layer: SiteLayerId): Bi | null => {
+    const d = detailByLayer.get(layer);
+    const rows = (d?.rows ?? []).filter((r) => r.value.en !== "—");
+    if (rows.length) return { en: rows.map((r) => `${r.label.en}: ${r.value.en}`).join(" · "), es: rows.map((r) => `${r.label.es}: ${r.value.es}`).join(" · ") };
+    const pill = pillByLayer.get(layer);
+    return pill ? pill.label : d?.reason ?? null;
+  };
+  const byUrl = new Map<string, SiteLayerResult[]>();
+  for (const r of layers.results) byUrl.set(r.source.url, [...(byUrl.get(r.source.url) ?? []), r]);
+  const sources: SiteSource[] = [...byUrl.values()].map((rs) => {
+    const r = rs[0];
+    const answers = rs.map((x) => answerFor(x.layer)).filter((a): a is Bi => !!a);
+    const key = agencyKeyOf(r.source.id);
+    // The best status of the layers that share the dataset (one answered = it answered).
+    const statuses = rs.map((x) => providerStatus(x));
+    const status = (["confirmed", "not_found", "error", "unavailable"] as const).find((st) => statuses.includes(st)) ?? "unavailable";
+    return {
+      layer: r.layer,
+      layers: rs.map((x) => x.layer),
+      agencyKey: key,
+      agency: AGENCY_NAME[key],
+      answer: answers.length ? { en: answers.map((a) => a.en).join(" · "), es: answers.map((a) => a.es).join(" · ") } : null,
+      meaning: rs.map((x) => detailByLayer.get(x.layer)?.meaning).find((m): m is Bi => !!m) ?? null,
+      dataset: r.source.name,
+      version: r.source.version,
+      datasetDate: r.source.dataset_date,
+      retrievedAt: r.retrieved_at,
+      status,
+      url: r.source.url,
+    };
+  });
 
   // ---- Structured context for the rules engine / Passport -------------------
   const fam = land?.status === "resolved" ? landFamily(land) : null;

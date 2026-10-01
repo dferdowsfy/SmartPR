@@ -7,9 +7,19 @@
 // only linked from the collapsed "Sources & details".
 
 import { AlertTriangle, CheckCircle2, ExternalLink, HelpCircle, Info, Leaf, Map, Mountain, RefreshCw, Waves } from "lucide-react";
+import { useId, useState } from "react";
 import type { Lang } from "../../forms/engine/types";
 import type { SiteLayers } from "../../locations/layers";
-import { buildSiteIntelligence, type PillTone, type ProviderStatus, type SiteGroupId } from "../../locations/siteIntelligence";
+import { buildSiteIntelligence, type PillTone, type ProviderStatus, type SiteGroupId, type SourceAgencyKey } from "../../locations/siteIntelligence";
+
+/** Agency marks (public/sources); FEMA is a plain text badge. */
+const SOURCE_ICON: Record<SourceAgencyKey, string> = {
+  fema: "/sources/fema.svg",
+  jp: "/sources/jp.png",
+  crim: "/sources/crim.png",
+  usgs: "/sources/usgs.png",
+  noaa: "/sources/noaa.png",
+};
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 const pick = (b: { en: string; es: string }, lang: Lang) => (lang === "es" ? b.es : b.en);
@@ -45,6 +55,9 @@ export function SiteIntelligencePanel({
   onRetry?: () => void;
 }) {
   const si = buildSiteIntelligence(layers, { municipality, address });
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const panelId = useId();
+  const agencyKeys = [...new Set(si.sources.map((s) => s.agencyKey))];
   const anyUnavailable = si.groups.some((g) => g.pills.some((p) => p.status === "unavailable"));
   return (
     <div className="spr-si" data-testid="site-intelligence">
@@ -99,61 +112,57 @@ export function SiteIntelligencePanel({
         </p>
       )}
 
-      <details className="spr-si-details" data-testid="site-details">
-        <summary>{L("View site details", "Ver detalles del lugar", lang)}</summary>
-        <div className="spr-si-details-body">
-          {si.groups.map((g) => (
-            <section key={g.id} className="spr-si-detail-group">
-              <h4>{pick(g.title, lang)}</h4>
-              {g.details.map((d) => (
-                <div key={d.layer} className="spr-si-detail" data-layer={d.layer} data-status={d.status}>
-                  <div className="spr-si-detail-head">
-                    <span>{pick(d.heading, lang)}</span>
-                    <span className={`spr-si-status spr-si-status-${d.status}`}>{pick(STATUS_LABEL[d.status], lang)}</span>
-                  </div>
-                  {d.rows.length > 0 && (
-                    <dl>
-                      {d.rows.map((r) => (
-                        <div key={r.label.en}>
-                          <dt>{pick(r.label, lang)}</dt>
-                          <dd>{pick(r.value, lang)}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  )}
-                  {d.reason && <p className="spr-si-detail-reason">{pick(d.reason, lang)}</p>}
-                  {d.meaning && (
-                    <p className="spr-si-detail-meaning">
-                      <strong>{L("Why this matters", "Por qué importa", lang)}: </strong>
-                      {pick(d.meaning, lang)}
-                    </p>
-                  )}
+      <div className="spr-si-sources-bar">
+        <button
+          type="button"
+          className="spr-si-sources-btn"
+          aria-expanded={sourcesOpen}
+          aria-controls={panelId}
+          onClick={() => setSourcesOpen((o) => !o)}
+          data-testid="site-sources-button"
+        >
+          <span className="spr-si-source-icons" aria-hidden="true">
+            {agencyKeys.map((k) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={k} src={SOURCE_ICON[k]} alt="" className="spr-si-source-icon" width={18} height={18} />
+            ))}
+          </span>
+          {L("Sources", "Fuentes", lang)}
+        </button>
+      </div>
+
+      {sourcesOpen && (
+        <div className="spr-si-sources-panel" id={panelId} data-testid="site-sources">
+          {si.sources.map((s) => (
+            <article key={s.url} className="spr-si-source" data-agency={s.agencyKey} data-status={s.status}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={SOURCE_ICON[s.agencyKey]} alt={s.agency} className="spr-si-source-logo" width={28} height={28} />
+              <div className="spr-si-source-body">
+                <div className="spr-si-source-head">
+                  <span className="spr-si-source-name">{s.dataset}</span>
+                  <span className={`spr-si-status spr-si-status-${s.status}`}>{pick(STATUS_LABEL[s.status], lang)}</span>
                 </div>
-              ))}
-            </section>
+                {s.answer && <p className="spr-si-source-answer">{pick(s.answer, lang)}</p>}
+                {s.meaning && (
+                  <p className="spr-si-source-meaning">
+                    <strong>{L("Why this matters", "Por qué importa", lang)}: </strong>
+                    {pick(s.meaning, lang)}
+                  </p>
+                )}
+                <span className="spr-si-source-meta">
+                  {[s.version, s.datasetDate, `${L("checked", "consultado", lang)} ${s.retrievedAt.slice(0, 16).replace("T", " ")} UTC`].filter(Boolean).join(" · ")}
+                </span>
+                <a href={s.url} target="_blank" rel="noopener noreferrer" className="spr-si-source-link">
+                  {L("View official source", "Ver fuente oficial", lang)} <ExternalLink size={11} aria-hidden="true" />
+                </a>
+              </div>
+            </article>
           ))}
           <p className="spr-si-wetlands">
             {L("Wetlands (USFWS National Wetlands Inventory): not checked yet.", "Humedales (Inventario Nacional de Humedales del USFWS): aún no se verifican.", lang)}
           </p>
-
-          <details className="spr-si-sources" data-testid="site-sources">
-            <summary>{L("Sources & details", "Fuentes y detalles", lang)}</summary>
-            <ul>
-              {si.sources.map((s) => (
-                <li key={s.layer}>
-                  <span className="spr-si-source-name">{s.dataset}</span>
-                  <span className="spr-si-source-meta">
-                    {[s.version, s.datasetDate, `${L("checked", "consultado", lang)} ${s.retrievedAt.slice(0, 16).replace("T", " ")} UTC`, pick(STATUS_LABEL[s.status], lang)].filter(Boolean).join(" · ")}
-                  </span>
-                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="spr-si-source-link">
-                    {L("View official source", "Ver fuente oficial", lang)} <ExternalLink size={11} aria-hidden="true" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </details>
         </div>
-      </details>
+      )}
     </div>
   );
 }
