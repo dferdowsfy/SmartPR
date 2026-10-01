@@ -9,8 +9,12 @@
  *   fill  — role, label, selector, input type and a coarse value KIND
  *           (email / phone / postal / number / date / text / empty). The
  *           value itself is read only to classify it and never leaves the
- *           page. Password fields are reported as kind "secret" without
- *           being read at all.
+ *           page. Sensitive fields (passwords, SSNs, one-time codes, card
+ *           numbers — see sensitiveKind in domHelpers.ts) are reported as
+ *           kind "secret" with a secretKind, without being read at all, and
+ *           are masked on screen so the live view and screenshots show dots.
+ *           Page events list the visible sensitive fields (label/selector
+ *           only) so SmartPR can offer a one-time secure input card.
  *
  * Events go to window.__claraRecord(json) when the worker exposes that
  * binding, and are also appended to window.__claraEvents (tests read it).
@@ -38,7 +42,7 @@ ${DOM_HELPERS_JS}
   function valueKind(el) {
     var tag = el.tagName.toLowerCase();
     var type = (el.getAttribute("type") || "").toLowerCase();
-    if (type === "password") return "secret";
+    if (type === "password" || sensitiveKind(el)) return "secret";
     if (type === "file") return "file";
     if (tag === "select") return el.selectedIndex > 0 || (el.value && el.selectedIndex >= 0) ? "option" : "empty";
     var v = String(el.value || "").trim();
@@ -68,13 +72,16 @@ ${DOM_HELPERS_JS}
   function emitPage() {
     var h = firstVisible("h1, h2, legend, [role=heading]");
     var heading = h ? textWithoutControls(h) : "";
-    var key = location.href.split("?")[0] + "|" + heading + "|" + document.title;
+    maskSensitive();
+    var secrets = sensitiveFields();
+    var key = location.href.split("?")[0] + "|" + heading + "|" + document.title + "|" + secrets.length;
     if (key === lastPageKey) return;
     lastPageKey = key;
     send({
       kind: "page",
       title: clean(document.title),
       heading: heading,
+      secretFields: secrets,
       hasPassword: !!firstVisible("input[type=password]"),
       hasCaptcha: !!firstVisible('iframe[src*="recaptcha"],iframe[src*="hcaptcha"],iframe[src*="turnstile"],.g-recaptcha,.h-captcha,[id*="captcha" i],[class*="captcha" i],[name*="captcha" i]'),
       hasFileInput: hasVisibleFileInput()
@@ -113,7 +120,8 @@ ${DOM_HELPERS_JS}
     var type = (el.getAttribute("type") || "").toLowerCase();
     if (!/^(input|select|textarea)$/.test(tag)) return;
     if (/^(radio|checkbox|submit|button|hidden)$/.test(type)) return;
-    var kind = valueKind(el);
+    var secret = sensitiveKind(el);
+    var kind = secret ? "secret" : valueKind(el);
     var ev = {
       kind: "fill",
       role: tag === "select" ? "combobox" : "textbox",
@@ -123,9 +131,13 @@ ${DOM_HELPERS_JS}
       valueKind: kind,
       required: isRequired(el)
     };
+    if (secret) ev.secretKind = secret;
     if (tag === "select" && el.selectedIndex >= 0 && el.options[el.selectedIndex]) ev.optionText = clean(el.options[el.selectedIndex].text);
     send(ev);
   }, true);
+
+  // Mask a sensitive field before the first keystroke shows on screen.
+  document.addEventListener("focusin", function () { maskSensitive(); }, true);
 
   ["pushState", "replaceState"].forEach(function (m) {
     var orig = history[m];

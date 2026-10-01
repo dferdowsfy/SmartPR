@@ -5,6 +5,10 @@
  *
  * Passport values and the human's answers live only in this process for
  * the run; the view carries labels, milestones and the pause, never values.
+ * Answers are dropped as soon as Clara has used them (after each advance),
+ * and sensitive one-time values (password, SSN, verification code) never
+ * enter the session at all: `secureInputReplay` hands them straight to the
+ * worker, which types them into the portal's field.
  * Drift marks a library skill needs_reteach (bundled skills flag their
  * portal instead — they're fixed in code review).
  */
@@ -24,6 +28,8 @@ export interface ReplayDeps {
   stopDrive(sessionId: string): Promise<void>;
   /** Strict replay: re-locate a drifted control (labels only), else pause. */
   relocate?: import("./relocate").Relocator;
+  /** Type a one-time sensitive value into the replay browser; the worker keeps no copy. */
+  secureFill?(sessionId: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason?: string }>;
 }
 
 export interface SkillRef {
@@ -55,6 +61,8 @@ export interface ReplayView {
   pause: ReplayPause | null;
   milestones: ReplayState["milestones"];
   live_url: string | null;
+  /** Sensitive inputs on the paused screen (labels/selectors) — for the masked one-time card. */
+  secret_fields: NonNullable<ReplayState["pauseSecretFields"]>;
 }
 
 const g = globalThis as typeof globalThis & { __smartprReplays?: Map<string, LiveReplay> };
@@ -76,6 +84,7 @@ function viewOf(r: LiveReplay): ReplayView {
     pause: r.state.pause,
     milestones: r.state.milestones,
     live_url: r.status === "running" || r.status === "paused" || r.status === "review" ? r.liveUrl : null,
+    secret_fields: r.status === "paused" || r.status === "review" ? r.state.pauseSecretFields ?? [] : [],
   };
 }
 
@@ -147,6 +156,8 @@ async function step(deps: ReplayDeps, r: LiveReplay): Promise<void> {
     },
   });
   r.state = next;
+  // Answers are used once, on this advance; nothing typed lingers in memory.
+  r.answers = {};
   r.status = next.status === "done" ? "done" : next.status === "stopped" ? "stopped" : next.pause?.kind === "gate" && next.pause.gate === "submit" ? "review" : next.status === "paused" ? "paused" : "running";
 }
 
@@ -154,9 +165,26 @@ async function step(deps: ReplayDeps, r: LiveReplay): Promise<void> {
 export async function startReplaySession(deps: ReplayDeps, viewer: SkillViewer, id: string): Promise<ReplayView> {
   const r = owned(viewer, id);
   if (r.status !== "planned") throw new ReplayError(409, "already_started", "This replay already started.");
+  // One replay browser per person: close any earlier one they left open
+  // (the worker runs one session at a time).
+  for (const other of replays().values()) {
+    if (other.id !== r.id && other.ownerUserId === viewer.userId && other.driveSessionId && (other.status === "running" || other.status === "paused" || other.status === "review")) {
+      await deps.stopDrive(other.driveSessionId).catch(() => undefined);
+      other.state = stopReplay(other.state);
+      other.status = "stopped";
+      other.answers = {};
+    }
+  }
   const decision = teachDomainDecision(r.skillRef.skill.portal.base_url, { isAdmin: true });
   if (!decision.ok) throw new ReplayError(400, decision.reason, decision.message.en);
-  const drive = await deps.startDrive({ startUrl: r.skillRef.skill.portal.base_url, allowedDomains: decision.allowedDomains });
+  let drive: { sessionId: string; liveUrl: string | null };
+  try {
+    drive = await deps.startDrive({ startUrl: r.skillRef.skill.portal.base_url, allowedDomains: decision.allowedDomains });
+  } catch (err) {
+    const msg = String((err as Error)?.message ?? "");
+    if (/ 409:/.test(msg)) throw new ReplayError(409, "worker_busy", "Clara's browser is busy with another session. Try again in a few minutes.");
+    throw new ReplayError(503, "worker_unreachable", "Clara's browser didn't answer, so the replay couldn't start. Try again in a moment.");
+  }
   r.driveSessionId = drive.sessionId;
   r.liveUrl = drive.liveUrl;
   r.status = "running";
@@ -173,6 +201,24 @@ export async function continueReplaySession(deps: ReplayDeps, viewer: SkillViewe
   for (const [k, v] of Object.entries(answers)) if (allowed.has(k) && typeof v === "string") r.answers[k] = v.slice(0, 500);
   await step(deps, r);
   return viewOf(r);
+}
+
+/**
+ * One-time sensitive input (password, SSN, verification code) for the
+ * screen Clara paused on: straight to the replay browser, never stored.
+ */
+export async function secureInputReplay(deps: ReplayDeps, viewer: SkillViewer, id: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason: string | null }> {
+  const r = owned(viewer, id);
+  if (!r.driveSessionId || r.status !== "paused") throw new ReplayError(409, "not_paused", "Clara isn't waiting for that right now.");
+  if (!deps.secureFill) throw new ReplayError(503, "worker_outdated", "Clara's browser can't take secure input yet.");
+  if (typeof input.value !== "string" || !input.value || input.value.length > 256) throw new ReplayError(400, "bad_value", "Type the value first.");
+  const selector = input.selector && (r.state.pauseSecretFields ?? []).some((f) => f.selector === input.selector) ? input.selector : null;
+  try {
+    const out = await deps.secureFill(r.driveSessionId, { value: input.value, selector });
+    return { ok: out.ok === true, reason: out.ok ? null : out.reason ?? "no_field" };
+  } catch {
+    throw new ReplayError(503, "worker_unreachable", "Clara's browser didn't answer.");
+  }
 }
 
 export async function stopReplaySession(deps: ReplayDeps, viewer: SkillViewer, id: string): Promise<ReplayView> {

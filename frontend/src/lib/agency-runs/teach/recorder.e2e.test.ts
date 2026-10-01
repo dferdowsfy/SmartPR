@@ -22,6 +22,7 @@ import { passportScrubValues, sanitizeTeachEvent, type TeachEvent } from "./even
 import { answerQuestion, applyTeachEvent, markStepConditional, newTeachState, openQuestions, type TeachState } from "./teachSession";
 import { buildSkillFromTeach } from "./buildSkill";
 import { validateSkill } from "../skills/skillValidate";
+import { DRIVER_SCRIPT } from "../replay/driverScript";
 
 const HTML = readFileSync(join(__dirname, "fixtures", "portal5.html"), "utf8");
 const PASSPORT = {
@@ -161,5 +162,63 @@ describe("teach mode in a real browser", () => {
     assert.match(json, /Always choose 'Permiso de Uso'/);
     assert.equal(skill.steps.at(-1)?.gate, "submit");
     assert.equal(skill.steps.find((x) => x.gate === "login")?.fields.length, 0);
+  });
+
+  it("sensitive fields (SSN, one-time code, password) are reported as secret without values and masked on screen", async (t) => {
+    if (!browser) return t.skip(`chromium unavailable: ${launchError}`);
+    const SSN = "123-45-6789";
+    const html = `<!doctype html><meta charset=utf-8><h1>Identificación</h1>
+      <label for=ssn>Número de seguro social</label><input id=ssn name=ssn>
+      <label for=otp>Código de verificación</label><input id=otp autocomplete="one-time-code">
+      <label for=zip>Código postal</label><input id=zip>
+      <label for=pw>Contraseña</label><input id=pw type=password>
+      <button id=go>Siguiente</button>`;
+    const context = await browser.newContext();
+    const raw: Record<string, unknown>[] = [];
+    await context.exposeBinding("__claraRecord", (_src, json: string) => void raw.push(JSON.parse(json)));
+    await context.addInitScript(RECORDER_SCRIPT);
+    const page = await context.newPage();
+    await page.route("**/*", (r) => r.fulfill({ status: 200, contentType: "text/html", body: html }));
+    await page.goto("https://portal.example.gov/id");
+    await page.waitForTimeout(400);
+    await page.fill("#ssn", SSN);
+    await page.fill("#otp", "482913");
+    await page.fill("#zip", "00961");
+    await page.fill("#pw", "S3cr3t!Clave");
+    await page.click("#go");
+    await page.waitForTimeout(400);
+
+    const json = JSON.stringify(raw);
+    for (const v of [SSN, "6789", "482913", "S3cr3t!Clave", "00961"]) assert.ok(!json.includes(v), `recorder leaked ${v}`);
+    const fills = raw.filter((e) => e.kind === "fill");
+    const byLabel = (l: string) => fills.find((e) => e.label === l)!;
+    assert.deepEqual([byLabel("Número de seguro social").valueKind, byLabel("Número de seguro social").secretKind], ["secret", "ssn"]);
+    assert.deepEqual([byLabel("Código de verificación").valueKind, byLabel("Código de verificación").secretKind], ["secret", "code"]);
+    assert.deepEqual([byLabel("Contraseña").valueKind, byLabel("Contraseña").secretKind], ["secret", "password"]);
+    assert.equal(byLabel("Código postal").valueKind, "postal", "a postal code is a normal Passport field");
+    const pageEv = raw.find((e) => e.kind === "page" && String(e.url).startsWith("https://")) as { secretFields: { label: string; kind: string }[] };
+    assert.deepEqual(pageEv.secretFields.map((f) => f.kind).sort(), ["code", "password", "ssn"]);
+    // Masked on screen: what the live view and any screenshot show is dots.
+    assert.equal(await page.$eval("#ssn", (e) => getComputedStyle(e).getPropertyValue("-webkit-text-security")), "disc");
+    assert.equal(await page.$eval("#otp", (e) => getComputedStyle(e).getPropertyValue("-webkit-text-security")), "disc");
+    assert.equal(await page.$eval("#zip", (e) => getComputedStyle(e).getPropertyValue("-webkit-text-security")), "none");
+    // Server sanitization keeps it that way.
+    const ev = sanitizeTeachEvent(byLabel("Número de seguro social"));
+    assert.equal(ev?.kind === "fill" ? ev.secretKind : null, "ssn");
+    await context.close();
+
+    // The replay driver never reads a text field's value back to the server.
+    const ctx2 = await browser.newContext();
+    await ctx2.addInitScript(DRIVER_SCRIPT);
+    const p2 = await ctx2.newPage();
+    await p2.route("**/*", (r) => r.fulfill({ status: 200, contentType: "text/html", body: html }));
+    await p2.goto("https://portal.example.gov/id");
+    await p2.fill("#ssn", SSN);
+    const located = await p2.evaluate(() => (window as unknown as { __claraDrive: { locate(t: unknown): { value: string } } }).__claraDrive.locate({ role: "textbox", label: "Número de seguro social" }));
+    assert.equal(located.value, "");
+    const snap = await p2.evaluate(() => (window as unknown as { __claraDrive: { snapshot(): unknown } }).__claraDrive.snapshot());
+    assert.ok(!JSON.stringify(snap).includes("6789"));
+    assert.ok(JSON.stringify(snap).includes("ssn"));
+    await ctx2.close();
   });
 });

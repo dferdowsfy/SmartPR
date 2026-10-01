@@ -30,6 +30,8 @@
     "test:clara:e2e": "node tests/clara-rehearsal.e2e.mjs",
     "test:agency": "tsx --test src/lib/agency-runs/*.test.ts src/lib/agency-runs/flows/*.test.ts src/lib/agency-runs/skills/*.test.ts src/lib/agency-runs/teach/*.test.ts src/lib/agency-runs/replay/*.test.ts 'src/app/businesses/[id]/agency-run/chatContracts.test.ts'",
     "test:dos:e2e": "tsx tests/dept-state-corporation.e2e.mts",
+    "test:teach:e2e": "tsx tests/teach-clara-workspace.e2e.mts",
+    "test:teach:real-worker": "tsx tests/teach-clara-real-worker.e2e.mts",
     "test:billing": "tsx --test src/lib/billing/*.test.ts",
     "test:locations": "tsx --test src/app/locations/geo.test.ts src/app/locations/intakeLocation.test.ts src/app/locations/locationContext.test.ts src/app/locations/schemaSync.test.ts src/app/locations/store.db.test.ts src/app/locations/requirements.test.ts src/app/locations/layers.test.ts src/lib/geocoding/geocoding.test.ts",
     "test:locations:e2e": "tsx tests/passport-location.e2e.mts",

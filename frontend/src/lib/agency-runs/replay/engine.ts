@@ -25,6 +25,7 @@ import { applyTransform, type BilingualText, type Skill, type SkillField, type S
 import { isSubmitTarget } from "../skills/skillValidate";
 import { defaultGate } from "../skills/gateCopy";
 import { normalizeLabel, readPassportPath } from "../teach/passportCatalog";
+import { scrubVisibleText, type SecretFieldRef } from "../teach/events";
 
 export interface PageSnapshot {
   url: string;
@@ -33,6 +34,8 @@ export interface PageSnapshot {
   hasPassword: boolean;
   hasCaptcha: boolean;
   errors: string[];
+  /** Visible sensitive inputs (password, SSN, code, card) — labels/selectors only. */
+  secretFields?: SecretFieldRef[];
 }
 
 export type LocateResult =
@@ -78,6 +81,8 @@ export interface ReplayState {
   /** Fingerprint of the screen when the last step finished / when paused. */
   lastStepScreen: string | null;
   pauseScreen: string | null;
+  /** Sensitive inputs on the screen Clara paused on (for the one-time secure input card). */
+  pauseSecretFields?: SecretFieldRef[];
 }
 
 export interface ReplayContext {
@@ -352,7 +357,11 @@ async function runStep(ctx: ReplayContext, state: ReplayState, step: SkillStep, 
  */
 export async function advanceReplay(stateIn: ReplayState, ctx: ReplayContext): Promise<ReplayState> {
   const next = await advanceInner(stateIn, ctx);
-  if (next.status === "paused") next.pauseScreen = screenKey(await ctx.driver.snapshot());
+  if (next.status === "paused") {
+    const snap = await ctx.driver.snapshot();
+    next.pauseScreen = screenKey(snap);
+    next.pauseSecretFields = (snap.secretFields ?? []).slice(0, 6);
+  } else next.pauseSecretFields = [];
   return next;
 }
 
@@ -417,7 +426,7 @@ async function advanceInner(stateIn: ReplayState, ctx: ReplayContext): Promise<R
         if (snap.errors.length || prev.actions.length) {
           // The portal rejected it, or our recorded click didn't move on.
           state.status = "paused";
-          state.pause = { kind: "portal_error", stepId: prev.id, errors: snap.errors };
+          state.pause = { kind: "portal_error", stepId: prev.id, errors: snap.errors.map((e) => scrubVisibleText(e)) };
           milestone(state, ctx, prev.id, { en: "The portal didn't move on from that screen. I stopped so you can see why.", es: "El portal no pasó de esa pantalla. Me detuve para que veas por qué." });
           return state;
         }

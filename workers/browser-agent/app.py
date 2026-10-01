@@ -15,8 +15,10 @@ client uses, so switching providers is an env change, not a rewrite:
   WS     /vnc/websock?token=               browser websocket <-> x11vnc bridge
   POST   /api/v4/teach                     {startUrl, allowedDomains, recorderScript}
   GET    /api/v4/teach/{id}/events         ?after=     (recorder events, structure only)
-  GET    /api/v4/teach/{id}/shots/{seq}  ?token=   (per-action screenshot, owner token)
+  GET    /api/v4/teach/{id}/shots/{seq}             (per-action screenshot; bearer, or viewer ?token=)
+  POST   /api/v4/teach/{id}/secure-fill    {value, selector?}  (one-time sensitive value; never logged)
   POST   /api/v4/teach/{id}/stop
+  GET    /api/v4/capabilities              (bearer) teach/drive recorder readiness for SmartPR's probe
   POST   /api/v4/drive                     {startUrl, allowedDomains, driverScript}  (skill replay)
   POST   /api/v4/drive/{id}/call           {op: snapshot|locate|fill|selectOption|click|settle, ...}
   POST   /api/v4/drive/{id}/stop
@@ -777,7 +779,10 @@ TEACH_MAX_SCRIPT_BYTES = 100_000
 _TEACH_EVENT_KEYS = {
     "kind", "url", "title", "heading", "hasPassword", "hasCaptcha", "hasFileInput",
     "role", "label", "selector", "inputType", "valueKind", "required", "optionText",
+    "secretKind", "secretFields",
 }
+# Bumped when the teach/drive contract changes; SmartPR's probe reads it.
+TEACH_PROTOCOL = 2
 
 
 class TeachCreate(BaseModel):
@@ -821,7 +826,13 @@ def _teach_record(sess: AgentSession, payload: Any) -> None:
         return
     event = {k: v for k, v in raw.items() if k in _TEACH_EVENT_KEYS}
     sess.teach_seq += 1
-    sess.teach_events.append({"seq": sess.teach_seq, "event": event})
+    # No per-step screenshot right after a sensitive field changed (password,
+    # SSN, one-time code …): the recorder masks those inputs, and this keeps
+    # even a masked frame of them out of the review strip.
+    sensitive = event.get("valueKind") == "secret" or bool(event.get("secretKind"))
+    sess.teach_events.append({"seq": sess.teach_seq, "event": event, "shot": not sensitive})
+    if sensitive:
+        return
     try:
         asyncio.get_running_loop().create_task(_teach_event_shot(sess, sess.teach_seq))
     except RuntimeError:
@@ -968,24 +979,133 @@ async def teach_events(session_id: str, after: int = Query(default=0, ge=0)):
         raise HTTPException(status_code=404, detail="teach session not found")
     items = [e for e in sess.teach_events if e["seq"] > after][:500]
     next_after = items[-1]["seq"] if items else after
-    base = _base()
-    if base:
-        items = [
-            {**e, "screenshot": f"{base}/api/v4/teach/{sess.id}/shots/{e['seq']}?token={sess.token}"}
-            for e in items
-        ]
+    # Screenshots are fetched by SmartPR's server with the bearer token and
+    # proxied to the owner; the viewer token never goes into event payloads.
     return {"items": items, "nextAfter": next_after, "status": sess.status}
 
 
 @app.get("/api/v4/teach/{session_id}/shots/{seq}")
-async def teach_shot(session_id: str, seq: int, token: Optional[str] = Query(default=None)):
+async def teach_shot(
+    session_id: str,
+    seq: int,
+    token: Optional[str] = Query(default=None),
+    authorization: Optional[str] = Header(default=None),
+):
     sess = SESSIONS.get(session_id)
-    if not sess or sess.kind != "teach" or sess.token != token:
+    bearer_ok = bool(WORKER_API_TOKEN) and authorization == f"Bearer {WORKER_API_TOKEN}"
+    if not sess or sess.kind != "teach" or not (bearer_ok or (token and sess.token == token)):
         raise HTTPException(status_code=403, detail="forbidden")
     shot = sess.teach_shots.get(seq)
     if not shot:
         raise HTTPException(status_code=404, detail="no screenshot for that step")
     return Response(content=shot, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=600"})
+
+
+class SecureFill(BaseModel):
+    value: str
+    selector: Optional[str] = None
+
+
+_SECURE_TARGET_JS = """(sel) => {
+  const ok = (el) => el && el.tagName && /^(input|textarea)$/i.test(el.tagName) && !el.disabled && !el.readOnly
+    && !/^(hidden|checkbox|radio|submit|button|file)$/i.test(el.type || '');
+  const mark = (el) => { el.setAttribute('data-clara-secure', '1'); return true; };
+  document.querySelectorAll('[data-clara-secure]').forEach((e) => e.removeAttribute('data-clara-secure'));
+  if (sel) { try { const el = document.querySelector(sel); if (ok(el)) return mark(el); } catch (e) {} return false; }
+  if (ok(document.activeElement)) return mark(document.activeElement);
+  const vis = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const cands = Array.from(document.querySelectorAll('input[type=password], input[autocomplete=one-time-code], input[data-clara-sensitive]'))
+    .filter((el) => ok(el) && vis(el) && !el.value);
+  return cands.length ? mark(cands[0]) : false;
+}"""
+
+
+@app.post("/api/v4/teach/{session_id}/secure-fill", dependencies=[Depends(require_api_token)])
+async def teach_secure_fill(session_id: str, body: SecureFill):
+    """Type a one-time sensitive value (password, SSN, verification code)
+    into the live portal. The value is used once and never logged, stored,
+    echoed or screenshotted by this worker."""
+    sess = SESSIONS.get(session_id)
+    if not sess or sess.kind != "teach" or sess.status != "running":
+        raise HTTPException(status_code=404, detail="session not found")
+    value = body.value or ""
+    if not value or len(value) > 256:
+        raise HTTPException(status_code=400, detail="value missing or too long")
+    selector = (body.selector or "").strip()[:300] or None
+    page = _drive_page(sess)
+    try:
+        found = await page.evaluate(_SECURE_TARGET_JS, selector)
+        if not found:
+            return {"ok": False, "reason": "no_field"}
+        loc = page.locator('[data-clara-secure="1"]')
+        await loc.fill(value)
+        await loc.dispatch_event("change")
+        await loc.evaluate("(e) => e.removeAttribute('data-clara-secure')")
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001 — never include the value
+        log.warning("secure fill failed: %s", type(exc).__name__)
+        return {"ok": False, "reason": "fill_failed"}
+    finally:
+        value = ""
+        body.value = ""
+    return {"ok": True}
+
+
+_BROWSER_PROBE: dict = {"at": 0.0, "ok": None, "error": None}
+
+
+async def _probe_browser() -> tuple[bool, Optional[str]]:
+    """Can this worker actually launch the recorder's browser (headed, on the
+    live-view display)? Success is cached 10 min, failure 30 s."""
+    ttl = 600 if _BROWSER_PROBE["ok"] else 30
+    if _BROWSER_PROBE["ok"] is not None and time.time() - _BROWSER_PROBE["at"] < ttl:
+        return _BROWSER_PROBE["ok"], _BROWSER_PROBE["error"]
+    ok, err = False, None
+    try:
+        from playwright.async_api import async_playwright
+
+        pw = await async_playwright().start()
+        try:
+            # Exactly how a teach / replay session launches it: headed, on the
+            # live-view display. A headless launch would pass without Xvfb.
+            browser = await pw.chromium.launch(
+                headless=False,
+                executable_path=CHROMIUM_PATH,
+                args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+            )
+            await browser.close()
+            ok = True
+        finally:
+            await pw.stop()
+    except ImportError:
+        err = "playwright_missing"
+    except Exception as exc:  # noqa: BLE001
+        err = "no_display" if "X server" in str(exc) or "DISPLAY" in str(exc) else f"browser_launch_failed:{type(exc).__name__}"
+    _BROWSER_PROBE.update(at=time.time(), ok=ok, error=err)
+    return ok, err
+
+
+@app.get("/api/v4/capabilities", dependencies=[Depends(require_api_token)])
+async def capabilities():
+    """What SmartPR's Teach Clara availability probe needs to know."""
+    busy = active_session()
+    # While a session runs, report the last probe (None = not probed yet).
+    if busy:
+        browser_ok, browser_err = _BROWSER_PROBE["ok"], _BROWSER_PROBE["error"]
+    else:
+        browser_ok, browser_err = await _probe_browser()
+    return {
+        "teach": True,
+        "drive": True,
+        "secureFill": True,
+        "protocol": TEACH_PROTOCOL,
+        "browser": browser_ok,
+        "browserError": browser_err,
+        "display": bool(os.environ.get("DISPLAY")),
+        "liveView": bool(_base()) and os.path.isdir(NOVNC_DIR),
+        "busy": bool(busy),
+    }
 
 
 @app.post("/api/v4/teach/{session_id}/stop", dependencies=[Depends(require_api_token)])

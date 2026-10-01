@@ -76,4 +76,47 @@ export const DOM_HELPERS_JS = String.raw`
     for (var i = 0; i < all.length; i++) if (visible(all[i])) return all[i];
     return null;
   }
+
+  // Sensitive inputs (passwords, SSNs, one-time codes, card numbers): their
+  // values are never read, and they are masked on screen (live view and any
+  // screenshot show dots), whatever the portal's own input type says.
+  function sensitiveKind(el) {
+    if (!el || !el.tagName || !/^(INPUT|TEXTAREA)$/.test(el.tagName)) return "";
+    var type = (el.getAttribute("type") || "").toLowerCase();
+    if (/^(hidden|checkbox|radio|submit|button|file|reset|image)$/.test(type)) return "";
+    if (type === "password") return "password";
+    var ac = (el.getAttribute("autocomplete") || "").toLowerCase();
+    if (ac.indexOf("one-time-code") >= 0) return "code";
+    if (/current-password|new-password/.test(ac)) return "password";
+    if (/cc-(number|csc)/.test(ac)) return "payment";
+    var hint = [el.getAttribute("name"), el.id, el.getAttribute("placeholder"), el.getAttribute("aria-label"), labelFor(el)].join(" ").toLowerCase();
+    if (/\bssn\b|social security|seguro social|\bitin\b/.test(hint)) return "ssn";
+    if (/\botp\b|one[- ]?time|verification code|c[oó]digo de (verificaci|seguridad|acceso|confirmaci)|security code|\b2fa\b|\bmfa\b|c[oó]digo (sms|otp)/.test(hint)) return "code";
+    if (/\bcvv\b|\bcvc\b|card number|n[uú]mero de (la )?tarjeta|routing number|n[uú]mero de ruta/.test(hint)) return "payment";
+    if (/passw|contrase[nñ]a|\bclave de acceso\b|\bpin\b/.test(hint)) return "password";
+    return "";
+  }
+
+  function maskSensitive() {
+    var all = document.querySelectorAll("input, textarea");
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (el.getAttribute("data-clara-sensitive")) continue;
+      var k = sensitiveKind(el);
+      if (!k) continue;
+      el.setAttribute("data-clara-sensitive", k);
+      el.setAttribute("autocomplete", el.getAttribute("autocomplete") || "off");
+      if ((el.getAttribute("type") || "").toLowerCase() !== "password") el.style.setProperty("-webkit-text-security", "disc", "important");
+    }
+  }
+
+  function sensitiveFields() {
+    var out = [];
+    var all = document.querySelectorAll("[data-clara-sensitive]");
+    for (var i = 0; i < all.length && out.length < 6; i++) {
+      if (!visible(all[i])) continue;
+      out.push({ label: labelFor(all[i]), selector: selectorFor(all[i]), kind: all[i].getAttribute("data-clara-sensitive") });
+    }
+    return out;
+  }
 `;

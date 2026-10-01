@@ -13,10 +13,11 @@
  * bound to (or "ask each time"); secrets (passwords, codes), SSN/EIN-type
  * IDs, uploads and payment screens become human pause steps.
  *
- * Screenshots: the worker may attach a per-action screenshot URL (owner
- * token-gated, served by the worker). It is kept on the session view for
- * the person reviewing their own recording and is NEVER written into the
- * saved routine (the skill).
+ * Screenshots: each action may carry SmartPR's owner-gated proxy path for
+ * its screenshot (never a worker URL with its viewer token). It is kept on
+ * the session view for the person reviewing their own recording and is
+ * NEVER written into the saved routine (the skill). The worker keeps no
+ * screenshot for a step on a sensitive field.
  */
 import type { BilingualText } from "../skills/skill";
 import { passportFieldName } from "../skills/skillCard";
@@ -67,6 +68,10 @@ const MAX_WAIT_MS = 120_000;
 export function safeScreenshotRef(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const s = raw.trim();
+  // SmartPR's owner-gated screenshot proxy (teachSessions.teachShotPath).
+  if (/^\/api\/teach-sessions\/[\w-]+\/shots\/\d+$/.test(s)) return s;
+  // Never hand a credential-bearing URL (e.g. a worker viewer token) to the page.
+  if (/[?&](token|key|sig|signature)=/i.test(s)) return null;
   if (/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(s) && s.length <= 400_000) return s;
   if (s.length > 600) return null;
   try {
@@ -101,7 +106,8 @@ export function actionFromEvent(ev: TeachEvent, prev: RecordedAction[], extra: {
   if (ev.kind === "fill") {
     if (ev.valueKind === "empty") return null; // touched but left blank
     const kind: RecordedActionKind = ev.valueKind === "file" ? "upload" : ev.role === "combobox" ? "select" : "type";
-    const pause: TeachGate | null = ev.valueKind === "file" ? "upload" : ev.valueKind === "secret" ? "login" : null;
+    const secretGate: TeachGate = ev.secretKind === "ssn" ? "identity" : ev.secretKind === "code" ? "mfa" : ev.secretKind === "payment" ? "payment" : "login";
+    const pause: TeachGate | null = ev.valueKind === "file" ? "upload" : ev.valueKind === "secret" ? secretGate : null;
     const last = prev.at(-1);
     // Typing then changing the same field again is one action.
     if (last && (last.kind === "type" || last.kind === "select") && last.kind === kind && urlKey(last.url) === urlKey(ev.url) && ((ev.selector && last.selector === ev.selector) || normalizeLabel(last.label) === normalizeLabel(ev.label))) {

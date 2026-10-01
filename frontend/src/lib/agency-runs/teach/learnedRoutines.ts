@@ -14,7 +14,15 @@ import type { LearnedRoutineSummary } from "./learnedRoutineMatch";
 export { routineForRow, type LearnedRoutineSummary } from "./learnedRoutineMatch";
 
 interface RoutineChecks {
-  routine?: { requirement_key?: string | null; portal_host?: string; start_url?: string; validation?: { status?: string }; learned_at?: string };
+  routine?: {
+    name?: string;
+    agency?: string | null;
+    requirement_key?: string | null;
+    portal_host?: string;
+    start_url?: string;
+    validation?: { status?: string; checkedAt?: string };
+    learned_at?: string;
+  };
 }
 
 export function routineOf(row: StoredSkill): RoutineChecks["routine"] | null {
@@ -27,6 +35,10 @@ export function summarizeRoutine(row: StoredSkill, viewer: SkillViewer): Learned
   if (!r || row.status === "rejected") return null;
   return {
     ref: row.id,
+    name: r.name || `${row.form} — ${row.skill.portal.name}`,
+    agency: r.agency ?? null,
+    version: row.version,
+    validation: { status: "pass", checked_at: r.validation?.checkedAt ?? null },
     requirement_key: r.requirement_key ?? null,
     portal_host: r.portal_host ?? row.portal_host,
     portal_name: row.skill.portal.name,

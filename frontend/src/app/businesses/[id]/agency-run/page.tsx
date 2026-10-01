@@ -52,6 +52,8 @@ import {
 } from "../../../../lib/agency-runs/sensitiveFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
+import { ClaraRoutineWorkspace } from "./ClaraRoutineWorkspace";
+import { parseClaraWorkspace } from "../../../components/clara/claraWorkspaceLink";
 import { TeachClaraEntry } from "./TeachClaraEntry";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
@@ -123,8 +125,30 @@ function SegmentedBar({ known, total }: { known: number; total: number }) {
   );
 }
 
-export default function AgencyRunPage({ params }: { params: Promise<{ id: string }> }) {
+/**
+ * ?mode=teach|fill opens the workspace in routine mode (Teach Clara / Fill
+ * with Clara for one requirement); anything else is the filing run page.
+ */
+export default function AgencyRunRoute({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id: businessId } = use(params);
+  const sp = use(searchParams);
+  const lang = useLang();
+  const routine = useMemo(() => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(sp ?? {})) if (typeof v === "string") q.set(k, v);
+    return parseClaraWorkspace(q.toString());
+  }, [sp]);
+  if (routine) return <ClaraRoutineWorkspace businessId={businessId} ctx={routine} lang={lang} />;
+  return <AgencyRunPage businessId={businessId} />;
+}
+
+function AgencyRunPage({ businessId }: { businessId: string }) {
   const lang = useLang();
   const router = useRouter();
   /** Back returns to the previous screen (intake, requirements, business

@@ -253,7 +253,16 @@ function onFill(state: TeachState, ev: TeachFillEvent): void {
     required: false,
     fallback: "pause_and_ask" as const,
   };
-  if (ev.valueKind === "secret") return setGate(state, step, step.gate === "mfa" ? "mfa" : "login", "detected");
+  if (ev.valueKind === "secret") {
+    // What kind of secret decides whose step this is: an SSN screen is an
+    // identity step, a one-time code is MFA, a card number is payment.
+    const gate: TeachGate =
+      ev.secretKind === "ssn" ? "identity"
+      : ev.secretKind === "code" ? "mfa"
+      : ev.secretKind === "payment" ? "payment"
+      : step.gate === "mfa" ? "mfa" : "login";
+    return setGate(state, step, gate, "detected");
+  }
   // "Código postal" / "Código NAICS" are passport fields, not a code screen.
   if (MFA_LABEL.test(ev.label) && proposeMapping(ev.label, ev.valueKind)?.confidence !== "high") {
     return setGate(state, step, "mfa", "detected");

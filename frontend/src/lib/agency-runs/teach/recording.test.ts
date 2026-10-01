@@ -79,7 +79,10 @@ describe("recorder event → step normalization", () => {
   });
 
   it("accepts only safe screenshot references", () => {
-    assert.equal(safeScreenshotRef("https://worker.example/api/v4/teach/t/shots/3?token=x"), "https://worker.example/api/v4/teach/t/shots/3?token=x");
+    // A worker URL carrying its viewer token never reaches the page; SmartPR's proxy path does.
+    assert.equal(safeScreenshotRef("https://worker.example/api/v4/teach/t/shots/3?token=x"), null);
+    assert.equal(safeScreenshotRef("/api/teach-sessions/abc-123/shots/3"), "/api/teach-sessions/abc-123/shots/3");
+    assert.equal(safeScreenshotRef("/api/teach-sessions/abc/shots/3?token=x"), null);
     assert.equal(safeScreenshotRef("javascript:alert(1)"), null);
     assert.equal(safeScreenshotRef("http://evil.example/x.png"), null);
     assert.ok(safeScreenshotRef("data:image/png;base64,iVBORw0KGgo="));

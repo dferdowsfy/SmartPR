@@ -6,9 +6,15 @@
  * Passport values are loaded once per session only to build the scrub list
  * for sanitizeTeachEvent; they are never stored on the session view,
  * returned to the client or written into a skill.
+ *
+ * Sensitive values (passwords, SSNs, one-time codes) never pass through
+ * here except on their way to the worker in `secureFillTeach`, which keeps
+ * no copy. Per-step screenshots are served through SmartPR's owner-gated
+ * proxy (`teachShot`); the worker's viewer token never reaches the client
+ * through the action log.
  */
 import { randomUUID } from "node:crypto";
-import { passportScrubValues, sanitizeTeachEvent } from "./events";
+import { passportScrubValues, sanitizeTeachEvent, type SecretFieldRef } from "./events";
 import {
   addSkippedStep,
   answerQuestion,
@@ -41,9 +47,17 @@ import {
 
 export interface TeachWorker {
   start(input: { startUrl: string; allowedDomains: string[] }): Promise<{ sessionId: string; liveUrl: string | null }>;
-  events(sessionId: string, after: number): Promise<{ items: { seq: number; event: unknown; screenshot?: unknown }[]; nextAfter: number; status: string }>;
+  /** `shot`: the worker kept a screenshot for this step; `screenshot`: legacy workers' direct URL. */
+  events(sessionId: string, after: number): Promise<{ items: { seq: number; event: unknown; shot?: boolean; screenshot?: unknown }[]; nextAfter: number; status: string }>;
   stop(sessionId: string): Promise<void>;
+  /** Type a one-time sensitive value into the live portal; the worker keeps no copy. */
+  secureFill?(sessionId: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason?: string }>;
+  /** A step's screenshot bytes (server-side, authenticated). */
+  shot?(sessionId: string, seq: number): Promise<ArrayBuffer | null>;
 }
+
+/** Where the person is in the walkthrough — the chat's stage line. */
+export type TeachStage = "recording" | "your_turn" | "mapping" | "ready_to_review" | "reviewing" | "saved";
 
 interface LiveTeach {
   state: TeachState;
@@ -62,6 +76,13 @@ interface LiveTeach {
   requirementKey: string | null;
   /** Last validation; cleared whenever the routine changes. */
   validation: RoutineValidation | null;
+  /** Agency (for the routine's metadata). */
+  agency: string | null;
+  /** Sensitive inputs on the current screen (labels/selectors only). */
+  secretFields: SecretFieldRef[];
+  /** Step seqs whose screenshot the worker kept, and legacy direct URLs (server-side only). */
+  shotSeqs: Set<number>;
+  legacyShotUrls: Map<number, string>;
 }
 
 export interface TeachSessionView {
@@ -89,6 +110,12 @@ export interface TeachSessionView {
   requirement_key: string | null;
   validation: RoutineValidation | null;
   worker_status: string;
+  agency: string | null;
+  stage: TeachStage;
+  /** Sensitive inputs visible on the portal's current screen — where a secure one-time value can go. */
+  secret_fields: SecretFieldRef[];
+  /** The human-only step the current screen is (login, MFA, CAPTCHA, payment …), if any. */
+  current_gate: TeachGate | null;
 }
 
 const globalStore = globalThis as typeof globalThis & { __smartprTeachSessions?: Map<string, LiveTeach> };
@@ -109,8 +136,18 @@ function owned(id: string, viewer: SkillViewer): LiveTeach {
   return live;
 }
 
+function stageOf(live: LiveTeach): TeachStage {
+  if (live.status === "saved") return "saved";
+  if (live.status === "finished") return live.validation ? "reviewing" : "ready_to_review";
+  const cur = live.state.steps.at(-1);
+  if (cur?.gate && cur.gate !== "submit") return "your_turn";
+  if (openQuestions(live.state).length) return "mapping";
+  return "recording";
+}
+
 export function viewOf(live: LiveTeach): TeachSessionView {
   const s = live.state;
+  const cur = s.steps.at(-1) ?? null;
   return {
     id: s.id,
     status: live.status,
@@ -144,7 +181,43 @@ export function viewOf(live: LiveTeach): TeachSessionView {
     requirement_key: live.requirementKey ?? null,
     validation: live.validation ?? null,
     worker_status: live.workerStatus,
+    agency: live.agency ?? null,
+    stage: stageOf(live),
+    secret_fields: live.status === "recording" ? live.secretFields ?? [] : [],
+    current_gate: live.status === "recording" ? cur?.gate ?? null : null,
   };
+}
+
+/** The owner-gated proxy path for one step's screenshot (no worker token). */
+export function teachShotPath(sessionId: string, seq: number): string {
+  return `/api/teach-sessions/${encodeURIComponent(sessionId)}/shots/${seq}`;
+}
+
+/** Map a worker failure to a specific, person-facing teach error. */
+function workerFailure(err: unknown): TeachSessionError {
+  const status = Number((err as { status?: unknown })?.status ?? NaN);
+  if (status === 409) {
+    return new TeachSessionError(409, "worker_busy", "Clara's recording browser is busy with another session. Try again in a few minutes.", {
+      en: "Clara's recording browser is busy with another session right now. Try again in a few minutes.",
+      es: "El navegador de grabación de Clara está ocupado con otra sesión. Intenta de nuevo en unos minutos.",
+    });
+  }
+  if (status === 401 || status === 403) {
+    return new TeachSessionError(503, "worker_unauthorized", "Clara's recording browser refused SmartPR's connection.", {
+      en: "Clara's recording browser refused SmartPR's connection.",
+      es: "El navegador de grabación de Clara rechazó la conexión de SmartPR.",
+    });
+  }
+  if (status === 400) {
+    return new TeachSessionError(400, "worker_rejected", "The recording browser couldn't open that address.", {
+      en: "The recording browser couldn't open that address. Check the portal link (it must be https).",
+      es: "El navegador de grabación no pudo abrir esa dirección. Revisa el enlace del portal (debe ser https).",
+    });
+  }
+  return new TeachSessionError(503, "worker_unreachable", "Clara's recording browser didn't answer.", {
+    en: "Clara's recording browser didn't answer, so the recording couldn't start. Try again in a moment.",
+    es: "El navegador de grabación de Clara no respondió, así que no se pudo empezar a grabar. Intenta de nuevo en un momento.",
+  });
 }
 
 export async function startTeachSession(
@@ -158,6 +231,7 @@ export async function startTeachSession(
     portalName: string;
     form: string;
     requirementKey?: string | null;
+    agency?: string | null;
   }
 ): Promise<TeachSessionView> {
   const decision = teachDomainDecision(input.startUrl, { isAdmin: input.viewer.isAdmin });
@@ -173,7 +247,12 @@ export async function startTeachSession(
       sessions().set(id, live);
     }
   }
-  const worker = await deps.worker.start({ startUrl: input.startUrl, allowedDomains: decision.allowedDomains });
+  let worker: { sessionId: string; liveUrl: string | null };
+  try {
+    worker = await deps.worker.start({ startUrl: input.startUrl, allowedDomains: decision.allowedDomains });
+  } catch (err) {
+    throw workerFailure(err);
+  }
   const id = randomUUID();
   const live: LiveTeach = {
     state: newTeachState({ id, ownerUserId: input.viewer.userId, tier: input.viewer.isAdmin ? "admin" : input.tier, portalName, form, startUrl: input.startUrl }),
@@ -189,6 +268,10 @@ export async function startTeachSession(
     actions: [],
     requirementKey: input.requirementKey ? input.requirementKey.slice(0, 120) : null,
     validation: null,
+    agency: input.agency ? input.agency.trim().slice(0, 120) || null : null,
+    secretFields: [],
+    shotSeqs: new Set(),
+    legacyShotUrls: new Map(),
   };
   sessions().set(id, live);
   return viewOf(live);
@@ -198,14 +281,30 @@ export async function startTeachSession(
 export async function syncTeachSession(deps: { worker: TeachWorker }, viewer: SkillViewer, id: string): Promise<TeachSessionView> {
   const live = owned(id, viewer);
   if (live.status === "recording") {
-    const batch = await deps.worker.events(live.workerSessionId, live.cursor);
+    let batch: Awaited<ReturnType<TeachWorker["events"]>>;
+    try {
+      batch = await deps.worker.events(live.workerSessionId, live.cursor);
+    } catch (err) {
+      throw workerFailure(err);
+    }
     let state = live.state;
-    for (const item of batch.items) {
+    const items = batch.items.map((item) => {
+      // Screenshots go through SmartPR's owner-gated proxy; a legacy
+      // worker's direct (viewer-token) URL stays server-side.
+      const legacy = typeof item.screenshot === "string" && item.screenshot ? item.screenshot : null;
+      if (legacy) live.legacyShotUrls.set(item.seq, legacy);
+      const has = item.shot === true || Boolean(legacy);
+      if (has) live.shotSeqs.add(item.seq);
+      return { seq: item.seq, event: item.event, screenshot: has ? teachShotPath(id, item.seq) : null };
+    });
+    for (const item of items) {
       const ev = sanitizeTeachEvent(item.event, live.secrets);
-      if (ev) state = applyTeachEvent(state, ev);
+      if (!ev) continue;
+      state = applyTeachEvent(state, ev);
+      if (ev.kind === "page") live.secretFields = ev.secretFields;
     }
     live.state = state;
-    live.actions = normalizeRecorderItems(batch.items, live.secrets, live.actions ?? []);
+    live.actions = normalizeRecorderItems(items, live.secrets, live.actions ?? []);
     live.cursor = batch.nextAfter;
     live.workerStatus = batch.status;
     if (batch.items.length) live.validation = null;
@@ -324,7 +423,7 @@ export async function saveTeachSession(
   deps: { repo: SkillRepo },
   viewer: SkillViewer,
   id: string,
-  opts: { submit: boolean; learn?: boolean }
+  opts: { submit: boolean; learn?: boolean; name?: string | null }
 ): Promise<StoredSkill> {
   const live = owned(id, viewer);
   if (opts.learn && live.validation?.status !== "pass") {
@@ -339,6 +438,8 @@ export async function saveTeachSession(
     let row = await saveTaughtSkill(deps.repo, viewer, skill, live.state.tier);
     if (opts.learn && live.validation) {
       const routine = {
+        name: (opts.name ?? "").replace(/\s+/g, " ").trim().slice(0, 120) || `${live.state.form} — ${live.state.portalName}`,
+        agency: live.agency,
         requirement_key: live.requirementKey,
         portal_host: new URL(skill.portal.base_url).hostname.replace(/^www\./, "").toLowerCase(),
         start_url: live.state.startUrl,
@@ -357,6 +458,39 @@ export async function saveTeachSession(
     if (err instanceof SkillLibraryError) throw new TeachSessionError(err.status, err.code, err.message);
     throw err;
   }
+}
+
+/**
+ * One-time sensitive input (password, SSN, verification code): sent
+ * straight to the live recording browser and dropped. Never stored on the
+ * session, never logged, never part of the recording (the recorder reports
+ * the field as "secret" without reading it).
+ */
+export async function secureFillTeach(deps: { worker: TeachWorker }, viewer: SkillViewer, id: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason: string | null }> {
+  const live = owned(id, viewer);
+  if (live.status !== "recording") throw new TeachSessionError(409, "not_recording", "The portal browser is closed.");
+  if (!deps.worker.secureFill) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't take secure input yet.");
+  if (typeof input.value !== "string" || !input.value || input.value.length > 256) throw new TeachSessionError(400, "bad_value", "Type the value first.");
+  // Only a field the recorder reported as sensitive on this screen (or the focused / first empty one).
+  const selector = input.selector && (live.secretFields ?? []).some((f) => f.selector === input.selector) ? input.selector : null;
+  try {
+    const out = await deps.worker.secureFill(live.workerSessionId, { value: input.value, selector });
+    return { ok: out.ok === true, reason: out.ok ? null : out.reason ?? "no_field" };
+  } catch (err) {
+    throw workerFailure(err);
+  }
+}
+
+/** A step screenshot for the session's owner (proxied from the worker). */
+export async function teachShot(deps: { worker: TeachWorker }, viewer: SkillViewer, id: string, seq: number): Promise<ArrayBuffer | null> {
+  const live = owned(id, viewer);
+  if (!live.shotSeqs?.has(seq)) return null;
+  const legacy = live.legacyShotUrls?.get(seq);
+  if (legacy) {
+    const res = await fetch(legacy, { cache: "no-store" }).catch(() => null);
+    return res && res.ok ? res.arrayBuffer() : null;
+  }
+  return deps.worker.shot ? deps.worker.shot(live.workerSessionId, seq) : null;
 }
 
 /** Read-only copy of a session's state (owner only) — for the live entry check. */

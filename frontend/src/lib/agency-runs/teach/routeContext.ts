@@ -7,7 +7,7 @@ import { getCurrentUser } from "../../supabase/server";
 import { isUserAdmin } from "../../admin";
 import { MemorySkillRepo, PgSkillRepo, SkillLibraryError, type SkillRepo, type SkillViewer } from "../skills/skillLibrary";
 import { TeachSessionError, type TeachWorker } from "./teachSessions";
-import { fetchWorkerTeachEvents, startWorkerTeach, stopWorkerTeach } from "./teachWorkerClient";
+import { fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach } from "./teachWorkerClient";
 import type { TeachTier } from "./teachSession";
 
 export interface RouteViewer extends SkillViewer {
@@ -58,7 +58,7 @@ export async function skillRepo(): Promise<SkillRepo> {
 }
 
 export const workerDeps: { worker: TeachWorker } = {
-  worker: { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach },
+  worker: { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, shot: fetchWorkerTeachShot },
 };
 
 export function unauthorized(): Response {
@@ -86,7 +86,8 @@ export function errorResponse(err: unknown): Response {
 export async function replayDeps(): Promise<import("../replay/replaySessions").ReplayDeps> {
   const { startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
   const { agentRelocator } = await import("../replay/relocate");
-  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate: agentRelocator(await modelPrompter(80)) };
+  const { secureFillWorker } = await import("./teachWorkerClient");
+  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate: agentRelocator(await modelPrompter(80)), secureFill: secureFillWorker };
 }
 
 /**

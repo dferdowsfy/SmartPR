@@ -9,11 +9,10 @@
  *    portal yet (no skill and no described playbook): "Clara hasn't learned
  *    this portal yet — Teach Clara."
  *
- * Both open the record-first Teach Clara dialog on the filing's portal: it
- * starts recording right away (live browser), validates the recording and
- * saves it as a learned routine. When the live recorder isn't connected or
- * on a phone, the dialog explains why and offers a screen-recording upload
- * or typed steps instead.
+ * Both open the Clara workspace in teach mode for the filing's requirement
+ * (chat-first recording with the live browser beside it, validation, named
+ * save as a learned routine). When the recorder isn't available the
+ * workspace says exactly why.
  */
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,8 +20,8 @@ import { GraduationCap } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
 import type { AgencyFilingType } from "../../../../lib/agency-runs/types";
-import { TeachRecordDialog } from "../../../components/clara/TeachRecordDialog";
 import type { GuidedSubject } from "../../../components/clara/guidedFormModel";
+import { claraWorkspaceHref } from "../../../components/clara/claraWorkspaceLink";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -53,8 +52,7 @@ export function TeachClaraEntry(props: {
   const router = useRouter();
   const [state, setState] = useState<MatchState | null>(null);
   const [starting, setStarting] = useState(false);
-  const [teaching, setTeaching] = useState(false);
-  const dialog = teaching ? <TeachRecordDialog subject={teachSubject(filingType, lang)} language={lang === "es" ? "es" : "en"} businessId={businessId} onClose={() => setTeaching(false)} /> : null;
+  const teach = () => router.push(claraWorkspaceHref("teach", businessId, teachSubject(filingType, lang)));
 
   useEffect(() => {
     let cancelled = false;
@@ -121,7 +119,7 @@ export function TeachClaraEntry(props: {
       <>
       <button
         type="button"
-        onClick={() => setTeaching(true)}
+        onClick={teach}
         data-testid="teach-clara-button"
         className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
         title={
@@ -133,7 +131,6 @@ export function TeachClaraEntry(props: {
         <GraduationCap className="h-3.5 w-3.5" />
         {L("Teach Clara", "Enséñale a Clara", lang)}
       </button>
-      {dialog}
       </>
     );
   }
@@ -149,10 +146,9 @@ export function TeachClaraEntry(props: {
           lang
         )}
       </p>
-      <button type="button" onClick={() => setTeaching(true)} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[14px] font-bold text-[#161616] hover:bg-white">
+      <button type="button" onClick={teach} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[14px] font-bold text-[#161616] hover:bg-white">
         {L("Teach Clara", "Enséñale a Clara", lang)}
       </button>
-      {dialog}
     </div>
   );
 }

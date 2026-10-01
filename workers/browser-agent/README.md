@@ -21,7 +21,10 @@ Next.js client already calls (`POST/GET /api/v3/sessions`,
 - `GET /api/v4/browsers?agentSessionId=` — Cloud-shaped browser listing with `liveUrl`
 - `POST /api/v4/teach` `{startUrl, allowedDomains, recorderScript}` — Teach Clara: open a plain Playwright browser (no agent) with SmartPR's structure-only recorder injected; returns `{sessionId, liveUrl}`
 - `GET /api/v4/teach/{id}/events?after=` — recorder events (labels, roles, selectors, page order, value *kind* — never values) with `nextAfter` cursor
+- `GET /api/v4/teach/{id}/shots/{seq}` — one step's screenshot (bearer token; SmartPR proxies it to the owner). None is kept for steps on sensitive fields
+- `POST /api/v4/teach/{id}/secure-fill` `{value, selector?}` — type a one-time sensitive value (password, SSN, verification code) into the live portal field; never logged, stored or echoed. Works for teach and replay (drive) sessions
 - `POST /api/v4/teach/{id}/stop` — close the teach browser
+- `GET /api/v4/capabilities` (bearer) — what SmartPR's Teach Clara probe checks: `teach`, `drive`, `secureFill`, `protocol`, `browser` (a headed Chromium actually launched on the display), `liveView`, `busy`
 - `GET /vnc/vnc.html?token=` — token-gated live viewer (noVNC, interactive)
 - `WS /vnc/websock?token=` — bridges the viewer to the session's browser
 
@@ -55,6 +58,10 @@ owner-gated API — the same privacy posture as the Cloud viewer.
    Omit `AGENT_PROVIDER` (or set `browser_use_cloud`) to keep using Browser
    Use Cloud with `BROWSER_USE_MODEL` (default `gpt-5.6-luna`).
 
+   Teach Clara and "Fill with Clara" replays always need this worker
+   (`SELF_HOSTED_AGENT_URL` + `WORKER_API_TOKEN`), whatever `AGENT_PROVIDER`
+   says — Browser Use Cloud can't inject the recorder.
+
 ## Teach Clara sessions
 
 Teach mode lets a person walk a filing once in the live viewer while the
@@ -68,6 +75,19 @@ are queued, and SmartPR's server sanitizes every event again.
 | `TEACH_TIMEOUT_MIN` | `45` (optional) — maximum length of a teach session; the browser closes after it |
 | `CHROMIUM_PATH` | optional — a specific Chromium build for Playwright |
 | `TEACH_IGNORE_HTTPS_ERRORS` | development only (local self-signed fixtures); never set in production |
+
+Sensitive fields (passwords, SSNs, one-time codes, card numbers) are
+detected in the page and masked on screen (live view and screenshots show
+dots); the recorder reports them as "secret" without reading them. A person
+can type such a value into Clara's masked one-time card instead of the live
+view; SmartPR sends it once to `secure-fill` and keeps nothing.
+
+**Is it working?** SmartPR probes the worker before every teach session
+(`GET /healthz`, then `GET /api/v4/capabilities` with the token) and shows a
+specific reason when it can't record: not configured, unreachable, token
+mismatch, outdated worker, Chromium can't launch on the display (e.g. Xvfb
+not running), or live view not wired (`PUBLIC_WORKER_URL`, noVNC). Admins
+also see the operator hint in the Teach Clara chat.
 
 On the Next.js side, `TEACH_APPROVED_DOMAINS` (comma-separated hosts) lists
 non-government sites anyone may teach on; government domains are always

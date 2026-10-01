@@ -2,7 +2,8 @@
 
 // "Fill with Clara" on a row Clara can't file by herself yet: open Clara with
 // the requirement's context and say plainly what she CAN do here, instead of
-// hiding the action.
+// hiding the action. "Teach Clara" goes straight to the Clara workspace
+// (teach mode) for this requirement — no second explanatory step.
 
 import { ClipboardList, ExternalLink, GraduationCap, MessageCircle } from "lucide-react";
 import { ClaraModal } from "./ClaraModal";
@@ -30,8 +31,8 @@ export function ClaraExplainDialog({ subject, language, onClose, onGuidedForm, o
         <button type="button" className="cl-btn" onClick={() => { onClose(); onGuidedForm(); }}>
           <ClipboardList size={16} aria-hidden="true" /> {es ? "Preparar la información en SmartPR" : "Prepare the information in SmartPR"}
         </button>
-        <button type="button" className="cl-btn cl-btn-ghost" onClick={() => { onClose(); onTeach(); }}>
-          <GraduationCap size={16} aria-hidden="true" /> {es ? "Enséñale este portal una vez" : "Show her this portal once"}
+        <button type="button" className="cl-btn cl-btn-ghost" onClick={() => { onClose(); onTeach(); }} data-testid="clara-explain-teach" title={es ? "Abre a Clara en el portal: hazlo una vez y ella aprende la rutina" : "Opens Clara on the portal: do it once and she learns the routine"}>
+          <GraduationCap size={16} aria-hidden="true" /> {es ? "Enséñale a Clara" : "Teach Clara"}
         </button>
         <button type="button" className="cl-btn cl-btn-ghost" onClick={() => { onClose(); openSmartPRChat(es ? `¿Cómo completo: ${subject.name}?` : `How do I complete: ${subject.name}?`); }}>
           <MessageCircle size={16} aria-hidden="true" /> {es ? "Preguntarle a Clara" : "Ask Clara"}

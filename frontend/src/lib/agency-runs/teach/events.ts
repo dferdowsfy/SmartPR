@@ -32,6 +32,17 @@ export type TeachControlRole =
   | "tab"
   | "textbox";
 
+/** What kind of sensitive value a field takes (never the value itself). */
+export type SecretKind = "password" | "ssn" | "code" | "payment";
+const SECRET_KINDS: SecretKind[] = ["password", "ssn", "code", "payment"];
+
+/** A visible sensitive input on the screen — where a one-time secure value goes. */
+export interface SecretFieldRef {
+  label: string;
+  selector: string | null;
+  kind: SecretKind;
+}
+
 export interface TeachPageEvent {
   kind: "page";
   url: string;
@@ -40,6 +51,8 @@ export interface TeachPageEvent {
   hasPassword: boolean;
   hasCaptcha: boolean;
   hasFileInput: boolean;
+  /** Visible sensitive inputs (password, SSN, one-time code, card). */
+  secretFields: SecretFieldRef[];
 }
 
 export interface TeachClickEvent {
@@ -68,6 +81,8 @@ export interface TeachFillEvent {
   required: boolean;
   /** Native <select> only: the picked option's text (same rules as click). */
   optionText: string;
+  /** Sensitive field (valueKind "secret"): which kind. */
+  secretKind: SecretKind | null;
 }
 
 export type TeachEvent = TeachPageEvent | TeachClickEvent | TeachFillEvent;
@@ -83,6 +98,10 @@ function str(value: unknown): string {
 }
 
 /** Scrub passport values, emails and 4+ digit runs out of visible text. */
+export function scrubVisibleText(text: string, secrets: string[] = []): string {
+  return scrubText(str(text), secrets);
+}
+
 function scrubText(text: string, secrets: string[]): string {
   let out = text;
   for (const secret of secrets) {
@@ -168,6 +187,11 @@ export function sanitizeTeachEvent(raw: unknown, secrets: string[] = []): TeachE
         hasPassword: r.hasPassword === true,
         hasCaptcha: r.hasCaptcha === true,
         hasFileInput: r.hasFileInput === true,
+        secretFields: (Array.isArray(r.secretFields) ? r.secretFields : [])
+          .slice(0, 6)
+          .map((f) => (f && typeof f === "object" ? (f as Record<string, unknown>) : {}))
+          .map((f) => ({ label: text(f.label), selector: scrubSelector(f.selector, secrets), kind: SECRET_KINDS.find((k) => k === f.kind) ?? "password" }))
+          .filter((f) => f.label || f.selector),
       };
     case "click": {
       const role = CLICK_ROLES.find((x) => x === r.role);
@@ -189,7 +213,10 @@ export function sanitizeTeachEvent(raw: unknown, secrets: string[] = []): TeachE
       if (!label) return null;
       const inputType = str(r.inputType).toLowerCase().slice(0, 24);
       let valueKind = VALUE_KINDS.find((k) => k === r.valueKind) ?? "text";
-      if (inputType === "password") valueKind = "secret";
+      let secretKind: SecretKind | null = SECRET_KINDS.find((k) => k === r.secretKind) ?? null;
+      if (inputType === "password") secretKind ??= "password";
+      if (secretKind) valueKind = "secret";
+      else if (valueKind === "secret") secretKind = "password";
       return {
         kind: "fill",
         url,
@@ -200,6 +227,7 @@ export function sanitizeTeachEvent(raw: unknown, secrets: string[] = []): TeachE
         valueKind,
         required: r.required === true,
         optionText: valueKind === "option" ? text(r.optionText) : "",
+        secretKind,
       };
     }
     default:

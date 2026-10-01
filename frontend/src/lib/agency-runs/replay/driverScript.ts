@@ -4,7 +4,8 @@
  * is done by Playwright on the tagged element (real input events).
  *
  *   window.__claraDrive.snapshot() → { url, title, heading, hasPassword,
- *     hasCaptcha, errors[] }  (visible validation messages, trimmed)
+ *     hasCaptcha, errors[], secretFields[] }  (visible validation messages,
+ *     trimmed; sensitive inputs by label/selector — never their values)
  *   window.__claraDrive.locate({ role, label, selector }) →
  *     { ok: true, ref, via: "label" | "selector", tag, type, value }
  *     { ok: false, reason: "not_found" | "ambiguous", seen: string[] }
@@ -47,7 +48,11 @@ ${DOM_HELPERS_JS}
       via: via,
       tag: el.tagName.toLowerCase(),
       type: (el.getAttribute("type") || "").toLowerCase(),
-      value: el.tagName === "SELECT" ? (el.options[el.selectedIndex] ? clean(el.options[el.selectedIndex].text) : "") : clean(el.value !== undefined && el.tagName !== "BUTTON" ? el.value : el.textContent)
+      // A control's caption (select option / button text) — never what is typed in a text field.
+      value: el.tagName === "SELECT" ? (el.options[el.selectedIndex] ? clean(el.options[el.selectedIndex].text) : "")
+        : (el.tagName === "INPUT" && /^(submit|button|reset)$/i.test(el.type || "")) ? clean(el.value)
+        : (el.tagName === "INPUT" || el.tagName === "TEXTAREA") ? ""
+        : clean(el.textContent)
     };
   }
 
@@ -75,6 +80,7 @@ ${DOM_HELPERS_JS}
   }
 
   function snapshot() {
+    maskSensitive();
     var h = firstVisible("h1, h2, legend, [role=heading]");
     var errs = Array.prototype.slice.call(document.querySelectorAll("[role=alert],.error,.errors,.validation-error,.field-validation-error,.invalid-feedback,[aria-invalid=true] + *"))
       .filter(visible).map(function (e) { return clean(e.textContent); }).filter(Boolean).slice(0, 5);
@@ -84,9 +90,15 @@ ${DOM_HELPERS_JS}
       heading: h ? textWithoutControls(h) : "",
       hasPassword: !!firstVisible("input[type=password]"),
       hasCaptcha: !!firstVisible('iframe[src*="recaptcha"],iframe[src*="hcaptcha"],iframe[src*="turnstile"],.g-recaptcha,.h-captcha,[id*="captcha" i],[class*="captcha" i],[name*="captcha" i]'),
-      errors: errs
+      errors: errs,
+      secretFields: sensitiveFields()
     };
   }
+
+  // Sensitive fields stay masked in the live view while Clara fills.
+  document.addEventListener("focusin", function () { maskSensitive(); }, true);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", maskSensitive);
+  else maskSensitive();
 
   window.__claraDrive = { snapshot: snapshot, locate: locate, norm: norm };
 })();`;

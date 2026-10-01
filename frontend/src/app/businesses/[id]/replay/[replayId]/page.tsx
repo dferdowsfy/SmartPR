@@ -12,6 +12,7 @@ import { ArrowLeft, CheckCircle2, Hand, HelpCircle, Loader2, TriangleAlert } fro
 import { useLang } from "../../../../useLang";
 import type { Lang } from "../../../../forms/engine/types";
 import type { ReplayView } from "../../../../../lib/agency-runs/replay/replaySessions";
+import { claraWorkspaceHref } from "../../../../components/clara/claraWorkspaceLink";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 const btn = "rounded-full px-3.5 py-1.5 text-[14px] font-semibold transition disabled:opacity-50";
@@ -176,7 +177,7 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string; r
                           <Link
                             data-testid="replay-reteach"
                             className={ghost}
-                            href={`/businesses/${encodeURIComponent(businessId)}/teach?${new URLSearchParams({ url: replay.skill.base_url, form: replay.skill.form, portal: replay.skill.portal, mode: "live" })}`}
+                            href={claraWorkspaceHref("teach", businessId, { key: replay.skill.form, name: replay.skill.form, agency: replay.skill.portal, portalUrl: replay.skill.base_url })}
                           >
                             {L("Re-teach Clara", "Enséñale otra vez", lang)}
                           </Link>
