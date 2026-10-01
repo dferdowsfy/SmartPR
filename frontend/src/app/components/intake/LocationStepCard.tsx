@@ -11,7 +11,7 @@
 // Census boundaries; the confirmed site then drives the requirements.
 
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { LocationPickerDialog, type PickedSite, type ResolvedPlacement } from "../../businesses/LocationPickerDialog";
 import type { PassportLocationWithGeographies } from "../../locations/geo";
 import { siteLabel, siteLayersCurrent, type IntakeSite, type LocationNeed, type LocationNeedReason } from "../../locations/intakeLocation";
@@ -74,6 +74,7 @@ export function LocationStepCard({
   businessId,
   onConfirm,
   compact = false,
+  summaryRow = false,
 }: {
   lang: Lang;
   need: LocationNeed;
@@ -83,6 +84,11 @@ export function LocationStepCard({
   onConfirm: (site: IntakeSite) => void;
   /** Requirements summary variant: one line. */
   compact?: boolean;
+  /**
+   * Project-summary sidebar variant: a "Site" `<div><dt/><dd/></div>` row
+   * for the summary list — the confirmed pin with Change, or "Find on map".
+   */
+  summaryRow?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [savedFor, setSavedFor] = useState<{ businessId: string; locations: PassportLocationWithGeographies[] } | null>(null);
@@ -92,7 +98,8 @@ export function LocationStepCard({
 
   // The business's saved locations (Passport → Property / Location).
   useEffect(() => {
-    if (!businessId) return;
+    // Only the full card lists saved locations.
+    if (!businessId || compact || summaryRow) return;
     let cancelled = false;
     fetch(`/api/businesses/${encodeURIComponent(businessId)}/locations`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { locations: [] }))
@@ -103,7 +110,7 @@ export function LocationStepCard({
     return () => {
       cancelled = true;
     };
-  }, [businessId]);
+  }, [businessId, compact, summaryRow]);
 
   const pickSaved = async (loc: PassportLocationWithGeographies) => {
     setResolving(loc.id);
@@ -147,6 +154,37 @@ export function LocationStepCard({
       }}
     />
   );
+
+  if (summaryRow) {
+    const checking = site && !siteLayersCurrent(site);
+    return (
+      <div className="spr-loc-summary-row" data-testid="summary-site">
+        <dt>{L("Site", "Sitio", lang)}</dt>
+        <dd>
+          {site ? (
+            <>
+              <span className="spr-loc-summary-label" data-testid="summary-site-label">{siteLabel(site)}</span>
+              {checking && (
+                <span className="spr-loc-summary-checking" role="status">
+                  <Loader2 className="spr-loc-spin" aria-hidden="true" />
+                  {L("Checking site…", "Revisando lugar…", lang)}
+                </span>
+              )}
+              <button type="button" className="spr-link spr-loc-summary-change" onClick={() => setOpen(true)} data-testid="summary-site-change">
+                {L("Change", "Cambiar", lang)}
+              </button>
+            </>
+          ) : (
+            <button type="button" className="spr-loc-summary-find" onClick={() => setOpen(true)} data-testid="summary-site-open">
+              <MapPin aria-hidden="true" />
+              {L("Find on map", "Buscar en el mapa", lang)}
+            </button>
+          )}
+        </dd>
+        {dialog}
+      </div>
+    );
+  }
 
   // Confirmed: "Rules for: <address> · Change".
   if (site) {
@@ -230,30 +268,78 @@ export function LocationStepCard({
  * What the pin resolved on the official maps: "Flood zone AE · Coastal zone ·
  * Zoning C-L · Rustic". Unknown layers are shown subtly (never as "no");
  * the tooltip names the source and dataset date.
+ *
+ * The lookup runs in the background after a site is confirmed and can take a
+ * few seconds, so its state is unmistakable: a body-size spinner line
+ * ("Checking flood zone, zoning and parcel for this site…") over skeleton
+ * chips while it runs, then a "Site checked" line over the real chips. The
+ * wrapper is a polite live region, so the change is also announced.
  */
-function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang }) {
+export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang }) {
   if (!siteLayersCurrent(site)) {
     return (
-      <span className="spr-loc-chips spr-loc-chips-loading" data-testid="location-layer-chips" aria-live="polite">
-        {L("Checking flood, coastal and zoning maps…", "Revisando mapas de inundación, costa y calificación…", lang)}
-      </span>
+      <div
+        className="spr-loc-layers spr-loc-layers-loading"
+        data-testid="location-layer-chips"
+        data-state="loading"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <p className="spr-loc-layers-status" data-testid="location-layers-status">
+          <Loader2 className="spr-loc-layers-icon spr-loc-spin" aria-hidden="true" />
+          <span>{L("Checking flood zone, zoning and parcel for this site…", "Revisando zona inundable, calificación y parcela de este lugar…", lang)}</span>
+        </p>
+        <span className="spr-loc-chips" aria-hidden="true">
+          <span className="spr-loc-chip spr-loc-chip-skeleton" style={{ width: 112 }} />
+          <span className="spr-loc-chip spr-loc-chip-skeleton" style={{ width: 136 }} />
+          <span className="spr-loc-chip spr-loc-chip-skeleton" style={{ width: 96 }} />
+        </span>
+      </div>
     );
   }
   const chips = layerChips(site.layers);
-  if (chips.length === 0) return null;
+  const known = chips.filter((c) => c.status !== "unknown").length;
+  const done = known > 0;
   return (
-    <span className="spr-loc-chips" data-testid="location-layer-chips" aria-label={L("Map facts at the pin", "Datos del mapa en el pin", lang)}>
-      {chips.map((c) => (
-        <span
-          key={c.layer}
-          className={c.status === "unknown" ? "spr-loc-chip spr-loc-chip-unknown" : "spr-loc-chip"}
-          title={lang === "es" ? c.title.es : c.title.en}
-          data-layer={c.layer}
-          data-status={c.status}
-        >
-          {lang === "es" ? c.label.es : c.label.en}
+    <div
+      className={`spr-loc-layers ${done ? "spr-loc-layers-done" : "spr-loc-layers-unavailable"}`}
+      data-testid="location-layer-chips"
+      data-state={done ? "done" : "unavailable"}
+      role="status"
+      aria-live="polite"
+    >
+      <p className="spr-loc-layers-status" data-testid="location-layers-status">
+        {done ? (
+          <CheckCircle2 className="spr-loc-layers-icon" aria-hidden="true" />
+        ) : (
+          <AlertCircle className="spr-loc-layers-icon" aria-hidden="true" />
+        )}
+        <span>
+          {done
+            ? L("Site checked on the official maps", "Lugar revisado en los mapas oficiales", lang)
+            : L(
+                "The official maps couldn't be reached. Requirements don't assume anything about this site.",
+                "No se pudo consultar los mapas oficiales. Los requisitos no suponen nada sobre este lugar.",
+                lang
+              )}
         </span>
-      ))}
-    </span>
+      </p>
+      {chips.length > 0 && (
+        <span className="spr-loc-chips" aria-label={L("Map facts at the pin", "Datos del mapa en el pin", lang)}>
+          {chips.map((c) => (
+            <span
+              key={c.layer}
+              className={c.status === "unknown" ? "spr-loc-chip spr-loc-chip-unknown" : "spr-loc-chip"}
+              title={lang === "es" ? c.title.es : c.title.en}
+              data-layer={c.layer}
+              data-status={c.status}
+            >
+              {lang === "es" ? c.label.es : c.label.en}
+            </span>
+          ))}
+        </span>
+      )}
+    </div>
   );
 }

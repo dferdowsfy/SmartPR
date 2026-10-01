@@ -35,6 +35,14 @@ const BIZ = "e2eloc01";
 const BIZ_UUID = "5a0c2d5e-8f7a-4c3b-9e1d-2b6f4a8c0e11";
 
 const failures: string[] = [];
+
+/** The picker is a viewport-fixed modal: its box must sit fully inside the viewport. */
+async function dialogInViewport(page: Page): Promise<{ ok: boolean; detail: string }> {
+  const box = await page.getByTestId("location-picker-dialog").boundingBox();
+  const vp = page.viewportSize()!;
+  const ok = !!box && box.x >= 0 && box.y >= 0 && box.x + box.width <= vp.width + 0.5 && box.y + box.height <= vp.height + 0.5;
+  return { ok, detail: `${JSON.stringify(box)} in ${vp.width}x${vp.height}` };
+}
 function check(name: string, ok: boolean, detail = "") {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
   if (!ok) failures.push(name);
@@ -175,9 +183,15 @@ try {
   check("empty state offers Add location", await page.getByTestId("location-add").isVisible());
   await page.screenshot({ path: path.join(OUT, "loc-1-empty.png"), fullPage: false });
 
+  // Open from a scrolled page: the dialog must still open inside the viewport.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.getByTestId("location-add").click();
   const dialog = page.getByTestId("location-picker-dialog");
   await dialog.waitFor();
+  {
+    const v = await dialogInViewport(page);
+    check("desktop: picker opens fully inside the viewport", v.ok, v.detail);
+  }
   check("confirm is disabled before a point is chosen", await page.getByTestId("location-confirm").isDisabled());
 
   const map = page.getByTestId("location-map-picker");
@@ -316,6 +330,10 @@ try {
   await mobile.getByTestId("passport-location-section").screenshot({ path: path.join(OUT, "loc-4-mobile-saved.png") });
   await mobile.getByTestId("location-edit").tap();
   await mobile.getByTestId("location-picker-dialog").waitFor();
+  {
+    const v = await dialogInViewport(mobile);
+    check("mobile: picker opens fully inside the viewport", v.ok, v.detail);
+  }
   const confirm = (await mobile.getByTestId("location-confirm").boundingBox())!;
   check("mobile: confirm control is on screen and large enough", confirm.y + confirm.height <= 844 && confirm.height >= 44, JSON.stringify(confirm));
   const mapBox = (await mobile.getByTestId("location-map-picker").boundingBox())!;
@@ -333,6 +351,11 @@ try {
   await intake.getByRole("button", { name: "Property / project only" }).click();
   await intake.getByRole("button", { name: /Add your business details/ }).click();
   await intake.getByTestId("intake-find-on-map").first().click();
+  await intake.getByTestId("location-picker-dialog").waitFor();
+  {
+    const v = await dialogInViewport(intake);
+    check("intake: Find on map opens the picker fully inside the viewport", v.ok, v.detail);
+  }
   await intake.getByText("Loading map…").waitFor({ state: "hidden", timeout: 30000 });
   await intake.getByTestId("location-latitude").fill("18.1263");
   await intake.getByTestId("location-longitude").fill("-65.4401");

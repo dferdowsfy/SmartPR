@@ -17,6 +17,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { GovernmentFormRenderer } from "./GovernmentFormRenderer.tsx";
 import { GovernmentFormPreview } from "./GovernmentFormPreview.tsx";
 import { GovernmentFormActions } from "./GovernmentFormActions.tsx";
+import { ModalPortal } from "../../components/ui/ViewportModal.tsx";
 import { GovernmentSubmissionPanel } from "../submission/GovernmentSubmissionPanel.tsx";
 import { governmentFeeText } from "../submission/pr.ts";
 import { validateForm, type FieldError } from "./formValidation.ts";
@@ -395,6 +396,8 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
   );
 
   return (
+    // Portalled to <body>: fixed to the viewport even inside a transformed ancestor.
+    <ModalPortal>
     <div role="dialog" aria-modal="true" data-requirement={props.requirementCode} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }}>
       <div style={{ background: "var(--surface, white)", borderRadius: 12, maxWidth: 820, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
         {/* Header */}
@@ -574,5 +577,6 @@ export function GovernmentFormModal(props: GovernmentFormModalProps) {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }
