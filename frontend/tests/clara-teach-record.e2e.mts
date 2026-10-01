@@ -159,6 +159,29 @@ async function toSpanish(page: Page) {
 const rowsWithMenu = (page: Page) => page.locator('.spr-requirements-main [data-testid="req-group-energy"] .ck-card-line:has([data-testid="row-more"])');
 const rowByName = (page: Page, name: string) => page.locator(".spr-requirements-main .ck-card-line").filter({ has: page.locator(".ck-name", { hasText: name }) }).first();
 
+/** Every learned row: chip, primary button and ⋯ sit inside the row's card (no overflow). */
+async function learnedRowsFit(page: Page, label: string) {
+  const lines = page.locator('.spr-requirements-main .ck-card-line:has([data-testid="row-learned"])');
+  const n = await lines.count();
+  const bad: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const res = await lines.nth(i).evaluate((line) => {
+      const card = (line.closest(".ck-row, .ck-card") as HTMLElement) ?? (line as HTMLElement);
+      const box = card.getBoundingClientRect();
+      const els = [...line.querySelectorAll('[data-testid="row-learned"], [data-testid="row-actions"] > [data-testid="row-cta"], [data-testid="row-more"]')] as HTMLElement[];
+      const out = els
+        .map((e) => ({ e, r: e.getBoundingClientRect() }))
+        .filter(({ r }) => r.width > 0 && (r.left < box.left - 1 || r.right > box.right + 1 || r.top < box.top - 1 || r.bottom > box.bottom + 1))
+        .map(({ e, r }) => `${e.getAttribute("data-testid")} [${Math.round(r.left)}–${Math.round(r.right)}] vs card [${Math.round(box.left)}–${Math.round(box.right)}]`);
+      return { count: els.length, out, scroll: line.scrollWidth > (line as HTMLElement).clientWidth + 1 };
+    });
+    if (res.count < 3) bad.push(`row ${i}: only ${res.count} of chip/button/⋯ found`);
+    bad.push(...res.out.map((o) => `row ${i}: ${o}`));
+    if (res.scroll) bad.push(`row ${i}: line overflows horizontally`);
+  }
+  check(`${label}: learned row chip + button + ⋯ fit inside the row`, n > 0 && bad.length === 0, bad.join(" | ") || `${n} row(s)`);
+}
+
 async function openTeach(page: Page, row: ReturnType<typeof rowByName>) {
   await row.locator('[data-testid="row-more"]').click();
   await row.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
@@ -238,6 +261,8 @@ let shot: Buffer | null = null;
   check("a recording that stops before review does NOT validate", st === "issues" && issues.includes("ends_at_review"), `${st} ${issues.join(",")}`);
   const fix = await dlg.locator('[data-testid="teach-issue"][data-check="ends_at_review"] small').innerText().catch(() => "");
   check("each issue has a one-line fix", /review screen/.test(fix), fix);
+  const head = await dlg.locator('[data-testid="teach-verdict"]').innerText();
+  check("validation header pluralizes (no 'thing(s)')", !/\(s\)/.test(head) && /Fix (1 thing |\d+ things )before Clara learns this/.test(head), head.split("\n")[0]);
   check("no 'Save — learned' while issues remain", (await dlg.locator('[data-testid="teach-save-learned"]').count()) === 0);
   await page.waitForTimeout(300);
   await page.screenshot({ path: path.join(OUT, "desktop_en_validation_issues.png") });
@@ -261,6 +286,7 @@ let shot: Buffer | null = null;
   check("learned row: Re-teach Clara + portal in ⋯", moreItems.some((t) => /Re-teach Clara/.test(t)) && moreItems.some((t) => /portal/i.test(t)), moreItems.join(" | "));
   await page.keyboard.press("Escape");
   await after.scrollIntoViewIfNeeded();
+  await learnedRowsFit(page, "desktop EN");
   await page.screenshot({ path: path.join(OUT, "desktop_en_learned_row.png") });
   await primary.click();
   const fillDlg = page.locator('[data-testid="learned-fill-dialog"]');
@@ -275,6 +301,7 @@ let shot: Buffer | null = null;
     const esLabel = (await esRow.locator('[data-testid="row-actions"] > [data-testid="row-cta"]').first().innerText().catch(() => "")).trim();
     check("ES: learned row primary 'Llenar con Clara' + chip", esLabel === "Llenar con Clara" && /Clara lo aprendió/.test(await esRow.locator('[data-testid="row-learned"]').innerText().catch(() => "")), esLabel);
     await esRow.scrollIntoViewIfNeeded();
+    await learnedRowsFit(page, "desktop ES");
     await page.screenshot({ path: path.join(OUT, "desktop_es_learned_row.png") });
     const other = rowsWithMenu(page).filter({ hasNot: page.locator('[data-testid="row-learned"]') }).first();
     if (await other.count()) {
@@ -305,6 +332,7 @@ let shot: Buffer | null = null;
   check("mobile: learned rows show 'Fill with Clara' + chip", (await learned.count()) > 0 && /Fill with Clara/.test(await learned.innerText()));
   if (await learned.count()) {
     await learned.scrollIntoViewIfNeeded();
+    await learnedRowsFit(page, "mobile EN");
     await page.screenshot({ path: path.join(OUT, "mobile_en_learned_row.png") });
   }
   const row = rowsWithMenu(page).filter({ hasNot: page.locator('[data-testid="row-learned"]') }).first();
@@ -329,6 +357,7 @@ let shot: Buffer | null = null;
     const learnedEs = page.locator('.spr-requirements-main .ck-card-line:has([data-testid="row-learned"])').first();
     if (await learnedEs.count()) {
       await learnedEs.scrollIntoViewIfNeeded();
+      await learnedRowsFit(page, "mobile ES");
       await page.screenshot({ path: path.join(OUT, "mobile_es_learned_row.png") });
     }
   }

@@ -244,13 +244,19 @@ test("learned routine on an answer-only row: Answer stays first, Fill with Clara
   assert.equal(m.more[0].onClick, onFill);
 });
 
-test("RowActions renders the 'Clara learned this' chip (EN/ES)", async () => {
-  const { RowActions } = await import("./RowActions.tsx");
+test("learned chip renders with the row title (RowName), not in the actions column (EN/ES)", async () => {
+  const { RowActions, RowName } = await import("./RowActions.tsx");
   const model = requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop }, onTeach: noop, onLearnedFill: noop, learnedStatus: "learned" }, "en");
-  const html = renderToStaticMarkup(createElement(RowActions, { model, language: "en" }));
-  assert.match(html, /data-testid="row-learned"/);
-  assert.match(html, /Clara learned this/);
-  const htmlEs = renderToStaticMarkup(createElement(RowActions, { model: requirementRowActions({ action: { kind: "form", label: "Completar", onClick: noop }, onTeach: noop, onLearnedFill: noop, learnedStatus: "learned" }, "es"), language: "es" }));
-  assert.match(htmlEs, /Clara lo aprendió/);
-  assert.match(htmlEs, /Llenar con Clara/);
+  const name = renderToStaticMarkup(createElement(RowName, { name: "LUMA interconnection", model, language: "en" }));
+  assert.match(name, /class="ck-name-stack"/);
+  assert.match(name, /data-testid="row-learned"/);
+  assert.match(name, /Clara learned this/);
+  const actions = renderToStaticMarkup(createElement(RowActions, { model, language: "en" }));
+  assert.doesNotMatch(actions, /row-learned/, "the chip no longer widens the fixed actions column");
+  const modelEs = requirementRowActions({ action: { kind: "form", label: "Completar", onClick: noop }, onTeach: noop, onLearnedFill: noop, learnedStatus: "learned" }, "es");
+  assert.match(renderToStaticMarkup(createElement(RowName, { name: "Interconexión", model: modelEs, language: "es" })), /Clara lo aprendió/);
+  assert.match(renderToStaticMarkup(createElement(RowActions, { model: modelEs, language: "es" })), /Llenar con Clara/);
+  // No routine → plain title.
+  const plain = renderToStaticMarkup(createElement(RowName, { name: "X", model: requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop } }, "en"), language: "en" }));
+  assert.equal(plain, '<span class="ck-name" title="X">X</span>');
 });

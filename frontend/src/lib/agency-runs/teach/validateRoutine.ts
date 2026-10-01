@@ -33,6 +33,9 @@ import { normalizeLabel } from "./passportCatalog";
 import type { RecordedAction } from "./recording";
 import type { DraftStep, TeachState } from "./teachSession";
 
+/** "1 step" / "2 steps" — no "step(s)". */
+const pl = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
 export type RoutineCheckId =
   | "starts_at_entry"
   | "has_work"
@@ -150,7 +153,7 @@ export function routineRuleChecks(state: TeachState, skill: Skill, actions: Reco
     id: "has_work",
     ok: working.length > 0,
     severity: "error",
-    title: working.length ? t(`${working.length} screen(s) Clara can fill`, `${working.length} pantalla(s) que Clara puede llenar`) : t("Nothing for Clara to fill", "Nada que Clara pueda llenar"),
+    title: working.length ? t(`${working.length} ${pl(working.length, "screen", "screens")} Clara can fill`, `${working.length} ${pl(working.length, "pantalla", "pantallas")} que Clara puede llenar`) : t("Nothing for Clara to fill", "Nada que Clara pueda llenar"),
     fix: working.length ? null : t("Fill in at least one screen of the form while recording.", "Llena por lo menos una pantalla del formulario mientras grabas."),
   });
 
@@ -185,7 +188,7 @@ export function routineRuleChecks(state: TeachState, skill: Skill, actions: Reco
     ok: pending.length === 0,
     severity: "error",
     title: pending.length
-      ? t(`${pending.length} field(s) not linked to your business info`, `${pending.length} campo(s) sin enlazar a la información del negocio`)
+      ? t(`${pending.length} ${pl(pending.length, "field", "fields")} not linked to your business info`, `${pending.length} ${pl(pending.length, "campo", "campos")} sin enlazar a la información del negocio`)
       : t("Every field is linked to your business info or asked each time", "Cada campo está enlazado a la información del negocio o se pregunta cada vez"),
     fix: pending.length
       ? t(`Pick a business field or “Ask each time” for ${pending.slice(0, 3).map((p) => q(p.f.label)).join(", ")}.`, `Escoge un dato del negocio o “Preguntar cada vez” para ${pending.slice(0, 3).map((p) => q(p.f.label)).join(", ")}.`)
@@ -200,7 +203,7 @@ export function routineRuleChecks(state: TeachState, skill: Skill, actions: Reco
     id: "questions_done",
     ok: open.length === 0,
     severity: "error",
-    title: open.length ? t(`${open.length} question(s) left`, `Quedan ${open.length} pregunta(s)`) : t("All of Clara's questions answered", "Todas las preguntas de Clara contestadas"),
+    title: open.length ? t(`${open.length} ${pl(open.length, "question", "questions")} left`, `${pl(open.length, "Queda", "Quedan")} ${open.length} ${pl(open.length, "pregunta", "preguntas")}`) : t("All of Clara's questions answered", "Todas las preguntas de Clara contestadas"),
     fix: open.length ? t("Answer the questions above the result.", "Contesta las preguntas que están arriba del resultado.") : null,
   });
 
@@ -273,9 +276,9 @@ export function routineRuleChecks(state: TeachState, skill: Skill, actions: Reco
     ok: lost.length === 0 && shaky.length === 0,
     severity: lost.length ? "error" : "warning",
     title: lost.length
-      ? t(`${lost.length} control(s) Clara can't find again`, `${lost.length} control(es) que Clara no podrá encontrar otra vez`)
+      ? t(`${lost.length} ${pl(lost.length, "control", "controls")} Clara can't find again`, `${lost.length} ${pl(lost.length, "control", "controles")} que Clara no podrá encontrar otra vez`)
       : shaky.length
-        ? t(`${shaky.length} control(s) found by label only`, `${shaky.length} control(es) se encuentran solo por su nombre`)
+        ? t(`${shaky.length} ${pl(shaky.length, "control", "controls")} found by label only`, `${shaky.length} ${pl(shaky.length, "control", "controles")} ${pl(shaky.length, "se encuentra", "se encuentran")} solo por su nombre`)
         : t("Every control can be found again", "Cada control se puede encontrar otra vez"),
     fix: lost.length
       ? t("Record again and click the field's visible label or text, not an icon.", "Graba otra vez y toca el nombre visible del campo, no un ícono.")
@@ -312,7 +315,7 @@ export async function validateRoutine(state: TeachState, skill: Skill, actions: 
     ok: replay.ok,
     severity: "error",
     title: replay.ok
-      ? t(`Replays end to end on a test copy (${replay.filled}/${replay.expectedFills} fields, ${replay.gatesPaused.length} pause(s))`, `Se repite completa en una copia de prueba (${replay.filled}/${replay.expectedFills} campos, ${replay.gatesPaused.length} pausa(s))`)
+      ? t(`Replays end to end on a test copy (${replay.filled}/${replay.expectedFills} fields, ${replay.gatesPaused.length} ${pl(replay.gatesPaused.length, "pause", "pauses")})`, `Se repite completa en una copia de prueba (${replay.filled}/${replay.expectedFills} campos, ${replay.gatesPaused.length} ${pl(replay.gatesPaused.length, "pausa", "pausas")})`)
       : t("Didn't replay cleanly on a test copy", "No se repitió bien en una copia de prueba"),
     fix: replay.ok ? null : t("Fix the issues above, then check again.", "Arregla lo de arriba y revisa otra vez."),
   });

@@ -12,6 +12,9 @@ import type { GuidedSubject } from "./guidedFormModel";
 import { useRequirementActionsEnv } from "./requirementActionsContext";
 import type { LearnedRoutineSummary } from "../../../lib/agency-runs/teach/learnedRoutineMatch";
 
+/** "1 step" / "2 steps" — no "step(s)". */
+const pl = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
 type Language = "en" | "es";
 
 export function LearnedFillDialog({ routine, subject, language, onClose, onReteach, businessId: businessOverride }: { routine: LearnedRoutineSummary; subject: GuidedSubject; language: Language; onClose: () => void; onReteach: () => void; businessId?: string | null }) {
@@ -47,8 +50,8 @@ export function LearnedFillDialog({ routine, subject, language, onClose, onRetea
           <GraduationCap size={18} aria-hidden="true" />
           <span>
             {T(
-              `Clara follows exactly the ${routine.steps} step(s) you taught her and stops at your ${routine.pauses} pause(s). She never presses Submit.`,
-              `Clara sigue exactamente los ${routine.steps} paso(s) que le enseñaste y se detiene en tus ${routine.pauses} pausa(s). Nunca toca Enviar.`
+              `Clara follows exactly the ${routine.steps} ${pl(routine.steps, "step", "steps")} you taught her and stops at the ${routine.pauses} ${pl(routine.pauses, "pause", "pauses")}. She never presses Submit.`,
+              `Clara sigue exactamente ${pl(routine.steps, "el", "los")} ${routine.steps} ${pl(routine.steps, "paso", "pasos")} que le enseñaste y se detiene en ${pl(routine.pauses, "la", "las")} ${routine.pauses} ${pl(routine.pauses, "pausa", "pausas")}. Nunca toca Enviar.`
             )}
           </span>
         </p>

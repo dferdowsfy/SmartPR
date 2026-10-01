@@ -17,7 +17,7 @@ import type { RegulatoryProcess } from "../../processes/types";
 import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
 import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
-import { ActionList, RowActions } from "../checklist/RowActions";
+import { ActionList, RowActions, RowName } from "../checklist/RowActions";
 import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActionModel";
 import { useInPlatformActions } from "../clara/useInPlatformActions";
 
@@ -199,7 +199,7 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {num !== undefined && <span className="ck-num">{num}</span>}
-          <span className="ck-name" title={item.name}>{item.name}</span>
+          <RowName name={item.name} model={actions} language={language} />
           {item.agency && <span className="ck-agency">{item.agency}</span>}
           <StatusPill status={item.status} language={language} />
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />

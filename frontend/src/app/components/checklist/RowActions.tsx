@@ -60,6 +60,28 @@ function CtaControl({ c, className, role, onDone, testId = "row-cta" }: { c: Row
   );
 }
 
+/**
+ * The row's title, with the "Clara learned this" chip under it when the row
+ * has a validated taught routine. The chip lives with the title (not with the
+ * action buttons) so the actions column keeps its fixed width and never
+ * overflows the row; long names truncate.
+ */
+export function RowName({ name, model, language }: { name: string; model: RowActionsModel; language: Language }) {
+  const es = language === "es";
+  const learned = model.done ? undefined : model.learned;
+  if (!learned) return <span className="ck-name" title={name}>{name}</span>;
+  const label = learned === "learned" ? (es ? "Clara lo aprendió" : "Clara learned this") : (es ? "Hay que enseñarle otra vez" : "Needs re-teaching");
+  const tip = learned === "learned" ? (es ? "Clara sigue exactamente los pasos que le enseñaste" : "Clara follows exactly the steps you taught her") : (es ? "El portal cambió — enséñale otra vez" : "The portal changed — teach her again");
+  return (
+    <span className="ck-name-stack">
+      <span className="ck-name" title={name}>{name}</span>
+      <span className={`ck-learned ck-learned-${learned}`} data-testid="row-learned" title={tip}>
+        <GraduationCap size={13} aria-hidden="true" /> {label}
+      </span>
+    </span>
+  );
+}
+
 export function RowActions({
   model,
   language,
@@ -88,15 +110,10 @@ export function RowActions({
     };
   }, [menu]);
 
-  const { primary, more, done, answer, learned } = model;
+  const { primary, more, done, answer } = model;
   if (!primary && !more.length && !done && !(answer && onAnswer)) return null;
   return (
     <div className="ck-line-actions" ref={ref} onClick={stop} data-testid="row-actions">
-      {learned && !done && (
-        <span className={`ck-learned ck-learned-${learned}`} data-testid="row-learned" title={learned === "learned" ? (es ? "Clara sigue exactamente los pasos que le enseñaste" : "Clara follows exactly the steps you taught her") : (es ? "El portal cambió — enséñale otra vez" : "The portal changed — teach her again")}>
-          <GraduationCap size={13} aria-hidden="true" /> {learned === "learned" ? (es ? "Clara lo aprendió" : "Clara learned this") : (es ? "Hay que enseñarle otra vez" : "Needs re-teaching")}
-        </span>
-      )}
       {done && (
         done.onClick ? (
           <button type="button" className="ck-cta ck-cta-view" data-testid="row-cta" data-cta="view" onClick={(e) => { e.stopPropagation(); done.onClick!(); }}>

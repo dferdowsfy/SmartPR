@@ -30,6 +30,9 @@ import { useRequirementActionsEnv } from "./requirementActionsContext";
 import { PASSPORT_CATALOG } from "../../../lib/agency-runs/teach/passportCatalog";
 import type { LearnedRoutineSummary } from "../../../lib/agency-runs/teach/learnedRoutineMatch";
 
+/** "1 step" / "2 steps" — no "step(s)". */
+const pl = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
 type Language = "en" | "es";
 type Bi = { en: string; es: string };
 
@@ -549,10 +552,10 @@ export function TeachRecordDialog({
           <div className={`tr-verdict ${pass ? "tr-verdict-pass" : "tr-verdict-issues"}`} data-testid="teach-verdict" data-status={validation.status}>
             {pass ? <CheckCircle2 size={22} aria-hidden="true" /> : <AlertTriangle size={22} aria-hidden="true" />}
             <span>
-              <b>{pass ? T("This is a repeatable filing", "Esto es un trámite repetible") : T(`Fix ${validation.errors} thing(s) before Clara learns this`, `Arregla ${validation.errors} cosa(s) antes de que Clara lo aprenda`)}</b>
+              <b>{pass ? T("This is a repeatable filing", "Esto es un trámite repetible") : T(`Fix ${validation.errors} ${pl(validation.errors, "thing", "things")} before Clara learns this`, `Arregla ${validation.errors} ${pl(validation.errors, "cosa", "cosas")} antes de que Clara lo aprenda`)}</b>
               <small>
                 {pass
-                  ? T(`${session?.actions.length ?? 0} recorded actions · ${pauses} pause(s) for you · stops before Submit.`, `${session?.actions.length ?? 0} acciones grabadas · ${pauses} pausa(s) para ti · se detiene antes de Enviar.`)
+                  ? T(`${session?.actions.length ?? 0} ${pl(session?.actions.length ?? 0, "recorded action", "recorded actions")} · ${pauses} ${pl(pauses, "pause", "pauses")} for you · stops before Submit.`, `${session?.actions.length ?? 0} ${pl(session?.actions.length ?? 0, "acción grabada", "acciones grabadas")} · ${pauses} ${pl(pauses, "pausa", "pausas")} para ti · se detiene antes de Enviar.`)
                   : T("Each one has a one-line fix below.", "Cada una tiene su arreglo abajo.")}
               </small>
             </span>
@@ -571,7 +574,7 @@ export function TeachRecordDialog({
         {passing.length > 0 && (
           <div className="tr-passed">
             <button type="button" className="tr-link" onClick={() => setShowPassed((s) => !s)} aria-expanded={showPassed}>
-              <CheckCircle2 size={15} aria-hidden="true" /> {T(`${passing.length} checks passed`, `${passing.length} revisiones pasaron`)}
+              <CheckCircle2 size={15} aria-hidden="true" /> {T(`${passing.length} ${pl(passing.length, "check passed", "checks passed")}`, `${passing.length} ${pl(passing.length, "revisión pasó", "revisiones pasaron")}`)}
             </button>
             {showPassed && (
               <ul className="tr-checks">
@@ -661,8 +664,8 @@ export function TeachRecordDialog({
         <p className="tc-title">{T("Clara learned this", "Clara lo aprendió")}</p>
         <p>
           {T(
-            `Next time, “Fill with Clara” follows exactly these ${routine.steps} step(s) on ${routine.portal_host}, stops at your ${routine.pauses} pause(s), and never presses Submit. If the portal changes, she stops and asks you to re-teach her.`,
-            `La próxima vez, “Llenar con Clara” sigue exactamente estos ${routine.steps} paso(s) en ${routine.portal_host}, se detiene en tus ${routine.pauses} pausa(s) y nunca toca Enviar. Si el portal cambia, se detiene y te pide que le enseñes otra vez.`
+            `Next time, “Fill with Clara” follows exactly the ${routine.steps} ${pl(routine.steps, "step", "steps")} on ${routine.portal_host}, stops at the ${routine.pauses} ${pl(routine.pauses, "pause", "pauses")}, and never presses Submit. If the portal changes, she stops and asks you to re-teach her.`,
+            `La próxima vez, “Llenar con Clara” sigue exactamente ${pl(routine.steps, "el", "los")} ${routine.steps} ${pl(routine.steps, "paso", "pasos")} en ${routine.portal_host}, se detiene en ${pl(routine.pauses, "la", "las")} ${routine.pauses} ${pl(routine.pauses, "pausa", "pausas")} y nunca toca Enviar. Si el portal cambia, se detiene y te pide que le enseñes otra vez.`
           )}
         </p>
         <button type="button" className="tc-primary" onClick={onClose} data-testid="teach-done">{T("Done", "Listo")}</button>

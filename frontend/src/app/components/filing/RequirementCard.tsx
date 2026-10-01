@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
-import { RowActions, RowQuestion } from "../checklist/RowActions";
+import { RowActions, RowName, RowQuestion } from "../checklist/RowActions";
 import { requirementRowActions } from "../checklist/rowActionModel";
 import { useInPlatformActions } from "../clara/useInPlatformActions";
 
@@ -249,7 +249,7 @@ export function RequirementCard({
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
           <span className="ck-num">{index}</span>
-          <span className="ck-name" title={name}>{name}</span>
+          <RowName name={name} model={rowActions} language={language} />
           {agency && <span className="ck-agency">{agency}</span>}
           {badge && <span className={`ck-pill rq-badge-${badge.tone}`}>{badge.label}</span>}
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
