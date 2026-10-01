@@ -22,6 +22,8 @@ import {
   parseCrimParcel,
   parseFemaFlood,
   floodMapSummary,
+  layerCards,
+  layerReasonText,
   parseJpCalificacion,
   parseVigencia,
   restoreSiteLayers,
@@ -216,8 +218,17 @@ test("resilience: a dropped connection is retried once; timeouts and 4xx are not
   assert.equal(layer(await run(reset.f), "flood_zone").code, "AE", "a connection reset is retried and recovers");
   assert.equal(reset.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 2);
   const slow = flaky("timeout");
-  assert.equal(layer(await run(slow.f), "flood_zone").status, "unknown", "a timeout is not retried");
-  assert.equal(slow.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 1);
+  assert.equal(layer(await run(slow.f), "flood_zone").code, "AE", "a stalled FEMA flood query is abandoned and re-asked once");
+  assert.equal(slow.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 2);
+  const alwaysSlow: FetchLike = async (url, init) =>
+    url.startsWith(LAYER_SOURCES.fema_flood_zones.url) || url.startsWith(LAYER_SOURCES.crim_parcels.url)
+      ? new Promise((_, reject) => init?.signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" }))))
+      : base(url, init);
+  const hits: string[] = [];
+  const stalled = await run(async (u, i) => { hits.push(u.split("?")[0]); return alwaysSlow(u, i); });
+  assert.equal(layer(stalled, "flood_zone").status, "unknown");
+  assert.equal(hits.filter((h) => h === LAYER_SOURCES.fema_flood_zones.url + "/query").length, 2, "FEMA flood: one retry, then unknown");
+  assert.equal(hits.filter((h) => h === LAYER_SOURCES.crim_parcels.url + "/query").length, 1, "other layers' timeouts are not retried");
   const notFound = flaky("404");
   assert.equal(layer(await run(notFound.f), "flood_zone").reason, "http_404");
   assert.equal(notFound.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 1, "a 404 is not retried");
@@ -257,6 +268,47 @@ test("shared store: answers survive a restart, and a FEMA outage serves the stor
   const broken: LayerStore = { load: async () => { throw new Error("db down"); }, save: async () => { throw new Error("db down"); } };
   const ok = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache: new LayerCache(), store: broken, timeoutMs: FAST, now: () => t0 });
   assert.equal(layer(ok, "flood_zone").code, "AE");
+});
+
+test("refresh: 'Try again' bypasses the remembered failure instead of serving it for a minute", async () => {
+  const [lat, lng] = FX.points.toa_baja_ae;
+  const cache = new LayerCache();
+  const down: FetchLike = async () => ({ ok: false, status: 503, json: async () => ({}) });
+  const first = await resolveSiteLayers(lat, lng, { fetchImpl: down, cache, timeoutMs: FAST, retryDelayMs: 0, now: () => new Date(AT) });
+  assert.equal(layer(first, "flood_zone").status, "unknown");
+  const calls: string[] = [];
+  const soon = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(calls), cache, timeoutMs: FAST, now: () => new Date(new Date(AT).getTime() + 5_000) });
+  assert.equal(layer(soon, "flood_zone").status, "unknown", "without refresh the failure is remembered for a minute");
+  assert.equal(calls.length, 0);
+  const again = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache, refresh: true, timeoutMs: FAST, now: () => new Date(new Date(AT).getTime() + 5_000) });
+  assert.equal(layer(again, "flood_zone").code, "AE", "refresh asks the services again");
+});
+
+test("map cards: plain-language meaning per layer; unknown layers say why and offer a retry + FEMA's own map", async () => {
+  const ae = layerCards(await resolveAt("toa_baja_ae"));
+  const flood = ae.find((c) => c.layer === "flood_zone")!;
+  assert.equal(flood.status, "resolved");
+  assert.match(flood.value.en, /^Zone AE/);
+  assert.match(flood.meaning!.en, /Special Flood Hazard Area/);
+  assert.match(flood.source ?? "", /FEMA · FIRM 72000C0330J · 2009-11-18/);
+  const x = layerCards(await resolveAt("guaynabo_pueblo")).find((c) => c.layer === "flood_zone")!;
+  assert.match(x.meaning!.en, /Minimal flood hazard/);
+  // Unknown: the reason is human, retry is offered, and the same spot can be checked on FEMA's map.
+  const down = await resolveAt("toa_baja_ae", { fetchImpl: fixtureFetch([], { fema_zones: "down" }), retryDelayMs: 0 });
+  const unk = layerCards(down).find((c) => c.layer === "flood_zone")!;
+  assert.equal(unk.status, "unknown");
+  assert.match(unk.reason!.en, /FEMA's map service is temporarily unavailable/);
+  assert.equal(unk.retryable, true);
+  assert.match(unk.link!.url, /^https:\/\/msc\.fema\.gov\/portal\/search\?AddressQuery=/);
+  assert.match(unk.value.es, /No se pudo verificar/);
+  // Reason mapping.
+  assert.equal(layerReasonText("timeout_4500ms", "FEMA").retryable, true);
+  assert.match(layerReasonText("timeout_4500ms", "FEMA").text.en, /didn't answer in time/);
+  assert.equal(layerReasonText("no_flood_hazard_polygon_at_point", "FEMA").retryable, false);
+  assert.match(layerReasonText("layers_service_unreachable: http_500").text.en, /couldn't reach the map lookup/);
+  // A parcel "none" explains itself; a layer that answered "no" (e.g. no coastal zone) adds no card.
+  const rural = layerCards(await resolveAt("guayama_rural"));
+  assert.ok(rural.every((c) => c.layer !== "historic_zone" && c.layer !== "protected_area" || c.status === "resolved"));
 });
 
 test("JP calificación: zoning + land class + catastro; VIAL is not a land class; no polygon is unknown", () => {

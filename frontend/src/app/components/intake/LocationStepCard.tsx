@@ -11,11 +11,11 @@
 // Census boundaries; the confirmed site then drives the requirements.
 
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, Loader2, MapPin } from "lucide-react";
+import { AlertCircle, CheckCircle2, ExternalLink, Loader2, MapPin, RefreshCw } from "lucide-react";
 import { LocationPickerDialog, type PickedSite, type ResolvedPlacement } from "../../businesses/LocationPickerDialog";
 import type { PassportLocationWithGeographies } from "../../locations/geo";
 import { siteLabel, siteLayersCurrent, type IntakeSite, type LocationNeed, type LocationNeedReason } from "../../locations/intakeLocation";
-import { floodMapSummary, layerChips } from "../../locations/layers";
+import { floodMapSummary, layerCards, layerChips } from "../../locations/layers";
 import type { Lang } from "../../forms/engine/types";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -75,6 +75,7 @@ export function LocationStepCard({
   onConfirm,
   compact = false,
   summaryRow = false,
+  onRetryLayers,
 }: {
   lang: Lang;
   need: LocationNeed;
@@ -89,6 +90,8 @@ export function LocationStepCard({
    * for the summary list — the confirmed pin with Change, or "Find on map".
    */
   summaryRow?: boolean;
+  /** Re-ask the official maps for this site ("Retry" on a layer that didn't answer). */
+  onRetryLayers?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [savedFor, setSavedFor] = useState<{ businessId: string; locations: PassportLocationWithGeographies[] } | null>(null);
@@ -201,7 +204,7 @@ export function LocationStepCard({
         <button type="button" className="spr-link spr-loc-change" onClick={() => setOpen(true)} data-testid="location-change">
           {L("Change", "Cambiar", lang)}
         </button>
-        <SiteLayerChips site={site} lang={lang} />
+        <SiteLayerChips site={site} lang={lang} onRetry={onRetryLayers} />
         {dialog}
       </div>
     );
@@ -275,7 +278,7 @@ export function LocationStepCard({
  * chips while it runs, then a "Site checked" line over the real chips. The
  * wrapper is a polite live region, so the change is also announced.
  */
-export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang }) {
+export function SiteLayerChips({ site, lang, onRetry }: { site: IntakeSite; lang: Lang; onRetry?: () => void }) {
   if (!siteLayersCurrent(site)) {
     return (
       <div
@@ -300,6 +303,7 @@ export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang })
   }
   const chips = layerChips(site.layers);
   const flood = floodMapSummary(site.layers);
+  const cards = layerCards(site.layers);
   const known = chips.filter((c) => c.status !== "unknown").length;
   const done = known > 0;
   return (
@@ -326,42 +330,6 @@ export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang })
               )}
         </span>
       </p>
-      {flood && (
-        <p className="spr-loc-fema" data-testid="location-fema-map">
-          <span className="spr-loc-fema-title">{L("FEMA flood map", "Mapa de inundación de FEMA", lang)}</span>
-          {flood.firmPanel && (
-            <span>
-              {L("Panel", "Panel", lang)} {flood.firmPanel}
-              {flood.effectiveDate ? ` · ${L("effective", "vigente", lang)} ${flood.effectiveDate}` : ""}
-              {flood.preliminaryDate ? ` · ${L("preliminary", "preliminar", lang)} ${flood.preliminaryDate}` : ""}
-            </span>
-          )}
-          {flood.community && (
-            <span>
-              {flood.community}
-              {flood.communityId ? ` (CID ${flood.communityId})` : ""}
-            </span>
-          )}
-          {flood.baseFloodElevation !== null && <span>{L("Base flood elevation", "Elevación base de inundación", lang)} {flood.baseFloodElevation}</span>}
-          {flood.mapChangeCount ? (
-            <span data-testid="location-fema-lomc">
-              {L(
-                `${flood.mapChangeCount} letter(s) of map change within 100 m — may revise this zone`,
-                `${flood.mapChangeCount} carta(s) de cambio de mapa a menos de 100 m — podrían revisar esta zona`,
-                lang
-              )}
-              {flood.mapChangeCases ? `: ${flood.mapChangeCases}` : ""}
-            </span>
-          ) : flood.mapChangeCount === 0 ? (
-            <span>{L("No letters of map change nearby", "Sin cartas de cambio de mapa cerca", lang)}</span>
-          ) : null}
-          {flood.mscUrl && (
-            <a href={flood.mscUrl} target="_blank" rel="noopener noreferrer">
-              {L("Open in FEMA Map Service Center", "Abrir en el Centro de Mapas de FEMA", lang)}
-            </a>
-          )}
-        </p>
-      )}
       {chips.length > 0 && (
         <span className="spr-loc-chips" aria-label={L("Map facts at the pin", "Datos del mapa en el pin", lang)}>
           {chips.map((c) => (
@@ -376,6 +344,50 @@ export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang })
             </span>
           ))}
         </span>
+      )}
+      {cards.length > 0 && (
+        <div className="spr-loc-cards" data-testid="location-map-cards" aria-label={L("What the maps say", "Lo que dicen los mapas", lang)}>
+          {cards.map((c) => (
+            <article key={c.layer} className={`spr-loc-card-item spr-loc-card-${c.status}`} data-layer={c.layer} data-status={c.status}>
+              <header>
+                <span className="spr-loc-card-title">{L(c.title.en, c.title.es, lang)}</span>
+                <span className="spr-loc-card-dot" aria-hidden="true" />
+              </header>
+              <p className="spr-loc-card-value">{L(c.value.en, c.value.es, lang)}</p>
+              {c.reason && <p className="spr-loc-card-reason">{L(c.reason.en, c.reason.es, lang)}</p>}
+              {c.meaning && <p className="spr-loc-card-meaning">{L(c.meaning.en, c.meaning.es, lang)}</p>}
+              {c.layer === "flood_zone" && flood && (flood.community || flood.mapChangeCount) ? (
+                <p className="spr-loc-card-meta" data-testid="location-fema-map">
+                  {flood.community ? `${flood.community}${flood.communityId ? ` (CID ${flood.communityId})` : ""}` : ""}
+                  {flood.effectiveDate ? ` · ${L("effective", "vigente", lang)} ${flood.effectiveDate}` : ""}
+                  {flood.mapChangeCount ? (
+                    <span data-testid="location-fema-lomc">
+                      {" · "}
+                      {L(
+                        `${flood.mapChangeCount} letter(s) of map change within 100 m — may revise this zone`,
+                        `${flood.mapChangeCount} carta(s) de cambio de mapa a menos de 100 m — podrían revisar esta zona`,
+                        lang
+                      )}
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
+              <footer>
+                {c.source && <span className="spr-loc-card-source">{c.source}</span>}
+                {c.retryable && onRetry && (
+                  <button type="button" className="spr-loc-card-btn" onClick={onRetry} data-testid="location-layers-retry">
+                    <RefreshCw size={13} aria-hidden="true" /> {L("Try again", "Intentar de nuevo", lang)}
+                  </button>
+                )}
+                {c.link && (
+                  <a className="spr-loc-card-btn spr-loc-card-link" href={c.link.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink size={13} aria-hidden="true" /> {L(c.link.label.en, c.link.label.es, lang)}
+                  </a>
+                )}
+              </footer>
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );

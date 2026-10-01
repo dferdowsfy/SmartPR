@@ -994,6 +994,224 @@ export function layerChips(layers: SiteLayers | null | undefined): LayerChip[] {
   return chips;
 }
 
+// ---------------------------------------------------------------------------
+// "What the maps say": one plain-language card per layer
+// ---------------------------------------------------------------------------
+
+type Bi = { en: string; es: string };
+
+export interface LayerCard {
+  layer: SiteLayerId;
+  status: SiteLayerStatus;
+  /** Layer name ("FEMA flood zone"). */
+  title: Bi;
+  /** The answer ("Zone AE · floodway"), or why there isn't one. */
+  value: Bi;
+  /** What it means for permitting — hedged, never a determination. */
+  meaning: Bi | null;
+  /** Source and dataset date ("FEMA · FIRM 72000C0985J · 2009-11-18"). */
+  source: string | null;
+  /** Unknown layers only: plain-language reason. */
+  reason: Bi | null;
+  /** Worth offering "Retry" (the service didn't answer, vs. a real "no"). */
+  retryable: boolean;
+  /** Where to check it yourself. */
+  link: { url: string; label: Bi } | null;
+}
+
+/** Plain-language reason a layer is unknown, from the raw machine reason. */
+export function layerReasonText(reason: string | null | undefined, service: "FEMA" | "JP" | "CRIM" = "JP"): { text: Bi; retryable: boolean } {
+  const r = reason ?? "";
+  const who = service === "FEMA" ? "FEMA" : service === "CRIM" ? "CRIM" : "Junta de Planificación";
+  if (/^timeout_/.test(r)) return { text: { en: `${who}'s map service didn't answer in time.`, es: `El servicio de mapas de ${who} no respondió a tiempo.` }, retryable: true };
+  if (/^layers_service_unreachable|^no_layers/.test(r)) return { text: { en: "SmartPR couldn't reach the map lookup.", es: "SmartPR no pudo conectar con la consulta de mapas." }, retryable: true };
+  if (/^network_error|^http_5\d\d$|^http_429$|unreachable|arcgis_error_5/.test(r)) return { text: { en: `${who}'s map service is temporarily unavailable.`, es: `El servicio de mapas de ${who} no está disponible por el momento.` }, retryable: true };
+  if (r === "no_flood_hazard_polygon_at_point") return { text: { en: "FEMA has no mapped flood area at this exact point (open water or outside the mapped area).", es: "FEMA no tiene un área de inundación mapeada en este punto exacto (agua abierta o fuera del área mapeada)." }, retryable: false };
+  if (r === "outside_puerto_rico") return { text: { en: "This point is outside Puerto Rico.", es: "Este punto está fuera de Puerto Rico." }, retryable: false };
+  if (/^http_4\d\d$|attribute_missing|unexpected_response|empty_response/.test(r)) return { text: { en: `${who} returned an answer SmartPR couldn't read.`, es: `${who} devolvió una respuesta que SmartPR no pudo leer.` }, retryable: true };
+  return { text: { en: "The official map couldn't be checked for this point.", es: "No se pudo consultar el mapa oficial para este punto." }, retryable: true };
+}
+
+const MEANING: Record<string, Bi> = {
+  flood_sfha: {
+    en: "Special Flood Hazard Area (1% annual-chance flood). Construction here may need a flood review (JP Regulation 13) and flood insurance may be required.",
+    es: "Área Especial de Riesgo de Inundación (1% de probabilidad anual). Construir aquí puede requerir revisión de inundabilidad (Reglamento 13 de la JP) y seguro contra inundaciones.",
+  },
+  flood_floodway: {
+    en: "Regulatory floodway: the channel that must stay clear to carry floodwater. Development is tightly restricted.",
+    es: "Cauce mayor regulatorio: el canal que debe mantenerse libre para el paso del agua. El desarrollo está muy restringido.",
+  },
+  flood_minimal: {
+    en: "Minimal flood hazard — outside the 1% annual-chance floodplain. No flood review is triggered by the map alone.",
+    es: "Riesgo mínimo de inundación — fuera de la llanura inundable de 1% anual. El mapa por sí solo no activa una revisión de inundabilidad.",
+  },
+  flood_moderate: {
+    en: "Moderate flood hazard (0.2% annual-chance). Outside the regulatory floodplain, but flood insurance is still worth considering.",
+    es: "Riesgo moderado de inundación (0.2% anual). Fuera de la llanura regulatoria, pero conviene considerar el seguro contra inundaciones.",
+  },
+  coastal: {
+    en: "Inside the coastal zone management area: a coastal consistency review (Plan de Manejo de la Zona Costanera) may apply.",
+    es: "Dentro del área de manejo de la zona costanera: puede aplicar una revisión de consistencia costanera (Plan de Manejo de la Zona Costanera).",
+  },
+  coastal_approx: {
+    en: "Approximate: the pin is within 1 km of the coastline. Confirm the official coastal-zone boundary before relying on this.",
+    es: "Aproximado: el pin está a menos de 1 km de la costa. Confirma el límite oficial de la zona costanera antes de depender de esto.",
+  },
+  zoning: {
+    en: "Permitted uses depend on this calificación. A use that doesn't fit it may need a variance or special approval.",
+    es: "Los usos permitidos dependen de esta calificación. Un uso que no encaje puede requerir una variación o una aprobación especial.",
+  },
+  srep: {
+    en: "Specially protected rustic land: most development needs a Consulta de Ubicación and is tightly limited.",
+    es: "Suelo rústico especialmente protegido: la mayoría del desarrollo requiere una Consulta de Ubicación y está muy limitado.",
+  },
+  rustic: {
+    en: "Rustic land (not urban): non-agricultural uses usually need a Consulta de Ubicación.",
+    es: "Suelo rústico (no urbano): los usos no agrícolas suelen requerir una Consulta de Ubicación.",
+  },
+  urban: {
+    en: "Urban land: zoning (calificación) decides what is permitted.",
+    es: "Suelo urbano: la calificación decide lo que está permitido.",
+  },
+  parcel: {
+    en: "CRIM cadastral parcel under the pin. Use this number on permit applications.",
+    es: "Parcela catastral del CRIM bajo el pin. Usa este número en las solicitudes de permisos.",
+  },
+  historic: {
+    en: "Inside a historic zone: exterior changes, demolition and signage may need Instituto de Cultura Puertorriqueña review.",
+    es: "Dentro de una zona histórica: cambios exteriores, demolición y rótulos pueden requerir revisión del Instituto de Cultura Puertorriqueña.",
+  },
+  protected: {
+    en: "Inside a protected natural area: DRNA and Junta de Planificación review may apply.",
+    es: "Dentro de un área natural protegida: puede aplicar revisión del DRNA y de la Junta de Planificación.",
+  },
+};
+
+/**
+ * One card per official-map layer for the "What the maps say" panel. Layers
+ * that answered "no" are omitted (except the parcel, where "none" usually
+ * means the pin is on a street); layers that didn't answer say so plainly.
+ */
+export function layerCards(layers: SiteLayers | null | undefined): LayerCard[] {
+  const by = new Map((layers?.results ?? []).map((r) => [r.layer, r]));
+  const out: LayerCard[] = [];
+  const dated = (r: SiteLayerResult, who: string, extra?: string | null) => {
+    const bits = [who, extra, r.source.dataset_date].filter(Boolean);
+    return bits.join(" · ");
+  };
+  const unknownCard = (r: SiteLayerResult, title: Bi, service: "FEMA" | "JP" | "CRIM", link: LayerCard["link"]) => {
+    const why = layerReasonText(r.reason, service);
+    out.push({ layer: r.layer, status: "unknown", title, value: { en: "Couldn't be checked", es: "No se pudo verificar" }, meaning: null, source: null, reason: why.text, retryable: why.retryable, link });
+  };
+
+  const flood = by.get("flood_zone");
+  if (flood) {
+    const title = { en: "FEMA flood zone", es: "Zona inundable de FEMA" };
+    const fm = floodMapSummary(layers);
+    const mscLink = fm?.mscUrl ? { url: fm.mscUrl, label: { en: "Open in FEMA Map Service Center", es: "Abrir en el Centro de Mapas de FEMA" } } : null;
+    if (flood.status === "resolved") {
+      const sub = flood.attributes.ZONE_SUBTY;
+      const fw = flood.tags.includes("FLOODWAY");
+      const sfha = flood.tags.includes("SFHA");
+      const meaning = fw ? MEANING.flood_floodway : sfha ? MEANING.flood_sfha : /0\.2|SHADED|MODERATE/i.test(String(sub ?? "")) ? MEANING.flood_moderate : MEANING.flood_minimal;
+      const bfe = typeof flood.attributes.STATIC_BFE === "number" ? ` · BFE ${flood.attributes.STATIC_BFE}` : "";
+      out.push({
+        layer: "flood_zone",
+        status: "resolved",
+        title,
+        value: { en: `Zone ${flood.code}${fw ? " · floodway" : ""}${bfe}`, es: `Zona ${flood.code}${fw ? " · cauce mayor" : ""}${bfe}` },
+        meaning,
+        source: dated(flood, "FEMA", fm?.firmPanel ? `FIRM ${fm.firmPanel}` : null),
+        reason: null,
+        retryable: false,
+        link: mscLink,
+      });
+    } else if (flood.status === "unknown") {
+      // Even without an answer, the person can check the same spot on FEMA's own map.
+      const link = mscLink ?? { url: femaMscUrl(layers!.latitude, layers!.longitude), label: { en: "Check on FEMA's Map Service Center", es: "Verificar en el Centro de Mapas de FEMA" } };
+      unknownCard(flood, title, "FEMA", link);
+    }
+  }
+  const czm = by.get("coastal_zone");
+  if (czm?.status === "resolved") {
+    out.push({
+      layer: "coastal_zone",
+      status: "resolved",
+      title: { en: "Coastal zone", es: "Zona costanera" },
+      value: czm.approximate ? { en: "Within ~1 km of the coast", es: "A ~1 km de la costa" } : { en: "Inside the coastal zone", es: "Dentro de la zona costanera" },
+      meaning: czm.approximate ? MEANING.coastal_approx : MEANING.coastal,
+      source: dated(czm, "Junta de Planificación"),
+      reason: null,
+      retryable: false,
+      link: null,
+    });
+  } else if (czm?.status === "unknown") unknownCard(czm, { en: "Coastal zone", es: "Zona costanera" }, "JP", null);
+  const zoning = by.get("zoning");
+  if (zoning?.status === "resolved") {
+    out.push({
+      layer: "zoning",
+      status: "resolved",
+      title: { en: "Zoning (calificación)", es: "Calificación" },
+      value: { en: `${zoning.code}${zoning.name ? ` — ${zoning.name}` : ""}`, es: `${zoning.code}${zoning.name ? ` — ${zoning.name}` : ""}` },
+      meaning: MEANING.zoning,
+      source: dated(zoning, "Junta de Planificación"),
+      reason: null,
+      retryable: false,
+      link: null,
+    });
+  } else if (zoning?.status === "unknown") unknownCard(zoning, { en: "Zoning (calificación)", es: "Calificación" }, "JP", null);
+  const lc = by.get("land_class");
+  if (lc?.status === "resolved") {
+    const fam = lc.tags[0];
+    out.push({
+      layer: "land_class",
+      status: "resolved",
+      title: { en: "Land classification", es: "Clasificación del suelo" },
+      value: { en: `${lc.code}${lc.name ? ` — ${lc.name}` : ""}`, es: `${lc.code}${lc.name ? ` — ${lc.name}` : ""}` },
+      meaning: fam === "SREP" ? MEANING.srep : fam === "SRC" ? MEANING.rustic : MEANING.urban,
+      source: dated(lc, "Junta de Planificación"),
+      reason: null,
+      retryable: false,
+      link: null,
+    });
+  }
+  const parcel = by.get("parcel");
+  if (parcel?.status === "resolved") {
+    out.push({
+      layer: "parcel",
+      status: "resolved",
+      title: { en: "Parcel (catastro)", es: "Parcela (catastro)" },
+      value: { en: String(parcel.code), es: String(parcel.code) },
+      meaning: MEANING.parcel,
+      source: dated(parcel, "CRIM"),
+      reason: null,
+      retryable: false,
+      link: null,
+    });
+  } else if (parcel?.status === "none") {
+    out.push({
+      layer: "parcel",
+      status: "none",
+      title: { en: "Parcel (catastro)", es: "Parcela (catastro)" },
+      value: { en: "No parcel at this exact point", es: "Sin parcela en este punto exacto" },
+      meaning: { en: "The pin may be on a street or between lots. Move it onto the building to get the parcel number.", es: "El pin puede estar en una calle o entre solares. Muévelo sobre el edificio para obtener el número de parcela." },
+      source: null,
+      reason: null,
+      retryable: false,
+      link: null,
+    });
+  } else if (parcel?.status === "unknown") unknownCard(parcel, { en: "Parcel (catastro)", es: "Parcela (catastro)" }, "CRIM", null);
+  for (const [layer, en, es, key] of [
+    ["historic_zone", "Historic zone", "Zona histórica", "historic"],
+    ["protected_area", "Protected natural area", "Área natural protegida", "protected"],
+  ] as const) {
+    const r = by.get(layer);
+    if (r?.status !== "resolved") continue;
+    out.push({ layer, status: "resolved", title: { en, es }, value: { en: r.code ?? "Yes", es: r.code ?? "Sí" }, meaning: MEANING[key], source: dated(r, "Junta de Planificación"), reason: null, retryable: false, link: null });
+  }
+  return out;
+}
+
 /** Defensive restore of persisted layers (snapshots); null when malformed or for another point. */
 export function restoreSiteLayers(raw: unknown, latitude: number, longitude: number): SiteLayers | null {
   if (!raw || typeof raw !== "object") return null;

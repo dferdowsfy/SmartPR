@@ -42,8 +42,10 @@ export interface ResolveLayersOptions {
   fetchImpl?: FetchLike;
   /** Persistent cache shared across restarts / instances (optional). */
   store?: LayerStore | null;
-  /** Retries after a dropped connection or 5xx (default 1). Timeouts are never retried. */
+  /** Retries after a dropped connection or 5xx (default 1). Timeouts are retried only for the core flood queries. */
   retries?: number;
+  /** "Retry" from the UI: ignore remembered failures and ask the services again. */
+  refresh?: boolean;
   retryDelayMs?: number;
   /** Per-query timeout override (ms). */
   timeoutMs?: Partial<Record<QueryKey, number>>;
@@ -57,8 +59,8 @@ type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" |
 
 /** Default timeouts (ms), sized from the latencies observed 2026-09-30 (JP ≈ 2.5–3 s, FEMA < 1 s). */
 export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
-  fema_zones: 6000,
-  fema_panels: 6000,
+  fema_zones: 4500,
+  fema_panels: 4500,
   fema_community: 6000,
   fema_lomas: 6000,
   fema_lomrs: 6000,
@@ -121,12 +123,18 @@ async function queryOnce(fetchImpl: FetchLike, url: string, timeoutMs: number): 
   }
 }
 
-/** Government GIS hosts drop connections at random: retry those, and 5xx/429 — never a timeout (it already waited). */
-const retryable = (r: ArcGisQueryResponse | string) => typeof r === "string" && (r.startsWith("network_error") || /^http_(5\d\d|429)$/.test(r));
+/**
+ * Government GIS hosts drop connections at random and sometimes stall: retry
+ * those and 5xx/429. A timeout is retried only for queries that opt in (the
+ * core flood zone / FIRM panel — FEMA answers in < 1 s when it answers at all,
+ * so a stalled first attempt is better abandoned and re-asked).
+ */
+const retryable = (r: ArcGisQueryResponse | string, onTimeout: boolean) =>
+  typeof r === "string" && (r.startsWith("network_error") || /^http_(5\d\d|429)$/.test(r) || (onTimeout && r.startsWith("timeout_")));
 
-async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: number, retries: number, retryDelayMs: number): Promise<ArcGisQueryResponse | string> {
+async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: number, retries: number, retryDelayMs: number, retryOnTimeout = false): Promise<ArcGisQueryResponse | string> {
   let result = await queryOnce(fetchImpl, url, timeoutMs);
-  for (let i = 0; i < retries && retryable(result); i++) {
+  for (let i = 0; i < retries && retryable(result, retryOnTimeout); i++) {
     if (retryDelayMs > 0) await new Promise((r) => setTimeout(r, retryDelayMs));
     result = await queryOnce(fetchImpl, url, timeoutMs);
   }
@@ -145,7 +153,8 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const at = now().toISOString();
   const retries = opts.retries ?? 1;
   const retryDelayMs = opts.retryDelayMs ?? 250;
-  const q = (k: QueryKey, url: string, extra?: Record<string, string>) => queryJson(fetchImpl, arcgisPointQueryUrl(url, latitude, longitude, extra), t(k), retries, retryDelayMs);
+  const q = (k: QueryKey, url: string, extra?: Record<string, string>) =>
+    queryJson(fetchImpl, arcgisPointQueryUrl(url, latitude, longitude, extra), t(k), retries, retryDelayMs, k === "fema_zones" || k === "fema_panels");
 
   // Seed the in-memory cache from the shared store: a pin resolved before a
   // restart (or on another instance) is still served fresh / stale-on-failure.
@@ -168,7 +177,7 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
     if (!e) return null;
     const age = now().getTime() - e.at;
     if (e.ok && age < FRESH_MS) return { ...e.result, retrieval: e.result.retrieval === "live" ? "cached" : e.result.retrieval };
-    if (!e.ok && age < FAILURE_MS) return e.result;
+    if (!e.ok && age < FAILURE_MS && !opts.refresh) return e.result;
     return null;
   };
   const want = (layers: SiteLayerId[]) => layers.some((l) => !fresh(l));

@@ -3862,11 +3862,29 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     };
   });
   const intakeLayersFetchRef = useRef<string | null>(null);
+  // Pins whose flood lookup already got one automatic second try, and whether
+  // the next fetch should bypass the server's remembered failures ("Try again").
+  const intakeLayersRetriedRef = useRef<Set<string>>(new Set());
+  const intakeLayersRefreshRef = useRef(false);
+  const retryIntakeLayers = () => {
+    const cur = intakeSiteRef.current;
+    if (!cur) return;
+    intakeLayersFetchRef.current = null;
+    intakeLayersRefreshRef.current = true;
+    setIntakeSite({ ...cur, layers: null });
+  };
   useEffect(() => {
     const site = intakeSite;
-    if (!site || siteLayersCurrent(site)) return;
+    if (!site) return;
     const key = `${site.latitude},${site.longitude}`;
-    if (intakeLayersFetchRef.current === key) return;
+    // A flood lookup that never got an answer (restored from a snapshot, or the
+    // service was down) is asked again once, instead of staying "unknown" forever.
+    const floodMissed = siteLayersCurrent(site) && site.layers!.results.some((r) => r.layer === 'flood_zone' && r.status === 'unknown' && r.retrieval === 'none' && r.reason !== 'outside_puerto_rico');
+    if (siteLayersCurrent(site) && !(floodMissed && !intakeLayersRetriedRef.current.has(key))) return;
+    if (floodMissed) {
+      intakeLayersRetriedRef.current.add(key);
+      intakeLayersRefreshRef.current = true;
+    } else if (intakeLayersFetchRef.current === key) return;
     intakeLayersFetchRef.current = key;
     const apply = (layers: SiteLayers) => {
       const cur = intakeSiteRef.current;
@@ -3875,7 +3893,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       setIntakeSite(next);
       recomputeForSiteRef.current?.(next);
     };
-    fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}`, { cache: 'no-store' })
+    const refresh = intakeLayersRefreshRef.current;
+    intakeLayersRefreshRef.current = false;
+    fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
       .then((data: { layers?: SiteLayers | null; reason?: string }) => {
         apply(data.layers && Array.isArray(data.layers.results)
@@ -6225,6 +6245,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       site={intakeSite}
       businessId={siteBusinessId}
       onConfirm={confirmIntakeSite}
+      onRetryLayers={retryIntakeLayers}
     />
   ) : null;
   const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, 0, language)}`;
@@ -6817,6 +6838,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       site={intakeSite}
                       businessId={siteBusinessId}
                       onConfirm={confirmIntakeSite}
+                      onRetryLayers={retryIntakeLayers}
                     />
                   </div>
                 )}

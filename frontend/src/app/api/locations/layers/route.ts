@@ -31,6 +31,6 @@ export async function GET(req: Request) {
   if (!isWithinPuertoRico(coords.latitude, coords.longitude)) {
     return Response.json({ layers: null, reason: "outside_puerto_rico" }, { headers: { "Cache-Control": "no-store" } });
   }
-  const layers = await resolveSiteLayers(coords.latitude, coords.longitude, { store: getLayerStore() });
+  const layers = await resolveSiteLayers(coords.latitude, coords.longitude, { store: getLayerStore(), refresh: url.searchParams.get("refresh") === "1" });
   return Response.json({ layers }, { headers: { "Cache-Control": "no-store" } });
 }
