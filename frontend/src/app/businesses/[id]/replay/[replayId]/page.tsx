@@ -172,6 +172,15 @@ export default function ReplayPage({ params }: { params: Promise<{ id: string; r
                       <div className="flex gap-2">
                         <button type="button" className={primary} disabled={busy} onClick={() => act("continue")}>{L("Try again", "Intentar de nuevo", lang)}</button>
                         <button type="button" className={ghost} disabled={busy} onClick={() => act("stop")}>{L("I'll finish it", "Lo termino yo", lang)}</button>
+                        {pause.kind === "drift" && (
+                          <Link
+                            data-testid="replay-reteach"
+                            className={ghost}
+                            href={`/businesses/${encodeURIComponent(businessId)}/teach?${new URLSearchParams({ url: replay.skill.base_url, form: replay.skill.form, portal: replay.skill.portal, mode: "live" })}`}
+                          >
+                            {L("Re-teach Clara", "Enséñale otra vez", lang)}
+                          </Link>
+                        )}
                       </div>
                     </>
                   )}

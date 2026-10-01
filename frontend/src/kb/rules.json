@@ -8856,5 +8856,430 @@
    }
   ],
   "citation_inherited_from": "DOC_TOBACCO_SALES_PROJECTION"
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0706",
+  "fact_key": "location.flood_zone.sfha",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "project_type",
+    "expected_answer": "new_construction"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "renovation"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "expansion"
+   },
+   {
+    "fact_key": "new_construction",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "expansion",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "structural_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "exterior_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "site_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "grading",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "excavation",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "construction_approvals_required",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_JP_FLOOD_REG13",
+  "citation": "Reglamento de Planificación Núm. 13 (Reglamento sobre Áreas Especiales de Peligro a Inundación), Octava Revisión, vigencia 9 de enero de 2021; Reglamento Conjunto 2023 § 3.2.1.2(d)",
+  "citation_url": "https://portaldeinundacion.jp.pr.gov/uploads/Documentos/Reglamento-Num-13-Octava-Revision-Vigencia-9-Enero-2021-1.pdf",
+  "citation_confidence": "statute",
+  "verification": "verified",
+  "trigger_summary": "Construction, expansion or site work at a pin inside a FEMA Special Flood Hazard Area (zones A, AE, AH, AO, VE — FEMA NFHL at the exact point) must comply with Planning Regulation 13 (flood-zone review and Elevation Certificate) as part of the OGPe permit. Reg. 13 adopts the FEMA FIRM zones as Áreas Especiales de Peligro a Inundación.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "Reg. 13 (8th rev., 2021-01-09) § 'Áreas Especiales de Peligro a Inundación' adopts FEMA FIRM/FIS zones; RC-2023 § 3.2.1.2(d): 'Si el inmueble … ubica en un área susceptible a inundaciones, según el Mapa de Tasas del Seguro de Inundaciones, deberá cumplir con … el Reglamento de Planificación Núm. 13'. The fact comes from FEMA NFHL layer 28 at the pin. JP advisory ABFE maps (JP_ABFE_01/02) can add areas the FIRM does not show — not loaded."
+   }
+  ]
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0707",
+  "fact_key": "location.flood_zone.floodway",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "project_type",
+    "expected_answer": "new_construction"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "renovation"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "expansion"
+   },
+   {
+    "fact_key": "new_construction",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "expansion",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "structural_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "exterior_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "site_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "grading",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "excavation",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "construction_approvals_required",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_JP_FLOOD_REG13",
+  "citation": "Reglamento de Planificación Núm. 13 (Reglamento sobre Áreas Especiales de Peligro a Inundación), Octava Revisión, vigencia 9 de enero de 2021; Reglamento Conjunto 2023 § 3.2.1.2(d) — Cauce Mayor (regulatory floodway)",
+  "citation_url": "https://portaldeinundacion.jp.pr.gov/uploads/Documentos/Reglamento-Num-13-Octava-Revision-Vigencia-9-Enero-2021-1.pdf",
+  "citation_confidence": "statute",
+  "verification": "verified",
+  "trigger_summary": "Construction or fill at a pin in the regulatory floodway (cauce mayor, FEMA NFHL ZONE_SUBTY 'FLOODWAY') is severely restricted under Planning Regulation 13: an encroachment / no-rise analysis is required and many works are prohibited.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "Reg. 13 regulates the Cauce Mayor (floodway) zone separately from AE/VE; FEMA NFHL flags it as ZONE_SUBTY = FLOODWAY. Expert validation: which works are outright prohibited vs. allowed with a no-rise certification."
+   }
+  ]
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0708",
+  "fact_key": "location.czm",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "project_type",
+    "expected_answer": "new_construction"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "renovation"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "expansion"
+   },
+   {
+    "fact_key": "new_construction",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "expansion",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "structural_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "exterior_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "site_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "grading",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "excavation",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "construction_approvals_required",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_CZM_COASTAL_REVIEW",
+  "citation": "15 CFR 930.57(a); 16 U.S.C. § 1456(c)(3)(A); Programa de Manejo de la Zona Costanera de Puerto Rico (Junta de Planificación)",
+  "citation_url": "https://www.ecfr.gov/current/title-15/subtitle-B/chapter-IX/subchapter-B/part-930/subpart-D/section-930.57",
+  "citation_confidence": "review",
+  "verification": "heuristic",
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Construction at a pin in Puerto Rico's coastal zone gets a coastal-zone (CZM) review; a federal consistency certification is required when the project also needs a federal license or permit. The official JP 'Zona Costanera' layer was unavailable when verified, so the zone may be approximated as within 1 km of the JP shoreline.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "CZMA federal consistency applies to federally licensed/permitted activities in or affecting the coastal zone (15 CFR 930.57). Which local reviews apply to a purely local permit in the zone, and the inland limits beyond the 1 km band, need expert validation; the official MIPR layer (Reglamentario_va2/31) returned 502 on 2026-09-30."
+   }
+  ]
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0709",
+  "fact_key": "location.land_class.srep",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "project_type",
+    "expected_answer": "new_construction"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "renovation"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "expansion"
+   },
+   {
+    "fact_key": "new_construction",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "expansion",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "structural_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "exterior_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "site_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "grading",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "excavation",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "construction_approvals_required",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "change_of_use",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "occupancy_change",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_CONSULTA_UBICACION",
+  "citation": "Reglamento Conjunto 2023 (Reg. 9473) — Suelo Rústico Especialmente Protegido; Ley 550-2004 (Plan de Uso de Terrenos de Puerto Rico); Ley 161-2009",
+  "citation_url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+  "citation_confidence": "review",
+  "verification": "heuristic",
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Construction or a new use on specially protected rustic land (SREP, from the JP calificación at the pin) is restricted by the Plan de Uso de Terrenos; uses outside what the district allows go through a consulta de ubicación before any construction permit.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "JP calificación layer (cali_vige) returns the land classification (clasi SREP-A / SREP-E / SREP-P …) at the pin. The exact uses allowed ministerially on each SREP sub-class need expert validation."
+   }
+  ]
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0710",
+  "fact_key": "location.zoning.residential",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "change_of_use",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "occupancy_change",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_CONSULTA_UBICACION",
+  "citation": "Reglamento Conjunto 2023 (Reg. 9473) — Consultas de Ubicación y Variaciones; Ley 161-2009, Art. 2.5",
+  "citation_url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+  "citation_confidence": "review",
+  "verification": "heuristic",
+  "trigger_summary": "EXPERT VALIDATION NEEDED — A change of use at a pin in a residential district (JP calificación) may not match the zoning: the new use needs a consulta de ubicación or a variance before the use permit.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "JP calificación at the pin gives the district (residential family, from the district description). Use/zoning compatibility is not modeled per district yet — the rule fires on any change of use there and needs expert validation."
+   }
+  ]
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0711",
+  "fact_key": "location.zoning.conservation",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "change_of_use",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "occupancy_change",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_CONSULTA_UBICACION",
+  "citation": "Reglamento Conjunto 2023 (Reg. 9473) — Consultas de Ubicación y Variaciones; Ley 161-2009, Art. 2.5",
+  "citation_url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+  "citation_confidence": "review",
+  "verification": "heuristic",
+  "trigger_summary": "EXPERT VALIDATION NEEDED — A change of use at a pin in a conservation district (JP calificación) may not match the zoning: the new use needs a consulta de ubicación or a variance before the use permit.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "JP calificación at the pin gives the district (conservation family, from the district description). Use/zoning compatibility is not modeled per district yet — the rule fires on any change of use there and needs expert validation."
+   }
+  ]
+ },
+ {
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "municipality_flag": null,
+  "requires_new_unformed_business": null,
+  "requires_business": null,
+  "missing_fact_keys": null,
+  "negated_fact_keys": null,
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-09-30",
+  "citation_source": "rule",
+  "id": "RULE_0712",
+  "fact_key": "location.zoning.agricultural",
+  "expected_answer": "true",
+  "any_of_facts": [
+   {
+    "fact_key": "change_of_use",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "occupancy_change",
+    "expected_answer": "true"
+   }
+  ],
+  "requires_document_id": "DOC_CONSULTA_UBICACION",
+  "citation": "Reglamento Conjunto 2023 (Reg. 9473) — Consultas de Ubicación y Variaciones; Ley 161-2009, Art. 2.5",
+  "citation_url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+  "citation_confidence": "review",
+  "verification": "heuristic",
+  "trigger_summary": "EXPERT VALIDATION NEEDED — A change of use at a pin in a agricultural district (JP calificación) may not match the zoning: the new use needs a consulta de ubicación or a variance before the use permit.",
+  "change_log": [
+   {
+    "date": "2026-09-30",
+    "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
+    "reason": "JP calificación at the pin gives the district (agricultural family, from the district description). Use/zoning compatibility is not modeled per district yet — the rule fires on any change of use there and needs expert validation."
+   }
+  ]
  }
 ]

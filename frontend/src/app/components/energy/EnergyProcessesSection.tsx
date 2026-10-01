@@ -17,9 +17,9 @@ import type { RegulatoryProcess } from "../../processes/types";
 import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
 import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
-import { ActionList, RowActions } from "../checklist/RowActions";
-import { TeachClaraRowLink } from "../checklist/TeachClaraRowLink";
+import { ActionList, RowActions, RowName } from "../checklist/RowActions";
 import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActionModel";
+import { useInPlatformActions } from "../clara/useInPlatformActions";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
 export interface EnergyLegacyCard {
@@ -91,7 +91,6 @@ export function EnergyProcessesSection({
   language,
   defaultOpen = [],
   onAnswer,
-  businessId = null,
 }: {
   /** Computed by the caller (processes/view.ts) so legacy cards can be deduped. */
   assessment: ProcessAssessment;
@@ -107,8 +106,6 @@ export function EnergyProcessesSection({
   defaultOpen?: string[];
   /** Answers a row's question in place ("Answer" on answer-only rows). */
   onAnswer?: (key: ProjectContextKey, fact: ProjectContextFact) => void;
-  /** Saved business id; enables "Teach Clara" / "Show Clara" on rows with a portal. */
-  businessId?: string | null;
 }) {
   const es = language === "es";
   const checklist = given ?? processChecklist(assessment, graph, language, { suppressedLegacy });
@@ -137,14 +134,14 @@ export function EnergyProcessesSection({
         {checklist.stages.map((s) =>
           flat ? (
             s.items.map((it) => (
-              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} businessId={businessId} />
+              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
             ))
           ) : (
             <div role="listitem" key={s.id} className="ck-stage" data-testid={`energy-step-${s.step}`}>
               <div className="ck-stage-head"><span className="ck-num">{s.step}</span> {s.name}</div>
               <div role="list" className="ck-rows">
                 {s.items.map((it) => (
-                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} businessId={businessId} />
+                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
                 ))}
               </div>
             </div>
@@ -173,32 +170,36 @@ function legacyFor(p: ProcessEvaluation, cards: Record<string, EnergyLegacyCard>
   return p.legacy_document_ids.map((d) => cards[d]).filter((c): c is EnergyLegacyCard => !!c);
 }
 
-function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, startOpen = false, question = null, businessId = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; portal?: RegulatoryProcess["portal"] | null; language: Language; startOpen?: boolean; question?: SummaryQuestion | null; businessId?: string | null }) {
+function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, startOpen = false, question = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; portal?: RegulatoryProcess["portal"] | null; language: Language; startOpen?: boolean; question?: SummaryQuestion | null }) {
   const es = language === "es";
   const [open, setOpen] = useState(startOpen);
   const [askOpen, setAskOpen] = useState(false);
-  const [needsOpen, setNeedsOpen] = useState(false);
   // An expert-check row does not get actions invented for it: only a
   // superseded card's own actions (none built from the process documents).
   const legacy = item.status === "expert" ? allCards.filter((c) => !c.processOwned) : allCards;
   const needs = item.needs.filter((x) => x.trim());
-  // Inline actions: the covered cards' own actions (same handlers as the
-  // expanded view), then the official portal, else "Start" (the prepared
-  // checklist); answer rows lead with "Answer". Rows with nothing to do
-  // (May apply without a form or portal, expert checks) get none.
+  // Inline actions: the covered cards' own in-platform actions (same
+  // handlers as the expanded view), else SmartPR's guided form built from
+  // "What you'll need" ("Complete form"); answer rows lead with "Answer".
+  // The official portal and Teach Clara sit in the ⋯ menu. Rows with nothing
+  // to do (May apply without a portal, expert checks) get no primary.
+  const inPlatform = useInPlatformActions(
+    { key: item.process_id, name: item.name, agency: item.agency ?? null, needs, portalUrl: portal?.url ?? null, portalLabel: portal ? ((es ? portal.label_es : null) ?? portal.label) : null },
+    language
+  );
   const actions: RowActionsModel = energyRowActions({
     status: item.status,
     cards: mergeRowActions(legacy.map((c) => c.rowActions ?? EMPTY_ROW_ACTIONS)),
     portal,
-    onStart: needs.length ? () => setNeedsOpen((o) => !o) : null,
     question: question ? { prompt: question.text } : null,
+    ...inPlatform.handlers,
   }, language);
   return (
     <div role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {num !== undefined && <span className="ck-num">{num}</span>}
-          <span className="ck-name" title={item.name}>{item.name}</span>
+          <RowName name={item.name} model={actions} language={language} />
           {item.agency && <span className="ck-agency">{item.agency}</span>}
           <StatusPill status={item.status} language={language} />
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
@@ -206,12 +207,7 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
         <RowActions model={actions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
       </div>
       {askOpen && question && <QuestionLine q={question} language={language} standalone />}
-      {needsOpen && !open && (
-        <div className="ck-row-checklist" data-testid="row-checklist">
-          <div className="ck-label">{es ? "Lo que necesitarás" : "What you'll need"}</div>
-          <ul>{needs.map((x) => <li key={x}>{x}</li>)}</ul>
-        </div>
-      )}
+      {inPlatform.dialogs(actions)}
       {open && (
         <div className="ck-row-body">
           <p className="ck-why">{item.why}</p>
@@ -235,6 +231,14 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
               <div>{item.before.join(" · ")}</div>
             </div>
           )}
+          {/* SmartPR's guided form — the same handler as the row's inline "Complete form". */}
+          {actions.primary?.kind === "guided" && (
+            <div className="ck-card-actions">
+              <button type="button" className="ck-action" data-testid="card-action" data-cta="guided" onClick={actions.primary.onClick}>
+                {es ? "Completar el formulario en SmartPR" : "Complete the form in SmartPR"}
+              </button>
+            </div>
+          )}
           {/* The covered cards' actions — the same handlers as the row's inline button. */}
           {legacy.map((c) => c.rowActions
             ? <ActionList key={c.name} model={c.rowActions} />
@@ -244,9 +248,6 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
               <a className="ck-action" data-testid="card-action" data-cta="portal" href={portal.url} target="_blank" rel="noopener noreferrer">
                 {(es ? portal.label_es : null) ?? portal.label} <ExternalLink size={11} />
               </a>
-              {businessId && !businessId.startsWith("local-") && (
-                <TeachClaraRowLink businessId={businessId} portalUrl={portal.url} form={item.name} portalName={portal.label} language={language} />
-              )}
             </div>
           )}
           {item.source && (

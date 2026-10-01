@@ -60,7 +60,7 @@ function askFor(label: string): { en: string; es: string } {
   return { en: `What should go in "${label}"?`, es: `¿Qué va en "${label}"?` };
 }
 
-function workFor(step: DraftStep): { fields: SkillField[]; actions: SkillAction[]; rules: string[] } {
+function workFor(step: DraftStep, opts: { humanAdvances?: boolean } = {}): { fields: SkillField[]; actions: SkillAction[]; rules: string[] } {
   const fields: SkillField[] = [];
   const actions: SkillAction[] = [];
   const rules = [...step.notes];
@@ -80,6 +80,9 @@ function workFor(step: DraftStep): { fields: SkillField[]; actions: SkillAction[
 
   for (const a of step.actions) {
     if (a.decision === "nav") {
+      // On a screen with a human part (upload, signature, certification …)
+      // the person moves on after doing it — Clara never clicks past it.
+      if (opts.humanAdvances) continue;
       actions.push({ type: "click", target: { role: a.role, label_contains: a.label, selector: a.selector }, fallback: "pause_and_ask" });
     } else if (a.decision === "always") {
       actions.push({ type: "click", target: { role: a.role, label_contains: a.label, selector: a.selector }, rule: `Always choose '${a.optionText || a.label}'.`, fallback: "pause_and_ask" });
@@ -109,7 +112,7 @@ export function buildSkillFromTeach(state: TeachState, opts: { version?: number 
       fallback: "pause_and_ask" as const,
     };
     const exclusive = draft.gate !== null && EXCLUSIVE.includes(draft.gate);
-    const work = exclusive ? { fields: [], actions: [], rules: [] } : workFor(draft);
+    const work = exclusive ? { fields: [], actions: [], rules: [] } : workFor(draft, { humanAdvances: draft.gate !== null });
     const hasWork = work.fields.length > 0 || work.actions.length > 0;
 
     if (hasWork || !draft.gate) {

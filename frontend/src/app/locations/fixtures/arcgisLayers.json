@@ -1,0 +1,348 @@
+{
+ "_recorded": "2026-09-30 ~21:15–21:40 ET from the live services (see layers.ts LAYER_SOURCES); attributes trimmed to the fields SmartPR reads. Errors are the exact failures observed.",
+ "points": {
+  "guaynabo_pueblo": [
+   18.3577,
+   -66.1108
+  ],
+  "condado": [
+   18.4573,
+   -66.0614
+  ],
+  "guayama_rural": [
+   17.993,
+   -66.134
+  ],
+  "toa_baja_ae": [
+   18.4436,
+   -66.201
+  ],
+  "rio_grande_ae": [
+   18.4005,
+   -65.82
+  ]
+ },
+ "responses": {
+  "fema_zones:guaynabo_pueblo": {
+   "features": [
+    {
+     "attributes": {
+      "FLD_ZONE": "X",
+      "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+      "SFHA_TF": "F",
+      "STATIC_BFE": -9999.0,
+      "LEN_UNIT": "",
+      "FLD_AR_ID": "72000C_4572",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_zones:condado": {
+   "features": [
+    {
+     "attributes": {
+      "FLD_ZONE": "VE",
+      "ZONE_SUBTY": null,
+      "SFHA_TF": "T",
+      "STATIC_BFE": 3.4,
+      "LEN_UNIT": "Meters",
+      "FLD_AR_ID": "72000C_937",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_zones:guayama_rural": {
+   "features": [
+    {
+     "attributes": {
+      "FLD_ZONE": "X",
+      "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+      "SFHA_TF": "F",
+      "STATIC_BFE": -9999.0,
+      "LEN_UNIT": "",
+      "FLD_AR_ID": "72000C_4572",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_zones:toa_baja_ae": {
+   "features": [
+    {
+     "attributes": {
+      "FLD_ZONE": "AE",
+      "ZONE_SUBTY": null,
+      "SFHA_TF": "T",
+      "STATIC_BFE": -9999.0,
+      "LEN_UNIT": "",
+      "FLD_AR_ID": "72000C_4740",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_zones:rio_grande_ae": {
+   "features": [
+    {
+     "attributes": {
+      "FLD_ZONE": "AE",
+      "ZONE_SUBTY": "FLOODWAY",
+      "SFHA_TF": "T",
+      "STATIC_BFE": -9999.0,
+      "LEN_UNIT": "",
+      "FLD_AR_ID": "72000C_4852",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_panels:guaynabo_pueblo": {
+   "features": [
+    {
+     "attributes": {
+      "FIRM_PAN": "72000C0730H",
+      "EFF_DATE": 1113868800000,
+      "PANEL_TYP": "Countywide, Panel Printed",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_panels:condado": {
+   "features": [
+    {
+     "attributes": {
+      "FIRM_PAN": "72000C0360J",
+      "EFF_DATE": 1258502400000,
+      "PANEL_TYP": "Countywide, Panel Printed",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_panels:guayama_rural": {
+   "features": [
+    {
+     "attributes": {
+      "FIRM_PAN": "72000C2110J",
+      "EFF_DATE": 1258502400000,
+      "PANEL_TYP": "Countywide, Panel Printed",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_panels:toa_baja_ae": {
+   "features": [
+    {
+     "attributes": {
+      "FIRM_PAN": "72000C0330J",
+      "EFF_DATE": 1258502400000,
+      "PANEL_TYP": "Countywide, Panel Printed",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "fema_panels:rio_grande_ae": {
+   "features": [
+    {
+     "attributes": {
+      "FIRM_PAN": "72000C0415J",
+      "EFF_DATE": 1258502400000,
+      "PANEL_TYP": "Countywide, Panel Printed",
+      "DFIRM_ID": "72000C"
+     }
+    }
+   ]
+  },
+  "jp_calif:guaynabo_pueblo": {
+   "features": [
+    {
+     "attributes": {
+      "num_catast": null,
+      "cali": "VIAL",
+      "descrip": "Sistema vial",
+      "clasi": "VIAL",
+      "descrip1": "Sistema vial",
+      "resolucion": null,
+      "vigencia": null,
+      "cali_sobre": null,
+      "des_sobre": null,
+      "barrio": null,
+      "municipio": "Guaynabo"
+     }
+    }
+   ]
+  },
+  "jp_calif:condado": {
+   "features": []
+  },
+  "jp_calif:guayama_rural": {
+   "features": [
+    {
+     "attributes": {
+      "num_catast": "419-000-005-02",
+      "cali": "R-A",
+      "descrip": "Residencial de Alta Densidad",
+      "clasi": "SREP-A",
+      "descrip1": "Suelo Rústico Especialmente Protegido - Agrícola",
+      "resolucion": "JP-PT-71-4",
+      "vigencia": "03/19/2008",
+      "cali_sobre": " ",
+      "des_sobre": " ",
+      "barrio": "Palmas",
+      "municipio": "Guayama"
+     }
+    }
+   ]
+  },
+  "jp_calif:toa_baja_ae": {
+   "features": [
+    {
+     "attributes": {
+      "num_catast": "038-000-010-13",
+      "cali": "C-R",
+      "descrip": "Conservación de Recursos",
+      "clasi": "SREP-E",
+      "descrip1": "Suelo Rústico Especialmente Protegido-Ecológico",
+      "resolucion": "JP-PT-13-11",
+      "vigencia": "27-DIC-2024",
+      "cali_sobre": " ",
+      "des_sobre": " ",
+      "barrio": "Sabana Seca",
+      "municipio": "Toa Baja"
+     }
+    }
+   ]
+  },
+  "jp_calif:rio_grande_ae": {
+   "features": [
+    {
+     "attributes": {
+      "num_catast": "090-000-005-01",
+      "cali": "CR",
+      "descrip": "Conservación de Recursos",
+      "clasi": "SREP-A",
+      "descrip1": "Suelo Rústico Especialmente Protegido - Agrícola",
+      "resolucion": "JP-PT-22-1",
+      "vigencia": "01-MAR-2012",
+      "cali_sobre": " ",
+      "des_sobre": " ",
+      "barrio": null,
+      "municipio": "Río Grande"
+     }
+    }
+   ]
+  },
+  "crim:guaynabo_pueblo": {
+   "features": [
+    {
+     "attributes": {
+      "NUM_CATASTRO": null,
+      "OLDPID": null,
+      "TIPO": "V"
+     }
+    }
+   ]
+  },
+  "crim:condado": {
+   "features": []
+  },
+  "crim:guayama_rural": {
+   "features": [
+    {
+     "attributes": {
+      "NUM_CATASTRO": "419-000-005-02",
+      "OLDPID": "419-000-005-02",
+      "TIPO": "P"
+     }
+    }
+   ]
+  },
+  "crim:toa_baja_ae": {
+   "features": [
+    {
+     "attributes": {
+      "NUM_CATASTRO": "038-000-010-13",
+      "OLDPID": "038-087-673-07",
+      "TIPO": "P"
+     }
+    }
+   ]
+  },
+  "crim:rio_grande_ae": {
+   "features": [
+    {
+     "attributes": {
+      "NUM_CATASTRO": "090-000-005-01",
+      "OLDPID": "090-000-005-01",
+      "TIPO": "P"
+     }
+    }
+   ]
+  },
+  "coastline:guaynabo_pueblo": {
+   "count": 0
+  },
+  "czm_official:guaynabo_pueblo": {
+   "_http_status": 502
+  },
+  "historic:guaynabo_pueblo": {
+   "_timeout": true
+  },
+  "protected:guaynabo_pueblo": {
+   "_timeout": true
+  },
+  "coastline:condado": {
+   "count": 1
+  },
+  "czm_official:condado": {
+   "_http_status": 502
+  },
+  "historic:condado": {
+   "_timeout": true
+  },
+  "protected:condado": {
+   "_timeout": true
+  },
+  "coastline:guayama_rural": {
+   "count": 0
+  },
+  "czm_official:guayama_rural": {
+   "_http_status": 502
+  },
+  "historic:guayama_rural": {
+   "_timeout": true
+  },
+  "protected:guayama_rural": {
+   "_timeout": true
+  },
+  "coastline:toa_baja_ae": {
+   "count": 0
+  },
+  "czm_official:toa_baja_ae": {
+   "_http_status": 502
+  },
+  "historic:toa_baja_ae": {
+   "_timeout": true
+  },
+  "protected:toa_baja_ae": {
+   "_timeout": true
+  },
+  "coastline:rio_grande_ae": {
+   "count": 0
+  },
+  "czm_official:rio_grande_ae": {
+   "_http_status": 502
+  },
+  "historic:rio_grande_ae": {
+   "_timeout": true
+  },
+  "protected:rio_grande_ae": {
+   "_timeout": true
+  }
+ }
+}

@@ -1,9 +1,17 @@
 // Inline row actions for the checklist view: the ONE primary action the
 // expanded requirement card already offers ("Complete form", "Upload",
-// "File with Clara", "Download", "Continue application"), shown on the
-// collapsed one-line row so the user can act without expanding it. Any
-// other action goes into a small overflow (⋯) menu. Every entry runs the
-// very same handler (or link) as the expanded card — nothing new is wired.
+// "Fill with Clara", "Continue application"), shown on the collapsed
+// one-line row so the user can act without expanding it. Any other action
+// goes into a small overflow (⋯) menu.
+//
+// In-platform rule (Darius, 2026-09-30): the primary inline action ALWAYS
+// keeps the user in SmartPR — an in-platform form/package ("Complete form"),
+// Clara ("Fill with Clara"), or an in-platform upload. Links that leave
+// SmartPR (agency portals, agency sites, official PDFs, instructions) only
+// ever sit in the ⋯ menu or the row details. When a row has nothing
+// in-platform of its own, the guided form generated from the requirement's
+// "What you'll need" list ("Complete form") leads. "Teach Clara" is always
+// reachable from the ⋯ menu.
 import type {
   RequirementAction,
   RequirementAnswerPrompt,
@@ -14,7 +22,7 @@ import type {
 
 type Language = "en" | "es";
 
-export type RowCtaKind = "form" | "upload" | "assist" | "download" | "instructions" | "site" | "portal" | "start" | "confirm" | "view" | "teach";
+export type RowCtaKind = "form" | "guided" | "upload" | "assist" | "teach" | "download" | "instructions" | "site" | "portal" | "start" | "confirm" | "view";
 
 export interface RowCta {
   id: string;
@@ -31,6 +39,8 @@ export interface RowCta {
 }
 
 export interface RowActionsModel {
+  /** Clara has a validated, recorded routine for this row ("Clara learned this"). */
+  learned?: "learned" | "needs_reteach" | null;
   primary: RowCta | null;
   more: RowCta[];
   /** Completed: a check plus "View" (clickable when the card can reopen it). */
@@ -45,8 +55,10 @@ const MAX = 16;
 
 const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
   form: { en: "Complete form", es: "Completar" },
+  guided: { en: "Complete form", es: "Completar" },
+  teach: { en: "Teach Clara", es: "Enséñale a Clara" },
   upload: { en: "Upload", es: "Subir" },
-  assist: { en: "File with Clara", es: "Radicar con Clara" },
+  assist: { en: "Fill with Clara", es: "Llenar con Clara" },
   download: { en: "Download", es: "Descargar" },
   instructions: { en: "Instructions", es: "Instrucciones" },
   site: { en: "Agency site", es: "Sitio de la agencia" },
@@ -54,12 +66,14 @@ const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
   start: { en: "Start", es: "Empezar" },
   confirm: { en: "Confirm", es: "Confirmar" },
   view: { en: "View", es: "Ver" },
-  teach: { en: "Teach Clara", es: "Enséñale a Clara" },
 };
 
 /** "Complete Patente Municipal registration form" → "Complete form"; short labels pass through. */
 export function shortCtaLabel(label: string, kind: RowCtaKind, language: Language): string {
   const t = label.trim();
+  // Clara's action reads the same on every row ("File with Clara" /
+  // "Prepare with Clara" are its long titles).
+  if (kind === "assist" || kind === "teach" || kind === "guided") return DEFAULT_SHORT[kind][language];
   if (t && t.length <= MAX) return t;
   if (kind === "form") {
     if (/^(continue|continuar)/i.test(t)) return language === "es" ? "Continuar" : "Continue";
@@ -83,7 +97,7 @@ export function requirementRowActions(
     answerPrompt?: RequirementAnswerPrompt;
     /** "Verify existing": confirming the document already held comes first. */
     verifyExisting?: boolean;
-  },
+  } & InPlatformHandlers,
   language: Language
 ): RowActionsModel {
   const { action, filing, download, secondary, secondaryOnCompleted, answerPrompt, verifyExisting } = input;
@@ -96,7 +110,7 @@ export function requirementRowActions(
     return { primary: null, more, done: { label: action.onClick ? (es ? "Ver" : "View") : es ? "Listo" : "Done", onClick: action.onClick }, answer: null };
   }
   if (answerPrompt && (action.kind === "none" || !action.onClick)) {
-    return { primary: null, more: [], done: null, answer: answerPrompt };
+    return ensureInPlatformPrimary({ primary: null, more: [], done: null, answer: answerPrompt }, input, language);
   }
 
   const list: RowCta[] = [];
@@ -116,9 +130,6 @@ export function requirementRowActions(
   const siteCta = filing?.agencySite
     ? cta("site", "site", filing.agencySite.label, language, { href: filing.agencySite.url, external: true })
     : null;
-  const teachCta = filing?.teach
-    ? cta("teach", "teach", filing.teach.label, language, { onClick: filing.teach.onClick })
-    : null;
   const downloadCta = !filing && download
     ? cta("download", "download", download.label, language, { href: download.url, external: true, onClick: download.onDownload })
     : null;
@@ -131,9 +142,9 @@ export function requirementRowActions(
     if (resuming) list.push(primaryAction!);
     if (confirm) list.push(confirm);
     if (primaryAction && !resuming) list.push(primaryAction);
-    for (const c of [filingCta, downloadCta, instructionsCta, siteCta, teachCta]) if (c) list.push(c);
+    for (const c of [filingCta, downloadCta, instructionsCta, siteCta]) if (c) list.push(c);
   } else {
-    for (const c of [primaryAction, filingCta, downloadCta, instructionsCta, secondaryCta("upload"), siteCta, teachCta]) if (c) list.push(c);
+    for (const c of [primaryAction, filingCta, downloadCta, instructionsCta, secondaryCta("upload"), siteCta]) if (c) list.push(c);
   }
   // One entry per handler, primary first.
   const seen = new Set<string>();
@@ -143,7 +154,95 @@ export function requirementRowActions(
     seen.add(key);
     return true;
   });
-  return { primary: unique[0] ?? null, more: unique.slice(1), done: null, answer: null };
+  return ensureInPlatformPrimary({ primary: unique[0] ?? null, more: unique.slice(1), done: null, answer: null }, input, language);
+}
+
+/** Opens SmartPR's own guided form / Teach Clara for a row (in-platform). */
+export interface InPlatformHandlers {
+  /** Opens the guided in-platform form built from the requirement's "What you'll need". */
+  onGuidedForm?: (() => void) | null;
+  /** Opens Teach Clara for this requirement / portal. */
+  onTeach?: (() => void) | null;
+  /**
+   * A validated recorded routine exists for this row: "Fill with Clara"
+   * replays exactly those steps and leads the row (any portal).
+   */
+  onLearnedFill?: (() => void) | null;
+  /** The learned routine's state; needs_reteach = the portal changed during a replay. */
+  learnedStatus?: "learned" | "needs_reteach" | null;
+}
+
+export function learnedFillCta(onClick: () => void, language: Language): RowCta {
+  const es = language === "es";
+  return { id: "learned", kind: "assist", label: DEFAULT_SHORT.assist[language], title: es ? "Llenar con Clara — sigue los pasos que le enseñaste" : "Fill with Clara — follows the steps you taught her", onClick };
+}
+
+export function reteachClaraCta(onClick: () => void, language: Language): RowCta {
+  const es = language === "es";
+  return { id: "teach", kind: "teach", label: es ? "Enseñar de nuevo" : "Re-teach Clara", title: es ? "Grabar otra vez cómo se radica" : "Record how this is filed again", onClick };
+}
+
+/** True when following the CTA leaves SmartPR (new tab or an off-site URL). */
+export function isExternalCta(c: RowCta | null | undefined): boolean {
+  if (!c) return false;
+  if (c.external) return true;
+  if (!c.href) return false;
+  return !c.href.startsWith("/") || c.href.startsWith("//");
+}
+
+export function guidedFormCta(onClick: () => void, language: Language, title?: string): RowCta {
+  const es = language === "es";
+  return { id: "guided", kind: "guided", label: DEFAULT_SHORT.guided[language], title: title ?? (es ? "Completar el formulario en SmartPR" : "Complete the form in SmartPR"), onClick };
+}
+
+export function teachClaraCta(onClick: () => void, language: Language): RowCta {
+  const es = language === "es";
+  return { id: "teach", kind: "teach", label: DEFAULT_SHORT.teach[language], title: es ? "Enséñale a Clara cómo se radica" : "Teach Clara how this is filed", onClick };
+}
+
+/**
+ * The in-platform rule, applied to any row model: an external primary moves
+ * to the ⋯ menu; the first in-platform action leads instead, else the
+ * guided form (when the row had something to act on). Teach Clara is added
+ * last to the ⋯ menu of every open row. Done / answer rows keep their state.
+ */
+export function ensureInPlatformPrimary(model: RowActionsModel, handlers: InPlatformHandlers, language: Language): RowActionsModel {
+  if (model.done) return model;
+  if (handlers.onLearnedFill && handlers.learnedStatus !== "needs_reteach") return applyLearnedRoutine(model, handlers, language);
+  const all = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach");
+  const internal = all.filter((c) => !isExternalCta(c));
+  const external = all.filter((c) => isExternalCta(c));
+  let primary: RowCta | null = model.answer ? null : internal[0] ?? null;
+  const more = model.answer ? [...internal] : internal.slice(1);
+  // Something to act on, but only off-site: SmartPR's guided form leads.
+  if (!model.answer && !primary && external.length && handlers.onGuidedForm) primary = guidedFormCta(handlers.onGuidedForm, language);
+  // A guided form never sits behind another in-platform action's ⋯ twice.
+  if (primary && primary.kind !== "guided") {
+    const g = more.findIndex((c) => c.kind === "guided");
+    if (g !== -1) more.splice(g, 1);
+  }
+  more.push(...external);
+  if (handlers.onTeach && (primary || more.length || model.answer)) {
+    more.push(handlers.learnedStatus === "needs_reteach" ? reteachClaraCta(handlers.onTeach, language) : teachClaraCta(handlers.onTeach, language));
+  }
+  return { primary, more, done: null, answer: model.answer, ...(handlers.learnedStatus ? { learned: handlers.learnedStatus } : {}) };
+}
+
+/**
+ * A validated recorded routine leads the row: "Fill with Clara" (strict
+ * replay) is the primary action on ANY portal; the row's other actions move
+ * to ⋯ (the built-in Clara action is replaced, external links stay in ⋯),
+ * and Teach becomes "Re-teach Clara". Answer rows keep "Answer" first.
+ */
+export function applyLearnedRoutine(model: RowActionsModel, handlers: InPlatformHandlers, language: Language): RowActionsModel {
+  if (model.done || !handlers.onLearnedFill) return model;
+  const others = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach" && c.kind !== "assist");
+  const internal = others.filter((c) => !isExternalCta(c));
+  const external = others.filter((c) => isExternalCta(c));
+  const fill = learnedFillCta(handlers.onLearnedFill, language);
+  const more = model.answer ? [fill, ...internal, ...external] : [...internal, ...external];
+  if (handlers.onTeach) more.push(reteachClaraCta(handlers.onTeach, language));
+  return { primary: model.answer ? null : fill, more, done: null, answer: model.answer, learned: "learned" };
 }
 
 /** Actions for an energy process row: the legacy cards it covers, merged. */
@@ -161,39 +260,54 @@ export interface ProcessPortal { url: string; label: string; label_es?: string }
 
 /**
  * Inline actions for an energy process row. The covered legacy cards' own
- * actions come first (same handlers as the expanded card); a process with an
- * official portal adds "Open portal"; a process with only a list of what to
- * prepare gets "Start", which opens that prepared checklist under the row.
+ * in-platform actions come first (same handlers as the expanded card); a
+ * row with nothing in-platform gets SmartPR's guided form ("Complete form",
+ * built from "What you'll need"). The official portal is ⋯-only, as is
+ * Teach Clara.
  *   - question rows: "Answer" leads; the rest go in the ⋯ menu.
  *   - expert rows: only real card actions (no expert-request handler exists).
- *   - may-apply rows: card actions and the portal, never a bare "Start".
+ *   - may-apply rows: card actions; the guided form only when the row has an
+ *     official portal (something to file), never a bare form.
  */
 export function energyRowActions(
   input: {
     status: string;
     cards: RowActionsModel;
     portal?: ProcessPortal | null;
-    /** Opens the prepared checklist ("What you'll need") under the row. */
+    /** @deprecated The prepared checklist is now the guided form (onGuidedForm). */
     onStart?: (() => void) | null;
     question?: { prompt: string } | null;
-  },
+  } & InPlatformHandlers,
   language: Language
 ): RowActionsModel {
   const { status, cards, portal, onStart, question } = input;
   const es = language === "es";
   if (cards.done) return cards;
-  const fromCards = [cards.primary, ...cards.more].filter((c): c is RowCta => !!c);
-  if (status === "expert") return { primary: fromCards[0] ?? null, more: fromCards.slice(1), done: null, answer: null };
+  const fromCards = [cards.primary, ...cards.more].filter((c): c is RowCta => !!c && c.kind !== "teach");
+  if (status === "expert") {
+    const own = fromCards.filter((c) => c.kind !== "guided");
+    return ensureInPlatformPrimary({ primary: own[0] ?? null, more: own.slice(1), done: null, answer: null }, { onTeach: input.onTeach, onLearnedFill: input.onLearnedFill, learnedStatus: input.learnedStatus }, language);
+  }
+  const own = fromCards.filter((c) => c.kind !== "guided");
   // The official portal ranks above a generic "agency site" link.
-  const list = fromCards.filter((c) => c.kind !== "site");
-  if (portal?.url && !fromCards.some((c) => c.href === portal.url)) {
+  const list = own.filter((c) => c.kind !== "site");
+  if (portal?.url && !own.some((c) => c.href === portal.url)) {
     const title = (es ? portal.label_es : null) ?? portal.label;
     list.push({ id: "portal", kind: "portal", label: DEFAULT_SHORT.portal[language], title, href: portal.url, external: true });
   }
-  list.push(...fromCards.filter((c) => c.kind === "site"));
-  if (onStart && !list.length && status !== "may_apply" && status !== "question") {
-    list.push({ id: "start", kind: "start", label: DEFAULT_SHORT.start[language], title: es ? "Abrir la lista preparada" : "Open the prepared checklist", onClick: onStart });
+  list.push(...own.filter((c) => c.kind === "site"));
+  const guided = input.onGuidedForm ?? null;
+  const hasInternal = list.some((c) => !isExternalCta(c));
+  if (!hasInternal && status !== "question") {
+    const mayFile = status !== "may_apply" || !!portal?.url;
+    if (guided && mayFile && (list.length || status !== "may_apply")) list.unshift(guidedFormCta(guided, language));
+    else if (!guided && onStart && !list.length && status !== "may_apply") {
+      list.push({ id: "start", kind: "start", label: DEFAULT_SHORT.start[language], title: es ? "Abrir la lista preparada" : "Open the prepared checklist", onClick: onStart });
+    }
   }
-  if (status === "question" && question) return { primary: null, more: list, done: null, answer: question };
-  return { primary: list[0] ?? null, more: list.slice(1), done: null, answer: null };
+  const model: RowActionsModel = status === "question" && question
+    ? { primary: null, more: list, done: null, answer: question }
+    : { primary: list[0] ?? null, more: list.slice(1), done: null, answer: null };
+  // may-apply rows without a portal never get a bare guided form.
+  return ensureInPlatformPrimary(model, { onTeach: input.onTeach, onGuidedForm: status === "may_apply" && !portal?.url ? null : guided, onLearnedFill: input.onLearnedFill, learnedStatus: input.learnedStatus }, language);
 }

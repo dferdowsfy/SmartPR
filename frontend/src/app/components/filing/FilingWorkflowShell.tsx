@@ -51,6 +51,11 @@ export interface SmartPRLiveData {
     municipality?: string | null;
     locationType?: string | null;
     scope?: string | null;
+    /**
+     * Optional "Site" row (a `<div><dt/><dd/></div>` for the summary list):
+     * the confirmed pin, or a button that opens the location picker.
+     */
+    site?: ReactNode;
     onPreview?: () => void;
   };
 }
@@ -161,6 +166,7 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
           {project.municipality && <div><dt>{language === "es" ? "Municipio" : "Municipality"}</dt><dd>{project.municipality}</dd></div>}
           {project.scope && <div><dt>{language === "es" ? "Proyecto" : "Scope"}</dt><dd>{project.scope}</dd></div>}
           {project.locationType && <div><dt>{language === "es" ? "Ubicación" : "Location"}</dt><dd>{project.locationType}</dd></div>}
+          {project.site}
         </dl>
         {!!data.scenario?.facts.length && <details className="spr-project-saved"><summary>{language === "es" ? "Información guardada" : "Saved information"}</summary><ul>{data.scenario.facts.map((fact) => <li key={fact}>{fact}</li>)}</ul></details>}
         <div className="spr-project-summary-next">

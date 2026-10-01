@@ -3097,7 +3097,11 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .ck-line-actions > .ck-cta { flex: 0 0 154px; width: 154px; justify-content: center; min-width: 0; min-height: 48px; }
 @keyframes spr-stage-arrive { from { opacity: .35; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spr-stage-progress { from { transform: scaleX(0); opacity: 1; } to { transform: scaleX(1); opacity: 0; } }
-.spr-stage-enter { animation: spr-stage-arrive .38s cubic-bezier(.2,.75,.3,1) both; }
+/* Fill mode is `backwards`, not `both`: a retained final keyframe keeps a
+   computed `transform` on the grid forever, which makes it the containing
+   block for every `position: fixed` descendant (dialogs opened off-screen at
+   the top of a scrolled page). Dialogs are also portalled to <body>. */
+.spr-stage-enter { animation: spr-stage-arrive .38s cubic-bezier(.2,.75,.3,1) backwards; }
 .spr-stage-enter::before { content: ''; position: fixed; z-index: 30; top: 0; left: 0; right: 0; height: 4px; background: #245c5c; transform-origin: left; pointer-events: none; animation: spr-stage-progress .55s ease-out both; }
 .spr-guided-intake-shell .spr-field label { font-size: 13px; line-height: 1.25; }
 .spr-guided-intake-shell .spr-project-brief span { font-size: 12px; }
@@ -3129,3 +3133,58 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 @media (prefers-reduced-motion: reduce) {
   .spr-stage-enter, .spr-stage-enter::before { animation: none; }
 }
+
+/* ---- Intake location step ("Where is it?") + "Rules for:" line ---- */
+.spr-loc-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.spr-loc-card-done { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.spr-loc-title { margin: 0; font-size: var(--rq-text-heading, 20px); font-weight: 700; line-height: 1.3; color: var(--ink); }
+.spr-loc-hint { margin: 0; font-size: var(--rq-text-body, 16px); line-height: 1.5; color: var(--ink); }
+.spr-loc-why { margin: 0; font-size: var(--rq-text-body, 16px); color: var(--muted, #555); }
+.spr-loc-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.spr-loc-primary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: 10px; border: 0; background: var(--brand); color: #f6f3ea; font-size: var(--rq-text-body, 16px); font-weight: 600; cursor: pointer; }
+.spr-loc-primary svg { width: 18px; height: 18px; }
+.spr-loc-saved { display: flex; flex-direction: column; gap: 6px; }
+.spr-loc-saved-label { font-size: 14px; font-weight: 600; color: var(--muted, #555); }
+.spr-loc-saved-item { text-align: left; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: #fff; font-size: var(--rq-text-body, 16px); color: var(--ink); cursor: pointer; }
+.spr-loc-saved-item:hover { border-color: var(--brand); }
+.spr-loc-saved-sub { color: var(--muted, #555); }
+.spr-loc-error { margin: 0; color: var(--danger, #b42318); font-size: 14px; }
+.spr-loc-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; font-size: var(--rq-text-body, 16px); color: var(--ink); }
+.spr-loc-icon { width: 18px; height: 18px; color: var(--brand); flex: none; }
+.spr-loc-rules { min-width: 0; overflow-wrap: anywhere; }
+.spr-loc-rules-label { color: var(--muted, #555); }
+.spr-loc-note { color: var(--warn, #b54708); font-size: 14px; }
+.spr-loc-change { font-size: var(--rq-text-body, 16px); font-weight: 600; }
+.spr-loc-action { min-height: 36px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--brand); background: #fff; color: var(--brand); font-size: 15px; font-weight: 600; cursor: pointer; }
+.spr-loc-pending .spr-loc-rules { color: var(--muted, #555); }
+.spr-loc-chips { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; margin-left: 28px; }
+.spr-loc-chip { display: inline-flex; align-items: center; min-height: 26px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.spr-loc-chip-unknown { font-weight: 400; color: var(--muted, #555); border-style: dashed; background: transparent; }
+/* Map-layer lookup state (loading → done / unavailable). Body size, never a
+   whisper: the lookup changes which requirements apply. */
+.spr-loc-layers { flex-basis: 100%; display: flex; flex-direction: column; gap: 8px; margin-left: 28px; }
+.spr-loc-layers .spr-loc-chips { margin-left: 0; }
+.spr-loc-layers-status { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--rq-text-body, 16px); line-height: 1.4; font-weight: 600; color: var(--ink); }
+.spr-loc-layers-icon { width: 20px; height: 20px; flex: none; }
+.spr-loc-layers-loading { padding: 10px 12px; border-radius: 10px; background: #eef5f4; border: 1px solid #cfe1de; }
+.spr-loc-layers-loading .spr-loc-layers-icon { color: var(--brand); }
+.spr-loc-layers-done .spr-loc-layers-icon { color: var(--accent, #047f58); }
+.spr-loc-layers-unavailable .spr-loc-layers-status { font-weight: 500; color: var(--ink); }
+.spr-loc-layers-unavailable .spr-loc-layers-icon { color: var(--warn, #b54708); }
+.spr-loc-chip-skeleton { min-height: 28px; border-color: transparent; background: linear-gradient(90deg, #dfe8e6 0%, #f1f6f5 50%, #dfe8e6 100%); background-size: 200% 100%; animation: spr-loc-shimmer 1.2s ease-in-out infinite; }
+.spr-loc-spin { animation: spr-loc-spin 0.9s linear infinite; }
+@keyframes spr-loc-spin { to { transform: rotate(360deg); } }
+@keyframes spr-loc-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .spr-loc-spin, .spr-loc-chip-skeleton { animation: none; }
+}
+.spr-loc-card-done .spr-loc-layers { margin-left: 0; }
+/* Project-summary sidebar "Site" row. */
+.spr-loc-summary-row dd { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.spr-loc-summary-label { overflow-wrap: anywhere; }
+.spr-loc-summary-checking { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--brand); }
+.spr-loc-summary-checking svg { width: 16px; height: 16px; }
+.spr-loc-summary-change { font-size: 14px; font-weight: 600; }
+.spr-loc-summary-find { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--brand); background: #fff; color: var(--brand); font-size: 14px; font-weight: 650; cursor: pointer; white-space: nowrap; }
+.spr-loc-summary-find:hover { background: #eef5f4; }
+.spr-loc-summary-find svg { width: 16px; height: 16px; }

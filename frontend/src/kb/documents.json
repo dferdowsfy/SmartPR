@@ -1193,5 +1193,47 @@
     "citation": "Requisitos para cada tipo de licencia de rentas internas — Licencia de Detallista / Mayorista de Cigarrillos: proyección del volumen de ventas",
     "citation_url": "https://hacienda.pr.gov/node/1178",
     "citation_confidence": "official"
+  },
+  {
+    "id": "DOC_JP_FLOOD_REG13",
+    "name": "Flood-Zone Review (Planning Regulation 13)",
+    "agency": "OGPe / Junta de Planificación",
+    "category": "Regulatory",
+    "agency_url": "https://portaldeinundacion.jp.pr.gov/",
+    "agency_canonical": "OGPe",
+    "download_url": "https://www.sbp.pr.gov/",
+    "download_kind": "filing_portal",
+    "download_note": "Filed with the construction permit in OGPe's Single Business Portal: flood-zone compliance under Planning Regulation 13, with an Elevation Certificate (JP Resolution JP-2021-335 guide) for AE/A/VE sites; development in a regulatory floodway needs a no-rise (encroachment) analysis.",
+    "citation": "Reglamento de Planificación Núm. 13 (Reglamento sobre Áreas Especiales de Peligro a Inundación), Octava Revisión, vigencia 9 de enero de 2021; Ley Núm. 3 de 27 de septiembre de 1961; Reglamento Conjunto 2023 § 3.2.1.2(d)",
+    "citation_url": "https://portaldeinundacion.jp.pr.gov/uploads/Documentos/Reglamento-Num-13-Octava-Revision-Vigencia-9-Enero-2021-1.pdf",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_CZM_COASTAL_REVIEW",
+    "name": "Coastal-Zone Review (CZM Consistency)",
+    "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA",
+    "category": "Regulatory",
+    "agency_url": "https://jp.pr.gov/",
+    "agency_canonical": "JP",
+    "download_url": "https://www.sbp.pr.gov/",
+    "download_kind": "filing_portal",
+    "download_note": "Projects in the coastal zone are reviewed for consistency with Puerto Rico's Coastal Zone Management Program; when a federal license or permit is needed (e.g. a Corps § 404/§ 10 permit) the applicant files a federal consistency certification (15 CFR 930.57). Works in the maritime-terrestrial zone also need DRNA authorization.",
+    "citation": "Coastal Zone Management Act § 307(c)(3)(A), 16 U.S.C. § 1456(c)(3)(A); 15 CFR 930.57(a); Programa de Manejo de la Zona Costanera de Puerto Rico (Junta de Planificación)",
+    "citation_url": "https://www.ecfr.gov/current/title-15/subtitle-B/chapter-IX/subchapter-B/part-930/subpart-D/section-930.57",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_CONSULTA_UBICACION",
+    "name": "Land-Use Siting Review (Consulta de Ubicación / Variance)",
+    "agency": "OGPe / Junta de Planificación",
+    "category": "Regulatory",
+    "agency_url": "https://www.sbp.pr.gov/",
+    "agency_canonical": "OGPe",
+    "download_url": "https://www.sbp.pr.gov/",
+    "download_kind": "filing_portal",
+    "download_note": "A use the site's calificación does not allow — or construction on specially protected rustic land — is evaluated through a consulta de ubicación (or a variance where the Reglamento Conjunto allows one) before the construction permit; filed in OGPe's Single Business Portal.",
+    "citation": "Reglamento Conjunto 2023 (Reg. 9473), Capítulo de Consultas de Ubicación y Variaciones; Ley 161-2009, Art. 2.5 (23 L.P.R.A. § 9012d); Ley 550-2004 (Plan de Uso de Terrenos)",
+    "citation_url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+    "citation_confidence": "regulation"
   }
 ]

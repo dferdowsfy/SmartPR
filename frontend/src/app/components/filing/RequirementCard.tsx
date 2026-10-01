@@ -3,8 +3,9 @@
 import { useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
-import { RowActions, RowQuestion } from "../checklist/RowActions";
+import { RowActions, RowName, RowQuestion } from "../checklist/RowActions";
 import { requirementRowActions } from "../checklist/rowActionModel";
+import { useInPlatformActions } from "../clara/useInPlatformActions";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
 
@@ -88,8 +89,6 @@ export interface RequirementFiling {
   href?: string;
   hint?: string;
   agencySite?: { label: string; url: string } | null;
-  /** "Teach Clara" / "Show Clara": record this portal once so Clara can fill it next time. */
-  teach?: { label: string; onClick: () => void } | null;
 }
 
 export interface RequirementCardProps {
@@ -143,6 +142,10 @@ export interface RequirementCardProps {
   verifyExisting?: boolean;
   /** Language of the inline row actions' short labels. */
   language?: "en" | "es";
+  /** Stable requirement key (engine document id / code) for drafts and Teach Clara; defaults to the row id. */
+  requirementKey?: string | null;
+  /** "What you'll need" items — the guided form's fields. */
+  needs?: string[];
 }
 
 function ActionButton({ action }: { action: RequirementAction }) {
@@ -212,6 +215,8 @@ export function RequirementCard({
   extraInBody,
   verifyExisting,
   language = "en",
+  requirementKey,
+  needs,
 }: RequirementCardProps) {
   // Checklist line by default: number · name · who handles it · status, plus
   // the primary action. Details expand on click; the full rationale and the
@@ -219,7 +224,15 @@ export function RequirementCard({
   const [open, setOpen] = useState(false);
   // Answer-only rows open just their question, not the details.
   const [askOpen, setAskOpen] = useState(false);
-  const rowActions = requirementRowActions({ action, filing, download, secondary, secondaryOnCompleted, answerPrompt, verifyExisting }, language);
+  // In-platform rule: the primary inline action keeps the user in SmartPR.
+  // A row whose only actions leave SmartPR leads with the guided form; Teach
+  // Clara is always in the ⋯ menu. The official site stays secondary.
+  const offSite = filing?.agencySite?.url ?? (filing?.href && !filing.href.startsWith("/") ? filing.href : null) ?? download?.url ?? null;
+  const inPlatform = useInPlatformActions(
+    { key: requirementKey || id?.replace(/^req-row-/, "") || name, name, agency: agency ?? null, needs, portalUrl: offSite, portalLabel: filing?.agencySite?.label ?? download?.label ?? null },
+    language
+  );
+  const rowActions = requirementRowActions({ action, filing, download, secondary, secondaryOnCompleted, answerPrompt, verifyExisting, ...inPlatform.handlers }, language);
   const whyRef = useRef<HTMLDetailsElement>(null);
   const openInstructions = () => {
     setOpen(true);
@@ -236,7 +249,7 @@ export function RequirementCard({
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
           <span className="ck-num">{index}</span>
-          <span className="ck-name" title={name}>{name}</span>
+          <RowName name={name} model={rowActions} language={language} />
           {agency && <span className="ck-agency">{agency}</span>}
           {badge && <span className={`ck-pill rq-badge-${badge.tone}`}>{badge.label}</span>}
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
@@ -244,6 +257,7 @@ export function RequirementCard({
         {/* The primary action(s) on the collapsed line — same handlers as below. */}
         <RowActions model={rowActions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
       </div>
+      {inPlatform.dialogs(rowActions)}
       {askOpen && !open && answerPrompt && (
         <RowQuestion {...answerPrompt} onYes={() => { setAskOpen(false); answerPrompt.onYes(); }} onNo={() => { setAskOpen(false); answerPrompt.onNo(); }} />
       )}

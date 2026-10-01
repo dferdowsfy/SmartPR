@@ -87,6 +87,12 @@ export interface ReplayContext {
   /** Human answers for "ask" fields, keyed by field key. Ephemeral. */
   answers?: Record<string, string>;
   onDrift?: (pause: Extract<ReplayPause, { kind: "drift" }>) => void | Promise<void>;
+  /**
+   * Strict replay: when a recorded control isn't found, name the same
+   * control among the labels the page shows (see replay/relocate.ts), or
+   * null to pause. Never consulted for ambiguous matches.
+   */
+  relocate?: (target: { role: string; label: string; selector?: string | null }, seen: string[]) => Promise<string | null>;
   now?: () => string;
   maxLoops?: number;
 }
@@ -217,9 +223,24 @@ function gatePause(state: ReplayState, ctx: ReplayContext, step: SkillStep | nul
   return state;
 }
 
+/** Locate a recorded control; on a miss, let the relocator re-find it once (exact visible label). */
+async function locateStrict(ctx: ReplayContext, state: ReplayState, step: SkillStep, target: { role: string; label: string; selector?: string | null }): Promise<LocateResult> {
+  const loc = await ctx.driver.locate(target);
+  if (loc.ok || loc.reason !== "not_found" || !ctx.relocate || !loc.seen.length) return loc;
+  const label = await ctx.relocate(target, loc.seen);
+  if (!label || normalizeLabel(label) === normalizeLabel(target.label)) return loc;
+  const again = await ctx.driver.locate({ role: target.role, label, selector: null });
+  if (!again.ok) return loc;
+  milestone(state, ctx, step.id, {
+    en: `The portal renamed “${target.label}” to “${label}” — I found it and kept going.`,
+    es: `El portal le cambió el nombre a “${target.label}” por “${label}” — lo encontré y seguí.`,
+  });
+  return again;
+}
+
 async function fillField(ctx: ReplayContext, step: SkillStep, field: SkillField, value: string, snap: PageSnapshot, state: ReplayState): Promise<ReplayState | "ok" | "skip"> {
   const role = field.portal_field.role === "combobox" ? "combobox" : "textbox";
-  const loc = await ctx.driver.locate({ role, label: field.portal_field.label, selector: field.portal_field.selector });
+  const loc = await locateStrict(ctx, state, step, { role, label: field.portal_field.label, selector: field.portal_field.selector });
   if (!loc.ok) {
     if (!field.required && field.fallback === "skip_step") return "skip";
     return drift(state, ctx, loc.reason === "ambiguous" ? "control_ambiguous" : "control_not_found", step, snap, `"${field.portal_field.label}"`);
@@ -261,7 +282,7 @@ async function clickTarget(ctx: ReplayContext, step: SkillStep, target: SkillTar
     // Defense in depth: validated skills can't contain this.
     return gatePause(state, ctx, step, "submit", true);
   }
-  const loc = await ctx.driver.locate({ role: target.role, label: target.label_contains, selector: target.selector });
+  const loc = await locateStrict(ctx, state, step, { role: target.role, label: target.label_contains, selector: target.selector });
   if (!loc.ok) return drift(state, ctx, loc.reason === "ambiguous" ? "control_ambiguous" : "control_not_found", step, snap, `"${target.label_contains}"`);
   if (isSubmitTarget({ role: target.role, label_contains: loc.value || target.label_contains, selector: null })) {
     return gatePause(state, ctx, step, "submit", true);

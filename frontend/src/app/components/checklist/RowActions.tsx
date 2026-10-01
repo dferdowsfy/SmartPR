@@ -16,7 +16,9 @@ const stop = (e: MouseEvent) => e.stopPropagation();
 function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
   if (locked) return <Lock size={14} aria-hidden="true" />;
   switch (kind) {
-    case "form": return <ClipboardList size={14} aria-hidden="true" />;
+    case "form":
+    case "guided": return <ClipboardList size={14} aria-hidden="true" />;
+    case "teach": return <GraduationCap size={14} aria-hidden="true" />;
     case "upload":
     case "confirm": return <Upload size={14} aria-hidden="true" />;
     case "assist": return <Sparkles size={14} aria-hidden="true" />;
@@ -25,7 +27,6 @@ function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
     case "site":
     case "portal": return <ExternalLink size={14} aria-hidden="true" />;
     case "start": return <ListChecks size={14} aria-hidden="true" />;
-    case "teach": return <GraduationCap size={14} aria-hidden="true" />;
     default: return <ArrowRight size={14} aria-hidden="true" />;
   }
 }
@@ -56,6 +57,28 @@ function CtaControl({ c, className, role, onDone, testId = "row-cta" }: { c: Row
     <button type="button" {...common} onClick={click}>
       <Icon kind={c.kind} locked={c.locked} /> <span>{c.label}</span>
     </button>
+  );
+}
+
+/**
+ * The row's title, with the "Clara learned this" chip under it when the row
+ * has a validated taught routine. The chip lives with the title (not with the
+ * action buttons) so the actions column keeps its fixed width and never
+ * overflows the row; long names truncate.
+ */
+export function RowName({ name, model, language }: { name: string; model: RowActionsModel; language: Language }) {
+  const es = language === "es";
+  const learned = model.done ? undefined : model.learned;
+  if (!learned) return <span className="ck-name" title={name}>{name}</span>;
+  const label = learned === "learned" ? (es ? "Clara lo aprendió" : "Clara learned this") : (es ? "Hay que enseñarle otra vez" : "Needs re-teaching");
+  const tip = learned === "learned" ? (es ? "Clara sigue exactamente los pasos que le enseñaste" : "Clara follows exactly the steps you taught her") : (es ? "El portal cambió — enséñale otra vez" : "The portal changed — teach her again");
+  return (
+    <span className="ck-name-stack">
+      <span className="ck-name" title={name}>{name}</span>
+      <span className={`ck-learned ck-learned-${learned}`} data-testid="row-learned" title={tip}>
+        <GraduationCap size={13} aria-hidden="true" /> {label}
+      </span>
+    </span>
   );
 }
 

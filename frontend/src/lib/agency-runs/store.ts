@@ -39,6 +39,7 @@ import {
   type ResumeFields,
 } from "./taskPrompt";
 import { mergeFieldsWithPassportPrefill } from "./prefillFromPassport";
+import type { TaughtPlaybook } from "./teach/taughtPlaybooks";
 import type { GoalBrief } from "./goalBrief";
 import { setPortalAccountStatus } from "./portalAccounts";
 import { stepPauseMessage } from "./portalStep";
@@ -736,6 +737,8 @@ export async function createRun(input: {
    * on the run, never written into events or chat.
    */
   fields?: ResumeFields | null;
+  /** Teach Clara v1: steps a user described for this portal (read as guidance). */
+  taughtPlaybook?: TaughtPlaybook | null;
 }): Promise<AgencyRunPublic> {
   // Hard gate: a filing variant that is disabled or whose launch switch is
   // off can never start a browser session, whoever calls this.
@@ -788,6 +791,9 @@ export async function createRun(input: {
     supplied_field_ids: mergeSuppliedFieldIds([], input.fields),
     goal_brief: input.goalBrief ?? null,
     submission_objective: input.submissionObjective ?? null,
+    taught_playbook_ref: input.taughtPlaybook
+      ? { id: input.taughtPlaybook.id, owner_user_id: input.taughtPlaybook.owner_user_id, requirement_key: input.taughtPlaybook.requirement_key, portal_host: input.taughtPlaybook.portal_host, version: input.taughtPlaybook.version }
+      : null,
   };
 
   if (useBu) {
@@ -805,7 +811,16 @@ export async function createRun(input: {
         goalBrief: input.goalBrief ?? null,
         fields: input.fields ?? null,
         submissionObjective: input.submissionObjective ?? null,
+        taughtPlaybook: input.taughtPlaybook ?? null,
       });
+      if (input.taughtPlaybook) {
+        pushEvent(run, {
+          message: `Using the steps you taught Clara for ${input.taughtPlaybook.portal_host}`,
+          message_es: `Usando los pasos que le enseñaste a Clara para ${input.taughtPlaybook.portal_host}`,
+          screenshot_url: PLACEHOLDER_SHOTS.home,
+          kind: "info",
+        });
+      }
       const buRun = await createAgentRun({
         task,
         allowedDomains: filingConfig.domains,

@@ -18,7 +18,18 @@ function normalizeToken(s: string): string {
 export function energyFactsFromProjectContext(
   context: ProjectContext | null | undefined,
   kb: Pick<ProcessKB, "facts">,
-  extra?: { municipality?: string | null; answers?: Record<string, unknown> | null }
+  extra?: {
+    municipality?: string | null;
+    answers?: Record<string, unknown> | null;
+    /**
+     * `location.*` facts of the confirmed site (intake pin / Passport
+     * location, locations/intakeLocation.siteEngineFacts) with their
+     * explanations. Map layers answer the siting questions the description
+     * left open: flood zone / coastal zone → site_flood_hazard_area / site_coastal_zone,
+     * JP land classification / calificación → site_zoning.
+     */
+    location?: { facts: Record<string, unknown>; details?: Record<string, { en: string; es: string }> } | null;
+  }
 ): { facts: FactMap; evidence: FactEvidence } {
   const facts: FactMap = {};
   const evidence: FactEvidence = {};
@@ -66,6 +77,7 @@ export function energyFactsFromProjectContext(
       evidence.mounting_type = { origin: "discovery_answer:Q_SOLAR_MOUNTING" };
     }
   }
+  if (extra?.location) applyLocationFacts(facts, evidence, extra.location);
   if (facts.municipality === undefined && extra?.municipality) {
     facts.municipality = extra.municipality;
     evidence.municipality = { origin: "intake_field" };
@@ -76,4 +88,49 @@ export function energyFactsFromProjectContext(
 /** True when the project context mentions anything energy-related at all. */
 export function hasEnergySignal(facts: FactMap): boolean {
   return Object.keys(facts).some((k) => k !== "municipality" && facts[k] !== undefined);
+}
+
+/**
+ * Site-zoning class of the pin, from the JP land classification and
+ * calificación facts (locations/layers): industrial and agricultural
+ * districts first (they decide the wind / solar hearing rules), then the
+ * land class. Null when the layers did not resolve.
+ */
+export function siteZoningFromLocation(lf: Record<string, unknown>): string | null {
+  if (lf["location.zoning.industrial"] === true) return "industrial";
+  if (lf["location.zoning.agricultural"] === true) return "agricultural";
+  if (lf["location.land_class.srep"] === true) return "specially_protected_rustic";
+  if (lf["location.land_class.src"] === true) return "other_rustic";
+  if (lf["location.land_class.su"] === true || lf["location.land_class.urbano"] === true) return "urban";
+  return null;
+}
+
+function applyLocationFacts(
+  facts: FactMap,
+  evidence: FactEvidence,
+  location: { facts: Record<string, unknown>; details?: Record<string, { en: string; es: string }> }
+): void {
+  const lf = location.facts;
+  const detail = (key: string) => location.details?.[key]?.en;
+  // The pin's flood and coastal zones are their own facts (the reviews key
+  // on them alongside a stated environmental_sensitivity), so the user is
+  // still asked about wetlands / habitat, which no loaded layer answers.
+  // A layer that is unknown or says "outside" adds nothing.
+  if (lf["location.flood_zone.sfha"] === true) {
+    facts.site_flood_hazard_area = true;
+    evidence.site_flood_hazard_area = { quote: detail("location.flood_zone.sfha"), origin: "location:location.flood_zone.sfha" };
+  }
+  if (lf["location.czm"] === true) {
+    facts.site_coastal_zone = true;
+    evidence.site_coastal_zone = { quote: detail("location.czm"), origin: "location:location.czm" };
+  }
+  // Site zoning only fills the gap the description left (never overrides it).
+  if (facts.site_zoning === undefined) {
+    const z = siteZoningFromLocation(lf);
+    if (z) {
+      facts.site_zoning = z;
+      const key = z === "industrial" || z === "agricultural" ? "location.zoning" : "location.land_class";
+      evidence.site_zoning = { quote: detail(key), origin: `location:${key}` };
+    }
+  }
 }

@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { ModalPortal, useModalBehavior } from "../components/ui/ViewportModal";
 import { PassportMap, type MapPoint } from "../components/map/PassportMap";
 import {
   formatCoordinate,
@@ -128,6 +129,13 @@ export interface LocationPickerDialogProps {
   defaultName?: string;
   /** Pick mode: offer "also save to the Passport" (needs businessId). */
   offerSave?: boolean;
+  /**
+   * Prefill the address search (e.g. a municipio or address the user already
+   * mentioned) and run it once when the dialog opens.
+   */
+  initialQuery?: string | null;
+  /** Dialog title override (pick mode). */
+  title?: string;
   onClose: () => void;
   onSaved?: (location: PassportLocationWithGeographies, warnings: string[]) => void;
   onPicked?: (site: PickedSite) => void;
@@ -146,6 +154,8 @@ export function LocationPickerDialog({
   existing,
   defaultName,
   offerSave = false,
+  initialQuery = null,
+  title,
   onClose,
   onSaved,
   onPicked,
@@ -187,7 +197,7 @@ export function LocationPickerDialog({
   const [addressText, setAddressText] = useState(existing?.formatted_address ?? "");
   const [lookup, setLookup] = useState<LookupState>({ status: "idle" });
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery?.trim() ?? "");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<GeocodeCandidate[] | null>(null);
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
@@ -204,31 +214,16 @@ export function LocationPickerDialog({
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
 
-  // Escape closes (unless a save is in flight). Read through a ref so the
-  // mount-only effect below never re-runs and steals focus mid-edit.
-  const closeRef = useRef<() => void>(() => {});
-  useEffect(() => {
-    closeRef.current = () => {
+  // Viewport-fixed modal: portalled to <body> (see ModalPortal), page scroll
+  // locked, focus moved into the dialog and kept there, Escape closes
+  // (unless a save is in flight), focus returns to the opener on close.
+  useModalBehavior(
+    dialogRef,
+    () => {
       if (!saving) onClose();
-    };
-  }, [onClose, saving]);
-
-  // Mount only: initial focus, Escape handler, body scroll lock; restore focus on close.
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    firstFieldRef.current?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeRef.current();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
-  }, []);
+    },
+    firstFieldRef
+  );
 
   /**
    * Describe the new point with a reverse lookup. Confirmation waits for it
@@ -348,9 +343,8 @@ export function LocationPickerDialog({
     movePoint({ latitude: v.latitude, longitude: v.longitude }, "MANUAL_ENTRY", true);
   };
 
-  const search = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const q = query.trim();
+  const runSearch = async (raw: string) => {
+    const q = raw.trim();
     if (!q) return;
     setSearching(true);
     setSearchMessage(null);
@@ -399,6 +393,21 @@ export function LocationPickerDialog({
       setSearching(false);
     }
   };
+
+  const search = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await runSearch(query);
+  };
+
+  // A prefilled query (what the user already told us) is searched once on open.
+  const initialSearchDone = useRef(false);
+  useEffect(() => {
+    if (initialSearchDone.current || !initialQuery?.trim()) return;
+    initialSearchDone.current = true;
+    void runSearch(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
+
 
   const chooseResult = (c: GeocodeCandidate) => {
     lookupSeq.current += 1; // cancel any in-flight reverse lookup
@@ -498,16 +507,26 @@ export function LocationPickerDialog({
     "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base font-normal text-[#161616] sm:text-sm";
 
   return (
+    <ModalPortal>
     <div
-      className="fixed inset-0 z-[60] flex items-stretch justify-center bg-black/40 sm:items-center sm:p-4"
-      onClick={() => !saving && onClose()}
+      // Full-screen sheet on phones; centered card (max 90dvh, body scrolls
+      // inside) from sm up. Fixed to the viewport via the body portal.
+      className="fixed inset-0 z-[1100] flex items-stretch justify-center overscroll-contain bg-black/40 sm:items-center sm:p-4"
+      onClick={(event) => {
+        // React events bubble through portals to the opener's tree: keep
+        // backdrop clicks from reaching it.
+        event.stopPropagation();
+        if (!saving) onClose();
+      }}
+      data-testid="location-picker-overlay"
     >
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex h-[100dvh] w-full flex-col bg-white shadow-xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-2xl"
+        tabIndex={-1}
+        className="flex h-[100dvh] max-h-[100dvh] w-full flex-col bg-white shadow-xl outline-none sm:h-auto sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
         data-testid="location-picker-dialog"
       >
@@ -515,7 +534,7 @@ export function LocationPickerDialog({
           <div>
             <h3 id={titleId} className="text-base font-bold text-[#161616]">
               {pickMode
-                ? L("Find the site on the map", "Busque el lugar en el mapa", lang)
+                ? title ?? L("Find the site on the map", "Busque el lugar en el mapa", lang)
                 : existing
                   ? L("Edit location", "Editar ubicación", lang)
                   : L("Add location", "Agregar ubicación", lang)}
@@ -539,7 +558,7 @@ export function LocationPickerDialog({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
           {(!pickMode || (offerSave && businessId && saveToPassport)) && (
             <div className="mb-4">
           <label htmlFor={nameId} className="block text-xs font-semibold text-slate-600">
@@ -865,5 +884,6 @@ export function LocationPickerDialog({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

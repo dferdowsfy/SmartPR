@@ -44,7 +44,24 @@ store, and no LLM is ever asked whether a point falls inside a boundary.
    facilities, the municipio comes from the pin (Census boundaries), which
    drives the intake's municipal and designation rules. Signed-in users with a
    saved business can also save the site to the Passport.
-4. **Projects:** each active filing on the business page has a **Site**
+4. **Intake location step ("Where is it?").** When a request needs a site,
+   the intake shows an inline card (and the requirements summary a
+   **Location** action) instead of burying the map in the business details.
+   `locations/intakeLocation.ts → detectLocationNeed()` decides, from the
+   prompt and intake facts: a municipio or street address mentioned, a fixed
+   physical site / customers on site, construction, an energy project, food
+   service, a property-only project, KB rules that depend on the municipio or
+   on `location.*` facts while no municipio is known, or the scenario graph
+   waiting on the property location (its free-text address question is
+   replaced by the pin). The map search is prefilled from the mention; a
+   business's saved locations can be picked. On confirm the municipio comes
+   from the pin (Census boundaries), the site's `location.*` facts
+   (`siteEngineFacts`, same shape and provenance as a saved location, plus
+   `location.designation.<flag>`) are bound to the engine evaluation, the
+   requirements re-evaluate, and the summary reads **Rules for: <address> ·
+   Change**. Signed-in users with a persisted business get the site saved to
+   the business's locations (moving the pin updates that same location).
+5. **Projects:** each active filing on the business page has a **Site**
    selector that links it to a saved location by stable id.
 
 ## Where it lives

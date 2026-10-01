@@ -35,6 +35,7 @@ import type { ProjectContext } from "./ai/intake/projectContext";
 import { projectFactsForEngine } from "./ai/intake/projectContext";
 import { INTAKE_RELATIONSHIPS } from "./ai/intake/relationshipRegistry";
 import type { FactMeta } from "./rulesEngine";
+import type { LocationEngineFacts } from "./locations/locationContext";
 
 /**
  * Reverse map: KB question id -> the profile/discovery answer keys that
@@ -1050,6 +1051,12 @@ export function computeRequirementsFromSnapshot(
      * buildEngineInput for honest trigger labeling (presentation-only).
      */
     aiPrefilledKeys?: Iterable<string>;
+    /**
+     * Engine facts of the site the request is for (intake pin or saved
+     * Passport location): `location.*` project facts bound to its location id.
+     * The site's municipio reaches the engine through the profile.
+     */
+    locationFacts?: LocationEngineFacts | null;
   } = {}
 ): UIRequirement[] {
   const input = buildEngineInput(profile, answers, resolved, {
@@ -1075,15 +1082,32 @@ export function computeRequirementsFromSnapshot(
     input.answers,
     (profile as { location_type?: string } | null | undefined)?.location_type ?? null
   );
+  if (options.locationFacts) {
+    const lf = options.locationFacts;
+    input.locationId = lf.locationId;
+    input.projectFacts = { ...lf.projectFacts, ...(input.projectFacts ?? {}) };
+    input.factMeta = { ...lf.factMeta, ...(input.factMeta ?? {}) };
+  }
   // Entity type from explicit caller options must reach the engine so
   // entity-scoped rules (excluded_entity_types) filter correctly; the
   // profile-derived value is only a fallback.
-  if (options.entityType) input.entityType = options.entityType as never;
+  // REG-SOLEPROP-DUALFORMATION-001 follow-up (2026-10-01 QA): "other" is the
+  // absence of a known entity, not a choice — it must not clobber the
+  // buildEngineInput fallback (Q_BUSINESS_STRUCTURE discovery answer). The
+  // live intake passes entityTypeFromLegacyStructure(profile.business_structure),
+  // which is "other" whenever the tiered filing_specific field is null even
+  // when the user answered the structure question; honoring that "other" here
+  // re-broke the dual-formation fix on the live path (both incorporation and
+  // LLC certificates shown to sole proprietors AND to LLCs in production).
+  const explicitEntityType =
+    options.entityType && options.entityType !== "other" ? options.entityType : null;
+  if (explicitEntityType) input.entityType = explicitEntityType as never;
   const { requirements } = runRulesEngine(snapshot, input);
   const classified = classifyEngineRequirements(requirements, {
     kb: snapshot,
     // Explicit caller choice wins; otherwise use what the profile declared.
-    entityType: options.entityType ?? input.entityType ?? null,
+    // (A bare "other" is not a choice — see the override guard above.)
+    entityType: explicitEntityType ?? input.entityType ?? null,
     // The classifier needs the same answers the engine saw for entity- and
     // employment-sensitive calls (e.g. EIN for an unknown entity type that
     // will hire employees is required; without that fact it is conditional).
@@ -1292,9 +1316,12 @@ export function computeRequirementsFromKB(
     aiPrefilledKeys?: Iterable<string>;
     deferredQuestions?: Array<{ questionId: string; writeKey: string }>;
     newPremises?: { registeredMunicipality?: string | null } | null;
+    /** Engine facts of the confirmed site (see locations/intakeLocation.siteEngineFacts). */
+    locationFacts?: LocationEngineFacts | null;
   } = {}
 ): UIRequirement[] {
   return computeRequirementsFromSnapshot(KB, profile, answers, resolved, {
+    locationFacts: options.locationFacts ?? null,
     deferredQuestions: options.deferredQuestions,
     newPremises: options.newPremises,
     entityType: options.entityType,

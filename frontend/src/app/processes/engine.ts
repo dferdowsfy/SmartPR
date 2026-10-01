@@ -244,7 +244,8 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
     return {
       kind: "fact",
       label: `${def?.label ?? derivedDefs.get(key)?.label ?? key}: ${Array.isArray(v) ? v.join(", ") : String(v)}`,
-      detail: ev?.quote ? `"${ev.quote}"` : ev?.origin,
+      // Map-layer facts carry an explanation, not the user's words.
+      detail: ev?.quote ? (ev.origin?.startsWith("location:") ? ev.quote : `"${ev.quote}"`) : ev?.origin,
     };
   };
 
