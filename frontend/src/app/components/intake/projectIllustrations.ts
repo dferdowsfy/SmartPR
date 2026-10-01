@@ -3,6 +3,7 @@ export const PROJECT_ILLUSTRATIONS = {
   default: "/illustrations/projects/default.png",
   restaurant: "/illustrations/projects/restaurant.png",
   bar: "/illustrations/projects/bar.png",
+  gym: "/illustrations/projects/gym.png",
   retail: "/illustrations/projects/retail.png",
   clinic: "/illustrations/projects/clinic.png",
   construction: "/illustrations/projects/construction.png",
@@ -93,6 +94,7 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
   if (matches(type, ["restaurant", "bakery", "cafe", "coffee shop", "catering", "ice cream shop", "juice bar", "commercial kitchen"])) return "restaurant";
   if (matches(type, ["medical spa", "beauty salon", "barbershop", "nail salon", "massage therapy", "esthetics", "makeup studio", "hair removal", "spa"])) return "salon";
   if (matches(type, ["medical office", "dental office", "clinic", "clinical laboratory", "laboratory", "urgent care", "mental health practice", "physical therapy", "veterinary"])) return "clinic";
+  if (matches(type, ["gym", "fitness center", "fitness studio", "health club", "yoga studio", "pilates studio"])) return "gym";
   if (type === "home health agency") return "office";
   if (matches(type, ["hotel", "resort", "guest house", "short-term rental", "short term rental"])) return "hospitality";
   if (matches(type, ["general contractor", "electrical contractor", "plumbing contractor", "hvac contractor", "roofing contractor", "concrete contractor", "construction contractor", "real estate developer"])) return "construction";
@@ -106,7 +108,7 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
   if (matches(type, ["auto repair", "body shop", "car wash", "tire shop", "motorcycle repair"])) return "garage";
   if (type === "car dealership") return "retail";
   if (matches(type, ["farm", "livestock", "aquaculture", "plant nursery", "agricultural services", "coffee plantation"])) return "farm";
-  if (matches(type, ["gym", "dance studio", "music venue", "event venue", "theater", "art gallery", "sports facility"])) return "arts";
+  if (matches(type, ["dance studio", "music venue", "event venue", "theater", "art gallery", "sports facility"])) return "arts";
   if (matches(type, ["wholesale", "beverage distributor"])) return "warehouse";
   if (matches(type, ["tour operator", "travel agency", "marketing agency", "engineering firm", "architecture firm", "notary services", "translation services", "staffing agency", "cybersecurity firm", "managed services provider", "data analytics firm", "web development agency", "mortgage broker", "financial advisory firm", "investment firm", "credit services company"])) return "office";
   if (type === "religious organization" || type === "taxi service" || type === "car rental business") return "default";

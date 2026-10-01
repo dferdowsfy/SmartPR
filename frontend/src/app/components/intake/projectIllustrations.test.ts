@@ -31,6 +31,8 @@ test("every selected illustration has a shipped asset, including the full busine
 test("specific business types stay distinct and unknowns remain neutral", () => {
   assert.equal(selectProjectIllustration({ businessType: "Restaurant", industry: "Food & Beverage" }), "restaurant");
   assert.equal(selectProjectIllustration({ businessType: "Bar", industry: "Food & Beverage" }), "bar");
+  assert.equal(selectProjectIllustration({ businessType: "Gym", industry: "Arts, Entertainment & Recreation" }), "gym");
+  assert.equal(selectProjectIllustration({ businessType: "Fitness Studio" }), "gym");
   assert.equal(selectProjectIllustration({ businessType: "Juice Bar", industry: "Food & Beverage" }), "restaurant");
   assert.equal(selectProjectIllustration({ businessType: "Liquor Store", industry: "Food & Beverage" }), "retail");
   assert.equal(selectProjectIllustration({ businessType: "Pharmacy", industry: "Healthcare" }), "retail");
@@ -54,6 +56,7 @@ test("solar warehouse requires explicit solar answers and updates when they chan
 test('confirmed request facts select images without any manually selected business type', () => {
   const fact = (value: string) => ({ value, source: 'explicit', confidence: 0.99 });
   assert.equal(selectProjectIllustration({ scenario: { operations: { activity: fact('restaurant') } } }), 'restaurant');
+  assert.equal(selectProjectIllustration({ scenario: { operations: { activity: fact('gym') } } }), 'gym');
   assert.equal(selectProjectIllustration({ scenario: { property: { proposedUse: fact('bar') } } }), 'bar');
   assert.equal(selectProjectIllustration({ businessType: 'Bar', scenario: { property: { proposedUse: fact('restaurant / food service') } } }), 'bar');
   assert.equal(selectProjectIllustration({ businessType: 'Warehouse Operator', scenario: { property: { proposedUse: fact('restaurant'), existingUse: fact('warehouse') } } }), 'restaurant');
