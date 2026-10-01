@@ -14,7 +14,8 @@ import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import { LocationPickerDialog, type PickedSite, type ResolvedPlacement } from "../../businesses/LocationPickerDialog";
 import type { PassportLocationWithGeographies } from "../../locations/geo";
-import { siteLabel, type IntakeSite, type LocationNeed, type LocationNeedReason } from "../../locations/intakeLocation";
+import { siteLabel, siteLayersCurrent, type IntakeSite, type LocationNeed, type LocationNeedReason } from "../../locations/intakeLocation";
+import { layerChips } from "../../locations/layers";
 import type { Lang } from "../../forms/engine/types";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -162,6 +163,7 @@ export function LocationStepCard({
         <button type="button" className="spr-link spr-loc-change" onClick={() => setOpen(true)} data-testid="location-change">
           {L("Change", "Cambiar", lang)}
         </button>
+        <SiteLayerChips site={site} lang={lang} />
         {dialog}
       </div>
     );
@@ -221,5 +223,37 @@ export function LocationStepCard({
       {error && <p className="spr-loc-error" role="alert">{error}</p>}
       {dialog}
     </section>
+  );
+}
+
+/**
+ * What the pin resolved on the official maps: "Flood zone AE · Coastal zone ·
+ * Zoning C-L · Rustic". Unknown layers are shown subtly (never as "no");
+ * the tooltip names the source and dataset date.
+ */
+function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang }) {
+  if (!siteLayersCurrent(site)) {
+    return (
+      <span className="spr-loc-chips spr-loc-chips-loading" data-testid="location-layer-chips" aria-live="polite">
+        {L("Checking flood, coastal and zoning maps…", "Revisando mapas de inundación, costa y calificación…", lang)}
+      </span>
+    );
+  }
+  const chips = layerChips(site.layers);
+  if (chips.length === 0) return null;
+  return (
+    <span className="spr-loc-chips" data-testid="location-layer-chips" aria-label={L("Map facts at the pin", "Datos del mapa en el pin", lang)}>
+      {chips.map((c) => (
+        <span
+          key={c.layer}
+          className={c.status === "unknown" ? "spr-loc-chip spr-loc-chip-unknown" : "spr-loc-chip"}
+          title={lang === "es" ? c.title.es : c.title.en}
+          data-layer={c.layer}
+          data-status={c.status}
+        >
+          {lang === "es" ? c.label.es : c.label.en}
+        </span>
+      ))}
+    </span>
   );
 }

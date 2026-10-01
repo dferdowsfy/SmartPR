@@ -307,6 +307,46 @@ describe("Passport locations on PostgreSQL", { skip }, () => {
     assert.equal(withLocationContext({ answers: {} }, ctx).locationId, second.id);
   });
 
+  test("map-layer determinations (FEMA flood zone, JP calificación, CRIM parcel) become location facts with provenance", async () => {
+    const { parseFemaFlood, parseJpCalificacion, parseCrimParcel } = await import("./layers.ts");
+    const { readFileSync } = await import("node:fs");
+    const fx = JSON.parse(readFileSync(new URL("./fixtures/arcgisLayers.json", import.meta.url), "utf8"));
+    const at = "2026-09-30T21:30:00.000Z";
+    const jp = parseJpCalificacion(fx.responses["jp_calif:toa_baja_ae"], at);
+    const layers = {
+      latitude: 18.3985,
+      longitude: -66.1,
+      resolved_at: at,
+      results: [
+        parseFemaFlood(fx.responses["fema_zones:toa_baja_ae"], fx.responses["fema_panels:toa_baja_ae"], at),
+        jp.zoning,
+        jp.land_class,
+        parseCrimParcel(fx.responses["crim:toa_baja_ae"], at),
+      ],
+    };
+    const written = await store.recordLayerDeterminations(pool, second.id, layers);
+    assert.ok(written >= 6, `rows written: ${written}`);
+    // Re-recording supersedes instead of duplicating.
+    await store.recordLayerDeterminations(pool, second.id, layers);
+    const cur = await pool.query(
+      `SELECT geography_type, geography_code, source_id, source_version, metadata FROM location_geographies
+        WHERE location_id=$1 AND superseded_at IS NULL AND geography_type='flood_zone' ORDER BY geography_code`,
+      [second.id]
+    );
+    assert.deepEqual(cur.rows.map((r) => r.geography_code), ["AE", "SFHA"]);
+    assert.equal(cur.rows[0].source_id, "fema-nfhl-s_fld_haz_ar");
+    assert.match(cur.rows[0].source_version, /72000C0330J · 2009-11-18/);
+    assert.equal(cur.rows[0].metadata.dataset_date, "2009-11-18");
+    const matterA = (await store.accessibleMatter(pool, MATTER_A, USER_A))!;
+    const ctx = (await store.locationContextForMatter(pool, matterA))!;
+    const { locationEngineFacts } = await import("./locationContext.ts");
+    const facts = locationEngineFacts(ctx).projectFacts;
+    assert.equal(facts["location.flood_zone.ae"], true);
+    assert.equal(facts["location.flood_zone.sfha"], true);
+    assert.equal(facts["location.land_class.srep"], true);
+    assert.equal(facts["location.parcel_id"], "038-000-010-13");
+  });
+
   test("deleting a location keeps the project (location unassigned) and promotes a new primary", async () => {
     const bizA = (await store.accessibleBusiness(pool, BIZ_A, USER_A))!;
     const result = await store.deleteLocation(pool, bizA, second.id);

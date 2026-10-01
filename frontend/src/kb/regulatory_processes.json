@@ -896,6 +896,38 @@
         "en": "Is the site near an airport?",
         "es": "¿Está cerca de un aeropuerto?"
       }
+    },
+    {
+      "key": "site_flood_hazard_area",
+      "label": "Site in a FEMA Special Flood Hazard Area (map)",
+      "type": "boolean",
+      "question": "Is the site inside a FEMA Special Flood Hazard Area (zones A, AE, AO, AH, VE)?",
+      "why": "Answered from the pin: FEMA NFHL flood hazard zone at the exact point. Planning Regulation 13 applies in these zones.",
+      "source": "location",
+      "extraction": {
+        "en": "\"site_flood_hazard_area\" :: never extracted — set from the map pin (FEMA NFHL).",
+        "es": "\"site_flood_hazard_area\" :: nunca se extrae — lo fija el pin (FEMA NFHL)."
+      },
+      "short_question": {
+        "en": "Is the site in a FEMA flood zone?",
+        "es": "¿Está el terreno en zona inundable de FEMA?"
+      }
+    },
+    {
+      "key": "site_coastal_zone",
+      "label": "Site in the coastal zone (map)",
+      "type": "boolean",
+      "question": "Is the site inside Puerto Rico's coastal zone?",
+      "why": "Answered from the pin: JP Zona Costanera layer, or within 1 km of the JP shoreline when the official layer is down (approximate).",
+      "source": "location",
+      "extraction": {
+        "en": "\"site_coastal_zone\" :: never extracted — set from the map pin.",
+        "es": "\"site_coastal_zone\" :: nunca se extrae — lo fija el pin."
+      },
+      "short_question": {
+        "en": "Is the site in the coastal zone?",
+        "es": "¿Está el terreno en la zona costanera?"
+      }
     }
   ],
   "evidence_types": [
@@ -2947,12 +2979,24 @@
       "id": "PT_ENVIRONMENTALLY_SENSITIVE_SITE",
       "name": "Environmentally sensitive site",
       "classifier": {
-        "fact": "environmental_sensitivity",
-        "op": "stated_contains",
-        "value": [
-          "wetlands",
-          "coastal_zone",
-          "floodplain"
+        "any": [
+          {
+            "fact": "environmental_sensitivity",
+            "op": "stated_contains",
+            "value": [
+              "wetlands",
+              "coastal_zone",
+              "floodplain"
+            ]
+          },
+          {
+            "fact": "site_flood_hazard_area",
+            "op": "stated"
+          },
+          {
+            "fact": "site_coastal_zone",
+            "op": "stated"
+          }
         ]
       },
       "may_require": [
@@ -5009,12 +5053,20 @@
         {
           "id": "CZ_R1",
           "outcome": "POTENTIALLY_REQUIRED",
-          "trigger_summary": "Coastal-zone site: a consistency certification is needed if the project requires a federal license or permit.",
+          "trigger_summary": "Coastal-zone site (stated, or the pin is in the coastal zone): a consistency certification is needed if the project requires a federal license or permit.",
           "trigger": {
-            "fact": "environmental_sensitivity",
-            "op": "stated_contains",
-            "value": [
-              "coastal_zone"
+            "any": [
+              {
+                "fact": "environmental_sensitivity",
+                "op": "stated_contains",
+                "value": [
+                  "coastal_zone"
+                ]
+              },
+              {
+                "fact": "site_coastal_zone",
+                "op": "stated"
+              }
             ]
           },
           "source_id": "SRC_CZMA_15CFR930_57",
@@ -5031,7 +5083,13 @@
       "short_name": "Coastal-zone review",
       "short_name_es": "Revisión de zona costanera",
       "summary": "Projects in the coastal zone need a consistency certification.",
-      "summary_es": "Los proyectos en la zona costanera necesitan una certificación de compatibilidad."
+      "summary_es": "Los proyectos en la zona costanera necesitan una certificación de compatibilidad.",
+      "legacy_document_ids": [
+        "DOC_CZM_COASTAL_REVIEW"
+      ],
+      "legacy_rule_ids": [
+        "RULE_0708"
+      ]
     },
     {
       "id": "PR_FLOODPLAIN_REG13",
@@ -5050,12 +5108,20 @@
         {
           "id": "FL_R1",
           "outcome": "REQUIRED",
-          "trigger_summary": "The site is in a flood-susceptible area.",
+          "trigger_summary": "The site is in a flood-susceptible area (stated, or the pin is in a FEMA Special Flood Hazard Area).",
           "trigger": {
-            "fact": "environmental_sensitivity",
-            "op": "stated_contains",
-            "value": [
-              "floodplain"
+            "any": [
+              {
+                "fact": "environmental_sensitivity",
+                "op": "stated_contains",
+                "value": [
+                  "floodplain"
+                ]
+              },
+              {
+                "fact": "site_flood_hazard_area",
+                "op": "stated"
+              }
             ]
           },
           "source_id": "SRC_RC_2023",
@@ -5072,7 +5138,14 @@
       "short_name": "Flood-zone compliance",
       "short_name_es": "Cumplimiento en zona inundable",
       "summary": "Sites in a flood zone must meet Planning Regulation 13.",
-      "summary_es": "Los terrenos en zona inundable deben cumplir el Reglamento 13."
+      "summary_es": "Los terrenos en zona inundable deben cumplir el Reglamento 13.",
+      "legacy_document_ids": [
+        "DOC_JP_FLOOD_REG13"
+      ],
+      "legacy_rule_ids": [
+        "RULE_0706",
+        "RULE_0707"
+      ]
     },
     {
       "id": "PR_FAA_OBSTRUCTION_NOTICE",

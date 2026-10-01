@@ -22,6 +22,7 @@ import {
 } from "./geo";
 import { buildLocationContext, type LocationContext } from "./locationContext";
 import { BOUNDARY_SOURCE, boundaryDeterminations } from "./boundaries";
+import { LAYER_SOURCES, layerDeterminations, type SiteLayers } from "./layers";
 
 type Db = Pool | PoolClient;
 
@@ -344,6 +345,7 @@ export async function createLocation(
     await recordBoundaryDeterminations(client, id, input.latitude, input.longitude);
   });
   await enrichLocationFromDatasets(pool, id);
+  scheduleLayerEnrichment(pool, id, input.latitude, input.longitude);
   const created = await getLocation(pool, business, id);
   if (!created) throw new Error("location_create_readback_failed");
   return created;
@@ -398,7 +400,10 @@ export async function updateLocation(
     return { moved, changed };
   });
   if (!result) return null;
-  if (result.moved) await enrichLocationFromDatasets(pool, locationId);
+  if (result.moved) {
+    await enrichLocationFromDatasets(pool, locationId);
+    scheduleLayerEnrichment(pool, locationId, input.latitude, input.longitude);
+  }
   const location = await getLocation(pool, business, locationId);
   return location ? { location, ...result } : null;
 }
@@ -576,4 +581,91 @@ export async function enrichLocationFromDatasets(pool: Pool, locationId: string)
     console.error("[locations] spatial enrichment failed:", (err as Error).message);
     return 0;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Live map layers (FEMA flood zone, JP calificación / land class, CRIM
+// parcel, coastal zone…) — src/app/locations/layerService.ts
+// ---------------------------------------------------------------------------
+
+const LAYER_SOURCE_IDS: string[] = Object.values(LAYER_SOURCES).map((s) => s.id);
+
+type LayerResolver = (latitude: number, longitude: number) => Promise<SiteLayers>;
+
+let layerResolver: LayerResolver | null | undefined;
+
+/**
+ * Override the layer resolver (tests inject recorded fixtures; null turns
+ * enrichment off). By default it is on, except under the Node test runner,
+ * where no test may reach the live services.
+ */
+export function setLayerResolver(fn: LayerResolver | null): void {
+  layerResolver = fn;
+}
+
+async function currentLayerResolver(): Promise<LayerResolver | null> {
+  if (layerResolver !== undefined) return layerResolver;
+  if (process.env.NODE_TEST_CONTEXT || process.env.LOCATION_LAYERS === "off") return null;
+  const { resolveSiteLayers } = await import("./layerService");
+  return (lat, lng) => resolveSiteLayers(lat, lng);
+}
+
+/**
+ * Record the resolved map layers for a saved location, superseding earlier
+ * layer determinations. Unknown layers are not written (they are not facts).
+ * Best-effort: never throws. Returns the number of rows written.
+ */
+export async function recordLayerDeterminations(db: Db, locationId: string, layers: SiteLayers): Promise<number> {
+  try {
+    const rows = layerDeterminations(layers);
+    await db.query(
+      `UPDATE location_geographies SET superseded_at=now()
+        WHERE location_id=$1 AND source_id = ANY($2::text[]) AND superseded_at IS NULL`,
+      [locationId, LAYER_SOURCE_IDS]
+    );
+    for (const d of rows) {
+      await db.query(
+        `INSERT INTO location_geographies
+           (id, location_id, geography_type, geography_code, geography_name, determination_method,
+            source_id, source_name, source_version, source_url, metadata)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11::jsonb)
+         ON CONFLICT DO NOTHING`,
+        [
+          randomUUID(),
+          locationId,
+          d.geography_type,
+          d.geography_code,
+          d.geography_name,
+          d.determination_method,
+          d.source_id,
+          d.source_name,
+          d.source_version,
+          d.source_url,
+          JSON.stringify(d.metadata),
+        ]
+      );
+    }
+    return rows.length;
+  } catch (err) {
+    console.error("[locations] layer enrichment failed:", (err as Error).message);
+    return 0;
+  }
+}
+
+/** Resolve and record layers in the background: a slow or down layer never delays the save. */
+function scheduleLayerEnrichment(pool: Pool, locationId: string, latitude: number, longitude: number): void {
+  void (async () => {
+    try {
+      const resolve = await currentLayerResolver();
+      if (!resolve) return;
+      const layers = await resolve(latitude, longitude);
+      // The pin may have moved while the layers were loading.
+      const { rows } = await pool.query(`SELECT latitude, longitude FROM locations WHERE id=$1`, [locationId]);
+      const cur = rows[0] as { latitude: number | string; longitude: number | string } | undefined;
+      if (!cur || Math.abs(Number(cur.latitude) - latitude) > 1e-7 || Math.abs(Number(cur.longitude) - longitude) > 1e-7) return;
+      await recordLayerDeterminations(pool, locationId, layers);
+    } catch (err) {
+      console.error("[locations] layer enrichment failed:", (err as Error).message);
+    }
+  })();
 }

@@ -46,6 +46,12 @@ export interface KBRule {
    */
   fact_key?: string | null;
   expected_answer: string | null;
+  /**
+   * project_fact only: the rule also needs AT LEAST ONE of these project
+   * facts to hold (with admissible provenance) — e.g. a flood-zone rule keyed
+   * on `location.flood_zone.sfha` that applies only to construction work.
+   */
+  any_of_facts?: Array<{ fact_key: string; expected_answer: string | null }> | null;
   municipality_flag: Flag | null;
   requires_document_id: string;
   /**
@@ -832,6 +838,13 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
           if (projectFactMatches(fact, rule.expected_answer)) {
             const prov = gateFact(rule, rule.fact_key, "project", fact);
             if (!prov) break;
+            if (rule.any_of_facts && rule.any_of_facts.length > 0) {
+              const co = rule.any_of_facts.find((c) => {
+                const v = input.projectFacts?.[c.fact_key];
+                return projectFactMatches(v, c.expected_answer) && isFactAdmissible(input.factMeta?.[c.fact_key], input, "project");
+              });
+              if (!co) break;
+            }
             add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`, formationGateUnresolved, prov);
             if (!projectFactSeen.has(rule.fact_key)) {
               projectFactSeen.add(rule.fact_key);

@@ -57,6 +57,12 @@ export interface GuidanceRequirement {
   reason: string;
   applicability?: string;
   triggerFacts?: string[];
+  /**
+   * The confirmed site's map fact that triggered this requirement, already
+   * localized — "Because your pin is in flood zone AE (FEMA, 2009-11-18)".
+   * Leads the "why" (locations/layers.layerFactDetails).
+   */
+  locationReason?: string | null;
 }
 const yes = (v: unknown) => v === true || v === "true" || v === "yes" || v === "Yes";
 const no = (v: unknown) => v === false || v === "false" || v === "no" || v === "No";
@@ -274,6 +280,23 @@ function review(req: GuidanceRequirement, ctx: GuidanceContext, reasons: string[
 }
 
 export function buildRequirementGuidance(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGuidance {
+  const g = buildGuidanceFor(req, ctx);
+  const loc = (req.locationReason ?? "").trim().replace(/\.$/, "");
+  if (!loc) return g;
+  // A map fact is the honest trigger: it leads the explanation. An
+  // unvalidated concept keeps its caveat, minus the generic "your case" lead.
+  const es = ctx.language === "es";
+  const agency = (req.agency ?? "").trim();
+  const rest = g.status === "VALIDATED"
+    ? g.whyThisApplies
+    : es
+      ? `Confirma${agency ? ` con ${agency}` : ""} el requisito exacto antes de actuar.`
+      : `Confirm the exact requirement${agency ? ` with ${agency}` : ""} before acting.`;
+  const why = `${loc}. ${rest}`.trim();
+  return { ...g, summary: why, whyThisApplies: why, triggeredBy: [loc, ...g.triggeredBy] };
+}
+
+function buildGuidanceFor(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGuidance {
   const kb = ctx.kb ?? ACTIVE_JURISDICTION.kb;
   // User-confirmed municipality advisories (potential_* items) are not KB
   // documents: their authored flagAdvisory text is the explanation, so they

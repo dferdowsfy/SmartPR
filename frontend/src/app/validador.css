@@ -3153,3 +3153,7 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .spr-loc-change { font-size: var(--rq-text-body, 16px); font-weight: 600; }
 .spr-loc-action { min-height: 36px; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--brand); background: #fff; color: var(--brand); font-size: 15px; font-weight: 600; cursor: pointer; }
 .spr-loc-pending .spr-loc-rules { color: var(--muted, #555); }
+.spr-loc-chips { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; margin-left: 28px; }
+.spr-loc-chip { display: inline-flex; align-items: center; min-height: 26px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); background: #fff; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.spr-loc-chip-unknown { font-weight: 400; color: var(--muted, #555); border-style: dashed; background: transparent; }
+.spr-loc-chips-loading { font-size: 14px; color: var(--muted, #555); }

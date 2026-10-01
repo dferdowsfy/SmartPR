@@ -14,6 +14,7 @@
  * Usage (dev server running without Supabase env):
  *   BASE_URL=http://localhost:3000 npx tsx tests/requirements-checklist.e2e.mts [outDir] [golden]
  *   BASE_URL=… npx tsx tests/requirements-checklist.e2e.mts [outDir] location   (intake location step)
+ *   BASE_URL=… npx tsx tests/requirements-checklist.e2e.mts [outDir] flood      (map layers: AE pin → Reg. 13 step)
  *   (E2E_CHROME=/path/to/chromium to use a system browser)
  * Exits non-zero on any failed check.
  */
@@ -23,6 +24,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateProjectContext } from "../src/app/ai/intake/projectContext";
+import { LAYER_SOURCES } from "../src/app/locations/layers";
+import { LayerCache, resolveSiteLayers, type FetchLike } from "../src/app/locations/layerService";
 
 const OUT = process.argv[2] || os.tmpdir();
 const GOLDEN = process.argv[3] || "E07_rooftop_solar_installation_guaynabo.json";
@@ -182,6 +185,159 @@ if (GOLDEN === "location") {
   check("metro-only rules removed after moving the pin to Adjuntas", !/Used-Oil Generator/i.test(text) && !/Hazardous-Waste Generator/i.test(text));
   check("patente municipal still listed (every municipio)", /Patente Municipal/i.test(text));
   await page.screenshot({ path: path.join(OUT, "location_requirements_after_change.png"), fullPage: false });
+
+  check("no page errors", errors.length === 0, errors.join(" | "));
+  await browser.close();
+  console.log(failures.length ? `\n${failures.length} FAILED` : "\nALL PASSED");
+  process.exit(failures.length ? 1 : 0);
+}
+
+// ---------------------------------------------------------------------------
+// Map-layer flow (`… tests/requirements-checklist.e2e.mts <outDir> flood`):
+// a new building whose pin is in FEMA flood zone AE (Toa Baja) lists the
+// Planning Regulation 13 flood-zone review, explained "Because your pin is in
+// flood zone AE (FEMA, 2009-11-18)", with chips for what the pin resolved.
+// Moving the pin to Guaynabo pueblo (zone X) removes the step. The layers
+// endpoint is stubbed with the fixtures recorded from the live services
+// (src/app/locations/fixtures/arcgisLayers.json); the Census municipio
+// lookup (/api/locations/resolve) runs for real.
+// ---------------------------------------------------------------------------
+if (GOLDEN === "flood") {
+  const FX = JSON.parse(readFileSync(path.join(here, "../src/app/locations/fixtures/arcgisLayers.json"), "utf8"));
+  const URL_LAYER: Array<[string, string]> = [
+    [LAYER_SOURCES.fema_flood_zones.url, "fema_zones"],
+    [LAYER_SOURCES.fema_firm_panels.url, "fema_panels"],
+    [LAYER_SOURCES.jp_calificacion.url, "jp_calif"],
+    [LAYER_SOURCES.crim_parcels.url, "crim"],
+    [LAYER_SOURCES.jp_zona_costanera.url, "czm_official"],
+    [LAYER_SOURCES.jp_linea_costa.url, "coastline"],
+  ];
+  const fixtureFetch: FetchLike = async (url) => {
+    const layer = URL_LAYER.find(([u]) => url.startsWith(`${u}/query?`))?.[1];
+    const [lng, lat] = new URL(url).searchParams.get("geometry")!.split(",").map(Number);
+    const pt = Object.entries(FX.points as Record<string, [number, number]>).find(([, [a, b]]) => a === lat && b === lng)?.[0];
+    const resp = layer && pt ? FX.responses[`${layer}:${pt}`] : undefined;
+    if (!resp || resp._http_status) return { ok: false, status: resp?._http_status ?? 404, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => resp };
+  };
+  const layersFor = (lat: number, lng: number) => resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch, cache: new LayerCache(), skipOptional: true });
+  const [aeLat, aeLng] = FX.points.toa_baja_ae as [number, number];
+  const [xLat, xLng] = FX.points.guaynabo_pueblo as [number, number];
+  const description = "New construction of a two-story retail building on our lot in Toa Baja.";
+  const { context } = validateProjectContext(
+    {
+      project_type: { value: "new_construction", confidence: 0.95, evidence: "New construction of a two-story retail building" },
+      municipality: { value: "Toa Baja", confidence: 0.95, evidence: "Toa Baja" },
+    },
+    description
+  );
+  const snap = {
+    state: {
+      profile: { name: "Tienda Sabana Seca", industry: "Retail", business_type: "Retail Store", municipality: "Toa Baja" },
+      discoveryAnswers: {},
+      projectContext: context,
+      projectIntent: "new_business",
+      intakeDescription: description,
+      intakeSite: {
+        latitude: aeLat,
+        longitude: aeLng,
+        coordinate_source: "MAP_PIN",
+        formatted_address: null,
+        municipality: { name: "Toa Baja", fips: "137" },
+        barrio: { name: "Sabana Seca", geoid: null },
+        near_boundary: false,
+        designations: [],
+        boundary_source: null,
+        location_id: null,
+        confirmed_at: "2026-09-30T21:30:00.000Z",
+      },
+      currentStep: 3,
+    },
+  };
+  const layerQueries: string[] = [];
+  const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME || undefined });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.route("**/api/**", async (route) => {
+    const u = new URL(route.request().url());
+    const p = u.pathname;
+    if (p === "/api/snapshots/e2e-flood") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(snap) });
+    if (p === "/api/me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
+    if (p === "/api/locations/resolve" || p === "/api/incentives/evaluate") return route.continue();
+    if (p === "/api/locations/layers") {
+      const lat = Number(u.searchParams.get("lat"));
+      const lng = Number(u.searchParams.get("lng"));
+      layerQueries.push(`${lat},${lng}`);
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ layers: await layersFor(lat, lng) }) });
+    }
+    if (p === "/api/geocode") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: null, results: [] }) });
+    return route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"stubbed"}' });
+  });
+  await page.goto(`${base}/?resume=e2e-flood`, { waitUntil: "domcontentloaded", timeout: 90000 });
+  const compute = page.getByRole("button", { name: /Compute Requirements from Rules Engine/ });
+  await Promise.race([compute.waitFor({ timeout: 90000 }), page.locator(".ck-summary").waitFor({ timeout: 90000 })]).catch(() => undefined);
+  if (await compute.isVisible().catch(() => false)) await compute.click();
+  await page.locator(".ck-summary").waitFor({ timeout: 30000 }).catch(async (e) => {
+    await page.screenshot({ path: path.join(OUT, "flood_debug.png"), fullPage: true });
+    console.log(errors.join("\n"));
+    throw e;
+  });
+  const chips = page.locator('.ck-summary [data-testid="location-layer-chips"]');
+  await page.waitForFunction(() => /Flood zone/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
+  const chipText = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
+  check("layers fetched for the pin", layerQueries.includes(`${aeLat},${aeLng}`), layerQueries.join(" | "));
+  check("chips show what the pin resolved (Flood zone AE · Zoning C-R · Rustic)", /Flood zone AE/.test(chipText) && /Zoning C-R/.test(chipText) && /Rustic/.test(chipText), chipText);
+  check("unknown layer shown subtly (coastal zone unknown)", (await page.locator('.ck-summary .spr-loc-chip-unknown').filter({ hasText: /Coastal zone unknown/ }).count()) === 1);
+  await page.waitForTimeout(500);
+  const reqText = async () => (await page.locator(".spr-requirements-main").innerText()).replace(/\s+/g, " ");
+  let text = await reqText();
+  check("AE pin adds the Planning Regulation 13 flood-zone step", /Flood-Zone Review \(Planning Regulation 13\)/.test(text));
+  check("rustic (SREP) land adds the consulta de ubicación step", /Consulta de Ubicación/.test(text));
+  // The row is an ordinary numbered row; its details name the pin's zone.
+  const row = page.locator(".ck-row, .ck-card").filter({ hasText: /Flood-Zone Review \(Planning Regulation 13\)/ }).first();
+  await row.evaluate((el) => el.scrollIntoView({ block: "center" })).catch(() => undefined);
+  const head = row.locator(".ck-row-head, .ck-card-head, summary, button").first();
+  await head.click().catch(() => undefined);
+  await page.waitForTimeout(400);
+  const rowText = (await row.innerText().catch(() => "")).replace(/\s+/g, " ");
+  check("details: 'Because your pin is in flood zone AE (FEMA, 2009-11-18)'", /Because your pin is in flood zone AE \(FEMA, 2009-11-18\)/.test(rowText) || /Because your pin is in flood zone AE \(FEMA, 2009-11-18\)/.test(await reqText()), rowText.slice(0, 300));
+  await page.screenshot({ path: path.join(OUT, "flood_ae_row_details.png"), fullPage: false });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator(".ck-summary").evaluate((el) => el.scrollIntoView({ block: "start" })).catch(() => undefined);
+  await page.screenshot({ path: path.join(OUT, "flood_ae_rules_for_chips.png"), fullPage: false });
+
+  // Change → move the pin to Guaynabo pueblo (zone X): the step goes away.
+  await page.locator('.ck-summary [data-testid="location-change"]').click();
+  const dialog = page.locator('[data-testid="location-picker-dialog"]');
+  await dialog.waitFor({ timeout: 10000 });
+  await dialog.locator('[data-testid="location-latitude"]').fill(String(xLat));
+  await dialog.locator('[data-testid="location-longitude"]').fill(String(xLng));
+  await dialog.getByRole("button", { name: /^Place pin$/ }).click();
+  await dialog.locator('[data-testid="location-selected-placement"]').filter({ hasText: /Guaynabo/ }).waitFor({ timeout: 15000 });
+  await page.waitForFunction(() => !(document.querySelector('[data-testid="location-confirm"]') as HTMLButtonElement | null)?.disabled, null, { timeout: 15000 });
+  await dialog.locator('[data-testid="location-confirm"]').click();
+  await dialog.waitFor({ state: "detached", timeout: 10000 });
+  await page.waitForFunction(() => /Flood zone X/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
+  await page.waitForTimeout(600);
+  const chipAfter = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
+  check("layers re-read for the moved pin", layerQueries.includes(`${xLat},${xLng}`), layerQueries.join(" | "));
+  check("chips now read 'Flood zone X'", /Flood zone X/.test(chipAfter) && !/Flood zone AE/.test(chipAfter), chipAfter);
+  text = await reqText();
+  check("moving the pin out of the AE zone removes the flood-zone step", !/Flood-Zone Review \(Planning Regulation 13\)/.test(text));
+  check("…and the rustic-land consulta (pueblo is not SREP)", !/Consulta de Ubicación/.test(text));
+  await page.locator(".ck-summary").evaluate((el) => el.scrollIntoView({ block: "start" })).catch(() => undefined);
+  await page.screenshot({ path: path.join(OUT, "flood_moved_to_zone_x.png"), fullPage: false });
+
+  // Spanish: chips localize.
+  const langBtn = page.getByRole("button", { name: /^(ES|Español)$/ }).first();
+  if (await langBtn.isVisible().catch(() => false)) {
+    await langBtn.click();
+    await page.waitForTimeout(500);
+    const es = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
+    check("chips in Spanish (Zona inundable X)", /Zona inundable X/.test(es), es);
+    await page.screenshot({ path: path.join(OUT, "flood_chips_es.png"), fullPage: false });
+  }
 
   check("no page errors", errors.length === 0, errors.join(" | "));
   await browser.close();

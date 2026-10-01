@@ -190,6 +190,10 @@ export function locationEngineFacts(ctx: LocationContext): LocationEngineFacts {
       }
     }
   }
+  // Stable aliases rules can key on without knowing the layer vocabulary:
+  // location.czm (in the coastal zone) and location.parcel_id (catastro).
+  if (byType.has("coastal_zone")) projectFacts["location.czm"] = true;
+  if (typeof projectFacts["location.parcel"] === "string") projectFacts["location.parcel_id"] = projectFacts["location.parcel"];
   const factMeta: Record<string, FactMeta> = {};
   for (const key of Object.keys(projectFacts)) {
     factMeta[key] = {
