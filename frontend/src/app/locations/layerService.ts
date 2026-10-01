@@ -20,6 +20,8 @@ import {
   parseCoastalZone,
   parseCrimParcel,
   parseFemaFlood,
+  femaMscUrl,
+  LOMC_SEARCH_RADIUS_M,
   parseJpCalificacion,
   parsePresence,
   type ArcGisQueryResponse,
@@ -40,12 +42,15 @@ export interface ResolveLayersOptions {
   skipOptional?: boolean;
 }
 
-type QueryKey = "fema_zones" | "fema_panels" | "jp_calificacion" | "crim" | "czm_official" | "coastline" | "historic" | "protected";
+type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "jp_calificacion" | "crim" | "czm_official" | "coastline" | "historic" | "protected";
 
 /** Default timeouts (ms), sized from the latencies observed 2026-09-30 (JP ≈ 2.5–3 s, FEMA < 1 s). */
 export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
   fema_zones: 6000,
   fema_panels: 6000,
+  fema_community: 6000,
+  fema_lomas: 6000,
+  fema_lomrs: 6000,
   jp_calificacion: 8000,
   crim: 6000,
   czm_official: 3500,
@@ -128,9 +133,14 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   };
   const want = (layers: SiteLayerId[]) => layers.some((l) => !fresh(l));
 
-  const [zones, panels, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
+  const near = { distance: String(LOMC_SEARCH_RADIUS_M), units: "esriSRUnit_Meter" };
+  const [zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
     want(["flood_zone"]) ? q("fema_zones", LAYER_SOURCES.fema_flood_zones.url) : null,
     want(["flood_zone"]) ? q("fema_panels", LAYER_SOURCES.fema_firm_panels.url) : null,
+    // MSC extras are best-effort: a miss never degrades the flood zone itself.
+    want(["flood_zone"]) ? q("fema_community", LAYER_SOURCES.fema_communities.url) : null,
+    want(["flood_zone"]) ? q("fema_lomas", LAYER_SOURCES.fema_lomas.url, near) : null,
+    want(["flood_zone"]) ? q("fema_lomrs", LAYER_SOURCES.fema_lomrs.url, near) : null,
     want(["zoning", "land_class", "parcel"]) ? q("jp_calificacion", LAYER_SOURCES.jp_calificacion.url) : null,
     want(["parcel"]) ? q("crim", LAYER_SOURCES.crim_parcels.url) : null,
     want(["coastal_zone"]) ? q("czm_official", LAYER_SOURCES.jp_zona_costanera.url) : null,
@@ -142,7 +152,11 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   ]);
 
   const computed: Partial<Record<SiteLayerId, SiteLayerResult>> = {};
-  if (zones !== null) computed.flood_zone = parseFemaFlood(zones, panels, at);
+  if (zones !== null) {
+    const flood = parseFemaFlood(zones, panels, at, { community, lomas, lomrs });
+    if (flood.status === "resolved") flood.attributes.MSC_URL = femaMscUrl(latitude, longitude);
+    computed.flood_zone = flood;
+  }
   let jpCatastro: string | null = null;
   if (cali !== null) {
     const jp = parseJpCalificacion(cali, at);

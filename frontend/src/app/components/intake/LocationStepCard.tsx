@@ -15,7 +15,7 @@ import { AlertCircle, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { LocationPickerDialog, type PickedSite, type ResolvedPlacement } from "../../businesses/LocationPickerDialog";
 import type { PassportLocationWithGeographies } from "../../locations/geo";
 import { siteLabel, siteLayersCurrent, type IntakeSite, type LocationNeed, type LocationNeedReason } from "../../locations/intakeLocation";
-import { layerChips } from "../../locations/layers";
+import { floodMapSummary, layerChips } from "../../locations/layers";
 import type { Lang } from "../../forms/engine/types";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -299,6 +299,7 @@ export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang })
     );
   }
   const chips = layerChips(site.layers);
+  const flood = floodMapSummary(site.layers);
   const known = chips.filter((c) => c.status !== "unknown").length;
   const done = known > 0;
   return (
@@ -325,6 +326,42 @@ export function SiteLayerChips({ site, lang }: { site: IntakeSite; lang: Lang })
               )}
         </span>
       </p>
+      {flood && (
+        <p className="spr-loc-fema" data-testid="location-fema-map">
+          <span className="spr-loc-fema-title">{L("FEMA flood map", "Mapa de inundación de FEMA", lang)}</span>
+          {flood.firmPanel && (
+            <span>
+              {L("Panel", "Panel", lang)} {flood.firmPanel}
+              {flood.effectiveDate ? ` · ${L("effective", "vigente", lang)} ${flood.effectiveDate}` : ""}
+              {flood.preliminaryDate ? ` · ${L("preliminary", "preliminar", lang)} ${flood.preliminaryDate}` : ""}
+            </span>
+          )}
+          {flood.community && (
+            <span>
+              {flood.community}
+              {flood.communityId ? ` (CID ${flood.communityId})` : ""}
+            </span>
+          )}
+          {flood.baseFloodElevation !== null && <span>{L("Base flood elevation", "Elevación base de inundación", lang)} {flood.baseFloodElevation}</span>}
+          {flood.mapChangeCount ? (
+            <span data-testid="location-fema-lomc">
+              {L(
+                `${flood.mapChangeCount} letter(s) of map change within 100 m — may revise this zone`,
+                `${flood.mapChangeCount} carta(s) de cambio de mapa a menos de 100 m — podrían revisar esta zona`,
+                lang
+              )}
+              {flood.mapChangeCases ? `: ${flood.mapChangeCases}` : ""}
+            </span>
+          ) : flood.mapChangeCount === 0 ? (
+            <span>{L("No letters of map change nearby", "Sin cartas de cambio de mapa cerca", lang)}</span>
+          ) : null}
+          {flood.mscUrl && (
+            <a href={flood.mscUrl} target="_blank" rel="noopener noreferrer">
+              {L("Open in FEMA Map Service Center", "Abrir en el Centro de Mapas de FEMA", lang)}
+            </a>
+          )}
+        </p>
+      )}
       {chips.length > 0 && (
         <span className="spr-loc-chips" aria-label={L("Map facts at the pin", "Datos del mapa en el pin", lang)}>
           {chips.map((c) => (

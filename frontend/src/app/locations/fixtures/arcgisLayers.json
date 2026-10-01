@@ -1,5 +1,5 @@
 {
- "_recorded": "2026-09-30 ~21:15–21:40 ET from the live services (see layers.ts LAYER_SOURCES); attributes trimmed to the fields SmartPR reads. Errors are the exact failures observed.",
+ "_recorded": "2026-09-30 ~21:15–21:40 ET from the live services (see layers.ts LAYER_SOURCES); attributes trimmed to the fields SmartPR reads. Errors are the exact failures observed. FEMA community / LOMA / LOMR responses for Guaynabo pueblo recorded 2026-10-01 (hazards.fema.gov NFHL layers 22 / 34 / 1).",
  "points": {
   "guaynabo_pueblo": [
    18.3577,
@@ -105,7 +105,10 @@
       "FIRM_PAN": "72000C0730H",
       "EFF_DATE": 1113868800000,
       "PANEL_TYP": "Countywide, Panel Printed",
-      "DFIRM_ID": "72000C"
+      "DFIRM_ID": "72000C",
+      "FIRM_ID": "72000C_100",
+      "PRE_DATE": 253392451200000,
+      "SCALE": "12000"
      }
     }
    ]
@@ -343,6 +346,28 @@
   },
   "protected:rio_grande_ae": {
    "_timeout": true
+  },
+  "fema_community:guaynabo_pueblo": {
+   "features": [
+    {
+     "attributes": {
+      "DFIRM_ID": "72000C",
+      "POL_NAME1": "Puerto Rico Unincorporated Areas",
+      "POL_NAME2": "Municipio de Guaynabo",
+      "CO_FIPS": "000",
+      "ST_FIPS": "72",
+      "COMM_NO": "0000",
+      "CID": "720000",
+      "ANI_TF": "F"
+     }
+    }
+   ]
+  },
+  "fema_lomas:guaynabo_pueblo": {
+   "features": []
+  },
+  "fema_lomrs:guaynabo_pueblo": {
+   "features": []
   }
  }
 }

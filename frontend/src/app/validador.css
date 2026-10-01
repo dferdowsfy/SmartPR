@@ -3246,3 +3246,8 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
   .ck-card-line .ck-row-head .ck-agency { flex: 0 0 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; }
   .ck-card-line .ck-row-head .ck-pill { flex: 0 0 116px; display: inline-flex; justify-content: center; text-align: center; box-sizing: border-box; }
 }
+
+/* FEMA flood map details under the site chips (what the MSC shows for the spot). */
+.spr-loc-fema { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin: 6px 0 0; font-size: var(--rq-text-sm, 14px); color: var(--muted, #69665f); }
+.spr-loc-fema-title { font-weight: 700; color: var(--ink); }
+.spr-loc-fema a { color: var(--brand); font-weight: 600; }

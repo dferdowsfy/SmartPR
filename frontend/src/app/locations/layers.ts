@@ -78,6 +78,36 @@ export const LAYER_SOURCES = {
     reliability: "high",
     verified: "2026-09-30",
   },
+  fema_communities: {
+    id: "fema-nfhl-s_pol_ar",
+    name: "FEMA National Flood Hazard Layer — Political Jurisdictions (community)",
+    publisher: "FEMA",
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/22",
+    layer: "Political Jurisdictions (S_POL_AR)",
+    dataset_date: null,
+    reliability: "high",
+    verified: "2026-10-01",
+  },
+  fema_lomas: {
+    id: "fema-nfhl-lomas",
+    name: "FEMA National Flood Hazard Layer — Letters of Map Amendment (LOMA)",
+    publisher: "FEMA",
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/34",
+    layer: "LOMAs",
+    dataset_date: null,
+    reliability: "high",
+    verified: "2026-10-01",
+  },
+  fema_lomrs: {
+    id: "fema-nfhl-lomrs",
+    name: "FEMA National Flood Hazard Layer — Letters of Map Revision (LOMR)",
+    publisher: "FEMA",
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/1",
+    layer: "LOMRs",
+    dataset_date: null,
+    reliability: "high",
+    verified: "2026-10-01",
+  },
   jp_calificacion: {
     id: "jp-calificacion-vigente",
     name: "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
@@ -279,11 +309,91 @@ export function unknownLayer(layer: SiteLayerId, src: LayerSource, reason: strin
 // string) and never throws.
 // ---------------------------------------------------------------------------
 
+/** Radius (m) around the pin searched for FEMA letters of map change (LOMA / LOMR). */
+export const LOMC_SEARCH_RADIUS_M = 100;
+
+/** Same search as the FEMA Map Service Center, for the same spot. */
+export function femaMscUrl(latitude: number, longitude: number): string {
+  return `https://msc.fema.gov/portal/search?AddressQuery=${encodeURIComponent(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`)}`;
+}
+
+/** Higher = more hazardous. When flood polygons overlap at a point, the most hazardous governs. */
+function floodHazardRank(a: Record<string, unknown>): number {
+  const zone = (str(a.FLD_ZONE) ?? "").toUpperCase();
+  const sub = (str(a.ZONE_SUBTY) ?? "").toUpperCase();
+  if (/FLOODWAY/.test(sub)) return 100;
+  if (zone.startsWith("V")) return 90;
+  if (zone.startsWith("A")) return 80;
+  if (zone === "D") return 30;
+  if (zone === "X" && /0\.2|SHADED|MODERATE/.test(sub)) return 20;
+  if (zone === "X" || zone === "B" || zone === "C") return 10;
+  return 0;
+}
+
+function mostHazardous(resp: ArcGisQueryResponse): { attrs: Record<string, unknown> | null; count: number } {
+  const all = (resp.features ?? []).map((f) => f?.attributes).filter((a): a is Record<string, unknown> => !!a);
+  if (!all.length) return { attrs: null, count: 0 };
+  return { attrs: all.reduce((best, a) => (floodHazardRank(a) > floodHazardRank(best) ? a : best), all[0]), count: all.length };
+}
+
+/** FEMA preliminary-map date; FEMA stores "none" as year 9999. */
+function realEpochDate(v: unknown): string | null {
+  const d = epochDate(v);
+  return d && Number(d.slice(0, 4)) < 2100 ? d : null;
+}
+
+export interface FemaFloodExtras {
+  /** Political Jurisdictions at the point (community name + CID). */
+  community?: ArcGisQueryResponse | string | null;
+  /** Letters of Map Amendment / Revision near the point. */
+  lomas?: ArcGisQueryResponse | string | null;
+  lomrs?: ArcGisQueryResponse | string | null;
+}
+
+function usable(r: ArcGisQueryResponse | string | null | undefined): ArcGisQueryResponse | null {
+  return r && typeof r !== "string" && !arcgisError(r) ? r : null;
+}
+
+/** Community the pin falls in (the MSC "Community" row): name + CID. */
+export function parseFemaCommunity(resp: ArcGisQueryResponse | string | null | undefined): { cid: string | null; name: string | null } | null {
+  const ok = usable(resp);
+  const a = ok ? firstAttributes(ok) : null;
+  if (!a) return null;
+  const n1 = str(a.POL_NAME1);
+  const n2 = str(a.POL_NAME2);
+  // PR is mapped as "Puerto Rico Unincorporated Areas" + the municipio name.
+  return { cid: str(a.CID), name: n2 && n1 && /unincorporated/i.test(n1) ? n2 : n1 ?? n2 };
+}
+
+/** Letters of map change near the pin; count is null when neither service answered. */
+export function parseFemaMapChanges(
+  lomas: ArcGisQueryResponse | string | null | undefined,
+  lomrs: ArcGisQueryResponse | string | null | undefined
+): { count: number | null; cases: string } {
+  const sets: Array<[string, ArcGisQueryResponse | null]> = [["LOMA", usable(lomas)], ["LOMR", usable(lomrs)]];
+  if (sets.every(([, r]) => !r)) return { count: null, cases: "" };
+  const lines: string[] = [];
+  let count = 0;
+  for (const [kind, r] of sets) {
+    for (const f of r?.features ?? []) {
+      const a = f?.attributes;
+      if (!a) continue;
+      count++;
+      const id = str(a.CASENUMBER) ?? str(a.CASE_NO) ?? str(a.LOMR_ID) ?? "case n/a";
+      const date = epochDate(a.DATEENDED) ?? epochDate(a.EFF_DATE);
+      const outcome = str(a.OUTCOME) ?? str(a.DETERMINATIONTYPE);
+      lines.push(`${str(a.PROJECTCATEGORY) ?? kind} ${id}${date ? ` (${date})` : ""}${outcome ? ` — ${outcome}` : ""}`);
+    }
+  }
+  return { count, cases: lines.slice(0, 5).join("; ") };
+}
+
 /** FEMA NFHL flood hazard zone, dated by the FIRM panel effective date. */
 export function parseFemaFlood(
   zones: ArcGisQueryResponse | string,
   panels: ArcGisQueryResponse | string | null,
-  retrieved_at: string
+  retrieved_at: string,
+  extras: FemaFloodExtras = {}
 ): SiteLayerResult {
   const src = LAYER_SOURCES.fema_flood_zones;
   if (typeof zones === "string") return unknownLayer("flood_zone", src, zones, retrieved_at);
@@ -292,7 +402,7 @@ export function parseFemaFlood(
   const panel = panels && typeof panels !== "string" && !arcgisError(panels) ? firstAttributes(panels) : null;
   const panelId = panel ? str(panel.FIRM_PAN) : null;
   const effective = panel ? epochDate(panel.EFF_DATE) : null;
-  const a = firstAttributes(zones);
+  const { attrs: a, count: zoneCount } = mostHazardous(zones);
   if (!a) {
     // NFHL covers all of Puerto Rico: no polygon means the point is off the
     // mapped area (open water / outside), which is not a "no flood zone".
@@ -307,6 +417,11 @@ export function parseFemaFlood(
   if (sfha) tags.push("SFHA");
   if (floodway) tags.push("FLOODWAY");
   const bfe = num(a.STATIC_BFE);
+  const community = parseFemaCommunity(extras.community);
+  const changes = parseFemaMapChanges(extras.lomas, extras.lomrs);
+  // A letter of map change near the pin can revise or remove the SFHA
+  // designation: surfaced for review, never applied automatically.
+  if (changes.count) tags.push("LOMC");
   return {
     layer: "flood_zone",
     status: "resolved",
@@ -318,10 +433,23 @@ export function parseFemaFlood(
       ZONE_SUBTY: subtype,
       SFHA_TF: str(a.SFHA_TF),
       STATIC_BFE: bfe,
+      DEPTH: num(a.DEPTH),
+      VELOCITY: num(a.VELOCITY),
       LEN_UNIT: str(a.LEN_UNIT),
       FLD_AR_ID: str(a.FLD_AR_ID),
+      STUDY_TYP: str(a.STUDY_TYP),
+      DFIRM_ID: str(a.DFIRM_ID),
+      ZONES_AT_POINT: zoneCount,
       FIRM_PAN: panelId,
       EFF_DATE: effective,
+      PRE_DATE: panel ? realEpochDate(panel.PRE_DATE) : null,
+      PANEL_TYP: panel ? str(panel.PANEL_TYP) : null,
+      FIRM_ID: panel ? str(panel.FIRM_ID) : null,
+      PANEL_SCALE: panel ? num(panel.SCALE) : null,
+      COMMUNITY_CID: community?.cid ?? null,
+      COMMUNITY_NAME: community?.name ?? null,
+      LOMC_COUNT: changes.count,
+      LOMC_CASES: changes.cases || null,
     },
     source: ref(src, effective, panelId),
     retrieval: "live",
@@ -751,6 +879,50 @@ export function layerFactDetails(layers: SiteLayers | null | undefined): Record<
   return out;
 }
 
+/**
+ * What the FEMA Map Service Center shows for an address, from the same
+ * official data: flood zone, FIRM panel, effective date, community, and any
+ * letters of map change near the pin — plus the link to the MSC itself.
+ */
+export interface FloodMapSummary {
+  zone: string;
+  sfha: boolean;
+  floodway: boolean;
+  baseFloodElevation: number | null;
+  firmPanel: string | null;
+  panelType: string | null;
+  effectiveDate: string | null;
+  preliminaryDate: string | null;
+  community: string | null;
+  communityId: string | null;
+  mapChangeCount: number | null;
+  mapChangeCases: string | null;
+  mscUrl: string | null;
+}
+
+export function floodMapSummary(layers: SiteLayers | null | undefined): FloodMapSummary | null {
+  const r = layers?.results.find((x) => x.layer === "flood_zone");
+  if (!r || r.status !== "resolved" || !r.code) return null;
+  const a = r.attributes;
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const n = (v: unknown) => (typeof v === "number" ? v : null);
+  return {
+    zone: r.code,
+    sfha: r.tags.includes("SFHA"),
+    floodway: r.tags.includes("FLOODWAY"),
+    baseFloodElevation: n(a.STATIC_BFE),
+    firmPanel: s(a.FIRM_PAN),
+    panelType: s(a.PANEL_TYP),
+    effectiveDate: s(a.EFF_DATE),
+    preliminaryDate: s(a.PRE_DATE),
+    community: s(a.COMMUNITY_NAME),
+    communityId: s(a.COMMUNITY_CID),
+    mapChangeCount: n(a.LOMC_COUNT),
+    mapChangeCases: s(a.LOMC_CASES),
+    mscUrl: s(a.MSC_URL),
+  };
+}
+
 export interface LayerChip {
   layer: SiteLayerId;
   status: SiteLayerStatus;
@@ -781,7 +953,10 @@ export function layerChips(layers: SiteLayers | null | undefined): LayerChip[] {
   if (flood) {
     if (flood.status === "resolved") {
       const fw = flood.tags.includes("FLOODWAY");
-      chips.push({ layer: "flood_zone", status: "resolved", label: { en: `Flood zone ${flood.code}${fw ? " · floodway" : ""}`, es: `Zona inundable ${flood.code}${fw ? " · cauce mayor" : ""}` }, title: title(flood) });
+      const fm = floodMapSummary(layers);
+      const extra = fm?.firmPanel ? ` · FIRM ${fm.firmPanel}${fm.effectiveDate ? ` (${fm.effectiveDate})` : ""}${fm.community ? ` · ${fm.community}` : ""}` : "";
+      const t = title(flood);
+      chips.push({ layer: "flood_zone", status: "resolved", label: { en: `Flood zone ${flood.code}${fw ? " · floodway" : ""}`, es: `Zona inundable ${flood.code}${fw ? " · cauce mayor" : ""}` }, title: { en: t.en + extra, es: t.es + extra } });
     } else unknown("flood_zone", "Flood zone", "Zona inundable");
   }
   const czm = by.get("coastal_zone");

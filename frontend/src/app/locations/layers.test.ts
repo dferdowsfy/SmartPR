@@ -21,6 +21,7 @@ import {
   parseCoastalZone,
   parseCrimParcel,
   parseFemaFlood,
+  floodMapSummary,
   parseJpCalificacion,
   parseVigencia,
   restoreSiteLayers,
@@ -52,6 +53,9 @@ const r = (k: string) => FX.responses[k] as ArcGisQueryResponse;
 const URL_LAYER: Array<[string, string]> = [
   [LAYER_SOURCES.fema_flood_zones.url, "fema_zones"],
   [LAYER_SOURCES.fema_firm_panels.url, "fema_panels"],
+  [LAYER_SOURCES.fema_communities.url, "fema_community"],
+  [LAYER_SOURCES.fema_lomas.url, "fema_lomas"],
+  [LAYER_SOURCES.fema_lomrs.url, "fema_lomrs"],
   [LAYER_SOURCES.jp_calificacion.url, "jp_calif"],
   [LAYER_SOURCES.crim_parcels.url, "crim"],
   [LAYER_SOURCES.jp_zona_costanera.url, "czm_official"],
@@ -79,7 +83,7 @@ function fixtureFetch(calls: string[] = [], override: Record<string, "down" | "t
     return { ok: true, status: 200, json: async () => resp };
   };
 }
-const FAST = { fema_zones: 200, fema_panels: 200, jp_calificacion: 200, crim: 200, czm_official: 50, coastline: 200, historic: 50, protected: 50 };
+const FAST = { fema_zones: 200, fema_panels: 200, fema_community: 200, fema_lomas: 200, fema_lomrs: 200, jp_calificacion: 200, crim: 200, czm_official: 50, coastline: 200, historic: 50, protected: 50 };
 const resolveAt = (pt: string, opts: Parameters<typeof resolveSiteLayers>[2] = {}) => {
   const [lat, lng] = FX.points[pt];
   return resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache: new LayerCache(), timeoutMs: FAST, now: () => new Date(AT), ...opts });
@@ -133,6 +137,60 @@ test("FEMA NFHL: AE (Toa Baja), AE floodway (Río Grande), VE (Condado), X (Guay
   const noPanel = parseFemaFlood(r("fema_zones:toa_baja_ae"), "http_503", AT);
   assert.equal(noPanel.code, "AE");
   assert.equal(noPanel.source.dataset_date, null);
+});
+
+test("FEMA MSC parity: FIRM panel, community and letters of map change come with the zone", () => {
+  const extras = { community: r("fema_community:guaynabo_pueblo"), lomas: r("fema_lomas:guaynabo_pueblo"), lomrs: r("fema_lomrs:guaynabo_pueblo") };
+  const x = parseFemaFlood(r("fema_zones:guaynabo_pueblo"), r("fema_panels:guaynabo_pueblo"), AT, extras);
+  assert.equal(x.attributes.FIRM_PAN, "72000C0730H");
+  assert.equal(x.attributes.PANEL_TYP, "Countywide, Panel Printed");
+  assert.equal(x.attributes.PRE_DATE, null, "FEMA's year-9999 placeholder means no preliminary map");
+  assert.equal(x.attributes.COMMUNITY_NAME, "Municipio de Guaynabo");
+  assert.equal(x.attributes.COMMUNITY_CID, "720000");
+  assert.equal(x.attributes.LOMC_COUNT, 0);
+  assert.deepEqual(x.tags, [], "no letters of map change → no LOMC tag");
+  // A LOMA near the pin is flagged, never applied: the zone itself is unchanged.
+  const loma = { features: [{ attributes: { CASENUMBER: "00-01-0480A", STATUS: "Completed", PROJECTCATEGORY: "LOMA", DATEENDED: 955584000000, OUTCOME: "Structure removed-Property partially inundated" } }] };
+  const withLoma = parseFemaFlood(r("fema_zones:toa_baja_ae"), r("fema_panels:toa_baja_ae"), AT, { ...extras, lomas: loma });
+  assert.equal(withLoma.code, "AE");
+  assert.deepEqual(withLoma.tags, ["SFHA", "LOMC"]);
+  assert.equal(withLoma.attributes.LOMC_COUNT, 1);
+  assert.match(String(withLoma.attributes.LOMC_CASES), /LOMA 00-01-0480A \(2000-04-13\)/);
+  // The extras are best-effort: a down service leaves the zone intact and the LOMC answer unknown.
+  const down = parseFemaFlood(r("fema_zones:toa_baja_ae"), r("fema_panels:toa_baja_ae"), AT, { community: "http_503", lomas: "timeout_6000ms", lomrs: "http_503" });
+  assert.equal(down.status, "resolved");
+  assert.equal(down.attributes.LOMC_COUNT, null);
+  assert.equal(down.attributes.COMMUNITY_NAME, null);
+  // Overlapping flood polygons: the most hazardous governs, as on a flood determination.
+  const overlap = { features: [{ attributes: { FLD_ZONE: "X", ZONE_SUBTY: "AREA OF MINIMAL FLOOD HAZARD", SFHA_TF: "F" } }, { attributes: { FLD_ZONE: "AE", SFHA_TF: "T" } }] };
+  const o = parseFemaFlood(overlap, null, AT);
+  assert.equal(o.code, "AE");
+  assert.equal(o.attributes.ZONES_AT_POINT, 2);
+  const fw = parseFemaFlood({ features: [{ attributes: { FLD_ZONE: "AE", SFHA_TF: "T" } }, { attributes: { FLD_ZONE: "AE", ZONE_SUBTY: "FLOODWAY", SFHA_TF: "T" } }] }, null, AT);
+  assert.deepEqual(fw.tags, ["SFHA", "FLOODWAY"]);
+});
+
+test("FEMA MSC parity: resolving a pin queries community + LOMA/LOMR and links to the Map Service Center", async () => {
+  const calls: string[] = [];
+  const [lat, lng] = FX.points.guaynabo_pueblo;
+  const l = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(calls), cache: new LayerCache(), timeoutMs: FAST, now: () => new Date(AT) });
+  for (const u of [LAYER_SOURCES.fema_communities.url, LAYER_SOURCES.fema_lomas.url, LAYER_SOURCES.fema_lomrs.url]) assert.ok(calls.some((c) => c.startsWith(`${u}/query?`)), u);
+  const near = calls.find((c) => c.startsWith(`${LAYER_SOURCES.fema_lomas.url}/query?`))!;
+  assert.equal(new URL(near).searchParams.get("distance"), "100");
+  const f = floodMapSummary(l)!;
+  assert.equal(f.zone, "X");
+  assert.equal(f.firmPanel, "72000C0730H");
+  assert.equal(f.effectiveDate, "2005-04-19");
+  assert.equal(f.community, "Municipio de Guaynabo");
+  assert.equal(f.communityId, "720000");
+  assert.equal(f.mapChangeCount, 0);
+  assert.match(f.mscUrl ?? "", /^https:\/\/msc\.fema\.gov\/portal\/search\?AddressQuery=18\.\d+%2C%20-66\.\d+$/);
+  // The extras failing never degrade the flood zone.
+  const degraded = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch([], { fema_community: "down", fema_lomas: "down", fema_lomrs: "timeout" }), cache: new LayerCache(), timeoutMs: FAST, now: () => new Date(AT) });
+  assert.equal(layer(degraded, "flood_zone").status, "resolved");
+  assert.equal(layer(degraded, "flood_zone").code, "X");
+  assert.equal(floodMapSummary(degraded)?.mapChangeCount, null);
+  assert.equal(floodMapSummary({ ...degraded, results: [] }), null);
 });
 
 test("JP calificación: zoning + land class + catastro; VIAL is not a land class; no polygon is unknown", () => {
