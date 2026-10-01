@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { ModalPortal, useModalBehavior } from "../components/ui/ViewportModal";
 import { PassportMap, type MapPoint } from "../components/map/PassportMap";
 import {
   formatCoordinate,
@@ -213,31 +214,16 @@ export function LocationPickerDialog({
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
 
-  // Escape closes (unless a save is in flight). Read through a ref so the
-  // mount-only effect below never re-runs and steals focus mid-edit.
-  const closeRef = useRef<() => void>(() => {});
-  useEffect(() => {
-    closeRef.current = () => {
+  // Viewport-fixed modal: portalled to <body> (see ModalPortal), page scroll
+  // locked, focus moved into the dialog and kept there, Escape closes
+  // (unless a save is in flight), focus returns to the opener on close.
+  useModalBehavior(
+    dialogRef,
+    () => {
       if (!saving) onClose();
-    };
-  }, [onClose, saving]);
-
-  // Mount only: initial focus, Escape handler, body scroll lock; restore focus on close.
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    firstFieldRef.current?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeRef.current();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-      previous?.focus?.();
-    };
-  }, []);
+    },
+    firstFieldRef
+  );
 
   /**
    * Describe the new point with a reverse lookup. Confirmation waits for it
@@ -521,16 +507,26 @@ export function LocationPickerDialog({
     "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-base font-normal text-[#161616] sm:text-sm";
 
   return (
+    <ModalPortal>
     <div
-      className="fixed inset-0 z-[60] flex items-stretch justify-center bg-black/40 sm:items-center sm:p-4"
-      onClick={() => !saving && onClose()}
+      // Full-screen sheet on phones; centered card (max 90dvh, body scrolls
+      // inside) from sm up. Fixed to the viewport via the body portal.
+      className="fixed inset-0 z-[1100] flex items-stretch justify-center overscroll-contain bg-black/40 sm:items-center sm:p-4"
+      onClick={(event) => {
+        // React events bubble through portals to the opener's tree: keep
+        // backdrop clicks from reaching it.
+        event.stopPropagation();
+        if (!saving) onClose();
+      }}
+      data-testid="location-picker-overlay"
     >
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="flex h-[100dvh] w-full flex-col bg-white shadow-xl sm:h-auto sm:max-h-[92vh] sm:max-w-2xl sm:rounded-2xl"
+        tabIndex={-1}
+        className="flex h-[100dvh] max-h-[100dvh] w-full flex-col bg-white shadow-xl outline-none sm:h-auto sm:max-h-[90dvh] sm:max-w-2xl sm:rounded-2xl"
         onClick={(event) => event.stopPropagation()}
         data-testid="location-picker-dialog"
       >
@@ -562,7 +558,7 @@ export function LocationPickerDialog({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
           {(!pickMode || (offerSave && businessId && saveToPassport)) && (
             <div className="mb-4">
           <label htmlFor={nameId} className="block text-xs font-semibold text-slate-600">
@@ -888,5 +884,6 @@ export function LocationPickerDialog({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

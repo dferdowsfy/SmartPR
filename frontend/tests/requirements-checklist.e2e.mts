@@ -15,6 +15,7 @@
  *   BASE_URL=http://localhost:3000 npx tsx tests/requirements-checklist.e2e.mts [outDir] [golden]
  *   BASE_URL=… npx tsx tests/requirements-checklist.e2e.mts [outDir] location   (intake location step)
  *   BASE_URL=… npx tsx tests/requirements-checklist.e2e.mts [outDir] flood      (map layers: AE pin → Reg. 13 step)
+ *   BASE_URL=… npx tsx tests/requirements-checklist.e2e.mts [outDir] picker     (picker opens in the viewport; card placement; layer loading state)
  *   (E2E_CHROME=/path/to/chromium to use a system browser)
  * Exits non-zero on any failed check.
  */
@@ -36,6 +37,285 @@ const failures: string[] = [];
 function check(name: string, ok: boolean, detail = "") {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
   if (!ok) failures.push(name);
+}
+
+// ---------------------------------------------------------------------------
+// Picker viewport + placement + layer-loading flow
+// (`… tests/requirements-checklist.e2e.mts <outDir> picker`):
+//   1. The inline "Where is it?" card sits right under the project
+//      description (top of the intake, before the intent and yes/no list).
+//   2. With the user scrolled far down a long intake, "Find it in <muni>"
+//      opens LocationPickerDialog FULLY inside the current viewport —
+//      desktop 1280x800 and mobile 390x844. The dialog is portalled to
+//      <body>, locks page scroll, takes focus, Escape closes, and the page
+//      scroll position is unchanged afterwards. The stage grid keeps no
+//      lingering transform (the containing-block root cause).
+//   3. Desktop: the summary sidebar's "Site → Find on map" row opens the same
+//      picker, also inside the viewport.
+//   4. After confirming a pin the map-layer lookup shows an obvious loading
+//      state (spinner + "Checking flood zone, zoning and parcel for this
+//      site…" at ≥16px, skeleton chips), then a clear done state with chips.
+// Geocoding is stubbed; /api/locations/layers is served from the recorded
+// ArcGIS fixtures with an artificial delay; /api/locations/resolve is real.
+// ---------------------------------------------------------------------------
+if (GOLDEN === "picker") {
+  const FX = JSON.parse(readFileSync(path.join(here, "../src/app/locations/fixtures/arcgisLayers.json"), "utf8"));
+  const URL_LAYER: Array<[string, string]> = [
+    [LAYER_SOURCES.fema_flood_zones.url, "fema_zones"],
+    [LAYER_SOURCES.fema_firm_panels.url, "fema_panels"],
+    [LAYER_SOURCES.jp_calificacion.url, "jp_calif"],
+    [LAYER_SOURCES.crim_parcels.url, "crim"],
+    [LAYER_SOURCES.jp_zona_costanera.url, "czm_official"],
+    [LAYER_SOURCES.jp_linea_costa.url, "coastline"],
+  ];
+  const fixtureFetch: FetchLike = async (url) => {
+    const layer = URL_LAYER.find(([u]) => url.startsWith(`${u}/query?`))?.[1];
+    const [lng, lat] = new URL(url).searchParams.get("geometry")!.split(",").map(Number);
+    const pt = Object.entries(FX.points as Record<string, [number, number]>).find(([, [a, b]]) => a === lat && b === lng)?.[0];
+    const resp = layer && pt ? FX.responses[`${layer}:${pt}`] : undefined;
+    if (!resp || resp._http_status) return { ok: false, status: resp?._http_status ?? 404, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => resp };
+  };
+  const [gLat, gLng] = FX.points.guaynabo_pueblo as [number, number];
+  const candidate = {
+    latitude: gLat,
+    longitude: gLng,
+    formatted_address: "Calle José de Diego, Guaynabo, PR 00969",
+    address_line_1: "Calle José de Diego",
+    city: "Guaynabo",
+    municipality: "Guaynabo",
+    state_or_region: "Puerto Rico",
+    postal_code: "00969",
+    country_code: "PR",
+    place_source: "stub",
+    place_source_id: "stub-guaynabo",
+  };
+  const snap = {
+    state: {
+      profile: { name: "Taller Guaynabo", industry: "Automotive", business_type: "Auto Repair Shop", municipality: "" },
+      discoveryAnswers: {},
+      projectIntent: "new_business",
+      currentStep: 1,
+    },
+  };
+  const LAYER_DELAY_MS = 2500;
+  const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME || undefined });
+  const errors: string[] = [];
+
+  async function openIntake(viewport: { width: number; height: number }, mobile: boolean) {
+    const page = await browser.newPage({ viewport, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 2 : 1 });
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.route("**/api/**", async (route) => {
+      const u = new URL(route.request().url());
+      const p = u.pathname;
+      if (p === "/api/snapshots/e2e-picker") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(snap) });
+      if (p === "/api/me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
+      if (p === "/api/locations/resolve" || p === "/api/incentives/evaluate") return route.continue();
+      if (p === "/api/locations/layers") {
+        const lat = Number(u.searchParams.get("lat"));
+        const lng = Number(u.searchParams.get("lng"));
+        await new Promise((r) => setTimeout(r, LAYER_DELAY_MS));
+        const layers = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch, cache: new LayerCache(), skipOptional: true });
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ layers }) }).catch(() => undefined);
+      }
+      if (p === "/api/geocode") {
+        if (u.searchParams.get("q")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [candidate] }) });
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: candidate }) });
+      }
+      return route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"stubbed"}' });
+    });
+    await page.goto(`${base}/?resume=e2e-picker`, { waitUntil: "domcontentloaded", timeout: 90000 });
+    const input = page.locator("#spr-nl-input");
+    await input.waitFor({ timeout: 90000 });
+    await input.fill("I want to open an auto repair shop in Guaynabo");
+    await page.getByRole("button", { name: /Interpret description/ }).click();
+    await page.locator('[data-testid="location-step"]').waitFor({ timeout: 30000 });
+    await page.waitForTimeout(700); // stage-enter animation settles
+    return page;
+  }
+
+  /** Simulate a long intake: a tall spacer above the card, then scroll down to the card. */
+  async function scrollFarDown(page: Page) {
+    await page.evaluate(() => {
+      const slot = document.querySelector('[data-testid="intake-location-slot"]');
+      if (slot && !document.getElementById("e2e-long-intake")) {
+        const spacer = document.createElement("div");
+        spacer.id = "e2e-long-intake";
+        spacer.className = "spr-field full";
+        spacer.style.height = "2600px";
+        spacer.style.background = "repeating-linear-gradient(#fff 0 60px, #f4f7f6 60px 120px)";
+        slot.parentElement!.insertBefore(spacer, slot);
+      }
+    });
+    // Center (not "end"): the sticky Continue footer would cover the button and
+    // Playwright would scroll again before clicking.
+    await page.locator('[data-testid="location-step-open"]').evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(250);
+    return page.evaluate(() => {
+      // The intake panel may scroll internally (desktop) or with the page (mobile).
+      const inner = document.querySelector(".spr-intake-scroll") as HTMLElement | null;
+      return Math.max(window.scrollY, inner?.scrollTop ?? 0);
+    });
+  }
+
+  async function assertDialogInViewport(page: Page, label: string, vw: number, vh: number, shot: string) {
+    const dialog = page.locator('[data-testid="location-picker-dialog"]');
+    await dialog.waitFor({ timeout: 15000 });
+    await page.waitForTimeout(400);
+    const box = await dialog.boundingBox();
+    const inside = !!box && box.x >= 0 && box.y >= 0 && box.x + box.width <= vw + 0.5 && box.y + box.height <= vh + 0.5;
+    check(`${label}: dialog fully inside the ${vw}x${vh} viewport`, inside, JSON.stringify(box));
+    const overlay = await page.locator('[data-testid="location-picker-overlay"]').boundingBox();
+    // On desktop html keeps `scrollbar-gutter: stable`, so the fixed overlay
+    // spans the viewport minus the reserved scrollbar gutter (≤ 20px).
+    check(`${label}: overlay covers the viewport`, !!overlay && Math.abs(overlay.x) < 1 && Math.abs(overlay.y) < 1 && overlay.width <= vw && overlay.width >= vw - 20 && Math.abs(overlay.height - vh) < 1, JSON.stringify(overlay));
+    const facts = await page.evaluate(() => {
+      const d = document.querySelector('[data-testid="location-picker-dialog"]')!;
+      const ov = d.parentElement!;
+      return {
+        portalled: ov.parentElement === document.body,
+        fixed: getComputedStyle(ov).position === "fixed",
+        focusInside: d.contains(document.activeElement),
+        scrollLocked: getComputedStyle(document.documentElement).overflow === "hidden" || getComputedStyle(document.body).overflow === "hidden",
+      };
+    });
+    check(`${label}: dialog portalled to <body> with position: fixed`, facts.portalled && facts.fixed, JSON.stringify(facts));
+    check(`${label}: focus moved into the dialog`, facts.focusInside);
+    check(`${label}: page scroll locked while open`, facts.scrollLocked);
+    const footer = await dialog.locator('[data-testid="location-confirm"]').boundingBox();
+    check(`${label}: 'Use this site' is on screen`, !!footer && footer.y >= 0 && footer.y + footer.height <= vh);
+    await page.screenshot({ path: path.join(OUT, shot), fullPage: false });
+  }
+
+  // ------------------------------------------------------------ desktop --
+  {
+    const VW = 1280, VH = 800;
+    const page = await openIntake({ width: VW, height: VH }, false);
+    // Placement: the card is near the top, right under the description.
+    const order = await page.evaluate(() => {
+      const slot = document.querySelector('[data-testid="intake-location-slot"]');
+      const nl = document.querySelector("#spr-nl-input");
+      const intent = Array.from(document.querySelectorAll(".spr-form .spr-field")).find((el) => /existing business|new business|Is this for/i.test(el.textContent ?? "") && !el.contains(slot));
+      const questions = document.querySelector(".spr-scn-questions, .spr-saved-answers");
+      // (no named helpers inside evaluate: tsx's keepNames would inject __name)
+      return {
+        afterDescription: !!nl && !!slot && !!(nl.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING),
+        beforeIntent: !!slot && (!intent || !!(slot.compareDocumentPosition(intent) & Node.DOCUMENT_POSITION_FOLLOWING)),
+        beforeQuestions: !!slot && (!questions || !!(slot.compareDocumentPosition(questions) & Node.DOCUMENT_POSITION_FOLLOWING)),
+        hasIntent: !!intent,
+        hasQuestions: !!questions,
+      };
+    });
+    check("placement: 'Where is it?' card comes right after the project description", order.afterDescription, JSON.stringify(order));
+    check("placement: card comes before the intent question and the yes/no list", order.beforeIntent && order.beforeQuestions, JSON.stringify(order));
+    const cardTop = await page.locator('[data-testid="location-step"]').evaluate((el) => el.getBoundingClientRect().top + (document.querySelector(".spr-intake-scroll")?.scrollTop ?? 0) + window.scrollY);
+    check("placement: card is within the first screen of the intake", cardTop < VH, `${Math.round(cardTop)}px`);
+    await page.locator('[data-testid="location-step"]').evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: path.join(OUT, "desktop_card_placement.png"), fullPage: false });
+    await page.evaluate(() => { window.scrollTo(0, 0); document.querySelector(".spr-intake-scroll")?.scrollTo(0, 0); });
+    await page.screenshot({ path: path.join(OUT, "desktop_intake_top.png"), fullPage: false });
+
+    // Root cause guard: no ancestor keeps a transform after the stage animation.
+    const transformed = await page.locator('[data-testid="location-step"]').evaluate((el) => {
+      const out: string[] = [];
+      for (let n = el.parentElement; n; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        if (cs.transform !== "none" || cs.filter !== "none" || cs.perspective !== "none" || /transform/.test(cs.willChange)) out.push(`${n.tagName}.${n.className}`);
+      }
+      return out;
+    });
+    check("no ancestor of the card creates a fixed-position containing block", transformed.length === 0, transformed.join(", "));
+
+    // Scrolled far down → Find it in Guaynabo → dialog inside the viewport.
+    const scrolled = await scrollFarDown(page);
+    check("desktop: intake scrolled far down before opening", scrolled > 1500, `${Math.round(scrolled)}px`);
+    await page.screenshot({ path: path.join(OUT, "desktop_scrolled_card.png"), fullPage: false });
+    await page.locator('[data-testid="location-step-open"]').click();
+    await assertDialogInViewport(page, "desktop", VW, VH, "desktop_dialog_scrolled.png");
+    await page.keyboard.press("Escape");
+    await page.locator('[data-testid="location-picker-dialog"]').waitFor({ state: "detached", timeout: 5000 });
+    const scrolledAfter = await page.evaluate(() => Math.max(window.scrollY, (document.querySelector(".spr-intake-scroll") as HTMLElement | null)?.scrollTop ?? 0));
+    check("desktop: Escape closes and the scroll position is kept", Math.abs(scrolledAfter - scrolled) < 2, `${Math.round(scrolled)} → ${Math.round(scrolledAfter)}`);
+    const unlocked = await page.evaluate(() => getComputedStyle(document.documentElement).overflow !== "hidden" && getComputedStyle(document.body).overflow !== "hidden");
+    check("desktop: page scroll unlocked after close", unlocked);
+
+    // Sidebar "Site" row opens the same picker (still scrolled far down).
+    const sideFind = page.locator('[data-testid="summary-site-open"]');
+    const sideShown = await sideFind.isVisible().catch(() => false);
+    check("desktop: summary sidebar shows a 'Site → Find on map' row", sideShown);
+    if (sideShown) {
+      await sideFind.click();
+      await assertDialogInViewport(page, "desktop sidebar", VW, VH, "desktop_dialog_from_sidebar.png");
+    } else {
+      await page.locator('[data-testid="location-step-open"]').click();
+      await page.locator('[data-testid="location-picker-dialog"]').waitFor();
+    }
+
+    // Confirm a pin → obvious layer-loading state → done state.
+    const dialog = page.locator('[data-testid="location-picker-dialog"]');
+    await dialog.locator('[data-testid="location-latitude"]').fill(String(gLat));
+    await dialog.locator('[data-testid="location-longitude"]').fill(String(gLng));
+    await dialog.getByRole("button", { name: /^Place pin$/ }).click();
+    await dialog.locator('[data-testid="location-selected-placement"]').filter({ hasText: /Guaynabo/ }).waitFor({ timeout: 15000 });
+    await page.waitForFunction(() => !(document.querySelector('[data-testid="location-confirm"]') as HTMLButtonElement | null)?.disabled, null, { timeout: 15000 });
+    await dialog.locator('[data-testid="location-confirm"]').click();
+    await dialog.waitFor({ state: "detached", timeout: 10000 });
+    const loading = page.locator('[data-testid="location-step"], [data-testid="location-rules-for"]').locator('[data-testid="location-layer-chips"][data-state="loading"]').first();
+    const loadingShown = await loading.waitFor({ timeout: 2000 }).then(() => true).catch(() => false);
+    check("layers: loading state appears after confirming the site", loadingShown);
+    if (loadingShown) {
+      const status = loading.locator('[data-testid="location-layers-status"]');
+      const txt = (await status.innerText()).replace(/\s+/g, " ");
+      check("layers: loading text names what is checked", /Checking flood zone, zoning and parcel for this site/.test(txt), txt);
+      const fontPx = await status.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+      check("layers: loading text is body size (≥16px)", fontPx >= 16, `${fontPx}px`);
+      check("layers: spinner shown", (await loading.locator(".spr-loc-spin").count()) === 1);
+      check("layers: skeleton chips shown", (await loading.locator(".spr-loc-chip-skeleton").count()) === 3);
+      check("layers: loading is a live status region", (await loading.getAttribute("role")) === "status" && (await loading.getAttribute("aria-busy")) === "true");
+      const sideChecking = await page.locator('[data-testid="summary-site"] .spr-loc-summary-checking').isVisible().catch(() => false);
+      check("layers: sidebar Site row shows 'Checking site…' while loading", sideChecking);
+      await loading.evaluate((el) => el.scrollIntoView({ block: "center" }));
+      await page.screenshot({ path: path.join(OUT, "desktop_layers_loading.png"), fullPage: false });
+    }
+    const done = page.locator('[data-testid="location-rules-for"] [data-testid="location-layer-chips"][data-state="done"]').first();
+    const doneShown = await done.waitFor({ timeout: LAYER_DELAY_MS + 15000 }).then(() => true).catch(() => false);
+    check("layers: done state replaces the loading state", doneShown);
+    if (doneShown) {
+      const txt = (await done.innerText()).replace(/\s+/g, " ");
+      check("layers: done state reads 'Site checked' with the chips", /Site checked on the official maps/.test(txt) && /Flood zone X/.test(txt), txt);
+      const sideLabel = await page.locator('[data-testid="summary-site-label"]').innerText().catch(() => "");
+      check("sidebar Site row shows the confirmed site", /Guaynabo/.test(sideLabel), sideLabel);
+      await done.evaluate((el) => el.scrollIntoView({ block: "center" }));
+      await page.waitForTimeout(200);
+      await page.screenshot({ path: path.join(OUT, "desktop_layers_done.png"), fullPage: false });
+    }
+    await page.close();
+  }
+
+  // ------------------------------------------------------------- mobile --
+  {
+    const VW = 390, VH = 844;
+    const page = await openIntake({ width: VW, height: VH }, true);
+    await page.locator('[data-testid="location-step"]').evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: path.join(OUT, "mobile_card_placement.png"), fullPage: false });
+    const scrolled = await scrollFarDown(page);
+    check("mobile: intake scrolled far down before opening", scrolled > 1500, `${Math.round(scrolled)}px`);
+    await page.screenshot({ path: path.join(OUT, "mobile_scrolled_card.png"), fullPage: false });
+    await page.locator('[data-testid="location-step-open"]').tap();
+    await assertDialogInViewport(page, "mobile", VW, VH, "mobile_dialog_scrolled.png");
+    await page.keyboard.press("Escape");
+    await page.locator('[data-testid="location-picker-dialog"]').waitFor({ state: "detached", timeout: 5000 });
+    const scrolledAfter = await page.evaluate(() => Math.max(window.scrollY, (document.querySelector(".spr-intake-scroll") as HTMLElement | null)?.scrollTop ?? 0));
+    check("mobile: Escape closes and the scroll position is kept", Math.abs(scrolledAfter - scrolled) < 2, `${Math.round(scrolled)} → ${Math.round(scrolledAfter)}`);
+    await page.close();
+  }
+
+  check("no page errors", errors.length === 0, errors.join(" | "));
+  await browser.close();
+  console.log(failures.length ? `\n${failures.length} FAILED` : "\nALL PASSED");
+  process.exit(failures.length ? 1 : 0);
 }
 
 // ---------------------------------------------------------------------------

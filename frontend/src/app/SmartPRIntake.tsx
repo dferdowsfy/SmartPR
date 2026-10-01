@@ -115,6 +115,7 @@ import {
 import { MunicipalityMapButton } from './components/intake/MunicipalityMapButton';
 import { normalizeMunicipio } from './locations/geo';
 import { LocationStepCard, intakeSiteFromPick } from './components/intake/LocationStepCard';
+import { ModalPortal } from './components/ui/ViewportModal';
 import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails, siteLabel, siteLayersCurrent, type IntakeSite } from './locations/intakeLocation';
 import { unavailableSiteLayers, type SiteLayers } from './locations/layers';
 import type { LocationEngineFacts } from './locations/locationContext';
@@ -6575,6 +6576,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       municipality: profile.municipality,
       locationType: profile.location_type,
       scope: projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null,
+      // Same show/hide rule as the inline "Where is it?" card.
+      site: intakeSite || locationNeed.needed ? (
+        <LocationStepCard
+          summaryRow
+          lang={language}
+          need={locationNeed}
+          site={intakeSite}
+          businessId={siteBusinessId}
+          onConfirm={confirmIntakeSite}
+        />
+      ) : null,
       onPreview: handleSubmitTap,
     },
     statusText: scenarioEval
@@ -6771,6 +6783,24 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     onChange: updatePassport,
                   } : undefined}
                 />
+
+                {/* Location step: when the request needs a site, ask "Where is
+                    it?" inline (pin, address, or a saved location), right
+                    under the project description — before the intent and the
+                    long yes/no list — so it is never buried at the bottom.
+                    The confirmed site's municipio and location facts drive
+                    the requirements. */}
+                {(locationNeed.needed || intakeSite) && (
+                  <div className="spr-field full" data-testid="intake-location-slot">
+                    <LocationStepCard
+                      lang={language}
+                      need={locationNeed}
+                      site={intakeSite}
+                      businessId={siteBusinessId}
+                      onConfirm={confirmIntakeSite}
+                    />
+                  </div>
+                )}
 
                 {/* Project-first intent: asked early, never defaulted. The
                     interpreter may pre-select it (with a needs-confirmation
@@ -6999,22 +7029,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   language={language}
                 />
               )}
-
-                {/* Location step: when the request needs a site, ask "Where is
-                    it?" inline (pin, address, or a saved location). The
-                    confirmed site's municipio and location facts drive the
-                    requirements. */}
-                {(locationNeed.needed || intakeSite) && (
-                  <div className="spr-field full">
-                    <LocationStepCard
-                      lang={language}
-                      need={locationNeed}
-                      site={intakeSite}
-                      businessId={siteBusinessId}
-                      onConfirm={confirmIntakeSite}
-                    />
-                  </div>
-                )}
 
                 {/* Business-details block: filled fields minimize into the
                     compact summary (tap to edit); fields still needing input
@@ -7757,6 +7771,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         if (!pkgReq || pkgEntries.length === 0) return null;
         const close = () => setActiveGovPackage(null);
         return (
+          <ModalPortal>
           <div role="dialog" aria-modal="true" data-requirement={pkgReq.code} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 1000, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "24px 12px" }} onClick={close}>
             <div style={{ background: "var(--surface, white)", borderRadius: 12, maxWidth: 640, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }} onClick={(e) => e.stopPropagation()}>
               <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0" }}>
@@ -7805,6 +7820,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               </div>
             </div>
           </div>
+          </ModalPortal>
         );
       })()}
 
