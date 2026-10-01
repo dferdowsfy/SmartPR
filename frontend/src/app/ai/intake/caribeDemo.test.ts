@@ -300,4 +300,30 @@ describe("the same business, described without saying 'existing'", () => {
     assert.equal(v(ctx.project.demolition), "interior");
     assert.equal(v(ctx.project.footprintChange), false);
   });
+
+  it("'is leasing a … facility' is new premises even when the Passport is already in that municipality", () => {
+    const here: PassportSnapshot = { ...PASSPORT, municipality: "Guaynabo" };
+    assert.equal(isNewPremises(ctx, here), true);
+    const own = interpretScenario("Caribe Precision Manufacturing has operated its leased Guaynabo plant for years and is renovating the office interior.");
+    assert.equal(isNewPremises(own, here), false, "an already-operating leased plant is not new premises");
+  });
+
+  it("the location permits stay required — a deferred side question must not demote them", () => {
+    const stated: Record<string, unknown> = { ...scenarioStatedAnswers(ctx) };
+    const prof = { name: PASSPORT.name, municipality: "Guaynabo", industry: "Manufacturing", business_type: "Furniture Manufacturing", location_type: "Industrial Facility", business_structure: "llc", number_of_employees: 28 };
+    const later = (discoveryQuestionsForBusinessType("Furniture Manufacturing") ?? [])
+      .filter((q) => stated[q.id] == null)
+      .map((q) => ({ questionId: kbQuestionIdFor(q.id, KB.questions), writeKey: q.id }));
+    const out = computeRequirementsFromKB(prof as never, stated, resolveIntakeFacts({ profile: prof, answers: stated }, { kb, allowedIndustries: INTAKE_INDUSTRIES }).questionValues, {
+      entityType: "limited_liability_company",
+      projectIntent: "existing_business",
+      projectContext: scenarioToProjectContext(ctx),
+      deferredQuestions: later,
+      newPremises: { registeredMunicipality: "Guaynabo" },
+    });
+    const at = (doc: string) => out.find((r) => r.document_id === doc)?.applicability;
+    assert.equal(at("DOC_OGPE_CONSTRUCTION_PERMIT"), "required");
+    assert.equal(at("DOC_PERMISO_UNICO"), "required");
+    assert.equal(at("DOC_FIRE_CERT"), "required");
+  });
 });

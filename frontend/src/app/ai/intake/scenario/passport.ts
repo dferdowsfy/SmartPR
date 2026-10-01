@@ -166,7 +166,7 @@ export function passportDeltas(ctx: ScenarioContext, snap: PassportSnapshot | nu
 }
 
 const NEW_PREMISES_RE =
-  /\b(?:expand\w*\s+(?:in)?to|mov(?:e|es|ed|ing)\s+(?:in)?to|relocat\w*|new\s+(?:location|site|facility|premises|space|warehouse|plant|store|branch)|second\s+(?:location|site|facility|store)|additional\s+(?:location|site|facility)|open\w*\s+(?:a|an)\s+(?:new\s+)?(?:location|branch))\b/i;
+  /\b(?:expand\w*\s+(?:in)?to|mov(?:e|es|ed|ing)\s+(?:in)?to|relocat\w*|new\s+(?:location|site|facility|premises|space|warehouse|plant|store|branch)|second\s+(?:location|site|facility|store)|additional\s+(?:location|site|facility)|open\w*\s+(?:a|an)\s+(?:new\s+)?(?:location|branch)|(?:leas(?:e|es|ing)|rent(?:s|ing)?)\s+(?:a|an)\s+(?:\d[\d,]*[-\s]?(?:square[-\s]?\w+|sq\.?\s?ft\.?)\s+)?(?:\w+\s+){0,3}(?:facility|warehouse|space|building|premises|site|property|plant|local)|(?:signed|signing|sign)\s+a\s+(?:new\s+)?lease)\b/i;
 
 /**
  * An existing business taking on premises it does not operate yet: the

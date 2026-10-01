@@ -1144,9 +1144,15 @@ export function computeRequirementsFromSnapshot(
   // Curated unanswered-trigger conditionals (e.g. the lease question):
   // honest "more information needed" cards with an inline Yes/No, never
   // an invented answer.
-  const withCurated = appendUnansweredTriggerConditionals(enriched, snapshot, input, legacyCodeMap);
-  const withDeferred = appendDeferredQuestionConditionals(withCurated, snapshot, profile, answers, resolved, options);
-  return applyNewPremisesPosture(withDeferred, options?.newPremises ?? null, (profile as { municipality?: string | null }).municipality ?? null)
+  const projectMunicipality = (profile as { municipality?: string | null }).municipality ?? null;
+  // The new-premises posture runs first: the deferred-question upgrade path
+  // compares a counterfactual Yes (which already carries the posture) against
+  // the listed card, so a still-"verify_existing" baseline made every location
+  // permit look weaker than the hypothetical and got replaced by a vague
+  // "more information needed" card.
+  const withPosture = applyNewPremisesPosture(enriched, options?.newPremises ?? null, projectMunicipality);
+  const withCurated = appendUnansweredTriggerConditionals(withPosture, snapshot, input, legacyCodeMap);
+  return appendDeferredQuestionConditionals(withCurated, snapshot, profile, answers, resolved, options)
     .sort((a, b) => orderIndex(a.document_id!) - orderIndex(b.document_id!));
 }
 
