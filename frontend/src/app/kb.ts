@@ -1091,12 +1091,23 @@ export function computeRequirementsFromSnapshot(
   // Entity type from explicit caller options must reach the engine so
   // entity-scoped rules (excluded_entity_types) filter correctly; the
   // profile-derived value is only a fallback.
-  if (options.entityType) input.entityType = options.entityType as never;
+  // REG-SOLEPROP-DUALFORMATION-001 follow-up (2026-10-01 QA): "other" is the
+  // absence of a known entity, not a choice — it must not clobber the
+  // buildEngineInput fallback (Q_BUSINESS_STRUCTURE discovery answer). The
+  // live intake passes entityTypeFromLegacyStructure(profile.business_structure),
+  // which is "other" whenever the tiered filing_specific field is null even
+  // when the user answered the structure question; honoring that "other" here
+  // re-broke the dual-formation fix on the live path (both incorporation and
+  // LLC certificates shown to sole proprietors AND to LLCs in production).
+  const explicitEntityType =
+    options.entityType && options.entityType !== "other" ? options.entityType : null;
+  if (explicitEntityType) input.entityType = explicitEntityType as never;
   const { requirements } = runRulesEngine(snapshot, input);
   const classified = classifyEngineRequirements(requirements, {
     kb: snapshot,
     // Explicit caller choice wins; otherwise use what the profile declared.
-    entityType: options.entityType ?? input.entityType ?? null,
+    // (A bare "other" is not a choice — see the override guard above.)
+    entityType: explicitEntityType ?? input.entityType ?? null,
     // The classifier needs the same answers the engine saw for entity- and
     // employment-sensitive calls (e.g. EIN for an unknown entity type that
     // will hire employees is required; without that fact it is conditional).
