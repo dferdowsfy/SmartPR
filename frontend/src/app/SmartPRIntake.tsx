@@ -5348,16 +5348,26 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // portal URL over the generic agency homepage when one exists.
     const site = agencySiteUrl(req);
     const agencySite = site ? { label: L('Open agency site', language), url: site } : null;
+    // Teach / Show Clara: needs a saved business and a portal address to record.
+    const teach = site && persistedBusinessId
+      ? {
+          label: me?.isAdmin ? L('Teach Clara', language) : L('Show Clara', language),
+          onClick: () => {
+            const q = new URLSearchParams({ url: site, form: req.name, portal: req.agency ?? '' });
+            window.location.href = `/businesses/${encodeURIComponent(persistedBusinessId)}/teach?${q}`;
+          },
+        }
+      : null;
     if (support === 'instructions') {
       const guide = req.downloadUrl && req.downloadKind && req.downloadKind !== 'filing_portal' && req.downloadKind !== 'none' ? req.downloadUrl : undefined;
-      return { kind: 'instructions', label: L('View filing instructions', language), href: guide, agencySite };
+      return { kind: 'instructions', label: L('View filing instructions', language), href: guide, agencySite, teach };
     }
     const label = support === 'file' ? L('File with Clara', language) : L('Prepare with Clara', language);
     if (!claraBusinessId) {
       const next = typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '%2F';
-      return { kind: support, label, href: `/auth/login?next=${next}`, hint: L('Sign in to let Clara use your saved information.', language), agencySite: support === 'prepare' ? agencySite : null };
+      return { kind: support, label, href: `/auth/login?next=${next}`, hint: L('Sign in to let Clara use your saved information.', language), agencySite: support === 'prepare' ? agencySite : null, teach };
     }
-    return { kind: support, label, onClick: () => { void openClara(req.document_id!); }, agencySite: support === 'prepare' ? agencySite : null };
+    return { kind: support, label, onClick: () => { void openClara(req.document_id!); }, agencySite: support === 'prepare' ? agencySite : null, teach };
   };
   // Why this applies to THIS project, beyond the rule's trigger: a new
   // premises (or municipality) for an existing business, and — for the

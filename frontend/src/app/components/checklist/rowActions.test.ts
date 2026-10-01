@@ -151,3 +151,16 @@ test("energy developer: an existing company — business formation items are sec
   assert.equal(developerGroup("completed", "tax_registration", true), "completed");
   assert.equal(openStepCount([{ id: "required_now", cards: [1, 2] }, { id: "conditional", cards: [1, 2, 3] }, { id: "prerequisites", cards: [1] }, { id: "supporting", cards: [1] }]), 3);
 });
+
+test("a filing with a saved business and a portal adds Teach Clara after the agency site, with the same handler", () => {
+  const teach = () => "teach";
+  const m = requirementRowActions({
+    action: { kind: "none", label: "" },
+    filing: { kind: "instructions", label: "View filing instructions", agencySite: { label: "Open agency site", url: "https://sbp.ogpe.pr.gov" }, teach: { label: "Show Clara", onClick: teach } },
+  }, "en");
+  const all = [m.primary, ...m.more].filter(Boolean);
+  const t = all.find((c) => c!.kind === "teach");
+  assert.equal(t?.title, "Show Clara");
+  assert.equal(t?.onClick, teach);
+  assert.ok(all.findIndex((c) => c!.kind === "site") < all.findIndex((c) => c!.kind === "teach"));
+});

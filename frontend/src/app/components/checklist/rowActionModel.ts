@@ -14,7 +14,7 @@ import type {
 
 type Language = "en" | "es";
 
-export type RowCtaKind = "form" | "upload" | "assist" | "download" | "instructions" | "site" | "portal" | "start" | "confirm" | "view";
+export type RowCtaKind = "form" | "upload" | "assist" | "download" | "instructions" | "site" | "portal" | "start" | "confirm" | "view" | "teach";
 
 export interface RowCta {
   id: string;
@@ -54,6 +54,7 @@ const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
   start: { en: "Start", es: "Empezar" },
   confirm: { en: "Confirm", es: "Confirmar" },
   view: { en: "View", es: "Ver" },
+  teach: { en: "Teach Clara", es: "Enséñale a Clara" },
 };
 
 /** "Complete Patente Municipal registration form" → "Complete form"; short labels pass through. */
@@ -115,6 +116,9 @@ export function requirementRowActions(
   const siteCta = filing?.agencySite
     ? cta("site", "site", filing.agencySite.label, language, { href: filing.agencySite.url, external: true })
     : null;
+  const teachCta = filing?.teach
+    ? cta("teach", "teach", filing.teach.label, language, { onClick: filing.teach.onClick })
+    : null;
   const downloadCta = !filing && download
     ? cta("download", "download", download.label, language, { href: download.url, external: true, onClick: download.onDownload })
     : null;
@@ -127,9 +131,9 @@ export function requirementRowActions(
     if (resuming) list.push(primaryAction!);
     if (confirm) list.push(confirm);
     if (primaryAction && !resuming) list.push(primaryAction);
-    for (const c of [filingCta, downloadCta, instructionsCta, siteCta]) if (c) list.push(c);
+    for (const c of [filingCta, downloadCta, instructionsCta, siteCta, teachCta]) if (c) list.push(c);
   } else {
-    for (const c of [primaryAction, filingCta, downloadCta, instructionsCta, secondaryCta("upload"), siteCta]) if (c) list.push(c);
+    for (const c of [primaryAction, filingCta, downloadCta, instructionsCta, secondaryCta("upload"), siteCta, teachCta]) if (c) list.push(c);
   }
   // One entry per handler, primary first.
   const seen = new Set<string>();

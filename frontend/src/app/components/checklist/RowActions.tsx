@@ -6,7 +6,7 @@
 // toggle (stopPropagation) and run the card's own handlers.
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 
 type Language = "en" | "es";
@@ -25,6 +25,7 @@ function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
     case "site":
     case "portal": return <ExternalLink size={14} aria-hidden="true" />;
     case "start": return <ListChecks size={14} aria-hidden="true" />;
+    case "teach": return <GraduationCap size={14} aria-hidden="true" />;
     default: return <ArrowRight size={14} aria-hidden="true" />;
   }
 }

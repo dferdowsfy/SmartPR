@@ -88,6 +88,8 @@ export interface RequirementFiling {
   href?: string;
   hint?: string;
   agencySite?: { label: string; url: string } | null;
+  /** "Teach Clara" / "Show Clara": record this portal once so Clara can fill it next time. */
+  teach?: { label: string; onClick: () => void } | null;
 }
 
 export interface RequirementCardProps {
