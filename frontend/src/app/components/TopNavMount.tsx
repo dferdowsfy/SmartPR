@@ -56,9 +56,16 @@ export function TopNavMount({
         requestAnimationFrame(attach);
         return;
       }
+      // Set the initial state synchronously — the observer's first callback
+      // can fire before layout settles, which would incorrectly mark the
+      // nav as scrolled away and show duplicate utilities.
+      const setScrolled = (scrolled: boolean) => {
+        document.documentElement.classList.toggle("nav-is-scrolled", scrolled);
+      };
+      setScrolled(window.scrollY > header.getBoundingClientRect().height);
       io = new IntersectionObserver(
         ([entry]) => {
-          document.documentElement.classList.toggle("nav-is-scrolled", !entry.isIntersecting && entry.boundingClientRect.top < 0);
+          setScrolled(!entry.isIntersecting);
         },
         { threshold: 0 }
       );

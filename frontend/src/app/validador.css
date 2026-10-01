@@ -3311,17 +3311,17 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden !important;
   transform: translateY(-4px);
-  pointer-events: none;
+  pointer-events: none !important;
   transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 180ms;
 }
 html.nav-is-scrolled .spr-stepper-utilities {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
   transform: translateY(0);
-  pointer-events: auto;
+  pointer-events: auto !important;
   transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 0ms;
 }
 .spr-header-utilities {
@@ -3331,16 +3331,16 @@ html.nav-is-scrolled .spr-stepper-utilities {
 }
 /* Only one visible set of utilities at a time */
 .appbar .spr-header-utilities {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
   transform: translateY(0);
   transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 0ms;
 }
 html.nav-is-scrolled .appbar .spr-header-utilities {
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden !important;
   transform: translateY(-4px);
-  pointer-events: none;
+  pointer-events: none !important;
   transition: opacity 180ms ease, transform 180ms ease, visibility 0ms linear 180ms;
 }
 
