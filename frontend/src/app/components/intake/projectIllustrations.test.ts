@@ -30,18 +30,35 @@ test("every selected illustration has a shipped asset, including the full busine
 
 test("specific business types stay distinct and unknowns remain neutral", () => {
   assert.equal(selectProjectIllustration({ businessType: "Restaurant", industry: "Food & Beverage" }), "restaurant");
+  assert.equal(selectProjectIllustration({ businessType: "Fine Dining Restaurant", industry: "Food & Beverage" }), "fineDining");
   assert.equal(selectProjectIllustration({ businessType: "Bar", industry: "Food & Beverage" }), "bar");
   assert.equal(selectProjectIllustration({ businessType: "Gym", industry: "Arts, Entertainment & Recreation" }), "gym");
   assert.equal(selectProjectIllustration({ businessType: "Fitness Studio" }), "gym");
   assert.equal(selectProjectIllustration({ businessType: "Juice Bar", industry: "Food & Beverage" }), "restaurant");
   assert.equal(selectProjectIllustration({ businessType: "Liquor Store", industry: "Food & Beverage" }), "retail");
-  assert.equal(selectProjectIllustration({ businessType: "Pharmacy", industry: "Healthcare" }), "retail");
+  assert.equal(selectProjectIllustration({ businessType: "Pharmacy", industry: "Healthcare" }), "pharmacy");
+  assert.equal(selectProjectIllustration({ businessType: "Auto Parts Store", industry: "Automotive" }), "autoParts");
+  assert.equal(selectProjectIllustration({ businessType: "Auto Parts Company" }), "autoParts");
+  assert.equal(selectProjectIllustration({ businessType: "Auto Parts Manufacturing", industry: "Manufacturing" }), "manufacturing");
+  assert.equal(selectProjectIllustration({ businessType: "Spa", industry: "Beauty & Personal Care" }), "spa");
+  assert.equal(selectProjectIllustration({ businessType: "Medical Spa", industry: "Beauty & Personal Care" }), "spa");
+  assert.equal(selectProjectIllustration({ businessType: "Medical Office", industry: "Healthcare" }), "clinic");
+  assert.equal(selectProjectIllustration({ businessType: "Consultorio médico" }), "clinic");
+  assert.equal(selectProjectIllustration({ businessType: "Hotel", industry: "Accommodation & Tourism" }), "hospitality");
+  assert.equal(selectProjectIllustration({ businessType: "Luxury Hotel", industry: "Accommodation & Tourism" }), "luxuryHotel");
+  assert.equal(selectProjectIllustration({ businessType: "Airbnb / Short-Term Rental", industry: "Accommodation & Tourism" }), "vacationRental");
+  assert.equal(selectProjectIllustration({ businessType: "Alquiler vacacional" }), "vacationRental");
+  assert.equal(selectProjectIllustration({ businessType: "Farmacia" }), "pharmacy");
+  assert.equal(selectProjectIllustration({ businessType: "Tienda de autopartes" }), "autoParts");
+  assert.equal(selectProjectIllustration({ businessType: "Restaurante de lujo" }), "fineDining");
+  assert.equal(selectProjectIllustration({ businessType: "Hotel de lujo" }), "luxuryHotel");
   assert.equal(selectProjectIllustration({ businessType: "Auto Repair Shop", industry: "Automotive" }), "garage");
   assert.equal(selectProjectIllustration({ businessType: "Food Truck", industry: "Food & Beverage" }), "foodTruck");
   assert.equal(selectProjectIllustration({ businessType: "Beauty Salon", industry: "Beauty & Personal Care" }), "salon");
   assert.equal(selectProjectIllustration({ businessType: "Private School", industry: "Education & Training" }), "school");
   assert.equal(selectProjectIllustration({ industry: "Food & Beverage" }), "default");
   assert.equal(selectProjectIllustration({ businessType: "Unknown Business" }), "default");
+  assert.equal(selectProjectIllustration({ businessType: "Mobile reef-survey service" }), "default");
 });
 
 test("solar warehouse requires explicit solar answers and updates when they change", () => {
@@ -56,6 +73,11 @@ test("solar warehouse requires explicit solar answers and updates when they chan
 test('confirmed request facts select images without any manually selected business type', () => {
   const fact = (value: string) => ({ value, source: 'explicit', confidence: 0.99 });
   assert.equal(selectProjectIllustration({ scenario: { operations: { activity: fact('restaurant') } } }), 'restaurant');
+  assert.equal(selectProjectIllustration({ scenario: { operations: { activity: fact('fine dining restaurant') } } }), 'fineDining');
+  assert.equal(selectProjectIllustration({ scenario: { property: { proposedUse: fact('luxury hotel') } } }), 'luxuryHotel');
+  assert.equal(selectProjectIllustration({ scenario: { property: { proposedUse: fact('short-term rental home') } } }), 'vacationRental');
+  assert.equal(selectProjectIllustration({ businessType: 'Luxury Hotel', scenario: { property: { proposedUse: fact('hotel') } } }), 'luxuryHotel');
+  assert.equal(selectProjectIllustration({ businessType: 'Fine Dining Restaurant', scenario: { property: { proposedUse: fact('restaurant / food service') } } }), 'fineDining');
   assert.equal(selectProjectIllustration({ scenario: { operations: { activity: fact('gym') } } }), 'gym');
   assert.equal(selectProjectIllustration({ scenario: { property: { proposedUse: fact('bar') } } }), 'bar');
   assert.equal(selectProjectIllustration({ businessType: 'Bar', scenario: { property: { proposedUse: fact('restaurant / food service') } } }), 'bar');

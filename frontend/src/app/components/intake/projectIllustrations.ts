@@ -2,9 +2,12 @@
 export const PROJECT_ILLUSTRATIONS = {
   default: "/illustrations/projects/default.png",
   restaurant: "/illustrations/projects/restaurant.png",
+  fineDining: "/illustrations/projects/fine-dining.png",
   bar: "/illustrations/projects/bar.png",
   gym: "/illustrations/projects/gym.png",
   retail: "/illustrations/projects/retail.png",
+  pharmacy: "/illustrations/projects/pharmacy.png",
+  autoParts: "/illustrations/projects/auto-parts.png",
   clinic: "/illustrations/projects/clinic.png",
   construction: "/illustrations/projects/construction.png",
   office: "/illustrations/projects/office.png",
@@ -12,8 +15,11 @@ export const PROJECT_ILLUSTRATIONS = {
   solar: "/illustrations/projects/solar-warehouse.png",
   solarWarehouse: "/illustrations/projects/solar-warehouse.png",
   hospitality: "/illustrations/projects/hospitality.png",
+  luxuryHotel: "/illustrations/projects/luxury-hotel.png",
+  vacationRental: "/illustrations/projects/vacation-rental.png",
   foodTruck: "/illustrations/projects/food-truck.png",
   salon: "/illustrations/projects/salon.png",
+  spa: "/illustrations/projects/spa.png",
   manufacturing: "/illustrations/projects/manufacturing.png",
   logistics: "/illustrations/projects/logistics.png",
   school: "/illustrations/projects/school.png",
@@ -47,6 +53,9 @@ const normalize = (value: string | null | undefined) =>
   (value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
 const matches = (value: string, terms: string[]) => terms.some((term) => value === term || value.includes(term));
+const isFineDining = (value: string) => matches(value, ["fine dining", "fine-dining", "upscale restaurant", "luxury restaurant", "high-end restaurant", "high end restaurant", "gourmet restaurant", "alta cocina", "restaurante de lujo"]);
+const isLuxuryHotel = (value: string) => matches(value, ["luxury hotel", "high-end hotel", "high end hotel", "upscale hotel", "boutique hotel", "five-star hotel", "5-star hotel", "luxury resort", "hotel de lujo", "hotel boutique"]);
+const isVacationRental = (value: string) => matches(value, ["airbnb", "short-term rental", "short term rental", "vacation rental", "holiday rental", "guest house", "alquiler a corto plazo", "alquiler vacacional", "casa vacacional"]);
 
 /**
  * Prefer a confirmed proposed use, then business type, over a broad industry. Never read the
@@ -64,9 +73,12 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
   const businessType = normalize(input.businessType);
   // The scenario groups bars/food trucks under a broad food-service use.
   // Keep the more specific confirmed business artwork within that group.
-  const foodServiceSubtype = ['bar', 'nightclub', 'food truck', 'juice bar'].includes(businessType)
-    && ['restaurant', 'restaurant / food service', 'food service'].includes(normalize(proposedUse));
-  const type = (foodServiceSubtype ? businessType : normalize(proposedUse)) || businessType || normalize(
+  const normalizedUse = normalize(proposedUse);
+  const broadFoodServiceUse = ['restaurant', 'restaurant / food service', 'food service'].includes(normalizedUse);
+  const specificBusinessType = (['bar', 'nightclub', 'food truck', 'juice bar'].includes(businessType) || isFineDining(businessType)) && broadFoodServiceUse
+    || isLuxuryHotel(businessType) && ['hotel', 'hotel / lodging', 'accommodation'].includes(normalizedUse)
+    || isVacationRental(businessType) && ['hotel', 'hotel / lodging', 'accommodation', 'hospitality'].includes(normalizedUse);
+  const type = (specificBusinessType ? businessType : normalizedUse) || businessType || normalize(
     confirmedScenarioValue(scenario?.operations?.activity)
       || confirmedScenarioValue(scenario?.business?.proposedActivity)
       || String(confirmedContext("proposed_use") ?? confirmedContext("business_activity") ?? "")
@@ -90,13 +102,19 @@ export function selectProjectIllustration(input: ProjectIllustrationInput): Proj
 
   if (["bar", "nightclub", "pub", "tavern", "cocktail lounge"].includes(type) || (type.endsWith(" bar") && type !== "juice bar")) return "bar";
   if (type === "food truck") return "foodTruck";
-  if (matches(type, ["liquor store", "grocery store", "supermarket", "convenience store", "pharmacy", "auto parts store"])) return "retail";
-  if (matches(type, ["restaurant", "bakery", "cafe", "coffee shop", "catering", "ice cream shop", "juice bar", "commercial kitchen"])) return "restaurant";
-  if (matches(type, ["medical spa", "beauty salon", "barbershop", "nail salon", "massage therapy", "esthetics", "makeup studio", "hair removal", "spa"])) return "salon";
-  if (matches(type, ["medical office", "dental office", "clinic", "clinical laboratory", "laboratory", "urgent care", "mental health practice", "physical therapy", "veterinary"])) return "clinic";
-  if (matches(type, ["gym", "fitness center", "fitness studio", "health club", "yoga studio", "pilates studio"])) return "gym";
+  if (isFineDining(type)) return "fineDining";
+  if (matches(type, ["pharmacy", "drugstore", "chemist shop", "farmacia"])) return "pharmacy";
+  if (matches(type, ["auto parts store", "auto parts shop", "auto parts retailer", "auto parts company", "car parts store", "automotive parts store", "tienda de autopartes", "tienda de piezas de auto", "repuestos de autos"])) return "autoParts";
+  if (matches(type, ["liquor store", "grocery store", "supermarket", "convenience store"])) return "retail";
+  if (matches(type, ["restaurant", "restaurante", "bakery", "cafe", "coffee shop", "catering", "ice cream shop", "juice bar", "commercial kitchen"])) return "restaurant";
+  if (type === "spa" || matches(type, ["day spa", "wellness spa", "massage spa", "medical spa"])) return "spa";
+  if (matches(type, ["beauty salon", "barbershop", "nail salon", "massage therapy", "esthetics", "makeup studio", "hair removal"])) return "salon";
+  if (matches(type, ["medical office", "consultorio medico", "dental office", "clinic", "clinical laboratory", "laboratory", "urgent care", "mental health practice", "physical therapy", "veterinary"])) return "clinic";
+  if (matches(type, ["gym", "gimnasio", "fitness center", "fitness studio", "health club", "yoga studio", "pilates studio"])) return "gym";
   if (type === "home health agency") return "office";
-  if (matches(type, ["hotel", "resort", "guest house", "short-term rental", "short term rental"])) return "hospitality";
+  if (isLuxuryHotel(type)) return "luxuryHotel";
+  if (isVacationRental(type)) return "vacationRental";
+  if (matches(type, ["hotel", "resort"])) return "hospitality";
   if (matches(type, ["general contractor", "electrical contractor", "plumbing contractor", "hvac contractor", "roofing contractor", "concrete contractor", "construction contractor", "real estate developer"])) return "construction";
   if (type === "utility contractor") return "construction";
   if (matches(type, ["solar installer", "battery storage installer", "renewable energy company"])) return "solar";
