@@ -353,10 +353,10 @@ function TeachFlow({ businessId }: { businessId: string }) {
           <GraduationCap className="h-5 w-5 text-[#9fd3b4]" />
           <div className="min-w-0 flex-1">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9a917f]">
-              {isAdmin ? L("Teach Clara · shared library", "Enséñale a Clara · biblioteca compartida", lang) : L("Show Clara · just for you", "Muéstrale a Clara · solo para ti", lang)}
+              {isAdmin ? L("Teach Clara · shared library", "Enséñale a Clara · biblioteca compartida", lang) : L("Teach Clara · just for you", "Enséñale a Clara · solo para ti", lang)}
             </p>
             <h1 className="truncate font-[family-name:var(--font-display)] text-[18px] text-[#f4efe2]">
-              {session ? `${session.portal_name} — ${session.form}` : L("Show Clara a filing once", "Muéstrale a Clara un trámite una vez", lang)}
+              {session ? `${session.portal_name} — ${session.form}` : L("Teach Clara a filing once", "Enséñale a Clara un trámite una vez", lang)}
             </h1>
           </div>
         </header>

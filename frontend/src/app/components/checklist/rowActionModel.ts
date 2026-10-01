@@ -108,7 +108,7 @@ export function requirementRowActions(
     return { primary: null, more, done: { label: action.onClick ? (es ? "Ver" : "View") : es ? "Listo" : "Done", onClick: action.onClick }, answer: null };
   }
   if (answerPrompt && (action.kind === "none" || !action.onClick)) {
-    return { primary: null, more: [], done: null, answer: answerPrompt };
+    return { primary: null, more: input.onTeach ? [teachClaraCta(input.onTeach, language)] : [], done: null, answer: answerPrompt };
   }
 
   const list: RowCta[] = [];

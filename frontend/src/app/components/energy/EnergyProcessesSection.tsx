@@ -231,6 +231,14 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
               <div>{item.before.join(" · ")}</div>
             </div>
           )}
+          {/* SmartPR's guided form — the same handler as the row's inline "Complete form". */}
+          {actions.primary?.kind === "guided" && (
+            <div className="ck-card-actions">
+              <button type="button" className="ck-action" data-testid="card-action" data-cta="guided" onClick={actions.primary.onClick}>
+                {es ? "Completar el formulario en SmartPR" : "Complete the form in SmartPR"}
+              </button>
+            </div>
+          )}
           {/* The covered cards' actions — the same handlers as the row's inline button. */}
           {legacy.map((c) => c.rowActions
             ? <ActionList key={c.name} model={c.rowActions} />

@@ -792,15 +792,18 @@ await page.screenshot({ path: path.join(OUT, `${tag}_inline_actions.png`), fullP
   const withMenu = main.locator('[data-testid="row-actions"]:has([data-testid="row-more"])');
   const total = await withMenu.count();
   let teachable = 0;
+  let seen = 0;
   for (let i = 0; i < total; i++) {
     const ra = withMenu.nth(i);
     if (!(await ra.isVisible())) continue;
+    seen++;
     await ra.locator('[data-testid="row-more"]').click();
     if (await ra.locator('[data-testid="row-more-item"][data-cta="teach"]').count()) teachable++;
+    else console.log("no Teach Clara:", await ra.evaluate((e) => e.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim()), await ra.locator('[data-testid="row-more-item"]').evaluateAll((els) => els.map((x) => x.getAttribute("data-cta"))));
     await page.keyboard.press("Escape");
   }
-  const visibleRows = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && !e.querySelector('[data-testid="row-done"]')).length);
-  check("Teach Clara in the ⋯ menu of every open row", teachable > 0 && teachable === visibleRows, `${teachable}/${visibleRows}`);
+  const noTeach = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && !e.querySelector('[data-testid="row-done"]') && !e.querySelector('[data-testid="row-more"]')).map((e) => e.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim()));
+  check("Teach Clara in the ⋯ menu of every open row", teachable > 0 && teachable === seen && noTeach.length === 0, `${teachable}/${seen}; no ⋯: ${noTeach.join(" | ") || "none"}`);
   const portalRow = main.locator('[data-testid="req-group-energy"] [data-testid="row-actions"]:has([data-testid="row-more"])').first();
   if (await portalRow.count()) {
     await portalRow.locator('[data-testid="row-more"]').click();
