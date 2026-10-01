@@ -815,6 +815,11 @@ await page.screenshot({ path: path.join(OUT, `${tag}_inline_actions.png`), fullP
     const opened = await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
     check("Teach Clara opens in SmartPR", opened);
     if (opened) {
+      // Teach is record-first; without a signed-in recorder it offers fallbacks,
+      // and typing the steps is the secondary option.
+      const fallback = await dlg.locator('[data-testid="teach-describe-instead"]').waitFor({ timeout: 8000 }).then(() => true).catch(() => false);
+      check("Teach Clara is record-first (typed steps only as a fallback)", fallback && (await dlg.locator('[data-testid="teach-form"]').count()) === 0);
+      if (fallback) await dlg.locator('[data-testid="teach-describe-instead"]').click();
       const portal = await dlg.locator('[data-testid="teach-portal"]').inputValue();
       check("Teach Clara is prefilled with the row's portal", /^https:\/\//.test(portal), portal);
       await dlg.locator('[data-testid="teach-step"]').nth(0).fill("Sign in to the portal with the business account");

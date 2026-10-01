@@ -221,10 +221,10 @@ function TeachFlow({ businessId }: { businessId: string }) {
   const [addTitle, setAddTitle] = useState("");
   const [addGate, setAddGate] = useState<TeachGate | "">("");
   const [isAdmin, setIsAdmin] = useState(false);
-  // Two ways to teach: describe the steps (always available — Teach Clara
-  // v1 playbooks), or walk through live (needs the self-hosted browser
-  // worker). Describe leads whenever the live recorder isn't connected.
-  const [mode, setMode] = useState<"describe" | "live">(() => (search.get("mode") === "live" ? "live" : "describe"));
+  // Record-first (Darius, 2026-09-30): recording the filing live leads;
+  // typed steps are the secondary way (and the fallback when the live
+  // recorder — the self-hosted browser worker — isn't connected).
+  const [mode, setMode] = useState<"describe" | "live">(() => (search.get("mode") === "describe" ? "describe" : "live"));
   const [liveAvailable, setLiveAvailable] = useState<boolean | null>(null);
   const requirementKey = search.get("requirement") || form || "filing";
 
@@ -264,7 +264,7 @@ function TeachFlow({ businessId }: { businessId: string }) {
     try {
       const { session: s } = await api<{ session: TeachSessionView }>("/api/teach-sessions", {
         method: "POST",
-        body: JSON.stringify({ start_url: startUrl, form, portal_name: portal, business_id: businessId }),
+        body: JSON.stringify({ start_url: startUrl, form, portal_name: portal, business_id: businessId, requirement_key: search.get("requirement") }),
       });
       setSession(s);
     } catch (err) {
@@ -366,8 +366,8 @@ function TeachFlow({ businessId }: { businessId: string }) {
         {!session && (
           <div className="mx-auto flex max-w-2xl gap-1 rounded-full bg-black/30 p-1" role="tablist" aria-label={L("How to teach Clara", "Cómo enseñarle a Clara", lang)}>
             {([
-              ["describe", L("Describe the steps", "Describir los pasos", lang)],
-              ["live", L("Show her live", "Mostrárselo en vivo", lang)],
+              ["live", L("Record it", "Grabarlo", lang)],
+              ["describe", L("Type the steps", "Escribir los pasos", lang)],
             ] as const).map(([m, label]) => (
               <button key={m} type="button" role="tab" aria-selected={mode === m} data-testid={`teach-mode-${m}`} onClick={() => setMode(m)}
                 className={`flex-1 rounded-full px-3 py-1.5 text-[15px] font-semibold transition ${mode === m ? "bg-[#fbf8f2] text-[#161616]" : "text-[#cfc6b4] hover:text-white"}`}>

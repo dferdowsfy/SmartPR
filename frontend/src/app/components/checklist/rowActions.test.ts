@@ -199,3 +199,58 @@ test("energy developer: an existing company — business formation items are sec
   assert.equal(developerGroup("completed", "tax_registration", true), "completed");
   assert.equal(openStepCount([{ id: "required_now", cards: [1, 2] }, { id: "conditional", cards: [1, 2, 3] }, { id: "prerequisites", cards: [1] }, { id: "supporting", cards: [1] }]), 3);
 });
+
+// ---------------------------------------------------------------- record-first Teach Clara
+test("learned routine: 'Fill with Clara' (strict replay) becomes the primary on any portal; chip + Re-teach in ⋯", () => {
+  const onForm = () => "form";
+  const onFill = () => "fill";
+  const onTeach = () => "teach";
+  const m = requirementRowActions({
+    action: { kind: "form", label: "Complete registration form", onClick: onForm },
+    filing: { kind: "prepare", label: "Prepare with Clara", href: "/x", agencySite: { label: "Open agency site", url: "https://portal.municipio.example.com" } },
+    onTeach,
+    onGuidedForm: noop,
+    onLearnedFill: onFill,
+    learnedStatus: "learned",
+  }, "en");
+  assert.equal(m.primary?.label, "Fill with Clara");
+  assert.equal(m.primary?.onClick, onFill);
+  assert.equal(m.learned, "learned");
+  assert.ok(!m.more.some((c) => c.kind === "assist"), "the built-in Clara action is replaced, not duplicated");
+  assert.equal(m.more[0].onClick, onForm, "the row's own form action moves to ⋯");
+  assert.equal(m.more.at(-1)?.label, "Re-teach Clara");
+  assert.ok(m.more.some((c) => c.kind === "site" && c.external), "agency links stay in ⋯");
+
+  const es = energyRowActions({ status: "required", cards: EMPTY_ROW_ACTIONS, portal: { url: "https://tramites.example.com", label: "Portal" }, onGuidedForm: noop, onTeach, onLearnedFill: onFill, learnedStatus: "learned" }, "es");
+  assert.equal(es.primary?.label, "Llenar con Clara");
+  assert.equal(es.primary?.onClick, onFill);
+  assert.equal(es.more.at(-1)?.label, "Enseñar de nuevo");
+  assert.ok(es.more.some((c) => c.kind === "portal"));
+  assert.ok(es.more.some((c) => c.kind === "guided"));
+});
+
+test("learned routine that needs re-teaching: normal primary, 'Re-teach Clara' in ⋯, warning chip", () => {
+  const m = requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop }, onTeach: noop, onLearnedFill: null, learnedStatus: "needs_reteach" }, "en");
+  assert.equal(m.primary?.label, "Complete form");
+  assert.equal(m.learned, "needs_reteach");
+  assert.equal(m.more.at(-1)?.label, "Re-teach Clara");
+});
+
+test("learned routine on an answer-only row: Answer stays first, Fill with Clara leads the ⋯", () => {
+  const onFill = () => "fill";
+  const m = requirementRowActions({ action: { kind: "none", label: "" }, answerPrompt: { prompt: "Do you have employees?", yesLabel: "Yes", noLabel: "No", onYes: noop, onNo: noop }, onTeach: noop, onLearnedFill: onFill, learnedStatus: "learned" }, "en");
+  assert.equal(m.primary, null);
+  assert.ok(m.answer);
+  assert.equal(m.more[0].onClick, onFill);
+});
+
+test("RowActions renders the 'Clara learned this' chip (EN/ES)", async () => {
+  const { RowActions } = await import("./RowActions.tsx");
+  const model = requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop }, onTeach: noop, onLearnedFill: noop, learnedStatus: "learned" }, "en");
+  const html = renderToStaticMarkup(createElement(RowActions, { model, language: "en" }));
+  assert.match(html, /data-testid="row-learned"/);
+  assert.match(html, /Clara learned this/);
+  const htmlEs = renderToStaticMarkup(createElement(RowActions, { model: requirementRowActions({ action: { kind: "form", label: "Completar", onClick: noop }, onTeach: noop, onLearnedFill: noop, learnedStatus: "learned" }, "es"), language: "es" }));
+  assert.match(htmlEs, /Clara lo aprendió/);
+  assert.match(htmlEs, /Llenar con Clara/);
+});

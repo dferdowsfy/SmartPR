@@ -38,7 +38,25 @@ function readFile(f: File): Promise<Attachment> {
   });
 }
 
-export function TeachClaraForm({ target, language, tone = "light", liveHref, onSaved }: { target: TeachTarget; language: Language; tone?: "light" | "dark"; liveHref?: string | null; onSaved?: () => void }) {
+export function TeachClaraForm({
+  target,
+  language,
+  tone = "light",
+  liveHref,
+  onSaved,
+  initialSteps,
+  variant = "describe",
+}: {
+  target: TeachTarget;
+  language: Language;
+  tone?: "light" | "dark";
+  liveHref?: string | null;
+  onSaved?: () => void;
+  /** Draft steps (e.g. read from an uploaded screen recording). */
+  initialSteps?: string[];
+  /** "edit" = the secondary typed-steps view (record-first Teach is the entry point). */
+  variant?: "describe" | "edit";
+}) {
   const es = language === "es";
   const T = (en: string, sp: string) => (es ? sp : en);
   // A description kept on this device (signed out) comes back too.
@@ -51,7 +69,8 @@ export function TeachClaraForm({ target, language, tone = "light", liveHref, onS
     }
   });
   const [portalUrl, setPortalUrl] = useState(target.portalUrl || local?.portal_url || "");
-  const [steps, setSteps] = useState<string[]>(local?.steps?.length ? local.steps : ["", "", ""]);
+  const hasInitialSteps = Boolean(initialSteps?.length);
+  const [steps, setSteps] = useState<string[]>(initialSteps?.length ? initialSteps : local?.steps?.length ? local.steps : ["", "", ""]);
   const [bindings, setBindings] = useState<{ label: string; path: string }[]>(local?.bindings?.length ? local.bindings.map((x) => ({ label: x.label, path: x.path ?? "" })) : [{ label: "", path: "" }]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [notes, setNotes] = useState(local?.notes ?? "");
@@ -73,6 +92,7 @@ export function TeachClaraForm({ target, language, tone = "light", liveHref, onS
         const pb = body.playbooks?.[0];
         if (pb) {
           setKnown(pb);
+          if (hasInitialSteps) return;
           setPortalUrl(pb.portal_url);
           setSteps(pb.steps.length ? pb.steps : ["", "", ""]);
           setBindings(pb.bindings.length ? pb.bindings.map((b) => ({ label: b.label, path: b.path ?? "" })) : [{ label: "", path: "" }]);
@@ -81,7 +101,7 @@ export function TeachClaraForm({ target, language, tone = "light", liveHref, onS
       })
       .catch(() => undefined);
     return () => { cancelled = true; };
-  }, [target.requirementKey, target.portalUrl]);
+  }, [target.requirementKey, target.portalUrl, hasInitialSteps]);
 
   const addFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -157,7 +177,10 @@ export function TeachClaraForm({ target, language, tone = "light", liveHref, onS
       <p className="tc-intro">
         <GraduationCap size={18} aria-hidden="true" />
         <span>
-          {known
+          {variant === "edit" && !known
+            ? T("Typed steps are a guide: Clara follows them toward the goal and stops for sign-in, uploads, payment and the final submit. For an exact routine she repeats step by step, record it once on a computer.",
+                "Los pasos escritos son una guía: Clara los sigue hacia la meta y se detiene para entrar, subir documentos, pagar y el envío final. Para una rutina exacta que repite paso a paso, grábala una vez en una computadora.")
+            : known
             ? T(`Clara already has your steps (version ${known.version}). Change anything and save a new version.`, `Clara ya tiene tus pasos (versión ${known.version}). Cambia lo que quieras y guarda una versión nueva.`)
             : T("Clara hasn't learned this portal yet. Tell her how it's done once — she'll follow it next time, fill in the business's info, and stop for sign-in, uploads, payment and the final submit.",
                 "Clara todavía no conoce este portal. Explícale una vez cómo se hace — la próxima vez lo sigue, llena la información del negocio y se detiene para entrar a la cuenta, subir documentos, pagar y el envío final.")}

@@ -69,3 +69,86 @@
 .tc-dark .tc-add, .tc-dark .tc-upload, .tc-dark .tc-secondary { color: #9fd3b4; border-color: rgb(255 255 255 / 20%); }
 .tc-dark .tc-primary { background: #fbf8f2; color: #161616; }
 .tc-dark.tc-done { color: #e8e1d0; }
+
+/* Record-first Teach Clara (recording, validation, learned). 16px body. */
+.cl-modal-xl { width: min(1180px, 100%); }
+.tr { display: grid; gap: 14px; font-size: 16px; }
+.tr-lead { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 10px; background: #eef6f1; color: #1e4d38; }
+.tr-lead svg { flex: 0 0 auto; margin-top: 2px; }
+.tr-lead-warn { background: #fff6e6; color: #6b4a10; }
+.tr-lead a { color: inherit; font-weight: 700; }
+.tr-status { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 16px; font-weight: 600; color: var(--brand, #245c5c); }
+.tr-note { margin: 0; font-size: 15px; color: var(--muted, #6b665c); }
+.tr-h { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 15px; font-weight: 700; }
+.tr-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #eef1ef; font-size: 13px; }
+.tr-input { width: 100%; font: inherit; font-size: 16px; padding: 9px 11px; border: 1px solid var(--border-strong, #d9d4ca); border-radius: 8px; }
+.tr-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.tr-link { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; padding: 6px 2px; font: inherit; font-size: 15px; color: var(--brand, #245c5c); cursor: pointer; }
+.tr-link:hover { text-decoration: underline; }
+.tr-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--brand, #245c5c); background: var(--brand, #245c5c); color: #fff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.tr-btn-ghost { background: #fff; color: var(--brand, #245c5c); }
+.tr-rec-banner { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px; border-radius: 10px; background: #fdecea; color: #7a1d10; font-size: 15px; font-weight: 600; }
+.tr-rec-dot { width: 10px; height: 10px; border-radius: 999px; background: #d4351c; animation: tr-pulse 1.4s ease-in-out infinite; }
+@keyframes tr-pulse { 50% { opacity: .35; } }
+.tr-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 16px; }
+.tr-live { min-height: 420px; border: 1px solid var(--border, #ece7dd); border-radius: 12px; overflow: hidden; background: #111; }
+.tr-live iframe { display: block; width: 100%; height: min(62vh, 640px); border: 0; background: #fff; }
+.tr-live-empty { height: min(62vh, 640px); display: grid; place-content: center; justify-items: center; gap: 8px; color: #ddd; text-align: center; padding: 20px; }
+.tr-side { display: grid; align-content: start; gap: 12px; max-height: min(62vh, 640px); overflow-y: auto; }
+.tr-actions-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tr-empty { color: var(--muted, #6b665c); font-size: 15px; }
+.tr-action { display: grid; grid-template-columns: 18px 1fr; gap: 4px 8px; align-items: start; padding: 8px 10px; border-radius: 9px; background: #f7f6f2; font-size: 15px; }
+.tr-action > svg { margin-top: 3px; color: var(--brand, #245c5c); }
+.tr-action-pause { background: #fff6e6; }
+.tr-action-pause > svg { color: #8a5a00; }
+.tr-action-stop { background: #fdecea; }
+.tr-action-stop > svg { color: #a3260f; }
+.tr-action-text { min-width: 0; overflow-wrap: anywhere; }
+.tr-action .tr-chip, .tr-action .tr-thumb { grid-column: 2; justify-self: start; }
+.tr-chip { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; background: #eef1ef; color: #34423c; font-size: 13px; font-weight: 600; }
+.tr-chip-bound { background: #e3f1e9; color: #1e4d38; }
+.tr-chip-pause { background: #ffe9c2; color: #6b4a10; }
+.tr-chip-stop { background: #f9d6cf; color: #7a1d10; }
+.tr-chip-todo { background: #fff0d9; color: #8a5a00; }
+.tr-thumb { width: 100%; max-width: 220px; border-radius: 6px; border: 1px solid var(--border, #ece7dd); }
+.tr-questions { display: grid; gap: 8px; }
+.tr-q { padding: 10px 12px; border-radius: 10px; border: 1px solid #f0d9a8; background: #fffaf0; }
+.tr-q p { margin: 0 0 8px; font-size: 15px; }
+.tr-q-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tr-q-actions select, .tr-screen select, .tr-edit-row select { font: inherit; font-size: 15px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-strong, #d9d4ca); background: #fff; max-width: 100%; }
+.tr-verdict { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; }
+.tr-verdict b { display: block; font-size: 18px; }
+.tr-verdict small { display: block; font-size: 15px; margin-top: 2px; }
+.tr-verdict-pass { background: #e3f1e9; color: #1e4d38; }
+.tr-verdict-issues { background: #fff1e0; color: #6b3a05; }
+.tr-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tr-check { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border-radius: 9px; background: #f7f6f2; font-size: 15px; }
+.tr-check b { display: block; font-weight: 650; }
+.tr-check small { display: block; font-size: 15px; color: var(--muted, #6b665c); }
+.tr-check > svg { flex: 0 0 auto; margin-top: 2px; }
+.tr-check-error > svg { color: #b4280f; }
+.tr-check-warning > svg { color: #a26a00; }
+.tr-check-ok > svg { color: #2f7a52; }
+.tr-screens { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tr-screen { border: 1px solid var(--border, #ece7dd); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; }
+.tr-screen-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tr-screen-head b { flex: 1; min-width: 160px; }
+.tr-edit-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; padding-left: 8px; }
+.tr-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.tr-option { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--border-strong, #d9d4ca); border-radius: 12px; background: #fff; font: inherit; text-align: left; cursor: pointer; color: inherit; }
+.tr-option:hover { border-color: var(--brand, #245c5c); }
+.tr-option svg { flex: 0 0 auto; color: var(--brand, #245c5c); margin-top: 2px; }
+.tr-option b { display: block; font-size: 16px; }
+.tr-option small { display: block; font-size: 14px; color: var(--muted, #6b665c); margin-top: 2px; }
+.tr-option input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.tr-learned { justify-items: center; text-align: center; padding: 14px 6px; color: #1e4d38; }
+.tr-learned p { margin: 0; }
+@media (max-width: 900px) {
+  .tr-grid { grid-template-columns: 1fr; }
+  .tr-side { max-height: none; }
+}
+
+/* Row chip: "Clara learned this" / "Needs re-teaching". */
+.ck-learned { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: #e3f1e9; color: #1e4d38; font-size: 13px; font-weight: 650; white-space: nowrap; }
+.ck-learned-needs_reteach { background: #fff0d9; color: #8a5a00; }
+@media (max-width: 560px) { .ck-learned { font-size: 12px; padding: 2px 7px; } }

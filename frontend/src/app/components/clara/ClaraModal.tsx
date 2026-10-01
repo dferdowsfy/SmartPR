@@ -7,7 +7,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
-export function ClaraModal({ title, subtitle, onClose, children, footer, testId, wide = false }: { title: string; subtitle?: string | null; onClose: () => void; children: ReactNode; footer?: ReactNode; testId?: string; wide?: boolean }) {
+export function ClaraModal({ title, subtitle, onClose, children, footer, testId, wide = false, size }: { title: string; subtitle?: string | null; onClose: () => void; children: ReactNode; footer?: ReactNode; testId?: string; wide?: boolean; size?: "xl" }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -23,7 +23,7 @@ export function ClaraModal({ title, subtitle, onClose, children, footer, testId,
   if (typeof document === "undefined") return null;
   return createPortal(
     <div className="cl-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onClick={(e) => e.stopPropagation()}>
-      <div className={`cl-modal ${wide ? "cl-modal-wide" : ""}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} data-testid={testId}>
+      <div className={`cl-modal ${wide ? "cl-modal-wide" : ""} ${size === "xl" ? "cl-modal-xl" : ""}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} data-testid={testId}>
         <header className="cl-head">
           <div className="cl-head-text">
             <h2>{title}</h2>

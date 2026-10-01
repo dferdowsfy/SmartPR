@@ -39,6 +39,8 @@ export interface RowCta {
 }
 
 export interface RowActionsModel {
+  /** Clara has a validated, recorded routine for this row ("Clara learned this"). */
+  learned?: "learned" | "needs_reteach" | null;
   primary: RowCta | null;
   more: RowCta[];
   /** Completed: a check plus "View" (clickable when the card can reopen it). */
@@ -108,7 +110,7 @@ export function requirementRowActions(
     return { primary: null, more, done: { label: action.onClick ? (es ? "Ver" : "View") : es ? "Listo" : "Done", onClick: action.onClick }, answer: null };
   }
   if (answerPrompt && (action.kind === "none" || !action.onClick)) {
-    return { primary: null, more: input.onTeach ? [teachClaraCta(input.onTeach, language)] : [], done: null, answer: answerPrompt };
+    return ensureInPlatformPrimary({ primary: null, more: [], done: null, answer: answerPrompt }, input, language);
   }
 
   const list: RowCta[] = [];
@@ -161,6 +163,23 @@ export interface InPlatformHandlers {
   onGuidedForm?: (() => void) | null;
   /** Opens Teach Clara for this requirement / portal. */
   onTeach?: (() => void) | null;
+  /**
+   * A validated recorded routine exists for this row: "Fill with Clara"
+   * replays exactly those steps and leads the row (any portal).
+   */
+  onLearnedFill?: (() => void) | null;
+  /** The learned routine's state; needs_reteach = the portal changed during a replay. */
+  learnedStatus?: "learned" | "needs_reteach" | null;
+}
+
+export function learnedFillCta(onClick: () => void, language: Language): RowCta {
+  const es = language === "es";
+  return { id: "learned", kind: "assist", label: DEFAULT_SHORT.assist[language], title: es ? "Llenar con Clara — sigue los pasos que le enseñaste" : "Fill with Clara — follows the steps you taught her", onClick };
+}
+
+export function reteachClaraCta(onClick: () => void, language: Language): RowCta {
+  const es = language === "es";
+  return { id: "teach", kind: "teach", label: es ? "Enseñar de nuevo" : "Re-teach Clara", title: es ? "Grabar otra vez cómo se radica" : "Record how this is filed again", onClick };
 }
 
 /** True when following the CTA leaves SmartPR (new tab or an off-site URL). */
@@ -189,6 +208,7 @@ export function teachClaraCta(onClick: () => void, language: Language): RowCta {
  */
 export function ensureInPlatformPrimary(model: RowActionsModel, handlers: InPlatformHandlers, language: Language): RowActionsModel {
   if (model.done) return model;
+  if (handlers.onLearnedFill && handlers.learnedStatus !== "needs_reteach") return applyLearnedRoutine(model, handlers, language);
   const all = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach");
   const internal = all.filter((c) => !isExternalCta(c));
   const external = all.filter((c) => isExternalCta(c));
@@ -202,8 +222,27 @@ export function ensureInPlatformPrimary(model: RowActionsModel, handlers: InPlat
     if (g !== -1) more.splice(g, 1);
   }
   more.push(...external);
-  if (handlers.onTeach && (primary || more.length || model.answer)) more.push(teachClaraCta(handlers.onTeach, language));
-  return { primary, more, done: null, answer: model.answer };
+  if (handlers.onTeach && (primary || more.length || model.answer)) {
+    more.push(handlers.learnedStatus === "needs_reteach" ? reteachClaraCta(handlers.onTeach, language) : teachClaraCta(handlers.onTeach, language));
+  }
+  return { primary, more, done: null, answer: model.answer, ...(handlers.learnedStatus ? { learned: handlers.learnedStatus } : {}) };
+}
+
+/**
+ * A validated recorded routine leads the row: "Fill with Clara" (strict
+ * replay) is the primary action on ANY portal; the row's other actions move
+ * to ⋯ (the built-in Clara action is replaced, external links stay in ⋯),
+ * and Teach becomes "Re-teach Clara". Answer rows keep "Answer" first.
+ */
+export function applyLearnedRoutine(model: RowActionsModel, handlers: InPlatformHandlers, language: Language): RowActionsModel {
+  if (model.done || !handlers.onLearnedFill) return model;
+  const others = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach" && c.kind !== "assist");
+  const internal = others.filter((c) => !isExternalCta(c));
+  const external = others.filter((c) => isExternalCta(c));
+  const fill = learnedFillCta(handlers.onLearnedFill, language);
+  const more = model.answer ? [fill, ...internal, ...external] : [...internal, ...external];
+  if (handlers.onTeach) more.push(reteachClaraCta(handlers.onTeach, language));
+  return { primary: model.answer ? null : fill, more, done: null, answer: model.answer, learned: "learned" };
 }
 
 /** Actions for an energy process row: the legacy cards it covers, merged. */
@@ -247,7 +286,7 @@ export function energyRowActions(
   const fromCards = [cards.primary, ...cards.more].filter((c): c is RowCta => !!c && c.kind !== "teach");
   if (status === "expert") {
     const own = fromCards.filter((c) => c.kind !== "guided");
-    return ensureInPlatformPrimary({ primary: own[0] ?? null, more: own.slice(1), done: null, answer: null }, { onTeach: input.onTeach }, language);
+    return ensureInPlatformPrimary({ primary: own[0] ?? null, more: own.slice(1), done: null, answer: null }, { onTeach: input.onTeach, onLearnedFill: input.onLearnedFill, learnedStatus: input.learnedStatus }, language);
   }
   const own = fromCards.filter((c) => c.kind !== "guided");
   // The official portal ranks above a generic "agency site" link.
@@ -270,5 +309,5 @@ export function energyRowActions(
     ? { primary: null, more: list, done: null, answer: question }
     : { primary: list[0] ?? null, more: list.slice(1), done: null, answer: null };
   // may-apply rows without a portal never get a bare guided form.
-  return ensureInPlatformPrimary(model, { onTeach: input.onTeach, onGuidedForm: status === "may_apply" && !portal?.url ? null : guided }, language);
+  return ensureInPlatformPrimary(model, { onTeach: input.onTeach, onGuidedForm: status === "may_apply" && !portal?.url ? null : guided, onLearnedFill: input.onLearnedFill, learnedStatus: input.learnedStatus }, language);
 }

@@ -9,18 +9,20 @@
  *    portal yet (no skill and no described playbook): "Clara hasn't learned
  *    this portal yet — Teach Clara."
  *
- * Both open /businesses/[id]/teach prefilled with the filing's portal
- * address and form name. Teaching is always reachable: when the live
- * recorder (self-hosted browser worker) isn't connected, the teach page
- * offers "describe the steps" (Teach Clara v1 playbooks) instead.
+ * Both open the record-first Teach Clara dialog on the filing's portal: it
+ * starts recording right away (live browser), validates the recording and
+ * saves it as a learned routine. When the live recorder isn't connected or
+ * on a phone, the dialog explains why and offers a screen-recording upload
+ * or typed steps instead.
  */
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GraduationCap } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
 import type { AgencyFilingType } from "../../../../lib/agency-runs/types";
+import { TeachRecordDialog } from "../../../components/clara/TeachRecordDialog";
+import type { GuidedSubject } from "../../../components/clara/guidedFormModel";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -34,17 +36,11 @@ interface MatchState {
   replayRef: string | null;
 }
 
-function teachHref(businessId: string, filingType: string | null): string {
-  const q = new URLSearchParams();
+/** What the record-first Teach dialog records for the current filing. */
+function teachSubject(filingType: string | null, lang: Lang): GuidedSubject {
   const cfg = filingType ? getFilingConfig(filingType as AgencyFilingType) : null;
-  if (cfg) {
-    q.set("url", cfg.startUrl);
-    q.set("form", cfg.labelEs);
-    q.set("portal", cfg.portalEs);
-    q.set("requirement", cfg.requirementIds?.[0] ?? cfg.id);
-  }
-  const s = q.toString();
-  return `/businesses/${encodeURIComponent(businessId)}/teach${s ? `?${s}` : ""}`;
+  if (!cfg) return { key: filingType ?? "agency-filing", name: lang === "es" ? "Trámite" : "Filing", agency: null, portalUrl: null };
+  return { key: cfg.requirementIds?.[0] ?? cfg.id, name: lang === "es" ? cfg.labelEs : cfg.labelEn, agency: cfg.portalEs, portalUrl: cfg.startUrl };
 }
 
 export function TeachClaraEntry(props: {
@@ -57,6 +53,8 @@ export function TeachClaraEntry(props: {
   const router = useRouter();
   const [state, setState] = useState<MatchState | null>(null);
   const [starting, setStarting] = useState(false);
+  const [teaching, setTeaching] = useState(false);
+  const dialog = teaching ? <TeachRecordDialog subject={teachSubject(filingType, lang)} language={lang === "es" ? "es" : "en"} businessId={businessId} onClose={() => setTeaching(false)} /> : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -118,12 +116,12 @@ export function TeachClaraEntry(props: {
       </div>
     );
   }
-  const href = teachHref(businessId, filingType);
-
   if (variant === "button") {
     return (
-      <Link
-        href={href}
+      <>
+      <button
+        type="button"
+        onClick={() => setTeaching(true)}
         data-testid="teach-clara-button"
         className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
         title={
@@ -134,7 +132,9 @@ export function TeachClaraEntry(props: {
       >
         <GraduationCap className="h-3.5 w-3.5" />
         {L("Teach Clara", "Enséñale a Clara", lang)}
-      </Link>
+      </button>
+      {dialog}
+      </>
     );
   }
 
@@ -144,14 +144,15 @@ export function TeachClaraEntry(props: {
       <GraduationCap className="h-4 w-4 shrink-0 text-[#9fd3b4]" />
       <p className="min-w-0 flex-1">
         {L(
-          "Clara hasn't learned this portal yet. Teach her once — describe the steps or show her — and next time she fills it in from your business info.",
-          "Clara todavía no conoce este portal. Enséñale una vez — describe los pasos o muéstraselo — y la próxima vez lo llena con la información de tu negocio.",
+          "Clara hasn't learned this portal yet. Do it once while she records — next time she follows exactly those steps with your business info.",
+          "Clara todavía no conoce este portal. Hazlo una vez mientras ella graba — la próxima vez sigue exactamente esos pasos con la información de tu negocio.",
           lang
         )}
       </p>
-      <Link href={href} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[14px] font-bold text-[#161616] hover:bg-white">
+      <button type="button" onClick={() => setTeaching(true)} className="shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[14px] font-bold text-[#161616] hover:bg-white">
         {L("Teach Clara", "Enséñale a Clara", lang)}
-      </Link>
+      </button>
+      {dialog}
     </div>
   );
 }

@@ -85,5 +85,25 @@ export function errorResponse(err: unknown): Response {
 
 export async function replayDeps(): Promise<import("../replay/replaySessions").ReplayDeps> {
   const { startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
-  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id) };
+  const { agentRelocator } = await import("../replay/relocate");
+  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate: agentRelocator(await modelPrompter(80)) };
+}
+
+/**
+ * Labels-only model call for the routine reviewer and the drift relocator
+ * (xAI, when configured). null when no model is configured.
+ */
+export async function modelPrompter(maxOutputTokens = 400): Promise<((p: { system: string; user: string }) => Promise<string>) | null> {
+  const { isXaiConfigured, requestXaiText } = await import("../../../app/ai/xai");
+  if (!isXaiConfigured()) return null;
+  return async ({ system, user }) =>
+    requestXaiText({
+      input: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      maxOutputTokens,
+      temperature: 0,
+      signal: AbortSignal.timeout(15_000),
+    });
 }

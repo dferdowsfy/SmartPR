@@ -22,6 +22,8 @@ export interface ReplayDeps {
   startDrive(input: { startUrl: string; allowedDomains: string[] }): Promise<{ sessionId: string; liveUrl: string | null }>;
   driver(sessionId: string): PortalDriver;
   stopDrive(sessionId: string): Promise<void>;
+  /** Strict replay: re-locate a drifted control (labels only), else pause. */
+  relocate?: import("./relocate").Relocator;
 }
 
 export interface SkillRef {
@@ -48,7 +50,7 @@ interface LiveReplay {
 export interface ReplayView {
   id: string;
   status: LiveReplay["status"];
-  skill: { ref: string; form: string; portal: string; version: number; attribution: SkillRef["attribution"] };
+  skill: { ref: string; form: string; portal: string; base_url: string; version: number; attribution: SkillRef["attribution"] };
   plan: PreflightPlan;
   pause: ReplayPause | null;
   milestones: ReplayState["milestones"];
@@ -69,7 +71,7 @@ function viewOf(r: LiveReplay): ReplayView {
   return {
     id: r.id,
     status: r.status,
-    skill: { ref: r.skillRef.ref, form: r.skillRef.skill.form, portal: r.skillRef.skill.portal.name, version: r.skillRef.skill.version, attribution: r.skillRef.attribution },
+    skill: { ref: r.skillRef.ref, form: r.skillRef.skill.form, portal: r.skillRef.skill.portal.name, base_url: r.skillRef.skill.portal.base_url, version: r.skillRef.skill.version, attribution: r.skillRef.attribution },
     plan: r.plan,
     pause: r.state.pause,
     milestones: r.state.milestones,
@@ -137,6 +139,7 @@ async function step(deps: ReplayDeps, r: LiveReplay): Promise<void> {
     passport: r.passport,
     driver: deps.driver(r.driveSessionId!),
     answers: r.answers,
+    relocate: deps.relocate,
     onDrift: async (d) => {
       const report = `${d.reason} on "${d.expected}" (${d.detail}); saw "${d.seen.heading || d.seen.title}"`;
       if (r.skillRef.rowId) await markNeedsReteach(deps.repo, r.skillRef.rowId, report);
