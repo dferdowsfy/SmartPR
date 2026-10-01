@@ -6038,6 +6038,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       legacyCards={energyLegacyCards}
       suppressedLegacy={energySuppressed}
       language={language}
+      businessId={businessId}
     />
   ) : null;
   const summaryReadiness = (() => {

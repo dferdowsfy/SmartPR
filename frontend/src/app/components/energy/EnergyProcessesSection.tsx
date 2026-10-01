@@ -18,6 +18,7 @@ import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/proj
 import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
 import { ActionList, RowActions } from "../checklist/RowActions";
+import { TeachClaraRowLink } from "../checklist/TeachClaraRowLink";
 import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActionModel";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
@@ -90,6 +91,7 @@ export function EnergyProcessesSection({
   language,
   defaultOpen = [],
   onAnswer,
+  businessId = null,
 }: {
   /** Computed by the caller (processes/view.ts) so legacy cards can be deduped. */
   assessment: ProcessAssessment;
@@ -105,6 +107,8 @@ export function EnergyProcessesSection({
   defaultOpen?: string[];
   /** Answers a row's question in place ("Answer" on answer-only rows). */
   onAnswer?: (key: ProjectContextKey, fact: ProjectContextFact) => void;
+  /** Saved business id; enables "Teach Clara" / "Show Clara" on rows with a portal. */
+  businessId?: string | null;
 }) {
   const es = language === "es";
   const checklist = given ?? processChecklist(assessment, graph, language, { suppressedLegacy });
@@ -133,14 +137,14 @@ export function EnergyProcessesSection({
         {checklist.stages.map((s) =>
           flat ? (
             s.items.map((it) => (
-              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+              <EnergyRow key={it.id} item={it} num={++n} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} businessId={businessId} />
             ))
           ) : (
             <div role="listitem" key={s.id} className="ck-stage" data-testid={`energy-step-${s.step}`}>
               <div className="ck-stage-head"><span className="ck-num">{s.step}</span> {s.name}</div>
               <div role="list" className="ck-rows">
                 {s.items.map((it) => (
-                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} />
+                  <EnergyRow key={it.id} item={it} startOpen={defaultOpen.includes(it.process_id)} question={questionFor(byId.get(it.process_id)!)} portal={graph.processes.get(it.process_id)?.portal ?? null} p={byId.get(it.process_id)!} legacy={legacyFor(byId.get(it.process_id)!, legacyCards)} language={language} businessId={businessId} />
                 ))}
               </div>
             </div>
@@ -169,7 +173,7 @@ function legacyFor(p: ProcessEvaluation, cards: Record<string, EnergyLegacyCard>
   return p.legacy_document_ids.map((d) => cards[d]).filter((c): c is EnergyLegacyCard => !!c);
 }
 
-function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, startOpen = false, question = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; portal?: RegulatoryProcess["portal"] | null; language: Language; startOpen?: boolean; question?: SummaryQuestion | null }) {
+function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, startOpen = false, question = null, businessId = null }: { item: ChecklistItem; p: ProcessEvaluation; num?: number; legacy: EnergyLegacyCard[]; portal?: RegulatoryProcess["portal"] | null; language: Language; startOpen?: boolean; question?: SummaryQuestion | null; businessId?: string | null }) {
   const es = language === "es";
   const [open, setOpen] = useState(startOpen);
   const [askOpen, setAskOpen] = useState(false);
@@ -240,6 +244,9 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
               <a className="ck-action" data-testid="card-action" data-cta="portal" href={portal.url} target="_blank" rel="noopener noreferrer">
                 {(es ? portal.label_es : null) ?? portal.label} <ExternalLink size={11} />
               </a>
+              {businessId && !businessId.startsWith("local-") && (
+                <TeachClaraRowLink businessId={businessId} portalUrl={portal.url} form={item.name} portalName={portal.label} language={language} />
+              )}
             </div>
           )}
           {item.source && (
