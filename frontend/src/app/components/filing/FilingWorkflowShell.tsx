@@ -13,6 +13,7 @@ import {
   CircleHelp,
   Sparkles,
 } from "lucide-react";
+import { HeaderUtilities } from "../HeaderUtilities";
 
 export type FilingStage = "intake" | "requirements" | "deliverables";
 
@@ -407,6 +408,13 @@ export function FilingWorkflowShell({
     <div className="spr-stepper-bar">
       <WorkflowStepper stage={stage} availableStages={availableStages} language={language} onChange={onStageChange} />
       {stepperRight}
+      {/* Utility cluster (EN/ES, bell, avatar) — hidden at page top, revealed
+          here once the global nav scrolls away. Visibility is driven by the
+          `nav-is-scrolled` class on <html>; the reserved width prevents the
+          stepper from jumping when the utilities appear. */}
+      <div className="spr-stepper-utilities">
+        <HeaderUtilities idPrefix="stepper" />
+      </div>
     </div>
   );
 

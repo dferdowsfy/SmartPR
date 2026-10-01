@@ -38,6 +38,38 @@ export function TopNavMount({
       document.documentElement.style.setProperty("--topnav-h", "0px");
     }
   }, [show, pathname, search]);
+  // Track whether the global nav has scrolled out of view so the sticky
+  // workflow stepper can absorb its utility controls (EN/ES, bell,
+  // avatar). IntersectionObserver on the header itself — no scroll-position
+  // math, no per-pixel rerenders. Toggles a class on <html>; CSS handles
+  // the crossfade (150-200ms, opacity/translateY only).
+  useEffect(() => {
+    if (!show || typeof document === "undefined" || typeof IntersectionObserver === "undefined") return;
+    let io: IntersectionObserver | null = null;
+    let cancelled = false;
+    // The header may not have painted yet when this effect runs; retry on
+    // the next frame rather than silently skipping the observer.
+    const attach = () => {
+      if (cancelled) return;
+      const header = document.querySelector("header.appbar");
+      if (!header) {
+        requestAnimationFrame(attach);
+        return;
+      }
+      io = new IntersectionObserver(
+        ([entry]) => {
+          document.documentElement.classList.toggle("nav-is-scrolled", !entry.isIntersecting && entry.boundingClientRect.top < 0);
+        },
+        { threshold: 0 }
+      );
+      io.observe(header);
+    };
+    attach();
+    return () => {
+      cancelled = true;
+      io?.disconnect();
+    };
+  }, [show, pathname, search]);
   if (!show) return null;
   return <TopNav />;
 }

@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { LogOut, Settings, ShieldCheck, CalendarDays, RefreshCw, FileText } from "lucide-react";
 import { createSupabaseBrowser, isAuthConfigured } from "../../lib/supabase/client";
 import { BrandLogo } from "../components/brand/BrandProvider";
-import { NotificationBell } from "../components/NotificationBell";
-import { readLang, setLang } from "../useLang";
+import { HeaderUtilities } from "../components/HeaderUtilities";
+import { readLang } from "../useLang";
 
 interface MeUser { id: string; email: string | null; name: string | null; avatar: string | null; isAdmin?: boolean }
 
@@ -47,21 +45,9 @@ function signOutNow() {
 
 export function TopNav() {
   const [user, setUser] = useState<MeUser | null | undefined>(undefined);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [lang, setLangState] = useState<"en" | "es">(() => readLang());
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const menuPanelRef = useRef<HTMLDivElement | null>(null);
-  const avatarBtnRef = useRef<HTMLButtonElement | null>(null);
   // Enterprise section: visible only when the user holds view_records in a workspace.
   const [hasEnterprise, setHasEnterprise] = useState<boolean | null>(() => cachedHasEnterprise);
-
-  const placeMenu = useCallback(() => {
-    const btn = avatarBtnRef.current;
-    if (!btn) return;
-    const r = btn.getBoundingClientRect();
-    setMenuPos({ top: Math.round(r.bottom + 8), right: Math.round(window.innerWidth - r.right) });
-  }, []);
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((d) => setUser(d.user || null)).catch(() => setUser(null));
@@ -84,44 +70,6 @@ export function TopNav() {
       });
   }, []);
 
-  // Only listen for outside clicks while open, and ignore the opening click.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (menuRef.current?.contains(target) || menuPanelRef.current?.contains(target)) return;
-      setMenuOpen(false);
-    };
-    const timer = window.setTimeout(() => {
-      document.addEventListener("mousedown", onPointerDown);
-      document.addEventListener("touchstart", onPointerDown);
-    }, 0);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("touchstart", onPointerDown);
-    };
-  }, [menuOpen]);
-
-  // Keep the open menu pinned to the avatar in viewport space so Start's
-  // collapsing sticky header (overflow:hidden + later chrome paint) can't clip it.
-  useLayoutEffect(() => {
-    if (!menuOpen) {
-      setMenuPos(null);
-      return;
-    }
-    placeMenu();
-    const onReposition = () => placeMenu();
-    window.addEventListener("resize", onReposition);
-    // capture scroll from nested intake panes too
-    window.addEventListener("scroll", onReposition, true);
-    return () => {
-      window.removeEventListener("resize", onReposition);
-      window.removeEventListener("scroll", onReposition, true);
-    };
-  }, [menuOpen, placeMenu]);
-
   useEffect(() => {
     setLangState(readLang());
     const handler = (e: Event) => {
@@ -139,13 +87,6 @@ export function TopNav() {
     };
   }, []);
 
-  // Broadcast so every mounted page's useLang() re-renders instantly.
-  const changeLang = (l: "en" | "es") => {
-    setLangState(l);
-    setLang(l);
-  };
-
-  const initials = (user?.name || user?.email || "?").slice(0, 1).toUpperCase();
   const navStart = lang === "es" ? "Comenzar" : "Start";
   const navMyBiz = lang === "es" ? "Mis Negocios" : "My Businesses";
   const es = lang === "es";
@@ -251,13 +192,6 @@ export function TopNav() {
     return () => ro.disconnect();
   }, []);
 
-  const langToggle = (
-    <div className="spr-context-language" aria-label={lang === "es" ? "Idioma" : "Language"}>
-      <button type="button" className={lang === "en" ? "active" : ""} aria-pressed={lang === "en"} onClick={() => changeLang("en")}>EN</button>
-      <button type="button" className={lang === "es" ? "active" : ""} aria-pressed={lang === "es"} onClick={() => changeLang("es")}>ES</button>
-    </div>
-  );
-
   return (
     <header ref={headerRef} className="appbar">
       <div className="appbar-inner">
@@ -352,79 +286,7 @@ export function TopNav() {
         </nav>
 
         <div className="appbar-actions">
-          {langToggle}
-          {user === undefined ? null : user ? (
-            <>
-            <NotificationBell />
-            <div className="account-menu" ref={menuRef}>
-              <button
-                ref={avatarBtnRef}
-                className="avatar"
-                type="button"
-                aria-label={es ? "Menú de cuenta" : "Account menu"}
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-                onClick={() => setMenuOpen((o) => !o)}
-                title={user.name || user.email || "Account"}
-              >
-                {user.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.avatar} alt="" className="avatar-img" />
-                ) : (
-                  <span className="avatar-initial">{initials}</span>
-                )}
-              </button>
-              {menuOpen && menuPos && typeof document !== "undefined"
-                ? createPortal(
-                    <div
-                      ref={menuPanelRef}
-                      className="user-menu open user-menu-fixed"
-                      role="menu"
-                      style={{ top: menuPos.top, right: menuPos.right }}
-                    >
-                      <div className="uhead">
-                        <div className="uname">{user.name || user.email}</div>
-                        <div className="uemail">{user.email}</div>
-                      </div>
-                      <Link className="uitem" role="menuitem" href="/settings" onClick={() => setMenuOpen(false)}>
-                        <Settings className="i" /> {es ? "Ajustes" : "Settings"}
-                      </Link>
-                      <Link className="uitem" role="menuitem" href="/filings" onClick={() => setMenuOpen(false)}>
-                        <FileText className="i" /> {es ? "Radicaciones anuales" : "Annual filings"}
-                      </Link>
-                      <Link className="uitem" role="menuitem" href="/calendar" onClick={() => setMenuOpen(false)}>
-                        <CalendarDays className="i" /> {es ? "Calendario" : "Calendar"}
-                      </Link>
-                      <Link className="uitem" role="menuitem" href="/history" onClick={() => setMenuOpen(false)}>
-                        <RefreshCw className="i" /> {es ? "Historial" : "History"}
-                      </Link>
-                      {user.isAdmin && (
-                        <Link className="uitem" role="menuitem" href="/admin/knowledge-base" onClick={() => setMenuOpen(false)}>
-                          <ShieldCheck className="i" /> {es ? "Grafo de conocimiento" : "Knowledge Graph"}
-                        </Link>
-                      )}
-                      {user.isAdmin && (
-                        <Link className="uitem" role="menuitem" href="/admin/requirements" onClick={() => setMenuOpen(false)}>
-                          <ShieldCheck className="i" /> {es ? "Revisión admin" : "Admin Review"}
-                        </Link>
-                      )}
-                      {user.isAdmin && (
-                        <Link className="uitem" role="menuitem" href="/admin/emails" onClick={() => setMenuOpen(false)}>
-                          <ShieldCheck className="i" /> {es ? "Correos de cumplimiento" : "Compliance emails"}
-                        </Link>
-                      )}
-                      <button type="button" className="uitem uitem-danger" role="menuitem" onClick={signOutNow}>
-                        <LogOut className="i" /> {es ? "Cerrar sesión" : "Log out"}
-                      </button>
-                    </div>,
-                    document.body,
-                  )
-                : null}
-            </div>
-            </>
-          ) : (
-            <Link href="/auth/login" className="nav-tab">{es ? "Iniciar sesión" : "Sign in"}</Link>
-          )}
+          <HeaderUtilities idPrefix="nav" />
         </div>
       </div>
     </header>
