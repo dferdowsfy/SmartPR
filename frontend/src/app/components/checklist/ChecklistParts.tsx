@@ -94,8 +94,11 @@ export function ChecklistSummary({
   questions,
   answered,
   language,
+  location,
 }: {
   line: string;
+  /** Location line under the summary ("Rules for: …" / pending Location action). */
+  location?: ReactNode;
   readiness?: { satisfied: number; total: number } | null;
   questions: SummaryQuestion[];
   /** Already-answered questions stay visible with their selected answer. */
@@ -106,6 +109,7 @@ export function ChecklistSummary({
   return (
     <section className="ck-summary" data-testid="requirements-summary">
       <p className="ck-summary-line">{line}</p>
+      {location}
       {readiness && readiness.total > 0 && (
         <p className="ck-summary-readiness">
           {es ? "Preparación" : "Readiness"}: {readiness.satisfied}/{readiness.total} {es ? "documentos listos" : "documents ready"}

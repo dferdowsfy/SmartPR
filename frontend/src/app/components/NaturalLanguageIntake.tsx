@@ -45,7 +45,7 @@ export interface NaturalLanguageIntakeProps {
    * the intake starts a new provenance session and quarantines facts the
    * previous description established instead of silently inheriting them.
    * Follow-up interpretations omit it and merge into the current session. */
-  onApply: (patch: IntakePatch, validated: ValidatedInterpretation, opts?: { fresh?: boolean }) => void;
+  onApply: (patch: IntakePatch, validated: ValidatedInterpretation, opts?: { fresh?: boolean; description?: string }) => void;
   /** Fires when the user taps Edit on the interpreted strip: the parent
    * starts replacement hygiene immediately (quarantining narrative-derived
    * facts) instead of waiting for a new description to be submitted. */
@@ -262,7 +262,7 @@ export function NaturalLanguageIntake({
         // Fresh description (the main interpret action, including after Edit):
         // a new provenance session — facts the previous description
         // established are quarantined, never silently inherited.
-        onApply(patch, validated, { fresh: true });
+        onApply(patch, validated, { fresh: true, description });
         replacingDescriptionRef.current = false;
         // Stated facts under "We understood"; suggested (0.60–0.85) business
         // facts and scenario inferences under "Needs confirmation".
@@ -283,7 +283,7 @@ export function NaturalLanguageIntake({
         );
         if (scenarioHasFacts(offline.scenario)) {
           const patch = toIntakePatch(offline, { kb, allowedIndustries });
-          onApply(patch, offline, { fresh: true });
+          onApply(patch, offline, { fresh: true, description });
           replacingDescriptionRef.current = false;
           const sc = scenarioChips(offline);
           setChips(sc.understood);
@@ -362,7 +362,7 @@ export function NaturalLanguageIntake({
           setStatus("error");
           return;
         }
-        onApply(patch, validated);
+        onApply(patch, validated, { description: transcript });
         const sc = scenarioChips(validated);
         const suggestedChips = buildSuggestedChips(validated);
         mergeChips(dedupe([...sc.understood, ...(validated.scenario ? factChips(patch.chips) : patch.chips)]));

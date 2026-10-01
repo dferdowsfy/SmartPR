@@ -13,6 +13,7 @@
  *
  * Usage (dev server running without Supabase env):
  *   BASE_URL=http://localhost:3000 npx tsx tests/requirements-checklist.e2e.mts [outDir] [golden]
+ *   BASE_URL=… npx tsx tests/requirements-checklist.e2e.mts [outDir] location   (intake location step)
  *   (E2E_CHROME=/path/to/chromium to use a system browser)
  * Exits non-zero on any failed check.
  */
@@ -27,14 +28,169 @@ const OUT = process.argv[2] || os.tmpdir();
 const GOLDEN = process.argv[3] || "E07_rooftop_solar_installation_guaynabo.json";
 const base = process.env.BASE_URL || "http://localhost:3000";
 const here = path.dirname(fileURLToPath(import.meta.url));
-const G = JSON.parse(readFileSync(path.join(here, "../src/app/processes/goldens", GOLDEN), "utf8"));
-const tag = String(G.id ?? "golden");
 
 const failures: string[] = [];
 function check(name: string, ok: boolean, detail = "") {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
   if (!ok) failures.push(name);
 }
+
+// ---------------------------------------------------------------------------
+// Location flow (`… tests/requirements-checklist.e2e.mts <outDir> location`):
+// the prompt mentions Guaynabo → the intake shows the inline "Where is it?"
+// card prefilled with Guaynabo → the user confirms a pin → the requirements
+// show "Rules for: …" and the municipio-specific rules (patente, metro-flag
+// rules for an auto repair shop). "Change" moves the pin to Adjuntas and the
+// metro rules go away. Geocoding is stubbed; the Census municipio lookup
+// (/api/locations/resolve) runs for real.
+// ---------------------------------------------------------------------------
+if (GOLDEN === "location") {
+  const GUAYNABO = { latitude: 18.3577, longitude: -66.1108 };
+  const ADJUNTAS = { latitude: 18.1627, longitude: -66.7224 };
+  const guaynaboCandidate = {
+    ...GUAYNABO,
+    formatted_address: "Calle José de Diego, Guaynabo, PR 00969",
+    address_line_1: "Calle José de Diego",
+    city: "Guaynabo",
+    municipality: "Guaynabo",
+    state_or_region: "Puerto Rico",
+    postal_code: "00969",
+    country_code: "PR",
+    place_source: "stub",
+    place_source_id: "stub-guaynabo",
+  };
+  const snap = {
+    state: {
+      profile: { name: "Taller Guaynabo", industry: "Automotive", business_type: "Auto Repair Shop", municipality: "" },
+      discoveryAnswers: {},
+      projectIntent: "new_business",
+      currentStep: 1,
+    },
+  };
+  const geocodeQueries: string[] = [];
+  const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME || undefined });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.route("**/api/**", (route) => {
+    const u = new URL(route.request().url());
+    const p = u.pathname;
+    if (p === "/api/snapshots/e2e-loc") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(snap) });
+    if (p === "/api/me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
+    if (p === "/api/locations/resolve" || p === "/api/incentives/evaluate") return route.continue();
+    if (p === "/api/geocode") {
+      if (u.searchParams.get("q")) {
+        geocodeQueries.push(u.searchParams.get("q")!);
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [guaynaboCandidate] }) });
+      }
+      const lat = Number(u.searchParams.get("lat"));
+      const result = Math.abs(lat - ADJUNTAS.latitude) < 0.01
+        ? { ...guaynaboCandidate, ...ADJUNTAS, formatted_address: "Calle Rodulfo González, Adjuntas, PR 00601", city: "Adjuntas", municipality: "Adjuntas", postal_code: "00601", place_source_id: "stub-adjuntas" }
+        : guaynaboCandidate;
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result }) });
+    }
+    return route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"stubbed"}' });
+  });
+  await page.goto(`${base}/?resume=e2e-loc`, { waitUntil: "domcontentloaded", timeout: 90000 });
+  const input = page.locator("#spr-nl-input");
+  await input.waitFor({ timeout: 90000 });
+  await input.fill("I want to open an auto repair shop in Guaynabo");
+  await page.getByRole("button", { name: /Interpret description/ }).click();
+
+  // The inline pin card appears, prefilled from the prompt.
+  const card = page.locator('[data-testid="location-step"]');
+  const shown = await card.waitFor({ timeout: 30000 }).then(() => true).catch(() => false);
+  check("intake shows the 'Where is it?' card", shown);
+  const cardText = shown ? await card.innerText() : "";
+  check("card asks 'Where is it?'", /Where is it\?/.test(cardText), cardText.replace(/\s+/g, " ").slice(0, 160));
+  check("card is prefilled from the prompt (Guaynabo)", /Guaynabo/.test(cardText));
+  await card.evaluate((el) => el.scrollIntoView({ block: "center" })).catch(() => undefined);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: path.join(OUT, "location_intake_card.png"), fullPage: false });
+
+  // Open the map: the search runs with the prefilled municipio; pick the result.
+  await page.locator('[data-testid="location-step-open"]').click();
+  const dialog = page.locator('[data-testid="location-picker-dialog"]');
+  await dialog.waitFor({ timeout: 15000 });
+  const result = dialog.getByRole("button", { name: /Calle José de Diego, Guaynabo/ });
+  await result.waitFor({ timeout: 15000 });
+  check("map search prefilled with the mentioned municipio", geocodeQueries.some((q) => /Guaynabo/.test(q)), geocodeQueries.join(" | "));
+  await result.click();
+  await dialog.locator('[data-testid="location-selected-placement"]').filter({ hasText: /Guaynabo/ }).waitFor({ timeout: 15000 });
+  await page.screenshot({ path: path.join(OUT, "location_pin_dialog.png"), fullPage: false });
+  const confirm = dialog.locator('[data-testid="location-confirm"]');
+  await page.waitForFunction(() => !(document.querySelector('[data-testid="location-confirm"]') as HTMLButtonElement | null)?.disabled, null, { timeout: 15000 });
+  await confirm.click();
+  await dialog.waitFor({ state: "detached", timeout: 10000 });
+
+  const rulesFor = page.locator('[data-testid="location-rules-for"]').first();
+  await rulesFor.waitFor({ timeout: 10000 });
+  const rulesForText = await rulesFor.innerText();
+  check("intake shows 'Rules for: <address>'", /Rules for:\s*Calle José de Diego, Guaynabo/.test(rulesForText), rulesForText);
+  const muni = await page.locator("#spr-municipality").inputValue().catch(() => "");
+  const brief = await page.locator('[data-testid="guided-project-brief"]').innerText().catch(() => "");
+  check("municipio set from the pin", muni === "Guaynabo" || /Guaynabo/.test(brief), muni || brief.replace(/\s+/g, " "));
+  await rulesFor.evaluate((el) => el.scrollIntoView({ block: "center" })).catch(() => undefined);
+  await page.screenshot({ path: path.join(OUT, "location_intake_confirmed.png"), fullPage: false });
+
+  // Requirements: Rules for + municipio-specific rules.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  // The location type is the one required field the prompt left open.
+  const lt = page.locator("#spr-location-type");
+  const ltOptions = await lt.locator("option").evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value).filter(Boolean));
+  await lt.selectOption(ltOptions.find((v) => /commercial|shop|storefront|garage/i.test(v)) ?? ltOptions[0]);
+  // Remaining intake questions (not about location) are answered "Not sure"/"No".
+  for (let i = 0; i < 30; i++) {
+    await page.waitForTimeout(500);
+    const notSure = page.getByRole("button", { name: /^\s*(Not sure|No)\s*$/ }).first();
+    if (!(await notSure.isVisible().catch(() => false))) break;
+    await notSure.click();
+  }
+  await page.locator(".spr-form-footer .spr-primary").click();
+  const compute = page.getByRole("button", { name: /Compute Requirements from Rules Engine/ });
+  await Promise.race([compute.waitFor({ timeout: 30000 }), page.locator(".ck-summary").waitFor({ timeout: 30000 })]).catch(() => undefined);
+  if (await compute.isVisible().catch(() => false)) await compute.click();
+  await page.locator(".ck-summary").waitFor({ timeout: 30000 }).catch(async (e) => {
+    await page.screenshot({ path: path.join(OUT, "location_debug.png"), fullPage: true });
+    console.log(errors.join("\n"));
+    throw e;
+  });
+  await page.waitForTimeout(600);
+  const summaryRules = await page.locator('.ck-summary [data-testid="location-rules-for"]').innerText().catch(() => "");
+  check("requirements summary shows 'Rules for: …' with Change", /Rules for:[\s\S]*Guaynabo/.test(summaryRules) && /Change/.test(summaryRules), summaryRules.replace(/\s+/g, " "));
+  const reqText = async () => (await page.locator(".spr-requirements-main").innerText()).replace(/\s+/g, " ");
+  let text = await reqText();
+  check("patente municipal is listed", /Patente Municipal/i.test(text));
+  check("Guaynabo (metro) rule: used-oil generator ID", /Used-Oil Generator/i.test(text));
+  check("Guaynabo (metro) rule: hazardous-waste generator ID", /Hazardous-Waste Generator/i.test(text));
+  await page.screenshot({ path: path.join(OUT, "location_requirements_rules_for.png"), fullPage: false });
+
+  // Change → move the pin to Adjuntas (no metro designation): the rules update.
+  await page.locator('.ck-summary [data-testid="location-change"]').click();
+  await dialog.waitFor({ timeout: 10000 });
+  await dialog.locator('[data-testid="location-latitude"]').fill(String(ADJUNTAS.latitude));
+  await dialog.locator('[data-testid="location-longitude"]').fill(String(ADJUNTAS.longitude));
+  await dialog.getByRole("button", { name: /^Place pin$/ }).click();
+  await dialog.locator('[data-testid="location-selected-placement"]').filter({ hasText: /Adjuntas/ }).waitFor({ timeout: 15000 });
+  await page.waitForFunction(() => !(document.querySelector('[data-testid="location-confirm"]') as HTMLButtonElement | null)?.disabled, null, { timeout: 15000 });
+  await dialog.locator('[data-testid="location-confirm"]').click();
+  await dialog.waitFor({ state: "detached", timeout: 10000 });
+  await page.waitForTimeout(600);
+  const summaryAfter = await page.locator('.ck-summary [data-testid="location-rules-for"]').innerText().catch(() => "");
+  check("summary now reads 'Rules for: … Adjuntas'", /Rules for:[\s\S]*Adjuntas/.test(summaryAfter), summaryAfter.replace(/\s+/g, " "));
+  text = await reqText();
+  check("metro-only rules removed after moving the pin to Adjuntas", !/Used-Oil Generator/i.test(text) && !/Hazardous-Waste Generator/i.test(text));
+  check("patente municipal still listed (every municipio)", /Patente Municipal/i.test(text));
+  await page.screenshot({ path: path.join(OUT, "location_requirements_after_change.png"), fullPage: false });
+
+  check("no page errors", errors.length === 0, errors.join(" | "));
+  await browser.close();
+  console.log(failures.length ? `\n${failures.length} FAILED` : "\nALL PASSED");
+  process.exit(failures.length ? 1 : 0);
+}
+
+const G = JSON.parse(readFileSync(path.join(here, "../src/app/processes/goldens", GOLDEN), "utf8"));
+const tag = String(G.id ?? "golden");
 
 const { context } = validateProjectContext(G.modelProjectContext, G.description);
 const snapshot = {
