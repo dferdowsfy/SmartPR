@@ -159,3 +159,5 @@
 .ck-learned { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: #e3f1e9; color: #1e4d38; font-size: 13px; font-weight: 650; white-space: nowrap; }
 .ck-learned-needs_reteach { background: #fff0d9; color: #8a5a00; }
 @media (max-width: 560px) { .ck-learned { font-size: 12px; padding: 2px 7px; } }
+.cl-explain-options { display: grid; gap: 8px; margin-top: 12px; }
+.cl-explain-options .cl-btn { justify-content: flex-start; }

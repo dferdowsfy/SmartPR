@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
+import { OPEN_CHAT_EVENT } from "./openChat";
 
 interface ChatProfile {
   name?: string | null;
@@ -80,6 +81,16 @@ export function SmartPRChatbot({ profile, requirements, language }: Props) {
   useEffect(() => {
     if (open) window.setTimeout(() => inputRef.current?.focus(), 120);
   }, [open]);
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const question = (e as CustomEvent<{ question?: string | null }>).detail?.question;
+      if (question) setInput(question);
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_CHAT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: messages.length > 1 ? "smooth" : "auto", block: "end" });

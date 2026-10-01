@@ -726,133 +726,182 @@ const rowStatus = async (re: RegExp) => {
 };
 const mg = await rowStatus(/Microgrid/);
 check("microgrid is not Required without microgrid facts", !mg || !/Required/.test(mg), mg ?? "absent");
-await page.locator('[data-testid="req-group-incentives"] > summary').click().catch(() => undefined);
-const incText = await page.locator('[data-testid="req-group-incentives"]').innerText().catch(() => "");
+// ---- Right sidebar: Clara assistant + the existing Incentives panel ----
+const sidebar = page.locator(".spr-requirements-sidebar");
+check("right sidebar renders beside the requirements", await sidebar.isVisible());
+{
+  const mainBox = await main.boundingBox();
+  const sideBox = await sidebar.boundingBox();
+  check("sidebar sits to the right of the main column", !!mainBox && !!sideBox && sideBox.x > mainBox.x + mainBox.width - 1);
+  check("main column ~70-75% of the layout", !!mainBox && !!sideBox && mainBox.width / (mainBox.width + sideBox.width) > 0.66 && mainBox.width / (mainBox.width + sideBox.width) < 0.78, mainBox && sideBox ? (mainBox.width / (mainBox.width + sideBox.width)).toFixed(2) : "");
+}
+const claraCard = page.locator('[data-testid="sidebar-clara"]');
+check("sidebar: Clara card with Fill with Clara + Ask Clara", (await claraCard.innerText()).includes("Fill with Clara") && (await claraCard.innerText()).includes("Ask Clara"));
+const incCard = sidebar.locator(".inc-card").first();
+await incCard.locator(".inc-loading").waitFor({ state: "detached", timeout: 30000 }).catch(() => undefined);
+const incText = await incCard.innerText().catch(() => "");
+check("sidebar: Incentives card", /Incentives/.test(incText), incText.slice(0, 120));
 for (const bad of [/Air and Maritime/i, /Export Logistics/i, /International Trading/i]) check(`no unrelated incentive ${bad.source}`, !bad.test(incText));
-check("green energy incentive kept", /Green Energy|energ/i.test(incText));
-await page.locator('[data-testid="req-group-incentives"] > summary').click().catch(() => undefined);
+check("green energy incentive kept", /Green Energy|energ/i.test(incText), incText.replace(/\s+/g, " ").slice(0, 200));
+const viewInc = sidebar.locator('[data-testid="view-incentives"]');
+if (await viewInc.count()) {
+  await viewInc.click();
+  const drawer = page.locator('[role="dialog"]').last();
+  check("View incentives opens the existing incentives drawer", await drawer.waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+} else check("View incentives action present", false);
+await page.screenshot({ path: path.join(OUT, `${tag}_requirements_sidebar.png`), fullPage: true });
 
-// Every Required energy row shows its action on the collapsed line.
-{
-  const rows = page.locator('[data-testid="req-group-energy"] .ck-row');
-  const missing: string[] = [];
-  let required = 0;
-  for (let i = 0; i < (await rows.count()); i++) {
-    const r = rows.nth(i);
-    const pill = (await r.locator(".ck-pill").first().innerText().catch(() => "")).trim();
-    if (!/^(Required|Requerido)$/.test(pill)) continue;
-    required++;
-    const cta = r.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-testid="row-cta"]').first();
-    if (!((await cta.count()) > 0 && (await cta.isVisible()))) missing.push((await r.locator(".ck-name").first().innerText()).trim());
+// ---- Standard actions: the same controls, same place, same width, every row ----
+await page.context().route(/^https?:\/\/(?!localhost)/, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<title>external</title>" }));
+for (const g of ["req-group-registrations"]) {
+  const s = page.locator(`[data-testid="${g}"] > summary`);
+  if (await s.count()) await s.click();
+}
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.waitForTimeout(300);
+type Slot = { x: number; w: number; text: string } | null;
+type Bar = { name: string; clara: Slot; complete: Slot; details: Slot; more: Slot; claraRoute: string | null; completeRoute: string | null };
+const visibleBars = (): Promise<Bar[]> => main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
+  const o: Record<string, unknown> = { name: e.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim() ?? "" };
+  for (const [k, sel] of [["clara", '[data-testid="row-clara"]'], ["complete", '[data-testid="row-complete"]'], ["details", '[data-testid="row-details"]'], ["more", '[data-testid="row-more"]']]) {
+    const el = e.querySelector(sel) as HTMLElement | null;
+    const r = el && el.offsetParent !== null ? el.getBoundingClientRect() : null;
+    o[k] = r ? { x: Math.round(r.x), w: Math.round(r.width), text: (el!.textContent ?? "").trim() } : null;
   }
-  check("every Required energy row has a visible inline action", required > 0 && missing.length === 0, `${required} required, missing: ${missing.join(" | ") || "none"}`);
+  o.claraRoute = e.querySelector('[data-testid="row-clara"]')?.getAttribute("data-route") ?? null;
+  o.completeRoute = e.querySelector('[data-testid="row-complete"]')?.getAttribute("data-route") ?? null;
+  return o;
+})) as Promise<Bar[]>;
+const bars = await visibleBars();
+console.log("rows:", bars.map((b) => `${b.name} [clara=${b.claraRoute} complete=${b.completeRoute}]`).join(" | "));
+check("every row has Fill with Clara · Complete · View details · ⋯", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.details && b.more), bars.filter((b) => !(b.clara && b.complete && b.details && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
+check("labels never change by agency", bars.every((b) => b.clara?.text === "Fill with Clara" && /^(Complete|Completed)$/.test(b.complete?.text ?? "") && b.details?.text === "View details"), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text, b.details?.text]))].join(","));
+for (const k of ["clara", "complete", "details", "more"] as const) {
+  const xs = bars.map((b) => b[k]).filter((v): v is NonNullable<Slot> => !!v);
+  check(`${k}: same x and width on every row`, xs.length > 1 && xs.every((v) => Math.abs(v.x - xs[0].x) <= 1 && Math.abs(v.w - xs[0].w) <= 1), xs.map((v) => `${v.x}/${v.w}`).join(","));
+}
+{
+  const cols = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
+    const line = e.closest(".ck-card-line") as HTMLElement;
+    const ag = line.querySelector(".ck-row-head .ck-agency") as HTMLElement | null;
+    const pill = line.querySelector(".ck-row-head .ck-pill") as HTMLElement | null;
+    return { agencyRight: ag ? Math.round(ag.getBoundingClientRect().right) : null, pillX: pill ? Math.round(pill.getBoundingClientRect().x) : null, pillW: pill ? Math.round(pill.getBoundingClientRect().width) : null };
+  }));
+  const ag = cols.map((c) => c.agencyRight).filter((v): v is number => v !== null);
+  const px = cols.map((c) => c.pillX).filter((v): v is number => v !== null);
+  check("agency column lines up", ag.length > 1 && ag.every((v) => Math.abs(v - ag[0]) <= 1), ag.join(","));
+  check("status column lines up", px.length > 1 && px.every((v) => Math.abs(v - px[0]) <= 1), px.join(","));
+}
+check("status chips stay out of the action column", (await main.locator('[data-testid="row-actions"] .ck-pill').count()) === 0);
+await page.screenshot({ path: path.join(OUT, `${tag}_standard_actions.png`), fullPage: true });
+
+// Each control does the row's own thing; none toggles the row except View details.
+const rowSel = '.spr-requirements-main .ck-row:not(:has(> .ck-row-static)), .spr-requirements-main .ck-card';
+const closeDialog = async () => {
+  const dialog = page.locator('[role="dialog"][aria-modal="true"]').first();
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  if (await dialog.isVisible().catch(() => false)) {
+    const close = dialog.getByRole("button", { name: /close|cerrar|×|✕/i }).first();
+    if (await close.count()) await close.click();
+  }
+  await dialog.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
+};
+const routesSeen = new Set<string>();
+for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
+  const row = page.locator(rowSel).nth(i);
+  if (!(await row.isVisible())) continue;
+  const head = row.locator(":scope > .ck-card-line > .ck-row-head").first();
+  const name = (await row.locator(".ck-name").first().innerText()).trim();
+  const bar = row.locator(':scope > .ck-card-line [data-testid="row-actions"]');
+  const clara = bar.locator('[data-testid="row-clara"]');
+  const complete = bar.locator('[data-testid="row-complete"]');
+  const claraRoute = await clara.getAttribute("data-route");
+  const route = await complete.getAttribute("data-route");
+  routesSeen.add(`clara:${claraRoute}`);
+  routesSeen.add(`complete:${route}`);
+  // Fill with Clara: always there; explains what Clara can do when she can't file.
+  if (claraRoute === "explain") {
+    await clara.click();
+    const ex = page.locator('[data-testid="clara-explain"]');
+    check(`"${name}": Fill with Clara opens Clara with the requirement's context`, await ex.waitFor({ timeout: 5000 }).then(async () => (await ex.innerText()).includes(name)).catch(() => false));
+    await closeDialog();
+  } else if (await clara.getAttribute("href")) {
+    check(`"${name}": Fill with Clara stays in SmartPR`, (await clara.getAttribute("target")) !== "_blank", (await clara.getAttribute("href")) ?? "");
+  }
+  // Complete: routed by the row's capabilities.
+  if (route === "smartpr_form") {
+    await complete.click();
+    check(`"${name}": Complete opens the SmartPR form`, await page.locator('[role="dialog"][aria-modal="true"]').first().waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+    await closeDialog();
+  } else if (route === "upload") {
+    const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => true).catch(() => false);
+    await complete.click();
+    check(`"${name}": Complete opens the upload flow`, await chooser);
+  } else if (route === "blocked") {
+    await complete.click();
+    const shown = (await row.locator('[data-testid="row-question"], .ck-q').first().isVisible().catch(() => false)) || (await row.locator(".ck-row-body").isVisible().catch(() => false));
+    check(`"${name}": Complete shows what must happen first`, shown);
+    if (await row.locator(".ck-row-body").isVisible().catch(() => false)) await head.click();
+    else await complete.click();
+  } else if (route === "instructions") {
+    await complete.click();
+    check(`"${name}": Complete shows completion instructions`, await row.locator(".ck-row-body").isVisible());
+    await head.click();
+  } else if (route === "government") {
+    const popup = page.waitForEvent("popup", { timeout: 4000 }).then(async (p) => { const u = p.url(); await p.close(); return u; }).catch(() => "");
+    await complete.click();
+    check(`"${name}": Complete launches the government workflow`, !!(await popup));
+  } else if (route === "done") {
+    check(`"${name}": completed rows keep the Complete slot`, await complete.isVisible());
+  }
+  if (route !== "instructions" && route !== "blocked") check(`"${name}": Complete does not toggle the row`, (await head.getAttribute("aria-expanded")) === "false");
+  // View details: always opens the details panel.
+  await bar.locator('[data-testid="row-details"]').click();
+  const body = row.locator(".ck-row-body");
+  check(`"${name}": View details opens the details panel`, (await body.isVisible()) && (await head.getAttribute("aria-expanded")) === "true");
+  await head.click();
+}
+console.log("routes seen:", [...routesSeen].join(", "));
+// The details panel of a requirement card: what, agency, status, source, prerequisites, readiness.
+{
+  const card = main.locator(".ck-card").filter({ has: page.locator('[data-testid="row-details"]') }).first();
+  if (await card.count()) {
+    await card.locator('[data-testid="row-details"]').click();
+    const t = await card.locator('[data-testid="requirement-details"]').innerText().catch(() => "");
+    for (const label of ["AGENCY", "SOURCE", "PREREQUISITES", "READINESS"]) check(`details panel shows ${label.toLowerCase()}`, t.toUpperCase().includes(label), t.replace(/\s+/g, " ").slice(0, 200));
+    await page.screenshot({ path: path.join(OUT, `${tag}_details_panel.png`), fullPage: false });
+    await card.locator(".ck-row-head").first().click();
+  }
 }
 
-// In-platform rule (Darius 2026-09-30): no row's inline primary takes the
-// user out of SmartPR — portals / agency sites / PDFs live in ⋯ or details.
+// Teach Clara and the official portal live in ⋯.
 {
-  const offenders = await main.evaluate((root) => Array.from(root.querySelectorAll('[data-testid="row-actions"] > [data-testid="row-cta"]'))
-    .filter((el) => (el as HTMLElement).offsetParent !== null)
-    .filter((el) => {
-      const kind = el.getAttribute("data-cta") ?? "";
-      const href = el.getAttribute("href");
-      return ["portal", "site", "instructions", "download"].includes(kind) || el.getAttribute("target") === "_blank" || (!!href && !href.startsWith("/"));
-    })
-    .map((el) => `${el.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim()} → ${el.getAttribute("data-cta")}`));
-  check("no inline primary action leaves SmartPR", offenders.length === 0, offenders.join(" | ") || "none");
-  const kinds = await main.evaluate((root) => Array.from(root.querySelectorAll('[data-testid="row-actions"] > [data-testid="row-cta"]')).map((el) => el.getAttribute("data-cta")));
-  console.log("inline primaries:", kinds.join(","));
-  check("energy rows lead with 'Complete form' (guided) when they have no form of their own", kinds.includes("guided"), kinds.join(","));
-}
-await page.screenshot({ path: path.join(OUT, `${tag}_inline_actions.png`), fullPage: true });
-
-// "Complete form" opens SmartPR's guided form in place (the row stays collapsed).
-{
-  const guidedRow = main.locator('.ck-row, .ck-card').filter({ has: page.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-cta="guided"]') }).first();
-  if (await guidedRow.count()) {
-    const name = (await guidedRow.locator(".ck-name").first().innerText()).trim();
-    await guidedRow.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-cta="guided"]').click();
-    const dlg = page.locator('[data-testid="guided-form"]');
-    const opened = await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
-    check("'Complete form' opens the guided in-platform form", opened, name);
-    check("…without expanding the row", (await guidedRow.locator(".ck-row-head").first().getAttribute("aria-expanded")) === "false");
-    if (opened) {
-      const fields = await dlg.locator(".cl-field").count();
-      check("guided form has a field per 'What you'll need' item plus business details", fields >= 6, `${fields} fields`);
-      check("guided form keeps the portal secondary (no portal button in the footer)", (await dlg.locator('footer a[target="_blank"]').count()) === 0);
-      await page.screenshot({ path: path.join(OUT, `${tag}_guided_form.png`), fullPage: false });
-      await page.keyboard.press("Escape");
-      await dlg.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
-    }
-  }
-}
-
-// Teach Clara is reachable from every open row's ⋯ menu.
-{
-  const withMenu = main.locator('[data-testid="row-actions"]:has([data-testid="row-more"])');
-  const total = await withMenu.count();
-  let teachable = 0;
-  let seen = 0;
-  for (let i = 0; i < total; i++) {
-    const ra = withMenu.nth(i);
-    if (!(await ra.isVisible())) continue;
-    seen++;
-    await ra.locator('[data-testid="row-more"]').click();
-    if (await ra.locator('[data-testid="row-more-item"][data-cta="teach"]').count()) teachable++;
-    else console.log("no Teach Clara:", await ra.evaluate((e) => e.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim()), await ra.locator('[data-testid="row-more-item"]').evaluateAll((els) => els.map((x) => x.getAttribute("data-cta"))));
-    await page.keyboard.press("Escape");
-  }
-  const noTeach = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && !e.querySelector('[data-testid="row-done"]') && !e.querySelector('[data-testid="row-more"]')).map((e) => e.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim()));
-  check("Teach Clara in the ⋯ menu of every open row", teachable > 0 && teachable === seen && noTeach.length === 0, `${teachable}/${seen}; no ⋯: ${noTeach.join(" | ") || "none"}`);
-  const portalRow = main.locator('[data-testid="req-group-energy"] [data-testid="row-actions"]:has([data-testid="row-more"])').first();
-  if (await portalRow.count()) {
-    await portalRow.locator('[data-testid="row-more"]').click();
-    const items = await portalRow.locator('[data-testid="row-more-item"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-cta")));
-    check("the official portal is in the ⋯ menu", items.includes("portal"), items.join(","));
-    await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_menu.png`), fullPage: false });
-    await portalRow.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
+  const bar = main.locator('[data-testid="req-group-energy"] [data-testid="row-actions"]').first();
+  if (await bar.count()) {
+    await bar.locator('[data-testid="row-more"]').click();
+    const items = await bar.locator('[data-testid="row-more-item"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-cta") ?? (e.textContent ?? "").trim()));
+    check("⋯ has Teach Clara", items.includes("teach"), items.join(","));
+    check("⋯ has the official portal", items.includes("portal"), items.join(","));
+    await page.screenshot({ path: path.join(OUT, `${tag}_more_menu.png`), fullPage: false });
+    await bar.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
     const dlg = page.locator('[data-testid="teach-clara-dialog"]');
-    const opened = await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
-    check("Teach Clara opens in SmartPR", opened);
-    if (opened) {
-      // Teach is record-first; without a signed-in recorder it offers fallbacks,
-      // and typing the steps is the secondary option.
-      const fallback = await dlg.locator('[data-testid="teach-describe-instead"]').waitFor({ timeout: 8000 }).then(() => true).catch(() => false);
-      check("Teach Clara is record-first (typed steps only as a fallback)", fallback && (await dlg.locator('[data-testid="teach-form"]').count()) === 0);
-      if (fallback) await dlg.locator('[data-testid="teach-describe-instead"]').click();
-      const portal = await dlg.locator('[data-testid="teach-portal"]').inputValue();
-      check("Teach Clara is prefilled with the row's portal", /^https:\/\//.test(portal), portal);
-      await dlg.locator('[data-testid="teach-step"]').nth(0).fill("Sign in to the portal with the business account");
-      await dlg.locator('[data-testid="teach-step"]').nth(1).fill("New application → choose the review type, fill the project details");
-      await dlg.locator('[data-testid="teach-step"]').nth(2).fill("Upload the site plan and stop at the review page");
-      await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_dialog.png`), fullPage: false });
-      await dlg.locator('[data-testid="teach-save"]').click();
-      const saved = await dlg.locator('[data-testid="teach-saved"]').waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
-      check("Teach Clara saves (signed out: on this device)", saved);
-      await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_saved.png`), fullPage: false });
-      await page.keyboard.press("Escape");
-      await dlg.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
-    }
+    check("Teach Clara opens in SmartPR", await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+    await closeDialog();
   }
 }
 
-// Spanish: the same buttons, localized.
+// Spanish: the same controls, localized.
 {
   const langBtn = page.getByRole("button", { name: /^(ES|Español)$/ }).first();
   if (await langBtn.isVisible().catch(() => false)) {
     await langBtn.click();
     await page.waitForTimeout(600);
-    const labels = await main.locator('[data-testid="row-actions"] > [data-testid="row-cta"]').allInnerTexts();
-    check("ES: inline actions are in Spanish", labels.length > 0 && labels.every((l) => !/^(Complete form|Upload|Fill with Clara|Open portal|Start)$/.test(l.trim())), labels.map((l) => l.trim()).join(","));
+    const es = await visibleBars();
+    check("ES: Llenar con Clara · Completar · Ver detalles", es.length > 0 && es.every((b) => b.clara?.text === "Llenar con Clara" && /^(Completar|Completado)$/.test(b.complete?.text ?? "") && b.details?.text === "Ver detalles"));
     await page.screenshot({ path: path.join(OUT, `${tag}_requirements_es.png`), fullPage: true });
-    const more = main.locator('[data-testid="req-group-energy"] [data-testid="row-more"]').first();
-    if (await more.count()) {
-      await more.click();
-      const t = await main.locator('[data-testid="row-more-item"][data-cta="teach"]').first().innerText().catch(() => "");
-      check("ES: 'Enséñale a Clara' in the ⋯ menu", /Enséñale a Clara/.test(t), t);
-      await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_menu_es.png`), fullPage: false });
-      await page.keyboard.press("Escape");
-    }
     const enBtn = page.getByRole("button", { name: /^(EN|English)$/ }).first();
     if (await enBtn.isVisible().catch(() => false)) { await enBtn.click(); await page.waitForTimeout(500); }
   }
@@ -880,140 +929,37 @@ const qs = page.locator(".ck-questions > [role=listitem]");
 check("no questions repeated on Requirements", (await qs.count()) === 0);
 check("no inline requirement Yes/No", (await page.locator(".rq-answer-prompt").count()) === 0);
 
-// ---- Inline row actions: act without expanding a row ----
-// Every row whose expanded card offers an action shows it on the collapsed
-// line; clicking it runs that flow and never toggles the row.
-await page.context().route(/^https?:\/\/(?!localhost)/, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<title>external</title>" }));
-for (const g of ["req-group-registrations"]) {
-  const s = page.locator(`[data-testid="${g}"] > summary`);
-  if (await s.count()) await s.click();
+// Narrower desktop (sidebar shown): View details moves into ⋯, the rest stays aligned.
+await page.setViewportSize({ width: 1280, height: 900 });
+await page.waitForTimeout(300);
+{
+  const b = await visibleBars();
+  check("1280: Fill with Clara + Complete + ⋯ on every row", b.length > 0 && b.every((x) => x.clara && x.complete && x.more), `${b.length} rows`);
+  check("1280: View details is in ⋯", b.every((x) => !x.details));
+  const bar = main.locator('[data-testid="row-actions"]').first();
+  await bar.locator('[data-testid="row-more"]').click();
+  const item = bar.locator('[data-testid="row-more-item"]').filter({ hasText: "View details" });
+  check("1280: ⋯ → View details", await item.isVisible());
+  await item.click();
+  check("1280: ⋯ → View details opens the panel", await main.locator(".ck-row-body").first().isVisible());
+  await main.locator(".ck-row-open > .ck-card-line > .ck-row-head").first().click();
+  const tall = await page.locator('.spr-requirements-main .ck-card-line').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && (e as HTMLElement).getBoundingClientRect().height > 76).length);
+  // Long names wrap to two lines instead of truncating; nothing taller.
+  check("desktop: rows stay compact (name ≤ 2 lines)", tall === 0, `${tall} tall rows`);
+  await page.screenshot({ path: path.join(OUT, `${tag}_requirements_1280.png`), fullPage: true });
 }
-await page.waitForTimeout(200);
-await page.screenshot({ path: path.join(OUT, `${tag}_requirements_inline.png`), fullPage: true });
-const desktopButtonWidths = await page.locator('.spr-requirements-main [data-testid="row-actions"] > [data-testid="row-cta"]').evaluateAll((buttons) =>
-  buttons.filter((button) => (button as HTMLElement).offsetParent !== null).map((button) => Math.round(button.getBoundingClientRect().width)));
-check("desktop: primary buttons have equal widths", desktopButtonWidths.length > 1 && desktopButtonWidths.every((width) => Math.abs(width - desktopButtonWidths[0]) <= 1), desktopButtonWidths.join(","));
-const rowSel = '.spr-requirements-main .ck-row:not(:has(> .ck-row-static)), .spr-requirements-main .ck-card';
-const rowCount = await page.locator(rowSel).count();
-let actionable = 0;
-let clicked = 0;
-for (let i = 0; i < rowCount; i++) {
-  const row = page.locator(rowSel).nth(i);
-  if (!(await row.isVisible())) continue;
-  const head = row.locator(":scope > .ck-card-line > .ck-row-head").first();
-  const name = (await row.locator(".ck-name").first().innerText()).trim();
-  const lineCta = row.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-testid="row-cta"]').first();
-  const lineDone = row.locator(':scope > .ck-card-line [data-testid="row-done"]');
-  const hasCta = (await lineCta.count()) > 0 && (await lineCta.isVisible());
-  // What the expanded card offers (then collapse again).
-  await head.click();
-  const body = row.locator(".ck-row-body");
-  const bodyActions = await body.locator('.ck-card-actions a, .ck-card-actions button, .ck-action, .rq-answer-prompt button').evaluateAll((els) =>
-    els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => (e.textContent ?? "").trim()).filter(Boolean));
-  await head.click();
-  const offers = bodyActions.length > 0;
-  const kind = hasCta ? await lineCta.getAttribute("data-cta") : null;
-  const status = (await row.locator(".ck-pill").first().innerText().catch(() => "")).trim();
-  console.log(`row: ${name} [${status}] cta=${kind ?? (await lineDone.count() ? "done" : "none")} body=${JSON.stringify(bodyActions)}`);
-  if (offers) {
-    actionable++;
-    check(`"${name}": inline action visible without expanding`, hasCta || (await lineDone.count()) > 0, kind ?? "none");
-  } else if (kind && kind !== "answer" && kind !== "start") {
-    check(`"${name}": no inline button without a card action`, false, kind);
-  }
-  if (!hasCta) continue;
-  clicked++;
-  const expandedBefore = await head.getAttribute("aria-expanded");
-  const label = (await lineCta.innerText()).trim();
-  let flow = "none";
-  if (kind === "answer") {
-    await lineCta.click();
-    flow = (await row.locator('[data-testid="row-question"]').isVisible()) ? "question" : "none";
-    check(`"${name}": Answer opens only the question`, flow === "question" && !(await body.isVisible().catch(() => false)));
-    await lineCta.click();
-  } else if (kind === "upload" || kind === "confirm") {
-    const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => "filechooser").catch(() => "none");
-    await lineCta.click();
-    flow = await chooser;
-    check(`"${name}": ${label} opens the upload flow`, flow === "filechooser");
-  } else if (kind === "start") {
-    await lineCta.click();
-    flow = (await row.locator('[data-testid="row-checklist"]').isVisible()) ? "checklist" : "none";
-    check(`"${name}": Start opens only the prepared checklist`, flow === "checklist" && !(await body.isVisible().catch(() => false)));
-    await lineCta.click();
-  } else if (kind === "download" || kind === "instructions" || kind === "portal" || kind === "site") {
-    const popup = page.waitForEvent("popup", { timeout: 4000 }).then(async (p) => { const u = p.url(); await p.close(); return u; }).catch(() => "");
-    await lineCta.click();
-    flow = await popup;
-    check(`"${name}": ${label} opens the official document`, !!flow, flow);
-  } else if (kind === "assist" && (await lineCta.getAttribute("href"))) {
-    // A link: the same destination as the expanded card's filing link.
-    const href = await lineCta.getAttribute("href");
-    await head.click();
-    const bodyHref = await body.locator(".rq-filing a").first().getAttribute("href").catch(() => null);
-    await head.click();
-    flow = `link ${href}`;
-    check(`"${name}": ${label} links where the card links`, !!href && href === bodyHref, `${href} vs ${bodyHref}`);
-  } else {
-    await lineCta.click();
-    const dialog = page.locator('[role="dialog"][aria-modal="true"]').first();
-    flow = (await dialog.waitFor({ timeout: 5000 }).then(() => "dialog").catch(() => "none"));
-    const requirement = await dialog.getAttribute("data-requirement").catch(() => null);
-    check(`"${name}": ${label} opens its form`, flow === "dialog", requirement ?? "");
-    if (flow === "dialog") {
-      await page.screenshot({ path: path.join(OUT, `${tag}_row_cta_flow.png`) }).catch(() => undefined);
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(200);
-      if (await dialog.isVisible().catch(() => false)) {
-        const close = dialog.getByRole("button", { name: /close|cerrar|×|✕/i }).first();
-        if (await close.count()) await close.click();
-      }
-      await dialog.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
-    }
-  }
-  check(`"${name}": clicking "${label}" does not expand the row`, (await head.getAttribute("aria-expanded")) === expandedBefore && expandedBefore === "false");
-}
-check("at least one actionable row checked", actionable > 0 && clicked > 0, `${actionable} actionable, ${clicked} clicked`);
-// Overflow (⋯): the other actions of a row, same handlers, row stays closed.
-const moreBtn = page.locator('.spr-requirements-main [data-testid="row-more"]').first();
-if (await moreBtn.count() && await moreBtn.isVisible()) {
-  const row = moreBtn.locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' ck-card ') or contains(concat(' ', normalize-space(@class), ' '), ' ck-row ')][1]");
-  const head = row.locator(":scope > .ck-card-line > .ck-row-head").first();
-  await moreBtn.click();
-  const items = row.locator('[data-testid="row-more-item"]');
-  const labels = await items.allInnerTexts();
-  check("overflow menu lists the other actions", labels.length > 0, labels.join(" | "));
-  const upload = row.locator('[data-testid="row-more-item"][data-cta="upload"]').first();
-  if (await upload.count()) {
-    const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => true).catch(() => false);
-    await upload.click();
-    check("overflow upload opens the upload flow", await chooser);
-  } else {
-    await page.keyboard.press("Escape");
-  }
-  check("overflow menu closes", (await items.count()) === 0);
-  check("overflow does not expand the row", (await head.getAttribute("aria-expanded")) === "false");
-}
-for (const g of ["req-group-registrations"]) {
-  const s = page.locator(`[data-testid="${g}"] > summary`);
-  if (await s.count()) await s.click();
-}
-// Mobile: the CTA wraps under the name and stays visible.
+// Mobile: Fill with Clara + Complete stay; the rest is in ⋯.
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 await page.screenshot({ path: path.join(OUT, `${tag}_requirements_mobile.png`), fullPage: true });
-// Width relative to the row line; the action wraps below the name.
-const mobileCtas = await page.locator('.spr-requirements-main [data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
-  const line = e.closest(".ck-card-line") as HTMLElement;
-  const name = line.querySelector(".ck-name") as HTMLElement;
-  return { ratio: e.getBoundingClientRect().width / line.getBoundingClientRect().width, below: e.getBoundingClientRect().top >= name.getBoundingClientRect().bottom - 1 };
-}));
-check("mobile: inline actions wrap under the name, full width", mobileCtas.every((m) => m.ratio > 0.85 && m.below), mobileCtas.map((m) => `${m.ratio.toFixed(2)}${m.below ? "↓" : "→"}`).join(","));
+{
+  const b = await visibleBars();
+  check("mobile: Fill with Clara + Complete visible on every row", b.length > 0 && b.every((x) => x.clara && x.complete && x.more && !x.details), `${b.length} rows`);
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+  check("mobile: no horizontal scroll", fits);
+}
 await page.setViewportSize({ width: 1280, height: 900 });
 await page.waitForTimeout(300);
-// Desktop: one line per row (the line is no taller than two text lines).
-const tall = await page.locator('.spr-requirements-main .ck-card-line').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && (e as HTMLElement).getBoundingClientRect().height > 64).length);
-check("desktop: rows stay one line", tall === 0, `${tall} tall rows`);
 
 // Reasoning: open the first energy row and its full reasoning; no empty <li>.
 const firstRow = page.locator('[data-testid="req-group-energy"] .ck-row').first();

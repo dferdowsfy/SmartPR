@@ -12,6 +12,7 @@ import type { GuidedSubject } from "./guidedFormModel";
 import { GuidedRequirementForm } from "./GuidedRequirementForm";
 import { TeachRecordDialog } from "./TeachRecordDialog";
 import { LearnedFillDialog } from "./LearnedFillDialog";
+import { ClaraExplainDialog } from "./ClaraExplainDialog";
 import { useRequirementActionsEnv } from "./requirementActionsContext";
 import { routineForRow } from "../../../lib/agency-runs/teach/learnedRoutineMatch";
 
@@ -19,10 +20,12 @@ type Language = "en" | "es";
 
 export function useInPlatformActions(subject: GuidedSubject, language: Language): {
   handlers: Required<InPlatformHandlers>;
+  /** "Fill with Clara" on a row Clara can't file yet: what she can do here. */
+  onExplainClara: () => void;
   dialogs: (model: RowActionsModel) => ReactNode;
 } {
   const env = useRequirementActionsEnv();
-  const [open, setOpen] = useState<"guided" | "teach" | "fill" | null>(null);
+  const [open, setOpen] = useState<"guided" | "teach" | "fill" | "explain" | null>(null);
   const routine = routineForRow(env.routines, { key: subject.key, portalUrl: subject.portalUrl ?? null, name: subject.name });
   const handlers: Required<InPlatformHandlers> = {
     onGuidedForm: () => setOpen("guided"),
@@ -42,10 +45,13 @@ export function useInPlatformActions(subject: GuidedSubject, language: Language)
           else if (clara.href) window.location.href = clara.href;
         }
       : null;
+    if (open === "explain") {
+      return <ClaraExplainDialog subject={subject} language={language} onClose={() => setOpen(null)} onGuidedForm={() => setOpen("guided")} onTeach={() => setOpen("teach")} />;
+    }
     if (open === "guided") {
       return <GuidedRequirementForm subject={subject} language={language} onClose={() => setOpen(null)} onFillWithClara={fillWithClara} onTeach={() => setOpen("teach")} />;
     }
     return <TeachRecordDialog subject={subject} language={language} onClose={() => setOpen(null)} onLearned={(r) => env.addRoutine(r)} />;
   };
-  return { handlers, dialogs };
+  return { handlers, onExplainClara: () => setOpen("explain"), dialogs };
 }

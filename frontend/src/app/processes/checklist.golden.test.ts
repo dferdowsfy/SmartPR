@@ -281,13 +281,15 @@ test("energy rows: inline CTA from the covered card, Answer on answer-only rows,
   // Compact visible label is deliberate (rowActionModel shortCtaLabel: "Complete LUMA
   // form" -> "Complete form" since the card already names LUMA); the covered legacy
   // card's CTA still flows into the row via the full accessible name.
-  assert.match(dgRow, /aria-label="Complete LUMA form"[^>]*data-cta="form"/);
-  assert.match(dgRow, />Complete form</);
+  assert.match(dgRow, /title="Complete LUMA form" data-testid="row-complete" data-route="smartpr_form"/);
   for (const i of items(r.ck)) {
     const row = rowOf(i.id);
-    if (i.status === "question") assert.match(row, /data-cta="answer"/, `${i.id} Answer`);
-    // May apply: a button only when there is something to do (the official portal).
-    if (i.status === "may_apply") assert.equal(/row-cta/.test(row), !!r.graph.processes.get(i.process_id)?.portal, `${i.id} button iff portal`);
+    // The same controls on every row; only what Complete does varies.
+    assert.match(row, /data-testid="row-clara"/, `${i.id} Fill with Clara`);
+    assert.match(row, /data-testid="row-details"/, `${i.id} View details`);
+    if (i.status === "question") assert.match(row, /data-testid="row-complete" data-route="blocked"/, `${i.id} answer first`);
+    // May apply: a SmartPR form only when there is something to file (the official portal).
+    if (i.status === "may_apply") assert.equal(/data-testid="row-complete" data-route="smartpr_form"/.test(row), !!r.graph.processes.get(i.process_id)?.portal, `${i.id} form iff portal`);
   }
   assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
 });
@@ -302,8 +304,8 @@ test("every Required energy row shows an inline action without expanding (E01, E
     const rowOf = (id: string) => { const i = starts.findIndex((s) => s.id === id); return html.slice(starts[i].at, starts[i + 1]?.at); };
     for (const it of items(r.ck)) {
       const row = rowOf(it.id);
-      if (it.status === "required") assert.match(row, /data-testid="row-cta"/, `${file}: ${it.name} has an inline action`);
-      if (it.status === "expert") assert.ok(!/row-cta/.test(row), `${file}: ${it.name} (expert, no handler) gets none`);
+      if (it.status === "required") assert.match(row, /data-testid="row-complete" data-route="(smartpr_form|upload|clara)"/, `${file}: ${it.name} has an inline action`);
+      if (it.status === "expert") assert.match(row, /data-testid="row-complete" data-route="blocked"/, `${file}: ${it.name} (expert) shows what must happen first`);
     }
     assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");
   }
@@ -327,7 +329,6 @@ test("no requirement in E01/E06/E07 resolves to an external-link primary action 
   const { claraSupportFor } = await import("../components/filing/requirementGroups.ts");
   const noop = () => {};
   const handlers = { onGuidedForm: noop, onTeach: noop };
-  const EXTERNAL_KINDS = new Set(["portal", "site", "instructions", "download"]);
   for (const file of ["E01_warehouse_rooftop_solar_caguas.json", "E06_developer_solar_bess_guayama.json", "E07_rooftop_solar_installation_guaynabo.json"]) {
     for (const lang of ["en", "es"] as const) {
       const r = run(file, lang);
@@ -362,10 +363,10 @@ test("no requirement in E01/E06/E07 resolves to an external-link primary action 
       const html = renderToStaticMarkup(createElement(EnergyProcessesSection, {
         assessment: r.a, graph: r.graph, checklist: r.ck, legacyCards, suppressedLegacy: [...r.sup.values()], language: lang, onAnswer: () => {},
       }));
-      const primaries = [...html.matchAll(/<(a|button)\b[^>]*data-testid="row-cta"[^>]*data-cta="([a-z]+)"/g)];
+      const primaries = [...html.matchAll(/<(a|button)\b[^>]*data-testid="row-(complete|clara)" data-route="([a-z_]+)"/g)];
       assert.ok(primaries.length > 0, `${file} ${lang}: rows render inline actions`);
       for (const m of primaries) {
-        assert.ok(!EXTERNAL_KINDS.has(m[2]), `${file} ${lang}: inline ${m[2]} is not an external link`);
+        assert.ok(m[3] !== "government", `${file} ${lang}: inline ${m[2]} is not an external link`);
         assert.ok(!/target="_blank"/.test(m[0]), `${file} ${lang}: inline action opens no new tab`);
       }
       assert.ok(!/ck-row-body/.test(html), "rows stay collapsed");

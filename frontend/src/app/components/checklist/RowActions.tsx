@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
+import { STANDARD_LABELS, type RequirementActions } from "./requirementActions";
 
 type Language = "en" | "es";
 
@@ -82,19 +83,7 @@ export function RowName({ name, model, language }: { name: string; model: RowAct
   );
 }
 
-export function RowActions({
-  model,
-  language,
-  onAnswer,
-  answerOpen = false,
-}: {
-  model: RowActionsModel;
-  language: Language;
-  /** Opens / closes the row's question strip (answer-only rows). */
-  onAnswer?: () => void;
-  answerOpen?: boolean;
-}) {
-  const es = language === "es";
+function useMenu() {
   const [menu, setMenu] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -109,6 +98,90 @@ export function RowActions({
       document.removeEventListener("keydown", close);
     };
   }, [menu]);
+  return { menu, setMenu, ref };
+}
+
+/**
+ * The standard action column, identical on every requirement row:
+ * Fill with Clara · Complete · View details · ⋯. Labels and positions never
+ * change; each row's own capabilities decide only what a click does (the
+ * route is exposed as data-route and in the tooltip). On narrow screens
+ * "View details" moves into the ⋯ menu.
+ */
+export function StandardRowActions({ actions, language, answerOpen = false }: { actions: RequirementActions; language: Language; answerOpen?: boolean }) {
+  const lang = language;
+  const { menu, setMenu, ref } = useMenu();
+  const { clara, complete, done, overflow } = actions;
+  const run = (a: { onClick?: () => void }) => (e: MouseEvent) => {
+    e.stopPropagation();
+    a.onClick?.();
+  };
+  const link = (a: { href?: string; external?: boolean }) =>
+    a.href ? { href: a.href, target: a.external ? "_blank" : undefined, rel: a.external ? "noopener noreferrer" : undefined } : null;
+  const claraLink = link(clara);
+  const completeLink = link(complete);
+  const claraInner = <><Sparkles size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.clara[lang]}</span></>;
+  const completeInner = <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{STANDARD_LABELS.complete[lang]}</span></>;
+  return (
+    <div className="rq-std-actions" ref={ref} onClick={stop} data-testid="row-actions">
+      {claraLink ? (
+        <a {...claraLink} className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</a>
+      ) : (
+        <button type="button" className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</button>
+      )}
+      {done ? (
+        <button type="button" className="rq-std-btn rq-std-complete rq-std-done" data-testid="row-complete" data-route="done" disabled={!done.onClick} onClick={(e) => { e.stopPropagation(); done.onClick?.(); }}>
+          <CheckCircle2 size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.done[lang]}</span>
+        </button>
+      ) : completeLink ? (
+        <a {...completeLink} className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} onClick={run(complete)}>{completeInner}</a>
+      ) : (
+        <button type="button" className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-expanded={complete.route === "blocked" ? answerOpen : undefined} onClick={run(complete)}>{completeInner}</button>
+      )}
+      <button type="button" className="rq-std-btn rq-std-details" data-testid="row-details" onClick={(e) => { e.stopPropagation(); actions.onViewDetails(); }}>
+        <FileText size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.details[lang]}</span>
+      </button>
+      <span className="ck-more rq-std-more">
+        <button
+          type="button"
+          className="ck-more-btn"
+          aria-haspopup="menu"
+          aria-expanded={menu}
+          aria-label={lang === "es" ? "Más acciones" : "More actions"}
+          data-testid="row-more"
+          onClick={(e) => { e.stopPropagation(); setMenu((m) => !m); }}
+        >
+          <MoreHorizontal size={16} aria-hidden="true" />
+        </button>
+        {menu && (
+          <span className="ck-more-menu" role="menu">
+            <button type="button" role="menuitem" className="ck-more-item rq-std-more-details" data-testid="row-more-item" onClick={(e) => { e.stopPropagation(); setMenu(false); actions.onViewDetails(); }}>
+              <FileText size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.details[lang]}</span>
+            </button>
+            {overflow.map((c) => (
+              <CtaControl key={`${c.id}-${c.kind}`} c={{ ...c, label: c.title }} className="ck-more-item" role="menuitem" testId="row-more-item" onDone={() => setMenu(false)} />
+            ))}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+export function RowActions({
+  model,
+  language,
+  onAnswer,
+  answerOpen = false,
+}: {
+  model: RowActionsModel;
+  language: Language;
+  /** Opens / closes the row's question strip (answer-only rows). */
+  onAnswer?: () => void;
+  answerOpen?: boolean;
+}) {
+  const es = language === "es";
+  const { menu, setMenu, ref } = useMenu();
 
   const { primary, more, done, answer } = model;
   if (!primary && !more.length && !done && !(answer && onAnswer)) return null;

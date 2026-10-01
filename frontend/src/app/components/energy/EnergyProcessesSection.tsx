@@ -8,7 +8,7 @@
 // graph (src/app/processes) — nothing is hardcoded here. Incentives render
 // once, in the page's "Possible incentives" section, never here.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ExternalLink, Zap } from "lucide-react";
 import type { ProcessAssessment, ProcessEvaluation } from "../../processes/engine";
 import type { ProcessGraph } from "../../processes/graph";
@@ -17,7 +17,8 @@ import type { RegulatoryProcess } from "../../processes/types";
 import type { ProjectContextFact, ProjectContextKey } from "../../ai/intake/projectContext";
 import { checklistQuestion, processChecklist, type ChecklistItem, type ChecklistQuestion, type ProcessChecklist } from "../../processes/presentation";
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
-import { ActionList, RowActions, RowName } from "../checklist/RowActions";
+import { ActionList, RowName, StandardRowActions } from "../checklist/RowActions";
+import { standardRequirementActions } from "../checklist/requirementActions";
 import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActionModel";
 import { useInPlatformActions } from "../clara/useInPlatformActions";
 
@@ -194,23 +195,42 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
     question: question ? { prompt: question.text } : null,
     ...inPlatform.handlers,
   }, language);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [detailsRequest, setDetailsRequest] = useState(0);
+  useEffect(() => {
+    if (detailsRequest) rowRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [detailsRequest]);
+  const standard = standardRequirementActions(actions, {
+    onViewDetails: () => {
+      setOpen(true);
+      setDetailsRequest((n) => n + 1);
+    },
+    onExplainClara: inPlatform.onExplainClara,
+    onAnswer: question ? () => setAskOpen((q) => !q) : null,
+    blockedReason: item.status === "expert" ? (es ? "Necesita revisión de un experto antes de radicar" : "Needs an expert check before filing") : null,
+  }, language);
   return (
-    <div role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
+    <div ref={rowRef} role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {num !== undefined && <span className="ck-num">{num}</span>}
           <RowName name={item.name} model={actions} language={language} />
-          {item.agency && <span className="ck-agency">{item.agency}</span>}
+          {item.agency && <span className="ck-agency" title={item.agency}>{item.agency}</span>}
           <StatusPill status={item.status} language={language} />
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
         </button>
-        <RowActions model={actions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
+        <StandardRowActions actions={standard} language={language} answerOpen={askOpen} />
       </div>
       {askOpen && question && <QuestionLine q={question} language={language} standalone />}
       {inPlatform.dialogs(actions)}
       {open && (
         <div className="ck-row-body">
           <p className="ck-why">{item.why}</p>
+          {item.agency && (
+            <dl className="rq-detail-grid" data-testid="requirement-details">
+              <div><dt>{es ? "Agencia" : "Agency"}</dt><dd>{item.agency}</dd></div>
+            </dl>
+          )}
           {item.what && item.what !== item.why && <p className="ck-what">{item.what}</p>}
           {p.voluntary && p.voluntary_note && <p className="ck-what">{p.voluntary_note}</p>}
           {item.needs.length > 0 && (

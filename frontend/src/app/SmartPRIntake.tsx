@@ -133,6 +133,7 @@ import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
 import { IncentivesSidebar } from './components/incentives/IncentivesSidebar';
+import { openSmartPRChat } from './components/chat/openChat';
 import { EnergyProcessesSection, energySummaryQuestions, type EnergyLegacyCard } from './components/energy/EnergyProcessesSection';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
@@ -147,7 +148,7 @@ import {
   CheckCircle, AlertTriangle, Info, FileText,
   ArrowRight, RefreshCw, Download, Building2, Archive, ExternalLink,
   ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, Eye,
-  Star, Sparkles,
+  Star, Sparkles, MessageCircle,
 } from 'lucide-react';
 
 // SmartPR
@@ -5461,7 +5462,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // tied to its obligations) and a signed-in owner — never a local draft id.
   const persistedBusinessId = businessId && !businessId.startsWith('local-') ? businessId : null;
   const claraBusinessId = me ? (persistedBusinessId ?? 'pending') : null;
-  const openClara = async (documentId: string) => {
+  const openClara = async (documentId?: string) => {
     if (!me) return;
     // An existing business links its Passport; any other signed-in intake
     // gets its business record now (ensurePersistedBusiness).
@@ -5492,7 +5493,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       }).catch(() => undefined),
       new Promise((resolve) => setTimeout(resolve, 8000)),
     ]);
-    window.location.href = `/businesses/${encodeURIComponent(id)}/agency-run?filing=${encodeURIComponent(documentId)}`;
+    window.location.href = `/businesses/${encodeURIComponent(id)}/agency-run${documentId ? `?filing=${encodeURIComponent(documentId)}` : ''}`;
   };
   const filingFor = (req: Requirement): RequirementFiling | null => {
     const { support } = claraSupportFor(req.document_id);
@@ -7272,7 +7273,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             />
           )}
 
-          <div className="spr-requirements-layout spr-requirements-layout-single">
+          <div className="spr-requirements-layout">
           <div className="spr-requirements-main">
           <RequirementActionsProvider value={{ businessId: persistedBusinessId, signedIn: !!me, prefill: { legalName: profile.name || undefined, tradeName: profile.trade_name, ein: profile.ein, address: profile.physical_address, municipality: profile.municipality || undefined, contactName: profile.owner_name, email: profile.email, phone: profile.phone } }}>
           {requirements.length > 0 && (
@@ -7441,22 +7442,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </details>
           )}
 
-          {/* Incentives render in ONE place: a small collapsed section. The
-              incentive engine's opportunities come first; process-graph energy
-              incentives are added only when their program is not already listed. */}
-          <IncentivesSidebar
-            variant="section"
-            profile={profile}
-            facts={incentiveFacts}
-            language={language}
-            initialAssessment={incentiveAssessmentHistory.at(-1) ?? null}
-            pursuedIncentives={pursuedIncentives}
-            onAssessmentChange={recordIncentiveAssessment}
-            onFactChange={(key, value) => setIncentiveFacts((current) => ({ ...current, [key]: value }))}
-            onReview={handleReviewIncentive}
-            onRemovePursued={handleRemovePursuedIncentive}
-            extraIncentives={energyAssessment?.incentives ?? []}
-          />
 
           {/* View options: the status filter and advisory recommendations sit
               below the collapsed groups, closed, so they never crowd the
@@ -7540,6 +7525,43 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </div>
           </RequirementActionsProvider>
           </div>
+
+          {/* Right sidebar: Clara and the existing Incentives panel. */}
+          <aside className="spr-requirements-sidebar" aria-label={L('Help and incentives', language)}>
+            <div className="rq-side-stack">
+              <section className="rq-clara-card" data-testid="sidebar-clara">
+                <h2><Sparkles className="i" style={{ width: 15, height: 15 }} /> Clara</h2>
+                <p>{L('Need help with a requirement? Clara fills what she can from your business info and tells you what she needs.', language)}</p>
+                <div className="rq-clara-actions">
+                  {me ? (
+                    <button type="button" className="rq-std-btn rq-std-clara" onClick={() => { void openClara(); }}>
+                      <Sparkles size={14} aria-hidden="true" /> {L('Fill with Clara', language)}
+                    </button>
+                  ) : (
+                    <a className="rq-std-btn rq-std-clara" href={`/auth/login?next=${typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '%2F'}`}>
+                      <Sparkles size={14} aria-hidden="true" /> {L('Fill with Clara', language)}
+                    </a>
+                  )}
+                  <button type="button" className="rq-std-btn rq-std-ask" onClick={() => openSmartPRChat()}>
+                    <MessageCircle size={14} aria-hidden="true" /> {L('Ask Clara', language)}
+                  </button>
+                </div>
+              </section>
+              <IncentivesSidebar
+                variant="sidebar"
+                profile={profile}
+                facts={incentiveFacts}
+                language={language}
+                initialAssessment={incentiveAssessmentHistory.at(-1) ?? null}
+                pursuedIncentives={pursuedIncentives}
+                onAssessmentChange={recordIncentiveAssessment}
+                onFactChange={(key, value) => setIncentiveFacts((current) => ({ ...current, [key]: value }))}
+                onReview={handleReviewIncentive}
+                onRemovePursued={handleRemovePursuedIncentive}
+                extraIncentives={energyAssessment?.incentives ?? []}
+              />
+            </div>
+          </aside>
 
           </div>
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, ChevronDown, ClipboardList, Clock, CloudUpload, ArrowRight, ExternalLink, Lock, Upload, Sparkles, FileText } from "lucide-react";
 import type { IconTone } from "./requirementCopy";
-import { RowActions, RowName, RowQuestion } from "../checklist/RowActions";
+import { RowName, RowQuestion, StandardRowActions } from "../checklist/RowActions";
 import { requirementRowActions } from "../checklist/rowActionModel";
+import { standardRequirementActions } from "../checklist/requirementActions";
 import { useInPlatformActions } from "../clara/useInPlatformActions";
 
 export type RequirementActionKind = "upload" | "form" | "waiting" | "completed" | "none";
@@ -233,6 +234,22 @@ export function RequirementCard({
     language
   );
   const rowActions = requirementRowActions({ action, filing, download, secondary, secondaryOnCompleted, answerPrompt, verifyExisting, ...inPlatform.handlers }, language);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [detailsRequest, setDetailsRequest] = useState(0);
+  useEffect(() => {
+    if (detailsRequest) cardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [detailsRequest]);
+  const viewDetails = () => {
+    setOpen(true);
+    setDetailsRequest((n) => n + 1);
+  };
+  const actions = standardRequirementActions(rowActions, {
+    onViewDetails: viewDetails,
+    onExplainClara: inPlatform.onExplainClara,
+    onAnswer: answerPrompt ? () => setAskOpen((q) => !q) : null,
+    blockedReason: action.kind === "waiting" ? action.label : null,
+  }, language);
+  const es = language === "es";
   const whyRef = useRef<HTMLDetailsElement>(null);
   const openInstructions = () => {
     setOpen(true);
@@ -245,17 +262,17 @@ export function RequirementCard({
   };
   const bodyId = id ? `${id}-body` : undefined;
   return (
-    <div id={id} className={`rq-card ck-card ${open ? "ck-row-open" : ""}`}>
+    <div id={id} ref={cardRef} className={`rq-card ck-card ${open ? "ck-row-open" : ""}`}>
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
           <span className="ck-num">{index}</span>
           <RowName name={name} model={rowActions} language={language} />
-          {agency && <span className="ck-agency">{agency}</span>}
+          {agency && <span className="ck-agency" title={agency}>{agency}</span>}
           {badge && <span className={`ck-pill rq-badge-${badge.tone}`}>{badge.label}</span>}
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
         </button>
         {/* The primary action(s) on the collapsed line — same handlers as below. */}
-        <RowActions model={rowActions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
+        <StandardRowActions actions={actions} language={language} answerOpen={askOpen} />
       </div>
       {inPlatform.dialogs(rowActions)}
       {askOpen && !open && answerPrompt && (
@@ -266,6 +283,22 @@ export function RequirementCard({
         <div className="ck-row-body" id={bodyId}>
           {contextLabel && <div className="rq-context-label">{contextLabel}</div>}
           <p className="ck-why">{whySentence || description}</p>
+          <dl className="rq-detail-grid" data-testid="requirement-details">
+            {whySentence && description && (
+              <div><dt>{es ? "Qué es" : "What this is"}</dt><dd>{description}</dd></div>
+            )}
+            {agency && <div><dt>{es ? "Agencia" : "Agency"}</dt><dd>{agency}</dd></div>}
+            {badge && <div><dt>{es ? "Estado" : "Status"}</dt><dd>{badge.label}</dd></div>}
+            {needs && needs.filter((n) => n.trim()).length > 0 && (
+              <div className="rq-detail-wide">
+                <dt>{es ? "Documentos / evidencia" : "Documents / evidence"}</dt>
+                <dd><ul>{needs.filter((n) => n.trim()).map((n) => <li key={n}>{n}</li>)}</ul></dd>
+              </div>
+            )}
+            {facts?.map((f) => (
+              <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>
+            ))}
+          </dl>
           {answerPrompt && (
             <div className="rq-answer-prompt" role="group" aria-label={answerPrompt.prompt}>
               <div className="rq-answer-prompt-q">{answerPrompt.prompt}</div>
@@ -345,18 +378,7 @@ export function RequirementCard({
               {fullReasoningLabel ?? whyLabel} <ChevronDown size={13} className="rq-why-chevron" />
             </summary>
             <div className="rq-why-body">
-              {whySentence && description && <p className="rq-card-desc">{description}</p>}
               {why}
-              {facts && facts.length > 0 && (
-                <dl className="rq-facts">
-                  {facts.map((f) => (
-                    <div key={f.label} className="rq-fact">
-                      <dt>{f.label}</dt>
-                      <dd>{f.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
             </div>
           </details>
           {extra && extraInBody && <div className="rq-card-extra">{extra}</div>}

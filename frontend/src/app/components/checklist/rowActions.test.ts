@@ -85,18 +85,20 @@ test("collapsed RequirementCard renders the CTA on its line (outside the toggle)
     language: "en",
   }));
   const line = html.slice(html.indexOf("ck-card-line"), html.indexOf("ck-card-line") + html.slice(html.indexOf("ck-card-line")).indexOf("</div></div>"));
-  assert.match(line, /data-testid="row-cta"[^>]*data-cta="form"/);
-  assert.match(line, />Complete form</);
+  assert.match(line, /title="Complete registration form" data-testid="row-complete" data-route="smartpr_form"/);
+  assert.match(line, />Complete</);
+  assert.match(line, /data-testid="row-clara" data-route="explain"[^>]*>.*Fill with Clara</);
+  assert.match(line, /data-testid="row-details"[^>]*>.*View details</);
   assert.match(line, /data-testid="row-more"/);
   assert.ok(!/ck-row-body/.test(html), "details not rendered while collapsed");
   // The CTA is not inside the toggle button.
   const toggle = html.slice(html.indexOf('class="ck-row-head"'), html.indexOf("</button>", html.indexOf('class="ck-row-head"')));
-  assert.ok(!/row-cta/.test(toggle));
+  assert.ok(!/row-complete|row-clara|row-details/.test(toggle));
   const done = renderToStaticMarkup(createElement(RequirementCard, {
     index: 2, icon: null, iconTone: "gray", name: "EIN", description: "d", whyLabel: "Why", why: null,
     action: { kind: "completed", label: "Completed", onClick: noop }, language: "es",
   }));
-  assert.match(done, /data-cta="view"[^>]*>.*Ver</);
+  assert.match(done, /data-route="done"[^>]*>.*Completado</);
 });
 
 const PORTAL = { url: "https://www.sbp.pr.gov/", label: "OGPe Single Business Portal (SBP)", label_es: "Single Business Portal de OGPe (SBP)" };
@@ -179,8 +181,8 @@ test("collapsed RequirementCard: an instructions-only row shows 'Complete form' 
     filing: { kind: "instructions", label: "View filing instructions", href: "https://www.drna.pr.gov/guia.pdf", agencySite: { label: "Open agency site", url: "https://www.drna.pr.gov" } },
     language: "en", id: "req-row-DOC_X",
   }));
-  assert.match(html, /<button[^>]*data-testid="row-cta"[^>]*data-cta="guided"/);
-  assert.ok(!/<a[^>]*data-testid="row-cta"/.test(html), "the inline primary is never an <a> out of SmartPR");
+  assert.match(html, /<button[^>]*data-testid="row-complete" data-route="smartpr_form"/);
+  assert.ok(!/<a[^>]*data-testid="row-(complete|clara)"/.test(html), "Complete / Fill with Clara never link out of SmartPR");
   assert.match(html, /data-testid="row-more"/);
 });
 

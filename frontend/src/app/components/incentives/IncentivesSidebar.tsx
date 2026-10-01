@@ -131,14 +131,15 @@ export function IncentivesSidebar({
   }, [variant]);
 
   const opportunities = assessment?.opportunities ?? [];
-  const topMatches = opportunities.slice(0, 2);
   const questionCount = assessment?.followUpQuestions.length ?? 0;
+  // Only programs with a real signal for this project; the drawer keeps the full list.
+  const relevant = relevantIncentiveOpportunities(opportunities);
+  const { extra } = unifiedIncentives(relevant, extraIncentives);
+  const count = relevant.length + extra.length;
+  const topMatches = relevant.slice(0, 2);
+  const topExtra = extra.slice(0, Math.max(0, 2 - topMatches.length));
 
   if (variant === "section") {
-    // Only programs with a real signal for this project; the drawer keeps the full list.
-    const relevant = relevantIncentiveOpportunities(opportunities);
-    const { extra } = unifiedIncentives(relevant, extraIncentives);
-    const count = relevant.length + extra.length;
     return (
       <details className="rq-group ck-group rq-group-incentives" data-testid="req-group-incentives">
         <style>{`
@@ -258,20 +259,20 @@ export function IncentivesSidebar({
       <button type="button" className="inc-mobile-trigger" onClick={() => setShowAll(true)}>
         <span className="inc-mobile-trigger-label">
           <Lightbulb size={15} aria-hidden="true" style={{ marginRight: 6, verticalAlign: "-2px" }} />
-          {loading ? (es ? "Evaluando oportunidades…" : "Evaluating opportunities…") : `${opportunities.length} ${es ? "oportunidades" : "opportunities"}`}
+          {loading ? (es ? "Evaluando incentivos…" : "Evaluating incentives…") : `${count} ${es ? "incentivos" : "incentives"}`}
         </span>
         <ArrowRight size={14} aria-hidden="true" />
       </button>
 
       <div className="inc-card">
         <div className="inc-head">
-          <div className="inc-head-title"><Lightbulb size={15} aria-hidden="true" /> {es ? "Oportunidades" : "Opportunities"}</div>
-          {!loading && <span className="inc-count">{opportunities.length} {es ? "identificadas" : "identified"}</span>}
+          <div className="inc-head-title"><Lightbulb size={15} aria-hidden="true" /> {es ? "Incentivos" : "Incentives"}</div>
+          {!loading && <span className="inc-count">{count} {es ? "identificados" : "identified"}</span>}
         </div>
 
         {loading && <div className="inc-loading">{es ? "Evaluando…" : "Evaluating…"}</div>}
 
-        {!loading && topMatches.length === 0 && (
+        {!loading && count === 0 && (
           <div className="inc-empty">{es
             ? "Aún no hay coincidencias publicadas para este perfil."
             : "No published matches for this profile yet."}</div>
@@ -295,9 +296,20 @@ export function IncentivesSidebar({
           );
         })}
 
-        {!loading && opportunities.length > 0 && (
-          <button type="button" className="inc-viewall" onClick={() => setShowAll(true)}>
-            {es ? "Ver todas las oportunidades" : "View all opportunities"} <ArrowRight size={13} aria-hidden="true" />
+        {!loading && topExtra.map((i) => (
+          <div key={i.incentive_id} className="inc-match" data-testid={`incentive-${i.incentive_id}`}>
+            <div className={`inc-status ${i.state === "POTENTIALLY_ELIGIBLE" ? "possible" : "info"}`}>
+              {i.state === "POTENTIALLY_ELIGIBLE" ? (es ? "Posiblemente elegible" : "Possibly eligible") : (es ? "Falta información" : "More information needed")}
+            </div>
+            <div className="inc-match-name">{i.program_name ?? i.name}</div>
+            <div className="inc-match-benefit">{i.agencies.map(shortAgency).join(" / ")}</div>
+            <a className="inc-review" href={i.citation.url} target="_blank" rel="noreferrer">{es ? "Fuente" : "Source"} <ArrowRight size={12} aria-hidden="true" /></a>
+          </div>
+        ))}
+
+        {!loading && (opportunities.length > 0 || count > 0) && (
+          <button type="button" className="inc-viewall" onClick={() => setShowAll(true)} data-testid="view-incentives">
+            {es ? "Ver incentivos" : "View incentives"} <ArrowRight size={13} aria-hidden="true" />
           </button>
         )}
 
