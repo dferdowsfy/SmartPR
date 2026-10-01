@@ -8,11 +8,14 @@
 //
 // Never fails because a layer is down: that layer comes back `unknown` with
 // a reason. Separate from /api/locations/resolve so the municipio answer
-// stays instant. No database and no account needed (serves the intake).
+// stays instant. No account needed (serves the intake). When a database is
+// configured, answers are also persisted per pin (site_layer_cache) so a
+// government service outage never blanks a pin that was resolved before.
 
 import { rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { resolveSiteLayers } from "../../../locations/layerService";
+import { getLayerStore } from "../../../locations/layerStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +31,6 @@ export async function GET(req: Request) {
   if (!isWithinPuertoRico(coords.latitude, coords.longitude)) {
     return Response.json({ layers: null, reason: "outside_puerto_rico" }, { headers: { "Cache-Control": "no-store" } });
   }
-  const layers = await resolveSiteLayers(coords.latitude, coords.longitude);
+  const layers = await resolveSiteLayers(coords.latitude, coords.longitude, { store: getLayerStore() });
   return Response.json({ layers }, { headers: { "Cache-Control": "no-store" } });
 }

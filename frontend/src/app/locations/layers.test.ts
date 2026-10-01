@@ -30,7 +30,7 @@ import {
   type ArcGisQueryResponse,
   type SiteLayers,
 } from "./layers.ts";
-import { LayerCache, resolveSiteLayers, type FetchLike } from "./layerService.ts";
+import { LayerCache, resolveSiteLayers, type FetchLike, type LayerStore } from "./layerService.ts";
 import { restoreIntakeSite, siteEngineFacts, siteFactDetails, type IntakeSite } from "./intakeLocation.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -191,6 +191,72 @@ test("FEMA MSC parity: resolving a pin queries community + LOMA/LOMR and links t
   assert.equal(layer(degraded, "flood_zone").code, "X");
   assert.equal(floodMapSummary(degraded)?.mapChangeCount, null);
   assert.equal(floodMapSummary({ ...degraded, results: [] }), null);
+});
+
+test("resilience: a dropped connection is retried once; timeouts and 4xx are not", async () => {
+  const [lat, lng] = FX.points.toa_baja_ae;
+  const base = fixtureFetch();
+  const flaky = (mode: "reset" | "timeout" | "404") => {
+    const seen = new Map<string, number>();
+    const f: FetchLike = async (url, init) => {
+      const k = url.split("?")[0];
+      const n = (seen.get(k) ?? 0) + 1;
+      seen.set(k, n);
+      if (k.startsWith(LAYER_SOURCES.fema_flood_zones.url) && n === 1) {
+        if (mode === "reset") throw new Error("SSL_ERROR_SYSCALL");
+        if (mode === "404") return { ok: false, status: 404, json: async () => ({}) };
+        return new Promise((_, reject) => init?.signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" }))));
+      }
+      return base(url, init);
+    };
+    return { f, seen };
+  };
+  const run = (f: FetchLike) => resolveSiteLayers(lat, lng, { fetchImpl: f, cache: new LayerCache(), timeoutMs: FAST, retryDelayMs: 0, now: () => new Date(AT) });
+  const reset = flaky("reset");
+  assert.equal(layer(await run(reset.f), "flood_zone").code, "AE", "a connection reset is retried and recovers");
+  assert.equal(reset.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 2);
+  const slow = flaky("timeout");
+  assert.equal(layer(await run(slow.f), "flood_zone").status, "unknown", "a timeout is not retried");
+  assert.equal(slow.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 1);
+  const notFound = flaky("404");
+  assert.equal(layer(await run(notFound.f), "flood_zone").reason, "http_404");
+  assert.equal(notFound.seen.get(LAYER_SOURCES.fema_flood_zones.url + "/query"), 1, "a 404 is not retried");
+});
+
+function memoryStore(): LayerStore & { rows: Map<string, { at: number; result: unknown }> } {
+  const rows = new Map<string, { at: number; result: unknown }>();
+  return {
+    rows,
+    load: async (keys) => keys.filter((k) => rows.has(k)).map((k) => ({ key: k, at: rows.get(k)!.at, result: rows.get(k)!.result as never })),
+    save: async (entries) => {
+      for (const e of entries) rows.set(e.key, { at: e.at, result: e.result });
+    },
+  };
+}
+
+test("shared store: answers survive a restart, and a FEMA outage serves the stored answer as stale", async () => {
+  const store = memoryStore();
+  const [lat, lng] = FX.points.toa_baja_ae;
+  const t0 = new Date(AT);
+  const first = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache: new LayerCache(), store, timeoutMs: FAST, now: () => t0 });
+  assert.equal(layer(first, "flood_zone").code, "AE");
+  assert.ok([...store.rows.keys()].some((k) => k.startsWith("flood_zone:")), "answered layers are persisted");
+  // New process (empty memory cache), FEMA completely down, 3 days later.
+  const later = new Date(t0.getTime() + 3 * 24 * 3600_000);
+  const down: FetchLike = async () => ({ ok: false, status: 503, json: async () => ({}) });
+  const after = await resolveSiteLayers(lat, lng, { fetchImpl: down, cache: new LayerCache(), store, timeoutMs: FAST, retryDelayMs: 0, now: () => later });
+  const flood = layer(after, "flood_zone");
+  assert.equal(flood.code, "AE");
+  assert.equal(flood.retrieval, "stale_cache");
+  // Within 24 h the stored answer is fresh: no FEMA call at all.
+  const calls: string[] = [];
+  const soon = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(calls), cache: new LayerCache(), store, timeoutMs: FAST, now: () => new Date(t0.getTime() + 3600_000) });
+  assert.equal(layer(soon, "flood_zone").retrieval, "cached");
+  assert.equal(calls.filter((c) => c.startsWith(LAYER_SOURCES.fema_flood_zones.url)).length, 0);
+  // A broken store never breaks a pin.
+  const broken: LayerStore = { load: async () => { throw new Error("db down"); }, save: async () => { throw new Error("db down"); } };
+  const ok = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache: new LayerCache(), store: broken, timeoutMs: FAST, now: () => t0 });
+  assert.equal(layer(ok, "flood_zone").code, "AE");
 });
 
 test("JP calificación: zoning + land class + catastro; VIAL is not a land class; no polygon is unknown", () => {

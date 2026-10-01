@@ -226,3 +226,18 @@ BEGIN
     CREATE POLICY smartpr_geo_features_read ON geo_features FOR SELECT TO authenticated USING (true);
   END IF;
 END $$;
+
+-- Official-map answers per pin (FEMA / JP / CRIM), shared across server
+-- instances and restarts so a flaky government service never blanks a pin
+-- that was resolved before. Public geographic data only; no business or user
+-- link. Written by the server only (RLS on, no policies).
+CREATE TABLE IF NOT EXISTS site_layer_cache (
+  cache_key TEXT PRIMARY KEY,
+  layer TEXT NOT NULL,
+  latitude DOUBLE PRECISION NOT NULL,
+  longitude DOUBLE PRECISION NOT NULL,
+  result JSONB NOT NULL,
+  fetched_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_site_layer_cache_fetched ON site_layer_cache (fetched_at);
+ALTER TABLE site_layer_cache ENABLE ROW LEVEL SECURITY;
