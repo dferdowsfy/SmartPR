@@ -6,7 +6,7 @@
 // toggle (stopPropagation) and run the card's own handlers.
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 
 type Language = "en" | "es";
@@ -16,7 +16,9 @@ const stop = (e: MouseEvent) => e.stopPropagation();
 function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
   if (locked) return <Lock size={14} aria-hidden="true" />;
   switch (kind) {
-    case "form": return <ClipboardList size={14} aria-hidden="true" />;
+    case "form":
+    case "guided": return <ClipboardList size={14} aria-hidden="true" />;
+    case "teach": return <GraduationCap size={14} aria-hidden="true" />;
     case "upload":
     case "confirm": return <Upload size={14} aria-hidden="true" />;
     case "assist": return <Sparkles size={14} aria-hidden="true" />;

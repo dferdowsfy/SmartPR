@@ -21,6 +21,7 @@ import { ArrowLeft, GraduationCap, Hand, Loader2, Plus, Split } from "lucide-rea
 import { useLang } from "../../../useLang";
 import type { Lang } from "../../../forms/engine/types";
 import { SkillCardView } from "../../../components/skills/SkillCardView";
+import { TeachClaraForm } from "../../../components/clara/TeachClaraForm";
 import type { SkillCard } from "../../../../lib/agency-runs/skills/skillCard";
 import { GATE_NAMES } from "../../../../lib/agency-runs/skills/skillCard";
 import { PASSPORT_CATALOG } from "../../../../lib/agency-runs/teach/passportCatalog";
@@ -220,9 +221,19 @@ function TeachFlow({ businessId }: { businessId: string }) {
   const [addTitle, setAddTitle] = useState("");
   const [addGate, setAddGate] = useState<TeachGate | "">("");
   const [isAdmin, setIsAdmin] = useState(false);
+  // Two ways to teach: describe the steps (always available — Teach Clara
+  // v1 playbooks), or walk through live (needs the self-hosted browser
+  // worker). Describe leads whenever the live recorder isn't connected.
+  const [mode, setMode] = useState<"describe" | "live">(() => (search.get("mode") === "live" ? "live" : "describe"));
+  const [liveAvailable, setLiveAvailable] = useState<boolean | null>(null);
+  const requirementKey = search.get("requirement") || form || "filing";
 
   useEffect(() => {
     fetch("/api/me", { cache: "no-store" }).then((r) => r.json()).then((me) => setIsAdmin(Boolean(me?.user?.isAdmin))).catch(() => undefined);
+    fetch("/api/clara-playbooks", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => setLiveAvailable(Boolean(b?.live_recorder)))
+      .catch(() => setLiveAvailable(false));
   }, []);
 
   const fail = useCallback(
@@ -353,6 +364,40 @@ function TeachFlow({ businessId }: { businessId: string }) {
         {error && <p role="alert" className="rounded-2xl border border-rose-300/40 bg-rose-500/10 px-4 py-3 text-[14px] text-rose-100">{error}</p>}
 
         {!session && (
+          <div className="mx-auto flex max-w-2xl gap-1 rounded-full bg-black/30 p-1" role="tablist" aria-label={L("How to teach Clara", "Cómo enseñarle a Clara", lang)}>
+            {([
+              ["describe", L("Describe the steps", "Describir los pasos", lang)],
+              ["live", L("Show her live", "Mostrárselo en vivo", lang)],
+            ] as const).map(([m, label]) => (
+              <button key={m} type="button" role="tab" aria-selected={mode === m} data-testid={`teach-mode-${m}`} onClick={() => setMode(m)}
+                className={`flex-1 rounded-full px-3 py-1.5 text-[15px] font-semibold transition ${mode === m ? "bg-[#fbf8f2] text-[#161616]" : "text-[#cfc6b4] hover:text-white"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!session && mode === "describe" && (
+          <section className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <TeachClaraForm
+              target={{ requirementKey, requirementName: form || L("This filing", "Este trámite", lang), agency: portal || null, portalUrl: startUrl || null }}
+              language={lang}
+              tone="dark"
+            />
+          </section>
+        )}
+
+        {!session && mode === "live" && liveAvailable === false && (
+          <p className="mx-auto max-w-2xl rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-[15px] text-amber-100" data-testid="teach-live-unavailable">
+            {L(
+              "Live walkthroughs need Clara's browser, which isn't connected on this server yet. Describe the steps instead — Clara uses them the same way.",
+              "El recorrido en vivo necesita el navegador de Clara, que todavía no está conectado en este servidor. Describe los pasos — Clara los usa igual.",
+              lang
+            )}
+          </p>
+        )}
+
+        {!session && mode === "live" && (
           <section className="mx-auto max-w-2xl space-y-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
             <p className="text-[15px] leading-relaxed text-[#e8e1d0]">
               {L(
@@ -378,7 +423,7 @@ function TeachFlow({ businessId }: { businessId: string }) {
               <span className="text-[13px] font-semibold text-[#b9b0a0]">{L("Agency or portal name (optional)", "Nombre de la agencia o portal (opcional)", lang)}</span>
               <input value={portal} onChange={(e) => setPortal(e.target.value)} className="w-full rounded-xl border border-white/15 bg-[#1f1f1f] px-3 py-2 text-[15px] text-[#f4efe2]" />
             </label>
-            <button type="button" className={primary} disabled={busy || !startUrl.trim() || !form.trim()} onClick={start}>
+            <button type="button" className={primary} disabled={busy || !startUrl.trim() || !form.trim() || liveAvailable === false} onClick={start}>
               {busy ? <Loader2 className="inline h-4 w-4 animate-spin" /> : L("Open the site and start", "Abrir la página y empezar", lang)}
             </button>
           </section>

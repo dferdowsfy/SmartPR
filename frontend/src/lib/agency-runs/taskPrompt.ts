@@ -1,3 +1,4 @@
+import { renderTaughtPlaybookBlock, type TaughtPlaybook } from "./teach/taughtPlaybooks";
 import type { AgencyFilingConfig, PlaybookChannel } from "./filingTypes";
 import { renderPortalFieldMapping } from "./canonicalFields";
 import {
@@ -207,6 +208,8 @@ export function buildAgencyTaskPrompt(input: {
    * (instead of the generic pause-handling resumeHint text).
    */
   authorizeResume?: boolean;
+  /** Teach Clara v1: the steps a user described for this portal (labels only). */
+  taughtPlaybook?: TaughtPlaybook | null;
 }): string {
   const { config } = input;
   // SECURITY: strip sensitive leaves (SSN, passwords, MFA, …) before the
@@ -385,7 +388,7 @@ ${passportBlock}
 \`\`\`
 
 ${procedureHeading}
-${procedure}${flowBlock}
+${procedure}${flowBlock}${renderTaughtPlaybookBlock(input.taughtPlaybook)}
 ${pathStatusBlock ? `${pathStatusBlock}\n` : ""}${authorizeBlock}${resume}${fieldsBlock}
 
 When finished or paused, end with a short status line containing exactly one marker: ${pauseMarkers}

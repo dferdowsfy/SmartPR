@@ -177,6 +177,8 @@ export interface AgencyRun {
    * requirement; the browser agent executes only this objective.
    */
   submission_objective?: SubmissionObjective | null;
+  /** Teach Clara v1: the described playbook this run read (ids only). */
+  taught_playbook_ref?: { id: string; owner_user_id: string; requirement_key: string; portal_host: string; version: number } | null;
 }
 
 export interface AgencyRunPublic {

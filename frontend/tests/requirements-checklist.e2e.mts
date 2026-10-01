@@ -645,6 +645,12 @@ async function installStubs(page: Page) {
     const p = new URL(route.request().url()).pathname;
     if (p === "/api/snapshots/e2e-req") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(snapshot) });
     if (p === "/api/me") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ user: null }) });
+    // Teach Clara v1, signed out: nothing saved yet; saving keeps it on the device.
+    if (p === "/api/clara-playbooks") {
+      return route.request().method() === "POST"
+        ? route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: "sign_in_required" }) })
+        : route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ signed_in: false, live_recorder: false, playbooks: [] }) });
+    }
     // Pure computation, no database: the real server route answers.
     if (p === "/api/incentives/evaluate") return route.continue();
     return route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"stubbed"}' });
@@ -740,6 +746,108 @@ await page.locator('[data-testid="req-group-incentives"] > summary').click().cat
     if (!((await cta.count()) > 0 && (await cta.isVisible()))) missing.push((await r.locator(".ck-name").first().innerText()).trim());
   }
   check("every Required energy row has a visible inline action", required > 0 && missing.length === 0, `${required} required, missing: ${missing.join(" | ") || "none"}`);
+}
+
+// In-platform rule (Darius 2026-09-30): no row's inline primary takes the
+// user out of SmartPR — portals / agency sites / PDFs live in ⋯ or details.
+{
+  const offenders = await main.evaluate((root) => Array.from(root.querySelectorAll('[data-testid="row-actions"] > [data-testid="row-cta"]'))
+    .filter((el) => (el as HTMLElement).offsetParent !== null)
+    .filter((el) => {
+      const kind = el.getAttribute("data-cta") ?? "";
+      const href = el.getAttribute("href");
+      return ["portal", "site", "instructions", "download"].includes(kind) || el.getAttribute("target") === "_blank" || (!!href && !href.startsWith("/"));
+    })
+    .map((el) => `${el.closest(".ck-card-line")?.querySelector(".ck-name")?.textContent?.trim()} → ${el.getAttribute("data-cta")}`));
+  check("no inline primary action leaves SmartPR", offenders.length === 0, offenders.join(" | ") || "none");
+  const kinds = await main.evaluate((root) => Array.from(root.querySelectorAll('[data-testid="row-actions"] > [data-testid="row-cta"]')).map((el) => el.getAttribute("data-cta")));
+  console.log("inline primaries:", kinds.join(","));
+  check("energy rows lead with 'Complete form' (guided) when they have no form of their own", kinds.includes("guided"), kinds.join(","));
+}
+await page.screenshot({ path: path.join(OUT, `${tag}_inline_actions.png`), fullPage: true });
+
+// "Complete form" opens SmartPR's guided form in place (the row stays collapsed).
+{
+  const guidedRow = main.locator('.ck-row, .ck-card').filter({ has: page.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-cta="guided"]') }).first();
+  if (await guidedRow.count()) {
+    const name = (await guidedRow.locator(".ck-name").first().innerText()).trim();
+    await guidedRow.locator(':scope > .ck-card-line [data-testid="row-actions"] > [data-cta="guided"]').click();
+    const dlg = page.locator('[data-testid="guided-form"]');
+    const opened = await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
+    check("'Complete form' opens the guided in-platform form", opened, name);
+    check("…without expanding the row", (await guidedRow.locator(".ck-row-head").first().getAttribute("aria-expanded")) === "false");
+    if (opened) {
+      const fields = await dlg.locator(".cl-field").count();
+      check("guided form has a field per 'What you'll need' item plus business details", fields >= 6, `${fields} fields`);
+      check("guided form keeps the portal secondary (no portal button in the footer)", (await dlg.locator('footer a[target="_blank"]').count()) === 0);
+      await page.screenshot({ path: path.join(OUT, `${tag}_guided_form.png`), fullPage: false });
+      await page.keyboard.press("Escape");
+      await dlg.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
+    }
+  }
+}
+
+// Teach Clara is reachable from every open row's ⋯ menu.
+{
+  const withMenu = main.locator('[data-testid="row-actions"]:has([data-testid="row-more"])');
+  const total = await withMenu.count();
+  let teachable = 0;
+  for (let i = 0; i < total; i++) {
+    const ra = withMenu.nth(i);
+    if (!(await ra.isVisible())) continue;
+    await ra.locator('[data-testid="row-more"]').click();
+    if (await ra.locator('[data-testid="row-more-item"][data-cta="teach"]').count()) teachable++;
+    await page.keyboard.press("Escape");
+  }
+  const visibleRows = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && !e.querySelector('[data-testid="row-done"]')).length);
+  check("Teach Clara in the ⋯ menu of every open row", teachable > 0 && teachable === visibleRows, `${teachable}/${visibleRows}`);
+  const portalRow = main.locator('[data-testid="req-group-energy"] [data-testid="row-actions"]:has([data-testid="row-more"])').first();
+  if (await portalRow.count()) {
+    await portalRow.locator('[data-testid="row-more"]').click();
+    const items = await portalRow.locator('[data-testid="row-more-item"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-cta")));
+    check("the official portal is in the ⋯ menu", items.includes("portal"), items.join(","));
+    await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_menu.png`), fullPage: false });
+    await portalRow.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
+    const dlg = page.locator('[data-testid="teach-clara-dialog"]');
+    const opened = await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
+    check("Teach Clara opens in SmartPR", opened);
+    if (opened) {
+      const portal = await dlg.locator('[data-testid="teach-portal"]').inputValue();
+      check("Teach Clara is prefilled with the row's portal", /^https:\/\//.test(portal), portal);
+      await dlg.locator('[data-testid="teach-step"]').nth(0).fill("Sign in to the portal with the business account");
+      await dlg.locator('[data-testid="teach-step"]').nth(1).fill("New application → choose the review type, fill the project details");
+      await dlg.locator('[data-testid="teach-step"]').nth(2).fill("Upload the site plan and stop at the review page");
+      await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_dialog.png`), fullPage: false });
+      await dlg.locator('[data-testid="teach-save"]').click();
+      const saved = await dlg.locator('[data-testid="teach-saved"]').waitFor({ timeout: 5000 }).then(() => true).catch(() => false);
+      check("Teach Clara saves (signed out: on this device)", saved);
+      await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_saved.png`), fullPage: false });
+      await page.keyboard.press("Escape");
+      await dlg.waitFor({ state: "detached", timeout: 5000 }).catch(() => undefined);
+    }
+  }
+}
+
+// Spanish: the same buttons, localized.
+{
+  const langBtn = page.getByRole("button", { name: /^(ES|Español)$/ }).first();
+  if (await langBtn.isVisible().catch(() => false)) {
+    await langBtn.click();
+    await page.waitForTimeout(600);
+    const labels = await main.locator('[data-testid="row-actions"] > [data-testid="row-cta"]').allInnerTexts();
+    check("ES: inline actions are in Spanish", labels.length > 0 && labels.every((l) => !/^(Complete form|Upload|Fill with Clara|Open portal|Start)$/.test(l.trim())), labels.map((l) => l.trim()).join(","));
+    await page.screenshot({ path: path.join(OUT, `${tag}_requirements_es.png`), fullPage: true });
+    const more = main.locator('[data-testid="req-group-energy"] [data-testid="row-more"]').first();
+    if (await more.count()) {
+      await more.click();
+      const t = await main.locator('[data-testid="row-more-item"][data-cta="teach"]').first().innerText().catch(() => "");
+      check("ES: 'Enséñale a Clara' in the ⋯ menu", /Enséñale a Clara/.test(t), t);
+      await page.screenshot({ path: path.join(OUT, `${tag}_teach_clara_menu_es.png`), fullPage: false });
+      await page.keyboard.press("Escape");
+    }
+    const enBtn = page.getByRole("button", { name: /^(EN|English)$/ }).first();
+    if (await enBtn.isVisible().catch(() => false)) { await enBtn.click(); await page.waitForTimeout(500); }
+  }
 }
 
 // An energy developer is an existing company: a "New energy project", its

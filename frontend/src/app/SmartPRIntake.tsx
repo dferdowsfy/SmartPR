@@ -126,6 +126,7 @@ import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExis
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
 import { requirementRowActions } from './components/checklist/rowActionModel';
+import { RequirementActionsProvider } from './components/clara/requirementActionsContext';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
@@ -7273,6 +7274,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
           <div className="spr-requirements-layout spr-requirements-layout-single">
           <div className="spr-requirements-main">
+          <RequirementActionsProvider value={{ businessId: persistedBusinessId, signedIn: !!me, prefill: { legalName: profile.name || undefined, tradeName: profile.trade_name, ein: profile.ein, address: profile.physical_address, municipality: profile.municipality || undefined, contactName: profile.owner_name, email: profile.email, phone: profile.phone } }}>
           {requirements.length > 0 && (
             <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={[]} language={language} location={summaryLocation} />
           )}
@@ -7536,6 +7538,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               </button>
             </div>
           </div>
+          </RequirementActionsProvider>
           </div>
 
           </div>

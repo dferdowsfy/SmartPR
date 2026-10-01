@@ -19,6 +19,7 @@ import { checklistQuestion, processChecklist, type ChecklistItem, type Checklist
 import { ConfidenceBadge, FullReasoning, QuestionLine, StatusPill, type SummaryQuestion } from "../checklist/ChecklistParts";
 import { ActionList, RowActions } from "../checklist/RowActions";
 import { EMPTY_ROW_ACTIONS, energyRowActions, mergeRowActions, type RowActionsModel } from "../checklist/rowActionModel";
+import { useInPlatformActions } from "../clara/useInPlatformActions";
 
 /** Legacy requirement card rendered through its energy process (upload path kept). */
 export interface EnergyLegacyCard {
@@ -173,21 +174,25 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
   const es = language === "es";
   const [open, setOpen] = useState(startOpen);
   const [askOpen, setAskOpen] = useState(false);
-  const [needsOpen, setNeedsOpen] = useState(false);
   // An expert-check row does not get actions invented for it: only a
   // superseded card's own actions (none built from the process documents).
   const legacy = item.status === "expert" ? allCards.filter((c) => !c.processOwned) : allCards;
   const needs = item.needs.filter((x) => x.trim());
-  // Inline actions: the covered cards' own actions (same handlers as the
-  // expanded view), then the official portal, else "Start" (the prepared
-  // checklist); answer rows lead with "Answer". Rows with nothing to do
-  // (May apply without a form or portal, expert checks) get none.
+  // Inline actions: the covered cards' own in-platform actions (same
+  // handlers as the expanded view), else SmartPR's guided form built from
+  // "What you'll need" ("Complete form"); answer rows lead with "Answer".
+  // The official portal and Teach Clara sit in the ⋯ menu. Rows with nothing
+  // to do (May apply without a portal, expert checks) get no primary.
+  const inPlatform = useInPlatformActions(
+    { key: item.process_id, name: item.name, agency: item.agency ?? null, needs, portalUrl: portal?.url ?? null, portalLabel: portal ? ((es ? portal.label_es : null) ?? portal.label) : null },
+    language
+  );
   const actions: RowActionsModel = energyRowActions({
     status: item.status,
     cards: mergeRowActions(legacy.map((c) => c.rowActions ?? EMPTY_ROW_ACTIONS)),
     portal,
-    onStart: needs.length ? () => setNeedsOpen((o) => !o) : null,
     question: question ? { prompt: question.text } : null,
+    ...inPlatform.handlers,
   }, language);
   return (
     <div role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
@@ -202,12 +207,7 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
         <RowActions model={actions} language={language} onAnswer={() => setAskOpen((q) => !q)} answerOpen={askOpen} />
       </div>
       {askOpen && question && <QuestionLine q={question} language={language} standalone />}
-      {needsOpen && !open && (
-        <div className="ck-row-checklist" data-testid="row-checklist">
-          <div className="ck-label">{es ? "Lo que necesitarás" : "What you'll need"}</div>
-          <ul>{needs.map((x) => <li key={x}>{x}</li>)}</ul>
-        </div>
-      )}
+      {inPlatform.dialogs(actions)}
       {open && (
         <div className="ck-row-body">
           <p className="ck-why">{item.why}</p>
