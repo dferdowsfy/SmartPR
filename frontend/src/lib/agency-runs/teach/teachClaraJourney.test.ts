@@ -32,7 +32,7 @@ import {
   TeachSessionError,
   type TeachWorker,
 } from "./teachSessions";
-import { listLearnedRoutines, routineForRow, summarizeRoutine } from "./learnedRoutines";
+import { listLearnedRoutines, removeRoutine, renameRoutine, routineForRow, summarizeRoutine } from "./learnedRoutines";
 import { probeTeachWorker, resetTeachProbeForTests, teachBrowserProvider, TeachWorkerError } from "./teachWorkerClient";
 import { defaultRoutineName, looksSensitiveLabel, replayPauseHeadline, secureCardFor, teachNarrative } from "./workspaceChat";
 import { VirtualPortal } from "../replay/virtualPortal";
@@ -258,6 +258,22 @@ describe("Teach Clara journey: teach once, replay for another business", () => {
     assert.equal(latest.version, 2);
     assert.equal(latest.status, "learned");
     assert.equal(latest.name, "Patente v2");
+  });
+
+  it("routines page: owner can rename and remove; others can't", async () => {
+    const repo = new MemorySkillRepo();
+    let { worker, v } = await teach(repo, "Patente");
+    for (const q of v.questions) v = answerTeachQuestion(teacher, v.id, q.id, q.kind === "mapping" ? { kind: "mapping", choice: "confirm" } : { kind: "yes_no", value: "yes" });
+    await finishTeachSession({ worker }, teacher, v.id);
+    await validateTeachSession(teacher, v.id);
+    const row = await saveTeachSession({ repo }, teacher, v.id, { submit: false, learn: true, name: "Patente" });
+    const stranger = { userId: randomUUID(), isAdmin: false };
+    await assert.rejects(renameRoutine(repo, stranger, row.id, "x"), (e: unknown) => (e as { status?: number }).status === 404);
+    assert.equal((await renameRoutine(repo, teacher, row.id, "  Patente   Bayamón ")).name, "Patente Bayamón");
+    assert.equal((await listLearnedRoutines(repo, teacher))[0].name, "Patente Bayamón");
+    await assert.rejects(removeRoutine(repo, stranger, row.id));
+    await removeRoutine(repo, teacher, row.id);
+    assert.equal((await listLearnedRoutines(repo, teacher)).length, 0);
   });
 
   it("worker failures surface as specific errors", async () => {

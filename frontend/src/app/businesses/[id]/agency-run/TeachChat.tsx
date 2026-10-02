@@ -595,6 +595,7 @@ export function TeachChat({
             )}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
+            <a className={ghostBtn} href="/routines" data-testid="ws-my-routines">{T("See all my routines", "Ver todas mis rutinas")}</a>
             {businessId && (
               <a className={primaryBtn} href={claraWorkspaceHref("fill", businessId, { key: ctx.requirementKey, name: ctx.name, agency: ctx.agency, portalUrl: ctx.portalUrl ?? saved.start_url }, { routineRef: saved.ref })} data-testid="ws-fill-now">
                 {T("Fill with Clara now", "Llenar con Clara ahora")}

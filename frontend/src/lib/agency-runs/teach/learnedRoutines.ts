@@ -8,7 +8,7 @@
  * action (strict replay of exactly those steps) for ANY portal, and to
  * show "Clara learned this" / "Needs re-teaching" on the row.
  */
-import { listVisibleSkills, type SkillRepo, type SkillViewer, type StoredSkill } from "../skills/skillLibrary";
+import { listVisibleSkills, SkillLibraryError, type SkillRepo, type SkillViewer, type StoredSkill } from "../skills/skillLibrary";
 import type { LearnedRoutineSummary } from "./learnedRoutineMatch";
 
 export { routineForRow, type LearnedRoutineSummary } from "./learnedRoutineMatch";
@@ -66,3 +66,31 @@ export async function listLearnedRoutines(repo: SkillRepo, viewer: SkillViewer):
   return [...out.values()];
 }
 
+
+/** Owner-only: a routine the viewer taught (not the shared library's). */
+async function ownedRoutine(repo: SkillRepo, viewer: SkillViewer, ref: string): Promise<StoredSkill> {
+  const row = await repo.get(ref);
+  if (!row || !routineOf(row) || row.owner_user_id !== viewer.userId) throw new SkillLibraryError(404, "not_found", "Routine not found.");
+  return row;
+}
+
+/** Rename a routine the viewer taught. */
+export async function renameRoutine(repo: SkillRepo, viewer: SkillViewer, ref: string, name: string): Promise<LearnedRoutineSummary> {
+  const clean = name.replace(/\s+/g, " ").trim().slice(0, 120);
+  if (!clean) throw new SkillLibraryError(400, "name_required", "Give the routine a name.");
+  const row = await ownedRoutine(repo, viewer, ref);
+  const checks = { ...((row.checks as Record<string, unknown>) ?? {}), routine: { ...routineOf(row), name: clean } };
+  await repo.update(row.id, { checks } as never);
+  return summarizeRoutine({ ...row, checks } as StoredSkill, viewer)!;
+}
+
+/**
+ * Remove a routine the viewer taught: it stops being a learned routine
+ * ("Fill with Clara" no longer replays it). The skill row stays for the
+ * audit trail; teaching the requirement again creates a fresh routine.
+ */
+export async function removeRoutine(repo: SkillRepo, viewer: SkillViewer, ref: string): Promise<void> {
+  const row = await ownedRoutine(repo, viewer, ref);
+  const checks = { ...((row.checks as Record<string, unknown>) ?? {}), routine: null, routine_removed_at: new Date().toISOString() };
+  await repo.update(row.id, { checks } as never);
+}
