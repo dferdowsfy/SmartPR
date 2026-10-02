@@ -58,6 +58,8 @@ export interface SmartPRLiveData {
      */
     site?: ReactNode;
     onPreview?: () => void;
+    /** Required-now answers still missing (same list the form flags). */
+    stillNeeded?: string[];
   };
 }
 
@@ -119,8 +121,15 @@ function WorkflowStepper({
   onChange: (stage: FilingStage) => void;
 }) {
   const activeIndex = stages.findIndex((item) => item.key === stage);
+  const activeStage = stages[activeIndex];
 
   return (
+    <>
+    <p className="spr-workflow-mobile" data-testid="stepper-mobile">
+      <span className="spr-workflow-mobile-step">{language === "es" ? `Paso ${activeIndex + 1} de ${stages.length}` : `Step ${activeIndex + 1} of ${stages.length}`}</span>
+      <span aria-hidden="true"> · </span>
+      <span>{activeStage ? (language === "es" ? activeStage.labelEs : activeStage.label) : ""}</span>
+    </p>
     <nav className="spr-workflow-stepper" aria-label={language === "es" ? "Progreso de la radicación" : "Filing progress"}>
       {stages.map((item, index) => {
         const complete = index < activeIndex;
@@ -143,6 +152,7 @@ function WorkflowStepper({
         );
       })}
     </nav>
+    </>
   );
 }
 
@@ -174,9 +184,20 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
           <strong>{language === "es" ? "Próximo paso" : "Next step"}</strong>
           <p>{data.nextAction}</p>
         </div>
-        <p className="spr-project-summary-note">{language === "es"
-          ? "Puedes completar los datos adicionales del negocio al preparar una solicitud."
-          : "You can complete additional business details when preparing a filing."}</p>
+        {project.stillNeeded ? (
+          <div className="spr-project-summary-missing" data-testid="sidebar-still-needed">
+            <strong>{language === "es" ? "Aún falta" : "Still needed"}</strong>
+            {project.stillNeeded.length ? (
+              <ul>{project.stillNeeded.map((item) => <li key={item}>{item}</li>)}</ul>
+            ) : (
+              <p>{language === "es" ? "Nada — ya puedes ver tus requisitos." : "Nothing — you can see your requirements."}</p>
+            )}
+          </div>
+        ) : (
+          <p className="spr-project-summary-note">{language === "es"
+            ? "Puedes completar los datos adicionales del negocio al preparar una solicitud."
+            : "You can complete additional business details when preparing a filing."}</p>
+        )}
         {project.onPreview && <button type="button" className="spr-project-preview" onClick={project.onPreview}>{language === "es" ? "Revisar requisitos" : "Review requirements"}</button>}
       </aside>
     );

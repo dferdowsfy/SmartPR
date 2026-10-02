@@ -3433,3 +3433,68 @@ html.nav-is-scrolled .appbar .spr-header-utilities {
     display: none;
   }
 }
+
+
+/* ---- Intake: compact header + clearer form (2026-10) ------------------- */
+/* Global nav scrolls away; the stepper bar alone stays pinned, aligned with
+   the form column, with tighter padding and a shorter gap to the question. */
+.spr-guided-intake-shell .spr-filing-chrome { border-bottom: 1px solid color-mix(in oklab, #161616 10%, transparent); }
+.spr-guided-intake-shell .spr-stepper-bar { max-width: 1440px; padding: 6px 48px; box-sizing: border-box; }
+.spr-guided-intake-shell .spr-stepper-bar .spr-workflow-stepper { padding: 0; max-width: calc(100% - 330px); }
+.spr-guided-intake-shell .spr-filing-sticky.compact .spr-stepper-bar { padding-top: 6px; }
+.spr-guided-intake-shell .spr-filing-sticky.compact .spr-stepper-bar .spr-workflow-stepper { padding-bottom: 0; }
+.spr-guided-intake-shell .spr-workflow-step { padding-block: 2px; }
+.spr-guided-intake-shell .spr-workflow-step-icon { width: 22px; height: 22px; }
+.spr-guided-intake-shell .spr-workflow-grid { padding-top: 18px; }
+.spr-guided-intake-shell .spr-intake-panel h1 { margin-top: 4px; margin-bottom: 8px; }
+.spr-guided-intake-shell .spr-subtitle { margin-bottom: 18px; }
+.spr-workflow-mobile { display: none; margin: 0; font-size: 13px; color: #526579; }
+.spr-workflow-mobile-step { font-weight: 700; color: var(--spr-shell-navy, #161616); }
+.spr-workflow-step:focus-visible { outline: 2px solid var(--spr-shell-teal, #245c5c); outline-offset: 2px; }
+
+/* Where will your business operate? */
+.spr-where { border: 1px solid #d7dedc; border-radius: 12px; padding: 18px 20px 20px; margin: 0; min-width: 0; background: #fff; }
+.spr-where-title { padding: 0 6px; margin-left: -6px; font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 500; color: #152f35; }
+.spr-where-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 6px; }
+.spr-where-field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.spr-where-field > label, .spr-where-label { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-transform: uppercase; letter-spacing: .075em; font-weight: 720; font-size: 11px; color: #657e86; }
+.spr-where-field select { width: 100%; height: 52px; border-radius: 10px; }
+.spr-where-known { margin: 0; height: 52px; display: flex; align-items: center; font-weight: 600; }
+.spr-where-map { margin-top: 14px; }
+
+/* Missing answers: flagged beside the field with the sidebar's wording. */
+.spr-missing select, .spr-missing input { border-color: #c98a12 !important; box-shadow: 0 0 0 3px rgba(201, 138, 18, .14); }
+.spr-missing-note { margin: 2px 0 0; font-size: 13px; color: #8a5a00; font-weight: 600; }
+
+/* What's still missing (replaces the generic "Add your business details") */
+.spr-still-needed-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; border: 1px solid #e3dcc8; border-radius: 10px; background: #fffaf0; }
+.spr-still-needed-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.spr-still-needed-chip { min-height: 36px; padding: 6px 12px; border: 1px solid #e3c88f; border-radius: 999px; background: #fff; color: #8a5a00; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.spr-still-needed-chip:hover { background: #fff3dc; }
+.spr-still-needed-chip:focus-visible, .spr-still-needed .spr-link:focus-visible { outline: 2px solid var(--spr-shell-teal, #245c5c); outline-offset: 2px; }
+
+/* Sidebar: still needed */
+.spr-project-summary-missing { margin-top: 16px; padding-top: 16px; border-top: 1px solid #d7dedc; font-size: 14px; color: #3d4b52; }
+.spr-project-summary-missing strong { display: block; margin-bottom: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-transform: uppercase; letter-spacing: .1em; font-size: 11px; color: #657e86; }
+.spr-project-summary-missing ul { margin: 0; padding-left: 18px; }
+.spr-project-summary-missing li { color: #8a5a00; font-weight: 600; }
+.spr-project-summary-missing p { margin: 0; }
+
+@media (max-width: 900px) {
+  .spr-guided-intake-shell .spr-stepper-bar .spr-workflow-stepper { max-width: none; }
+}
+@media (max-width: 640px) {
+  .spr-guided-intake-shell .spr-stepper-bar { padding: 8px 20px; }
+  .spr-guided-intake-shell .spr-stepper-bar .spr-workflow-stepper { display: none; }
+  .spr-guided-intake-shell .spr-workflow-mobile { display: block; flex: 1; }
+  .spr-guided-intake-shell .spr-workflow-grid { padding-top: 14px; }
+  .spr-where { padding: 14px 14px 16px; }
+  .spr-where-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spr-guided-intake-shell .spr-filing-sticky * { transition: none !important; }
+}
+.spr-guided-intake-shell .spr-form-footer > [data-testid="intake-footer-status"] { font-family: var(--font-sans), "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; color: #8a5a00; line-height: 1.4; }
+.spr-guided-intake-shell .spr-stepper-bar { padding-block: 4px; }
+.spr-guided-intake-shell .spr-stepper-utilities { height: 36px; overflow: visible; }
+.spr-guided-intake-shell .spr-stepper-bar { min-height: 44px; }

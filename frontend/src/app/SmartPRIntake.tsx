@@ -6576,6 +6576,44 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           ? L(currentPotentialQuestion.followUp, language)
           : (language === 'es' ? 'Revisa tu proyecto y genera los requisitos.' : 'Review your project and generate the requirements.');
 
+  // ---- What's still missing (required-now only; same source as the sidebar)
+  const missingFieldLabel: Record<string, string> = {
+    municipality: t('municipality'),
+    location_type: t('locationType'),
+    business_type: t('businessType'),
+    industry: t('industry'),
+  };
+  const missingQuestionCount = Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
+  const stillNeeded = [
+    ...(projectIntent === null ? [{ key: 'project_intent', label: language === 'es' ? 'Tipo de Proyecto' : 'Project Type' }] : []),
+    ...intakePlan.missingRequired.map((key) => ({ key, label: missingFieldLabel[key] ?? key })),
+  ];
+  const footerStatus = stillNeeded.length
+    ? `${language === 'es' ? 'Aún falta' : 'Still needed'}: ${stillNeeded.map((i) => i.label).join(', ')}${missingQuestionCount ? (language === 'es' ? ` · ${missingQuestionCount} pregunta${missingQuestionCount === 1 ? '' : 's'}` : ` · ${missingQuestionCount} question${missingQuestionCount === 1 ? '' : 's'}`) : ''}`
+    : missingQuestionCount
+      ? (language === 'es' ? `Faltan ${missingQuestionCount} pregunta${missingQuestionCount === 1 ? '' : 's'}` : `${missingQuestionCount} question${missingQuestionCount === 1 ? '' : 's'} left`)
+      : (language === 'es' ? 'Listo para ver tus requisitos' : 'Ready to see your requirements');
+  /** A required-now field is flagged when it is the sidebar's next step, or after an incomplete submit. */
+  const isFlaggedMissing = (key: string) => intakePlan.missingRequired.includes(key as never) && (submitAttempted || key === nextProfileField || (key === 'industry' && nextProfileField === 'industry'));
+  const missingCls = (key: string) => (isFlaggedMissing(key) ? ' spr-missing' : '');
+  const missingAria = (key: string) => (isFlaggedMissing(key) ? { 'aria-invalid': submitAttempted ? true : undefined, 'aria-describedby': `spr-missing-${key}` } : {});
+  const missingNote = (key: string) => isFlaggedMissing(key) || (key === 'industry' && nextProfileField === 'industry') ? (
+    <p className="spr-missing-note" id={`spr-missing-${key}`} data-testid={`missing-note-${key}`}>
+      {nextFieldActions[key] ?? (language === 'es' ? 'Falta este dato.' : 'This is still needed.')}
+    </p>
+  ) : null;
+  const focusMissing = (key: string) => {
+    if (key === 'business_type' || key === 'industry') setProfileFormExpanded(true);
+    const id = key === 'project_intent' ? null : key === 'location_type' ? 'spr-location-type' : key === 'municipality' ? 'spr-municipality' : key === 'business_type' ? 'spr-business-type' : 'spr-industry';
+    window.setTimeout(() => {
+      const el = id ? document.getElementById(id) : document.querySelector<HTMLElement>('.spr-intent-option');
+      if (!el) return;
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+      el.focus({ preventScroll: true });
+    }, 0);
+  };
+
   const whyAsking = isProjectOnly
     ? (!profile.name
       ? (language === 'es' ? 'El nombre identifica el proyecto en la solicitud.' : 'A name gives the project a clear identity on the filing.')
@@ -6634,7 +6672,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           onConfirm={confirmIntakeSite}
         />
       ) : null,
-      onPreview: handleSubmitTap,
+      stillNeeded: stillNeeded.map((i) => i.label),
     },
     statusText: scenarioEval
       ? (scenarioEval.questions.length
@@ -6830,18 +6868,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     long yes/no list — so it is never buried at the bottom.
                     The confirmed site's municipio and location facts drive
                     the requirements. */}
-                {(locationNeed.needed || intakeSite) && (
-                  <div className="spr-field full" data-testid="intake-location-slot">
-                    <LocationStepCard
-                      lang={language}
-                      need={locationNeed}
-                      site={intakeSite}
-                      businessId={siteBusinessId}
-                      onConfirm={confirmIntakeSite}
-                      onRetryLayers={retryIntakeLayers}
-                    />
-                  </div>
-                )}
+                {/* The site ("Where is it?" pin/address/saved location) now
+                    lives in the "Where will your business operate?" section
+                    below, with the location type and municipality. */}
 
                 {/* Project summary + the one "Expand details" control, below the
                     site so the location answer reads first. */}
@@ -6902,15 +6931,73 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   )}
                 </div>}
 
-                {!isProjectOnly && (
-                  <div className={`spr-field spr-location-type-field${profileAttentionCls}`}>
-                    <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
-                    <select id="spr-location-type" value={profile.location_type} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
-                      <option value="">{t('selectLocationType')}</option>
-                      {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => <option key={lt} value={lt}>{lt}</option>)}
-                    </select>
+                {/* One section for where the business operates: location
+                    type, municipality and the map/site, with the same label
+                    style, spacing and input width. */}
+                <fieldset className="spr-field full spr-where" data-testid="intake-where">
+                  <legend className="spr-where-title">{isProjectOnly
+                    ? (language === 'es' ? '¿Dónde está el proyecto?' : 'Where is the project?')
+                    : (language === 'es' ? '¿Dónde operará tu negocio?' : 'Where will your business operate?')}</legend>
+                  <div className="spr-where-grid">
+                    {!isProjectOnly && (
+                      <div className={`spr-where-field${missingCls('location_type')}`}>
+                        <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
+                        <select id="spr-location-type" value={profile.location_type} {...missingAria('location_type')} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
+                          <option value="">{t('selectLocationType')}</option>
+                          {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => <option key={lt} value={lt}>{lt}</option>)}
+                        </select>
+                        {missingNote('location_type')}
+                      </div>
+                    )}
+                    {!passportKnownFields.has('municipality') ? (
+                      <div className={`spr-where-field${missingCls('municipality')}`}>
+                        <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
+                        <select
+                          id="spr-municipality"
+                          value={profile.municipality}
+                          {...missingAria('municipality')}
+                          onChange={e => {
+                            setProfile({ ...profile, municipality: e.target.value });
+                            setPotentialDecisions({});
+                            markUserTouched('municipality');
+                          }}
+                        >
+                          <option value="">{t('selectMunicipality')}</option>
+                          {municipalityOptions.map((m: string) => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        {missingNote('municipality')}
+                      </div>
+                    ) : (
+                      <div className="spr-where-field">
+                        <span className="spr-where-label">{t('municipality')}</span>
+                        <p className="spr-where-known">{profile.municipality}</p>
+                      </div>
+                    )}
                   </div>
-                )}
+                  {/* Sites often have no clean address: the municipio comes
+                      from the pin via official Census boundaries. */}
+                  {(locationNeed.needed || intakeSite) ? (
+                    <div className="spr-where-map" data-testid="intake-location-slot">
+                      <LocationStepCard
+                        lang={language}
+                        need={locationNeed}
+                        site={intakeSite}
+                        businessId={siteBusinessId}
+                        onConfirm={confirmIntakeSite}
+                        onRetryLayers={retryIntakeLayers}
+                      />
+                    </div>
+                  ) : !passportKnownFields.has('municipality') && (
+                    <div className="spr-where-map">
+                      <MunicipalityMapButton
+                        lang={language}
+                        currentMunicipality={profile.municipality}
+                        businessId={me && businessId && !businessId.startsWith('local-') ? businessId : null}
+                        onPicked={(site) => confirmIntakeSite(intakeSiteFromPick(site))}
+                      />
+                    </div>
+                  )}
+                </fieldset>
 
                 {/* Existing-business picker: when the intent is
                     existing_business and no ?business= id is attached, offer
@@ -7092,23 +7179,33 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     stay visible. An incomplete submit expands everything and
                     scrolls here. */}
                 <span ref={profileFieldsRef} aria-hidden="true" className="spr-anchor" />
-                {!hasProjectRequest && (
-                <div className="spr-field full">
-                  <span className="spr-profile-summary-label">{L('Business details', language)}</span>
-                  <button
-                    type="button"
-                    className="spr-profile-summary"
-                    onClick={() => { setProfileFormExpanded((value) => !value); setSubmitAttempted(false); }}
-                    aria-expanded={profileFormExpanded}
-                    aria-controls="spr-business-details"
-                  >
-                    <span className="spr-profile-summary-text">
-                      {profileFormExpanded ? L('Business details', language) : anyProfileValue ? profileSummary : L('Add your business details', language)}
-                    </span>
-                    <span className="spr-profile-summary-edit">
-                      {profileFormExpanded ? L('Minimize details', language) : L('Expand details', language)}
-                    </span>
-                  </button>
+                {(!hasProjectRequest || stillNeeded.length > 0) && (
+                <div className="spr-field full spr-still-needed" data-testid="intake-still-needed">
+                  <span className="spr-profile-summary-label">{stillNeeded.length ? (language === 'es' ? 'Aún falta' : 'Still needed') : (language === 'es' ? 'Detalles del negocio' : 'Business details')}</span>
+                  <div className="spr-still-needed-row">
+                    {stillNeeded.length ? (
+                      <ul className="spr-still-needed-list">
+                        {stillNeeded.map((item) => (
+                          <li key={item.key}>
+                            <button type="button" className="spr-still-needed-chip" onClick={() => focusMissing(item.key)}>{item.label}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <span className="spr-profile-summary-text">{anyProfileValue ? profileSummary : (language === 'es' ? 'Nada pendiente' : 'Nothing missing')}</span>
+                    )}
+                    {!hasProjectRequest && (
+                    <button
+                      type="button"
+                      className="spr-link"
+                      onClick={() => { setProfileFormExpanded((value) => !value); setSubmitAttempted(false); }}
+                      aria-expanded={profileFormExpanded}
+                      aria-controls="spr-business-details"
+                    >
+                      {profileFormExpanded ? L('Minimize details', language) : (language === 'es' ? 'Ver todos los detalles' : 'All business details')}
+                    </button>
+                    )}
+                  </div>
                 </div>
                 )}
 
@@ -7129,39 +7226,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </div>
                 )}
 
-                {!passportKnownFields.has('municipality') && profileFieldVisible('municipality') && (
-                <div className={`spr-field${profileAttentionCls}`}>
-                  <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
-                  <select
-                    id="spr-municipality"
-                    value={profile.municipality}
-                    onChange={e => {
-                      setProfile({ ...profile, municipality: e.target.value });
-                      setPotentialDecisions({});
-                      markUserTouched('municipality');
-                    }}
-                  >
-                    <option value="">{t('selectMunicipality')}</option>
-                    {municipalityOptions.map((m: string) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                  {/* Sites (construction, energy projects, new premises) often
-                      have no clean address: the municipio comes from the pin
-                      via official Census boundaries, not from typed text. */}
-                  <MunicipalityMapButton
-                    lang={language}
-                    currentMunicipality={profile.municipality}
-                    businessId={me && businessId && !businessId.startsWith('local-') ? businessId : null}
-                    onPicked={(site) => confirmIntakeSite(intakeSiteFromPick(site))}
-                  />
-                </div>
-                )}
                 {/* project_only asks zero business-formation questions: industry,
                     business type, location type, entity type, and headcount
                     are business fields and never appear for a property-only
                     project. */}
                 {!isProjectOnly && (<>
                 {!passportKnownFields.has('industry') && profileFieldVisible('industry') && (
-                <div className={`spr-field${profileAttentionCls}`}>
+                <div className={`spr-field${profileAttentionCls}${missingCls('industry')}`}>
                   <label htmlFor="spr-industry">{t('industry')}{confirmationBadge('industry')}</label>
                   <select
                     id="spr-industry"
@@ -7171,16 +7242,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     <option value="">{t('selectIndustry')}</option>
                     {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                   </select>
+                  {missingNote('industry')}
                 </div>
                 )}
 
                 {!passportKnownFields.has('business_type') && profileFieldVisible('business_type') && (
-                <div className={`spr-field${profileAttentionCls}`}>
+                <div className={`spr-field${profileAttentionCls}${missingCls('business_type')}`}>
                   <label htmlFor="spr-business-type">{t('businessType')}{confirmationBadge('business_type')}</label>
                   <select
                     id="spr-business-type"
                     key={profile.industry || 'none'}
                     value={profile.business_type}
+                    {...missingAria('business_type')}
                     onChange={e => {
                       const newBt = e.target.value;
                       const allowed = LOCATION_TYPES_BY_BUSINESS_TYPE[newBt] || LOCATION_TYPES;
@@ -7194,6 +7267,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       <option key={bt} value={bt}>{bt}</option>
                     ))}
                   </select>
+                  {missingNote('business_type')}
                 </div>
                 )}
                 {!passportKnownFields.has('business_structure') && profileFieldVisible('business_structure') && (
@@ -7284,7 +7358,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             )}
 
             <div className="spr-form-footer">
-              <span>{remainingIntakeItems > 0 ? (language === 'es' ? `${remainingIntakeItems} detalles por confirmar` : `${remainingIntakeItems} details to confirm`) : (language === 'es' ? 'Listo para revisar los requisitos' : 'Ready to review requirements')}</span>
+              <span data-testid="intake-footer-status">{footerStatus}</span>
               <div className="spr-form-actions">
                 {canGoBackInIntake && (
                   <button className="spr-back" onClick={handleIntakeBack}>{L('Back', language)}</button>
@@ -7294,7 +7368,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   onClick={handleSubmitTap}
                   disabled={isLoading}
                 >
-                  {isLoading ? L('Preparing requirements…', language) : L('Continue', language)}
+                  {isLoading ? L('Preparing requirements…', language) : (language === 'es' ? 'Ver mis requisitos' : 'See my requirements')}
                   {isLoading || submitPulse ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
                 </button>
               </div>

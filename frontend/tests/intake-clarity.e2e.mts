@@ -1,0 +1,157 @@
+/**
+ * Intake clarity (real page under next dev): compact header + sticky
+ * stepper, grouped "Where will your business operate?" section, specific
+ * "still needed" list matching the sidebar, inline missing-field flags, one
+ * primary "See my requirements" action, keyboard, mobile, and the
+ * transition to Requirements.
+ *
+ *   BASE_URL=http://localhost:3217 E2E_CHROME=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npx tsx tests/intake-clarity.e2e.mts [outDir]
+ */
+import { chromium, type Page } from "playwright";
+import { mkdirSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+const OUT = process.argv[2] || path.join(os.tmpdir(), "intake-clarity");
+mkdirSync(OUT, { recursive: true });
+const base = process.env.BASE_URL || "http://localhost:3000";
+const failures: string[] = [];
+const check = (name: string, ok: boolean, detail = "") => {
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  if (!ok) failures.push(name);
+};
+
+const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME || undefined });
+const errors: string[] = [];
+async function open(width: number, height = 1000): Promise<Page> {
+  const page = await browser.newPage({ viewport: { width, height } });
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.route("**/api/me", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ user: null }) }));
+  await page.goto(`${base}/?entry=new-business`, { waitUntil: "networkidle", timeout: 120000 });
+  await page.locator('[data-testid="intake-where"]').waitFor({ timeout: 60000 });
+  return page;
+}
+const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height }; });
+
+// ---------------- desktop
+{
+  const page = await open(1440);
+  // compact header aligned with the form
+  const bar = await rect(page, ".spr-stepper-bar");
+  const h1 = await rect(page, ".spr-intake-panel h1");
+  const step1 = await rect(page, ".spr-workflow-step");
+  check("compact stepper bar (≤ 48px tall)", bar.height <= 48, `${Math.round(bar.height)}px`);
+  check("tight gap to the opening question (≤ 40px)", h1.top - bar.bottom <= 40, `${Math.round(h1.top - bar.bottom)}px`);
+  check("stepper aligned with the form column (±12px)", Math.abs(step1.left - h1.left) <= 12, `${Math.round(step1.left)} vs ${Math.round(h1.left)}`);
+  check("opening business description question kept", (await page.getByText("What are you looking to open?").count()) === 1);
+  check("project summary sidebar kept", (await page.locator(".spr-project-summary").count()) === 1);
+
+  // grouped location section
+  const where = page.locator('[data-testid="intake-where"]');
+  check("Where will your business operate? section", (await where.locator("legend").innerText()).trim() === "Where will your business operate?");
+  check("location type, municipality and map inside it", (await where.locator("#spr-location-type").count()) === 1 && (await where.locator("#spr-municipality").count()) === 1 && (await where.getByText(/Find the site on the map/).count()) === 1);
+  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, "#spr-municipality")]);
+  check("consistent input widths and alignment", Math.abs(lt.width - mu.width) < 2 && Math.abs(lt.top - mu.top) < 2 && Math.abs(lt.height - mu.height) < 2, `${Math.round(lt.width)} / ${Math.round(mu.width)}`);
+  check("municipality no longer duplicated elsewhere", (await page.locator("#spr-municipality").count()) === 1);
+
+  // still needed, matching the sidebar
+  const chips = (await page.locator(".spr-still-needed-chip").allInnerTexts()).map((t) => t.trim());
+  const side = (await page.locator('[data-testid="sidebar-still-needed"] li').allInnerTexts()).map((t) => t.trim());
+  check("specific 'Still needed' list instead of generic details", chips.length >= 3 && chips.includes("Municipality"), chips.join(", "));
+  check("sidebar lists the same missing answers", JSON.stringify(chips) === JSON.stringify(side), side.join(", "));
+  check("generic 'Add your business details' gone", (await page.getByText("Add your business details").count()) === 0);
+  check("footer names what is missing", /Still needed: .*Municipality/.test(await page.locator('[data-testid="intake-footer-status"]').innerText()));
+
+  // one primary action
+  check("one primary action: See my requirements", (await page.getByRole("button", { name: /See my requirements/ }).count()) === 1 && (await page.getByRole("button", { name: /^Continue$/ }).count()) === 0 && (await page.getByRole("button", { name: /Review requirements/ }).count()) === 0);
+
+  // next-step field flagged with the sidebar's wording
+  const next = (await page.locator(".spr-project-summary-next p").innerText()).trim();
+  const note = (await page.locator('[data-testid="missing-note-municipality"]').innerText()).trim();
+  check("missing field flagged beside it with the sidebar's guidance", note === next, note);
+  await page.screenshot({ path: path.join(OUT, "1_desktop.png"), fullPage: true });
+
+  // validation: incomplete submit flags every missing field
+  await page.getByRole("button", { name: /See my requirements/ }).click();
+  await page.waitForTimeout(500);
+  check("incomplete submit: location type flagged", (await page.locator('[data-testid="missing-note-location_type"]').count()) === 1 && (await page.locator("#spr-location-type").getAttribute("aria-invalid")) === "true");
+  check("incomplete submit: municipality aria-invalid + described", (await page.locator("#spr-municipality").getAttribute("aria-invalid")) === "true" && (await page.locator("#spr-municipality").getAttribute("aria-describedby")) === "spr-missing-municipality");
+  check("incomplete submit stays on intake", (await page.locator('[data-testid="intake-where"]').count()) === 1);
+  await page.screenshot({ path: path.join(OUT, "2_validation.png"), fullPage: true });
+
+  // keyboard: chip → field focus
+  await page.locator(".spr-still-needed-chip", { hasText: "Municipality" }).focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(400);
+  check("keyboard: Enter on a missing chip focuses its field", await page.evaluate(() => document.activeElement?.id === "spr-municipality"));
+  await page.keyboard.press("Shift+Tab");
+  check("keyboard: Shift+Tab reaches location type", await page.evaluate(() => document.activeElement?.id === "spr-location-type"));
+
+  // scrolling: global nav scrolls away, stepper stays
+  await page.evaluate(() => window.scrollTo(0, 700));
+  await page.waitForTimeout(400);
+  const nav = await rect(page, "header.appbar");
+  const stepper = await rect(page, ".spr-stepper-bar");
+  check("scroll: global nav scrolls away", nav.bottom <= 0, `${Math.round(nav.bottom)}`);
+  check("scroll: stepper stays visible at the top", stepper.top >= 0 && stepper.top < 40 && stepper.height > 0, `${Math.round(stepper.top)}`);
+  await page.evaluate(() => window.scrollTo(0, 0));
+
+  // complete everything and go to requirements
+  await page.getByRole("button", { name: "New business", exact: true }).click();
+  await page.locator("#spr-municipality").selectOption({ label: "San Juan" });
+  await page.locator(".spr-still-needed-chip", { hasText: /Business Type/ }).click();
+  await page.waitForTimeout(300);
+  const ind = page.locator("#spr-industry");
+  if (await ind.count()) { const v = await ind.locator("option").nth(1).getAttribute("value"); await ind.selectOption(v!); }
+  const bt = page.locator("#spr-business-type");
+  await bt.waitFor();
+  const btv = await bt.locator("option").nth(1).getAttribute("value");
+  await bt.selectOption(btv!);
+  const ltv = await page.locator("#spr-location-type option").nth(1).getAttribute("value");
+  await page.locator("#spr-location-type").selectOption(ltv!);
+  await page.waitForTimeout(400);
+  check("all answered: still-needed list cleared (form + sidebar)", (await page.locator(".spr-still-needed-chip").count()) === 0 && /Nothing/.test(await page.locator('[data-testid="sidebar-still-needed"]').innerText()));
+  check("no stale missing flags", (await page.locator(".spr-missing-note").count()) === 0);
+  await page.screenshot({ path: path.join(OUT, "3_complete.png"), fullPage: true });
+  // Answer any remaining yes/no questions, then submit.
+  for (let i = 0; i < 60; i++) {
+    if (!/question/.test(await page.locator('[data-testid="intake-footer-status"]').innerText())) break;
+    const no = page.getByRole("button", { name: /^\s*(No|Not sure)\s*$/ }).first();
+    if (!(await no.count())) break;
+    await no.click();
+    await page.waitForTimeout(250);
+  }
+  console.log("   footer before submit:", await page.locator('[data-testid="intake-footer-status"]').innerText());
+  await page.getByRole("button", { name: /See my requirements/ }).click();
+  await page.waitForTimeout(3000);
+  await page.screenshot({ path: path.join(OUT, "3b_after_submit.png"), fullPage: false });
+  await page.locator(".rq-page-head h1").waitFor({ timeout: 60000 });
+  check("transition: See my requirements opens Requirements (step 2)", (await page.locator(".rq-page-head h1").innerText()).trim() === "Requirements" && (await page.locator('.spr-workflow-step[aria-current="step"]').innerText()).includes("Requirements"));
+  await page.screenshot({ path: path.join(OUT, "4_requirements.png") });
+  await page.close();
+}
+
+// ---------------- mobile
+{
+  const page = await open(390, 844);
+  check("mobile: concise step indicator", (await page.locator('[data-testid="stepper-mobile"]').innerText()).replace(/\s+/g, " ").trim() === "Step 1 of 3 · Intake");
+  check("mobile: full stepper hidden", await page.locator(".spr-workflow-stepper").isHidden());
+  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, "#spr-municipality")]);
+  check("mobile: Where fields stacked, same width", lt.bottom < mu.top && Math.abs(lt.width - mu.width) < 2);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check("mobile: no horizontal overflow", overflow <= 0, String(overflow));
+  const btn = await rect(page, ".spr-form-footer .spr-primary");
+  check("mobile: primary action full-width and tappable", btn.width > 300 && btn.height >= 44, `${Math.round(btn.width)}×${Math.round(btn.height)}`);
+  await page.evaluate(() => window.scrollTo(0, 900));
+  await page.waitForTimeout(400);
+  const ind = await rect(page, '[data-testid="stepper-mobile"]');
+  check("mobile: step indicator stays visible while scrolling", ind.top >= 0 && ind.top < 40, `${Math.round(ind.top)}`);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: path.join(OUT, "5_mobile.png"), fullPage: true });
+  await page.close();
+}
+
+check("no page errors", errors.length === 0, errors.join(" | ").slice(0, 300));
+await browser.close();
+console.log(failures.length ? `\n${failures.length} FAILED` : "\nALL PASSED");
+process.exit(failures.length ? 1 : 0);
