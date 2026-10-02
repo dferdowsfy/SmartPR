@@ -675,6 +675,39 @@ for (const [docId, ruleIds, basis, esBits] of [
   });
 }
 
+// REG-GUIDE-WASTEWATER-CARWASH-001 (2026-10-02 QA): the wastewater concept
+// fires for beverage manufacturing AND car washes (RULE_0666/0668/0669), but
+// its regulatoryReason was written only for breweries — a live Mayagüez car
+// wash filing (S365) rendered "Beverage manufacturing produces industrial
+// wastewater — from brewing, cleaning, and cooling…" as its own situation.
+// The concept copy must stay industry-neutral: no brewing references, car
+// wash named, subject terms intact in EN and PR-ES.
+test("REG-GUIDE-WASTEWATER-CARWASH-001: wastewater concept copy is industry-neutral for car wash (live S365 finding 2026-10-02)", () => {
+  const concept = PR_REQUIREMENT_GUIDANCE["DOC_WASTEWATER_DISCHARGE_AUTHORIZATION"];
+  const body = JSON.stringify([concept.regulatoryReason, concept.purpose, concept.nextAction, concept.consequenceOrNextStep]);
+  // No brewery-only framing: the situation must not present brewing as the
+  // card's own case ("Beverage manufacturing produces…" was the S365 leak).
+  assert.doesNotMatch(body, /beverage manufacturing produces/i, "no brewery-only framing (EN)");
+  assert.doesNotMatch(body, /la manufactura de bebidas produce/i, "no brewery-only framing (ES)");
+  assert.doesNotMatch(body, /cervecer/i, "no cervecería references (ES)");
+  // Both covered industries named; subject terms intact (validator enforces).
+  assert.match(body, /car wash/i, "car wash named (EN)");
+  assert.match(body, /car wash/, "car wash named (ES, boricua usage)");
+  assert.match(body, /wastewater/);
+  assert.match(body, /aguas residuales/);
+  // Full path on a car-wash profile: validated, industry-neutral situation.
+  const mkCtx = (prof: Record<string, unknown>, discoveryAnswers: Record<string, unknown>): GuidanceContext => {
+    return { ...ctx, businessTypeName: prof.business_type as string, profile: prof, discoveryAnswers, engineInput: buildEngineInput(prof, discoveryAnswers) };
+  };
+  const carwash = { municipality: "Mayagüez", business_type: "Car Wash", business_structure: "LLC", location_type: "Commercial Facility", number_of_employees: 4 };
+  for (const language of ["en", "es"] as const) {
+    const q = buildRequirementGuidance(req("DOC_WASTEWATER_DISCHARGE_AUTHORIZATION"), { ...mkCtx(carwash, {}), language });
+    assert.equal(q.status, "VALIDATED", `car wash: ${q.reviewReasons}`);
+    assert.doesNotMatch(JSON.stringify(q), /beverage manufacturing produces|la manufactura de bebidas produce|cervecer/i);
+    assert.match(JSON.stringify(q), /AAA/);
+  }
+});
+
 // REG-GUIDE-VERIFY-001 (2026-09-21 QA): the EIN and Permiso Único cards
 // rendered apply-copy ("SmartPR prepares the IRS Form SS-4 application for
 // you" / "complete the permit application in SBP") with a VERIFY EXISTING
