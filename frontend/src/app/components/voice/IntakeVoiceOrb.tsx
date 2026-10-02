@@ -717,144 +717,143 @@ export function IntakeVoiceOrb({
           </div>
         )}
 
-        {/* Hints stack upward above the orb (never over Live sidebar / form) */}
-        {showHints && (
-          <div className="pointer-events-auto relative order-2 max-w-[14.5rem]">
-            <button
-              type="button"
-              disabled={blocked && state !== "listening"}
-              onClick={() => {
-                if (state === "listening") void stopListening();
-                else if (state === "idle") void startListening();
-              }}
-              className="flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/75 px-3.5 py-1.5 text-left text-[11px] font-medium leading-snug text-slate-500 shadow-[0_4px_14px_rgba(36,92,92,0.07)] backdrop-blur-md"
-            >
-              <span role="status" aria-live="polite" className="min-w-0 flex-1">{tooltipText}</span>
-            </button>
-            <span
-              aria-hidden
-              className="absolute left-1/2 top-full -mt-px h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-slate-200/70 bg-white/75 shadow-[2px_2px_4px_rgba(36,92,92,0.05)]"
-            />
-          </div>
-        )}
-
         {/* Single globe orb — cosmos smoke swirls continuously inside */}
-        <button
-          type="button"
-          disabled={blocked && state !== "listening"}
-          onClick={() => {
-            if (state === "listening") {
-              void stopListening();
-            } else if (state === "processing") {
-              return;
-            } else if (state === "error") {
-              setState("idle");
-              setError(null);
-              setShowPanel(true);
-            } else {
-              void startListening();
-            }
-          }}
-          aria-label={state === "listening" ? L("Stop recording and use speech", "Terminar grabación y usar voz", lang) : L("Fill in fields by voice", "Llena los campos por voz", lang)}
-          aria-pressed={state === "listening"}
-          aria-busy={state === "processing"}
-          className={`pointer-events-auto group relative order-4 flex items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 ${state === "listening" ? "h-24 w-24 ring-4 ring-teal-600 ring-offset-4 md:h-28 md:w-28" : "h-[5.5rem] w-[5.5rem] md:h-24 md:w-24"}`}
-        >
-          {/* Gentle ambient rings — listening indicator only */}
-          {state === "listening" && !reducedMotion && (
-            <>
-              <span
-                aria-hidden
-                className="spr-intake-orb-ring absolute inset-[-6px] rounded-full border border-teal-200/50"
-              />
-              <span
-                aria-hidden
-                className="spr-intake-orb-ring-delay absolute inset-[-6px] rounded-full border border-cyan-200/40"
-              />
-            </>
+        <div className="pointer-events-none relative order-4">
+        {/* Hint sits beside the orb (left), in the same bottom band — never over the sidebar */}
+          {showHints && (
+            <div className="pointer-events-auto absolute right-full top-1/2 mr-2 hidden max-w-[14.5rem] -translate-y-1/2 items-center sm:flex">
+              <button
+                type="button"
+                disabled={blocked && state !== "listening"}
+                onClick={() => {
+                  if (state === "listening") void stopListening();
+                  else if (state === "idle") void startListening();
+                }}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200/70 bg-white/90 px-3 py-1 text-left text-[11px] font-medium leading-snug text-slate-500 shadow-[0_4px_14px_rgba(36,92,92,0.07)] backdrop-blur-md"
+              >
+                <span role="status" aria-live="polite" className="min-w-0 flex-1">{tooltipText}</span>
+              </button>
+            </div>
           )}
-          {state === "listening" || state === "processing" ? (
-            /* Mic ON: dark signal disc with a pulsating white waveform —
-               no globe in the active state. */
-            <span
-              aria-hidden
-              className={`absolute inset-[5px] overflow-hidden rounded-full bg-[#303036] ${
-                state === "listening" && !reducedMotion ? "spr-disc-pulse" : ""
-              }`}
-              style={{
-                boxShadow:
-                  "inset 0 -8px 16px rgba(0,0,0,0.5), inset 0 4px 10px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.35)",
-              }}
-            />
-          ) : (
-            /* Motion globe — green smoke, kept visibly alive. The globe fills
-               the button edge-to-edge: no border gap, no halo rings. */
-            <span
-              aria-hidden
-              className={`absolute inset-0 overflow-hidden rounded-full bg-[#0b3532] ${
-                !reducedMotion ? "spr-orb-alive" : ""
-              }`}
-              style={{
-                boxShadow:
-                  "inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
-              }}
-            >
-            {/* Smoke layers sit inside a masked circular clipper: without the
-                mask, Safari intermittently renders the orb as a square
-                because the rotating (GPU-composited) smoke squares escape
-                the border-radius + overflow clip. */}
-            <span aria-hidden className="spr-orb-clip absolute inset-0 overflow-hidden rounded-full bg-[#0b3532]">
-            {/* Smoke layer — slow clockwise swirl */}
-            <span
-              aria-hidden
-              className={`absolute -inset-[30%] ${!reducedMotion ? "spr-smoke-swirl" : ""}`}
-              style={{
-                backgroundImage: "url(/orb-smoke-green.png)",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
-            {/* Smoke layer — counter swirl at different scale for depth */}
-            <span
-              aria-hidden
-              className={`absolute -inset-[30%] ${!reducedMotion ? "spr-smoke-swirl-rev" : ""}`}
-              style={{
-                backgroundImage: "url(/orb-smoke-green.png)",
-                backgroundSize: "160%",
-                backgroundPosition: "30% 65%",
-                opacity: 0.5,
-                mixBlendMode: "screen",
-              }}
-            />
-            </span>
-            {/* Glass depth shading */}
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,transparent_55%,rgba(4,32,30,0.55)_100%)]"
-            />
-            {/* Glass sheen */}
-            <span
-              aria-hidden
-              className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_26%,rgba(255,255,255,0.5)_0%,rgba(255,255,255,0.08)_30%,transparent_48%)]"
-            />
-            </span>
-          )}
-          {/* Icon: white waveform signal while listening; the idle globe is
-              clean cosmos smoke with no overlay lines. */}
-          {(state === "listening" || state === "processing") && (
-            <span className="relative z-10">
-              {state === "listening" ? (
-                <span className="flex flex-col items-center gap-1"><WaveformBars live level={level} reducedMotion={reducedMotion} /><Square className="h-3 w-3 fill-white text-white" /></span>
-              ) : (
+  
+            <button
+            type="button"
+            disabled={blocked && state !== "listening"}
+            onClick={() => {
+              if (state === "listening") {
+                void stopListening();
+              } else if (state === "processing") {
+                return;
+              } else if (state === "error") {
+                setState("idle");
+                setError(null);
+                setShowPanel(true);
+              } else {
+                void startListening();
+              }
+            }}
+            aria-label={state === "listening" ? L("Stop recording and use speech", "Terminar grabación y usar voz", lang) : L("Fill in fields by voice", "Llena los campos por voz", lang)}
+            aria-pressed={state === "listening"}
+            aria-busy={state === "processing"}
+            data-testid="intake-voice-orb"
+            className={`pointer-events-auto group relative flex items-center justify-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#245c5c] disabled:opacity-70 ${state === "listening" ? "h-14 w-14 ring-[3px] ring-teal-600 ring-offset-2" : "h-12 w-12"}`}
+          >
+            {/* Gentle ambient rings — listening indicator only */}
+            {state === "listening" && !reducedMotion && (
+              <>
                 <span
-                  className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
-                    reducedMotion ? "" : "animate-spin"
-                  }`}
+                  aria-hidden
+                  className="spr-intake-orb-ring absolute inset-[-6px] rounded-full border border-teal-200/50"
                 />
-              )}
-            </span>
-          )}
-        </button>
+                <span
+                  aria-hidden
+                  className="spr-intake-orb-ring-delay absolute inset-[-6px] rounded-full border border-cyan-200/40"
+                />
+              </>
+            )}
+            {state === "listening" || state === "processing" ? (
+              /* Mic ON: dark signal disc with a pulsating white waveform —
+                 no globe in the active state. */
+              <span
+                aria-hidden
+                className={`absolute inset-[5px] overflow-hidden rounded-full bg-[#303036] ${
+                  state === "listening" && !reducedMotion ? "spr-disc-pulse" : ""
+                }`}
+                style={{
+                  boxShadow:
+                    "inset 0 -8px 16px rgba(0,0,0,0.5), inset 0 4px 10px rgba(255,255,255,0.08), 0 4px 16px rgba(0,0,0,0.35)",
+                }}
+              />
+            ) : (
+              /* Motion globe — green smoke, kept visibly alive. The globe fills
+                 the button edge-to-edge: no border gap, no halo rings. */
+              <span
+                aria-hidden
+                className={`absolute inset-0 overflow-hidden rounded-full bg-[#0b3532] ${
+                  !reducedMotion ? "spr-orb-alive" : ""
+                }`}
+                style={{
+                  boxShadow:
+                    "inset 0 -10px 18px rgba(4,47,46,0.55), inset 0 6px 14px rgba(255,255,255,0.16), 0 4px 16px rgba(36,92,92,0.38)",
+                }}
+              >
+              {/* Smoke layers sit inside a masked circular clipper: without the
+                  mask, Safari intermittently renders the orb as a square
+                  because the rotating (GPU-composited) smoke squares escape
+                  the border-radius + overflow clip. */}
+              <span aria-hidden className="spr-orb-clip absolute inset-0 overflow-hidden rounded-full bg-[#0b3532]">
+              {/* Smoke layer — slow clockwise swirl */}
+              <span
+                aria-hidden
+                className={`absolute -inset-[30%] ${!reducedMotion ? "spr-smoke-swirl" : ""}`}
+                style={{
+                  backgroundImage: "url(/orb-smoke-green.png)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+              {/* Smoke layer — counter swirl at different scale for depth */}
+              <span
+                aria-hidden
+                className={`absolute -inset-[30%] ${!reducedMotion ? "spr-smoke-swirl-rev" : ""}`}
+                style={{
+                  backgroundImage: "url(/orb-smoke-green.png)",
+                  backgroundSize: "160%",
+                  backgroundPosition: "30% 65%",
+                  opacity: 0.5,
+                  mixBlendMode: "screen",
+                }}
+              />
+              </span>
+              {/* Glass depth shading */}
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_50%,transparent_55%,rgba(4,32,30,0.55)_100%)]"
+              />
+              {/* Glass sheen */}
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_26%,rgba(255,255,255,0.5)_0%,rgba(255,255,255,0.08)_30%,transparent_48%)]"
+              />
+              </span>
+            )}
+            {/* Icon: white waveform signal while listening; the idle globe is
+                clean cosmos smoke with no overlay lines. */}
+            {(state === "listening" || state === "processing") && (
+              <span className="relative z-10">
+                {state === "listening" ? (
+                  <span className="flex flex-col items-center gap-1"><WaveformBars live level={level} reducedMotion={reducedMotion} /><Square className="h-3 w-3 fill-white text-white" /></span>
+                ) : (
+                  <span
+                    className={`inline-block h-5 w-5 rounded-full border-2 border-white border-t-transparent ${
+                      reducedMotion ? "" : "animate-spin"
+                    }`}
+                  />
+                )}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </>
   );

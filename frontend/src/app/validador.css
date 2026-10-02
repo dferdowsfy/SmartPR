@@ -3498,3 +3498,36 @@ html.nav-is-scrolled .appbar .spr-header-utilities {
 .spr-guided-intake-shell .spr-stepper-bar { padding-block: 4px; }
 .spr-guided-intake-shell .spr-stepper-utilities { height: 36px; overflow: visible; }
 .spr-guided-intake-shell .spr-stepper-bar { min-height: 44px; }
+
+/* ---- Intake: keep the location section and the voice control in view ---- */
+/* The form's action footer is sticky at the bottom: reserve its height when
+   the browser scrolls a field or section into view (focus, scrollIntoView),
+   so the bottom of "Where will your business operate?" never ends up under it. */
+:root:has(.spr-guided-intake-shell) { scroll-padding-bottom: 112px; scroll-padding-top: 64px; }
+.spr-where { scroll-margin-bottom: 112px; }
+/* Beside the form, the project sidebar stops above the bottom band where the
+   (compact) Fill-by-voice control sits, and scrolls inside if it's long. */
+@media (min-width: 821px) {
+  .spr-guided-intake-shell .spr-project-summary { max-height: calc(100dvh - 232px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+}
+
+/* ---- Site results: labeled group cards, uniform spacing ---- */
+.spr-si-groups { display: grid; gap: 10px; }
+.spr-si-group { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid #e3e7e6; border-radius: 10px; background: #fff; }
+.spr-si-group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.spr-si-group .spr-si-group-title { margin: 0; }
+.spr-si-group-toggle { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; color: var(--spr-shell-teal, #245c5c); font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; }
+.spr-si-group-toggle:hover { background: #eef5f3; }
+.spr-si-group-toggle:focus-visible { outline: 2px solid var(--spr-shell-teal, #245c5c); outline-offset: 1px; }
+.spr-si-group-chevron { transition: transform .15s ease; transform: rotate(-90deg); }
+.spr-si-group-chevron.open { transform: rotate(0deg); }
+.spr-si-group-sources { display: grid; gap: 8px; padding-top: 8px; border-top: 1px solid #eef0ef; }
+@media (prefers-reduced-motion: reduce) { .spr-si-group-chevron { transition: none; } }
+/* Mobile: the compact voice control docks beside the footer's primary
+   action instead of on top of it. */
+@media (max-width: 820px) {
+  .spr-guided-intake-shell .spr-form-footer { padding-right: 76px; }
+}
+.spr-si, .spr-si-group, .spr-si-groups { text-align: left; }
+.spr-si-group .spr-si-pills { justify-content: flex-start; }
+.spr-si-group { align-items: stretch; }

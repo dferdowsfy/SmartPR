@@ -141,7 +141,8 @@ const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e)
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check("mobile: no horizontal overflow", overflow <= 0, String(overflow));
   const btn = await rect(page, ".spr-form-footer .spr-primary");
-  check("mobile: primary action full-width and tappable", btn.width > 300 && btn.height >= 44, `${Math.round(btn.width)}×${Math.round(btn.height)}`);
+  const orb = await rect(page, '[data-testid="intake-voice-orb"]');
+  check("mobile: primary action wide, tappable, and clear of the voice control", btn.width > 250 && btn.height >= 44 && (btn.right <= orb.left || orb.bottom <= btn.top || orb.top >= btn.bottom), `${Math.round(btn.width)}×${Math.round(btn.height)}`);
   await page.evaluate(() => window.scrollTo(0, 900));
   await page.waitForTimeout(400);
   const ind = await rect(page, '[data-testid="stepper-mobile"]');
