@@ -80,6 +80,7 @@ async function until(pred: (v: TeachSessionView) => boolean, label: string, ms =
 
 // The fixture "person" opens the sign-in screen; the password comes through the secure card.
 await until((x) => x.secret_fields.some((f) => f.kind === "password"), "sign-in screen with a password field");
+check("sign-in screen: every field is offered for typing from the chat (username + password)", ["Usuario", "Contraseña"].every((l) => (v.page_fields ?? []).some((f) => f.label === l)) && (v.page_fields ?? []).find((f) => f.label === "Contraseña")?.kind === "password", JSON.stringify(v.page_fields));
 check("sign-in screen: current gate is the person's (login)", v.current_gate === "login", String(v.current_gate));
 const sent = await secureFillTeach({ worker }, viewer, v.id, { value: PASSWORD, selector: v.secret_fields.find((f) => f.kind === "password")!.selector });
 check("secure one-time password typed into the portal by the worker", sent.ok, JSON.stringify(sent));

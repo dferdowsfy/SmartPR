@@ -90,7 +90,8 @@ ${DOM_HELPERS_JS}
     var heading = h ? textWithoutControls(h) : "";
     maskSensitive();
     var secrets = sensitiveFields();
-    var key = location.href.split("?")[0] + "|" + heading + "|" + document.title + "|" + secrets.length;
+    var fields = pageFields();
+    var key = location.href.split("?")[0] + "|" + heading + "|" + document.title + "|" + secrets.length + "|" + fields.length;
     if (key === lastPageKey) return;
     lastPageKey = key;
     send({
@@ -98,6 +99,7 @@ ${DOM_HELPERS_JS}
       title: clean(document.title),
       heading: heading,
       secretFields: secrets,
+      inputFields: fields,
       hasPassword: !!firstVisible("input[type=password]"),
       hasCaptcha: !!firstVisible('iframe[src*="recaptcha"],iframe[src*="hcaptcha"],iframe[src*="turnstile"],.g-recaptcha,.h-captcha,[id*="captcha" i],[class*="captcha" i],[name*="captcha" i]'),
       hasFileInput: hasVisibleFileInput()

@@ -14,7 +14,7 @@
  * through the action log.
  */
 import { randomUUID } from "node:crypto";
-import { passportScrubValues, sanitizeTeachEvent, type SecretFieldRef } from "./events";
+import { passportScrubValues, sanitizeTeachEvent, type PageFieldRef, type SecretFieldRef } from "./events";
 import {
   addSkippedStep,
   answerQuestion,
@@ -80,6 +80,8 @@ interface LiveTeach {
   agency: string | null;
   /** Sensitive inputs on the current screen (labels/selectors only). */
   secretFields: SecretFieldRef[];
+  /** Every visible input on the current screen (labels/selectors only). */
+  pageFields: PageFieldRef[];
   /** Step seqs whose screenshot the worker kept, and legacy direct URLs (server-side only). */
   shotSeqs: Set<number>;
   legacyShotUrls: Map<number, string>;
@@ -114,6 +116,8 @@ export interface TeachSessionView {
   stage: TeachStage;
   /** Sensitive inputs visible on the portal's current screen — where a secure one-time value can go. */
   secret_fields: SecretFieldRef[];
+  /** Every visible input on the portal's current screen — the person can type into it from the chat. */
+  page_fields: PageFieldRef[];
   /** The human-only step the current screen is (login, MFA, CAPTCHA, payment …), if any. */
   current_gate: TeachGate | null;
 }
@@ -184,6 +188,7 @@ export function viewOf(live: LiveTeach): TeachSessionView {
     agency: live.agency ?? null,
     stage: stageOf(live),
     secret_fields: live.status === "recording" ? live.secretFields ?? [] : [],
+    page_fields: live.status === "recording" ? live.pageFields ?? [] : [],
     current_gate: live.status === "recording" ? cur?.gate ?? null : null,
   };
 }
@@ -270,6 +275,7 @@ export async function startTeachSession(
     validation: null,
     agency: input.agency ? input.agency.trim().slice(0, 120) || null : null,
     secretFields: [],
+    pageFields: [],
     shotSeqs: new Set(),
     legacyShotUrls: new Map(),
   };
@@ -301,7 +307,10 @@ export async function syncTeachSession(deps: { worker: TeachWorker }, viewer: Sk
       const ev = sanitizeTeachEvent(item.event, live.secrets);
       if (!ev) continue;
       state = applyTeachEvent(state, ev);
-      if (ev.kind === "page") live.secretFields = ev.secretFields;
+      if (ev.kind === "page") {
+        live.secretFields = ev.secretFields;
+        live.pageFields = ev.inputFields;
+      }
     }
     live.state = state;
     live.actions = normalizeRecorderItems(items, live.secrets, live.actions ?? []);
@@ -472,7 +481,9 @@ export async function secureFillTeach(deps: { worker: TeachWorker }, viewer: Ski
   if (!deps.worker.secureFill) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't take secure input yet.");
   if (typeof input.value !== "string" || !input.value || input.value.length > 256) throw new TeachSessionError(400, "bad_value", "Type the value first.");
   // Only a field the recorder reported as sensitive on this screen (or the focused / first empty one).
-  const selector = input.selector && (live.secretFields ?? []).some((f) => f.selector === input.selector) ? input.selector : null;
+  // Only a field the recorder reported on this screen (or the focused / first empty sensitive one).
+  const known = [...(live.secretFields ?? []), ...(live.pageFields ?? [])];
+  const selector = input.selector && known.some((f) => f.selector === input.selector) ? input.selector : null;
   try {
     const out = await deps.worker.secureFill(live.workerSessionId, { value: input.value, selector });
     return { ok: out.ok === true, reason: out.ok ? null : out.reason ?? "no_field" };

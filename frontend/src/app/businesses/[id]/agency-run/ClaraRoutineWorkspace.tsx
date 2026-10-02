@@ -26,6 +26,8 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
   const router = useRouter();
   const businessId = isPersistedBusinessId(rawBusinessId) ? rawBusinessId : null;
   const [panel, setPanel] = useState<Panel>(ctx.mode === "teach" ? "browser" : null);
+  /** Desktop: the browser takes the whole width (chat one click away). */
+  const [browserWide, setBrowserWide] = useState(false);
   const [mobilePane, setMobilePane] = useState<"chat" | "panel">("chat");
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [biz, setBiz] = useState<{ name: string; municipality: string } | null>(null);
@@ -170,7 +172,7 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
 
         <div className="mt-3 flex min-h-0 flex-1 gap-3">
           <section
-            className={`min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02] p-3 sm:p-4 ${panelOpen ? "w-full lg:w-[42%] lg:shrink-0" : "mx-auto w-full max-w-3xl"} ${panelOpen && mobilePane !== "chat" ? "hidden lg:block" : ""}`}
+            className={`min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.02] p-3 sm:p-4 ${panelOpen ? "w-full lg:w-[32%] lg:min-w-[340px] lg:shrink-0" : "mx-auto w-full max-w-3xl"} ${panelOpen && mobilePane !== "chat" ? "hidden lg:block" : ""} ${panelOpen && panel === "browser" && browserWide ? "lg:hidden" : ""}`}
             aria-label={L("Conversation with Clara", "Conversación con Clara", lang)}
             data-testid="ws-chat"
           >
@@ -209,7 +211,7 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
           {panelOpen && (
             <aside className={`min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 ${mobilePane === "panel" ? "flex" : "hidden lg:flex"}`} data-testid="ws-side-panel" data-panel={panel}>
               {panel === "browser" ? (
-                <BrowserPanel liveUrl={liveUrl} lang={lang} note={L("Clara's browser on the agency portal. Your part (sign-in, codes, CAPTCHA, signature, payment, submit) happens here.", "El navegador de Clara en el portal de la agencia. Tu parte (entrar, códigos, CAPTCHA, firma, pago, envío) pasa aquí.", lang)} />
+                <BrowserPanel liveUrl={liveUrl} lang={lang} wide={browserWide} onToggleWide={() => setBrowserWide((w) => !w)} note={L("Click and type here like any browser. Sign-in, codes, CAPTCHA, signature, payment and submit are yours.", "Haz clic y escribe aquí como en cualquier navegador. Entrar, códigos, CAPTCHA, firma, pago y envío son tuyos.", lang)} />
               ) : (
                 <PassportPanel fields={passportFields} loaded={Boolean(passport?.loaded)} lang={lang} />
               )}

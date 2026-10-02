@@ -779,7 +779,7 @@ TEACH_MAX_SCRIPT_BYTES = 100_000
 _TEACH_EVENT_KEYS = {
     "kind", "url", "title", "heading", "hasPassword", "hasCaptcha", "hasFileInput",
     "role", "label", "selector", "inputType", "valueKind", "required", "optionText",
-    "secretKind", "secretFields",
+    "secretKind", "secretFields", "inputFields",
 }
 # Bumped when the teach/drive contract changes; SmartPR's probe reads it.
 TEACH_PROTOCOL = 2

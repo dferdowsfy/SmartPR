@@ -249,12 +249,19 @@ export function PassportPanel({ fields, loaded, lang, highlight }: { fields: Pas
   );
 }
 
-export function BrowserPanel({ liveUrl, lang, note }: { liveUrl: string | null; lang: Lang; note?: ReactNode }) {
+export function BrowserPanel({ liveUrl, lang, note, wide, onToggleWide }: { liveUrl: string | null; lang: Lang; note?: ReactNode; wide?: boolean; onToggleWide?: () => void }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="ws-browser-panel">
-      {note && <div className="shrink-0 border-b border-white/10 px-3 py-2 text-[13px] text-[#cfc6b4]">{note}</div>}
+      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-3 py-2 text-[13px] text-[#cfc6b4]">
+        <span className="min-w-0 flex-1">{note}</span>
+        {onToggleWide && (
+          <button type="button" onClick={onToggleWide} className="hidden shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1 text-[13px] font-bold text-[#161616] hover:bg-white lg:inline-flex" data-testid="ws-expand-browser">
+            {wide ? L("Show chat", "Ver chat", lang) : L("Expand browser", "Agrandar navegador", lang)}
+          </button>
+        )}
+      </div>
       {liveUrl ? (
-        <iframe src={liveUrl} title={L("Clara's browser", "Navegador de Clara", lang)} className="min-h-0 w-full flex-1 bg-black" allow="clipboard-read; clipboard-write" data-testid="ws-live-view" />
+        <iframe src={liveUrl} title={L("Clara's browser", "Navegador de Clara", lang)} className="min-h-0 w-full flex-1 bg-black" allow="autoplay; clipboard-read; clipboard-write; fullscreen" data-testid="ws-live-view" />
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-[14px] text-[#b9b0a0]">
           <Monitor className="h-7 w-7" aria-hidden="true" />
@@ -278,5 +285,74 @@ export function UnavailableCard({ lang, message, hint, reason, onRetry, children
         {children}
       </div>
     </ClaraBubble>
+  );
+}
+
+export interface PageFieldView {
+  label: string;
+  selector: string | null;
+  kind: "text" | "password" | "ssn" | "code" | "payment";
+}
+
+/**
+ * Type into the portal from the chat: one input per field Clara sees on the
+ * current screen (username, password, SSN, any text field). Each value goes
+ * once, straight to that field in the live browser, then the box clears —
+ * nothing is kept in the chat, the routine or anywhere else. Sensitive fields
+ * are masked. Clicking in the browser panel works too.
+ */
+export function PageFieldsCard({ lang, fields, endpoint, onSent }: { lang: Lang; fields: PageFieldView[]; endpoint: string; onSent?: () => void }) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, { ok: boolean; text: string }>>({});
+  const refs = useRef<Record<string, HTMLInputElement | null>>({});
+  const usable = fields.filter((f) => f.selector && f.kind !== "payment");
+  if (!usable.length) return null;
+  const send = async (f: PageFieldView) => {
+    const key = f.selector!;
+    const el = refs.current[key];
+    const value = el?.value ?? "";
+    if (!value) return;
+    if (el) el.value = "";
+    setBusy(key);
+    const r = await api<{ ok?: boolean; reason?: string | null }>(endpoint, { value, selector: f.selector }).catch(() => null);
+    setBusy(null);
+    const ok = Boolean(r?.ok && r.data.ok);
+    setNotes((n) => ({ ...n, [key]: { ok, text: ok ? L("Sent to the portal — not saved.", "Enviado al portal — no se guardó.", lang) : L("Didn't reach that field. Click it in the browser and try again, or type it there.", "No llegó a ese campo. Haz clic en él en el navegador e intenta otra vez, o escríbelo allí.", lang) } }));
+    if (ok) onSent?.();
+  };
+  return (
+    <div className="ml-9 space-y-2 rounded-2xl border border-[#2f6b4f] bg-[#10251b] p-3" data-testid="ws-page-fields">
+      <p className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em] text-[#9fd3b4]">
+        <Lock className="h-3.5 w-3.5" aria-hidden="true" /> {L("Type into this page from here", "Escribe en esta página desde aquí", lang)}
+      </p>
+      <p className="text-[12px] text-[#cfc6b4]">{L("Or click and type in the browser panel. Clara records which field you filled, never the value.", "O haz clic y escribe en el panel del navegador. Clara graba qué campo llenaste, nunca el valor.", lang)}</p>
+      {usable.map((f) => {
+        const key = f.selector!;
+        const secret = f.kind !== "text";
+        return (
+          <form key={key} className="space-y-1" autoComplete="off" onSubmit={(e) => { e.preventDefault(); void send(f); }} data-testid="ws-page-field" data-kind={f.kind}>
+            <span className="block text-[14px] text-[#f4efe2]">{f.label || L("Field", "Campo", lang)}{secret && <Lock className="ml-1 inline h-3 w-3 text-[#9fd3b4]" aria-label={L("sensitive", "sensible", lang)} />}</span>
+            <span className="flex items-center gap-2">
+              <input
+                ref={(el) => { refs.current[key] = el; }}
+                type={secret ? "password" : "text"}
+                autoComplete={secret ? "one-time-code" : "off"}
+                spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                maxLength={256}
+                aria-label={f.label}
+                className="min-w-0 flex-1 rounded-xl border border-white/15 bg-[#1f1f1f] px-3 py-1.5 text-[15px] text-[#f4efe2]"
+                data-testid="ws-page-field-input"
+              />
+              <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-page-field-send">
+                {busy === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} {L("Send", "Enviar", lang)}
+              </button>
+            </span>
+            {notes[key] && <span className={`block text-[12px] ${notes[key].ok ? "text-[#9fd3b4]" : "text-amber-200"}`} role="status">{notes[key].text}</span>}
+          </form>
+        );
+      })}
+    </div>
   );
 }

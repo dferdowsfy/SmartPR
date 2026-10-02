@@ -29,7 +29,7 @@ import {
 } from "../../../../lib/agency-runs/teach/workspaceChat";
 import { claraWorkspaceHref, type ClaraWorkspaceContext } from "../../../components/clara/claraWorkspaceLink";
 import { TeachClaraForm } from "../../../components/clara/TeachClaraForm";
-import { ClaraBubble, L, SecureInputCard, UnavailableCard, api, errText, ghostBtn, pick, primaryBtn, type Bi, type PassportFieldView } from "./workspaceParts";
+import { ClaraBubble, L, PageFieldsCard, SecureInputCard, type PageFieldView, UnavailableCard, api, errText, ghostBtn, pick, primaryBtn, type Bi, type PassportFieldView } from "./workspaceParts";
 
 type Question =
   | { id: string; kind: "mapping"; label: string; proposal: { path: string; en: string; es: string } | null; canAlwaysChoose: boolean; optionText: string }
@@ -47,6 +47,7 @@ interface SessionView {
   actions: { seq: number; kind: string; screenshot: string | null }[];
   stage: TeachStage;
   secret_fields: SecretFieldView[];
+  page_fields: PageFieldView[];
   current_gate: string | null;
   worker_status: string;
 }
@@ -554,10 +555,12 @@ export function TeachChat({
               {pick(GATE_EXPLAIN[session.current_gate], lang) || T("This part is yours.", "Esta parte es tuya.")}
             </ClaraBubble>
           )}
-          {secure && (
+          {(session.page_fields ?? []).length > 0 ? (
+            <PageFieldsCard key={(session.page_fields ?? []).map((f) => f.selector).join("|")} lang={lang} fields={session.page_fields} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
+          ) : secure ? (
             <SecureInputCard key={`${session.current_gate}-${secure.fields.map((f) => f.selector).join("|")}`} lang={lang} gate={secure.gate} fields={secure.fields} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
-          )}
-          {secureSent > 0 && <p className="ml-9 text-[12px] text-[#9fd3b4]" data-testid="ws-secure-count">{T(`${secureSent} sensitive value(s) sent straight to the portal — none kept.`, `${secureSent} valor(es) sensible(s) enviado(s) directo al portal — ninguno guardado.`)}</p>}
+          ) : null}
+          {secureSent > 0 && <p className="ml-9 text-[12px] text-[#9fd3b4]" data-testid="ws-secure-count">{T(`${secureSent} value(s) sent straight to the portal — none kept.`, `${secureSent} valor(es) enviado(s) directo al portal — ninguno guardado.`)}</p>}
           <div className="sticky bottom-0 ml-9 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-[#1b1b1b]/95 p-2.5 backdrop-blur" data-testid="ws-recording">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/15 px-2.5 py-1 text-[13px] font-semibold text-rose-100" data-testid="ws-stage" data-stage={session.stage}>
               <span className="h-2 w-2 animate-pulse rounded-full bg-rose-400" aria-hidden="true" />

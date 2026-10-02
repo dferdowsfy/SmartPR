@@ -110,6 +110,21 @@ export const DOM_HELPERS_JS = String.raw`
     }
   }
 
+  // Every visible text-like field on the screen (label/selector/kind — never a value),
+  // so the person can type into the portal from SmartPR's chat.
+  function pageFields() {
+    var out = [];
+    var all = document.querySelectorAll("input, textarea");
+    for (var i = 0; i < all.length && out.length < 12; i++) {
+      var el = all[i];
+      var type = (el.getAttribute("type") || "").toLowerCase();
+      if (/^(hidden|checkbox|radio|submit|button|file|reset|image|range|color)$/.test(type)) continue;
+      if (el.disabled || el.readOnly || !visible(el)) continue;
+      out.push({ label: labelFor(el), selector: selectorFor(el), kind: sensitiveKind(el) || "text" });
+    }
+    return out;
+  }
+
   function sensitiveFields() {
     var out = [];
     var all = document.querySelectorAll("[data-clara-sensitive]");

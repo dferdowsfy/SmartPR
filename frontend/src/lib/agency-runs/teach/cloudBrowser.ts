@@ -218,7 +218,7 @@ async function stopCloud(id: string): Promise<void> {
 
 // ------------------------------------------------------------------ teach
 
-const EVENT_KEYS = new Set(["kind", "url", "title", "heading", "hasPassword", "hasCaptcha", "hasFileInput", "role", "label", "selector", "inputType", "valueKind", "required", "optionText", "secretKind", "secretFields"]);
+const EVENT_KEYS = new Set(["kind", "url", "title", "heading", "hasPassword", "hasCaptcha", "hasFileInput", "role", "label", "selector", "inputType", "valueKind", "required", "optionText", "secretKind", "secretFields", "inputFields"]);
 
 async function drain(live: CloudLive): Promise<void> {
   if (live.status !== "running") return;

@@ -43,6 +43,13 @@ export interface SecretFieldRef {
   kind: SecretKind;
 }
 
+/** A visible input on the screen, for typing into it from the chat. */
+export interface PageFieldRef {
+  label: string;
+  selector: string | null;
+  kind: "text" | SecretKind;
+}
+
 export interface TeachPageEvent {
   kind: "page";
   url: string;
@@ -53,6 +60,8 @@ export interface TeachPageEvent {
   hasFileInput: boolean;
   /** Visible sensitive inputs (password, SSN, one-time code, card). */
   secretFields: SecretFieldRef[];
+  /** Every visible text-like input (sensitive ones carry their secret kind). */
+  inputFields: PageFieldRef[];
 }
 
 export interface TeachClickEvent {
@@ -192,6 +201,11 @@ export function sanitizeTeachEvent(raw: unknown, secrets: string[] = []): TeachE
           .map((f) => (f && typeof f === "object" ? (f as Record<string, unknown>) : {}))
           .map((f) => ({ label: text(f.label), selector: scrubSelector(f.selector, secrets), kind: SECRET_KINDS.find((k) => k === f.kind) ?? "password" }))
           .filter((f) => f.label || f.selector),
+        inputFields: (Array.isArray(r.inputFields) ? r.inputFields : [])
+          .slice(0, 12)
+          .map((f) => (f && typeof f === "object" ? (f as Record<string, unknown>) : {}))
+          .map((f) => ({ label: text(f.label), selector: scrubSelector(f.selector, secrets), kind: (SECRET_KINDS.find((k) => k === f.kind) ?? "text") as PageFieldRef["kind"] }))
+          .filter((f) => f.selector),
       };
     case "click": {
       const role = CLICK_ROLES.find((x) => x === r.role);

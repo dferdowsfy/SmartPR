@@ -262,7 +262,9 @@ describe("Teach Clara journey: teach once, replay for another business", () => {
 
   it("routines page: owner can rename and remove; others can't", async () => {
     const repo = new MemorySkillRepo();
-    let { worker, v } = await teach(repo, "Patente");
+    const taught = await teach(repo, "Patente");
+    const worker = taught.worker;
+    let v = taught.v;
     for (const q of v.questions) v = answerTeachQuestion(teacher, v.id, q.id, q.kind === "mapping" ? { kind: "mapping", choice: "confirm" } : { kind: "yes_no", value: "yes" });
     await finishTeachSession({ worker }, teacher, v.id);
     await validateTeachSession(teacher, v.id);
