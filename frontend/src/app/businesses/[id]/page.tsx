@@ -4,7 +4,7 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle, ArrowRight, Bell, Bot, Building2, CalendarDays, CheckCircle2,
+  ArrowRight, Bell, Bot, Building2, CalendarDays, CheckCircle2,
   ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, Scale, ShieldAlert, Upload,
 } from "lucide-react";
 import { useDeliverablesAccess } from "../../../lib/billing/useDeliverablesAccess";
@@ -15,11 +15,13 @@ import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow, passportCoverage } from "../../forms/engine/businessPassport";
 import { BusinessTile } from "../BusinessTile";
+import { ActiveFilingPanel, MunicipalityNotice } from "../ActiveFilingPanel";
+import { activeFilingFor, municipalityConflict, municipalRequirements } from "../activeFiling";
+import type { PassportLocationWithGeographies } from "../../locations/geo";
 import { PassportLocationSection } from "../PassportLocationSection";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
 import { MatterSiteSelect } from "../MatterSiteSelect";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
-import { AgencyRunCard } from "../AgencyRunCard";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
 import { getDocumentDownload, downloadKindLabel, KB } from "../../kb";
 import { legalBasisFor } from "../../requirementGuidance";
@@ -47,6 +49,7 @@ interface Detail {
   overall_readiness?: number | null;
   matters?: Matter[];
   obligations?: Obligation[];
+  agency_runs?: { filing_type: string; status: string }[];
   evidence?: Evidence[];
   submissions?: Submission[];
   deliverables?: Deliverable[];
@@ -130,38 +133,6 @@ function readinessLabel(percent: number | null, lang: Lang): { text: string; cls
   if (percent >= 90) return { text: L("On track", lang), cls: "bg-emerald-50 text-emerald-700" };
   if (percent >= 50) return { text: L("In progress", lang), cls: "bg-amber-50 text-amber-800" };
   return { text: L("Needs attention", lang), cls: "bg-rose-50 text-rose-700" };
-}
-
-function StatTile({ icon, iconBg, value, label }: { icon: React.ReactNode; iconBg: string; value: number; label: string }) {
-  return (
-    <div className="flex flex-1 flex-col items-center gap-2 px-4 py-2 text-center">
-      <span className={`flex h-11 w-11 items-center justify-center rounded-full ${iconBg}`}>{icon}</span>
-      <div className="text-2xl font-semibold text-[#161616]">{value}</div>
-      <div className="text-xs font-medium text-slate-500">{label}</div>
-    </div>
-  );
-}
-
-function CollapsibleRow({ icon, iconBg, title, summary, children, defaultOpen }: {
-  icon: React.ReactNode; iconBg: string; title: string; summary: string; children: React.ReactNode; defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(Boolean(defaultOpen));
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
-      <button
-        type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open}
-        className="flex w-full items-center gap-3 rounded-2xl px-5 py-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${iconBg}`}>{icon}</span>
-        <div className="min-w-0 flex-1">
-          <div className="font-bold text-[#161616]">{title}</div>
-          <div className="text-xs text-slate-500">{summary}</div>
-        </div>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && <div className="border-t border-slate-100 px-5 py-4">{children}</div>}
-    </section>
-  );
 }
 
 function Empty({ text }: { text: string }) { return <div className="rounded-xl border border-dashed border-slate-200 py-7 text-center text-sm text-slate-400">{text}</div>; }
@@ -605,18 +576,19 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const [showAllRequirements, setShowAllRequirements] = useState(false);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
   // Tiles start collapsed; a deep link (#business-passport, #all-requirements …) opens its tile.
-  const [openTiles, setOpenTiles] = useState<Set<string>>(() => new Set());
-  const toggleTile = (key: string) => setOpenTiles((cur) => { const next = new Set(cur); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+  const [activeTile, setActiveTile] = useState<string | null>(null);
+  const [panelEl, setPanelEl] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     const byHash: Record<string, string> = { "#business-passport": "passport", "#property-location": "location", "#evidence-locker": "evidence", "#missing-requirements": "missing", "#compliance-calendar": "calendar" };
     const hash = window.location.hash;
     const t = window.setTimeout(() => {
-      if (byHash[hash]) setOpenTiles(new Set([byHash[hash]!]));
+      if (byHash[hash]) setActiveTile(byHash[hash]!);
       if (hash === "#all-requirements") setShowAllRequirements(true);
     }, 0);
     return () => window.clearTimeout(t);
   }, []);
-  const [locationCount, setLocationCount] = useState<number | null>(null);
+  const [locations, setLocations] = useState<PassportLocationWithGeographies[] | null>(null);
+  const locationCount = locations?.length ?? null;
   // Requirements the user just marked complete: kept pinned in the
   // "outstanding" list (rendered with their new completed look) instead of
   // silently dropping out of view the instant the list re-sorts.
@@ -631,8 +603,8 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   useEffect(() => { void load(); }, [load]);
   const loadLocations = useCallback(() => fetch(`/api/businesses/${encodeURIComponent(id)}/locations`, { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : null))
-    .then((j) => setLocationCount(Array.isArray(j?.locations) ? j.locations.length : 0))
-    .catch(() => setLocationCount(0)), [id]);
+    .then((j) => setLocations(Array.isArray(j?.locations) ? j.locations : []))
+    .catch(() => setLocations([])), [id]);
   useEffect(() => { void loadLocations(); }, [loadLocations]);
 
   // Normalize to the short public URL once the business loads, so the address
@@ -689,6 +661,9 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     return { filled: cov.filled.length, total, pct: total ? Math.round((cov.filled.length / total) * 100) : 0 };
   }, [data]);
 
+  const activeFiling = data?.matters ? activeFilingFor(data.matters, data.obligations ?? [], data.agency_runs ?? []) : null;
+  const conflict = data?.business ? municipalityConflict(data.business.municipality, locations ?? []) : null;
+
   if (loadError) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-sm text-rose-700">{L("Couldn't load this business right now.", lang)} <button type="button" onClick={() => void load()} className="font-semibold underline">{L("Try again", lang)}</button></div></div>;
   if (!data) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-slate-500">{L("Loading compliance profile…", lang)}</div></div>;
   if (data.error || !data.business) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-slate-500">{L("Business not found.", lang)}</div></div>;
@@ -736,7 +711,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               <h1 className="font-[family-name:var(--font-display)] text-4xl font-medium tracking-tight md:text-5xl">{business.legal_name || business.name}</h1>
               <p className="mt-2 max-w-2xl text-base text-[#5a5a5a]">{business.entity_number || L("Entity number not entered", lang)} · {business.onboarding_mode === "EXISTING" ? L("Existing business reconstruction", lang) : L("SmartPR formation workflow", lang)}</p>
             </div>
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button" onClick={() => setShowBusinessDetails((value) => !value)} aria-expanded={showBusinessDetails}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-[#161616]/20 bg-white px-4 py-3 text-sm font-medium text-[#161616]"
@@ -745,6 +720,14 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showBusinessDetails ? "rotate-180" : ""}`} />
               </button>
               <Link href={`/businesses/${shortId}/matters/new`} className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-medium text-[#f6f3ea]">{L("Start New Filing / Renewal", lang)}</Link>
+              <Link
+                href={`/businesses/${shortId}/agency-run`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#161616]/20 bg-white px-4 py-3 text-sm font-medium text-[#161616] hover:bg-[#f4f1ea] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                data-testid="open-clara"
+                aria-label={lang === "es" ? "Abrir Clara, asistente para radicar" : "Open Clara, filing assistant"}
+              >
+                <Bot className="h-4 w-4" aria-hidden="true" /> {lang === "es" ? "Abrir Clara" : "Open Clara"}
+              </Link>
             </div>
           </div>
 
@@ -764,60 +747,67 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           )}
         </header>
 
-        {/* Overall readiness — the top of the profile. Same numbers as every
-            tile below (one pass over obligations in `derived`). */}
-        <section className="mt-6 rounded-2xl border border-[#D9DCE1] bg-white p-5 sm:p-6" data-testid="business-readiness">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
-            <div className="flex min-w-0 flex-1 items-center gap-5">
-              <ReadinessRing percent={derived.readiness} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{L("Overall readiness", lang)}</span>
-                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessInfo.cls}`}>{readinessInfo.text}</span>
-                </div>
-                <p className="mt-1 text-lg font-bold text-[#161616]">
-                  {derived.totalApplicable
-                    ? (lang === "es" ? `${derived.completed} de ${derived.totalApplicable} requisitos completados` : `${derived.completed} of ${derived.totalApplicable} requirements complete`)
-                    : L("No applicable requirements recorded yet.", lang)}
-                </p>
-                {derived.totalApplicable > 0 && (
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#ECEAE4]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={derived.readiness ?? 0} aria-label={L("Overall readiness", lang)}>
-                    <div className="h-full rounded-full bg-brand" style={{ width: `${derived.readiness ?? 0}%` }} />
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2 lg:w-[360px]">
-              <div className="rounded-xl bg-[#E8F3EC] px-3 py-2.5 text-center"><div className="text-2xl font-bold text-[#1E6B43]">{derived.completed}</div><div className="text-xs text-[#1E6B43]">{L("Complete", lang)}</div></div>
-              <div className="rounded-xl bg-[#FBEAEA] px-3 py-2.5 text-center"><div className="text-2xl font-bold text-[#9F2D2D]">{Math.max(derived.totalApplicable - derived.completed, 0)}</div><div className="text-xs text-[#9F2D2D]">{L("Need attention", lang)}</div></div>
-              <div className="rounded-xl bg-[#FBF1DE] px-3 py-2.5 text-center"><div className="text-2xl font-bold text-[#8A5A00]">{derived.activeMatters.length}</div><div className="text-xs text-[#8A5A00]">{L("Active filing", lang)}</div></div>
-            </div>
+        {/* Active filing first (what am I preparing, what blocks it, what next),
+            then overall business readiness and any location conflict. */}
+        <div className="mt-6 grid items-start gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <ActiveFilingPanel
+              lang={lang}
+              filing={activeFiling}
+              businessId={shortId}
+              onOpenRequirement={() => setShowAllRequirements(true)}
+              municipalityFlag={conflict ? conflict.passport : null}
+            />
           </div>
-          {nextBestAction && (
-            <div className="mt-4 flex flex-col gap-3 rounded-xl bg-[#F4F1EA] px-4 py-3 sm:flex-row sm:items-center">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand"><ArrowRight className="h-4 w-4 text-white" /></span>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-medium text-slate-500">{L("Next best action", lang)}</div>
-                <div className="truncate font-bold text-[#161616]">{nextBestAction.name}</div>
+          <div className="space-y-4">
+            {conflict && (
+              <MunicipalityNotice
+                lang={lang}
+                conflict={conflict}
+                affected={municipalRequirements(data.obligations ?? []).map((o) => o.name)}
+                onReviewLocation={() => setActiveTile("location")}
+                onReviewPassport={() => setActiveTile("passport")}
+              />
+            )}
+            <section className="rounded-2xl border border-[#D9DCE1] bg-white p-4" data-testid="business-readiness">
+              <div className="flex items-center gap-4">
+                <ReadinessRing percent={derived.readiness} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{L("Overall readiness", lang)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${readinessInfo.cls}`}>{readinessInfo.text}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-[#161616]">
+                    {derived.totalApplicable
+                      ? (lang === "es" ? `${derived.completed} de ${derived.totalApplicable} requisitos completados` : `${derived.completed} of ${derived.totalApplicable} requirements complete`)
+                      : L("No applicable requirements recorded yet.", lang)}
+                  </p>
+                  {conflict && <p className="mt-0.5 text-xs font-medium text-amber-800">{lang === "es" ? "Puede cambiar: el municipio está en conflicto" : "May change: municipality conflict"}</p>}
+                </div>
               </div>
-              <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="inline-flex items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea]">{lang === "es" ? "Continuar" : "Continue"}</a>
-            </div>
-          )}
-        </section>
-
-        {/* Agency assistant — primary assisted-filing action. */}
-        <div className="mt-6">
-          <AgencyRunCard businessId={shortId} lang={lang} />
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-[#E8F3EC] px-2 py-2 text-center"><div className="text-lg font-bold text-[#1E6B43]">{derived.completed}</div><div className="text-[11px] text-[#1E6B43]">{L("Complete", lang)}</div></div>
+                <div className="rounded-xl bg-[#FBEAEA] px-2 py-2 text-center"><div className="text-lg font-bold text-[#9F2D2D]">{Math.max(derived.totalApplicable - derived.completed, 0)}</div><div className="text-[11px] text-[#9F2D2D]">{lang === "es" ? "Pendientes" : "Remaining"}</div></div>
+                <div className="rounded-xl bg-[#FBF1DE] px-2 py-2 text-center"><div className="text-lg font-bold text-[#8A5A00]">{derived.activeMatters.length}</div><div className="text-[11px] text-[#8A5A00]">{L("Active filing", lang)}</div></div>
+              </div>
+              {nextBestAction && (!activeFiling || activeFiling.next?.item.id !== nextBestAction.id) && (
+                <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="mt-3 flex items-center gap-2 rounded-xl bg-[#F4F1EA] px-3 py-2 text-sm hover:bg-[#ece8de]">
+                  <ArrowRight className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate"><span className="text-slate-500">{L("Next best action", lang)}: </span><span className="font-semibold text-[#161616]">{nextBestAction.name}</span></span>
+                </a>
+              )}
+            </section>
+          </div>
         </div>
 
-        {/* Two tiles per row; each collapses so no section takes over the page. */}
-        <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+        {/* Compact tiles; the selected one opens in ONE shared detail panel below. */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="business-tiles">
           <BusinessTile
             id="business-passport" testId="tile-passport" tone="blue" icon={<Building2 className="h-5 w-5" />}
             title={lang === "es" ? "Pasaporte del negocio" : "Business Passport"}
             summary={lang === "es" ? `${passportStats.filled} de ${passportStats.total} datos guardados` : `${passportStats.filled} of ${passportStats.total} facts on file`}
             metric={`${passportStats.pct}%`} progress={passportStats.pct}
-            open={openTiles.has("passport")} onToggle={() => toggleTile("passport")}
+            selected={activeTile === "passport"} onSelect={() => setActiveTile("passport")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <BusinessPassportPanel businessId={shortId} business={business} lang={lang} onSaved={() => load()} showLocation={false} />
           </BusinessTile>
@@ -830,7 +820,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               : locationCount === 0
                 ? (business.municipality || (lang === "es" ? "Aún no hay ubicación" : "No location yet"))
                 : `${business.municipality ? `${business.municipality} · ` : ""}${lang === "es" ? `${locationCount} ubicación${locationCount === 1 ? "" : "es"}` : `${locationCount} location${locationCount === 1 ? "" : "s"}`}`}
-            open={openTiles.has("location")} onToggle={() => toggleTile("location")}
+            selected={activeTile === "location"} onSelect={() => setActiveTile("location")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <div className="rounded-2xl bg-white p-3">
               <PassportLocationSection businessId={shortId} lang={lang} onPassportUpdated={() => { void load(); void loadLocations(); }} />
@@ -847,7 +837,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 : `${evidence.length} document${evidence.length === 1 ? "" : "s"} · ${verified} verified`;
             })()}
             metric={evidence.length}
-            open={openTiles.has("evidence")} onToggle={() => toggleTile("evidence")}
+            selected={activeTile === "evidence"} onSelect={() => setActiveTile("evidence")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <EvidenceLockerPanel
               businessId={shortId}
@@ -865,7 +855,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               ? (lang === "es" ? `Faltan ${derived.missing.length} · ${topMissing[0]?.name ?? ""}` : `${derived.missing.length} left · next: ${topMissing[0]?.name ?? ""}`)
               : (lang === "es" ? "No falta nada" : "Nothing missing")}
             metric={derived.missing.length}
-            open={openTiles.has("missing")} onToggle={() => toggleTile("missing")}
+            selected={activeTile === "missing"} onSelect={() => setActiveTile("missing")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <div className="rounded-2xl bg-white p-4">
               {topMissing.length ? (
@@ -891,7 +881,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             title={L("Compliance Calendar", lang)}
             summary={topCalendar[0] ? `${dateLabel(topCalendar[0].due_date, lang)} · ${topCalendar[0].name}` : (lang === "es" ? "Sin fechas próximas" : "No upcoming dates")}
             metric={derived.calendar.length}
-            open={openTiles.has("calendar")} onToggle={() => toggleTile("calendar")}
+            selected={activeTile === "calendar"} onSelect={() => setActiveTile("calendar")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <div className="rounded-2xl bg-white p-4">
               {topCalendar.length ? (
@@ -917,7 +907,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             summary={lang === "es"
               ? `${derived.activeMatters.length} radicación${derived.activeMatters.length === 1 ? "" : "es"} activa${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} documento${evidence.length === 1 ? "" : "s"}`
               : `${derived.activeMatters.length} active filing${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} document${evidence.length === 1 ? "" : "s"}`}
-            open={openTiles.has("filings")} onToggle={() => toggleTile("filings")}
+            selected={activeTile === "filings"} onSelect={() => setActiveTile("filings")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <div className="rounded-2xl bg-white p-4">
             <div className="space-y-4">
@@ -987,7 +977,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 ? `${n} radicación${n === 1 ? "" : "es"} pasada${n === 1 ? "" : "s"} · ${unreadNotifications} sin leer`
                 : `${n} past filing${n === 1 ? "" : "s"} · ${unreadNotifications} unread`;
             })()}
-            open={openTiles.has("history")} onToggle={() => toggleTile("history")}
+            selected={activeTile === "history"} onSelect={() => setActiveTile("history")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
           >
             <div className="rounded-2xl bg-white p-4">
             <div className="space-y-4">
@@ -1017,6 +1007,12 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             </div>
           </BusinessTile>
         </div>
+        <div
+          ref={setPanelEl}
+          hidden={activeTile === null}
+          className="mt-3 rounded-2xl border border-[#D9DCE1] bg-white p-4 sm:p-5"
+          data-testid="tile-detail-panel"
+        />
 
         {showAllRequirements && (
           <section id="all-requirements" className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">

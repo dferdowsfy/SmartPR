@@ -20,6 +20,7 @@ import {
   HeartPulse, IdCard, Landmark, Loader2, Lock, MapPin, Sparkles, Square, Users, X,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
+import { ClaraPilotNote } from "../../AgencyRunCard";
 import { CLARA_BTN, CLARA_SURFACE, CLARA_SURFACE_SELECTED } from "./claraStyles";
 import type { FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import {
@@ -157,6 +158,7 @@ export function ClaraLaunchScreen({
             lang
           )}
         </p>
+        <ClaraPilotNote lang={lang} />
         {loading ? (
           <p className="mt-10 text-center text-[#64748B]"><Loader2 className="mr-2 inline h-5 w-5 animate-spin" />{L("Finding the filings for this project…", "Buscando los trámites de este proyecto…", lang)}</p>
         ) : error ? (

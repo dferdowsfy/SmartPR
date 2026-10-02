@@ -3,6 +3,7 @@
 import { getPool, isEnabled } from "../../../graph/db";
 import { ensureSchema, resolveBusinessUuid } from "../../../graph/store";
 import { getCurrentUser } from "../../../../lib/supabase/server";
+import { listRunsForBusiness } from "../../../../lib/agency-runs/store";
 import { deriveObligationStatus, nextActionForStatus, validDateOnly } from "../../../compliance/dates";
 import { selectEntriesForRequirement } from "../../../forms/engine/routing";
 import { getTemplate, isOfficialArtifact } from "../../../forms/artifacts/catalog";
@@ -156,6 +157,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
       obligations,
       evidence: evidenceResult.rows,
       notifications: notificationResult.rows,
+      // Clara run statuses (labels only) so the page can say "ready for
+      // review" / "submitted" from real run state. Runs are keyed by the id
+      // used in the Clara URL (public id or UUID).
+      agency_runs: [...listRunsForBusiness(id), ...(business.public_id && business.public_id !== id ? listRunsForBusiness(String(business.public_id)) : []), ...(businessUuid !== id ? listRunsForBusiness(businessUuid) : [])]
+        .map((r) => ({ filing_type: r.filing_type, status: r.status })),
     });
   } catch (err) {
     console.error("[businesses] detail failed:", (err as Error).message);
