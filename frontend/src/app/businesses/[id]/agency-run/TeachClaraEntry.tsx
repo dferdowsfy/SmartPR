@@ -16,6 +16,7 @@
  */
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { CLARA_BTN_ADMIN } from "./claraStyles";
 import { GraduationCap } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import { getFilingConfig } from "../../../../lib/agency-runs/filingTypes";
@@ -124,15 +125,21 @@ export function TeachClaraEntry(props: {
         type="button"
         onClick={teach}
         data-testid="teach-clara-button"
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[13px] font-bold text-[#161616] shadow-sm hover:bg-white"
+        data-admin={state.isAdmin ? "1" : "0"}
+        className={`${CLARA_BTN_ADMIN} shrink-0 px-3 py-1.5 text-[13px] font-bold`}
         title={
           state.isAdmin
             ? L("Walk a filing once so Clara can do it for every business.", "Haz un trámite una vez para que Clara lo pueda hacer para cualquier negocio.", lang)
             : L("Show Clara a form once and she'll remember it for you.", "Enséñale un formulario a Clara una vez y ella se lo aprende.", lang)
         }
       >
-        <GraduationCap className="h-3.5 w-3.5" />
+        <GraduationCap className="h-4 w-4" aria-hidden="true" />
         {L("Teach Clara", "Enséñale a Clara", lang)}
+        {props.adminOnly && (
+          <span className="rounded-md border border-[#F2C46D] bg-white/70 px-1.5 py-px text-[11px] font-bold uppercase tracking-wide text-[#8A5A00]" data-testid="teach-clara-admin-badge">
+            {L("Admin", "Admin", lang)}
+          </span>
+        )}
       </button>
       </>
     );

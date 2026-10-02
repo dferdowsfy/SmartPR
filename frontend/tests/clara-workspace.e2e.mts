@@ -93,7 +93,7 @@ const titles = await page.locator('[data-testid="clara-launch"] [data-testid="cl
 check("launch: only ready filings are cards (Permiso Único, Registro de Corporación)", titles.length === 2 && titles.some((t) => /Permiso Único/.test(t)) && titles.some((t) => /Registro de Corporación/.test(t)), titles.map((t) => t.split("\n")[1]).join(", "));
 check("launch: unsupported (Licencia Sanitaria) not shown", !(await page.locator('[data-testid="clara-launch"]').innerText()).includes("Licencia Sanitaria"));
 const notReady = await page.locator('[data-testid="clara-not-ready-card"]').allInnerTexts();
-check("launch: not-ready filing listed separately, not launchable", notReady.length === 1 && /Registro de Comerciante/.test(notReady[0]) && /2 items missing/.test(notReady[0]) && (await page.locator('[data-testid="clara-not-ready-card"] button').count()) === 0, notReady.join(" | "));
+check("launch: not-ready filing listed separately, not launchable", notReady.length === 1 && /Registro de Comerciante/.test(notReady[0]) && /2 items missing/.test(notReady[0]) && (await page.locator('[data-testid="clara-not-ready-card"] [data-testid="clara-workflow-card"]').count()) === 0, notReady.join(" | "));
 const strip = await page.locator('[data-testid="clara-autofill-strip"] li').evaluateAll((els) => els.map((e) => `${e.textContent?.trim()}:${e.getAttribute("data-available")}`));
 check("launch: Passport strip reflects this business", strip.some((s) => s.startsWith("Business details") && s.endsWith(":1")) && strip.some((s) => s.startsWith("Documents") && s.endsWith(":1")), strip.join(", "));
 check("launch: Business Passport button top-right", (await page.locator('[data-testid="clara-passport-button"]').count()) === 1);

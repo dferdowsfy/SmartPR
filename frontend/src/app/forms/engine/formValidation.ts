@@ -31,8 +31,8 @@ export interface FieldError {
 
 // --- Primitive validators -------------------------------------------------
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[+]?[-()\d\s.]{7,}$/;
+export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const PHONE_RE = /^[+]?[-()\d\s.]{7,}$/;
 const US_ZIP_RE = /^\d{5}(-\d{4})?$/;
 
 /**

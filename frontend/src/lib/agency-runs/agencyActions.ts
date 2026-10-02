@@ -91,11 +91,13 @@ function withObjective(action: AgencyAction): AgencyAction {
  * "addresses.municipality" / "addresses.state" keys fall back to their leaf
  * (both are address-scoped concepts — no collision risk with other leaves).
  */
-function coverageHit(flat: Map<string, string>, key: string): boolean {
+export function coverageHit(flat: Map<string, string>, key: string): boolean {
   const k = key.toLowerCase();
   if (flat.has(k)) return true;
   const leaf = k.includes(".") ? k.slice(k.lastIndexOf(".") + 1) : k;
   if ((leaf === "municipality" || leaf === "state") && flat.has(leaf)) return true;
+  // The canonical address keeps the state as principalPhysical.stateOrTerritory.
+  if (k === "addresses.state" && flat.has("stateorterritory")) return true;
   return false;
 }
 

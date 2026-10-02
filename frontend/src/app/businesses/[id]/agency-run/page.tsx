@@ -56,6 +56,8 @@ import { classifyWorkflows, filingProgress, workflowKey } from "../../../../lib/
 import { ClaraRoutineWorkspace } from "./ClaraRoutineWorkspace";
 import { parseClaraWorkspace } from "../../../components/clara/claraWorkspaceLink";
 import { TeachClaraEntry } from "./TeachClaraEntry";
+import { MissingRequirementsModal, type SaveResult } from "./MissingRequirementsModal";
+import { passportPatchFor, type MissingFieldSpec } from "../../../../lib/agency-runs/missingRequirements";
 import { AgencyChat, filingBusyKey, type SessionMsg } from "./AgencyChat";
 import { type FilingGroup, type FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import { filingReadinessKey, type FilingReadinessSummary } from "../../../../lib/agency-runs/filingReadiness";
@@ -1006,7 +1008,7 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
   useEffect(() => {
     lastTransientRef.current = null;
     setTransientHistory([]);
-  }, [run?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [run?.id]);  
 
   const terminalNote =
     run?.status === "stopped"
@@ -1127,6 +1129,10 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
   /** Back to the workflow list while a filing keeps running underneath. */
   const [launchOpen, setLaunchOpen] = useState(false);
   const [passportOpen, setPassportOpen] = useState(false);
+  /** Bumped after the missing-requirements modal saves, to re-read Passport fields. */
+  const [passportFieldsNonce, setPassportFieldsNonce] = useState(0);
+  /** The open modal's values are already saved (retry only re-reads eligibility). */
+  const savedRef = useRef(false);
   const [passportFields, setPassportFields] = useState<{ path: string; en: string; es: string; has: boolean; preview: string | null }[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -1139,7 +1145,60 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [businessId, passportOpen]);
+  }, [businessId, passportOpen, passportFieldsNonce]);
+
+  /* ---------------- Missing requirements (in Clara, no navigation) ---------------- */
+  const [missingFor, setMissingFor] = useState<{ filing: FilingOption; opener: HTMLElement } | null>(null);
+  const [highlightKey, setHighlightKey] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast && !highlightKey) return;
+    const t = window.setTimeout(() => { setToast(null); setHighlightKey(null); }, 4000);
+    return () => window.clearTimeout(t);
+  }, [toast, highlightKey]);
+  /** Re-read workflow eligibility (same endpoint the launch screen loads) without a loading flash. */
+  const refreshFilings = useCallback(async (): Promise<FilingGroup[] | null> => {
+    try {
+      const response = await fetch(`/api/agency-actions/filings?business_id=${encodeURIComponent(businessId)}${demoVisible ? "&demo=1" : ""}`, { cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return null;
+      const groups = (result.groups ?? []) as FilingGroup[];
+      setMsgs((prev) => prev.map((m) => (m.type === "filing-picker" ? { ...m, loading: false, error: null, groups, readiness: (result.readiness ?? null) as FilingReadinessSummary | null } : m)));
+      return groups;
+    } catch {
+      return null;
+    }
+  }, [businessId, demoVisible]);
+  /** Save to the canonical Business Passport, then recalculate eligibility. */
+  const saveMissing = async (filing: FilingOption, specs: MissingFieldSpec[], values: Record<string, string>, alreadySaved: boolean): Promise<SaveResult> => {
+    if (!alreadySaved) {
+      try {
+        const r = await fetch(`/api/businesses/${encodeURIComponent(businessId)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passport: passportPatchFor(specs, values), mergePassport: true }),
+        });
+        if (!r.ok) return { ok: false, stage: "save" };
+      } catch {
+        return { ok: false, stage: "save" };
+      }
+      savedRef.current = true;
+      setPassportFieldsNonce((n) => n + 1);
+    }
+    const groups = await refreshFilings();
+    if (!groups) return { ok: false, stage: "refresh" };
+    const key = workflowKey(filing);
+    const now = classifyWorkflows(groups);
+    const ready = now.ready.find((f) => workflowKey(f) === key);
+    const title = lang === "es" ? filing.action?.title_es ?? filing.title_es : filing.action?.title_en ?? filing.title_en;
+    if (ready) {
+      setHighlightKey(key);
+      setToast(L(`You're ready to file ${title}`, `Ya puedes radicar ${title}`, lang));
+    } else {
+      setToast(L("Saved to Business Passport", "Guardado en el Pasaporte del negocio", lang));
+    }
+    return { ok: true };
+  };
 
   /* ---------------- Clara workspace (launch → active filing) ---------------- */
   const pickerMsg = msgs.find((m) => m.type === "filing-picker");
@@ -1217,6 +1276,8 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
             busyKey={filingBusyId}
             categories={passportCategories}
             requirementsHref={requirementsHref}
+            highlightKey={highlightKey}
+            onCompleteRequirements={(f, opener) => { savedRef.current = false; setMissingFor({ filing: f, opener }); }}
           />
         )}
 
@@ -1331,6 +1392,22 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
           </div>
         )}
       </main>
+
+      {missingFor && (
+        <MissingRequirementsModal
+          key={workflowKey(missingFor.filing)}
+          lang={lang}
+          filing={missingFor.filing}
+          returnFocus={missingFor.opener}
+          onClose={() => setMissingFor(null)}
+          onSave={(specs, values) => saveMissing(missingFor.filing, specs, values, savedRef.current)}
+        />
+      )}
+      {toast && (
+        <div role="status" aria-live="polite" className="fixed bottom-6 left-1/2 z-[70] -translate-x-1/2 rounded-full border border-[#A7F3D0] bg-[#ECFDF5] px-5 py-2.5 text-[15px] font-semibold text-[#065F46] shadow-[0_4px_12px_rgba(15,23,42,0.12)]" data-testid="clara-toast">
+          {toast}
+        </div>
+      )}
 
       <PassportDrawer lang={lang} open={passportOpen} onClose={() => setPassportOpen(false)} fullHref={`/businesses/${encodeURIComponent(businessId)}#business-passport`}>
         <ul className="divide-y divide-[#F1F5F9]" data-testid="clara-passport-list">

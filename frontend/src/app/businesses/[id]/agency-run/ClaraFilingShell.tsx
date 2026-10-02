@@ -20,6 +20,7 @@ import {
   HeartPulse, IdCard, Landmark, Loader2, Lock, MapPin, Sparkles, Square, Users, X,
 } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
+import { CLARA_BTN, CLARA_SURFACE, CLARA_SURFACE_SELECTED } from "./claraStyles";
 import type { FilingOption } from "../../../../lib/agency-runs/agencyActions";
 import {
   FILING_STEPS, PHASE_COPY, PHASE_ORDER, agencyTone, missingCount, workflowKey,
@@ -67,22 +68,22 @@ export function ClaraHeader({ lang, onLang, onPassport, onClose, extra }: { lang
       </div>
       {extra}
       <div className="hidden flex-col items-center sm:flex">
-        <button type="button" onClick={onPassport} className="inline-flex items-center gap-2 rounded-full border border-[#BFD3FE] bg-[#F5F8FF] px-4 py-2 text-[15px] font-semibold text-[#0F172A] hover:bg-[#EAF1FF] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]" data-testid="clara-passport-button">
+        <button type="button" onClick={onPassport} className={`${CLARA_SURFACE_SELECTED} inline-flex items-center gap-2 rounded-full bg-[#F5F8FF] px-4 py-2 text-[15px] font-semibold text-[#0F172A] hover:border-[#6E98F5] hover:bg-[#EAF1FF]`} data-testid="clara-passport-button">
           <IdCard className="h-4 w-4" aria-hidden="true" /> {L("Business Passport", "Pasaporte del negocio", lang)} <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </button>
         <span className="mt-1 text-[12px] text-[#64748B]">{L("View and manage your saved information", "Ve y administra tu información guardada", lang)}</span>
       </div>
-      <button type="button" onClick={onPassport} className="rounded-full border border-[#BFD3FE] p-2 sm:hidden" aria-label={L("Business Passport", "Pasaporte del negocio", lang)}>
+      <button type="button" onClick={onPassport} className={`${CLARA_SURFACE_SELECTED} rounded-full bg-[#F5F8FF] p-2 sm:hidden`} aria-label={L("Business Passport", "Pasaporte del negocio", lang)}>
         <IdCard className="h-4 w-4" />
       </button>
-      <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-[#E5E7EB] bg-[#F8FAFC] p-1" role="group" aria-label={L("Language", "Idioma", lang)}>
+      <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-[#D7DEE8] bg-[#F1F4F8] p-1 shadow-[0_2px_6px_rgba(15,23,42,0.06)]" role="group" data-testid="clara-lang-toggle" aria-label={L("Language", "Idioma", lang)}>
         {(["en", "es"] as const).map((l) => (
-          <button key={l} type="button" aria-pressed={lang === l} onClick={() => onLang(l)} className={`rounded-full px-3 py-1 text-[13px] font-bold ${lang === l ? "bg-white text-[#0F172A] shadow-sm" : "text-[#64748B]"}`}>
+          <button key={l} type="button" aria-pressed={lang === l} onClick={() => onLang(l)} className={`rounded-full border px-3 py-1 text-[13px] font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${lang === l ? "border-[#B8C4D4] bg-white text-[#0F172A] shadow-[0_1px_3px_rgba(15,23,42,0.12)]" : "border-transparent text-[#64748B] hover:text-[#0F172A]"}`}>
             {l.toUpperCase()}
           </button>
         ))}
       </div>
-      <button type="button" onClick={onClose} className="rounded-full p-2 text-[#64748B] hover:bg-[#F1F5F9]" aria-label={L("Close Clara", "Cerrar Clara", lang)} data-testid="clara-close">
+      <button type="button" onClick={onClose} className="rounded-full p-2 text-[#64748B] hover:bg-[#F1F5F9] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]" aria-label={L("Close Clara", "Cerrar Clara", lang)} data-testid="clara-close">
         <X className="h-5 w-5" />
       </button>
     </header>
@@ -91,7 +92,7 @@ export function ClaraHeader({ lang, onLang, onPassport, onClose, extra }: { lang
 
 // ------------------------------------------------------------------ launch screen
 
-function WorkflowCard({ f, lang, onSelect, busy, selected, compact }: { f: FilingOption; lang: Lang; onSelect: () => void; busy?: boolean; selected?: boolean; compact?: boolean }) {
+function WorkflowCard({ f, lang, onSelect, busy, selected, compact, highlight }: { f: FilingOption; lang: Lang; onSelect: () => void; busy?: boolean; selected?: boolean; compact?: boolean; highlight?: boolean }) {
   const t = TONE[agencyTone(f)];
   const Icon = t.Icon;
   return (
@@ -100,10 +101,11 @@ function WorkflowCard({ f, lang, onSelect, busy, selected, compact }: { f: Filin
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={`${agencyLabel(f, lang)} — ${titleOf(f, lang)}`}
-      className={`group flex w-full items-center gap-4 rounded-[20px] border text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${compact ? "p-3.5" : "p-5"} ${selected ? "border-[#3B82F6] bg-[#EFF4FF]" : "border-[#E5E7EB] hover:border-[#CBD5E1]"}`}
+      className={`group flex w-full items-center gap-4 rounded-[20px] text-left ${compact ? "p-3.5" : "p-5"} ${selected ? `${CLARA_SURFACE_SELECTED} bg-[#EFF4FF]` : CLARA_SURFACE} ${highlight ? "ring-2 ring-[#34D399] ring-offset-2" : ""}`}
       style={selected ? undefined : { background: `linear-gradient(135deg, ${t.bg} 0%, #FFFFFF 85%)` }}
       data-testid="clara-workflow-card"
       data-key={workflowKey(f)}
+      data-highlight={highlight ? "1" : undefined}
     >
       <span className={`flex shrink-0 items-center justify-center rounded-full ${compact ? "h-11 w-11" : "h-14 w-14"}`} style={{ background: t.ring }} aria-hidden="true">
         <Icon className={compact ? "h-5 w-5" : "h-7 w-7"} style={{ color: t.fg }} />
@@ -112,9 +114,10 @@ function WorkflowCard({ f, lang, onSelect, busy, selected, compact }: { f: Filin
         <span className="block text-[13px] font-semibold" style={{ color: t.fg }}>{agencyLabel(f, lang)}</span>
         <span className={`block font-bold text-[#0F172A] ${compact ? "text-[15px]" : "text-[17px]"}`}>{titleOf(f, lang)}</span>
         <span className={`mt-0.5 block text-[#64748B] ${compact ? "line-clamp-2 text-[13px]" : "text-[14px]"}`}>{describe(f, lang)}</span>
+        {highlight && <span className="mt-1 inline-block rounded-full bg-[#D1FAE5] px-2 py-0.5 text-[12px] font-semibold text-[#047857]">{L("Ready to start", "Listo para empezar", lang)}</span>}
         {f.filing_status === "in_progress" && <span className="mt-1 inline-block rounded-full bg-[#DBEAFE] px-2 py-0.5 text-[12px] font-semibold text-[#2563EB]">{L("In progress", "En curso", lang)}</span>}
       </span>
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E5E7EB] bg-white shadow-sm group-hover:border-[#93C5FD]" aria-hidden="true">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#D7DEE8] bg-white shadow-[0_2px_6px_rgba(15,23,42,0.06)] group-hover:border-[#93B4FF] group-hover:bg-[#EFF4FF]" aria-hidden="true">
         {busy ? <Loader2 className="h-4 w-4 animate-spin text-[#2563EB]" /> : <ArrowRight className="h-4 w-4 text-[#2563EB]" />}
       </span>
     </button>
@@ -128,7 +131,7 @@ export interface PassportCategory {
 }
 
 export function ClaraLaunchScreen({
-  lang, workflows, loading, error, onSelect, busyKey, categories, requirementsHref,
+  lang, workflows, loading, error, onSelect, busyKey, categories, requirementsHref, onCompleteRequirements, highlightKey,
 }: {
   lang: Lang;
   workflows: ClassifiedWorkflows;
@@ -138,6 +141,10 @@ export function ClaraLaunchScreen({
   busyKey: string | null;
   categories: PassportCategory[];
   requirementsHref: string;
+  /** Opens the in-Clara missing-requirements modal (never navigates). */
+  onCompleteRequirements: (f: FilingOption, opener: HTMLElement) => void;
+  /** A workflow that just became ready (brief highlight). */
+  highlightKey?: string | null;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-8 sm:px-7" data-testid="clara-launch">
@@ -158,13 +165,13 @@ export function ClaraLaunchScreen({
           <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-6 text-center" data-testid="clara-no-workflows">
             <p className="text-[16px] font-semibold text-[#0F172A]">{L("Nothing is ready for Clara to file yet", "Todavía no hay nada listo para que Clara radique", lang)}</p>
             <p className="mt-1 text-[14px] text-[#64748B]">{L("Finish the items your requirements still need, and the filings Clara can do will appear here.", "Completa lo que todavía piden tus requisitos y aquí aparecerán los trámites que Clara puede hacer.", lang)}</p>
-            <a href={requirementsHref} className="mt-3 inline-flex items-center gap-1 text-[14px] font-semibold text-[#2563EB] hover:underline">{L("View requirements", "Ver requisitos", lang)} <ExternalLink className="h-3.5 w-3.5" /></a>
+            <a href={requirementsHref} className={`${CLARA_BTN} mt-4 px-4 py-2 text-[14px] font-semibold text-[#1D4ED8]`}>{L("View requirements", "Ver requisitos", lang)} <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a>
           </div>
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3" role="list">
             {workflows.ready.map((f) => (
               <div role="listitem" key={workflowKey(f)}>
-                <WorkflowCard f={f} lang={lang} onSelect={() => onSelect(f)} busy={busyKey === workflowKey(f)} />
+                <WorkflowCard f={f} lang={lang} onSelect={() => onSelect(f)} busy={busyKey === workflowKey(f)} highlight={highlightKey === workflowKey(f)} />
               </div>
             ))}
           </div>
@@ -177,13 +184,20 @@ export function ClaraLaunchScreen({
               {workflows.notReady.map((f) => {
                 const n = missingCount(f);
                 return (
-                  <li key={workflowKey(f)} className="flex items-center gap-3 rounded-2xl border border-dashed border-[#E2E8F0] bg-[#FAFAF9] p-4" data-testid="clara-not-ready-card">
-                    <div className="min-w-0 flex-1">
+                  <li key={workflowKey(f)} className="flex flex-col gap-3 rounded-2xl border border-dashed border-[#C9D2DE] bg-[#F7F7F5] p-4" data-testid="clara-not-ready-card" data-key={workflowKey(f)}>
+                    <div className="min-w-0">
                       <p className="text-[13px] text-[#64748B]">{agencyLabel(f, lang)}</p>
                       <p className="font-semibold text-[#334155]">{titleOf(f, lang)}</p>
-                      <p className="text-[13px] text-[#B45309]">{n === 1 ? L("1 item missing", "Falta 1 dato", lang) : L(`${n} items missing`, `Faltan ${n} datos`, lang)}</p>
+                      <p className="text-[13px] text-[#64748B]">{describe(f, lang)}</p>
                     </div>
-                    <a href={requirementsHref} className="shrink-0 text-[13px] font-semibold text-[#2563EB] hover:underline">{L("View missing requirements", "Ver lo que falta", lang)}</a>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="rounded-full border border-[#FCD9A8] bg-[#FFF4E5] px-2.5 py-0.5 text-[12px] font-semibold text-[#9A4D00]" data-testid="clara-missing-count">
+                        {n === 1 ? L("1 item missing", "Falta 1 dato", lang) : L(`${n} items missing`, `Faltan ${n} datos`, lang)}
+                      </span>
+                      <button type="button" onClick={(e) => onCompleteRequirements(f, e.currentTarget)} className={`${CLARA_BTN} px-3.5 py-1.5 text-[13px] font-semibold text-[#1D4ED8]`} data-testid="clara-complete-requirements">
+                        {L("Complete requirements", "Completar lo que falta", lang)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
+                    </div>
                   </li>
                 );
               })}
@@ -369,7 +383,7 @@ export function FilingHeader({ lang, filing, requirementsHref }: { lang: Lang; f
         <h2 className="text-[24px] font-bold leading-tight text-[#0F172A]">{titleOf(filing, lang)}</h2>
         <p className="text-[14px] text-[#64748B]">{describe(filing, lang)}</p>
       </div>
-      <a href={requirementsHref} className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-[14px] font-semibold text-[#0F172A] hover:bg-[#F8FAFC]" data-testid="clara-view-requirements">
+      <a href={requirementsHref} className={`${CLARA_BTN} px-4 py-2 text-[14px] font-semibold text-[#0F172A]`} data-testid="clara-view-requirements">
         {L("View requirements", "Ver requisitos", lang)} <ExternalLink className="h-4 w-4" aria-hidden="true" />
       </a>
     </div>
@@ -391,7 +405,7 @@ export function BrowserFrame({ lang, live, children }: { lang: Lang; live: boole
 
 export function StopClaraButton({ lang, onStop, busy }: { lang: Lang; onStop: () => void; busy: boolean }) {
   return (
-    <button type="button" onClick={onStop} disabled={busy} className="inline-flex items-center gap-2 rounded-full border-2 border-[#FDA4AF] bg-white px-5 py-2 text-[15px] font-semibold text-[#E11D48] hover:bg-[#FFF1F2] disabled:opacity-50" data-testid="clara-stop">
+    <button type="button" onClick={onStop} disabled={busy} className="inline-flex items-center gap-2 rounded-full border-2 border-[#FDA4AF] bg-white px-5 py-2 text-[15px] font-semibold text-[#E11D48] shadow-[0_2px_6px_rgba(15,23,42,0.06)] hover:border-[#FB7185] hover:bg-[#FFF1F2] hover:shadow-[0_4px_12px_rgba(15,23,42,0.09)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E11D48] disabled:opacity-50" data-testid="clara-stop">
       <Square className="h-4 w-4 fill-[#E11D48]" aria-hidden="true" /> {L("Stop Clara", "Detener a Clara", lang)}
     </button>
   );

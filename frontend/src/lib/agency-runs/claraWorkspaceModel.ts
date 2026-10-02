@@ -45,9 +45,11 @@ export function workflowKey(f: FilingOption): string {
   return `${f.id}:${f.obligation_id}:${f.action?.objective_en ?? ""}`;
 }
 
-/** What still blocks a not-ready workflow (labels only). */
+/** What still blocks a not-ready workflow: its own missing non-sensitive
+ * fields plus prerequisite filings (sensitive values are asked during the run
+ * and never block). */
 export function missingCount(f: FilingOption): number {
-  return (f.action?.missing_items.length ?? 0) + (f.action?.blocked_by.length ?? 0);
+  return (f.action?.missing_items.filter((m) => !m.sensitive).length ?? 0) + (f.action?.blocked_by.length ?? 0);
 }
 
 // ------------------------------------------------------------------ agency styling
