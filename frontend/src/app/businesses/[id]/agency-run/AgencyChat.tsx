@@ -1810,12 +1810,15 @@ export function AgencyChat(props: AgencyChatProps) {
                   <>
                     <div className="space-y-2">{openable.map(card)}</div>
                     {other.length > 0 && (
-                      <div data-testid="filings-unavailable">
-                        <p className="mb-2 mt-1 pl-1 text-[12px] font-bold uppercase tracking-wider text-slate-400">
-                          {L("Not available for browser filing yet", "Aún no disponibles para radicar en el navegador", lang)}
-                        </p>
+                      // Filings Clara can't submit yet stay one click away, so the
+                      // list starts with what can actually be filed now.
+                      <details data-testid="filings-unavailable" className="group">
+                        <summary className="mb-2 mt-1 cursor-pointer list-none pl-1 text-[13px] font-semibold text-slate-500 hover:text-slate-700">
+                          <span className="mr-1 inline-block transition group-open:rotate-90">›</span>
+                          {L(`${other.length} more ${other.length === 1 ? "filing" : "filings"} Clara can't submit in the browser yet`, `${other.length} ${other.length === 1 ? "trámite más que Clara aún no puede" : "trámites más que Clara aún no puede"} radicar en el navegador`, lang)}
+                        </summary>
                         <div className="space-y-2">{other.map(card)}</div>
-                      </div>
+                      </details>
                     )}
                   </>
                 )}

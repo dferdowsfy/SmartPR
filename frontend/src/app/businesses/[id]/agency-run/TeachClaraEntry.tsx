@@ -121,7 +121,7 @@ export function TeachClaraEntry(props: {
         type="button"
         onClick={teach}
         data-testid="teach-clara-button"
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#fbf8f2] px-3 py-1.5 text-[13px] font-bold text-[#161616] shadow-sm hover:bg-white"
         title={
           state.isAdmin
             ? L("Walk a filing once so Clara can do it for every business.", "Haz un trámite una vez para que Clara lo pueda hacer para cualquier negocio.", lang)
