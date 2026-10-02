@@ -1544,6 +1544,12 @@ export interface AgencyChatProps {
   onShowMissing: () => void;
   /** "Prepare documents" quick action target. */
   prepareHref: string;
+  /**
+   * Inside the Clara filing workspace: only the run's cards (pre-flight,
+   * interventions, review, notes) — no free-form composer and no stop bar
+   * (the workspace has Stop Clara).
+   */
+  embedded?: boolean;
 }
 
 const QUICK_ACTION =
@@ -1978,7 +1984,7 @@ export function AgencyChat(props: AgencyChatProps) {
         </div>
       </div>
 
-      {!props.runActive && (
+      {!props.runActive && !props.embedded && (
         <form
           className="border-t border-slate-100 px-4 pt-3"
           data-testid="chat-composer"
@@ -2043,6 +2049,7 @@ export function AgencyChat(props: AgencyChatProps) {
         </form>
       )}
 
+      {!props.embedded && (
       <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3 empty:hidden">
         {props.stoppedOrFailed ? (
           <button
@@ -2069,6 +2076,7 @@ export function AgencyChat(props: AgencyChatProps) {
           )
         )}
       </div>
+      )}
     </div>
   );
 }

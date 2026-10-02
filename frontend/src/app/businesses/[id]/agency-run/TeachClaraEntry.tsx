@@ -47,6 +47,8 @@ export function TeachClaraEntry(props: {
   filingType: string | null;
   lang: Lang;
   variant: "button" | "offer";
+  /** Clara filing workspace: Teach Clara is an operator tool — admins only. */
+  adminOnly?: boolean;
 }) {
   const { businessId, filingType, lang, variant } = props;
   const router = useRouter();
@@ -90,6 +92,7 @@ export function TeachClaraEntry(props: {
   }, [filingType]);
 
   if (!state) return null;
+  if (props.adminOnly && !state.isAdmin) return null;
   if (variant === "offer" && state.replayRef) {
     const ref = state.replayRef;
     const plan = async () => {

@@ -1,42 +1,38 @@
 "use client";
 
 /**
- * Clara (agency assistant) — CHAT-PRIMARY run page.
+ * Clara (agency assistant) — the filing workspace.
  *
- * The chat thread (AgencyChat) is the primary surface for the whole run:
- * filing picker → pre-flight card → goal brief → milestone messages → one
- * transient status indicator → intervention cards → review card. The live
- * browser (AgencyBrowser) is a static, always-visible panel while a run is
- * active: beside the chat on desktop, stacked above it on mobile. It is
- * never a modal sheet and never starts hidden — the user can hide it, but
- * it reopens with every new run.
+ * Launch screen: "Ready to file with Clara" lists only the filings SmartPR
+ * identified for this business that Clara can run now (GET
+ * /api/agency-actions/filings → classifyWorkflows), plus the ones that apply
+ * but aren't ready. No chat box, no browser yet.
  *
- * Filing-first: the picker lists the specific filings SmartPR identified
- * for this business (GET /api/agency-actions/filings). SmartPR decides what
- * needs to be filed — the browser agent only executes the selected filing,
- * via pre-flight (GET /api/agency-actions/preflight) and run creation
- * (POST /api/agency-actions, requires obligation_id).
+ * Active filing: picking a workflow runs the existing flow — pre-flight
+ * (GET /api/agency-actions/preflight, Business Passport + project facts)
+ * → the person confirms → run (POST /api/agency-actions, Browser Use) —
+ * shown as a collapsible workflow sidebar, a 5-step stepper and Clara's
+ * progress checklist (filingProgress: real run status / pause / events),
+ * the existing pre-flight, intervention and review cards, and the live
+ * browser. Stop Clara calls POST /api/agency-runs/[id]/stop.
  *
- * Preserved behaviors and API contracts from the previous browser-centric page:
+ * Preserved behaviors and API contracts:
  * - GET /api/agency-runs/[id] polled every 900ms while queued/running/paused.
  * - Pending-field values live in local state only and are POSTed to
  *   /api/agency-runs/[id]/resume as `{ fields }` — never rendered into chat
  *   text, events, or logs.
  * - Uploads POST to /api/evidence (5 MB cap).
- * - Takeover mode, reconnect preview, stop, provider badge.
- * - Mock provider timelines flow through the same chat components.
+ * - Takeover mode, reconnect preview, stop, approval gates.
+ * - ?mode=teach|fill opens the Teach Clara / Fill with Clara routine workspace.
  */
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft, Eye, EyeOff, KeyRound, Shield,
-} from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { useLang, setLang } from "../../../useLang";
 import type { Lang } from "../../../forms/engine/types";
 import type {
   AgencyPendingField,
   AgencyRunPublic,
-  AgencyRunStatus,
 } from "../../../../lib/agency-runs/types";
 import { getFilingConfig, AGENCY_FILING_CONFIGS } from "../../../../lib/agency-runs/filingTypes";
 import {
@@ -52,6 +48,11 @@ import {
 } from "../../../../lib/agency-runs/sensitiveFields";
 import { mergeFieldsWithPassportPrefill } from "../../../../lib/agency-runs/prefillFromPassport";
 import { AgencyBrowser } from "./AgencyBrowser";
+import {
+  BrowserFrame, ClaraHeader, ClaraLaunchScreen, ClaraProgressPanel, FilingHeader, FilingStepper, PassportDrawer, StopClaraButton, WorkflowSidebar,
+  type PassportCategory,
+} from "./ClaraFilingShell";
+import { classifyWorkflows, filingProgress, workflowKey } from "../../../../lib/agency-runs/claraWorkspaceModel";
 import { ClaraRoutineWorkspace } from "./ClaraRoutineWorkspace";
 import { parseClaraWorkspace } from "../../../components/clara/claraWorkspaceLink";
 import { TeachClaraEntry } from "./TeachClaraEntry";
@@ -67,63 +68,18 @@ import {
   isTerminalWorkflowState,
   workflowStateForRun,
   workflowStatusLine,
-  type AgencyAction,
   type GoalBrief,
 } from "./chatContracts";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
-const STATUS_STYLES: Record<AgencyRunStatus, string> = {
-  queued: "border-slate-300 bg-slate-100 text-slate-700",
-  running: "border-sky-300 bg-sky-50 text-sky-800",
-  paused: "border-amber-300 bg-amber-50 text-amber-900",
-  review: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  submitted: "border-emerald-400 bg-emerald-100 text-emerald-900",
-  stopped: "border-slate-400 bg-slate-200 text-slate-800",
-  failed: "border-rose-300 bg-rose-50 text-rose-800",
-};
 
-function statusLabel(status: AgencyRunStatus, lang: Lang): string {
-  const map: Record<AgencyRunStatus, [string, string]> = {
-    queued: ["Queued", "En cola"],
-    running: ["Running", "En curso"],
-    paused: ["Paused", "Pausado"],
-    review: ["Review", "Revisión"],
-    submitted: ["Submitted", "Enviado"],
-    stopped: ["Stopped", "Detenido"],
-    failed: ["Failed", "Falló"],
-  };
-  const [en, es] = map[status];
-  return L(en, es, lang);
-}
 
-function StatusPill({ status, lang }: { status: AgencyRunStatus; lang: Lang }) {
-  return (
-    <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[13px] font-bold tracking-wide ${STATUS_STYLES[status]}`}>
-      {statusLabel(status, lang)}
-    </span>
-  );
-}
 
 /**
  * Segmented passport-progress bar from the Clara design: filled segments in
  * deep forest green, remaining segments in gold.
  */
-function SegmentedBar({ known, total }: { known: number; total: number }) {
-  const n = Math.max(total, 1);
-  const segs = Math.min(n, 16);
-  const filledCount = Math.round((Math.min(known, n) / n) * segs);
-  return (
-    <span className="inline-flex items-center gap-[3px]" aria-hidden="true">
-      {Array.from({ length: segs }).map((_, i) => (
-        <span
-          key={i}
-          className={`h-1.5 w-3.5 rounded-full ${i < filledCount ? "bg-[#1e4d38]" : "bg-[#c99509]"}`}
-        />
-      ))}
-    </span>
-  );
-}
 
 /**
  * ?mode=teach|fill opens the workspace in routine mode (Teach Clara / Fill
@@ -188,12 +144,6 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
     values: {},
   });
   const [previewLoaded, setPreviewLoaded] = useState(false);
-  /**
-   * The live browser is a static, always-visible panel while a run is
-   * active — never a modal sheet, never starting hidden. The user can
-   * hide it; starting a new run (or taking over) reopens it.
-   */
-  const [browserHidden, setBrowserHidden] = useState(false);
   /** Small screens show one pane at a time; desktop ignores this. */
   const [mobilePane, setMobilePane] = useState<"chat" | "browser">("chat");
   /** Fictional rehearsal portal — admin-only or ?demo=1. Never for real users. */
@@ -242,33 +192,8 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
     };
   }, [businessId]);
 
-  /** Portal-fields progress for the Clara chat header ("Portal fields 11 of 12"). */
-  const portalFieldsProgress = useMemo(() => {
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      const m = msgs[i];
-      if (m.type === "preflight" && m.action) {
-        return { known: m.action.known, total: m.action.total };
-      }
-    }
-    if (goalBrief) {
-      const known = goalBrief.known_fields?.length ?? 0;
-      const total = known + (goalBrief.user_input_expected?.length ?? 0);
-      if (total > 0) return { known, total };
-    }
-    return null;
-  }, [msgs, goalBrief]);
 
   /** Filing label for the sub-header subtitle (latest pre-flight / goal brief). */
-  const activeFilingLabel = useMemo(() => {
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      const m = msgs[i];
-      if (m.type === "preflight" || m.type === "goal-brief") {
-        return L(m.filingLabelEn, m.filingLabelEs, lang);
-      }
-    }
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [msgs, lang]);
 
   const pushMsg = useCallback((msg: SessionMsg) => {
     setMsgs((prev) => [...prev, msg]);
@@ -672,7 +597,6 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
     const started = result.run as AgencyRunPublic;
     const brief = (result.brief ?? null) as GoalBrief | null;
     setRun(started);
-    setBrowserHidden(false);
     setGoalBrief(brief);
     // Retain pre-flight field values in-memory (never persisted) so that a
     // later re-ask of the same fields pre-fills from this session and the
@@ -837,7 +761,6 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
 
   const enterTakeover = async () => {
     setTakeover(true);
-    setBrowserHidden(false);
     setMobilePane("browser");
     if (!run) return;
     try {
@@ -1142,7 +1065,6 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
       ? {
           knownCount: goalBrief ? goalBrief.known_fields.length : null,
           onReviewInBrowser: () => {
-            setBrowserHidden(false);
             if (run.live_url) void enterTakeover();
           },
           onClose: () => void stop(),
@@ -1187,7 +1109,6 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
     setGoalBrief(null);
     setError(null);
     setUploadMsg(null);
-    setBrowserHidden(false);
     // Keep the filing picker (already loaded) and drop everything after it.
     setMsgs((prev) => prev.filter((m) => m.type === "filing-picker"));
   };
@@ -1201,281 +1122,230 @@ function AgencyRunPage({ businessId }: { businessId: string }) {
    * in the first chat message, not a hero above the window.
    */
   /** Before a run the browser pane is a placeholder (desktop), so the layout doesn't jump. */
-  const showBrowserPanel = !browserHidden;
-  const workflowLabel = activeFilingLabel ?? L("Assisted filing", "Radicación asistida", lang);
+
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  /** Back to the workflow list while a filing keeps running underneath. */
+  const [launchOpen, setLaunchOpen] = useState(false);
+  const [passportOpen, setPassportOpen] = useState(false);
+  const [passportFields, setPassportFields] = useState<{ path: string; en: string; es: string; has: boolean; preview: string | null }[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/clara-workspace/passport?business_id=${encodeURIComponent(businessId)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!cancelled && Array.isArray(j?.fields)) setPassportFields(j.fields);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [businessId, passportOpen]);
+
+  /* ---------------- Clara workspace (launch → active filing) ---------------- */
+  const pickerMsg = msgs.find((m) => m.type === "filing-picker");
+  const pickerGroups = pickerMsg?.type === "filing-picker" ? pickerMsg.groups : [];
+  const workflows = classifyWorkflows(pickerGroups);
+  const allWorkflowOptions = [...workflows.ready, ...workflows.notReady];
+  const preflightMsg = [...msgs].reverse().find((m) => m.type === "preflight");
+  const activeFiling =
+    (selectedKey ? allWorkflowOptions.find((f) => workflowKey(f) === selectedKey) : undefined) ??
+    (run ? workflows.ready.find((f) => f.action?.filing_type === run.filing_type) : undefined) ??
+    (preflightMsg?.type === "preflight" ? workflows.ready.find((f) => f.obligation_id === preflightMsg.action.obligation_id) : undefined) ??
+    null;
+  const activeMode = Boolean(run) || Boolean(preflightMsg) || filingBusyId !== null || selectedKey !== null;
+  const showLaunch = !activeMode || launchOpen;
+  const progress = filingProgress({ preparing: filingBusyId !== null, awaitingStart: Boolean(preflightMsg) && !run, run });
+  const preflightAction = preflightMsg?.type === "preflight" ? preflightMsg.action : null;
+  const requirementsHref = `/businesses/${encodeURIComponent(businessId)}#all-requirements`;
+  const selectWorkflow = (f: FilingOption) => {
+    setLaunchOpen(false);
+    const key = workflowKey(f);
+    if (run && !terminal) {
+      // One filing at a time: the running one stays as it is.
+      if (activeFiling && workflowKey(activeFiling) !== key) setError(L("Stop Clara before starting another filing.", "Detén a Clara antes de empezar otro trámite.", lang));
+      return;
+    }
+    setError(null);
+    setSelectedKey(key);
+    if (run) newRun();
+    setMsgs((ms) => ms.filter((m) => m.type !== "preflight"));
+    if (f.filing_status === "in_progress" && f.active_run_id) void resumeFiling(f);
+    else void startFiling(f);
+  };
+  const backToWorkflows = () => {
+    setLaunchOpen(true);
+    if (!run) {
+      setSelectedKey(null);
+      setMsgs((ms) => ms.filter((m) => m.type !== "preflight"));
+    }
+  };
+  const passportCategories: PassportCategory[] = [
+    { id: "business", label: { en: "Business details", es: "Datos del negocio" }, available: passportFields.some((f) => f.has && f.path.startsWith("business.")) },
+    { id: "contact", label: { en: "Contact information", es: "Información de contacto" }, available: passportFields.some((f) => f.has && f.path.startsWith("contact.")) },
+    { id: "property", label: { en: "Property information", es: "Información de la propiedad" }, available: passportFields.some((f) => f.has && (f.path.startsWith("property.") || f.path.startsWith("addresses."))) },
+    { id: "documents", label: { en: "Documents", es: "Documentos" }, available: (pickerMsg?.type === "filing-picker" ? pickerMsg.readiness?.documents.length ?? 0 : 0) > 0 },
+  ];
+  const fieldsLine = preflightAction ? L(`${preflightAction.known} of ${preflightAction.total} details ready from your Passport`, `${preflightAction.known} de ${preflightAction.total} datos listos de tu Pasaporte`, lang) : null;
+  const businessLine = bizHeader ? [bizHeader.name, bizHeader.municipality].filter(Boolean).join(" · ") : null;
 
   return (
-    // No global app header on this route (see headerVisibility.ts) — the
-    // workspace takes the full viewport height. TopNavMount publishes
-    // --topnav-h as 0px here, so the calc below resolves to 100dvh; the
-    // h-* class is the fallback where dvh is unsupported (some webviews
-    // ignore dvh). overscroll-none stops rubber-band chaining.
     <div
-      className="flex h-[calc(100vh-var(--topnav-h,0px))] flex-col overflow-hidden overscroll-none bg-[#161616]"
+      className="flex h-[calc(100vh-var(--topnav-h,0px))] flex-col overflow-hidden overscroll-none bg-[#161616] p-2 sm:p-4"
       style={{ height: "calc(100dvh - var(--topnav-h, 0px))" }}
     >
-      <main className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col px-3 pb-3 pt-2.5 sm:px-5">
-        {/* Compact persistent workspace header */}
-        <header className="shrink-0 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={goBack}
-              className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10"
-              title={
-                run && !terminal
-                  ? L(
-                      "Clara keeps your place — reopen this filing to pick up where you left off.",
-                      "Clara guarda tu lugar — vuelve a abrir este trámite para seguir donde lo dejaste.",
-                      lang
-                    )
-                  : undefined
-              }
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{L("Back", "Atrás", lang)}</span>
-            </button>
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1e4d38] font-[family-name:var(--font-display)] text-[15px] text-white">
-              M
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[12px] font-bold uppercase tracking-[0.14em] text-[#9a917f]">
-                {bizHeader
-                  ? bizHeader.municipality
-                    ? `${bizHeader.name} · ${bizHeader.municipality}`
-                    : bizHeader.name
-                  : L("Clara · Assisted filing", "Clara · Radicación asistida", lang)}
-              </p>
-              <p className="truncate font-[family-name:var(--font-display)] text-[17px] leading-tight text-[#f4efe2]">
-                {workflowLabel}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {run && <StatusPill status={run.status} lang={lang} />}
-              {intervention && (
-                <span className="hidden items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[13px] font-bold text-amber-900 sm:inline-flex">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  {L("Needs you", "Te necesita", lang)}
-                </span>
-              )}
-            </div>
-            {/* Filing progress: portal fields (what Clara still needs) on
-                md+, the SmartPR workflow step on xl. */}
-            {portalFieldsProgress && (
-              <span
-                className="hidden shrink-0 items-center gap-2 md:inline-flex"
-                aria-label={L("Filing progress", "Progreso del trámite", lang)}
-              >
-                <span className="whitespace-nowrap text-[13px] font-semibold text-[#b9b0a0]">
-                  {L("Portal fields", "Campos del portal", lang)} · {portalFieldsProgress.known}/
-                  {portalFieldsProgress.total}
-                </span>
-                <SegmentedBar known={portalFieldsProgress.known} total={portalFieldsProgress.total} />
-              </span>
-            )}
-            <ol
-              className="hidden shrink-0 items-center gap-2 text-[13px] font-bold xl:flex"
-              aria-label={L("SmartPR steps", "Pasos de SmartPR", lang)}
-            >
-              <li className="flex items-center gap-1 text-[#8f8674]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dcefe2] text-[9px] font-black text-[#1e4d38]">✓</span>
-                {L("Requirements", "Requisitos", lang)}
-              </li>
-              <li className="flex items-center gap-1 text-[#f4efe2]">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1e4d38] text-[9px] font-black text-white">3</span>
-                {L("File", "Radicación", lang)}
-              </li>
-            </ol>
-            <TeachClaraEntry businessId={businessId} filingType={run?.filing_type ?? null} lang={lang} variant="button" />
-            {/* Language toggle lives here now that the global nav (which
-                used to carry it) is removed on this route. */}
-            <div
-              className="hidden shrink-0 items-center gap-0.5 rounded-full border border-white/15 bg-white/5 p-1 lg:inline-flex"
-              role="group"
-              aria-label={L("Language", "Idioma", lang)}
-            >
-              {(["en", "es"] as const).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  aria-pressed={lang === l}
-                  onClick={() => setLang(l)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition ${
-                    lang === l
-                      ? "bg-[#fbf8f2] text-[#161616]"
-                      : "text-[#b9b0a0] hover:text-white"
-                  }`}
-                >
-                  {l.toUpperCase()}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => setBrowserHidden((h) => !h)}
-              aria-pressed={!showBrowserPanel}
-              className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[13px] font-semibold text-[#e8e1d0] hover:bg-white/10 lg:inline-flex"
-            >
-              {showBrowserPanel ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              {showBrowserPanel
-                ? L("Hide browser", "Ocultar navegador", lang)
-                : L("Show browser", "Ver navegador", lang)}
-            </button>
-          </div>
-
-          {/* Small screens: one pane at a time, with an explicit switch. */}
-          <div
-            className="mt-2 grid grid-cols-2 gap-1 rounded-full bg-black/30 p-1 lg:hidden"
-            role="tablist"
-            aria-label={L("Workspace view", "Vista del espacio", lang)}
-          >
-            {(
-              [
-                ["chat", L("Conversation", "Conversación", lang)],
-                ["browser", L("Browser", "Navegador", lang)],
-              ] as const
-            ).map(([pane, label]) => (
-              <button
-                key={pane}
-                type="button"
-                role="tab"
-                aria-selected={mobilePane === pane}
-                onClick={() => setMobilePane(pane)}
-                className={`relative rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${
-                  mobilePane === pane ? "bg-[#fbf8f2] text-[#161616]" : "text-[#cfc6b4] hover:text-white"
-                }`}
-              >
-                {label}
-                {pane === "chat" && intervention && mobilePane !== "chat" && (
-                  <span className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-amber-400" aria-label={L("Needs you", "Te necesita", lang)} />
-                )}
-              </button>
-            ))}
-          </div>
-        </header>
-        {run && (
-          <TeachClaraEntry businessId={businessId} filingType={run.filing_type} lang={lang} variant="offer" />
-        )}
-
+      <main className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden rounded-[28px] bg-[#FAF9F6] text-[#0F172A] shadow-2xl shadow-black/40" data-testid="clara-workspace-shell">
+        <ClaraHeader
+          lang={lang}
+          onLang={(l) => setLang(l)}
+          onPassport={() => setPassportOpen(true)}
+          onClose={goBack}
+          extra={<TeachClaraEntry businessId={businessId} filingType={run?.filing_type ?? null} lang={lang} variant="button" adminOnly />}
+        />
         {error && (
-          <div className="mt-2 shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-[15px] text-rose-800">
+          <div className="mx-5 mb-2 shrink-0 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-[15px] text-rose-800 sm:mx-7" role="alert">
             {error}
           </div>
         )}
 
-        {/* The window — chat and browser side by side on desktop, one at a
-            time on small screens. Flex (not grid): a grid row sizes to its
-            content, which let the chat grow past the viewport. */}
-        <div className="mt-2.5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl bg-[#fbf8f2] shadow-2xl shadow-black/50 lg:flex-row">
-          <section
-            className={`min-h-0 min-w-0 flex-1 flex-col overflow-hidden lg:flex ${
-              mobilePane === "chat" ? "flex" : "hidden"
-            } ${
-              showBrowserPanel
-                ? "lg:w-[38%] lg:min-w-[360px] lg:max-w-[480px] lg:flex-none lg:border-r lg:border-[#161616]/10"
-                : "lg:mx-auto lg:w-full lg:max-w-3xl"
-            }`}
-            aria-label={L("Clara chat", "Chat de Clara", lang)}
-          >
-            <AgencyChat
-              lang={lang}
-              businessId={businessId}
-              msgs={msgs}
-              milestones={milestones}
-              run={run}
-              runActive={Boolean(run)}
-              transientHistory={transientHistory}
-              scrollKey={scrollKey}
-              scrollToLatestSignal={scrollToLatest}
-              onExpandPicker={() => setMsgs((ms) => ms.map((m) => (m.type === "filing-picker" ? { ...m, collapsed: false } : m)))}
-            onStartFiling={(filing) => void startFiling(filing)}
-              onResumeFiling={(filing) => void resumeFiling(filing)}
-              filingBusyId={filingBusyId}
-              onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}
-              onUploadEvidence={(file, tags) => void uploadToLocker(file, tags)}
-              uploadBusy={uploadBusy}
-              intervention={intervention}
-              review={review}
-              submitted={submitted}
-              terminalNote={terminalNote}
-              onStop={() => void stop()}
-              busy={busy}
-              stoppedOrFailed={Boolean(run && (run.status === "stopped" || run.status === "failed"))}
-              onNewRun={newRun}
-              runFailed={run?.status === "failed"}
-              projectName={bizHeader?.name ?? null}
-              onAsk={onAsk}
-              askBusy={askBusy}
-              onShowMissing={onShowMissing}
-              prepareHref={`/businesses/${businessId}#all-requirements`}
-            />
-          </section>
+        {showLaunch && (
+          <ClaraLaunchScreen
+            lang={lang}
+            workflows={workflows}
+            loading={pickerMsg?.type === "filing-picker" ? pickerMsg.loading : true}
+            error={pickerMsg?.type === "filing-picker" ? pickerMsg.error : null}
+            onSelect={selectWorkflow}
+            busyKey={filingBusyId}
+            categories={passportCategories}
+            requirementsHref={requirementsHref}
+          />
+        )}
 
-          {/* Browser — stays mounted (hidden via CSS) so the live session
-              survives view switches. */}
-          <div
-            className={`min-h-0 min-w-0 flex-1 flex-col ${
-              mobilePane === "browser" ? "flex" : "hidden"
-            } ${showBrowserPanel ? "lg:flex" : "lg:hidden"}`}
-          >
-            {run ? (
-              <AgencyBrowser
-                lang={lang}
-                run={run}
-                open
-                onClose={() => {
-                  setBrowserHidden(true);
-                  setMobilePane("chat");
-                }}
-                portalName={portalName}
-                uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
-                domainsLabel={activeConfig.domains[0] ?? ""}
-                isMock={run.provider === "mock"}
-                takeover={takeover}
-                busy={busy}
-                previewKey={previewKey}
-                previewLoaded={previewLoaded}
-                onPreviewLoaded={() => setPreviewLoaded(true)}
-                reconnectBusy={reconnectBusy}
-                onReconnect={() => void reconnectPreview()}
-                reloadBusy={reloadBusy}
-                onReload={() => void reloadPortalPage()}
-                onTakeover={() => void enterTakeover()}
-                onHandBack={() => void handBackToAgent()}
-                onResume={() => void resume()}
-                onStop={() => void stop()}
-                fieldsPause={fieldsPause}
-                uploadBusy={uploadBusy}
-                uploadMsg={uploadMsg}
-                onUpload={(file) => void uploadToLocker(file)}
-              />
-            ) : (
-              <div
-                className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center"
-                aria-label={L("Live browser", "Navegador en vivo", lang)}
-              >
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1e4d38]/10">
-                  <Shield className="h-5 w-5 text-[#1e4d38]" />
-                </span>
-                <p className="max-w-sm text-[15px] font-semibold text-[#23211c]">
-                  {L(
-                    "The agency portal opens here once you start a filing.",
-                    "El portal de la agencia se abre aquí cuando empieces un trámite.",
-                    lang
-                  )}
-                </p>
-                <p className="max-w-sm text-[13px] text-[#6b675e]">
-                  {L(
-                    "You'll watch Clara fill every field. You review and submit — nothing is sent without your approval.",
-                    "Verás a Clara llenar cada campo. Tú revisas y envías — nada se envía sin tu aprobación.",
-                    lang
-                  )}
-                </p>
+        {/* Active filing — stays mounted while the launch screen is shown so
+            the live browser session is never torn down. */}
+        {activeMode && (
+          <div className={`min-h-0 flex-1 border-t border-[#E5E7EB] ${showLaunch ? "hidden" : "flex"}`} data-testid="clara-active">
+            <WorkflowSidebar lang={lang} workflows={workflows} selectedKey={activeFiling ? workflowKey(activeFiling) : null} onSelect={selectWorkflow} onBack={backToWorkflows} busyKey={filingBusyId} />
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-4 sm:p-5">
+              <div className="flex items-center gap-3 lg:hidden">
+                <button type="button" onClick={backToWorkflows} className="text-[14px] font-semibold text-[#2563EB]">← {L("Workflows", "Trámites", lang)}</button>
               </div>
-            )}
+              {activeFiling && <FilingHeader lang={lang} filing={activeFiling} requirementsHref={requirementsHref} />}
+              <FilingStepper lang={lang} progress={progress} />
+              {run && (
+                <div className="grid grid-cols-2 gap-1 rounded-full bg-[#F1F5F9] p-1 lg:hidden" role="tablist">
+                  {([["chat", L("Status", "Estado", lang)], ["browser", L("Browser", "Navegador", lang)]] as const).map(([pane, label]) => (
+                    <button key={pane} type="button" role="tab" aria-selected={mobilePane === pane} onClick={() => setMobilePane(pane)} className={`rounded-full py-1.5 text-[14px] font-semibold ${mobilePane === pane ? "bg-white shadow-sm" : "text-[#64748B]"}`}>{label}</button>
+                  ))}
+                </div>
+              )}
+              <div className="flex min-h-0 flex-1 gap-4">
+                <section
+                  className={`min-h-0 min-w-0 flex-col overflow-y-auto ${run ? "lg:w-[38%] lg:min-w-[320px] lg:max-w-[460px] lg:flex-none" : "mx-auto w-full max-w-2xl"} ${run && mobilePane !== "chat" ? "hidden lg:flex" : "flex"}`}
+                  aria-label={L("Clara's progress", "Progreso de Clara", lang)}
+                >
+                  <ClaraProgressPanel lang={lang} progress={progress} businessLine={businessLine} fieldsLine={fieldsLine} portalName={portalName}>
+                    <div className="flex min-h-0 flex-col rounded-[20px] border border-[#E5E7EB] bg-white [&:not(:has(*))]:hidden">
+                      <AgencyChat
+                        embedded
+                        lang={lang}
+                        businessId={businessId}
+                        msgs={msgs.filter((m) => m.type !== "filing-picker")}
+                        milestones={milestones}
+                        run={run}
+                        runActive={Boolean(run)}
+                        transientHistory={transientHistory}
+                        scrollKey={scrollKey}
+                        scrollToLatestSignal={scrollToLatest}
+                        onStartFiling={(filing) => void startFiling(filing)}
+                        onResumeFiling={(filing) => void resumeFiling(filing)}
+                        filingBusyId={filingBusyId}
+                        onConfirmPreflight={(msg, answers) => confirmPreflightStart(msg, answers)}
+                        onUploadEvidence={(file, tags) => void uploadToLocker(file, tags)}
+                        uploadBusy={uploadBusy}
+                        intervention={intervention}
+                        review={review}
+                        submitted={submitted}
+                        terminalNote={terminalNote}
+                        onStop={() => void stop()}
+                        busy={busy}
+                        stoppedOrFailed={Boolean(run && (run.status === "stopped" || run.status === "failed"))}
+                        onNewRun={newRun}
+                        runFailed={run?.status === "failed"}
+                        projectName={bizHeader?.name ?? null}
+                        onAsk={onAsk}
+                        askBusy={askBusy}
+                        onShowMissing={onShowMissing}
+                        prepareHref={requirementsHref}
+                      />
+                    </div>
+                    {run && (run.status === "stopped" || run.status === "failed") && activeFiling && (
+                      <button type="button" onClick={() => selectWorkflow(activeFiling)} className="self-start rounded-full bg-[#2563EB] px-5 py-2 text-[15px] font-semibold text-white hover:bg-[#1D4ED8]" data-testid="clara-start-again">
+                        {L("Start again", "Empezar de nuevo", lang)}
+                      </button>
+                    )}
+                  </ClaraProgressPanel>
+                </section>
+
+                {/* Live browser — appears once Browser Use starts; stays mounted
+                    (CSS-hidden on small screens) so the session survives. */}
+                {run && (
+                  <div className={`min-h-0 min-w-0 flex-1 flex-col ${mobilePane === "browser" ? "flex" : "hidden lg:flex"}`}>
+                    <BrowserFrame lang={lang} live={Boolean(run.live_url) && !terminal}>
+                      <AgencyBrowser
+                        lang={lang}
+                        run={run}
+                        open
+                        onClose={() => setMobilePane("chat")}
+                        portalName={portalName}
+                        uploadsText={L(activeConfig.uploadsEn, activeConfig.uploadsEs, lang)}
+                        domainsLabel={activeConfig.domains[0] ?? ""}
+                        isMock={run.provider === "mock"}
+                        takeover={takeover}
+                        busy={busy}
+                        previewKey={previewKey}
+                        previewLoaded={previewLoaded}
+                        onPreviewLoaded={() => setPreviewLoaded(true)}
+                        reconnectBusy={reconnectBusy}
+                        onReconnect={() => void reconnectPreview()}
+                        reloadBusy={reloadBusy}
+                        onReload={() => void reloadPortalPage()}
+                        onTakeover={() => void enterTakeover()}
+                        onHandBack={() => void handBackToAgent()}
+                        onResume={() => void resume()}
+                        onStop={() => void stop()}
+                        fieldsPause={fieldsPause}
+                        uploadBusy={uploadBusy}
+                        uploadMsg={uploadMsg}
+                        onUpload={(file) => void uploadToLocker(file)}
+                      />
+                    </BrowserFrame>
+                    {!terminal && (
+                      <div className="mt-3 flex justify-end">
+                        <StopClaraButton lang={lang} onStop={() => void stop()} busy={busy} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </main>
+
+      <PassportDrawer lang={lang} open={passportOpen} onClose={() => setPassportOpen(false)} fullHref={`/businesses/${encodeURIComponent(businessId)}#business-passport`}>
+        <ul className="divide-y divide-[#F1F5F9]" data-testid="clara-passport-list">
+          {passportFields.length === 0 && <li className="px-5 py-4 text-[14px] text-[#64748B]">{L("Loading…", "Cargando…", lang)}</li>}
+          {passportFields.map((f) => (
+            <li key={f.path} className="flex items-start gap-3 px-5 py-2.5" data-has={f.has ? "1" : "0"}>
+              <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${f.has ? "bg-[#10B981]" : "bg-[#E2E8F0]"}`} aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14px] text-[#0F172A]">{lang === "es" ? f.es : f.en}</span>
+                <span className="block truncate text-[13px] text-[#64748B]">{f.preview ?? L("Not on file", "No está guardado", lang)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </PassportDrawer>
 
       {stuckPrompt && (
         <div
