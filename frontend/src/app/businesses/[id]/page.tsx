@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight, Bell, Bot, Building2, CalendarDays, CheckCircle2,
-  ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, Scale, ShieldAlert, Upload,
+  ChevronDown, Download, ExternalLink, FileText, FolderOpen, Lock, MapPin, Scale, Search, ShieldAlert, Upload,
 } from "lucide-react";
 import { useDeliverablesAccess } from "../../../lib/billing/useDeliverablesAccess";
 import { ScorePill, fmtDate, fmtDateTime } from "../../history/ui";
@@ -23,6 +23,7 @@ import { PassportLocationSection } from "../PassportLocationSection";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
 import { MatterSiteSelect } from "../MatterSiteSelect";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
+import { OverflowMenu, RequirementStatusPill, menuItemCls, requirementPhase, type RequirementPhase } from "../RequirementCardParts";
 import { evidenceForObligation } from "../../compliance/evidenceLocker";
 import { getDocumentDownload, downloadKindLabel, KB } from "../../kb";
 import { legalBasisFor } from "../../requirementGuidance";
@@ -375,121 +376,129 @@ function ObligationRow({ item, business, businessId, evidence, reload, onMarkCom
     });
   };
   return (
-    <div id={`obligation-${item.id}`} className={`rounded-xl border px-4 py-3 transition-colors ${completed ? "border-emerald-300 bg-emerald-50" : "border-slate-200"}`}>
-      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-        <div className="flex min-w-0 items-center gap-2">
-          {completed && <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />}
-          <div className="min-w-0">
-            <div className="font-semibold text-[#161616]">{item.name}</div>
-            <div className="text-xs text-slate-500">{item.agency || L("Agency not recorded", lang)}{item.matter_title ? ` · ${item.matter_title}` : ""}</div>
+    <article id={`obligation-${item.id}`} data-testid="requirement-card" data-phase={requirementPhase(completed ? "COMPLETED" : item.status)} className={`scroll-mt-24 rounded-2xl border bg-white p-5 transition-colors sm:p-6 ${completed ? "border-emerald-200" : "border-slate-200"}`}>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        {/* What it is · its state */}
+        <div className="flex min-w-0 gap-3.5">
+          <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${completed ? "bg-emerald-50 text-emerald-700" : "bg-[#EAF2F1] text-brand"}`} aria-hidden="true">
+            {completed ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
+              <h3 className="min-w-0 text-[17px] font-bold leading-snug text-[#161616]">{item.name}</h3>
+              <span className="lg:hidden"><RequirementStatusPill status={completed ? "COMPLETED" : item.status} lang={lang} /></span>
+            </div>
+            <div className="mt-0.5 text-sm text-slate-500">
+              {item.agency || L("Agency not recorded", lang)}{item.matter_title ? ` · ${item.matter_title}` : ""}
+              {item.due_date && <span className="text-slate-600"> · {dateLabel(item.due_date, lang)}</span>}
+            </div>
             <LegalBasisDisclosure item={item} lang={lang} />
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="text-right">
-            <div className="text-sm font-semibold text-slate-700">{dateLabel(item.due_date, lang)}</div>
-            {item.due_date && item.due_date_source !== "UNKNOWN" && (
-              <div className="text-[10px] uppercase tracking-wide text-slate-400">{item.due_date_source.replaceAll("_", " ")}</div>
+            {!item.due_date && !completed && <p className="mt-2 text-sm text-slate-500">{L(DUE_DATE_UNKNOWN_MESSAGE, lang)}</p>}
+            {downloaded && !completed && (
+              <p className="mt-2 text-sm font-semibold text-brand">✓ {L("Got it? Upload the finished document when you come back.", lang)}</p>
             )}
           </div>
-          <StatusBadge status={completed ? "COMPLETED" : (item.status as ObligationStatus)} lang={lang} />
         </div>
-      </div>
-      {!item.due_date && !completed && <p className="mt-2 text-xs text-slate-500">{L(DUE_DATE_UNKNOWN_MESSAGE, lang)}</p>}
-      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-        <span className="mr-auto text-xs font-medium text-slate-600">{completed ? L("Marked as complete", lang) : L(item.next_action, lang)}</span>
-        {!completed && (
-          <>
-            <button
-              type="button" disabled={uploading || busy} onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand px-3 py-1 text-xs font-semibold text-brand disabled:opacity-50"
-            >
-              <Upload className="h-3.5 w-3.5" />{uploading ? L("Uploading…", lang) : L("Upload", lang)}
-            </button>
-            <AttachFromLockerPicker
-              lang={lang}
-              lockerFiles={evidence}
-              requirementId={item.requirement_id}
-              obligationId={item.id}
-              busy={uploading || busy}
-              onAttach={(evidenceId) => void attachFromLocker(evidenceId)}
-            />
-            {dl?.kind === "filing_portal" ? (
+
+        {/* Next best action · other actions */}
+        <div className="flex flex-col gap-3 lg:items-end">
+          <span className="hidden lg:inline-flex"><RequirementStatusPill status={completed ? "COMPLETED" : item.status} lang={lang} /></span>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center lg:justify-end" data-testid="requirement-actions">
+            {!completed && (
+              <button
+                type="button" disabled={uploading || busy} onClick={() => fileInputRef.current?.click()}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-brand bg-white px-4 text-sm font-semibold text-brand hover:bg-brand/5 disabled:opacity-50"
+              >
+                <Upload className="h-4 w-4" aria-hidden="true" />{uploading ? L("Uploading…", lang) : L("Upload document", lang)}
+              </button>
+            )}
+            {!completed && (dl?.kind === "filing_portal" ? (
               /* Clara-first filing: portal filings launch the in-app Clara
-                 filing workspace instead of kicking the user out to the
-                 government site in a new tab. */
+                 filing workspace instead of the government site. */
               <Link
                 href={item.requirement_id
                   ? `/businesses/${businessId}/agency-run?filing=${encodeURIComponent(item.requirement_id)}`
                   : `/businesses/${businessId}/agency-run`}
                 title={L("Work through this filing with Clara — you stay in control of every step.", lang)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-bold text-white"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90"
               >
-                <Bot className="h-3.5 w-3.5" />
-                {L("File with Clara", lang)}
+                <Bot className="h-4 w-4" aria-hidden="true" />{L("File with Clara", lang)}
               </Link>
             ) : dl ? (
               <a
                 href={dl.url} target="_blank" rel="noopener noreferrer" onClick={recordDownload}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-brand px-3 py-1 text-xs font-bold text-brand"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                {downloaded ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                {downloaded ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : <ExternalLink className="h-4 w-4" aria-hidden="true" />}
                 {downloaded ? L("Open again", lang) : L(downloadKindLabel(dl.kind), lang)}
               </a>
-            ) : null}
-            <input
-              ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
-              onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadFile(file); }}
-            />
-            {definition && (
+            ) : definition ? (
+              <button type="button" onClick={() => setFormOpen(true)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand/90">
+                {deliverablesLocked ? <Lock className="h-4 w-4" aria-hidden="true" /> : <FileText className="h-4 w-4" aria-hidden="true" />}{L("Complete document", lang)}
+              </button>
+            ) : null)}
+            {!completed && (
               <button
-                type="button" onClick={() => setFormOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white"
+                type="button" onClick={() => { setDate(item.due_date || ""); setMessage(null); setDateDialogOpen(true); }}
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100"
               >
-                {deliverablesLocked ? <Lock className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}{L("Complete document", lang)}
+                <CalendarDays className="h-4 w-4" aria-hidden="true" />{L("Update date", lang)}
               </button>
             )}
-            <button
-              type="button" onClick={() => { setDate(item.due_date || ""); setMessage(null); setDateDialogOpen(true); }}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600"
-            >
-              <CalendarDays className="h-3.5 w-3.5" />{L("Update date", lang)}
-            </button>
-          </>
-        )}
-        {completed ? (
-          <>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
-              <CheckCircle2 className="h-3.5 w-3.5" />Completed
-            </span>
-            {definition && (
-              <button
-                type="button" onClick={() => setFormOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600"
-              >
-                <FileText className="h-3.5 w-3.5" />{L("Edit document", lang)}
+            {completed && definition && (
+              <button type="button" onClick={() => setFormOpen(true)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                <FileText className="h-4 w-4" aria-hidden="true" />{L("Edit document", lang)}
               </button>
             )}
-            <button
-              type="button" disabled={muteBusy || muted === null} onClick={toggleMute} title={L("Mute or unmute email reminders for this requirement.", lang)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold disabled:opacity-50 ${muted ? "border-slate-300 bg-slate-100 text-slate-500" : "border-amber-300 text-amber-700"}`}
-            >
-              {muted ? `🔕 ${L("Reminders off", lang)}` : `🔔 ${L("Reminders on", lang)}`}
-            </button>
-          </>
-        ) : (
-          <button disabled={busy} onClick={markComplete} className="rounded-full border border-emerald-300 px-3 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-50">{L("Mark renewed / complete", lang)}</button>
-        )}
+            <OverflowMenu lang={lang} label={item.name}>
+              {!completed && (
+                <button type="button" role="menuitem" data-menu-close disabled={busy} onClick={markComplete} className={menuItemCls}>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />{L("Mark renewed / complete", lang)}
+                </button>
+              )}
+              {!completed && definition && dl && (
+                <button type="button" role="menuitem" data-menu-close onClick={() => setFormOpen(true)} className={menuItemCls}>
+                  {deliverablesLocked ? <Lock className="h-4 w-4" aria-hidden="true" /> : <FileText className="h-4 w-4" aria-hidden="true" />}{L("Complete document", lang)}
+                </button>
+              )}
+              {!completed && dl && dl.kind !== "filing_portal" && (
+                <a role="menuitem" data-menu-close href={dl.url} target="_blank" rel="noopener noreferrer" onClick={recordDownload} className={menuItemCls}>
+                  <ExternalLink className="h-4 w-4" aria-hidden="true" />{L("Open official site", lang)}
+                </a>
+              )}
+              {!completed && (
+                <div className="px-1.5 py-1">
+                  <AttachFromLockerPicker
+                    lang={lang}
+                    lockerFiles={evidence}
+                    requirementId={item.requirement_id}
+                    obligationId={item.id}
+                    busy={uploading || busy}
+                    onAttach={(evidenceId) => void attachFromLocker(evidenceId)}
+                  />
+                </div>
+              )}
+              {completed && (
+                <button type="button" role="menuitem" data-menu-close onClick={() => { setDate(item.due_date || ""); setMessage(null); setDateDialogOpen(true); }} className={menuItemCls}>
+                  <CalendarDays className="h-4 w-4" aria-hidden="true" />{L("Update date", lang)}
+                </button>
+              )}
+              <button type="button" role="menuitem" disabled={muteBusy || muted === null} onClick={toggleMute} className={menuItemCls} title={L("Mute or unmute email reminders for this requirement.", lang)}>
+                {muted ? `🔕 ${L("Reminders off", lang)}` : `🔔 ${L("Reminders on", lang)}`}
+              </button>
+              <p className="border-t border-slate-100 px-3 pb-1 pt-2 text-xs text-slate-500">{completed ? L("Marked as complete", lang) : L(item.next_action, lang)}</p>
+            </OverflowMenu>
+          </div>
+        </div>
       </div>
-      {downloaded && !completed && (
-        <p className="mt-2 text-xs font-semibold text-brand">
-          ✓ {L("Got it? Upload the finished document when you come back.", lang)}
-        </p>
-      )}
+      <input
+        ref={fileInputRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,.xls,.xlsx"
+        onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void uploadFile(file); }}
+      />
       {completedPdf && (
-        <div className="mt-2 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
           <FileText className="h-4 w-4 shrink-0 text-emerald-700" />
-          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-emerald-900" title={completedPdf.original_filename}>
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-emerald-900" title={completedPdf.original_filename}>
             {L("Completed document:", lang)} {completedPdf.original_filename}
           </span>
           <DownloadButton kind="evidence" id={completedPdf.id} lang={lang} />
@@ -548,7 +557,87 @@ function ObligationRow({ item, business, businessId, evidence, reload, onMarkCom
           completeLabels={["Save completed document", "Guardar documento completado"]}
         />
       )}
-    </div>
+    </article>
+  );
+}
+
+/**
+ * Requirements list: header, filter tabs with counts, search, and the cards.
+ * Filters/search only choose which existing rows are shown.
+ */
+function RequirementsList({ lang, outstanding, completed, onHide, renderRow }: {
+  lang: Lang;
+  outstanding: Obligation[];
+  completed: Obligation[];
+  onHide: () => void;
+  renderRow: (item: Obligation, isCompletedGroup: boolean) => React.ReactNode;
+}) {
+  const es = lang === "es";
+  const [tab, setTab] = useState<"all" | RequirementPhase>("all");
+  const [query, setQuery] = useState("");
+  const all = [...outstanding, ...completed];
+  const count = (t: "all" | RequirementPhase) => t === "all" ? all.length : all.filter((i) => requirementPhase(i.status) === t).length;
+  const q = query.trim().toLowerCase();
+  const keep = (i: Obligation) =>
+    (tab === "all" || requirementPhase(i.status) === tab)
+    && (!q || [i.name, i.agency, i.matter_title].some((v) => v?.toLowerCase().includes(q)));
+  const shownOutstanding = outstanding.filter(keep);
+  const shownCompleted = completed.filter(keep);
+  const tabs: { key: "all" | RequirementPhase; label: string }[] = [
+    { key: "all", label: es ? "Todos" : "All" },
+    { key: "required", label: es ? "Requeridos" : "Required" },
+    { key: "in_progress", label: es ? "En progreso" : "In progress" },
+    { key: "completed", label: es ? "Completados" : "Completed" },
+  ];
+  return (
+    <section id="all-requirements" className="mt-6" data-testid="requirements-list" aria-labelledby="all-requirements-title">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id="all-requirements-title" className="text-2xl font-bold text-[#161616]">{es ? "Requisitos" : "Requirements"}</h2>
+          <p className="mt-1 text-[15px] text-slate-600">
+            {es
+              ? `Paso 2 de 3 — Identificamos ${all.length} requisitos según los detalles de tu proyecto.`
+              : `Step 2 of 3 — We've identified ${all.length} requirement${all.length === 1 ? "" : "s"} based on your project details.`}
+          </p>
+        </div>
+        <button type="button" onClick={onHide} className="min-h-11 rounded-xl px-3 text-sm font-semibold text-brand hover:bg-brand/5">{L("Hide", lang)}</button>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div role="tablist" aria-label={es ? "Filtrar requisitos" : "Filter requirements"} className="flex flex-wrap gap-1.5" data-testid="requirements-tabs">
+          {tabs.map((t) => (
+            <button
+              key={t.key} type="button" role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)} data-tab={t.key}
+              className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${tab === t.key ? "bg-[#161616] text-white" : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+            >
+              {t.label}
+              <span className={`rounded-full px-2 py-0.5 text-xs tabular-nums ${tab === t.key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"}`}>{count(t.key)}</span>
+            </button>
+          ))}
+        </div>
+        <label className="relative block md:w-72">
+          <span className="sr-only">{es ? "Buscar requisitos" : "Search requirements"}</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+          <input
+            type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder={es ? "Buscar requisitos…" : "Search requirements..."}
+            className="min-h-11 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-[15px] text-[#161616] focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+            data-testid="requirements-search"
+          />
+        </label>
+      </div>
+
+      <div className="mt-5 space-y-4" role="tabpanel">
+        {shownOutstanding.map((item) => renderRow(item, false))}
+        {shownCompleted.length > 0 && shownOutstanding.length > 0 && (
+          <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Completed", lang)}</div>
+        )}
+        {shownCompleted.map((item) => renderRow(item, true))}
+        {shownOutstanding.length + shownCompleted.length === 0 && (
+          <Empty text={all.length === 0 ? L("No outstanding requirements.", lang) : (es ? "Ningún requisito coincide." : "No requirements match.")} />
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -1019,30 +1108,18 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
         </div>
 
         {showAllRequirements && (
-          <section id="all-requirements" className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
-            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
-              {L("All requirements", lang)}
-              <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.totalApplicable}</span>
-              <button type="button" onClick={() => setShowAllRequirements(false)} className="text-sm font-semibold text-brand hover:underline">{L("Hide", lang)}</button>
-            </div>
-            <div className="space-y-3 p-5">
-              {outstandingDisplay.length ? outstandingDisplay.map((item) => (
-                <ObligationRow
-                  key={item.id} item={item} business={business} businessId={shortId} evidence={evidence} reload={load} onMarkComplete={markRecentlyCompleted}
-                />
-              )) : <Empty text={L("No outstanding requirements.", lang)} />}
-              {otherCompleted.length > 0 && (
-                <>
-                  <div className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Completed", lang)}</div>
-                  {otherCompleted.map((item) => (
-                    <ObligationRow
-                      key={item.id} item={item} business={business} businessId={shortId} evidence={evidence} reload={load}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-          </section>
+          <RequirementsList
+            lang={lang}
+            outstanding={outstandingDisplay}
+            completed={otherCompleted}
+            onHide={() => setShowAllRequirements(false)}
+            renderRow={(item, isCompletedGroup) => (
+              <ObligationRow
+                key={item.id} item={item} business={business} businessId={shortId} evidence={evidence} reload={load}
+                onMarkComplete={isCompletedGroup ? undefined : markRecentlyCompleted}
+              />
+            )}
+          />
         )}
       </main>
     </div>

@@ -81,6 +81,33 @@ async function open(runs: { filing_type: string; status: string }[], locations: 
   await page.locator("#all-requirements").waitFor({ timeout: 5000 });
   check("View requirements opens the full list", await page.locator("#all-requirements").isVisible());
 
+  // ---- requirements: header, tabs, search, calm cards, ≤3 actions + overflow
+  {
+    const list = page.locator('[data-testid="requirements-list"]');
+    const headTxt = (await list.locator("h2").first().innerText()) + " | " + (await list.locator("p").first().innerText());
+    check("requirements header + step text with count", /^Requirements/.test(headTxt) && /Step 2 of 3 — We've identified 4 requirements based on your project details\./.test(headTxt), headTxt);
+    const tabTxt = (await list.locator('[data-testid="requirements-tabs"]').innerText()).replace(/\s+/g, " ");
+    check("tabs with counts: All 4 · Required 2 · In progress 1 · Completed 1", /All 4/.test(tabTxt) && /Required 2/.test(tabTxt) && /In progress 1/.test(tabTxt) && /Completed 1/.test(tabTxt), tabTxt);
+    check("no red 'MISSING' badges for normal incomplete items", !/MISSING/.test(await list.innerText()) && /Required/.test(await page.locator("#obligation-o1 [data-testid=requirement-status]:visible").innerText()));
+    const actionCounts = await list.locator('[data-testid="requirement-actions"]').evaluateAll((els) => els.map((e) => Array.from(e.children).filter((c) => !(c as HTMLElement).querySelector('[data-testid="requirement-more"]') && (c as HTMLElement).offsetParent !== null).length));
+    check("≤3 visible actions per card plus overflow", actionCounts.every((n) => n <= 3) && (await list.locator('[data-testid="requirement-more"]').count()) === 4, actionCounts.join(","));
+    const fs = await page.locator("#obligation-o1 h3").evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+    check("title is 17px+ and not truncated", fs >= 17 && (await page.locator("#obligation-o1 h3").evaluate((e) => e.scrollWidth <= e.clientWidth + 1)), String(fs));
+    await page.locator('#obligation-o4 [data-testid="requirement-more"]').click();
+    const menu = page.locator('#obligation-o4 [data-testid="requirement-menu"]');
+    check("overflow holds Mark renewed / complete + reminders", /Mark renewed \/ complete/.test(await menu.innerText()) && /Reminders/.test(await menu.innerText()));
+    await page.keyboard.press("Escape");
+    check("Escape closes the overflow menu", (await menu.count()) === 0);
+    await list.locator('[data-tab="completed"]').click();
+    check("Completed tab shows only completed", (await list.locator('[data-testid="requirement-card"]').count()) === 1 && (await page.locator("#obligation-o3").count()) === 1);
+    await list.locator('[data-tab="all"]').click();
+    await list.locator('[data-testid="requirements-search"]').fill("alcohol");
+    check("search filters by name", (await list.locator('[data-testid="requirement-card"]').count()) === 1);
+    await list.locator('[data-testid="requirements-search"]').fill("");
+    await list.evaluate((e) => e.scrollIntoView({ block: "start" }));
+    await page.screenshot({ path: path.join(OUT, "requirements_cards.png"), fullPage: false });
+  }
+
   // ---- municipality: short alert + expandable explanation
   const notice = page.locator('[data-testid="municipality-conflict"]');
   check("alert shows both values in one line", /Camuy/.test(await notice.innerText()) && /Hatillo/.test(await notice.innerText()));
@@ -218,6 +245,17 @@ async function open(runs: { filing_type: string; status: string }[], locations: 
   const stuck = await page.evaluate(() => Array.from(document.querySelectorAll('[data-testid="section-nav"] li')).every((li) => { const r = li.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight; }));
   check("mobile: menu stays visible while scrolling", stuck);
   await page.screenshot({ path: path.join(OUT, "6_mobile_panel.png") });
+  {
+    await page.locator('[data-testid="active-filing-view-requirements"]').click();
+    await page.locator("#obligation-o1").waitFor();
+    const card = page.locator("#obligation-o1");
+    const btns = await card.locator('[data-testid="requirement-actions"] > *:visible').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { y: Math.round(r.top), h: r.height, right: r.right }; }));
+    const perRow = Math.max(...Object.values(btns.reduce<Record<number, number>>((m, b) => ({ ...m, [b.y]: (m[b.y] ?? 0) + 1 }), {})));
+    check("mobile cards: actions ≤2 per row, ≥44px, inside the viewport", perRow <= 2 && btns.every((b) => b.h >= 44 && b.right <= 390), JSON.stringify(btns));
+    const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    check("mobile cards: no horizontal overflow", ov <= 0, String(ov));
+    await card.screenshot({ path: path.join(OUT, "6_mobile_card.png") });
+  }
   await page.close();
 }
 
