@@ -213,9 +213,11 @@ function EnergyRow({ item, p, num, legacy: allCards, portal = null, language, st
     <div ref={rowRef} role="listitem" className={`ck-row ${open ? "ck-row-open" : ""}`} data-testid={`energy-process-${item.id}`}>
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {num !== undefined && <span className="ck-num">{num}</span>}
-          <RowName name={item.name} model={actions} language={language} />
-          {item.agency && <span className="ck-agency" title={item.agency}>{item.agency}</span>}
+          {num !== undefined ? <span className="ck-num">{num}</span> : <span aria-hidden="true" />}
+          <span className="ck-name-block" data-testid="row-name-block">
+            <RowName name={item.name} model={actions} language={language} />
+            {item.agency && <span className="ck-agency" data-testid="row-agency">{item.agency}</span>}
+          </span>
           <StatusPill status={item.status} language={language} />
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
         </button>

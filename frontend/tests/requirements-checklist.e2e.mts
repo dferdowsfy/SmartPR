@@ -710,9 +710,9 @@ const visibleBars = (): Promise<Bar[]> => main.locator('[data-testid="row-action
 })) as Promise<Bar[]>;
 const bars = await visibleBars();
 console.log("rows:", bars.map((b) => `${b.name} [clara=${b.claraRoute} complete=${b.completeRoute}]`).join(" | "));
-check("every row has Fill with Clara · Complete · View details · ⋯", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.details && b.more), bars.filter((b) => !(b.clara && b.complete && b.details && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
-check("labels never change by agency", bars.every((b) => b.clara?.text === "Fill with Clara" && /^(Complete|Completed)$/.test(b.complete?.text ?? "") && b.details?.text === "View details"), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text, b.details?.text]))].join(","));
-for (const k of ["clara", "complete", "details", "more"] as const) {
+check("every row has Fill with Clara · Complete · ⋯ (View details inside ⋯)", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.more && !b.details), bars.filter((b) => !(b.clara && b.complete && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
+check("labels never change by agency", bars.every((b) => b.clara?.text === "Fill with Clara" && /^(Complete|Completed)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
+for (const k of ["clara", "complete", "more"] as const) {
   const xs = bars.map((b) => b[k]).filter((v): v is NonNullable<Slot> => !!v);
   check(`${k}: same x and width on every row`, xs.length > 1 && xs.every((v) => Math.abs(v.x - xs[0].x) <= 1 && Math.abs(v.w - xs[0].w) <= 1), xs.map((v) => `${v.x}/${v.w}`).join(","));
 }
@@ -720,15 +720,47 @@ for (const k of ["clara", "complete", "details", "more"] as const) {
   const cols = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
     const line = e.closest(".ck-card-line") as HTMLElement;
     const ag = line.querySelector(".ck-row-head .ck-agency") as HTMLElement | null;
+    const nm = line.querySelector(".ck-row-head .ck-name") as HTMLElement;
     const pill = line.querySelector(".ck-row-head .ck-pill") as HTMLElement | null;
-    return { agencyRight: ag ? Math.round(ag.getBoundingClientRect().right) : null, pillX: pill ? Math.round(pill.getBoundingClientRect().x) : null, pillW: pill ? Math.round(pill.getBoundingClientRect().width) : null };
+    const n = nm.getBoundingClientRect();
+    const a = ag?.getBoundingClientRect();
+    const cs = getComputedStyle(nm);
+    return {
+      agencyUnder: a ? a.top >= n.bottom - 1 && Math.abs(a.left - n.left) <= 1 : null,
+      nameW: Math.round(n.width), truncated: nm.scrollWidth > nm.clientWidth + 1 || nm.scrollHeight > nm.clientHeight + 1 || cs.textOverflow === "ellipsis" || cs.whiteSpace === "nowrap",
+      nameSize: parseFloat(cs.fontSize), nameWeight: cs.fontWeight, agencySize: ag ? parseFloat(getComputedStyle(ag).fontSize) : null,
+      pillX: pill ? Math.round(pill.getBoundingClientRect().x) : null, pillW: pill ? Math.round(pill.getBoundingClientRect().width) : null,
+    };
   }));
-  const ag = cols.map((c) => c.agencyRight).filter((v): v is number => v !== null);
   const px = cols.map((c) => c.pillX).filter((v): v is number => v !== null);
-  check("agency column lines up", ag.length > 1 && ag.every((v) => Math.abs(v - ag[0]) <= 1), ag.join(","));
+  check("agency sits directly under the requirement name", cols.every((c) => c.agencyUnder !== false));
+  check("no requirement name is truncated or clipped", cols.every((c) => !c.truncated), `${cols.filter((c) => c.truncated).length} truncated`);
+  check("name column ≥ 300px at 1440", cols.every((c) => c.nameW >= 300), cols.map((c) => c.nameW).join(","));
+  check("name 17–18px semibold, agency 13–14px", cols.every((c) => c.nameSize >= 17 && c.nameSize <= 18 && Number(c.nameWeight) >= 600 && (c.agencySize === null || (c.agencySize >= 13 && c.agencySize <= 14))), `${cols[0]?.nameSize}/${cols[0]?.agencySize}`);
   check("status column lines up", px.length > 1 && px.every((v) => Math.abs(v - px[0]) <= 1), px.join(","));
 }
 check("status chips stay out of the action column", (await main.locator('[data-testid="row-actions"] .ck-pill').count()) === 0);
+// Row layout at other widths (2026-10): names never truncated; card layout when narrow.
+for (const [w, h] of [[1280, 900], [1024, 800], [390, 844]] as const) {
+  await page.setViewportSize({ width: w, height: h });
+  await page.waitForTimeout(350);
+  const r = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
+    const line = e.closest(".ck-card-line") as HTMLElement;
+    const nm = line.querySelector(".ck-name") as HTMLElement;
+    const n = nm.getBoundingClientRect();
+    const lh = parseFloat(getComputedStyle(nm).lineHeight);
+    return { name: nm.textContent, w: Math.round(n.width), lines: Math.round(n.height / lh), clipped: nm.scrollWidth > nm.clientWidth + 1 || nm.scrollHeight > nm.clientHeight + 1 || getComputedStyle(nm).textOverflow === "ellipsis", actionsBelow: e.getBoundingClientRect().top >= n.bottom - 1 };
+  }));
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check(`${w}: no requirement name clipped or ellipsized`, r.length > 0 && r.every((x) => !x.clipped), r.filter((x) => x.clipped).map((x) => x.name).join(" | "));
+  if (w === 390) check(`${w}: full names wrap naturally in the card (≥ 150px)`, r.every((x) => x.w >= 150), r.map((x) => `${x.w}/${x.lines}`).join(","));
+  else check(`${w}: names readable (≥ 300px wide, ≤ 2 lines)`, r.every((x) => x.w >= 300 && x.lines <= 2), r.map((x) => `${x.w}/${x.lines}`).join(","));
+  if (w === 390) check(`${w}: compact card — actions below the name`, r.every((x) => x.actionsBelow));
+  check(`${w}: no horizontal scroll`, overflow <= 0, String(overflow));
+  await page.screenshot({ path: path.join(OUT, `${tag}_rows_${w}.png`), fullPage: true });
+}
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.waitForTimeout(350);
 await page.screenshot({ path: path.join(OUT, `${tag}_standard_actions.png`), fullPage: true });
 
 // Each control does the row's own thing; none toggles the row except View details.
@@ -792,7 +824,8 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
     check(`"${name}": completed rows keep the Complete slot`, await complete.isVisible());
   }
   if (route !== "instructions" && route !== "blocked") check(`"${name}": Complete does not toggle the row`, (await head.getAttribute("aria-expanded")) === "false");
-  // View details: always opens the details panel.
+  // View details (⋯ menu): always opens the details panel.
+  await bar.locator('[data-testid="row-more"]').click();
   await bar.locator('[data-testid="row-details"]').click();
   const body = row.locator(".ck-row-body");
   check(`"${name}": View details opens the details panel`, (await body.isVisible()) && (await head.getAttribute("aria-expanded")) === "true");
@@ -801,8 +834,9 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
 console.log("routes seen:", [...routesSeen].join(", "));
 // The details panel of a requirement card: what, agency, status, source, prerequisites, readiness.
 {
-  const card = main.locator(".ck-card").filter({ has: page.locator('[data-testid="row-details"]') }).first();
+  const card = main.locator(".ck-card").filter({ has: page.locator('[data-testid="row-more"]') }).first();
   if (await card.count()) {
+    await card.locator('[data-testid="row-more"]').click();
     await card.locator('[data-testid="row-details"]').click();
     const t = await card.locator('[data-testid="requirement-details"]').innerText().catch(() => "");
     for (const label of ["AGENCY", "SOURCE", "PREREQUISITES", "READINESS"]) check(`details panel shows ${label.toLowerCase()}`, t.toUpperCase().includes(label), t.replace(/\s+/g, " ").slice(0, 200));
@@ -834,7 +868,7 @@ console.log("routes seen:", [...routesSeen].join(", "));
     await langBtn.click();
     await page.waitForTimeout(600);
     const es = await visibleBars();
-    check("ES: Llenar con Clara · Completar · Ver detalles", es.length > 0 && es.every((b) => b.clara?.text === "Llenar con Clara" && /^(Completar|Completado)$/.test(b.complete?.text ?? "") && b.details?.text === "Ver detalles"));
+    check("ES: Llenar con Clara · Completar · ⋯", es.length > 0 && es.every((b) => b.clara?.text === "Llenar con Clara" && /^(Completar|Completado)$/.test(b.complete?.text ?? "") && !!b.more));
     await page.screenshot({ path: path.join(OUT, `${tag}_requirements_es.png`), fullPage: true });
     const enBtn = page.getByRole("button", { name: /^(EN|English)$/ }).first();
     if (await enBtn.isVisible().catch(() => false)) { await enBtn.click(); await page.waitForTimeout(500); }
@@ -872,14 +906,14 @@ await page.waitForTimeout(300);
   check("1280: View details is in ⋯", b.every((x) => !x.details));
   const bar = main.locator('[data-testid="row-actions"]').first();
   await bar.locator('[data-testid="row-more"]').click();
-  const item = bar.locator('[data-testid="row-more-item"]').filter({ hasText: "View details" });
+  const item = bar.locator('[data-testid="row-details"]').filter({ hasText: "View details" });
   check("1280: ⋯ → View details", await item.isVisible());
   await item.click();
   check("1280: ⋯ → View details opens the panel", await main.locator(".ck-row-body").first().isVisible());
   await main.locator(".ck-row-open > .ck-card-line > .ck-row-head").first().click();
-  const tall = await page.locator('.spr-requirements-main .ck-card-line').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null && (e as HTMLElement).getBoundingClientRect().height > 76).length);
-  // Long names wrap to two lines instead of truncating; nothing taller.
-  check("desktop: rows stay compact (name ≤ 2 lines)", tall === 0, `${tall} tall rows`);
+  const lines = await page.locator('.spr-requirements-main .ck-card-line .ck-name').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight))));
+  // Long names wrap naturally (up to two lines at this width) instead of truncating.
+  check("1280: names wrap to at most 2 lines, never truncated", lines.length > 0 && lines.every((n) => n <= 2), lines.join(","));
   await page.screenshot({ path: path.join(OUT, `${tag}_requirements_1280.png`), fullPage: true });
 }
 // Mobile: Fill with Clara + Complete stay; the rest is in ⋯.
@@ -889,6 +923,13 @@ await page.screenshot({ path: path.join(OUT, `${tag}_requirements_mobile.png`), 
 {
   const b = await visibleBars();
   check("mobile: Fill with Clara + Complete visible on every row", b.length > 0 && b.every((x) => x.clara && x.complete && x.more && !x.details), `${b.length} rows`);
+  const card = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
+    const line = e.closest(".ck-card-line") as HTMLElement;
+    const nm = line.querySelector(".ck-name") as HTMLElement;
+    const pill = line.querySelector(".ck-pill") as HTMLElement | null;
+    return { actionsBelow: e.getBoundingClientRect().top >= nm.getBoundingClientRect().bottom, pillBelow: !pill || pill.getBoundingClientRect().top >= nm.getBoundingClientRect().bottom - 1, clipped: nm.scrollWidth > nm.clientWidth + 1 };
+  }));
+  check("mobile: compact card — status and actions below the name, nothing clipped", card.every((c) => c.actionsBelow && c.pillBelow && !c.clipped));
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
   check("mobile: no horizontal scroll", fits);
 }

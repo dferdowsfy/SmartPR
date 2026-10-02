@@ -70,12 +70,12 @@ function CtaControl({ c, className, role, onDone, testId = "row-cta" }: { c: Row
 export function RowName({ name, model, language }: { name: string; model: RowActionsModel; language: Language }) {
   const es = language === "es";
   const learned = model.done ? undefined : model.learned;
-  if (!learned) return <span className="ck-name" title={name}>{name}</span>;
+  if (!learned) return <span className="ck-name">{name}</span>;
   const label = learned === "learned" ? (es ? "Clara lo aprendió" : "Clara learned this") : (es ? "Hay que enseñarle otra vez" : "Needs re-teaching");
   const tip = learned === "learned" ? (es ? "Clara sigue exactamente los pasos que le enseñaste" : "Clara follows exactly the steps you taught her") : (es ? "El portal cambió — enséñale otra vez" : "The portal changed — teach her again");
   return (
     <span className="ck-name-stack">
-      <span className="ck-name" title={name}>{name}</span>
+      <span className="ck-name">{name}</span>
       <span className={`ck-learned ck-learned-${learned}`} data-testid="row-learned" title={tip}>
         <GraduationCap size={13} aria-hidden="true" /> {label}
       </span>
@@ -103,10 +103,9 @@ function useMenu() {
 
 /**
  * The standard action column, identical on every requirement row:
- * Fill with Clara · Complete · View details · ⋯. Labels and positions never
- * change; each row's own capabilities decide only what a click does (the
- * route is exposed as data-route and in the tooltip). On narrow screens
- * "View details" moves into the ⋯ menu.
+ * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item). Labels
+ * and positions never change; each row's own capabilities decide only what a
+ * click does (the route is exposed as data-route and in the tooltip).
  */
 export function StandardRowActions({ actions, language, answerOpen = false }: { actions: RequirementActions; language: Language; answerOpen?: boolean }) {
   const lang = language;
@@ -138,9 +137,6 @@ export function StandardRowActions({ actions, language, answerOpen = false }: { 
       ) : (
         <button type="button" className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-expanded={complete.route === "blocked" ? answerOpen : undefined} onClick={run(complete)}>{completeInner}</button>
       )}
-      <button type="button" className="rq-std-btn rq-std-details" data-testid="row-details" onClick={(e) => { e.stopPropagation(); actions.onViewDetails(); }}>
-        <FileText size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.details[lang]}</span>
-      </button>
       <span className="ck-more rq-std-more">
         <button
           type="button"
@@ -155,7 +151,7 @@ export function StandardRowActions({ actions, language, answerOpen = false }: { 
         </button>
         {menu && (
           <span className="ck-more-menu" role="menu">
-            <button type="button" role="menuitem" className="ck-more-item rq-std-more-details" data-testid="row-more-item" onClick={(e) => { e.stopPropagation(); setMenu(false); actions.onViewDetails(); }}>
+            <button type="button" role="menuitem" className="ck-more-item rq-std-more-details" data-testid="row-details" onClick={(e) => { e.stopPropagation(); setMenu(false); actions.onViewDetails(); }}>
               <FileText size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.details[lang]}</span>
             </button>
             {overflow.map((c) => (

@@ -266,8 +266,11 @@ export function RequirementCard({
       <div className="ck-card-line">
         <button type="button" className="ck-row-head" aria-expanded={open} aria-controls={bodyId} onClick={() => setOpen((o) => !o)}>
           <span className="ck-num">{index}</span>
-          <RowName name={name} model={rowActions} language={language} />
-          {agency && <span className="ck-agency" title={agency}>{agency}</span>}
+          {/* Requirement name with its agency underneath — the widest, flexible column. */}
+          <span className="ck-name-block" data-testid="row-name-block">
+            <RowName name={name} model={rowActions} language={language} />
+            {agency && <span className="ck-agency" data-testid="row-agency">{agency}</span>}
+          </span>
           {badge && <span className={`ck-pill rq-badge-${badge.tone}`}>{badge.label}</span>}
           <ChevronDown size={16} className="ck-chevron" aria-hidden="true" />
         </button>

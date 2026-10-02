@@ -3670,3 +3670,53 @@ html.nav-is-scrolled .appbar .spr-header-utilities {
   .spr-guided-intake-shell .spr-ploc-input { font-size: 16px; }
   .spr-guided-intake-shell .spr-ploc-find { min-width: 72px; padding: 0 14px; }
 }
+
+/* ======================================================================
+   Requirement rows (2026-10): the name is the widest column and is never
+   truncated. Wide: # | name + agency (flexible, ≥300px) | status | actions.
+   Narrow list (container query, not viewport): a compact card —
+   # name / agency / status / actions. Overrides the older fixed agency/status
+   columns, nowrap + ellipsis, and the 2-line clamp.
+   ====================================================================== */
+.spr-requirements-main { container-type: inline-size; container-name: rq-list; width: 100%; min-width: 0; }
+:is(.rq-card, .ck-row) .ck-card-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px 12px; padding: 0 12px 0 0; }
+:is(.rq-card, .ck-row) .ck-card-line > .ck-row-head {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) 140px 16px; align-items: start; column-gap: 14px; row-gap: 6px;
+  min-width: 0; padding: 14px 6px 14px 14px;
+}
+:is(.rq-card, .ck-row) .ck-row-head .ck-num { margin-top: 0; }
+:is(.rq-card, .ck-row) .ck-name-block { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+:is(.rq-card, .ck-row) .ck-card-line .ck-name,
+:is(.rq-card, .ck-row) .ck-name-block .ck-name {
+  display: block; -webkit-line-clamp: unset; -webkit-box-orient: unset; overflow: visible; text-overflow: clip; white-space: normal;
+  overflow-wrap: break-word; hyphens: manual;
+  font-size: 17.5px; font-weight: 600; line-height: 1.3; color: var(--ink);
+}
+:is(.rq-card, .ck-row) .ck-card-line .ck-row-head .ck-agency,
+:is(.rq-card, .ck-row) .ck-name-block .ck-agency {
+  flex: none; width: auto; text-align: left; white-space: normal; overflow: visible; text-overflow: clip;
+  font-size: 13.5px; line-height: 1.35; color: var(--muted);
+}
+:is(.rq-card, .ck-row) .ck-card-line .ck-row-head .ck-pill { flex: none; justify-self: start; align-self: start; min-width: 0; margin-top: 2px; white-space: nowrap; }
+:is(.rq-card, .ck-row) .ck-row-head .ck-chevron { margin-top: 6px; }
+:is(.rq-card, .ck-row) .rq-std-actions { align-self: start; padding-top: 10px; gap: 6px; }
+:is(.rq-card, .ck-row) .rq-std-more .ck-more-btn { width: 36px; height: 36px; }
+/* View details lives in the ⋯ menu on every width. */
+:is(.rq-card, .ck-row) .rq-std-more-details { display: flex; }
+
+/* Narrow list → compact card: actions move under the requirement. */
+@container rq-list (max-width: 860px) {
+  :is(.rq-card, .ck-row) .ck-card-line { grid-template-columns: minmax(0, 1fr); padding: 0 12px 12px 0; }
+  :is(.rq-card, .ck-row) .ck-card-line > .ck-row-head { grid-template-columns: 30px minmax(0, 1fr) 16px; padding: 12px 6px 6px 12px; }
+  :is(.rq-card, .ck-row) .ck-card-line .ck-row-head .ck-pill { grid-column: 2; grid-row: 2; }
+  :is(.rq-card, .ck-row) .ck-row-head .ck-chevron { grid-column: 3; grid-row: 1; }
+  :is(.rq-card, .ck-row) .rq-std-actions { width: auto; padding: 0 0 0 56px; flex-wrap: wrap; }
+  :is(.rq-card, .ck-row) .rq-std-clara, :is(.rq-card, .ck-row) .rq-std-complete { flex: 0 1 auto; }
+}
+@container rq-list (max-width: 420px) {
+  :is(.rq-card, .ck-row) .rq-std-actions { padding-left: 12px; }
+  :is(.rq-card, .ck-row) .rq-std-clara, :is(.rq-card, .ck-row) .rq-std-complete { flex: 1 1 auto; }
+}
+@container rq-list (max-width: 420px) {
+  :is(.rq-card, .ck-row) .ck-card-line > .ck-row-head { grid-template-columns: 28px minmax(0, 1fr) 16px; column-gap: 10px; padding: 12px 4px 6px 10px; }
+}

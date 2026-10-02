@@ -88,7 +88,9 @@ test("collapsed RequirementCard renders the CTA on its line (outside the toggle)
   assert.match(line, /title="Complete registration form" data-testid="row-complete" data-route="smartpr_form"/);
   assert.match(line, />Complete</);
   assert.match(line, /data-testid="row-clara" data-route="explain"[^>]*>.*Fill with Clara</);
-  assert.match(line, /data-testid="row-details"[^>]*>.*View details</);
+  // View details lives in the ⋯ menu (row-more), not as its own button.
+  assert.match(line, /data-testid="row-more"/);
+  assert.ok(!/data-testid="row-details"/.test(line));
   assert.match(line, /data-testid="row-more"/);
   assert.ok(!/ck-row-body/.test(html), "details not rendered while collapsed");
   // The CTA is not inside the toggle button.
@@ -260,5 +262,5 @@ test("learned chip renders with the row title (RowName), not in the actions colu
   assert.match(renderToStaticMarkup(createElement(RowActions, { model: modelEs, language: "es" })), /Llenar con Clara/);
   // No routine → plain title.
   const plain = renderToStaticMarkup(createElement(RowName, { name: "X", model: requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop } }, "en"), language: "en" }));
-  assert.equal(plain, '<span class="ck-name" title="X">X</span>');
+  assert.equal(plain, '<span class="ck-name">X</span>');
 });
