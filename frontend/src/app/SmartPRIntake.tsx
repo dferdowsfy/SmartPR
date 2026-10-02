@@ -7957,17 +7957,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
           </div>
 
-          {/* Official disclaimer */}
-          <div className="disclaimer">
-            <b>{L('IMPORTANT DISCLAIMER — READ CAREFULLY', language)}</b>
-            <ul>
-              <li>{L('Do NOT submit this package or any SmartPR output to government agencies as an official filing.', language)}</li>
-              <li>{L('Do NOT claim that SmartPR approves, grants, or issues any license or permit.', language)}</li>
-              <li>{L('Do NOT file permits or applications using these materials as the sole source.', language)}</li>
-              <li>{L('SmartPR is a', language)} <strong>{L('readiness and compliance preparation platform', language)}</strong>, {L('not a government filing system.', language)}</li>
-              <li>{L('All final approvals are made exclusively by the Government of Puerto Rico and its agencies.', language)}</li>
-            </ul>
-          </div>
 
         </main>
       )}

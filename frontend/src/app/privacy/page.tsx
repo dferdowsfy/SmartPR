@@ -29,6 +29,19 @@ export default function PrivacyPage() {
               that approve those filings.
             </p>
           </section>
+          <section id="not-a-filing-system">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-medium">Not a government filing system</h2>
+            <p className="mt-3">
+              SmartPR is a readiness and compliance preparation platform, not a government filing system. Reports,
+              submission packages, worksheets and workspaces it prepares are preparation materials only:
+            </p>
+            <ul className="mt-3 list-disc space-y-1.5 pl-6">
+              <li>Do not submit a SmartPR package or any SmartPR output to a government agency as an official filing.</li>
+              <li>SmartPR does not approve, grant, or issue any license or permit, and nothing it produces should be presented as doing so.</li>
+              <li>Do not file permits or applications using SmartPR materials as the sole source; use the agency&apos;s official forms and instructions.</li>
+              <li>All final approvals are made exclusively by the Government of Puerto Rico and its agencies.</li>
+            </ul>
+          </section>
           <section>
             <h2 className="font-[family-name:var(--font-display)] text-2xl font-medium">Information we collect</h2>
             <p className="mt-3">We collect only what is needed to run the product:</p>
