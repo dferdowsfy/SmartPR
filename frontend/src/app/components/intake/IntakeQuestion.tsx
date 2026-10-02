@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle, XCircle } from "lucide-react";
+import { Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { L } from "../../i18n";
 
 type Language = "en" | "es";
@@ -38,6 +39,18 @@ export function IntakeQuestion({
   onNotSure?: () => void;
 }) {
   const es = language === "es";
+  // The chosen answer stays visibly selected for a beat before the engine
+  // moves on, so the user registers what they picked.
+  const [picked, setPicked] = useState<boolean | string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  const choose = (value: boolean | string) => {
+    if (picked !== null) return;
+    setPicked(value);
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    timer.current = setTimeout(() => onAnswer(value), reduce ? 60 : 200);
+  };
+  const cls = (value: boolean | string) => `spr-answer-choice${picked === value ? " selected" : ""}`;
   return (
     <div className="spr-follow-up">
       <div className="spr-kicker">{es ? "Pregunta por confirmar" : "Question to confirm"}</div>
@@ -51,15 +64,15 @@ export function IntakeQuestion({
       {options ? (
         <div className={`spr-answer-row ${options.length >= 3 ? "spr-answer-row-three" : ""}`}>
           {options.map((option) => (
-            <button key={option.value} onClick={() => onAnswer(option.value)}>
-              {option.label}
+            <button key={option.value} type="button" className={cls(option.value)} aria-pressed={picked === option.value} disabled={picked !== null && picked !== option.value} onClick={() => choose(option.value)}>
+              {picked === option.value && <Check className="i" aria-hidden="true" />} {option.label}
             </button>
           ))}
         </div>
       ) : (
-        <div className="spr-answer-row">
-          <button onClick={() => onAnswer(true)}><CheckCircle className="i" /> {es ? "Sí" : "Yes"}</button>
-          <button onClick={() => onAnswer(false)}><XCircle className="i" /> {es ? "No" : "No"}</button>
+        <div className="spr-answer-row spr-answer-yesno" role="group" aria-label={title}>
+          <button type="button" className={cls(true)} aria-pressed={picked === true} disabled={picked === false} onClick={() => choose(true)}><Check className="i" aria-hidden="true" /> {es ? "Sí" : "Yes"}</button>
+          <button type="button" className={cls(false)} aria-pressed={picked === false} disabled={picked === true} onClick={() => choose(false)}><X className="i" aria-hidden="true" /> No</button>
         </div>
       )}
       {onNotSure && (

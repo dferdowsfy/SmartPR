@@ -172,7 +172,7 @@ export function ScenarioQuestions({
   onSkip,
 }: {
   evaluation: ScenarioEvaluation;
-  heading: string;
+  heading?: string;
   lang: Lang;
   onAnswer: (q: ScenarioQuestion, answer: string | boolean | string[]) => void;
   onSkip: (q: ScenarioQuestion) => void;
@@ -182,7 +182,7 @@ export function ScenarioQuestions({
   if (!q && evaluation.controlling.length === 0) return null;
   return (
     <section className="spr-scn-questions" data-testid="scenario-questions" aria-live="polite">
-      <h3>{heading}</h3>
+      {heading && <h3>{heading}</h3>}
       {q ? (
         <div key={q.id} data-testid={`scenario-question-${q.id}`}>
           <p className="spr-scn-q-text">{q.text}</p>

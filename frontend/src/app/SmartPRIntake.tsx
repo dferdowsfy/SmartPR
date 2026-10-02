@@ -18,6 +18,7 @@ import {
 } from './potentialRequirements';
 import { buildExtraction, type ExtractionResult } from './documentFields';
 import { IntakeQuestion } from './components/intake/IntakeQuestion';
+import { ProgressiveQuestionnaire } from './components/intake/ProgressiveQuestionnaire';
 import { PROJECT_ILLUSTRATIONS, selectProjectIllustration } from './components/intake/projectIllustrations';
 import {
   ISSUED_DOCUMENT_GUIDANCE,
@@ -6299,6 +6300,24 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .filter((q) => !questionList.some((guided) => guided.id === q.questionId) && discoveryAnswers[q.writeKey] !== undefined)
       .map((q) => ({ id: q.questionId, text: (KB.questions as Array<{ id: string; question?: string }>).find((item) => item.id === q.questionId)?.question ?? q.questionId, value: discoveryAnswers[q.writeKey] as boolean | string, writeKey: q.writeKey })));
 
+  // After "Change": once the reopened question is answered again, answers to
+  // follow-ups the new answer no longer asks (dropped from the engine's
+  // question list, or suppressed) are removed — never kept silently. Answers
+  // that still apply are untouched.
+  const pruneAfterChangeRef = useRef<{ reopened: string; listed: string[] } | null>(null);
+  useEffect(() => {
+    const pending = pruneAfterChangeRef.current;
+    if (!pending || discoveryAnswers[pending.reopened] === undefined) return;
+    pruneAfterChangeRef.current = null;
+    const current = new Set(questionList.map((q) => q.id));
+    const stale = pending.listed.filter((id) =>
+      id !== pending.reopened && !id.startsWith('pc_') && discoveryAnswers[id] !== undefined
+      && (!current.has(id) || isQuestionSuppressedByAnswers(id, discoveryAnswers)));
+    if (stale.length === 0) return;
+    stale.forEach((id) => markUserTouched(id));
+    setDiscoveryAnswers((prev) => { const next = { ...prev }; for (const id of stale) delete next[id]; return next; });
+  }, [discoveryAnswers, questionList]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /** Let the user correct something the interpreter got wrong. */
   const reopenAnsweredQuestion = (questionId: string) => {
     setAiPrefilledKeys((prev) => prev.filter((id) => id !== questionId));
@@ -6337,10 +6356,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : intakeRuleQuestions.length > 0 ? 'rule'
     : scenarioEval ? 'scenario'
     : null;
-  const questionsHeading =
-    projectIntent === 'existing_business' && passportSnapshot
-      ? (language === 'es' ? 'Aún necesitamos para este proyecto' : 'We still need for this project')
-      : (language === 'es' ? 'Lo que SmartPR aún necesita' : 'What SmartPR still needs');
+  const questionsRemaining =
+    questionList.slice(activeQuestionIndex).filter((q) => discoveryAnswers[q.id] === undefined && !isQuestionPreAnswered(q.id) && !isQuestionSuppressedByAnswers(q.id, discoveryAnswers)).length
+    + Math.max(0, potentialItems.length - answeredPotentialCount)
+    + intakeRuleQuestions.length
+    + (scenarioEval?.questions.length ?? 0);
   // Attention target after an incomplete submit tap (questions half).
   const questionsNeedAttention = submitAttempted && baseProfileReady && !intakeQuestionsComplete;
   // Once everything's complete, the incomplete-submit state retires: the
@@ -7066,97 +7086,93 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     this one region at the top — exactly one question UI at a
                     time, in the pink "what we still need" box, before the
                     text fields. */}
-                {topQuestionKind && baseProfileReady && (
+                {/* Progressive interview: answered questions stay on the
+                    path as compact rows (Change reopens them in place); the
+                    engine's next question opens directly underneath. */}
+                {baseProfileReady && (topQuestionKind || answeredIntakeQuestions.length > 0) && (
                 <div
                   className={`spr-field full${questionsNeedAttention ? ' spr-attention' : ''}`}
                   ref={questionsPanelRef}
                 >
-                  {(topQuestionKind === 'guided' || topQuestionKind === 'potential' || topQuestionKind === 'rule') ? (
-                    <section className="spr-scn-questions" aria-live="polite">
-                      <h3>{questionsHeading}</h3>
-                      {topQuestionKind === 'guided' && currentQuestion && (
-                        <IntakeQuestion
-                          language={language}
-                          title={L(currentQuestion.text, language)}
-                          contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
-                          contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
-                          options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
-                          onAnswer={(value) => handleQuestionAnswer(value)}
-                        />
-                      )}
-                      {topQuestionKind === 'potential' && currentPotentialQuestion && (
-                        <IntakeQuestion
-                          language={language}
-                          title={L(currentPotentialQuestion.followUp, language)}
-                          contextTitle={L(currentPotentialQuestion.document, language)}
-                          contextBody={L(currentPotentialQuestion.why, language)}
-                          onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
-                          onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
-                        />
-                      )}
-                      {topQuestionKind === 'rule' && intakeRuleQuestions[0] && (
-                        <IntakeQuestion
-                          language={language}
-                          title={L(intakeRuleQuestions[0].text, language)}
-                          onAnswer={(value) => answerTriggerQuestion(intakeRuleQuestions[0].writeKey, value === true)}
-                        />
-                      )}
-                    </section>
-                  ) : (
-                    scenarioEval && (
-                      <ScenarioQuestions
-                        evaluation={scenarioEval}
-                        heading={questionsHeading}
-                        lang={language}
-                        onAnswer={answerScenarioQuestion}
-                        onSkip={skipScenarioQuestion}
-                      />
-                    )
-                  )}
+                  <ProgressiveQuestionnaire
+                    language={language}
+                    remaining={questionsRemaining}
+                    answered={answeredIntakeQuestions.map((item) => ({
+                      id: item.id,
+                      text: L(item.text, language),
+                      valueLabel: typeof item.value === 'boolean'
+                        ? (item.value ? t('yes') : t('no'))
+                        : L(questionList.find((q) => q.id === item.id)?.options?.find((o) => o.value === item.value)?.label ?? String(item.value), language),
+                      badge: confirmationsNeeded[item.id] ? L('Needs confirmation', language) : undefined,
+                      onChange: () => {
+                        pruneAfterChangeRef.current = { reopened: item.writeKey, listed: questionList.map((q) => q.id) };
+                        if (item.writeKey === item.id) {
+                          reopenAnsweredQuestion(item.id);
+                        } else {
+                          // REG-INTAKE-ANSWER-PERSIST-001: mark the key
+                          // user-touched so the scenario-answer merge
+                          // cannot re-apply the deleted value.
+                          markUserTouched(item.writeKey);
+                          setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; });
+                        }
+                      },
+                    }))}
+                    active={
+                      topQuestionKind === 'guided' && currentQuestion ? {
+                        id: currentQuestion.id,
+                        node: (
+                          <IntakeQuestion
+                            key={currentQuestion.id}
+                            language={language}
+                            title={L(currentQuestion.text, language)}
+                            contextTitle={currentQuestion.whyWeAsk ? L("Why we ask", language) : undefined}
+                            contextBody={currentQuestion.whyWeAsk ? L(currentQuestion.whyWeAsk, language) : undefined}
+                            options={currentQuestion.options?.map((option) => ({ value: option.value, label: L(option.label, language) }))}
+                            onAnswer={(value) => handleQuestionAnswer(value)}
+                          />
+                        ),
+                      }
+                      : topQuestionKind === 'potential' && currentPotentialQuestion ? {
+                        id: `potential:${currentPotentialQuestion.flag}`,
+                        node: (
+                          <IntakeQuestion
+                            key={currentPotentialQuestion.flag}
+                            language={language}
+                            title={L(currentPotentialQuestion.followUp, language)}
+                            contextTitle={L(currentPotentialQuestion.document, language)}
+                            contextBody={L(currentPotentialQuestion.why, language)}
+                            onAnswer={(value) => handlePotentialAnswer(currentPotentialQuestion, value === true ? "applies" : "not_applies")}
+                            onNotSure={() => handlePotentialAnswer(currentPotentialQuestion, "not_sure")}
+                          />
+                        ),
+                      }
+                      : topQuestionKind === 'rule' && intakeRuleQuestions[0] ? {
+                        id: intakeRuleQuestions[0].id,
+                        node: (
+                          <IntakeQuestion
+                            key={intakeRuleQuestions[0].writeKey}
+                            language={language}
+                            title={L(intakeRuleQuestions[0].text, language)}
+                            onAnswer={(value) => answerTriggerQuestion(intakeRuleQuestions[0].writeKey, value === true)}
+                          />
+                        ),
+                      }
+                      : topQuestionKind === 'scenario' && scenarioEval ? {
+                        id: `scenario:${scenarioNextQuestion?.id ?? 'idle'}`,
+                        node: (
+                          <ScenarioQuestions
+                            evaluation={scenarioEval}
+                            lang={language}
+                            onAnswer={answerScenarioQuestion}
+                            onSkip={skipScenarioQuestion}
+                          />
+                        ),
+                      }
+                      : null
+                    }
+                  />
                 </div>
                 )}
-
-              {/* Keep each selected answer visible after the next prompt loads. */}
-              {answeredIntakeQuestions.length > 0 && (
-                <section className="spr-answered spr-saved-answers" aria-label={L('Answered questions', language)}>
-                  <div className="spr-kicker">
-                    {L('Answered questions', language)} · {answeredIntakeQuestions.length}
-                  </div>
-                  <ul className="spr-answered-list">
-                    {answeredIntakeQuestions.map((item) => (
-                      <li key={item.id}>
-                        <CheckCircle className="i" style={{ width: 14, height: 14 }} />
-                        <span className="spr-answered-text">{L(item.text, language)}</span>
-                        {confirmationsNeeded[item.id] && (
-                          <span className="spr-confirm-badge">{L('Needs confirmation', language)}</span>
-                        )}
-                        {typeof item.value === 'boolean' ? (
-                          <span className="spr-answer-options" role="group" aria-label={L(item.text, language)}>
-                            {[true, false].map((choice) => <span key={String(choice)} className={`spr-answer-option${item.value === choice ? ' selected' : ''}`}>{choice ? t('yes') : t('no')}</span>)}
-                          </span>
-                        ) : <span className="spr-answered-value">{String(item.value)}</span>}
-                        <button
-                          type="button"
-                          className="spr-answered-change"
-                          onClick={() => {
-                            if (item.writeKey === item.id) {
-                              reopenAnsweredQuestion(item.id);
-                            } else {
-                              // REG-INTAKE-ANSWER-PERSIST-001: mark the key
-                              // user-touched so the scenario-answer merge
-                              // cannot re-apply the deleted value.
-                              markUserTouched(item.writeKey);
-                              setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; });
-                            }
-                          }}
-                        >
-                          {L('Change', language)}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
 
               {(energyIntakeQuestions.length > 0 || answeredEnergyQuestions.length > 0) && (
                 <ChecklistSummary
