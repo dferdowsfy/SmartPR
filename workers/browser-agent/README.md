@@ -56,7 +56,8 @@ owner-gated API — the same privacy posture as the Cloud viewer.
    | `XAI_MODEL` | `grok-4.3` (optional; overrides per deploy) |
 
    Omit `AGENT_PROVIDER` (or set `browser_use_cloud`) to keep using Browser
-   Use Cloud with `BROWSER_USE_MODEL` (default `gpt-5.6-luna`).
+   Use Cloud with `BROWSER_USE_MODEL` (default `bu-ultrafast`; accepts no
+   reasoning/modelParams configuration).
 
    Teach Clara and "Fill with Clara" replays always need this worker
    (`SELF_HOSTED_AGENT_URL` + `WORKER_API_TOKEN`), whatever `AGENT_PROVIDER`
