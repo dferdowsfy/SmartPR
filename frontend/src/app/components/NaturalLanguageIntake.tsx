@@ -33,7 +33,6 @@ import {
 } from "../ai/intake/scenario";
 import { projectIntentLabel } from "../ai/intake/projectIntent";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
-import { ChevronRight, MessageCircle } from "lucide-react";
 import { PassportVoiceReview, usePassportVoiceInput, type PassportInputTarget } from "./voice/PassportVoiceReview";
 
 export interface NaturalLanguageIntakeProps {
@@ -53,8 +52,6 @@ export interface NaturalLanguageIntakeProps {
   onEdit?: () => void;
   /** When true, show the floating voice orb (intake Start). Default true. */
   showVoiceOrb?: boolean;
-  /** Secondary "Ask Clara" row under the voice action (opens the chat). */
-  onAskClara?: () => void;
   /** Enabled only once discovery is complete; writes the existing canonical state. */
   passport?: PassportInputTarget;
   /**
@@ -123,7 +120,6 @@ export function NaturalLanguageIntake({
   onApply,
   onEdit,
   showVoiceOrb = true,
-  onAskClara,
   passport,
   scenarioSummary,
   compact = false,
@@ -462,7 +458,7 @@ export function NaturalLanguageIntake({
         )}
       </p>
 
-      {/* Voice = complete the intake; Clara = questions and help. */}
+      {/* Voice: complete the intake by speaking. */}
       {showVoiceOrb && (
         <IntakeVoiceOrb
           variant="inline"
@@ -474,14 +470,7 @@ export function NaturalLanguageIntake({
           feedback={<PassportVoiceReview review={passportReview} lang={lang} />}
         />
       )}
-      {onAskClara && (
-        <button type="button" className="spr-ask-clara-row" onClick={onAskClara} data-testid="intake-ask-clara">
-          <MessageCircle className="spr-ask-clara-icon" aria-hidden="true" />
-          <span className="spr-ask-clara-label">{L("Ask Clara", "Preguntar a Clara")}</span>
-          <span className="spr-ask-clara-help">{L("Have a question? Get help from our AI assistant.", "¿Tienes una pregunta? Recibe ayuda de nuestra asistente.")}</span>
-          <ChevronRight className="spr-ask-clara-chev" aria-hidden="true" />
-        </button>
-      )}
+
 
       {status === "done" && (shownUnderstood.length > 0 || shownNeeds.length > 0) && (
         <div className="spr-nl-result" data-testid="scenario-understood">

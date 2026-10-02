@@ -6903,7 +6903,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     SmartPR fills in the fields it can confidently determine. The
                     guided fields below remain the source of truth. */}
                 <NaturalLanguageIntake
-                  onAskClara={() => openSmartPRChat()}
                   kb={KB}
                   lang={language}
                   allowedIndustries={INDUSTRIES}

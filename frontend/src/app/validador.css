@@ -3907,18 +3907,8 @@ section.spr-plc .spr-plc-intel { padding-top: 4px; border-top: 1px solid #f0ece4
 .spr-voice-label { white-space: nowrap; }
 .spr-voice-stop { width: 12px; height: 12px; fill: #152a45; }
 .spr-voice-help { padding-left: 18px; border-left: 1px solid #ddd8cd; font-size: 15px; line-height: 1.4; color: #526579; }
-.spr-ask-clara-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; margin-top: 14px; padding: 8px 6px; border: 0; border-top: 1px solid #e6e1d7; background: none; text-align: left; cursor: pointer; font-family: var(--spr-ui-font, var(--font-sans)); }
-.spr-ask-clara-row:hover .spr-ask-clara-label { text-decoration: underline; }
-.spr-ask-clara-row:focus-visible { outline: 2px solid #1f6b66; outline-offset: 2px; border-radius: 8px; }
-.spr-ask-clara-icon { flex: 0 0 auto; width: 24px; height: 24px; color: #1f6b66; }
-.spr-ask-clara-label { flex: 0 0 auto; padding-right: 12px; border-right: 1px solid #ddd8cd; font-size: 16px; font-weight: 650; color: #152a45; }
-.spr-ask-clara-help { flex: 1; min-width: 0; font-size: 15px; color: #526579; }
-.spr-ask-clara-chev { flex: 0 0 auto; width: 18px; height: 18px; color: #152a45; }
 @media (max-width: 520px) {
   .spr-voice-row { flex-direction: column; align-items: stretch; }
   .spr-voice-pill { justify-content: flex-start; width: 100%; }
   .spr-voice-help { padding-left: 4px; border-left: 0; }
-  .spr-ask-clara-row { flex-wrap: wrap; }
-  .spr-ask-clara-label { border-right: 0; }
-  .spr-ask-clara-help { flex-basis: 100%; order: 3; padding-left: 36px; }
 }

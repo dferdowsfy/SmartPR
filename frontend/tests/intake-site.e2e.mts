@@ -108,7 +108,7 @@ for (const [w, h, tag] of [[1440, 900, "desktop"], [1280, 800, "laptop"], [390, 
   const inputBox = await box(page, ".spr-nl-input");
   const pos = await pill.evaluate((e) => { for (let n: Element | null = e; n; n = n.parentElement) if (getComputedStyle(n).position === "fixed") return "fixed"; return "flow"; });
   check(`${tag}: voice pill is inline below the describe box, 52–58px tall`, pos === "flow" && pb.top >= inputBox.bottom && pb.height >= 52 && pb.height <= 58 && /Fill out by voice/.test(await pill.innerText()), `${Math.round(pb.width)}×${Math.round(pb.height)} ${pos}`);
-  check(`${tag}: helper copy + separate Ask Clara row below`, /Complete your intake by speaking\./.test(await page.locator(".spr-voice-help").innerText()) && (await box(page, '[data-testid="intake-ask-clara"]')).top > pb.bottom);
+  check(`${tag}: helper copy, no Ask Clara chat entry in the intake`, /Complete your intake by speaking\./.test(await page.locator(".spr-voice-help").innerText()) && (await page.getByText("Ask Clara").count()) === 0);
   await page.evaluate(() => window.scrollTo(0, 0));
 
   // 3 — site results
