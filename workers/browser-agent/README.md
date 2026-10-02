@@ -59,9 +59,21 @@ owner-gated API — the same privacy posture as the Cloud viewer.
    Use Cloud with `BROWSER_USE_MODEL` (default `bu-ultrafast`; accepts no
    reasoning/modelParams configuration).
 
-   Teach Clara and "Fill with Clara" replays always need this worker
-   (`SELF_HOSTED_AGENT_URL` + `WORKER_API_TOKEN`), whatever `AGENT_PROVIDER`
-   says — Browser Use Cloud can't inject the recorder.
+   Teach Clara and "Fill with Clara" replays pick their browser
+   independently of `AGENT_PROVIDER`:
+
+   - **Teach-only worker** (filing runs and replays stay on Browser Use
+     Cloud): set only `TEACH_WORKER_URL` (this worker's public URL) +
+     `WORKER_API_TOKEN` in the Next.js service — do **not** set
+     `AGENT_PROVIDER` or `SELF_HOSTED_AGENT_URL`. Teach sessions record on
+     this worker; strict replay keeps using Browser Use Cloud while
+     `BROWSER_USE_API_KEY` is set. `TEACH_WORKER_URL` must be present at
+     build time too (Railway passes service variables to the build) so the
+     agency-run page's CSP allows framing the worker's live view.
+   - Without `TEACH_WORKER_URL`, teach and replay use Browser Use Cloud when
+     `BROWSER_USE_API_KEY` is set, else `SELF_HOSTED_AGENT_URL`.
+     `TEACH_BROWSER_PROVIDER` / `REPLAY_BROWSER_PROVIDER`
+     (`browser_use_cloud` | `self_hosted`) force a choice.
 
 ## Teach Clara sessions
 

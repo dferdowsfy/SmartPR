@@ -7,7 +7,7 @@ import { getCurrentUser } from "../../supabase/server";
 import { isUserAdmin } from "../../admin";
 import { MemorySkillRepo, PgSkillRepo, SkillLibraryError, type SkillRepo, type SkillViewer } from "../skills/skillLibrary";
 import { TeachSessionError, type TeachWorker } from "./teachSessions";
-import { fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach, teachBrowserProvider } from "./teachWorkerClient";
+import { fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach, replayBrowserProvider, teachBrowserProvider } from "./teachWorkerClient";
 import { CloudDriver, cloudTeachWorker, secureFillCloudDrive, startCloudDrive, stopCloudDrive } from "./cloudBrowser";
 import type { TeachTier } from "./teachSession";
 
@@ -97,13 +97,15 @@ export function errorResponse(err: unknown): Response {
 }
 
 export async function replayDeps(): Promise<import("../replay/replaySessions").ReplayDeps> {
-  const { startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
+  const { secureFillDriveWorker, startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
   const { agentRelocator } = await import("../replay/relocate");
   const relocate = agentRelocator(await modelPrompter(80));
-  if (teachBrowserProvider() !== "self_hosted") {
+  // Strict replay follows its own provider (Browser Use Cloud whenever
+  // BROWSER_USE_API_KEY is set) — a teach-only worker never takes it over.
+  if (replayBrowserProvider() !== "self_hosted") {
     return { repo: await skillRepo(), startDrive: startCloudDrive, stopDrive: stopCloudDrive, driver: (id) => new CloudDriver(id), relocate, secureFill: secureFillCloudDrive };
   }
-  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate, secureFill: secureFillWorker };
+  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate, secureFill: secureFillDriveWorker };
 }
 
 /**

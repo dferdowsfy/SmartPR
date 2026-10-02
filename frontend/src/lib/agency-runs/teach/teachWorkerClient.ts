@@ -4,16 +4,26 @@
  * browser on the same display the live viewer already streams, injects
  * RECORDER_SCRIPT into every page, and queues the recorder's events.
  *
- * Teach mode and strict replay run on a browser SmartPR can inject its
- * recorder / driver into: a Browser Use Cloud browser over CDP (default when
- * BROWSER_USE_API_KEY is set — see cloudBrowser.ts) or the self-hosted
- * worker (when SELF_HOSTED_AGENT_URL + WORKER_API_TOKEN are set).
- * TEACH_BROWSER_PROVIDER=browser_use_cloud|self_hosted forces one.
+ * Teach mode and strict replay each pick their own browser — neither looks
+ * at AGENT_PROVIDER, so Clara's filing runs (Browser Use Cloud by default)
+ * are never affected by the teach setup:
+ *
+ *  - Teach (`teachBrowserProvider`): a dedicated teach worker
+ *    (TEACH_WORKER_URL + WORKER_API_TOKEN) wins; otherwise a Browser Use
+ *    Cloud browser over CDP when BROWSER_USE_API_KEY is set (cloudBrowser.ts);
+ *    otherwise the general worker (SELF_HOSTED_AGENT_URL + WORKER_API_TOKEN).
+ *  - Strict replay (`replayBrowserProvider`): Browser Use Cloud when
+ *    BROWSER_USE_API_KEY is set; otherwise the worker. Setting
+ *    TEACH_WORKER_URL never moves replay off Browser Use Cloud.
+ *
+ * TEACH_BROWSER_PROVIDER / REPLAY_BROWSER_PROVIDER = browser_use_cloud |
+ * self_hosted force one (TEACH_BROWSER_PROVIDER alone still forces both, as
+ * before, unless TEACH_WORKER_URL is set).
  *
  * `teachAvailability()` is the cheap config check; `probeTeachWorker()`
- * actually reaches the worker (health + authenticated capabilities: can it
- * launch the recorder's browser, is the live view wired) and says exactly
- * what is wrong when it can't record.
+ * actually reaches the teach browser (health + authenticated capabilities:
+ * can it launch the recorder's browser, is the live view wired) and says
+ * exactly what is wrong when it can't record.
  */
 import { RECORDER_SCRIPT } from "./recorderScript";
 import { cloudBrowserConfigured, probeCloudBrowser } from "./cloudBrowser";
@@ -26,19 +36,52 @@ export type TeachAvailability = { ok: true } | { ok: false; reason: "config" };
 /** The worker protocol this SmartPR build expects (secure fill, proxied screenshots). */
 export const TEACH_PROTOCOL = 2;
 
-function workerUrl(): string | null {
-  const url = process.env.SELF_HOSTED_AGENT_URL?.trim();
+function cleanUrl(v: string | undefined): string | null {
+  const url = v?.trim();
   return url ? url.replace(/\/$/, "") : null;
 }
 
-function workerToken(): string | null {
+/** The worker teach sessions use: TEACH_WORKER_URL, else SELF_HOSTED_AGENT_URL. */
+export function teachWorkerUrl(): string | null {
+  return cleanUrl(process.env.TEACH_WORKER_URL) ?? cleanUrl(process.env.SELF_HOSTED_AGENT_URL);
+}
+
+/** The worker strict replay drives when it isn't on Browser Use Cloud: SELF_HOSTED_AGENT_URL, else TEACH_WORKER_URL. */
+export function driveWorkerUrl(): string | null {
+  return cleanUrl(process.env.SELF_HOSTED_AGENT_URL) ?? cleanUrl(process.env.TEACH_WORKER_URL);
+}
+
+export function workerToken(): string | null {
   return process.env.WORKER_API_TOKEN?.trim() || null;
 }
 
-/** Which browser Teach Clara / Fill with Clara use here (null = none configured). */
+function forcedProvider(v: string | undefined): TeachBrowserProvider | null {
+  const f = v?.trim();
+  return f === "self_hosted" || f === "browser_use_cloud" ? f : null;
+}
+
+/** Which browser Teach Clara records on here (null = none configured). Independent of AGENT_PROVIDER. */
 export function teachBrowserProvider(): TeachBrowserProvider | null {
-  const forced = process.env.TEACH_BROWSER_PROVIDER?.trim();
-  const selfHosted = Boolean(workerUrl() && workerToken());
+  const selfHosted = Boolean(teachWorkerUrl() && workerToken());
+  const forced = forcedProvider(process.env.TEACH_BROWSER_PROVIDER);
+  if (forced === "self_hosted") return selfHosted ? "self_hosted" : null;
+  if (forced === "browser_use_cloud") return cloudBrowserConfigured() ? "browser_use_cloud" : null;
+  // A dedicated teach worker is an explicit choice: teach sessions use it.
+  if (cleanUrl(process.env.TEACH_WORKER_URL) && workerToken()) return "self_hosted";
+  if (cloudBrowserConfigured()) return "browser_use_cloud";
+  return selfHosted ? "self_hosted" : null;
+}
+
+/**
+ * Which browser strict replay ("Fill with Clara") drives (null = none).
+ * Independent of AGENT_PROVIDER and of TEACH_WORKER_URL.
+ */
+export function replayBrowserProvider(): TeachBrowserProvider | null {
+  const selfHosted = Boolean(driveWorkerUrl() && workerToken());
+  const forced =
+    forcedProvider(process.env.REPLAY_BROWSER_PROVIDER) ??
+    // Legacy: TEACH_BROWSER_PROVIDER used to force both teach and replay.
+    (cleanUrl(process.env.TEACH_WORKER_URL) ? null : forcedProvider(process.env.TEACH_BROWSER_PROVIDER));
   if (forced === "self_hosted") return selfHosted ? "self_hosted" : null;
   if (forced === "browser_use_cloud") return cloudBrowserConfigured() ? "browser_use_cloud" : null;
   if (cloudBrowserConfigured()) return "browser_use_cloud";
@@ -47,6 +90,10 @@ export function teachBrowserProvider(): TeachBrowserProvider | null {
 
 export function teachAvailability(): TeachAvailability {
   return teachBrowserProvider() ? { ok: true } : { ok: false, reason: "config" };
+}
+
+export function replayAvailability(): TeachAvailability {
+  return replayBrowserProvider() ? { ok: true } : { ok: false, reason: "config" };
 }
 
 export interface TeachProbe {
@@ -65,7 +112,7 @@ const MESSAGES: Record<TeachUnavailableReason, { en: string; es: string; hint: s
   config: {
     en: "Teach Clara needs SmartPR's recording browser, and it isn't connected on this site yet.",
     es: "Enseñarle a Clara necesita el navegador de grabación de SmartPR, y todavía no está conectado en este sitio.",
-    hint: "Set BROWSER_USE_API_KEY for the SmartPR app (Browser Use Cloud browsers), or SELF_HOSTED_AGENT_URL + WORKER_API_TOKEN for the workers/browser-agent service.",
+    hint: "Set TEACH_WORKER_URL (or SELF_HOSTED_AGENT_URL) + WORKER_API_TOKEN for the workers/browser-agent service, or BROWSER_USE_API_KEY for Browser Use Cloud browsers.",
   },
   no_credits: {
     en: "Clara's recording browser is out of credits right now.",
@@ -75,7 +122,7 @@ const MESSAGES: Record<TeachUnavailableReason, { en: string; es: string; hint: s
   unreachable: {
     en: "Clara's recording browser isn't answering right now, so she can't watch you walk the portal.",
     es: "El navegador de grabación de Clara no responde ahora mismo, así que no puede verte recorrer el portal.",
-    hint: "SELF_HOSTED_AGENT_URL did not answer GET /healthz. Check that the browser-agent worker is deployed and running.",
+    hint: "The teach worker (TEACH_WORKER_URL, else SELF_HOSTED_AGENT_URL) did not answer GET /healthz. Check that the browser-agent worker is deployed and running.",
   },
   unauthorized: {
     en: "Clara's recording browser refused SmartPR's connection.",
@@ -134,7 +181,7 @@ async function runProbe(fetchImpl: typeof fetch, timeoutMs: number): Promise<Tea
     if (r.status === 402) return fail("no_credits");
     return { ...fail("unreachable"), operator_hint: `Browser Use (api.browser-use.com) didn't answer (${r.status === 0 ? "network error" : `HTTP ${r.status}`}).` };
   }
-  const url = workerUrl();
+  const url = teachWorkerUrl();
   const token = workerToken();
   if (!url || !token) return fail("config");
   try {
@@ -174,7 +221,7 @@ export function resetTeachProbeForTests(): void {
 }
 
 function base(): string {
-  return `${workerUrl()}/api/v4/teach`;
+  return `${teachWorkerUrl()}/api/v4/teach`;
 }
 
 function headers(): HeadersInit {

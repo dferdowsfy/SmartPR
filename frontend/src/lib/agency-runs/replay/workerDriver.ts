@@ -5,15 +5,26 @@
  */
 import type { LocateResult, PageSnapshot, PortalDriver } from "./engine";
 import { DRIVER_SCRIPT } from "./driverScript";
+import { driveWorkerUrl, workerToken } from "../teach/teachWorkerClient";
+
+function root(): string {
+  const url = driveWorkerUrl();
+  if (!url) throw new Error("no drive worker configured (SELF_HOSTED_AGENT_URL / TEACH_WORKER_URL)");
+  return url;
+}
 
 function base(): string {
-  return `${process.env.SELF_HOSTED_AGENT_URL!.trim().replace(/\/$/, "")}/api/v4/drive`;
+  return `${root()}/api/v4/drive`;
+}
+
+function auth(): string {
+  return `Bearer ${workerToken() ?? ""}`;
 }
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${base()}${path}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${process.env.WORKER_API_TOKEN!.trim()}`, "Content-Type": "application/json", Accept: "application/json" },
+    headers: { Authorization: auth(), "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(body),
     cache: "no-store",
   });
@@ -23,6 +34,18 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 
 export async function startWorkerDrive(input: { startUrl: string; allowedDomains: string[] }): Promise<{ sessionId: string; liveUrl: string | null }> {
   return post("", { startUrl: input.startUrl, allowedDomains: input.allowedDomains, driverScript: DRIVER_SCRIPT });
+}
+
+/** One-time sensitive value into a replay (drive) session on the same worker that runs it; never kept. */
+export async function secureFillDriveWorker(sessionId: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason?: string }> {
+  const res = await fetch(`${root()}/api/v4/teach/${encodeURIComponent(sessionId)}/secure-fill`, {
+    method: "POST",
+    headers: { Authorization: auth(), "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ value: input.value, selector: input.selector }),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`drive worker ${res.status}`);
+  return (await res.json()) as { ok: boolean; reason?: string };
 }
 
 export async function stopWorkerDrive(sessionId: string): Promise<void> {

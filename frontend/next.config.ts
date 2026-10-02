@@ -1,5 +1,22 @@
 import type { NextConfig } from "next";
 
+/**
+ * Origins of the self-hosted browser worker(s) (Teach Clara live view is a
+ * noVNC page served by the worker). Read at build time — Railway exposes
+ * service variables to the build — so the agency-run page may frame them.
+ */
+function workerFrameOrigins(): string[] {
+  const out = new Set<string>();
+  for (const v of [process.env.TEACH_WORKER_URL, process.env.SELF_HOSTED_AGENT_URL]) {
+    try {
+      if (v?.trim()) out.add(new URL(v.trim()).origin);
+    } catch {
+      // not a URL: ignore
+    }
+  }
+  return [...out];
+}
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
@@ -40,8 +57,10 @@ const nextConfig: NextConfig = {
       ],
     };
   },
-  // Allow Browser Use Cloud live preview iframes (live.browser-use.com).
+  // Allow Browser Use Cloud live preview iframes (live.browser-use.com) and
+  // the self-hosted worker's live view (TEACH_WORKER_URL / SELF_HOSTED_AGENT_URL).
   async headers() {
+    const frames = ["'self'", "https://live.browser-use.com", "https://*.browser-use.com", ...workerFrameOrigins()].join(" ");
     return [
       {
         source: "/businesses/:id/agency-run",
@@ -49,8 +68,8 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value: [
-              "frame-src 'self' https://live.browser-use.com https://*.browser-use.com",
-              "child-src 'self' https://live.browser-use.com https://*.browser-use.com",
+              `frame-src ${frames}`,
+              `child-src ${frames}`,
             ].join("; "),
           },
         ],
