@@ -76,7 +76,10 @@ export function LocationStepCard({
   compact = false,
   summaryRow = false,
   onRetryLayers,
+  onOpenInline,
 }: {
+  /** Summary row: jump to the page's inline Project location instead of opening the picker dialog. */
+  onOpenInline?: () => void;
   lang: Lang;
   need: LocationNeed;
   site: IntakeSite | null;
@@ -173,12 +176,12 @@ export function LocationStepCard({
                   {L("Checking site…", "Revisando lugar…", lang)}
                 </span>
               )}
-              <button type="button" className="spr-link spr-loc-summary-change" onClick={() => setOpen(true)} data-testid="summary-site-change">
+              <button type="button" className="spr-link spr-loc-summary-change" onClick={() => (onOpenInline ? onOpenInline() : setOpen(true))} data-testid="summary-site-change">
                 {L("Change", "Cambiar", lang)}
               </button>
             </>
           ) : (
-            <button type="button" className="spr-loc-summary-find" onClick={() => setOpen(true)} data-testid="summary-site-open">
+            <button type="button" className="spr-loc-summary-find" onClick={() => (onOpenInline ? onOpenInline() : setOpen(true))} data-testid="summary-site-open">
               <MapPin aria-hidden="true" />
               {L("Find on map", "Buscar en el mapa", lang)}
             </button>

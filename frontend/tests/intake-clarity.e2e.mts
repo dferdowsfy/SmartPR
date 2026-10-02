@@ -27,6 +27,9 @@ async function open(width: number, height = 1000): Promise<Page> {
   const page = await browser.newPage({ viewport: { width, height } });
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.route("**/api/me", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ user: null }) }));
+  // Address search → a San Juan (Condado) point; the municipio is then resolved for real.
+  await page.route("**/api/geocode**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ results: [{ formatted_address: "Calle Ashford, San Juan, PR 00907", latitude: 18.4573, longitude: -66.0614, place_source: "stub", place_source_id: "sj" }], result: null }) }));
+  await page.route("**/api/locations/layers**", (r) => r.fulfill({ status: 503, contentType: "application/json", body: "{}" }));
   await page.goto(`${base}/?entry=new-business`, { waitUntil: "networkidle", timeout: 120000 });
   await page.locator('[data-testid="intake-where"]').waitFor({ timeout: 60000 });
   return page;
@@ -46,7 +49,7 @@ async function typography(page: Page, tag: string) {
     }
     const cta = getComputedStyle(document.querySelector(".spr-form-footer .spr-primary")!);
     const label = getComputedStyle(document.querySelector('[data-testid="intake-where"] label')!);
-    const input = getComputedStyle(document.querySelector("#spr-municipality")!);
+    const input = getComputedStyle(document.querySelector('[data-testid="project-location-search"]')!);
     const h1 = getComputedStyle(document.querySelector(".spr-intake-panel h1")!);
     return { bad, cta: [cta.fontFamily, cta.fontSize, cta.fontWeight, cta.letterSpacing], label: [label.fontFamily, label.fontSize, label.fontWeight], input: input.fontSize, h1: [h1.fontFamily, h1.fontSize] };
   });
@@ -73,10 +76,10 @@ async function typography(page: Page, tag: string) {
   // grouped location section
   const where = page.locator('[data-testid="intake-where"]');
   check("location section has no visible title (kept for screen readers)", (await where.locator("legend").evaluate((e) => { const cs = getComputedStyle(e); return cs.position === "absolute" && cs.clipPath.startsWith("inset") && e.getBoundingClientRect().height <= 1; })) && ((await where.locator("legend").textContent()) ?? "").includes("Where will your business operate?"));
-  check("location type, municipality and map inside it", (await where.locator("#spr-location-type").count()) === 1 && (await where.locator("#spr-municipality").count()) === 1 && (await where.getByText(/Find the site on the map/).count()) === 1);
-  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, "#spr-municipality")]);
-  check("consistent input widths and alignment", Math.abs(lt.width - mu.width) < 2 && Math.abs(lt.top - mu.top) < 2 && Math.abs(lt.height - mu.height) < 2, `${Math.round(lt.width)} / ${Math.round(mu.width)}`);
-  check("municipality no longer duplicated elsewhere", (await page.locator("#spr-municipality").count()) === 1);
+  check("project location (search + map) and location type in one section", (await where.locator("#spr-location-type").count()) === 1 && (await where.locator('[data-testid="project-location-search"]').count()) === 1 && (await where.getByRole("button", { name: "Choose on map" }).count()) === 1);
+  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, '[data-testid="project-location-search"]')]);
+  check("consistent left alignment and input heights", Math.abs(lt.left - mu.left) < 2 && Math.abs(lt.height - mu.height) < 6, `${Math.round(lt.left)}/${Math.round(mu.left)} ${Math.round(lt.height)}/${Math.round(mu.height)}`);
+  check("municipality dropdown only as a fallback (not shown up front)", (await page.locator("#spr-municipality").count()) === 0);
 
   // still needed, matching the sidebar
   const chips = (await page.locator(".spr-still-needed-chip").allInnerTexts()).map((t) => t.trim());
@@ -100,7 +103,7 @@ async function typography(page: Page, tag: string) {
   await page.locator(".spr-form-footer .spr-primary").click();
   await page.waitForTimeout(500);
   check("incomplete submit: location type flagged", (await page.locator('[data-testid="missing-note-location_type"]').count()) === 1 && (await page.locator("#spr-location-type").getAttribute("aria-invalid")) === "true");
-  check("incomplete submit: municipality aria-invalid + described", (await page.locator("#spr-municipality").getAttribute("aria-invalid")) === "true" && (await page.locator("#spr-municipality").getAttribute("aria-describedby")) === "spr-missing-municipality");
+  check("incomplete submit: location search aria-invalid + described by the note", (await page.locator('[data-testid="project-location-search"]').getAttribute("aria-invalid")) === "true" && ((await page.locator('[data-testid="project-location-search"]').getAttribute("aria-describedby")) ?? "").includes("spr-missing-municipality"));
   check("incomplete submit stays on intake", (await page.locator('[data-testid="intake-where"]').count()) === 1);
   await page.screenshot({ path: path.join(OUT, "2_validation.png"), fullPage: true });
 
@@ -108,9 +111,9 @@ async function typography(page: Page, tag: string) {
   await page.locator(".spr-still-needed-chip", { hasText: "Municipality" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForTimeout(400);
-  check("keyboard: Enter on a missing chip focuses its field", await page.evaluate(() => document.activeElement?.id === "spr-municipality"));
-  await page.keyboard.press("Shift+Tab");
-  check("keyboard: Shift+Tab reaches location type", await page.evaluate(() => document.activeElement?.id === "spr-location-type"));
+  check("keyboard: Enter on a missing chip focuses its field", await page.evaluate(() => document.activeElement?.id === "spr-project-location"));
+  await page.keyboard.press("Tab"); // Find is disabled while the search is empty
+  check("keyboard: Tab from the search reaches 'Choose on map'", await page.evaluate(() => document.activeElement?.getAttribute("data-testid") === "project-location-map-toggle"));
 
   // scrolling: global nav scrolls away, stepper stays
   await page.evaluate(() => window.scrollTo(0, 700));
@@ -123,7 +126,9 @@ async function typography(page: Page, tag: string) {
 
   // complete everything and go to requirements
   await page.getByRole("button", { name: "New business", exact: true }).click();
-  await page.locator("#spr-municipality").selectOption({ label: "San Juan" });
+  await page.locator('[data-testid="project-location-search"]').fill("Calle Ashford San Juan");
+  await page.keyboard.press("Enter");
+  await page.locator('[data-testid="project-location-confirmed"]').waitFor({ timeout: 30000 });
   await page.locator(".spr-still-needed-chip", { hasText: /Business Type/ }).click();
   await page.waitForTimeout(300);
   const ind = page.locator("#spr-industry");
@@ -161,8 +166,8 @@ async function typography(page: Page, tag: string) {
   const page = await open(390, 844);
   check("mobile: concise step indicator", (await page.locator('[data-testid="stepper-mobile"]').innerText()).replace(/\s+/g, " ").trim() === "Step 1 of 3 · Intake");
   check("mobile: full stepper hidden", await page.locator(".spr-workflow-stepper").isHidden());
-  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, "#spr-municipality")]);
-  check("mobile: Where fields stacked, same width", lt.bottom < mu.top && Math.abs(lt.width - mu.width) < 2);
+  const [mu, lt] = await Promise.all([rect(page, '[data-testid="project-location"]'), rect(page, "#spr-location-type")]);
+  check("mobile: project location then location type, stacked, same width", mu.bottom < lt.top && Math.abs(lt.width - mu.width) < 2);
   await typography(page, "mobile");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check("mobile: no horizontal overflow", overflow <= 0, String(overflow));

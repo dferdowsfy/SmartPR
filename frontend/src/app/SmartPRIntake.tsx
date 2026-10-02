@@ -112,9 +112,9 @@ import {
   type FilingStage,
   type SmartPRLiveData,
 } from './components/filing/FilingWorkflowShell';
-import { MunicipalityMapButton } from './components/intake/MunicipalityMapButton';
 import { normalizeMunicipio } from './locations/geo';
-import { LocationStepCard, intakeSiteFromPick } from './components/intake/LocationStepCard';
+import { ProjectLocation } from './components/intake/ProjectLocation';
+import { LocationStepCard } from './components/intake/LocationStepCard';
 import { ModalPortal } from './components/ui/ViewportModal';
 import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails, siteLabel, siteLayersCurrent, type IntakeSite } from './locations/intakeLocation';
 import { unavailableSiteLayers, type SiteLayers } from './locations/layers';
@@ -6604,7 +6604,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   ) : null;
   const focusMissing = (key: string) => {
     if (key === 'business_type' || key === 'industry') setProfileFormExpanded(true);
-    const id = key === 'project_intent' ? null : key === 'location_type' ? 'spr-location-type' : key === 'municipality' ? 'spr-municipality' : key === 'business_type' ? 'spr-business-type' : 'spr-industry';
+    const id = key === 'project_intent' ? null : key === 'location_type' ? 'spr-location-type' : key === 'municipality' ? 'spr-project-location' : key === 'business_type' ? 'spr-business-type' : 'spr-industry';
     window.setTimeout(() => {
       const el = id ? document.getElementById(id) : document.querySelector<HTMLElement>('.spr-intent-option');
       if (!el) return;
@@ -6670,6 +6670,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           site={intakeSite}
           businessId={siteBusinessId}
           onConfirm={confirmIntakeSite}
+          onOpenInline={() => focusMissing('municipality')}
         />
       ) : null,
       stillNeeded: stillNeeded.map((i) => i.label),
@@ -6938,18 +6939,23 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   <legend className="spr-where-title sr-only">{isProjectOnly
                     ? (language === 'es' ? '¿Dónde está el proyecto?' : 'Where is the project?')
                     : (language === 'es' ? '¿Dónde operará tu negocio?' : 'Where will your business operate?')}</legend>
-                  <div className="spr-where-grid">
-                    {!isProjectOnly && (
-                      <div className={`spr-where-field${missingCls('location_type')}`}>
-                        <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
-                        <select id="spr-location-type" value={profile.location_type} {...missingAria('location_type')} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
-                          <option value="">{t('selectLocationType')}</option>
-                          {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => <option key={lt} value={lt}>{lt}</option>)}
-                        </select>
-                        {missingNote('location_type')}
-                      </div>
-                    )}
-                    {!passportKnownFields.has('municipality') ? (
+                  {/* One Project location workflow: address search or inline
+                      map → coordinates + address + municipio, via the same
+                      confirmIntakeSite as before. The municipality select is
+                      only the fallback when detection fails. */}
+                  <ProjectLocation
+                    lang={language}
+                    site={intakeSite}
+                    businessId={siteBusinessId}
+                    onConfirm={confirmIntakeSite}
+                    onClear={() => setIntakeSite(null)}
+                    onRetryLayers={retryIntakeLayers}
+                    initialQuery={locationNeed.prefill.query}
+                    searchInputId="spr-project-location"
+                    invalid={isFlaggedMissing('municipality') && submitAttempted}
+                    missingNote={missingNote('municipality')}
+                    knownMunicipality={intakeSite ? null : profile.municipality || null}
+                    municipalityFallback={
                       <div className={`spr-where-field${missingCls('municipality')}`}>
                         <label htmlFor="spr-municipality">{t('municipality')}{confirmationBadge('municipality')}</label>
                         <select
@@ -6965,36 +6971,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                           <option value="">{t('selectMunicipality')}</option>
                           {municipalityOptions.map((m: string) => <option key={m} value={m}>{m}</option>)}
                         </select>
-                        {missingNote('municipality')}
                       </div>
-                    ) : (
-                      <div className="spr-where-field">
-                        <span className="spr-where-label">{t('municipality')}</span>
-                        <p className="spr-where-known">{profile.municipality}</p>
-                      </div>
-                    )}
-                  </div>
-                  {/* Sites often have no clean address: the municipio comes
-                      from the pin via official Census boundaries. */}
-                  {(locationNeed.needed || intakeSite) ? (
-                    <div className="spr-where-map" data-testid="intake-location-slot">
-                      <LocationStepCard
-                        lang={language}
-                        need={locationNeed}
-                        site={intakeSite}
-                        businessId={siteBusinessId}
-                        onConfirm={confirmIntakeSite}
-                        onRetryLayers={retryIntakeLayers}
-                      />
-                    </div>
-                  ) : !passportKnownFields.has('municipality') && (
-                    <div className="spr-where-map">
-                      <MunicipalityMapButton
-                        lang={language}
-                        currentMunicipality={profile.municipality}
-                        businessId={me && businessId && !businessId.startsWith('local-') ? businessId : null}
-                        onPicked={(site) => confirmIntakeSite(intakeSiteFromPick(site))}
-                      />
+                    }
+                  />
+                  {!isProjectOnly && (
+                    <div className={`spr-where-field spr-where-type${missingCls('location_type')}`}>
+                      <label htmlFor="spr-location-type">{t('locationType')}{confirmationBadge('location_type')}</label>
+                      <select id="spr-location-type" value={profile.location_type} {...missingAria('location_type')} onChange={e => { setProfile({ ...profile, location_type: e.target.value }); markUserTouched('location_type'); }}>
+                        <option value="">{t('selectLocationType')}</option>
+                        {(LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES).map(lt => <option key={lt} value={lt}>{lt}</option>)}
+                      </select>
+                      {missingNote('location_type')}
                     </div>
                   )}
                 </fieldset>

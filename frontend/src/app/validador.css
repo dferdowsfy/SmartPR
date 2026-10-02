@@ -3631,3 +3631,42 @@ html.nav-is-scrolled .appbar .spr-header-utilities {
 }
 .spr-guided-intake-shell .spr-main-workarea :is(.spr-field, .spr-where-field) :is(input, select, textarea) { font-size: 16px; }
 .spr-where > legend.sr-only { clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+
+/* ---- Project location: one embedded workflow (search → map → confirmed) ---- */
+.spr-ploc { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.spr-guided-intake-shell .spr-ploc-title { margin: 0; font-family: var(--spr-ui-font); font-size: 21px; font-weight: 650; line-height: 1.25; color: #152f35; }
+.spr-ploc-help { margin: -4px 0 2px; font-size: 17px; line-height: 1.5; color: #526579; }
+.spr-ploc-search { position: relative; display: flex; align-items: stretch; gap: 8px; }
+.spr-ploc-search-icon { position: absolute; left: 16px; top: 50%; width: 20px; height: 20px; transform: translateY(-50%); color: var(--spr-shell-teal, #245c5c); pointer-events: none; }
+.spr-guided-intake-shell .spr-ploc-input { flex: 1; min-width: 0; height: 56px; padding: 0 16px 0 46px; border: 1.5px solid #9fb3b5; border-radius: 12px; background: #fff; font-size: 17px; color: #152f35; box-shadow: 0 1px 2px rgba(15,35,50,.05); }
+.spr-ploc-input:hover { border-color: #6f8e91; }
+.spr-ploc-input:focus { outline: none; border-color: var(--spr-shell-teal, #245c5c); box-shadow: 0 0 0 3px rgba(36,92,92,.18); }
+.spr-ploc-input[aria-invalid="true"] { border-color: #c98a12; box-shadow: 0 0 0 3px rgba(201,138,18,.14); }
+.spr-guided-intake-shell .spr-ploc-find { flex: 0 0 auto; min-width: 88px; height: 56px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--spr-shell-teal, #245c5c); color: #f6f3ea; font-size: 16px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.spr-ploc-find:disabled { opacity: .45; cursor: not-allowed; }
+.spr-ploc-find:focus-visible, .spr-ploc-map-toggle:focus-visible, .spr-ploc-saved-item:focus-visible { outline: 2px solid var(--spr-shell-teal, #245c5c); outline-offset: 2px; }
+.spr-ploc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.spr-guided-intake-shell .spr-ploc-map-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid #c6d2d8; border-radius: 10px; background: #fff; color: var(--spr-shell-teal, #245c5c); font-size: 16px; font-weight: 600; cursor: pointer; }
+.spr-ploc-map-toggle svg { width: 18px; height: 18px; }
+.spr-ploc-map-toggle:hover { background: #f4f8f7; }
+.spr-ploc-saved { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.spr-guided-intake-shell .spr-ploc-saved-item { min-height: 40px; padding: 0 12px; border: 1px dashed #c6d2d8; border-radius: 999px; background: transparent; color: #183b41; font-size: 15px; cursor: pointer; }
+.spr-ploc-message { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; color: #526579; }
+.spr-ploc-alts { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; font-size: 15px; color: #526579; }
+.spr-ploc-map { overflow: hidden; border: 1px solid #d7dedc; border-radius: 12px; }
+.spr-ploc-fallback { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid #eed9ae; border-radius: 12px; background: #fffaf0; }
+.spr-ploc-fallback > p { margin: 0; font-size: 16px; font-weight: 600; color: #8a5a00; }
+.spr-ploc-confirmed { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid #c5e0cf; border-radius: 12px; background: #f3faf6; }
+.spr-ploc-confirmed-title { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 17px; font-weight: 650; color: #1e6b43; }
+.spr-ploc-confirmed-title svg { width: 20px; height: 20px; }
+.spr-ploc-confirmed-address { margin: 0; font-size: 17px; font-weight: 600; color: #152f35; overflow-wrap: anywhere; }
+.spr-ploc-facts { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; font-size: 16px; color: #3d4b52; }
+.spr-ploc-facts > div { display: flex; gap: 6px; }
+.spr-ploc-facts dt { font-weight: 600; }
+.spr-ploc-facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+.spr-ploc-note { margin: 0; font-size: 15px; color: #8a5a00; }
+.spr-where-type { margin-top: 18px; padding-top: 18px; border-top: 1px solid #e6ebea; }
+@media (max-width: 640px) {
+  .spr-guided-intake-shell .spr-ploc-input { font-size: 16px; }
+  .spr-guided-intake-shell .spr-ploc-find { min-width: 72px; padding: 0 14px; }
+}
