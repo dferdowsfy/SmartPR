@@ -147,7 +147,7 @@ import { trackAcquisition } from './restaurants/analytics';
 import { jsPDF } from 'jspdf';
 import {
   CheckCircle, AlertTriangle, Info, FileText,
-  ArrowRight, RefreshCw, Download, Building2, Archive, ExternalLink,
+  ArrowRight, ChevronDown, RefreshCw, Download, Building2, Archive, ExternalLink,
   ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, Eye,
   Star, Sparkles, MessageCircle,
 } from 'lucide-react';
@@ -1633,6 +1633,7 @@ export default function SmartPRIntake() {
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [missingDocsOpen, setMissingDocsOpen] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
   // Intake location step: the confirmed site (pin / geocoded address / saved
   // location) whose municipio and location facts drive the requirements.
@@ -6671,6 +6672,35 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // the rules engine's baseline guesses (e.g. Permiso Único) only appear
   // once the user has given SmartPR something to work with.
   const liveBlank = intakeDone === 0;
+  // Deliverables: mandatory requirements still pending (missing documents).
+  const deliverablesMissing = requirements.filter((r) => r.mandatory && r.status === 'pending');
+  // Deliverables sidebar: the next action only.
+  const deliverablesSidebar = (
+    <aside className="dlv-next" aria-label={L('Next action', language)} data-testid="deliverables-next-action">
+      <div className="dlv-next-eyebrow">{L('Next action', language)}</div>
+      {deliverablesMissing.length > 0 ? (
+        <>
+          <h2>{L('Complete missing evidence', language)}</h2>
+          <p>{language === 'es'
+            ? `Vuelve a los requisitos para revisar y subir ${deliverablesMissing.length === 1 ? 'el documento que falta' : `los ${deliverablesMissing.length} documentos que faltan`}.`
+            : `Return to requirements to review and upload the ${deliverablesMissing.length === 1 ? 'missing document' : `${deliverablesMissing.length} missing documents`}.`}</p>
+          <button type="button" className="dlv-next-link" onClick={() => goTo('requirements')}>← {L('Back to requirements', language)}</button>
+        </>
+      ) : packageAssetCount > 0 ? (
+        <>
+          <h2>{L('Download your package', language)}</h2>
+          <p>{L('Your validated documents are sorted and ready. Review them before you file with each agency.', language)}</p>
+          <button type="button" className="dlv-next-link" onClick={downloadSubmissionPackage} disabled={isLoading}>{L('Download ZIP Package', language)} →</button>
+        </>
+      ) : (
+        <>
+          <h2>{L('Upload your documents', language)}</h2>
+          <p>{L('Add your documents in requirements to build the submission package.', language)}</p>
+          <button type="button" className="dlv-next-link" onClick={() => goTo('requirements')}>← {L('Back to requirements', language)}</button>
+        </>
+      )}
+    </aside>
+  );
   const stageIntelligence: SmartPRLiveData = view === 'intake' ? {
     project: {
       illustrationSrc: PROJECT_ILLUSTRATIONS[selectProjectIllustration({
@@ -6836,7 +6866,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         onLanguageChange={setLanguage}
         onStageChange={goTo}
         intelligence={stageIntelligence}
-        sidebar={view === 'requirements' ? null : undefined}
+        sidebar={view === 'requirements' ? null : view === 'deliverables' ? deliverablesSidebar : undefined}
         stickyHeader={view !== 'requirements'}
         stepperRight={view === 'requirements' ? (
           <ReadinessControl
@@ -7717,7 +7747,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <div className="section-head">
             <div>
               <h2>{L('SUBMISSION DELIVERABLES', language)}</h2>
-              <p>{L('All validated materials are ready. This platform prepares you for submission — it does not file with government.', language)}</p>
+              {/* Intro follows the real readiness state. */}
+              <p data-testid="deliverables-intro">
+                {deliverablesMissing.length > 0
+                  ? (language === 'es'
+                      ? `Tu informe está disponible. Completa ${deliverablesMissing.length === 1 ? 'el documento que falta' : `los ${deliverablesMissing.length} documentos que faltan`} para preparar tu paquete.`
+                      : `Your report is available. Complete the ${deliverablesMissing.length === 1 ? 'missing document' : `${deliverablesMissing.length} missing documents`} to prepare your package.`)
+                  : packageAssetCount > 0
+                    ? L('Your report and submission package are ready to download.', language)
+                    : L('Your report is available. Upload your documents to build the submission package.', language)}
+                {' '}{L('SmartPR prepares materials; it does not file with government.', language)}
+              </p>
             </div>
             <span className={`pkg-status-pill ${deliverablesReady && (readinessScore || 0) >= 70 ? 'ready' : 'missing'}`} style={{ marginLeft: 0 }}>
               {deliverablesReady && (readinessScore || 0) >= 70 ? L('READY FOR SUBMISSION', language) : L('IN PROGRESS — REVIEW REQUIRED', language)}
@@ -7725,9 +7765,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </div>
 
           {/* Business summary banner */}
-          <div className="req-banner" style={{ marginBottom: 20 }}>
+          <div className="req-banner" style={{ marginBottom: 20 }} data-testid="deliverables-summary">
             <div className="mini-ring" style={{ ['--p' as string]: readinessScore ?? 0 }}>
-              <div className="num">{readinessScore ?? '—'}{readinessScore !== null ? '%' : ''}</div>
+              <div className="num">{readinessScore ?? 0}%</div>
             </div>
             <div className="headline">
               <div className="eyebrow">{L('Readiness Score', language)}</div>
@@ -7748,14 +7788,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
           </div>
 
-          <div className="packages">
+          {/* 2×2: Report · Package / Worksheets · Workspace (stacks in this order). */}
+          <div className="packages pkg-grid-2" data-testid="deliverables-grid">
             {/* 1. PDF Readiness Report */}
-            <div className="pkg indigo">
+            <div className="pkg indigo" data-testid="tile-report">
               <div className="pkg-head">
                 <div className="pkg-ic"><FileText className="i-lg i" /></div>
                 <div>
                   <div className="pkg-title">{L('Readiness Report (PDF)', language)}</div>
-                  <div className="pkg-sub">{L('Human-readable summary for your records, attorney, or consultant.', language)}</div>
+                  <div className="pkg-sub">{L('A summary for your records, attorney, or consultant.', language)}</div>
                 </div>
                 <span className="pkg-status-pill ready">{L('Ready', language)}</span>
               </div>
@@ -7766,18 +7807,86 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               </div>
               <div className="pkg-foot">
                 <span className="pkg-sub">{language === 'es' ? 'Español' : 'English'} · PDF</span>
-                <button className="btn btn-primary" style={{ padding: '8px 14px', fontSize: 13 }} onClick={previewReadinessReport} disabled={isLoading}>
+                <button data-main-action className="btn btn-primary" style={{ padding: '8px 14px', fontSize: 13 }} onClick={previewReadinessReport} disabled={isLoading}>
                   <Eye className="i" style={{ width: 14, height: 14 }} /> {L('Preview PDF Report', language)}
                 </button>
               </div>
             </div>
 
-            {/* 2. Prepared application worksheets */}
-            <div className="pkg purple">
+            {/* 2. Submission Package ZIP */}
+            <div className="pkg green" data-testid="tile-package">
+              <div className="pkg-head">
+                <div className="pkg-ic"><Archive className="i-lg i" /></div>
+                <div>
+                  <div className="pkg-title">{L('Submission Package (ZIP)', language)}</div>
+                  <div className="pkg-sub">{L('Report and validated documents, sorted for submission.', language)}</div>
+                </div>
+                <span className={`pkg-status-pill ${packageAssetCount > 0 ? 'ready' : 'missing'}`}>
+                  {packageAssetCount > 0 ? L('Ready', language) : L('Waiting', language)}
+                </span>
+              </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12.5, color: 'var(--muted)' }}>
+                  <span>{L('Package readiness', language)}</span>
+                  <b style={{ color: 'var(--ink)', fontWeight: 650 }}>{checklistProgress}%</b>
+                </div>
+                <div className="pkg-bar"><span style={{ width: `${checklistProgress}%` }} /></div>
+              </div>
+              {(preparedSampleList.length > 0 || zipReadyDocs.length > 0) && (
+                <div className="pkg-list">
+                  {preparedSampleList.slice(0, 2).map((application) => (
+                    <div key={application.requirementCode} className="pkg-item ok">
+                      <span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>
+                      {application.title}
+                    </div>
+                  ))}
+                  {zipReadyDocs.slice(0, 3).map((d, i) => (
+                    <div key={i} className="pkg-item ok">
+                      <span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>
+                      {d.ai_analysis?.document_type || d.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {deliverablesMissing.length > 0 && (
+                <div className="pkg-missing">
+                  <button
+                    type="button"
+                    className="pkg-missing-toggle"
+                    aria-expanded={missingDocsOpen}
+                    aria-controls="pkg-missing-list"
+                    onClick={() => setMissingDocsOpen((o) => !o)}
+                    data-testid="missing-docs-toggle"
+                  >
+                    <AlertTriangle className="i" style={{ width: 15, height: 15 }} aria-hidden="true" />
+                    <span>{language === 'es'
+                      ? `Ver ${deliverablesMissing.length} documento${deliverablesMissing.length === 1 ? '' : 's'} faltante${deliverablesMissing.length === 1 ? '' : 's'}`
+                      : `View ${deliverablesMissing.length} missing document${deliverablesMissing.length === 1 ? '' : 's'}`}</span>
+                    <ChevronDown className={`i pkg-missing-chev${missingDocsOpen ? ' open' : ''}`} style={{ width: 16, height: 16 }} aria-hidden="true" />
+                  </button>
+                  {missingDocsOpen && (
+                    <ul id="pkg-missing-list" className="pkg-missing-list" data-testid="missing-docs-list">
+                      {deliverablesMissing.map((r) => (
+                        <li key={r.code}>{trReqName(r)}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              <div className="pkg-foot">
+                <span className="pkg-sub">{packageAssetCount} {L('files', language)}</span>
+                <button data-main-action className="btn btn-primary" style={{ padding: '8px 14px', fontSize: 13 }} onClick={downloadSubmissionPackage} disabled={isLoading || packageAssetCount === 0}>
+                  <Download className="i" style={{ width: 14, height: 14 }} /> {L('Download ZIP Package', language)}
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Prepared application worksheets */}
+            <div className="pkg purple" data-testid="tile-worksheets">
               <div className="pkg-head">
                 <div className="pkg-ic"><FileText className="i-lg i" /></div>
                 <div>
-                  <div className="pkg-title">{L('Prepared Application Worksheets', language)}</div>
+                  <div className="pkg-title">{L('Application Worksheets', language)}</div>
                   <div className="pkg-sub">{L('Fillable preparation drafts. Official agency-issued documents are still required.', language)}</div>
                 </div>
                 <span className={`pkg-status-pill ${preparedSampleList.length + preparedGovList.length > 0 ? 'ready' : 'missing'}`}>
@@ -7788,7 +7897,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 {preparedSampleList.length + preparedGovList.length === 0 ? (
                   <div className="pkg-item missing">
                     <span className="ic"><AlertTriangle className="i" style={{ width: 13, height: 13 }} /></span>
-                    {L('Return to the checklist and choose Prepare application.', language)}
+                    {L('Prepare an application from your requirements checklist.', language)}
                   </div>
                 ) : preparedSampleList.map((application) => (
                   <div key={application.requirementCode} className="pkg-item ok prepared-application-item">
@@ -7817,78 +7926,32 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 ))}
               </div>
               <div className="pkg-foot">
-                <span className="pkg-sub">{L('Included in the Submission Package ZIP', language)}</span>
-                <button className="btn btn-secondary" onClick={() => goTo('requirements')}>{L('Prepare another', language)}</button>
-              </div>
-            </div>
-
-            {/* 3. Submission Package ZIP */}
-            <div className="pkg green">
-              <div className="pkg-head">
-                <div className="pkg-ic"><Archive className="i-lg i" /></div>
-                <div>
-                  <div className="pkg-title">{L('Submission Package (ZIP)', language)}</div>
-                  <div className="pkg-sub">{L('Report + validated documents, renamed and sorted in submission order.', language)}</div>
-                </div>
-                <span className={`pkg-status-pill ${packageAssetCount > 0 ? 'ready' : 'missing'}`}>
-                  {packageAssetCount > 0 ? L('Ready', language) : L('Waiting', language)}
-                </span>
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12.5, color: 'var(--muted)' }}>
-                  <span>{L('Package readiness', language)}</span>
-                  <b style={{ color: 'var(--ink)', fontWeight: 650 }}>{checklistProgress}%</b>
-                </div>
-                <div className="pkg-bar"><span style={{ width: `${checklistProgress}%` }} /></div>
-              </div>
-              <div className="pkg-list">
-                {preparedSampleList.slice(0, 3).map((application) => (
-                  <div key={application.requirementCode} className="pkg-item ok">
-                    <span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>
-                    {application.title}
-                  </div>
-                ))}
-                {zipReadyDocs.slice(0, 4).map((d, i) => (
-                  <div key={i} className="pkg-item ok">
-                    <span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>
-                    {d.ai_analysis?.document_type || d.name}
-                  </div>
-                ))}
-                {requirements.filter(r => r.mandatory && r.status === 'pending').slice(0, Math.max(0, 4 - zipReadyDocs.length) + 2).map(r => (
-                  <div key={r.code} className="pkg-item missing">
-                    <span className="ic"><AlertTriangle className="i" style={{ width: 13, height: 13 }} /></span>
-                    {trReqName(r)}
-                    <span className="miss-label">{L('Missing', language)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="pkg-foot">
-                <span className="pkg-sub">{packageAssetCount} {L('files', language)}</span>
-                <button className="btn btn-primary" style={{ padding: '8px 14px', fontSize: 13 }} onClick={downloadSubmissionPackage} disabled={isLoading || packageAssetCount === 0}>
-                  <Download className="i" style={{ width: 14, height: 14 }} /> {L('Download ZIP Package', language)}
+                <span className="pkg-sub">{L('Included in your package', language)}</span>
+                <button data-main-action className="btn btn-secondary" onClick={() => goTo('requirements')}>
+                  {preparedSampleList.length + preparedGovList.length > 0 ? L('Prepare another', language) : L('Prepare application', language)}
                 </button>
               </div>
             </div>
 
             {/* 4. Workspace */}
-            <div className="pkg purple">
+            <div className="pkg purple" data-testid="tile-workspace">
               <div className="pkg-head">
                 <div className="pkg-ic"><Building2 className="i-lg i" /></div>
                 <div>
                   <div className="pkg-title">{L('Workspace', language)}</div>
-                  <div className="pkg-sub">{L('Permanent, shareable link to your readiness workspace.', language)}</div>
+                  <div className="pkg-sub">{L('A permanent link to your readiness workspace.', language)}</div>
                 </div>
                 <span className="pkg-status-pill draft">{L('Shareable', language)}</span>
               </div>
               <div className="pkg-list">
-                <div className="pkg-item ok"><span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>{L('Profile & questionnaire responses', language)}</div>
+                <div className="pkg-item ok"><span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>{L('Business profile & responses', language)}</div>
                 <div className="pkg-item ok"><span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>{L('Requirements & validation results', language)}</div>
-                <div className="pkg-item ok"><span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>{L('Renders anywhere without a login', language)}</div>
+                <div className="pkg-item ok"><span className="ic"><CheckCircle className="i" style={{ width: 13, height: 13 }} /></span>{L('Share your readiness progress', language)}</div>
               </div>
               <div className="pkg-foot">
-                <span className="pkg-sub" style={{ fontFamily: 'monospace', fontSize: 11 }}>{activeWorkspaceId ? `/workspace/${activeWorkspaceId}` : '/workspace/…'}</span>
-                <button className="btn btn-accent" style={{ padding: '8px 14px', fontSize: 13 }} onClick={openSmartPRWorkspace}>
-                  {L('Open Workspace', language)} <ExternalLink className="i" style={{ width: 14, height: 14 }} />
+                <span className="pkg-sub">{L('Workspace link', language)}</span>
+                <button data-main-action className="btn btn-accent" style={{ padding: '8px 14px', fontSize: 13 }} onClick={openSmartPRWorkspace}>
+                  <ExternalLink className="i" style={{ width: 14, height: 14 }} /> {L('Open Workspace', language)}
                 </button>
               </div>
             </div>
@@ -7906,17 +7969,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </ul>
           </div>
 
-          <div className="helpbar">
-            <div className="help-ic"><RefreshCw className="i-lg i" /></div>
-            <div className="help-text">
-              <b>{L('Need to make changes?', language)}</b>
-              <small>{L('Go back to requirements to upload more evidence, or edit the business profile.', language)}</small>
-            </div>
-            <div className="help-cta" style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn-secondary" onClick={() => goTo('requirements')}>← {L('Back to requirements', language)}</button>
-              <button className="btn btn-secondary" onClick={() => goTo('intake')}>{L('Edit business profile', language)}</button>
-            </div>
-          </div>
         </main>
       )}
       </FilingWorkflowShell>

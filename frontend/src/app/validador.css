@@ -3871,3 +3871,26 @@ section.spr-plc .spr-plc-intel { padding-top: 4px; border-top: 1px solid #f0ece4
   .spr-pq-head { flex-direction: column; }
   .spr-pq .spr-answer-row.spr-answer-yesno { grid-template-columns: minmax(0, 1fr); max-width: none; }
 }
+
+/* ===== Deliverables: 2×2 tiles + next-action sidebar ===== */
+.packages.pkg-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pkg-grid-2 .pkg { min-width: 0; }
+.pkg-grid-2 .pkg-list { flex: 1; }
+.pkg-missing { display: flex; flex-direction: column; gap: 8px; }
+.pkg-missing-toggle { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--border, #d9d4ca); border-radius: 10px; background: #fff; color: var(--ink, #161616); font-size: 14px; font-weight: 600; text-align: left; cursor: pointer; }
+.pkg-missing-toggle > svg:first-child { color: #b7791f; flex: 0 0 auto; }
+.pkg-missing-toggle span { flex: 1; }
+.pkg-missing-toggle:hover { background: #faf8f3; }
+.pkg-missing-toggle:focus-visible { outline: 2px solid var(--brand, #1f6b66); outline-offset: 2px; }
+.pkg-missing-chev { transition: transform .15s; }
+.pkg-missing-chev.open { transform: rotate(180deg); }
+.pkg-missing-list { margin: 0; padding: 4px 0 0 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--ink, #161616); max-height: 260px; overflow: auto; }
+.dlv-next { position: sticky; top: 92px; padding: 20px; border: 1px solid #cfe3e0; border-radius: 16px; background: #f1f8f7; }
+.dlv-next-eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--brand, #1f6b66); }
+.dlv-next h2 { margin: 8px 0 6px; font-size: 20px; font-weight: 650; line-height: 1.25; color: var(--ink, #161616); }
+.dlv-next p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.55; color: #4a5560; }
+.dlv-next-link { padding: 6px 0; border: 0; background: none; color: var(--brand, #1f6b66); font-size: 14.5px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+@media (max-width: 760px) {
+  .packages.pkg-grid-2 { grid-template-columns: minmax(0, 1fr) !important; }
+  .dlv-next { position: static; }
+}
