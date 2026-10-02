@@ -113,8 +113,8 @@ import {
   type SmartPRLiveData,
 } from './components/filing/FilingWorkflowShell';
 import { normalizeMunicipio } from './locations/geo';
-import { ProjectLocation } from './components/intake/ProjectLocation';
-import { LocationStepCard } from './components/intake/LocationStepCard';
+import { ProjectLocationCard } from './components/intake/ProjectLocationCard';
+import { LocationStepCard, SiteLayerChips } from './components/intake/LocationStepCard';
 import { ModalPortal } from './components/ui/ViewportModal';
 import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails, siteLabel, siteLayersCurrent, type IntakeSite } from './locations/intakeLocation';
 import { unavailableSiteLayers, type SiteLayers } from './locations/layers';
@@ -6245,15 +6245,20 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   });
   const siteBusinessId = me && businessId && !businessId.startsWith('local-') ? businessId : null;
   const summaryLocation = intakeSite || locationNeed.needed ? (
-    <LocationStepCard
-      compact
-      lang={language}
-      need={locationNeed}
-      site={intakeSite}
-      businessId={siteBusinessId}
-      onConfirm={confirmIntakeSite}
-      onRetryLayers={retryIntakeLayers}
-    />
+    <>
+      <ProjectLocationCard
+        mode="summary"
+        lang={language}
+        site={intakeSite}
+        businessId={siteBusinessId}
+        onConfirm={confirmIntakeSite}
+        onRetryLayers={retryIntakeLayers}
+        initialQuery={locationNeed.prefill.query}
+        searchInputId="spr-requirements-location"
+        knownMunicipality={intakeSite ? null : profile.municipality || null}
+      />
+      {intakeSite && <SiteLayerChips site={intakeSite} lang={language} onRetry={retryIntakeLayers} variant="rows" />}
+    </>
   ) : null;
   const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, 0, language)}`;
   const energySection = energyAssessment && energyChecklist ? (
@@ -6943,7 +6948,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       map → coordinates + address + municipio, via the same
                       confirmIntakeSite as before. The municipality select is
                       only the fallback when detection fails. */}
-                  <ProjectLocation
+                  <ProjectLocationCard
+                    mode="edit"
                     lang={language}
                     site={intakeSite}
                     businessId={siteBusinessId}
@@ -7367,14 +7373,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       {/* ====================== REQUIREMENTS ====================== */}
       {view === 'requirements' && (
         <main className="shell">
-          <button className="section-back" onClick={() => goTo('intake')}>
-            ← {L('Back to intake', language)}
-          </button>
-
-          {/* Page head — Step 2 of 3 */}
+          {/* Page head: the project + how many requirements were found. */}
           <div className="rq-page-head">
-            <h1>{L('Requirements', language)}</h1>
-            <p>{L('Step 2 of 3 — SmartPR shows you what you need and what to do next.', language)}</p>
+            <h1>{summaryHeadline ? capitalizeFirst(summaryHeadline) : L('Requirements', language)}</h1>
+            <p>{language === 'es' ? `${summaryStepCount} requisitos identificados` : `${summaryStepCount} requirement${summaryStepCount === 1 ? '' : 's'} identified`}</p>
           </div>
 
           {activeIncentiveResult && (

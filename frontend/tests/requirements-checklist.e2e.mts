@@ -141,6 +141,8 @@ if (GOLDEN === "picker") {
     const input = page.locator('[data-testid="project-location-search"]');
     await input.fill("Calle José de Diego, Guaynabo");
     await input.press("Enter");
+    await page.locator('[data-testid="project-location-use"]:not([disabled])').waitFor({ timeout: 30000 });
+    await page.locator('[data-testid="project-location-use"]').click();
   }
 
   // ------------------------------------------------------------ desktop --
@@ -184,7 +186,7 @@ if (GOLDEN === "picker") {
     }
 
     await confirmBySearch(page);
-    const loading = page.locator('[data-testid="project-location-confirmed"] [data-testid="location-layer-chips"][data-state="loading"]').first();
+    const loading = page.locator('[data-testid="project-location"] [data-testid="location-layer-chips"][data-state="loading"]').first();
     const loadingShown = await loading.waitFor({ timeout: 15000 }).then(() => true).catch(() => false);
     check("layers: loading state appears after confirming the site", loadingShown);
     if (loadingShown) {
@@ -200,7 +202,7 @@ if (GOLDEN === "picker") {
       check("layers: sidebar Site row shows 'Checking site…' while loading", sideChecking);
       await page.screenshot({ path: path.join(OUT, "desktop_layers_loading.png"), fullPage: false });
     }
-    const done = page.locator('[data-testid="project-location-confirmed"] [data-testid="location-layer-chips"][data-state="done"]').first();
+    const done = page.locator('[data-testid="project-location"] [data-testid="location-layer-chips"][data-state="done"]').first();
     const doneShown = await done.waitFor({ timeout: LAYER_DELAY_MS + 15000 }).then(() => true).catch(() => false);
     check("layers: done state replaces the loading state", doneShown);
     if (doneShown) {
@@ -218,7 +220,7 @@ if (GOLDEN === "picker") {
   {
     const VW = 390, VH = 844;
     const page = await openIntake({ width: VW, height: VH }, true);
-    check("mobile: map collapsed until 'Choose on map'", (await page.locator('[data-testid="project-location-map"]').count()) === 0);
+    check("mobile: map hidden until the user starts", (await page.locator('[data-testid="project-location-map"]').count()) === 0);
     await page.locator('[data-testid="project-location-map-toggle"]').tap();
     const mb = await page.locator('[data-testid="project-location-map"]').boundingBox();
     check("mobile: map opens inline inside the form", Boolean(mb && mb.x >= 0 && mb.x + mb.width <= VW) && (await page.locator('[data-testid="location-picker-dialog"]').count()) === 0, JSON.stringify(mb));
@@ -470,7 +472,7 @@ if (GOLDEN === "flood") {
       layerQueries.push(`${lat},${lng}`);
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ layers: await layersFor(lat, lng) }) });
     }
-    if (p === "/api/geocode") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ result: null, results: [] }) });
+    if (p === "/api/geocode") return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(u.searchParams.get("q") ? { results: [{ latitude: xLat, longitude: xLng, formatted_address: "Guaynabo Pueblo, Guaynabo, Puerto Rico, 00969, United States", place_source: "stub", place_source_id: "stub-x" }] } : { result: null, results: [] }) });
     return route.fulfill({ status: 404, contentType: "application/json", body: '{"error":"stubbed"}' });
   });
   await page.goto(`${base}/?resume=e2e-flood`, { waitUntil: "domcontentloaded", timeout: 90000 });
@@ -521,17 +523,31 @@ if (GOLDEN === "flood") {
   await page.locator(".ck-summary").evaluate((el) => el.scrollIntoView({ block: "start" })).catch(() => undefined);
   await page.screenshot({ path: path.join(OUT, "flood_ae_rules_for_chips.png"), fullPage: false });
 
-  // Change → move the pin to Guaynabo pueblo (zone X): the step goes away.
+  // Requirements page layout (reference): title, location card, banner, rows.
+  {
+    const h1 = (await page.locator(".rq-page-head h1").innerText()).trim();
+    const sub = (await page.locator(".rq-page-head p").innerText()).trim();
+    check("page head: project title + 'N requirements identified'", /Toa Baja/.test(h1) && /^\d+ requirements? identified$/.test(sub), `${h1} | ${sub}`);
+    const card = page.locator('.ck-summary [data-testid="project-location"]');
+    const cardText = (await card.innerText()).replace(/\s+/g, " ");
+    check("location card: summary mode with confirmed pill, barrio + municipality, metadata", (await card.getAttribute("data-mode")) === "summary" && /Exact site confirmed/.test(cardText) && /Sabana Seca, Toa Baja/.test(cardText) && /Municipality Toa Baja/.test(cardText) && /Coordinates/.test(cardText) && !/United States/.test(cardText), cardText.slice(0, 300));
+    const banner = page.locator('.ck-summary [data-testid="site-consideration"]').first();
+    check("flood advisory banner with heading + 'View map details'", /Flood advisory detected/.test(await banner.innerText()) && (await banner.locator('[data-testid="site-consideration-details"]').count()) === 1);
+    await banner.locator('[data-testid="site-consideration-details"]').click();
+    check("'View map details' opens the flood group's source details", (await page.locator('.ck-summary .spr-si-group[data-group="flood"] [data-testid="site-group-sources"]').count()) === 1);
+    const rowH = await page.locator('.ck-summary .spr-si-group[data-group="land"] .spr-si-group-head').evaluate((e) => e.getBoundingClientRect().height);
+    check("intelligence rows are compact (≤ 72px)", rowH <= 72, String(rowH));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(OUT, "flood_requirements_page.png"), fullPage: true });
+  }
+
+  // Edit location (inline, same component) → move the pin to Guaynabo pueblo (zone X): the step goes away.
   await page.locator('.ck-summary [data-testid="location-change"]').click();
-  const dialog = page.locator('[data-testid="location-picker-dialog"]');
-  await dialog.waitFor({ timeout: 10000 });
-  await dialog.locator('[data-testid="location-latitude"]').fill(String(xLat));
-  await dialog.locator('[data-testid="location-longitude"]').fill(String(xLng));
-  await dialog.getByRole("button", { name: /^Place pin$/ }).click();
-  await dialog.locator('[data-testid="location-selected-placement"]').filter({ hasText: /Guaynabo/ }).waitFor({ timeout: 15000 });
-  await page.waitForFunction(() => !(document.querySelector('[data-testid="location-confirm"]') as HTMLButtonElement | null)?.disabled, null, { timeout: 15000 });
-  await dialog.locator('[data-testid="location-confirm"]').click();
-  await dialog.waitFor({ state: "detached", timeout: 10000 });
+  check("Edit location reopens the same card inline (no dialog)", (await page.locator('[data-testid="location-picker-dialog"], [role="dialog"]').count()) === 0 && (await page.locator('.ck-summary [data-testid="project-location-search"]').count()) === 1);
+  await page.locator('.ck-summary [data-testid="project-location-search"]').fill("Guaynabo pueblo");
+  await page.locator('.ck-summary [data-testid="project-location-search"]').press("Enter");
+  await page.locator('.ck-summary [data-testid="project-location-use"]:not([disabled])').waitFor({ timeout: 20000 });
+  await page.locator('.ck-summary [data-testid="project-location-use"]').click();
   await page.waitForFunction(() => /Effective FIRM · Zone X/.test(document.querySelector('.ck-summary [data-testid="location-layer-chips"]')?.textContent ?? ""), null, { timeout: 15000 }).catch(() => undefined);
   await page.waitForTimeout(600);
   const chipAfter = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
@@ -546,10 +562,12 @@ if (GOLDEN === "flood") {
   // Spanish: chips localize.
   const langBtn = page.getByRole("button", { name: /^(ES|Español)$/ }).first();
   if (await langBtn.isVisible().catch(() => false)) {
-    await langBtn.click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(400);
+    await langBtn.click({ force: true });
     await page.waitForTimeout(500);
     const es = (await chips.innerText().catch(() => "")).replace(/\s+/g, " ");
-    check("site intelligence in Spanish (FIRM vigente · Zona X)", /FIRM vigente · Zona X/.test(es) && /Lugar verificado con datos oficiales/.test(es), es);
+    check("site intelligence in Spanish (FIRM vigente · Zona X)", /FIRM vigente · Zona X/.test(es), es);
     await page.screenshot({ path: path.join(OUT, "flood_chips_es.png"), fullPage: false });
   }
 

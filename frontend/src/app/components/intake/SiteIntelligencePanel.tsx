@@ -6,8 +6,8 @@
 // details and the sources. Everything stays in SmartPR; official sources are
 // only linked from the collapsed "Sources & details".
 
-import { AlertTriangle, CheckCircle2, ChevronDown, ExternalLink, HelpCircle, Info, Leaf, Map, Mountain, RefreshCw, Waves } from "lucide-react";
-import { useId, useState } from "react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, HelpCircle, Info, Leaf, Map, Mountain, RefreshCw, Waves } from "lucide-react";
+import { useId, useRef, useState } from "react";
 import type { Lang } from "../../forms/engine/types";
 import type { SiteLayers } from "../../locations/layers";
 import { buildSiteIntelligence, type PillTone, type ProviderStatus, type SiteGroupId, type SourceAgencyKey } from "../../locations/siteIntelligence";
@@ -78,30 +78,57 @@ export function SiteIntelligencePanel({
   municipality,
   address,
   onRetry,
+  variant = "cards",
 }: {
   layers: SiteLayers;
   lang: Lang;
   municipality?: string | null;
   address?: string | null;
   onRetry?: () => void;
+  /** "rows": Requirements page — advisory banners + one compact row per group. */
+  variant?: "cards" | "rows";
 }) {
   const si = buildSiteIntelligence(layers, { municipality, address });
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<SiteGroupId | null>(null);
   const panelId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const rows = variant === "rows";
+  const groupOf = (layer: string) =>
+    si.groups.find((g) => g.pills.some((p) => p.layer === layer) || g.details.some((d) => d.layer === layer))?.id ?? null;
+  /** Banner "View map details" → open that group's source details and bring them into view. */
+  const showGroup = (id: SiteGroupId | null) => {
+    if (!id) { setSourcesOpen(true); return; }
+    setOpenGroup(id);
+    requestAnimationFrame(() => rootRef.current?.querySelector(`[data-group="${id}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+  };
   const agencyKeys = [...new Set(si.sources.map((s) => s.agencyKey))];
   const anyUnavailable = si.groups.some((g) => g.pills.some((p) => p.status === "unavailable"));
   return (
-    <div className="spr-si" data-testid="site-intelligence">
+    <div ref={rootRef} className={`spr-si${rows ? " spr-si-rows" : ""}`} data-testid="site-intelligence">
       {si.considerations.length > 0 && (
         <div className="spr-si-alerts">
           {si.considerations.map((c, i) => (
             <div key={i} className={`spr-si-alert spr-si-alert-${c.tone}`} role="note" data-testid="site-consideration" data-layer={c.layer} data-tone={c.tone}>
               <AlertTriangle size={16} aria-hidden="true" />
-              <span>
-                <strong>{L("Site consideration", "Consideración del lugar", lang)}: </strong>
-                {pick(c.text, lang)}
-              </span>
+              {rows ? (
+                <span className="spr-si-alert-body">
+                  <strong className="spr-si-alert-title">
+                    {/flood/i.test(c.layer)
+                      ? L("Flood advisory detected", "Aviso de inundación detectado", lang)
+                      : L("Site consideration", "Consideración del lugar", lang)}
+                  </strong>
+                  <span>{pick(c.text, lang)}</span>
+                  <button type="button" className="spr-si-alert-link" onClick={() => showGroup(groupOf(c.layer))} data-testid="site-consideration-details">
+                    {L("View map details", "Ver detalles del mapa", lang)} →
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  <strong>{L("Site consideration", "Consideración del lugar", lang)}: </strong>
+                  {pick(c.text, lang)}
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -113,12 +140,30 @@ export function SiteIntelligencePanel({
           const groupLayers = new Set([...g.pills.map((p) => p.layer), ...g.details.map((d) => d.layer)]);
           const groupSources = si.sources.filter((src) => src.layers.some((l) => groupLayers.has(l)));
           const open = openGroup === g.id;
+          const pills = (
+            <span className="spr-si-pills">
+              {g.pills.map((p) => (
+                <span
+                  key={p.layer}
+                  className={`spr-si-pill spr-si-tone-${p.tone}`}
+                  title={pick(p.title, lang)}
+                  data-layer={p.layer}
+                  data-status={p.status}
+                  data-tone={p.tone}
+                >
+                  <ToneIcon tone={p.tone} />
+                  {pick(p.label, lang)}
+                </span>
+              ))}
+            </span>
+          );
           return (
             <section key={g.id} className="spr-si-group" data-group={g.id} aria-labelledby={`${panelId}-${g.id}`}>
               <div className="spr-si-group-head">
                 <h4 className="spr-si-group-title" id={`${panelId}-${g.id}`}>
-                  <Icon size={14} aria-hidden="true" /> {pick(g.title, lang)}
+                  {rows ? <span className="spr-si-group-icon" aria-hidden="true"><Icon size={16} /></span> : <Icon size={14} aria-hidden="true" />} {pick(g.title, lang)}
                 </h4>
+                {rows && pills}
                 {groupSources.length > 0 && (
                   <button
                     type="button"
@@ -128,26 +173,15 @@ export function SiteIntelligencePanel({
                     onClick={() => setOpenGroup(open ? null : g.id)}
                     data-testid="site-group-sources-toggle"
                   >
-                    <ChevronDown size={14} aria-hidden="true" className={`spr-si-group-chevron${open ? " open" : ""}`} />
-                    {open ? L("Hide source details", "Ocultar detalles de la fuente", lang) : L(`Source details (${groupSources.length})`, `Detalles de la fuente (${groupSources.length})`, lang)}
+                    {!rows && <ChevronDown size={14} aria-hidden="true" className={`spr-si-group-chevron${open ? " open" : ""}`} />}
+                    {rows
+                      ? L(`Source details (${groupSources.length})`, `Detalles de la fuente (${groupSources.length})`, lang)
+                      : open ? L("Hide source details", "Ocultar detalles de la fuente", lang) : L(`Source details (${groupSources.length})`, `Detalles de la fuente (${groupSources.length})`, lang)}
+                    {rows && <ChevronRight size={16} aria-hidden="true" className={`spr-si-group-chevron${open ? " open" : ""}`} />}
                   </button>
                 )}
               </div>
-              <span className="spr-si-pills">
-                {g.pills.map((p) => (
-                  <span
-                    key={p.layer}
-                    className={`spr-si-pill spr-si-tone-${p.tone}`}
-                    title={pick(p.title, lang)}
-                    data-layer={p.layer}
-                    data-status={p.status}
-                    data-tone={p.tone}
-                  >
-                    <ToneIcon tone={p.tone} />
-                    {pick(p.label, lang)}
-                  </span>
-                ))}
-              </span>
+              {!rows && pills}
               {open && (
                 <div className="spr-si-group-sources" id={`${panelId}-${g.id}-sources`} data-testid="site-group-sources">
                   {groupSources.map((src) => <SourceArticle key={src.url} s={src} lang={lang} />)}

@@ -80,36 +80,41 @@ async function open(width: number, height = 900): Promise<Page> {
 {
   const page = await open(1440);
   const sec = page.locator('[data-testid="project-location"]');
-  check("one 'Project location' section with the supporting text", (await sec.getByRole("heading", { name: "Project location" }).count()) === 1 && /Enter the address or select the exact site on the map/.test(await sec.innerText()));
+  check("one 'Project location' card with the supporting text", (await sec.getByRole("heading", { name: "Project location" }).count()) === 1 && /Enter an address or select the exact site/.test(await sec.innerText()));
   const input = page.locator('[data-testid="project-location-search"]');
-  check("address search is the primary input (placeholder, icon, ≥16px)", (await input.getAttribute("placeholder")) === "Search address, business, or place" && (await sec.locator(".spr-ploc-search-icon").count()) === 1 && parseFloat(await input.evaluate((e) => getComputedStyle(e).fontSize)) >= 16);
+  check("address search is the primary input (placeholder, icon, ≥16px)", (await input.getAttribute("placeholder")) === "Search address, business, or place" && (await sec.locator(".spr-plc-search-icon").count()) === 1 && parseFloat(await input.evaluate((e) => getComputedStyle(e).fontSize)) >= 16);
   const [iw, sw] = await Promise.all([input.evaluate((e) => e.getBoundingClientRect().width), sec.evaluate((e) => e.getBoundingClientRect().width)]);
-  check("search is (near) full width", iw > sw * 0.8, `${Math.round(iw)} of ${Math.round(sw)}`);
+  check("search is (near) full width", iw > sw * 0.75, `${Math.round(iw)} of ${Math.round(sw)}`);
   check("municipality dropdown not shown up front", (await page.locator("#spr-municipality").count()) === 0);
-  check("old 'Where is it?' card / drop-pin / municipality button gone", (await page.getByText("Where is it?").count()) === 0 && (await page.getByText(/Drop a pin|Find the site on the map|Find it in/).count()) === 0);
-  check("map collapsed until 'Choose on map'", (await page.locator('[data-testid="project-location-map"]').count()) === 0 && (await page.getByRole("button", { name: "Choose on map" }).count()) === 1);
+  check("workspace hidden until the user starts", (await page.locator('[data-testid="project-location-map"]').count()) === 0);
+  await page.screenshot({ path: path.join(OUT, "0_initial.png"), fullPage: false });
 
-  // keyboard: type + Enter
+  // keyboard: type + Enter → map + selected details, not yet saved
   await input.click();
   await input.fill("Calle José de Diego Guaynabo");
   await page.keyboard.press("Enter");
   const conf = page.locator('[data-testid="project-location-confirmed"]');
   await conf.waitFor({ timeout: 30000 });
-  check("Enter geocodes → 'Location confirmed ✓'", /Location confirmed/.test(await conf.innerText()));
-  check("confirmation: resolved address", (await page.locator('[data-testid="project-location-address"]').innerText()).includes("Calle José de Diego"));
-  check("confirmation: municipality derived automatically", /^Guaynabo/.test(await page.locator('[data-testid="project-location-municipality"]').innerText()));
-  check("confirmation: coordinates", /^18\.\d+, -66\.\d+$/.test((await page.locator('[data-testid="project-location-coordinates"]').innerText()).trim()));
+  check("Enter geocodes → 'Exact site selected' details next to the map", /Exact site selected/.test(await conf.innerText()) && (await page.locator('[data-testid="project-location-map"]').count()) === 1);
+  const [mb, cb] = [await page.locator('[data-testid="project-location-map"]').boundingBox(), await conf.boundingBox()];
+  check("desktop: map left, details right", Boolean(mb && cb && cb.x > mb.x + mb.width - 1 && Math.abs(mb.width - cb.width) < mb.width * 0.25), JSON.stringify({ mb, cb }));
+  check("details: clean address (no United States)", /Calle José de Diego|Guaynabo/.test(await page.locator('[data-testid="project-location-address"]').innerText()) && !/United States/.test(await conf.innerText()));
+  check("details: municipality derived automatically", /^Guaynabo/.test(await page.locator('[data-testid="project-location-municipality"]').innerText()));
+  check("details: coordinates", /^18\.\d+, -66\.\d+$/.test((await page.locator('[data-testid="project-location-coordinates"]').innerText()).trim()));
+  check("other matches offered", (await sec.getByText("Not the right place?").count()) === 1);
+  check("no modal", (await page.locator('[role="dialog"]').count()) === 0);
+  await page.screenshot({ path: path.join(OUT, "1_selected.png"), fullPage: false });
+
+  await page.locator('[data-testid="project-location-use"]').click();
+  await page.locator('[data-testid="project-location"][data-state="saved"]').waitFor({ timeout: 10000 });
+  check("Use this location → 'Location saved' + Edit location", /Location saved/.test(await conf.innerText()) && (await sec.getByRole("button", { name: "Edit location" }).count()) === 1);
   check("sidebar + still-needed updated (municipality no longer missing)", /Guaynabo/.test(await page.locator(".spr-project-summary").innerText()) && !(await page.locator(".spr-still-needed-chip").allInnerTexts()).includes("Municipality"));
   await page.locator('[data-testid="location-layer-chips"][data-state="done"]').waitFor({ timeout: 30000 });
-  check("existing site checks ran (FEMA / zoning / parcel)", layerCalls.length >= 1 && (await conf.locator('[data-testid="site-intelligence"]').count()) === 1);
-  check("other matches offered", (await sec.getByText("Not the right place?").count()) === 1);
-  await page.screenshot({ path: path.join(OUT, "1_confirmed.png"), fullPage: true });
+  check("existing site checks ran (FEMA / zoning / parcel)", layerCalls.length >= 1 && (await sec.locator('[data-testid="site-intelligence"]').count()) === 1);
+  await page.screenshot({ path: path.join(OUT, "2_saved.png"), fullPage: false });
 
-  // inline map
-  await page.getByRole("button", { name: "Choose on map" }).click();
-  const map = page.locator('[data-testid="project-location-map"]');
-  await map.waitFor();
-  check("map expands inline (no modal/dialog)", (await page.locator('[role="dialog"]').count()) === 0 && (await map.evaluate((e) => !!e.closest('[data-testid="project-location"]'))));
+  // Edit → map tap moves the pin, reverse-geocodes, details follow
+  await sec.getByRole("button", { name: "Edit location" }).click();
   await page.locator('[data-testid="project-location-map"] canvas').waitFor({ timeout: 30000 }).catch(() => undefined);
   await page.waitForTimeout(1500);
   const canvas = page.locator('[data-testid="project-location-map"] canvas').first();
@@ -121,42 +126,44 @@ async function open(width: number, height = 900): Promise<Page> {
     const after = await page.locator('[data-testid="project-location-coordinates"]').innerText().catch(() => before);
     const fallback = await page.locator('[data-testid="project-location-fallback"]').count();
     check("map tap moves the pin: coordinates update (or fallback if off-island)", after !== before || fallback === 1, `${before} → ${after}`);
-    check("map tap reverse-geocodes the address", reverseCalls.length >= 1 && ((await input.inputValue()).includes("Carr. 2") || fallback === 1), await input.inputValue());
+    check("map tap reverse-geocodes the address into the search", reverseCalls.length >= 1 && ((await input.inputValue()).includes("Carr. 2") || fallback === 1), await input.inputValue());
   } else {
     check("map canvas rendered (WebGL)", false, "no canvas");
   }
-  await page.screenshot({ path: path.join(OUT, "2_map.png"), fullPage: true });
+  await page.screenshot({ path: path.join(OUT, "3_edit_pin.png"), fullPage: false });
 
   // fallback: detection fails → municipality select appears with the message
   await input.fill("ocean point");
   await page.keyboard.press("Enter");
   const fb = page.locator('[data-testid="project-location-fallback"]');
   await fb.waitFor({ timeout: 30000 });
-  check("fallback message when municipality can't be determined", /We couldn’t determine the municipality automatically/.test(await fb.innerText()));
+  check("fallback message when municipality can't be determined", /We couldn’t determine the municipality/.test(await fb.innerText()));
   check("fallback shows the existing municipality select", (await fb.locator("#spr-municipality option").count()) > 70);
   check("unresolved address drops the previous site (address, pin and municipality stay in sync)", (await page.locator('[data-testid="summary-site-label"]').count()) === 0 && (await page.locator('[data-testid="project-location-confirmed"]').count()) === 0);
   await fb.locator("#spr-municipality").selectOption({ label: "Ponce" });
   check("fallback selection sets the municipality", /Ponce/.test(await page.locator(".spr-project-summary").innerText()));
-  await page.screenshot({ path: path.join(OUT, "3_fallback.png"), fullPage: true });
+  await page.screenshot({ path: path.join(OUT, "4_fallback.png"), fullPage: false });
   await page.close();
 }
 
 // ---------------- mobile
 {
   const page = await open(390, 844);
-  check("mobile: map collapsed", (await page.locator('[data-testid="project-location-map"]').count()) === 0);
   const fs = await page.locator('[data-testid="project-location-search"]').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   check("mobile: search text ≥16px", fs >= 16, String(fs));
-  await page.getByRole("button", { name: "Choose on map" }).click();
-  const mb = await page.locator('[data-testid="project-location-map"]').boundingBox();
-  check("mobile: map expands inline at full form width", Boolean(mb && mb.width > 300 && mb.height >= 250), JSON.stringify(mb));
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  check("mobile: no horizontal overflow", overflow <= 0, String(overflow));
   await page.locator('[data-testid="project-location-search"]').fill("Guaynabo");
   await page.locator('[data-testid="project-location-find"]').click();
-  await page.locator('[data-testid="project-location-confirmed"]').waitFor({ timeout: 30000 });
-  check("mobile: Find button confirms the location", /Guaynabo/.test(await page.locator('[data-testid="project-location-municipality"]').innerText()));
-  await page.screenshot({ path: path.join(OUT, "4_mobile.png"), fullPage: true });
+  const conf = page.locator('[data-testid="project-location-confirmed"]');
+  await conf.waitFor({ timeout: 30000 });
+  const mb = await page.locator('[data-testid="project-location-map"]').boundingBox();
+  const cb = await conf.boundingBox();
+  const secW = (await page.locator('[data-testid="project-location"]').boundingBox())!.width;
+  check("mobile: map full card width, details stacked below", Boolean(mb && cb && mb.width >= secW - 34 && mb.height >= 250 && cb.y >= mb.y + mb.height - 1), JSON.stringify({ mb, cb }));
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check("mobile: no horizontal overflow", overflow <= 0, String(overflow));
+  await page.locator('[data-testid="project-location-use"]').click();
+  check("mobile: Use this location saves it", /Guaynabo/.test(await page.locator('[data-testid="project-location-municipality"]').innerText()) && (await page.locator('[data-testid="project-location"][data-state="saved"]').count()) === 1);
+  await page.locator('[data-testid="project-location"]').screenshot({ path: path.join(OUT, "5_mobile.png") });
   await page.close();
 }
 

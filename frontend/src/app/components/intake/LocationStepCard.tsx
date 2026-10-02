@@ -285,7 +285,7 @@ export function LocationStepCard({
  * chips while it runs, then a "Site checked" line over the real chips. The
  * wrapper is a polite live region, so the change is also announced.
  */
-export function SiteLayerChips({ site, lang, onRetry }: { site: IntakeSite; lang: Lang; onRetry?: () => void }) {
+export function SiteLayerChips({ site, lang, onRetry, variant }: { site: IntakeSite; lang: Lang; onRetry?: () => void; variant?: "cards" | "rows" }) {
   if (!siteLayersCurrent(site)) {
     return (
       <div
@@ -333,7 +333,7 @@ export function SiteLayerChips({ site, lang, onRetry }: { site: IntakeSite; lang
               )}
         </span>
       </p>
-      <SiteIntelligencePanel layers={site.layers!} lang={lang} municipality={site.municipality.name} address={site.formatted_address} onRetry={onRetry} />
+      <SiteIntelligencePanel layers={site.layers!} lang={lang} municipality={site.municipality.name} address={site.formatted_address} onRetry={onRetry} variant={variant} />
     </div>
   );
 }

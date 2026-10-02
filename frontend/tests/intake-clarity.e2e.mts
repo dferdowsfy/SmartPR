@@ -76,9 +76,9 @@ async function typography(page: Page, tag: string) {
   // grouped location section
   const where = page.locator('[data-testid="intake-where"]');
   check("location section has no visible title (kept for screen readers)", (await where.locator("legend").evaluate((e) => { const cs = getComputedStyle(e); return cs.position === "absolute" && cs.clipPath.startsWith("inset") && e.getBoundingClientRect().height <= 1; })) && ((await where.locator("legend").textContent()) ?? "").includes("Where will your business operate?"));
-  check("project location (search + map) and location type in one section", (await where.locator("#spr-location-type").count()) === 1 && (await where.locator('[data-testid="project-location-search"]').count()) === 1 && (await where.getByRole("button", { name: "Choose on map" }).count()) === 1);
-  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, '[data-testid="project-location-search"]')]);
-  check("consistent left alignment and input heights", Math.abs(lt.left - mu.left) < 2 && Math.abs(lt.height - mu.height) < 6, `${Math.round(lt.left)}/${Math.round(mu.left)} ${Math.round(lt.height)}/${Math.round(mu.height)}`);
+  check("project location (search + map) and location type in one section", (await where.locator("#spr-location-type").count()) === 1 && (await where.locator('[data-testid="project-location-search"]').count()) === 1 && (await where.getByRole("button", { name: "Or place the pin on the map" }).count()) === 1);
+  const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, '[data-testid="project-location"]')]);
+  check("location card aligned with the other fields", Math.abs(lt.left - mu.left) < 2, `${Math.round(lt.left)}/${Math.round(mu.left)} ${Math.round(lt.height)}/${Math.round(mu.height)}`);
   check("municipality dropdown only as a fallback (not shown up front)", (await page.locator("#spr-municipality").count()) === 0);
 
   // still needed, matching the sidebar
@@ -128,7 +128,8 @@ async function typography(page: Page, tag: string) {
   await page.getByRole("button", { name: "New business", exact: true }).click();
   await page.locator('[data-testid="project-location-search"]').fill("Calle Ashford San Juan");
   await page.keyboard.press("Enter");
-  await page.locator('[data-testid="project-location-confirmed"]').waitFor({ timeout: 30000 });
+  await page.locator('[data-testid="project-location-use"]:not([disabled])').waitFor({ timeout: 30000 });
+  await page.locator('[data-testid="project-location-use"]').click();
   await page.locator(".spr-still-needed-chip", { hasText: /Business Type/ }).click();
   await page.waitForTimeout(300);
   const ind = page.locator("#spr-industry");
@@ -156,7 +157,7 @@ async function typography(page: Page, tag: string) {
   await page.waitForTimeout(3000);
   await page.screenshot({ path: path.join(OUT, "3b_after_submit.png"), fullPage: false });
   await page.locator(".rq-page-head h1").waitFor({ timeout: 60000 });
-  check("transition: Continue opens Requirements (step 2)", (await page.locator(".rq-page-head h1").innerText()).trim() === "Requirements" && (await page.locator('.spr-workflow-step[aria-current="step"]').innerText()).includes("Requirements"));
+  check("transition: Continue opens Requirements (step 2)", /requirements? identified/.test(await page.locator(".rq-page-head p").innerText()) && (await page.locator('.spr-workflow-step[aria-current="step"]').innerText()).includes("Requirements"));
   await page.screenshot({ path: path.join(OUT, "4_requirements.png") });
   await page.close();
 }
