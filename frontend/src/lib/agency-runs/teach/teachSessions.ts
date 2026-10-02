@@ -33,7 +33,7 @@ import { buildSkillFromTeach, type BuildResult } from "./buildSkill";
 import { bindRecordedActions, normalizeRecorderItems, type RecordedAction } from "./recording";
 import { llmReviewRoutine, validateRoutine, withLlmNotes, type LlmReviewer, type RoutineValidation } from "./validateRoutine";
 import { passportFieldName } from "../skills/skillCard";
-import { catalogEntry } from "./passportCatalog";
+import { catalogEntry, proposeMapping, readPassportPath } from "./passportCatalog";
 import { teachDomainDecision } from "./domains";
 import { skillCard, type SkillCard } from "../skills/skillCard";
 import {
@@ -82,6 +82,8 @@ interface LiveTeach {
   secretFields: SecretFieldRef[];
   /** Every visible input on the current screen (labels/selectors only). */
   pageFields: PageFieldRef[];
+  /** The business's Passport (server memory only — never in the view) for "fill from Passport". */
+  passport: unknown;
   /** Step seqs whose screenshot the worker kept, and legacy direct URLs (server-side only). */
   shotSeqs: Set<number>;
   legacyShotUrls: Map<number, string>;
@@ -117,7 +119,7 @@ export interface TeachSessionView {
   /** Sensitive inputs visible on the portal's current screen — where a secure one-time value can go. */
   secret_fields: SecretFieldRef[];
   /** Every visible input on the portal's current screen — the person can type into it from the chat. */
-  page_fields: PageFieldRef[];
+  page_fields: (PageFieldRef & { suggestion: { path: string; name: { en: string; es: string }; on_file: boolean } | null })[];
   /** The human-only step the current screen is (login, MFA, CAPTCHA, payment …), if any. */
   current_gate: TeachGate | null;
 }
@@ -188,9 +190,40 @@ export function viewOf(live: LiveTeach): TeachSessionView {
     agency: live.agency ?? null,
     stage: stageOf(live),
     secret_fields: live.status === "recording" ? live.secretFields ?? [] : [],
-    page_fields: live.status === "recording" ? live.pageFields ?? [] : [],
+    page_fields: live.status === "recording" ? (live.pageFields ?? []).map((f) => withSuggestion(f, live.passport)) : [],
     current_gate: live.status === "recording" ? cur?.gate ?? null : null,
   };
+}
+
+/** The Passport field a screen field looks like (Spanish or English label) — and whether this business has it. Never the value. */
+function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; value: string | null } | null {
+  if (f.kind !== "text") return null; // passwords, SSNs, codes: never from the Passport
+  const p = proposeMapping(f.label, "text");
+  if (!p || p.confidence !== "high") return null;
+  const v = passport ? readPassportPath(passport, p.path) : undefined;
+  const value = v === undefined || v === null || v === "" || typeof v === "object" ? null : String(v);
+  return { path: p.path, value };
+}
+
+function withSuggestion(f: PageFieldRef, passport: unknown) {
+  const s = suggestionFor(f, passport);
+  return { ...f, suggestion: s ? { path: s.path, name: passportFieldName(s.path), on_file: s.value !== null } : null };
+}
+
+/** Fill one field on the current screen from the business's Passport (typed by the browser; nothing returned). */
+export async function fillFromPassportTeach(deps: { worker: TeachWorker }, viewer: SkillViewer, id: string, selector: string): Promise<{ ok: boolean; reason: string | null }> {
+  const live = owned(id, viewer);
+  if (live.status !== "recording") throw new TeachSessionError(409, "not_recording", "The portal browser is closed.");
+  const field = (live.pageFields ?? []).find((f) => f.selector === selector);
+  const s = field ? suggestionFor(field, live.passport) : null;
+  if (!s || s.value === null) return { ok: false, reason: "not_on_file" };
+  if (!deps.worker.secureFill) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't type for you yet.");
+  try {
+    const out = await deps.worker.secureFill(live.workerSessionId, { value: s.value.slice(0, 256), selector });
+    return { ok: out.ok === true, reason: out.ok ? null : out.reason ?? "no_field" };
+  } catch (err) {
+    throw workerFailure(err);
+  }
 }
 
 /** The owner-gated proxy path for one step's screenshot (no worker token). */
@@ -276,6 +309,7 @@ export async function startTeachSession(
     agency: input.agency ? input.agency.trim().slice(0, 120) || null : null,
     secretFields: [],
     pageFields: [],
+    passport: input.passport ?? null,
     shotSeqs: new Set(),
     legacyShotUrls: new Map(),
   };

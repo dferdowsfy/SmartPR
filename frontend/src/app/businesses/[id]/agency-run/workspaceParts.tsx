@@ -292,6 +292,15 @@ export interface PageFieldView {
   label: string;
   selector: string | null;
   kind: "text" | "password" | "ssn" | "code" | "payment";
+  /** The Passport field this looks like, and whether the business has it (never the value). */
+  suggestion?: { path: string; name: Bi; on_file: boolean } | null;
+}
+
+/** "Primer Nombre:*" → "Primer Nombre (First name)" when a translation exists. */
+export function withTranslation(label: string, tr: Record<string, string> | undefined): string {
+  const t = tr?.[label];
+  const clean = label.replace(/[:*\s]+$/g, "").trim();
+  return t && t.toLowerCase() !== clean.toLowerCase() ? `${clean} (${t})` : label;
 }
 
 /**
@@ -301,12 +310,26 @@ export interface PageFieldView {
  * nothing is kept in the chat, the routine or anywhere else. Sensitive fields
  * are masked. Clicking in the browser panel works too.
  */
-export function PageFieldsCard({ lang, fields, endpoint, onSent }: { lang: Lang; fields: PageFieldView[]; endpoint: string; onSent?: () => void }) {
+export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, translations, onSent }: { lang: Lang; fields: PageFieldView[]; endpoint: string; passportEndpoint?: string; translations?: Record<string, string>; onSent?: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, { ok: boolean; text: string }>>({});
   const refs = useRef<Record<string, HTMLInputElement | null>>({});
   const usable = fields.filter((f) => f.selector && f.kind !== "payment");
   if (!usable.length) return null;
+  const fromPassport = usable.filter((f) => f.suggestion?.on_file);
+  const fillFromPassport = async (f: PageFieldView) => {
+    if (!passportEndpoint) return;
+    const key = f.selector!;
+    setBusy(key);
+    const r = await api<{ ok?: boolean; reason?: string | null }>(passportEndpoint, { selector: f.selector }).catch(() => null);
+    setBusy(null);
+    const ok = Boolean(r?.ok && r.data.ok);
+    setNotes((n) => ({ ...n, [key]: { ok, text: ok ? L("Filled from the Business Passport.", "Llenado desde el Pasaporte del negocio.", lang) : L("Couldn't fill it — type it instead.", "No se pudo llenar — escríbelo.", lang) } }));
+    if (ok) onSent?.();
+  };
+  const fillAll = async () => {
+    for (const f of fromPassport) await fillFromPassport(f);
+  };
   const send = async (f: PageFieldView) => {
     const key = f.selector!;
     const el = refs.current[key];
@@ -326,12 +349,31 @@ export function PageFieldsCard({ lang, fields, endpoint, onSent }: { lang: Lang;
         <Lock className="h-3.5 w-3.5" aria-hidden="true" /> {L("Type into this page from here", "Escribe en esta página desde aquí", lang)}
       </p>
       <p className="text-[12px] text-[#cfc6b4]">{L("Or click and type in the browser panel. Clara records which field you filled, never the value.", "O haz clic y escribe en el panel del navegador. Clara graba qué campo llenaste, nunca el valor.", lang)}</p>
+      {passportEndpoint && fromPassport.length > 0 && (
+        <button type="button" className={primaryBtn} disabled={busy !== null} onClick={() => void fillAll()} data-testid="ws-fill-all-passport">
+          {L(`Fill ${fromPassport.length} from the Business Passport`, `Llenar ${fromPassport.length} desde el Pasaporte del negocio`, lang)}
+        </button>
+      )}
       {usable.map((f) => {
         const key = f.selector!;
         const secret = f.kind !== "text";
         return (
           <form key={key} className="space-y-1" autoComplete="off" onSubmit={(e) => { e.preventDefault(); void send(f); }} data-testid="ws-page-field" data-kind={f.kind}>
-            <span className="block text-[14px] text-[#f4efe2]">{f.label || L("Field", "Campo", lang)}{secret && <Lock className="ml-1 inline h-3 w-3 text-[#9fd3b4]" aria-label={L("sensitive", "sensible", lang)} />}</span>
+            <span className="block text-[14px] text-[#f4efe2]">{withTranslation(f.label, translations) || L("Field", "Campo", lang)}{secret && <Lock className="ml-1 inline h-3 w-3 text-[#9fd3b4]" aria-label={L("sensitive", "sensible", lang)} />}</span>
+            {f.suggestion && (
+              <span className="flex flex-wrap items-center gap-2 text-[12px]" data-testid="ws-page-field-suggestion" data-on-file={f.suggestion.on_file ? "1" : "0"}>
+                <span className={f.suggestion.on_file ? "text-[#9fd3b4]" : "text-amber-200"}>
+                  {f.suggestion.on_file
+                    ? L(`Passport: ${f.suggestion.name.en}`, `Pasaporte: ${f.suggestion.name.es}`, lang)
+                    : L(`${f.suggestion.name.en} isn't in the Passport yet`, `${f.suggestion.name.es} todavía no está en el Pasaporte`, lang)}
+                </span>
+                {f.suggestion.on_file && passportEndpoint && (
+                  <button type="button" className="rounded-full bg-[#1e4d38] px-2.5 py-0.5 font-semibold text-white hover:bg-[#2f6b4f]" disabled={busy === key} onClick={() => void fillFromPassport(f)} data-testid="ws-fill-from-passport">
+                    {L("Fill from Passport", "Llenar del Pasaporte", lang)}
+                  </button>
+                )}
+              </span>
+            )}
             <span className="flex items-center gap-2">
               <input
                 ref={(el) => { refs.current[key] = el; }}

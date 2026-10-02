@@ -110,8 +110,28 @@ export async function loadCanonicalPassportForBusiness(
     // "other" is the empty placeholder, not a fact about the business.
     if (canonical.business.entityType === "other") delete canonical.business.entityType;
     if (!canonical.business.legalName && row.name) canonical.business.legalName = String(row.name);
+    splitContactName(canonical as unknown as Record<string, unknown>);
     return canonical;
   } catch {
     return null;
   }
+}
+
+/**
+ * Portals ask for the person's name in parts (Primer nombre, Primer apellido
+ * …). Derive them from contact.fullName when the Passport has only that:
+ * "Ana Luisa Pérez Díaz" → first "Ana", middle "Luisa", last "Pérez",
+ * second last "Díaz" (Puerto Rican two-surname order). Existing parts win.
+ */
+export function splitContactName(passport: Record<string, unknown>): void {
+  const contact = (passport.contact ??= {}) as Record<string, unknown>;
+  const full = typeof contact.fullName === "string" ? contact.fullName.replace(/\s+/g, " ").trim() : "";
+  if (!full) return;
+  const t = full.split(" ");
+  const parts =
+    t.length === 1 ? { firstName: t[0] }
+    : t.length === 2 ? { firstName: t[0], lastName: t[1] }
+    : t.length === 3 ? { firstName: t[0], lastName: t[1], secondLastName: t[2] }
+    : { firstName: t[0], middleName: t.slice(1, -2).join(" "), lastName: t.at(-2), secondLastName: t.at(-1) };
+  for (const [k, v] of Object.entries(parts)) if (v && !contact[k]) contact[k] = v;
 }

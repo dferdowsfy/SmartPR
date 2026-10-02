@@ -17,6 +17,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { MemorySkillRepo } from "../skills/skillLibrary";
 import { sanitizeTeachEvent } from "./events";
+import { splitContactName } from "../passportLoader";
 import { applyTeachEvent, newTeachState } from "./teachSession";
 import { sampleRecorderEvents } from "./sampleRecording";
 import {
@@ -24,6 +25,7 @@ import {
   finishTeachSession,
   resetTeachSessionsForTests,
   saveTeachSession,
+  fillFromPassportTeach,
   secureFillTeach,
   startTeachSession,
   syncTeachSession,
@@ -276,6 +278,32 @@ describe("Teach Clara journey: teach once, replay for another business", () => {
     await assert.rejects(removeRoutine(repo, stranger, row.id));
     await removeRoutine(repo, teacher, row.id);
     assert.equal((await listLearnedRoutines(repo, teacher)).length, 0);
+  });
+
+  it("Spanish portal fields are matched to the Passport and filled from it (value never in the view)", async () => {
+    const passport = { contact: { fullName: "Ana Luisa Pérez Díaz" }, business: { legalName: "Caribe LLC" } };
+    splitContactName(passport);
+    assert.deepEqual([passport.contact].map((c: Record<string, unknown>) => [c.firstName, c.middleName, c.lastName, c.secondLastName])[0], ["Ana", "Luisa", "Pérez", "Díaz"]);
+    const fields = [
+      { label: "Primer Nombre:*", selector: "#pn", kind: "text" },
+      { label: "Primer Apellido*:", selector: "#pa", kind: "text" },
+      { label: "Ciudadanía:*", selector: "#ci", kind: "text" },
+      { label: "Número de Seguro Social*:", selector: "#ssn", kind: "ssn" },
+    ];
+    const worker = fakeWorker([{ kind: "page", url: `${PORTAL}perfil`, title: "DDEC", heading: "Mi Información", inputFields: fields }]);
+    let v = await startTeachSession({ worker }, { viewer: teacher, tier: "admin", businessId: "b", passport, startUrl: PORTAL, portalName: "DDEC", form: "Perfil" });
+    v = await syncTeachSession({ worker }, teacher, v.id);
+    const sug = Object.fromEntries(v.page_fields.map((f) => [f.label, f.suggestion]));
+    assert.equal(sug["Primer Nombre:*"]?.path, "contact.firstName");
+    assert.equal(sug["Primer Nombre:*"]?.on_file, true);
+    assert.equal(sug["Primer Apellido*:"]?.path, "contact.lastName");
+    assert.equal(sug["Ciudadanía:*"], null, "no Passport field: typed by the person");
+    assert.equal(sug["Número de Seguro Social*:"], null, "sensitive fields never come from the Passport");
+    assert.ok(!JSON.stringify(v).includes("Ana") && !JSON.stringify(v).includes("Pérez"), "values never in the view");
+    assert.deepEqual(await fillFromPassportTeach({ worker }, teacher, v.id, "#pn"), { ok: true, reason: null });
+    assert.deepEqual(worker.typed.at(-1), { sessionId: "w1", value: "Ana", selector: "#pn" });
+    assert.equal((await fillFromPassportTeach({ worker }, teacher, v.id, "#ci")).reason, "not_on_file");
+    assert.equal((await fillFromPassportTeach({ worker }, teacher, v.id, "#ssn")).reason, "not_on_file");
   });
 
   it("worker failures surface as specific errors", async () => {
