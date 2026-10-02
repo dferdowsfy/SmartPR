@@ -30,3 +30,10 @@ test("date-only validation and reminder subtraction are deterministic", () => {
   assert.equal(validDateOnly("2028-02-29"), "2028-02-29");
   assert.equal(subtractDays("2026-11-15", 90), "2026-08-17");
 });
+
+test("normalizeReminderDays: defaults, filtering, order, empty", async () => {
+  const { normalizeReminderDays } = await import("./dates");
+  assert.deepEqual(normalizeReminderDays(null), [60, 30, 7]);
+  assert.deepEqual(normalizeReminderDays([7, 90, 7, 0, 5, "30"]), [90, 7, 0]);
+  assert.deepEqual(normalizeReminderDays([]), []);
+});

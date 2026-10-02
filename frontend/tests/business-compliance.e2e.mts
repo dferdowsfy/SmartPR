@@ -50,6 +50,7 @@ const detail = {
 const browser = await chromium.launch({ executablePath: process.env.E2E_CHROME || undefined });
 const errors: string[] = [];
 let portfolioCalls = 0;
+const writes: { method: string; path: string; body: Record<string, unknown> }[] = [];
 async function open(url: string, width = 1440): Promise<Page> {
   const page = await browser.newPage({ viewport: { width, height: 1000 } });
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -57,6 +58,10 @@ async function open(url: string, width = 1440): Promise<Page> {
     const p = new URL(r.request().url()).pathname;
     const j = (b: unknown) => r.fulfill({ contentType: "application/json", body: JSON.stringify(b) });
     if (p === "/api/portfolio") { portfolioCalls++; return j(portfolio); }
+    if (/\/obligations(\/[^/]+)?$/.test(p) && ["POST", "PATCH"].includes(r.request().method())) {
+      writes.push({ method: r.request().method(), path: p, body: r.request().postDataJSON() });
+      return r.fulfill({ status: r.request().method() === "POST" ? 201 : 200, contentType: "application/json", body: JSON.stringify({ created: true, updated: true, id: "new1" }) });
+    }
     if (p === "/api/businesses/amigos") return j(detail);
     if (p.endsWith("/locations")) return j({ locations: [], can_edit: true });
     if (p === "/api/me") return j({ user: { id: "u" } });
@@ -134,6 +139,36 @@ await ref.close();
   await page.locator(`${scope} [data-horizon="30"]`).focus();
   await page.keyboard.press("Enter");
   check("keyboard: Enter applies a filter", (await page.locator(`${scope} [data-horizon="30"]`).getAttribute("aria-pressed")) === "true");
+
+  // Add filing date: custom filing with repeat, reminders and email choice.
+  check("calendar pill title has no 'annual filings'", !/annual filings/i.test(await page.locator('[data-testid="tile-calendar-toggle"]').innerText()), await page.locator('[data-testid="tile-calendar-toggle"]').innerText());
+  await page.locator(`${scope} [data-testid="calendar-add-date"]`).click();
+  const form = page.locator(`${scope} [data-testid="filing-date-form"]`);
+  await form.waitFor();
+  check("form defaults to an undated tracked filing", (await form.locator('[data-testid="filing-date-filing"]').inputValue()) === "o8");
+  const defaults = await form.locator('[data-testid="filing-date-reminders"] button[aria-pressed="true"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-days")).join(","));
+  check("default reminders 60/30/7 + email on", defaults === "60,30,7" && (await form.locator('[data-testid="filing-date-email"]').isChecked()), defaults);
+  check("save disabled until a date is set", await form.locator('[data-testid="filing-date-save"]').isDisabled());
+  await form.locator('[data-testid="filing-date-due"]').fill(day(40));
+  await form.locator('[data-testid="filing-date-reminders"] [data-days="14"]').click();
+  await form.locator('[data-testid="filing-date-save"]').click();
+  await form.waitFor({ state: "detached", timeout: 5000 });
+  const w1 = writes.at(-1);
+  check("tracked filing: PATCH with date, source, reminders, email", w1?.method === "PATCH" && w1.path === "/api/obligations/o8" && w1.body.due_date === day(40) && w1.body.due_date_source === "USER_PROVIDED" && JSON.stringify(w1.body.reminder_days) === "[60,30,14,7]" && w1.body.reminder_email === true, JSON.stringify(w1));
+  const callsBefore = portfolioCalls;
+  await page.locator(`${scope} [data-testid="calendar-add-date"]`).click();
+  await form.locator('[data-testid="filing-date-filing"]').selectOption("__custom__");
+  check("custom filing shows name + repeats (default every year)", (await form.locator('[data-testid="filing-date-name"]').count()) === 1 && (await form.locator('[data-testid="filing-date-repeat"]').inputValue()) === "12");
+  await form.locator('[data-testid="filing-date-name"]').fill("Póliza de seguro");
+  await form.locator('[data-testid="filing-date-due"]').fill(day(90));
+  await form.locator('[data-testid="filing-date-email"]').uncheck();
+  await page.screenshot({ path: path.join(OUT, "4_add_date.png"), fullPage: false });
+  await form.locator('[data-testid="filing-date-save"]').click();
+  await form.waitFor({ state: "detached", timeout: 5000 });
+  const w2 = writes.at(-1);
+  check("custom filing: POST to the business with name, repeat, in-app only", w2?.method === "POST" && w2.path === `/api/businesses/${UUID}/obligations` && w2.body.name === "Póliza de seguro" && w2.body.renewal_frequency_months === 12 && w2.body.reminder_email === false, JSON.stringify(w2));
+  await page.waitForTimeout(500);
+  check("calendar reloads after saving", portfolioCalls > callsBefore);
 
   // navigation + business context remain visible
   check("business context visible (name in header)", await page.getByRole("heading", { name: "Amigos" }).first().isVisible());

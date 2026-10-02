@@ -27,6 +27,7 @@ export function DashboardCompliance({
   onOpenObligation: (obligationId: string) => void;
 }) {
   const [data, setData] = useState<PortfolioData | null>(null);
+  const [version, setVersion] = useState(0);
   useEffect(() => {
     let cancelled = false;
     fetch("/api/portfolio", { cache: "no-store" })
@@ -34,7 +35,7 @@ export function DashboardCompliance({
       .then((j) => { if (!cancelled) setData(j); })
       .catch(() => { if (!cancelled) setData({}); });
     return () => { cancelled = true; };
-  }, []);
+  }, [version]);
   const es = lang === "es";
   const tabs: { key: ComplianceTab; label: string }[] = [
     { key: "calendar", label: es ? "Calendario" : "Calendar" },
@@ -75,6 +76,8 @@ export function DashboardCompliance({
           lockedBusinessId={businessIds}
           onShowFilings={() => onTab("filings")}
           onOpenItem={(item) => onOpenObligation(item.id)}
+          addForBusinessId={businessIds[0]}
+          onChanged={() => setVersion((v) => v + 1)}
         />
       </div>
       <div role="tabpanel" id="compliance-tabpanel-filings" aria-labelledby="compliance-tab-filings" hidden={tab !== "filings"}>

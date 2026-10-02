@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { getPool } from "../../../graph/db";
 import { ensureSchema } from "../../../graph/store";
 import { getCurrentUser } from "../../../../lib/supabase/server";
-import { addMonthsClamped, deriveObligationStatus, nextActionForStatus, validDateOnly } from "../../../compliance/dates";
+import { addMonthsClamped, deriveObligationStatus, nextActionForStatus, normalizeReminderDays, validDateOnly } from "../../../compliance/dates";
 import { scheduleObligationNotifications } from "../../../compliance/server";
 import { DUE_DATE_SOURCES, type DueDateSource } from "../../../compliance/types";
 
@@ -18,6 +18,10 @@ interface PatchBody {
   next_due_date?: string | null;
   next_due_date_source?: DueDateSource;
   next_source_reference?: string | null;
+  /** Days before the due date to remind (0 = on the date); [] = none. */
+  reminder_days?: number[];
+  reminder_email?: boolean;
+  renewal_frequency_months?: number | null;
 }
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -47,6 +51,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       status: string; due_date: string | null; due_date_source: DueDateSource;
       source: string; source_reference: string | null; renewal_frequency_months: number | null;
       renewal_reference: string | null; cycle_index: number; workspace_id: string | null;
+      reminder_days: number[] | null; reminder_email: boolean;
       business_name: string; evidence_state: "NONE" | "VERIFIED" | "NEEDS_REVIEW" | "FAILED";
     }>(
       `SELECT o.*, b.workspace_id, COALESCE(b.legal_name, b.name) AS business_name,
@@ -87,6 +92,24 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         body.source_reference?.trim() || null, nextActionForStatus(status)]
     );
 
+    if (body.reminder_days !== undefined || body.reminder_email !== undefined || body.renewal_frequency_months !== undefined) {
+      const months = body.renewal_frequency_months;
+      await client.query(
+        `UPDATE obligations SET
+            reminder_days = CASE WHEN $2::boolean THEN $3::int[] ELSE reminder_days END,
+            reminder_email = COALESCE($4, reminder_email),
+            renewal_frequency_months = CASE WHEN $5::boolean THEN $6::int ELSE renewal_frequency_months END
+          WHERE id = $1`,
+        [id, body.reminder_days !== undefined, normalizeReminderDays(body.reminder_days ?? null),
+          typeof body.reminder_email === "boolean" ? body.reminder_email : null,
+          months !== undefined && current.source === "USER_ADDED",
+          typeof months === "number" && months > 0 && months <= 120 ? Math.round(months) : null]
+      );
+      if (months !== undefined && current.source === "USER_ADDED") {
+        current.renewal_frequency_months = typeof months === "number" && months > 0 ? Math.round(months) : null;
+      }
+    }
+
     let nextObligationId: string | null = null;
     if (body.complete) {
       await client.query(
@@ -101,6 +124,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         nextDue = addMonthsClamped(resolvedDue, current.renewal_frequency_months);
         nextSource = "REGULATORY_RULE";
         nextReference = current.renewal_reference;
+      } else if (!nextDue && current.renewal_frequency_months && resolvedDue && current.source === "USER_ADDED") {
+        // A filing the user added with "repeats": the user set the cadence.
+        nextDue = addMonthsClamped(resolvedDue, current.renewal_frequency_months);
+        nextSource = "USER_PROVIDED";
       }
       if (nextDue) {
         if (nextSource === "UNKNOWN" || !DUE_DATE_SOURCES.includes(nextSource)) {
@@ -115,12 +142,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           `INSERT INTO obligations
              (id,business_id,matter_id,requirement_id,graph_entity_id,name,agency,status,due_date,
               due_date_source,source,source_reference,verified_at,renewal_frequency_months,
-              renewal_reference,mandatory,next_action,cycle_index,previous_obligation_id)
-           VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),$12,$13,$14,$15,$16,$17)`,
+              renewal_reference,mandatory,next_action,cycle_index,previous_obligation_id,
+              reminder_days,reminder_email)
+           VALUES ($1,$2,NULL,$3,$4,$5,$6,$7,$8,$9,$10,$11,now(),$12,$13,$14,$15,$16,$17,$18,$19)`,
           [nextObligationId, current.business_id, current.requirement_id, current.graph_entity_id,
             current.name, current.agency, nextStatus, nextDue, nextSource, current.source,
             nextReference, current.renewal_frequency_months, current.renewal_reference,
-            current.mandatory, nextActionForStatus(nextStatus), current.cycle_index + 1, id]
+            current.mandatory, nextActionForStatus(nextStatus), current.cycle_index + 1, id,
+            current.reminder_days, current.reminder_email]
         );
         await scheduleObligationNotifications(client, {
           userId: user.id,
@@ -132,7 +161,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
           dueDate: nextDue,
         });
       }
-    } else if (resolvedDue) {
+    } else if (resolvedDue && status !== "COMPLETED") {
       await scheduleObligationNotifications(client, {
         userId: user.id,
         workspaceId: current.workspace_id,

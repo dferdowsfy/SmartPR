@@ -5,6 +5,16 @@ import type { ObligationStatus } from "./types";
 // Founder decision 2026-09-14: email-only reminders at 60/30/7 days.
 export const REMINDER_WINDOWS_DAYS = [60, 30, 7] as const;
 
+/** Reminder offsets a user can pick per filing (days before; 0 = due date). */
+export const REMINDER_DAY_OPTIONS = [90, 60, 30, 14, 7, 1, 0] as const;
+
+/** A user's reminder choice → valid offsets, latest-first; null/invalid → defaults. Empty = no reminders. */
+export function normalizeReminderDays(value: unknown): number[] {
+  if (!Array.isArray(value)) return [...REMINDER_WINDOWS_DAYS];
+  const allowed = new Set<number>(REMINDER_DAY_OPTIONS);
+  return [...new Set(value.filter((d): d is number => typeof d === "number" && allowed.has(d)))].sort((a, b) => b - a);
+}
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function validDateOnly(value: unknown): string | null {

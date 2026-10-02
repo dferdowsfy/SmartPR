@@ -12,7 +12,7 @@ import { entityTypeFromLegacyStructure } from "../forms/engine/intake";
 import { normalizeEntityFormationRequirements } from "../forms/engine/requirementAugment";
 import { normalizeProjectIntent } from "../ai/intake/projectIntent";
 import type { KnowledgeBase } from "../rulesEngine";
-import { REMINDER_WINDOWS_DAYS, subtractDays } from "./dates";
+import { normalizeReminderDays, subtractDays } from "./dates";
 import type { ObligationBlueprint } from "./types";
 
 type Db = Pool | PoolClient;
@@ -248,18 +248,27 @@ export async function scheduleObligationNotifications(
       WHERE obligation_id = $1 AND status = 'PENDING'`,
     [input.obligationId]
   );
-  for (const days of REMINDER_WINDOWS_DAYS) {
-    const type = `RENEWAL_${days}_DAY`;
-    const message =
-      `${input.obligationName} for ${input.businessName} is due in ${days} days.`;
+  // The filing's own reminder schedule (NULL → 60/30/7 defaults); email
+  // off → the same reminders in-app only.
+  const prefs = (await db.query<{ reminder_days: number[] | null; reminder_email: boolean | null }>(
+    `SELECT reminder_days, reminder_email FROM obligations WHERE id = $1`,
+    [input.obligationId]
+  )).rows[0];
+  const windows = normalizeReminderDays(prefs?.reminder_days ?? null);
+  const channel = prefs?.reminder_email === false ? "IN_APP" : "EMAIL";
+  for (const days of windows) {
+    const type = days === 0 ? "DUE_TODAY" : `RENEWAL_${days}_DAY`;
+    const message = days === 0
+      ? `${input.obligationName} for ${input.businessName} is due today.`
+      : `${input.obligationName} for ${input.businessName} is due in ${days} day${days === 1 ? "" : "s"}.`;
     const scheduledFor = `${subtractDays(input.dueDate, days)}T09:00:00.000Z`;
     await db.query(
       `INSERT INTO notifications
          (id, user_id, workspace_id, business_id, obligation_id, type, channel, scheduled_for, message)
-       VALUES ($1,$2,$3,$4,$5,$6,'EMAIL',$7,$8)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (obligation_id, type, scheduled_for) DO UPDATE SET
-         status = 'PENDING', message = EXCLUDED.message`,
-      [randomUUID(), input.userId, input.workspaceId, input.businessId, input.obligationId, type, scheduledFor, message]
+         status = 'PENDING', channel = EXCLUDED.channel, message = EXCLUDED.message`,
+      [randomUUID(), input.userId, input.workspaceId, input.businessId, input.obligationId, type, channel, scheduledFor, message]
     );
   }
 }

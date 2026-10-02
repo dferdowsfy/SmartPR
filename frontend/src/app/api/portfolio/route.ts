@@ -36,6 +36,7 @@ export async function GET() {
         `SELECT o.id, o.business_id, b.public_id AS business_public_id, o.matter_id, o.requirement_id, o.name, o.agency,
                 o.status, o.due_date::text, o.due_date_source, o.due_date_confidence,
                 o.source_reference, o.renewal_frequency_months, o.mandatory, o.next_action,
+                o.source, o.reminder_days, o.reminder_email,
                 o.completed_at, b.legal_name, b.name AS legacy_name, b.municipality,
                 m.matter_type, m.title AS matter_title, m.status AS matter_status,
                 m.readiness_score,
@@ -94,7 +95,7 @@ export async function GET() {
             AND (b.user_id=$1 OR wm.user_id IS NOT NULL)`,
         [user.id]
       ),
-      // Next pending email reminder per obligation — powers the calendar's
+      // Next pending reminder (email or in-app) per obligation — powers the calendar's
       // "🔔 reminds in N days" badge.
       pool.query<{ obligation_id: string; next_reminder_for: string }>(
         `SELECT DISTINCT ON (n.obligation_id) n.obligation_id,
@@ -102,7 +103,7 @@ export async function GET() {
            FROM notifications n
            JOIN businesses b ON b.id = n.business_id
            LEFT JOIN workspace_members wm ON wm.workspace_id = b.workspace_id AND wm.user_id = $1
-          WHERE n.user_id = $1 AND n.channel = 'EMAIL' AND n.status = 'PENDING'
+          WHERE n.user_id = $1 AND n.channel IN ('EMAIL','IN_APP') AND n.status = 'PENDING'
             AND n.obligation_id IS NOT NULL
             AND (b.user_id = $1 OR wm.user_id IS NOT NULL)
           ORDER BY n.obligation_id, n.scheduled_for`,

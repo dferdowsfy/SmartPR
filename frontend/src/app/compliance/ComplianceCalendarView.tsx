@@ -12,7 +12,8 @@
  */
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, CalendarPlus } from "lucide-react";
+import { FilingDateForm } from "./FilingDateForm";
 import { StatusBadge } from "../components/compliance/StatusBadge";
 import { L } from "../i18n";
 import type { Lang } from "../forms/engine/types";
@@ -29,6 +30,11 @@ export interface CalendarEventItem {
   status: ObligationStatus;
   matter_title: string | null;
   reminder_scheduled_for: string | null;
+  item_type?: string;
+  source?: string | null;
+  renewal_frequency_months?: number | null;
+  reminder_days?: number[] | null;
+  reminder_email?: boolean | null;
 }
 
 export interface PortfolioData {
@@ -40,8 +46,12 @@ export const HORIZONS = [7, 30, 60, 90, 365] as const;
 export type Horizon = (typeof HORIZONS)[number] | "all";
 
 export function ComplianceCalendarView({
-  data, lang, initialBusiness = "", lockedBusinessId, onOpenItem, onShowFilings, embedded = false,
+  data, lang, initialBusiness = "", lockedBusinessId, onOpenItem, onShowFilings, embedded = false, addForBusinessId, onChanged,
 }: {
+  /** Business the "Add filing date" form saves to (dashboard). Omit to hide it. */
+  addForBusinessId?: string;
+  /** Reload the calendar data after a date is saved. */
+  onChanged?: () => void;
   data: PortfolioData | null;
   lang: Lang;
   initialBusiness?: string;
@@ -51,6 +61,7 @@ export function ComplianceCalendarView({
   embedded?: boolean;
 }) {
   const es = lang === "es";
+  const [adding, setAdding] = useState(false);
   const [horizon, setHorizon] = useState<Horizon>("all");
   const [pickedBusiness, setBusiness] = useState(initialBusiness);
   const ids = lockedBusinessId ?? (pickedBusiness ? [pickedBusiness] : null);
@@ -59,6 +70,10 @@ export function ComplianceCalendarView({
     const keys = idsKey ? idsKey.split(",") : null;
     return !keys || keys.includes(item.business_id) || (item.business_public_id != null && keys.includes(item.business_public_id));
   }, [idsKey]);
+  const trackedFilings = useMemo(() => (data?.items ?? [])
+    .filter((item) => inBusiness(item) && item.status !== "COMPLETED" && (item.item_type ?? "OBLIGATION") === "OBLIGATION")
+    .map((item) => ({ id: item.id, name: item.name, agency: item.agency, due_date: item.due_date, source: item.source ?? null, renewal_frequency_months: item.renewal_frequency_months ?? null, reminder_days: item.reminder_days ?? null, reminder_email: item.reminder_email ?? null }))
+    .sort((a, b) => Number(!!a.due_date) - Number(!!b.due_date) || a.name.localeCompare(b.name)), [data, inBusiness]);
   const events = useMemo(() => {
     const today = new Date();
     return (data?.items ?? []).filter((item) => {
@@ -131,12 +146,28 @@ export function ComplianceCalendarView({
             </button>
           );
         })}</div>
-        <div className="mt-4 flex items-center gap-4 text-sm text-slate-500" data-testid="calendar-count">
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-slate-500" data-testid="calendar-count">
           <span><span className="font-bold text-[#161616] tabular-nums">{events.length}</span> {es ? `vencimiento${events.length === 1 ? "" : "s"} en este horizonte` : `item${events.length === 1 ? "" : "s"} in this horizon`}</span>
           {overdueCount > 0 && <span className="flex items-center gap-1.5 font-semibold text-red-700"><span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold tabular-nums">{overdueCount}</span> {L("overdue", lang)}</span>}
+          {addForBusinessId && !adding && (
+            <button type="button" onClick={() => setAdding(true)} data-testid="calendar-add-date" className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand/40 bg-white px-4 text-sm font-semibold text-brand hover:bg-brand/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand">
+              <CalendarPlus className="h-4 w-4" aria-hidden="true" /> {es ? "Añadir fecha de radicación" : "Add filing date"}
+            </button>
+          )}
         </div>
+        {addForBusinessId && adding && (
+          <div className="mt-4">
+            <FilingDateForm
+              lang={lang}
+              businessId={addForBusinessId}
+              filings={trackedFilings}
+              onCancel={() => setAdding(false)}
+              onSaved={() => { setAdding(false); setHorizon("all"); onChanged?.(); }}
+            />
+          </div>
+        )}
         <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-          {data === null ? <div className="py-14 text-center text-slate-500">{L("Loading calendar…", lang)}</div> : events.length === 0 ? <div className="py-14 text-center"><CalendarDays className="mx-auto mb-3 h-9 w-9 text-slate-300" /><div className="font-semibold text-[#161616]">{L("No due dates in this horizon.", lang)}</div><p className="mt-1 text-sm text-slate-500">{L("Dates stay unset until documentation or a sourced date is provided.", lang)}</p></div> : <div className="divide-y divide-slate-100">{events.map((item) => {
+          {data === null ? <div className="py-14 text-center text-slate-500">{L("Loading calendar…", lang)}</div> : events.length === 0 ? <div className="py-14 text-center"><CalendarDays className="mx-auto mb-3 h-9 w-9 text-slate-300" /><div className="font-semibold text-[#161616]">{L("No due dates in this horizon.", lang)}</div><p className="mt-1 text-sm text-slate-500">{L("Dates stay unset until documentation or a sourced date is provided.", lang)}</p>{addForBusinessId && !adding && <button type="button" onClick={() => setAdding(true)} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white"><CalendarPlus className="h-4 w-4" aria-hidden="true" /> {es ? "Añadir fecha de radicación" : "Add filing date"}</button>}</div> : <div className="divide-y divide-slate-100">{events.map((item) => {
             const date = new Date(`${item.due_date}T00:00:00`);
             const reminderDays = item.reminder_scheduled_for
               ? Math.ceil((new Date(item.reminder_scheduled_for).getTime() - new Date().getTime()) / 86400000)

@@ -103,6 +103,10 @@ CREATE INDEX IF NOT EXISTS idx_obligations_business_status ON obligations (busin
 -- Tracks when the user opened the requirement's official download/filing
 -- destination in a new tab. Powers the "downloaded, now upload" return nudge.
 ALTER TABLE obligations ADD COLUMN IF NOT EXISTS downloaded_at TIMESTAMPTZ;
+-- Per-filing reminder schedule (days before the due date; NULL = product
+-- defaults 60/30/7) and whether reminders are emailed (false = in-app only).
+ALTER TABLE obligations ADD COLUMN IF NOT EXISTS reminder_days INTEGER[];
+ALTER TABLE obligations ADD COLUMN IF NOT EXISTS reminder_email BOOLEAN NOT NULL DEFAULT true;
 CREATE INDEX IF NOT EXISTS idx_obligations_due ON obligations (due_date) WHERE completed_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_obligations_requirement ON obligations (requirement_id);
 

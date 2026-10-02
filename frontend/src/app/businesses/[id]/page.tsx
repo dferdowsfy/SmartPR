@@ -897,7 +897,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
           <BusinessTile
             id="compliance-calendar" testId="tile-calendar" tone="violet" icon={<CalendarDays className="h-5 w-5" />}
-            title={lang === "es" ? "Calendario y radicaciones anuales" : "Compliance calendar & annual filings"} shortTitle={lang === "es" ? "Calendario" : "Calendar"} showSummaryInPanel={false}
+            title={lang === "es" ? "Calendario de cumplimiento" : "Compliance calendar"} shortTitle={lang === "es" ? "Calendario" : "Calendar"} showSummaryInPanel={false}
             summary={topCalendar[0] ? `${dateLabel(topCalendar[0].due_date, lang)} · ${topCalendar[0].name}` : (lang === "es" ? "Sin fechas próximas" : "No upcoming dates")}
             metric={derived.calendar.length}
             selected={activeTile === "calendar"} onSelect={() => selectSection("calendar")} navEl={navEl} panelEl={panelEl}
