@@ -54,6 +54,8 @@ export interface IntakeVoiceOrbProps {
   /** Business context for answers (profile/requirements may be empty). */
   chatContext?: VoiceChatContext;
   feedback?: ReactNode;
+  /** "inline": a "Fill out by voice" pill in the page flow (intake); default floating orb. */
+  variant?: "floating" | "inline";
 }
 
 /**
@@ -112,6 +114,7 @@ export function IntakeVoiceOrb({
   enableVoiceAnswers = true,
   chatContext,
   feedback,
+  variant = "floating",
 }: IntakeVoiceOrbProps) {
   const [state, setState] = useState<OrbState>("idle");
   const [level, setLevel] = useState(0);
@@ -487,6 +490,14 @@ export function IntakeVoiceOrb({
           : L("Fill by voice", "Llena por voz", lang);
 
   const showHints = state !== "error";
+  const inline = variant === "inline";
+  // Same behavior as the floating orb's click.
+  const onOrbClick = () => {
+    if (state === "listening") void stopListening();
+    else if (state === "processing") return;
+    else if (state === "error") { setState("idle"); setError(null); setShowPanel(true); }
+    else void startListening();
+  };
 
   return (
     <>
@@ -585,15 +596,46 @@ export function IntakeVoiceOrb({
       `}</style>
 
       <div
-        className="pointer-events-none fixed z-40 flex flex-col items-end gap-2.5 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] md:bottom-[calc(1.35rem+env(safe-area-inset-bottom,0px))] md:right-[max(1.25rem,env(safe-area-inset-right,0px))]"
+        className={inline
+          ? "spr-voice-inline relative flex flex-col items-stretch gap-2.5"
+          : "pointer-events-none fixed z-40 flex flex-col items-end gap-2.5 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] md:bottom-[calc(1.35rem+env(safe-area-inset-bottom,0px))] md:right-[max(1.25rem,env(safe-area-inset-right,0px))]"}
       >
-        {feedback && <div className="pointer-events-auto order-1 max-h-[45vh] w-[min(100vw-2rem,22rem)] overflow-y-auto">{feedback}</div>}
+        {inline && (
+          <div className="order-0 spr-voice-row">
+            <button
+              type="button"
+              disabled={blocked && state !== "listening"}
+              onClick={onOrbClick}
+              aria-pressed={state === "listening"}
+              aria-busy={state === "processing"}
+              aria-describedby="spr-voice-help"
+              data-testid="intake-voice-start"
+              className={`spr-voice-pill${state === "listening" ? " listening" : ""}`}
+            >
+              <span className="spr-voice-icon" aria-hidden>
+                {state === "processing" ? (
+                  <span className={`inline-block h-4 w-4 rounded-full border-2 border-white border-t-transparent ${reducedMotion ? "" : "animate-spin"}`} />
+                ) : (
+                  <WaveformBars live={state === "listening"} level={level} reducedMotion={reducedMotion} />
+                )}
+              </span>
+              <span className="spr-voice-label" role="status" aria-live="polite">
+                {state === "idle" ? L("Fill out by voice", "Completar por voz", lang) : tooltipText}
+              </span>
+              {state === "listening" && <Square className="spr-voice-stop" aria-hidden />}
+            </button>
+            <span id="spr-voice-help" className="spr-voice-help">
+              {L("Complete your intake by speaking.", "Completa tu información hablando.", lang)}
+            </span>
+          </div>
+        )}
+        {feedback && <div className={`pointer-events-auto order-1 overflow-y-auto ${inline ? "max-w-xl" : "max-h-[45vh] w-[min(100vw-2rem,22rem)]"}`}>{feedback}</div>}
         {/* Compact status / error panel — opens upward above hints */}
         {(showPanel || error) && (
           <div
             role="status"
             aria-live="polite"
-            className="pointer-events-auto order-1 w-[min(100vw-2rem,16.5rem)] overflow-hidden rounded-2xl border border-teal-100/80 bg-white/95 shadow-lg shadow-teal-950/10 backdrop-blur"
+            className={`pointer-events-auto order-1 overflow-hidden rounded-2xl border border-teal-100/80 bg-white/95 shadow-lg shadow-teal-950/10 backdrop-blur ${inline ? "max-w-xl" : "w-[min(100vw-2rem,16.5rem)]"}`}
           >
             <div className="flex items-start gap-2 px-3 py-2.5">
               <div className="min-w-0 flex-1 space-y-2">
@@ -718,6 +760,7 @@ export function IntakeVoiceOrb({
         )}
 
         {/* Single globe orb — cosmos smoke swirls continuously inside */}
+        {!inline && (
         <div className="pointer-events-none relative order-4">
         {/* Hint sits beside the orb (left), in the same bottom band — never over the sidebar */}
           {showHints && (
@@ -854,6 +897,7 @@ export function IntakeVoiceOrb({
             )}
           </button>
         </div>
+        )}
       </div>
     </>
   );

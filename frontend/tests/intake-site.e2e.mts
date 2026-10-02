@@ -91,7 +91,7 @@ for (const [w, h, tag] of [[1440, 900, "desktop"], [1280, 800, "laptop"], [390, 
   const overflowX = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check(`${tag}: location section within the form column`, wb.left >= main.left - 1 && wb.right <= main.right + 1, `${Math.round(wb.left)}–${Math.round(wb.right)} in ${Math.round(main.left)}–${Math.round(main.right)}`);
   check(`${tag}: no horizontal overflow`, overflowX <= 0, String(overflowX));
-  const clipped = await page.locator(where).evaluate((el) => Array.from(el.querySelectorAll("*")).some((c) => { const r = c.getBoundingClientRect(); const p = el.getBoundingClientRect(); return r.width > 0 && (r.right > p.right + 1 || r.left < p.left - 1); }));
+  const clipped = await page.locator(where).evaluate((el) => Array.from(el.querySelectorAll("*")).some((c) => { const r = c.getBoundingClientRect(); const p = el.getBoundingClientRect(); return r.width > 1 && !c.classList.contains("sr-only") && (r.right > p.right + 1 || r.left < p.left - 1); }));
   check(`${tag}: nothing inside the section spills out`, !clipped);
   // scroll the section's bottom into view: it must not sit under the sticky footer
   await page.locator(where).evaluate((e) => e.scrollIntoView({ block: "end" }));
@@ -101,22 +101,14 @@ for (const [w, h, tag] of [[1440, 900, "desktop"], [1280, 800, "laptop"], [390, 
   const footerSticky = await page.locator(".spr-form-footer").evaluate((e) => getComputedStyle(e).position === "sticky" || getComputedStyle(e).position === "fixed");
   check(`${tag}: section end visible, not hidden under the footer`, wb2.bottom <= h + 1 && (!footerSticky || wb2.bottom <= foot.top + 1), `section bottom ${Math.round(wb2.bottom)}, footer top ${Math.round(foot.top)}`);
 
-  // 2 — voice control
-  const orb = await box(page, '[data-testid="intake-voice-orb"], .spr-voice-orb, .voice-orb');
-  check(`${tag}: voice control is compact (≤ 64px)`, orb.width <= 64 && orb.height <= 64, `${Math.round(orb.width)}×${Math.round(orb.height)}`);
-  if (tag !== "mobile") {
-    for (const y of [0, 600, 1200]) {
-      await page.evaluate((yy) => window.scrollTo(0, yy), y);
-      await page.waitForTimeout(150);
-      const o = await box(page, '[data-testid="intake-voice-orb"], .spr-voice-orb, .voice-orb');
-      const side = await box(page, ".spr-project-summary");
-      check(`${tag}: voice control doesn't cover the project sidebar (scroll ${y})`, !overlap(o, side), `orb ${Math.round(o.left)},${Math.round(o.top)} sidebar ${Math.round(side.left)}–${Math.round(side.right)}`);
-    }
-  } else {
-    const prim = await box(page, ".spr-form-footer .spr-primary");
-    const o = await box(page, '[data-testid="intake-voice-orb"], .spr-voice-orb, .voice-orb');
-    check("mobile: voice control doesn't cover the primary action", !overlap(o, prim));
-  }
+  // 2 — voice control: inline "Fill out by voice" pill under the describe box; no floating orb
+  check(`${tag}: no floating voice orb`, (await page.locator('[data-testid="intake-voice-orb"]').count()) === 0);
+  const pill = page.locator('[data-testid="intake-voice-start"]');
+  const pb = await box(page, '[data-testid="intake-voice-start"]');
+  const inputBox = await box(page, ".spr-nl-input");
+  const pos = await pill.evaluate((e) => { for (let n: HTMLElement | null = e; n; n = n.parentElement) if (getComputedStyle(n).position === "fixed") return "fixed"; return "flow"; });
+  check(`${tag}: voice pill is inline below the describe box, 52–58px tall`, pos === "flow" && pb.top >= inputBox.bottom && pb.height >= 52 && pb.height <= 58 && /Fill out by voice/.test(await pill.innerText()), `${Math.round(pb.width)}×${Math.round(pb.height)} ${pos}`);
+  check(`${tag}: helper copy + separate Ask Clara row below`, /Complete your intake by speaking\./.test(await page.locator(".spr-voice-help").innerText()) && (await box(page, '[data-testid="intake-ask-clara"]')).top > pb.bottom);
   await page.evaluate(() => window.scrollTo(0, 0));
 
   // 3 — site results

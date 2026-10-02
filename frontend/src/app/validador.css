@@ -3894,3 +3894,31 @@ section.spr-plc .spr-plc-intel { padding-top: 4px; border-top: 1px solid #f0ece4
   .packages.pkg-grid-2 { grid-template-columns: minmax(0, 1fr) !important; }
   .dlv-next { position: static; }
 }
+
+/* ===== Intake: inline "Fill out by voice" + Ask Clara ===== */
+.spr-voice-inline { margin-top: 14px; }
+.spr-voice-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.spr-voice-pill { display: inline-flex; align-items: center; gap: 14px; min-height: 56px; padding: 7px 26px 7px 8px; border: 1px solid #cfe3e0; border-radius: 999px; background: linear-gradient(180deg, #f1f8f7, #e8f3f1); box-shadow: 0 2px 8px rgba(20, 60, 60, .08); color: #152a45; font-family: var(--spr-ui-font, var(--font-sans)); font-size: 17px; font-weight: 650; cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.spr-voice-pill:hover:not(:disabled) { border-color: #9fc9c3; box-shadow: 0 4px 14px rgba(20, 60, 60, .12); }
+.spr-voice-pill:focus-visible { outline: 3px solid rgba(37, 99, 235, .45); outline-offset: 3px; }
+.spr-voice-pill:disabled { opacity: .7; cursor: default; }
+.spr-voice-pill.listening { border-color: #2563eb; }
+.spr-voice-icon { display: grid; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 999px; background: #2563eb; box-shadow: 0 2px 6px rgba(37, 99, 235, .35); }
+.spr-voice-label { white-space: nowrap; }
+.spr-voice-stop { width: 12px; height: 12px; fill: #152a45; }
+.spr-voice-help { padding-left: 18px; border-left: 1px solid #ddd8cd; font-size: 15px; line-height: 1.4; color: #526579; }
+.spr-ask-clara-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; margin-top: 14px; padding: 8px 6px; border: 0; border-top: 1px solid #e6e1d7; background: none; text-align: left; cursor: pointer; font-family: var(--spr-ui-font, var(--font-sans)); }
+.spr-ask-clara-row:hover .spr-ask-clara-label { text-decoration: underline; }
+.spr-ask-clara-row:focus-visible { outline: 2px solid #1f6b66; outline-offset: 2px; border-radius: 8px; }
+.spr-ask-clara-icon { flex: 0 0 auto; width: 24px; height: 24px; color: #1f6b66; }
+.spr-ask-clara-label { flex: 0 0 auto; padding-right: 12px; border-right: 1px solid #ddd8cd; font-size: 16px; font-weight: 650; color: #152a45; }
+.spr-ask-clara-help { flex: 1; min-width: 0; font-size: 15px; color: #526579; }
+.spr-ask-clara-chev { flex: 0 0 auto; width: 18px; height: 18px; color: #152a45; }
+@media (max-width: 520px) {
+  .spr-voice-row { flex-direction: column; align-items: stretch; }
+  .spr-voice-pill { justify-content: flex-start; width: 100%; }
+  .spr-voice-help { padding-left: 4px; border-left: 0; }
+  .spr-ask-clara-row { flex-wrap: wrap; }
+  .spr-ask-clara-label { border-right: 0; }
+  .spr-ask-clara-help { flex-basis: 100%; order: 3; padding-left: 36px; }
+}
