@@ -3531,3 +3531,103 @@ html.nav-is-scrolled .appbar .spr-header-utilities {
 .spr-si, .spr-si-group, .spr-si-groups { text-align: left; }
 .spr-si-group .spr-si-pills { justify-content: flex-start; }
 .spr-si-group { align-items: stretch; }
+
+/* ======================================================================
+   Intake typography (2026-10): one UI font, readable sizes.
+   UI text and controls → SmartPR sans (IBM Plex Sans, --font-sans).
+   Editorial headings (h1, summary title, question titles) keep the serif.
+   ====================================================================== */
+.spr-guided-intake-shell {
+  --spr-ui-font: var(--font-sans), "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--spr-ui-font);
+  font-size: 16px;
+  line-height: 1.5;
+}
+/* Every UI element in the intake uses the sans (replaces the old monospace
+   labels, kicker and footer); the serif headings are excluded below. */
+.spr-guided-intake-shell *:not(h1):not(h2):not(.spr-display-serif):not(svg):not(svg *) { font-family: var(--spr-ui-font); }
+.spr-guided-intake-shell :is(input, select, textarea, button) { font-family: var(--spr-ui-font); }
+
+/* Headings */
+.spr-guided-intake-shell .spr-intake-panel h1 { font-size: clamp(34px, 3.6vw, 50px); line-height: 1.12; }
+.spr-guided-intake-shell .spr-subtitle { font-size: 18px; line-height: 1.5; }
+.spr-guided-intake-shell .spr-project-summary h2 { font-size: 28px; line-height: 1.2; }
+
+/* Labels: sentence case, 16px semibold (no tracking/uppercase) */
+.spr-guided-intake-shell .spr-field > label,
+.spr-guided-intake-shell .spr-field label,
+.spr-guided-intake-shell .spr-where-field > label,
+.spr-guided-intake-shell .spr-where-label,
+.spr-guided-intake-shell .spr-profile-summary-label {
+  font-size: 16px; font-weight: 600; line-height: 1.4; letter-spacing: normal; text-transform: none; color: #1f2f36;
+}
+/* Small section kickers (Your project · Next step · Still needed · questions heading) */
+.spr-guided-intake-shell .spr-kicker,
+.spr-guided-intake-shell .spr-project-summary-kicker,
+.spr-guided-intake-shell .spr-project-summary-next strong,
+.spr-guided-intake-shell .spr-project-summary-missing strong,
+.spr-guided-intake-shell .spr-scn-questions > h3 {
+  font-size: 14px; font-weight: 600; letter-spacing: .06em; line-height: 1.4;
+}
+
+/* Inputs, selects, placeholders */
+.spr-guided-intake-shell :is(input, select, textarea) { font-size: 16px; line-height: 1.4; }
+.spr-guided-intake-shell :is(input, textarea)::placeholder { font-size: 16px; }
+
+/* Helper / example / hint text */
+.spr-guided-intake-shell :is(.spr-hint, .spr-loc-hint, .spr-loc-why, .spr-loc-note, .spr-later-note, .spr-guest-note) { font-size: 15px; line-height: 1.45; }
+.spr-guided-intake-shell .spr-missing-note { font-size: 15px; }
+
+/* Buttons and controls: 16px semibold, normal tracking */
+.spr-guided-intake-shell :is(button, .spr-link) { letter-spacing: normal; }
+.spr-guided-intake-shell :is(.spr-intent-option, .spr-profile-done, .spr-loc-primary, .spr-loc-action, .spr-back, .spr-still-needed-chip, .spr-project-preview) { font-size: 16px; font-weight: 600; line-height: 1.25; }
+.spr-guided-intake-shell .spr-link { font-size: 16px; }
+
+/* Primary CTA: "Continue →" sized to its label */
+.spr-guided-intake-shell .spr-form-footer .spr-primary,
+.spr-main-workarea .spr-form-footer .spr-primary {
+  font-family: var(--spr-ui-font); font-size: 16px; font-weight: 600; letter-spacing: normal; line-height: 1.25;
+  text-transform: none; min-width: 0; width: auto; padding: 0 26px;
+}
+.spr-guided-intake-shell .spr-form-footer { font-family: var(--spr-ui-font); text-transform: none; letter-spacing: normal; }
+.spr-guided-intake-shell .spr-form-footer > [data-testid="intake-footer-status"] { font-size: 16px; font-weight: 600; }
+
+/* Stepper + mobile step indicator */
+.spr-guided-intake-shell .spr-workflow-step { font-size: 15px; }
+.spr-guided-intake-shell .spr-workflow-step-icon { font-size: 13px; }
+.spr-guided-intake-shell .spr-workflow-mobile { font-size: 15px; }
+
+/* Project summary */
+.spr-guided-intake-shell .spr-project-summary dt { font-size: 14px; font-weight: 600; }
+.spr-guided-intake-shell .spr-project-summary dd { font-size: 17px; font-weight: 600; line-height: 1.35; }
+.spr-guided-intake-shell :is(.spr-project-summary-next p, .spr-project-summary-missing, .spr-project-summary-missing li, .spr-project-summary-note) { font-size: 16px; line-height: 1.45; }
+
+/* Project brief (filled-in summary row) */
+.spr-guided-intake-shell .spr-project-brief span { font-size: 14px; font-weight: 600; letter-spacing: .04em; }
+.spr-guided-intake-shell .spr-project-brief strong { font-size: 17px; font-weight: 600; }
+
+/* Answered questions, badges, chips */
+.spr-guided-intake-shell :is(.spr-answered-text, .spr-answered-value) { font-size: 16px; }
+.spr-guided-intake-shell :is(.spr-confirm-badge, .spr-intent-chip, .spr-answer-option, .spr-answered-change) { font-size: 14px; }
+
+/* Location card + site results: nothing meaningful below 14px */
+.spr-guided-intake-shell :is(.spr-loc-title) { font-size: 18px; }
+.spr-guided-intake-shell :is(.spr-loc-rules, .spr-loc-layers-status, .spr-loc-saved-label, .spr-loc-saved-item) { font-size: 16px; }
+.spr-guided-intake-shell :is(.spr-loc-confidence, .spr-loc-chip) { font-size: 14px; }
+.spr-guided-intake-shell :is(.spr-si-pill, .spr-si-group-toggle, .spr-si-group-title, .spr-si-sources-btn, .spr-si-retry, .spr-si-retry-line, .spr-si-source-meta, .spr-si-source-link, .spr-si-status, .spr-si-wetlands) { font-size: 14px; }
+.spr-guided-intake-shell :is(.spr-si-alert, .spr-si-source-name, .spr-si-source-answer, .spr-si-source-meaning) { font-size: 15px; line-height: 1.45; }
+/* Description prompt label + example */
+.spr-guided-intake-shell .spr-nl-label { font-size: 16px; font-weight: 600; letter-spacing: normal; text-transform: none; }
+.spr-guided-intake-shell .spr-nl-example { font-size: 15px; line-height: 1.45; }
+/* Global nav + language toggle on the intake: same sans, readable sizes */
+:root:has(.spr-guided-intake-shell) header.appbar,
+:root:has(.spr-guided-intake-shell) header.appbar :is(a, button) { font-family: var(--font-sans), "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; letter-spacing: normal; }
+:root:has(.spr-guided-intake-shell) header.appbar .nav-tab { font-size: 15px; }
+:root:has(.spr-guided-intake-shell) .spr-header-utilities button,
+:root:has(.spr-guided-intake-shell) header.appbar .lang-toggle button,
+:root:has(.spr-guided-intake-shell) header.appbar [role="group"] button { font-size: 14px; }
+@media (max-width: 640px) {
+  :root:has(.spr-guided-intake-shell) header.appbar .nav-tab { font-size: 14px; }
+}
+.spr-guided-intake-shell .spr-main-workarea :is(.spr-field, .spr-where-field) :is(input, select, textarea) { font-size: 16px; }
+.spr-where > legend.sr-only { clip-path: inset(50%); overflow: hidden; white-space: nowrap; }

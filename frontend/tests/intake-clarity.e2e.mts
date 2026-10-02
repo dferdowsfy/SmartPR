@@ -2,7 +2,7 @@
  * Intake clarity (real page under next dev): compact header + sticky
  * stepper, grouped "Where will your business operate?" section, specific
  * "still needed" list matching the sidebar, inline missing-field flags, one
- * primary "See my requirements" action, keyboard, mobile, and the
+ * primary "Continue" action, keyboard, mobile, and the
  * transition to Requirements.
  *
  *   BASE_URL=http://localhost:3217 E2E_CHROME=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npx tsx tests/intake-clarity.e2e.mts [outDir]
@@ -33,6 +33,30 @@ async function open(width: number, height = 1000): Promise<Page> {
 }
 const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e) => { const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, width: r.width, height: r.height }; });
 
+/** One UI font, nothing meaningful under 14px, serif headings kept, CTA 16px semibold sans. */
+async function typography(page: Page, tag: string) {
+  const r = await page.evaluate(() => {
+    const bad: string[] = [];
+    for (const el of Array.from(document.querySelectorAll("body *")) as HTMLElement[]) {
+      if (!el.closest(".spr-guided-intake-shell, header.appbar")) continue;
+      if (!Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent!.trim().length > 1)) continue;
+      const b = el.getBoundingClientRect(); if (!b.width || !b.height) continue;
+      const cs = getComputedStyle(el); if (cs.visibility === "hidden") continue;
+      if (parseFloat(cs.fontSize) < 14 || /mono/i.test(cs.fontFamily)) bad.push(`${cs.fontSize} ${el.className.toString().slice(0, 30)} "${el.textContent!.trim().slice(0, 30)}"`);
+    }
+    const cta = getComputedStyle(document.querySelector(".spr-form-footer .spr-primary")!);
+    const label = getComputedStyle(document.querySelector('[data-testid="intake-where"] label')!);
+    const input = getComputedStyle(document.querySelector("#spr-municipality")!);
+    const h1 = getComputedStyle(document.querySelector(".spr-intake-panel h1")!);
+    return { bad, cta: [cta.fontFamily, cta.fontSize, cta.fontWeight, cta.letterSpacing], label: [label.fontFamily, label.fontSize, label.fontWeight], input: input.fontSize, h1: [h1.fontFamily, h1.fontSize] };
+  });
+  check(`${tag}: no monospace and no meaningful text under 14px`, r.bad.length === 0, r.bad.slice(0, 4).join(" | "));
+  check(`${tag}: Continue is 16px semibold sans, normal tracking`, /Plex|sans/.test(r.cta[0]!) && !/mono/i.test(r.cta[0]!) && r.cta[1] === "16px" && r.cta[2] === "600" && r.cta[3] === "normal", r.cta.join(" "));
+  check(`${tag}: labels 16px semibold in the same sans`, r.label[0] === r.cta[0] && r.label[1] === "16px" && r.label[2] === "600");
+  check(`${tag}: inputs 16px`, r.input === "16px");
+  check(`${tag}: headline keeps the serif`, /Georgia|serif/.test(r.h1[0]!) && !/Plex/.test(r.h1[0]!), r.h1.join(" "));
+}
+
 // ---------------- desktop
 {
   const page = await open(1440);
@@ -48,7 +72,7 @@ const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e)
 
   // grouped location section
   const where = page.locator('[data-testid="intake-where"]');
-  check("Where will your business operate? section", (await where.locator("legend").innerText()).trim() === "Where will your business operate?");
+  check("location section has no visible title (kept for screen readers)", (await where.locator("legend").evaluate((e) => { const cs = getComputedStyle(e); return cs.position === "absolute" && cs.clipPath.startsWith("inset") && e.getBoundingClientRect().height <= 1; })) && ((await where.locator("legend").textContent()) ?? "").includes("Where will your business operate?"));
   check("location type, municipality and map inside it", (await where.locator("#spr-location-type").count()) === 1 && (await where.locator("#spr-municipality").count()) === 1 && (await where.getByText(/Find the site on the map/).count()) === 1);
   const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, "#spr-municipality")]);
   check("consistent input widths and alignment", Math.abs(lt.width - mu.width) < 2 && Math.abs(lt.top - mu.top) < 2 && Math.abs(lt.height - mu.height) < 2, `${Math.round(lt.width)} / ${Math.round(mu.width)}`);
@@ -63,16 +87,17 @@ const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e)
   check("footer names what is missing", /Still needed: .*Municipality/.test(await page.locator('[data-testid="intake-footer-status"]').innerText()));
 
   // one primary action
-  check("one primary action: See my requirements", (await page.getByRole("button", { name: /See my requirements/ }).count()) === 1 && (await page.getByRole("button", { name: /^Continue$/ }).count()) === 0 && (await page.getByRole("button", { name: /Review requirements/ }).count()) === 0);
+  check("one primary action: Continue →", (await page.locator(".spr-form-footer .spr-primary").innerText()).trim() === "Continue" && (await page.locator(".spr-form-footer .spr-primary svg").count()) === 1 && (await page.getByRole("button", { name: /See my requirements|Review requirements/ }).count()) === 0);
 
   // next-step field flagged with the sidebar's wording
   const next = (await page.locator(".spr-project-summary-next p").innerText()).trim();
   const note = (await page.locator('[data-testid="missing-note-municipality"]').innerText()).trim();
   check("missing field flagged beside it with the sidebar's guidance", note === next, note);
+  await typography(page, "desktop");
   await page.screenshot({ path: path.join(OUT, "1_desktop.png"), fullPage: true });
 
   // validation: incomplete submit flags every missing field
-  await page.getByRole("button", { name: /See my requirements/ }).click();
+  await page.locator(".spr-form-footer .spr-primary").click();
   await page.waitForTimeout(500);
   check("incomplete submit: location type flagged", (await page.locator('[data-testid="missing-note-location_type"]').count()) === 1 && (await page.locator("#spr-location-type").getAttribute("aria-invalid")) === "true");
   check("incomplete submit: municipality aria-invalid + described", (await page.locator("#spr-municipality").getAttribute("aria-invalid")) === "true" && (await page.locator("#spr-municipality").getAttribute("aria-describedby")) === "spr-missing-municipality");
@@ -122,11 +147,11 @@ const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e)
     await page.waitForTimeout(250);
   }
   console.log("   footer before submit:", await page.locator('[data-testid="intake-footer-status"]').innerText());
-  await page.getByRole("button", { name: /See my requirements/ }).click();
+  await page.locator(".spr-form-footer .spr-primary").click();
   await page.waitForTimeout(3000);
   await page.screenshot({ path: path.join(OUT, "3b_after_submit.png"), fullPage: false });
   await page.locator(".rq-page-head h1").waitFor({ timeout: 60000 });
-  check("transition: See my requirements opens Requirements (step 2)", (await page.locator(".rq-page-head h1").innerText()).trim() === "Requirements" && (await page.locator('.spr-workflow-step[aria-current="step"]').innerText()).includes("Requirements"));
+  check("transition: Continue opens Requirements (step 2)", (await page.locator(".rq-page-head h1").innerText()).trim() === "Requirements" && (await page.locator('.spr-workflow-step[aria-current="step"]').innerText()).includes("Requirements"));
   await page.screenshot({ path: path.join(OUT, "4_requirements.png") });
   await page.close();
 }
@@ -138,6 +163,7 @@ const rect = (page: Page, sel: string) => page.locator(sel).first().evaluate((e)
   check("mobile: full stepper hidden", await page.locator(".spr-workflow-stepper").isHidden());
   const [lt, mu] = await Promise.all([rect(page, "#spr-location-type"), rect(page, "#spr-municipality")]);
   check("mobile: Where fields stacked, same width", lt.bottom < mu.top && Math.abs(lt.width - mu.width) < 2);
+  await typography(page, "mobile");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check("mobile: no horizontal overflow", overflow <= 0, String(overflow));
   const btn = await rect(page, ".spr-form-footer .spr-primary");

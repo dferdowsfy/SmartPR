@@ -1650,7 +1650,7 @@ export default function SmartPRIntake() {
   // only fields still needing input render as inputs. Expands fully when the
   // user taps Edit (or when submit finds profile fields missing).
   const [profileFormExpanded, setProfileFormExpanded] = useState(false);
-  // Set when "See my requirements" is tapped while incomplete — drives the
+  // Set when "Continue" (requirements) is tapped while incomplete — drives the
   // loading pulse plus scroll/highlight to what's missing.
   const [submitAttempted, setSubmitAttempted] = useState(false);
   // Brief loading animation on the submit button after an incomplete tap —
@@ -1888,7 +1888,7 @@ export default function SmartPRIntake() {
   // confirm the branch — the user may still switch to project_only before
   // anything is created (see shouldCreateBusinessRecord).
   //
-  // The creation itself is extracted so late callers ("See my requirements",
+  // The creation itself is extracted so late callers ("Continue" (requirements),
   // Clara entry) can ensure a persisted business on demand: the one-shot
   // effect above can miss (e.g. a failed fetch during a deploy), and without
   // a persisted id Clara's filing picker and ?filing= deep link cannot
@@ -1944,7 +1944,7 @@ export default function SmartPRIntake() {
     if (!decision) return;
     formationStartAttemptedRef.current = true;
     // Best-effort: intake remains usable and creation is retried on demand
-    // by "See my requirements" and Clara entry; guest progress continues
+    // by "Continue" (requirements) and Clara entry; guest progress continues
     // saving on-device.
     void ensurePersistedBusiness();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- gated effect; the
@@ -3363,7 +3363,7 @@ export default function SmartPRIntake() {
    * Changing industry invalidates everything downstream of it: the business
    * type, the guided questions and their answers, potential-item decisions,
    * and any requirements already computed. Reset all of it so the intake can
-   * never sit in a half-answered state with a dead "See my requirements"
+   * never sit in a half-answered state with a dead "Continue" (requirements)
    * button. Industry-independent facts (name, municipality, structure) stay.
    */
   const handleIndustryChange = (nextIndustry: string) => {
@@ -3406,7 +3406,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 };
 
   // Step 1: Save profile + compute discovery requirements (client-side)
-  // "See my requirements" is never a dead button: it only disables while a
+  // "Continue" (requirements) is never a dead button: it only disables while a
   // real submission is in flight. Tapped while incomplete, it plays a short
   // loading pulse, expands the business-details block, and scrolls to the
   // first thing missing — profile fields first, then the questions panel.
@@ -5216,7 +5216,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const intakeDone = intakeFieldsDone + guidedQuestionsAnswered + answeredPotentialCount;
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
   // project_only readiness is the project name + municipality: without this
-  // branch the "See my requirements" button could never enable for a
+  // branch the "Continue" (requirements) button could never enable for a
   // property-only project, because the business fields are never collected.
   // Only required-now facts gate requirements (ai/intake/infoNeeds.ts).
   const baseProfileReady = intakePlan.ready;
@@ -6935,7 +6935,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     type, municipality and the map/site, with the same label
                     style, spacing and input width. */}
                 <fieldset className="spr-field full spr-where" data-testid="intake-where">
-                  <legend className="spr-where-title">{isProjectOnly
+                  <legend className="spr-where-title sr-only">{isProjectOnly
                     ? (language === 'es' ? '¿Dónde está el proyecto?' : 'Where is the project?')
                     : (language === 'es' ? '¿Dónde operará tu negocio?' : 'Where will your business operate?')}</legend>
                   <div className="spr-where-grid">
@@ -7368,7 +7368,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   onClick={handleSubmitTap}
                   disabled={isLoading}
                 >
-                  {isLoading ? L('Preparing requirements…', language) : (language === 'es' ? 'Ver mis requisitos' : 'See my requirements')}
+                  {isLoading ? L('Preparing requirements…', language) : L('Continue', language)}
                   {isLoading || submitPulse ? <RefreshCw className="i spr-spin" /> : <ArrowRight className="i" />}
                 </button>
               </div>

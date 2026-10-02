@@ -729,7 +729,7 @@ export function IntakeVoiceOrb({
                   if (state === "listening") void stopListening();
                   else if (state === "idle") void startListening();
                 }}
-                className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200/70 bg-white/90 px-3 py-1 text-left text-[11px] font-medium leading-snug text-slate-500 shadow-[0_4px_14px_rgba(36,92,92,0.07)] backdrop-blur-md"
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-slate-200/70 bg-white/90 px-3 py-1 text-left text-sm font-medium leading-snug text-slate-500 shadow-[0_4px_14px_rgba(36,92,92,0.07)] backdrop-blur-md"
               >
                 <span role="status" aria-live="polite" className="min-w-0 flex-1">{tooltipText}</span>
               </button>
