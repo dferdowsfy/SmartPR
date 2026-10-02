@@ -55,18 +55,23 @@ function describe(f: FilingOption, lang: Lang) {
 // ------------------------------------------------------------------ header
 
 export function ClaraHeader({ lang, onLang, onPassport, onClose, extra }: { lang: Lang; onLang: (l: Lang) => void; onPassport: () => void; onClose: () => void; extra?: ReactNode }) {
+  // Mobile: row 1 = icon · title · close; row 2 = actions (wrap, never squeeze the title).
   return (
-    <header className="flex shrink-0 items-start gap-3 px-5 pb-3 pt-4 sm:px-7">
+    <header className="flex shrink-0 flex-wrap items-start gap-x-3 gap-y-3 px-4 pb-3 pt-4 sm:flex-nowrap sm:px-7" data-testid="clara-header">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EFF4FF]" aria-hidden="true">
         <Sparkles className="h-6 w-6 text-[#2563EB]" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-2">
+        <p className="flex flex-wrap items-center gap-2">
           <span className="text-[26px] font-bold leading-none text-[#0F172A]">Clara</span>
           <span className="rounded-md bg-[#DBEAFE] px-2 py-0.5 text-[12px] font-bold tracking-wide text-[#2563EB]">BETA</span>
         </p>
         <p className="mt-1 text-[14px] text-[#64748B]">{L("Your browser filing assistant", "Tu asistente para radicar en el navegador", lang)}</p>
       </div>
+      <button type="button" onClick={onClose} className="order-2 rounded-full p-2 text-[#64748B] hover:bg-[#F1F5F9] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] sm:order-last" aria-label={L("Close Clara", "Cerrar Clara", lang)} data-testid="clara-close">
+        <X className="h-5 w-5" />
+      </button>
+      <div className="order-3 flex w-full flex-wrap items-center gap-2 sm:order-none sm:w-auto sm:flex-nowrap sm:items-start sm:gap-3" data-testid="clara-header-actions">
       {extra}
       <div className="hidden flex-col items-center sm:flex">
         <button type="button" onClick={onPassport} className={`${CLARA_SURFACE_SELECTED} inline-flex items-center gap-2 rounded-full bg-[#F5F8FF] px-4 py-2 text-[15px] font-semibold text-[#0F172A] hover:border-[#6E98F5] hover:bg-[#EAF1FF]`} data-testid="clara-passport-button">
@@ -77,16 +82,14 @@ export function ClaraHeader({ lang, onLang, onPassport, onClose, extra }: { lang
       <button type="button" onClick={onPassport} className={`${CLARA_SURFACE_SELECTED} rounded-full bg-[#F5F8FF] p-2 sm:hidden`} aria-label={L("Business Passport", "Pasaporte del negocio", lang)}>
         <IdCard className="h-4 w-4" />
       </button>
-      <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-[#D7DEE8] bg-[#F1F4F8] p-1 shadow-[0_2px_6px_rgba(15,23,42,0.06)]" role="group" data-testid="clara-lang-toggle" aria-label={L("Language", "Idioma", lang)}>
+      <div className="ml-auto flex shrink-0 items-center gap-0.5 rounded-full border border-[#D7DEE8] bg-[#F1F4F8] p-1 sm:ml-0 shadow-[0_2px_6px_rgba(15,23,42,0.06)]" role="group" data-testid="clara-lang-toggle" aria-label={L("Language", "Idioma", lang)}>
         {(["en", "es"] as const).map((l) => (
           <button key={l} type="button" aria-pressed={lang === l} onClick={() => onLang(l)} className={`rounded-full border px-3 py-1 text-[13px] font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] ${lang === l ? "border-[#B8C4D4] bg-white text-[#0F172A] shadow-[0_1px_3px_rgba(15,23,42,0.12)]" : "border-transparent text-[#64748B] hover:text-[#0F172A]"}`}>
             {l.toUpperCase()}
           </button>
         ))}
       </div>
-      <button type="button" onClick={onClose} className="rounded-full p-2 text-[#64748B] hover:bg-[#F1F5F9] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]" aria-label={L("Close Clara", "Cerrar Clara", lang)} data-testid="clara-close">
-        <X className="h-5 w-5" />
-      </button>
+      </div>
     </header>
   );
 }
