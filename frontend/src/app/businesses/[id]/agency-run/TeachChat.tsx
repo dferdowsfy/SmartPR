@@ -29,7 +29,7 @@ import {
 } from "../../../../lib/agency-runs/teach/workspaceChat";
 import { claraWorkspaceHref, type ClaraWorkspaceContext } from "../../../components/clara/claraWorkspaceLink";
 import { TeachClaraForm } from "../../../components/clara/TeachClaraForm";
-import { ClaraBubble, L, PageFieldsCard, SecureInputCard, type PageFieldView, UnavailableCard, api, errText, ghostBtn, pick, primaryBtn, type Bi, type PassportFieldView } from "./workspaceParts";
+import { ClaraBubble, L, PageFieldsCard, withTranslation, SecureInputCard, type PageFieldView, UnavailableCard, api, errText, ghostBtn, pick, primaryBtn, type Bi, type PassportFieldView } from "./workspaceParts";
 
 type Question =
   | { id: string; kind: "mapping"; label: string; proposal: { path: string; en: string; es: string } | null; canAlwaysChoose: boolean; optionText: string }
@@ -104,6 +104,19 @@ export function TeachChat({
   const [secureSent, setSecureSent] = useState(0);
   const [editing, setEditing] = useState(false);
   const [describing, setDescribing] = useState(false);
+  /** Portal labels/titles in the chat's language (the portal is often in Spanish). */
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const asked = useRef<Set<string>>(new Set());
+  const labelKey = [...(session?.page_fields ?? []).map((f) => f.label), ...(session?.steps ?? []).flatMap((st) => [st.title, ...st.fields.map((f) => f.label)])].join("\u0001");
+  useEffect(() => {
+    if (lang !== "en") return;
+    const want = labelKey.split("\u0001").filter((t) => t && !asked.current.has(t)).slice(0, 40);
+    if (!want.length) return;
+    want.forEach((t) => asked.current.add(t));
+    void api<{ translations?: Record<string, string> }>("/api/clara-workspace/translate", { texts: want, to: "en" }).then((r) => {
+      if (r.ok && r.data.translations) setTranslations((m) => ({ ...m, ...r.data.translations }));
+    });
+  }, [labelKey, lang]);
   const endRef = useRef<HTMLDivElement>(null);
 
   const autoPhase: Phase =
@@ -250,7 +263,7 @@ export function TeachChat({
   };
 
   const questions = session?.questions ?? [];
-  const narrative = teachNarrative(session?.steps ?? []);
+  const narrative = teachNarrative((session?.steps ?? []).map((st) => ({ ...st, title: withTranslation(st.title, translations), fields: st.fields.map((f) => ({ ...f, label: withTranslation(f.label, translations) })) })));
   const secure = session && phase === "recording" ? secureCardFor(session.current_gate, session.secret_fields ?? []) : null;
   const onFile = useMemo(() => new Set((passport ?? []).filter((f) => f.has).map((f) => f.path)), [passport]);
   const passportLoaded = Boolean(passport?.some((f) => f.has));
@@ -262,8 +275,8 @@ export function TeachChat({
         <>
           <p>
             {q.proposal
-              ? T(`You filled “${q.label}”. Is that the business's ${q.proposal.en.toLowerCase()} from the Passport?`, `Llenaste “${q.label}”. ¿Es ${q.proposal.es.toLowerCase()} del Pasaporte?`)
-              : T(`You filled “${q.label}”. What should Clara put there for each business?`, `Llenaste “${q.label}”. ¿Qué debe poner Clara ahí para cada negocio?`)}
+              ? T(`You filled “${withTranslation(q.label, translations)}”. Is that the business's ${q.proposal.en.toLowerCase()} from the Passport?`, `Llenaste “${withTranslation(q.label, translations)}”. ¿Es ${q.proposal.es.toLowerCase()} del Pasaporte?`)
+              : T(`You filled “${withTranslation(q.label, translations)}”. What should Clara put there for each business?`, `Llenaste “${withTranslation(q.label, translations)}”. ¿Qué debe poner Clara ahí para cada negocio?`)}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {q.proposal && (
@@ -314,7 +327,7 @@ export function TeachChat({
       )}
       {q.kind === "branch" && (
         <>
-          <p>{T(`“${q.title}” only shows up for some businesses. What decides it?`, `“${q.title}” sale solo para algunos negocios. ¿Qué lo decide?`)}</p>
+          <p>{T(`“${withTranslation(q.title, translations)}” only shows up for some businesses. What decides it?`, `“${withTranslation(q.title, translations)}” sale solo para algunos negocios. ¿Qué lo decide?`)}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <select
               aria-label={T("Passport fact", "Dato del Pasaporte")}
@@ -556,7 +569,7 @@ export function TeachChat({
             </ClaraBubble>
           )}
           {(session.page_fields ?? []).length > 0 ? (
-            <PageFieldsCard key={(session.page_fields ?? []).map((f) => f.selector).join("|")} lang={lang} fields={session.page_fields} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
+            <PageFieldsCard key={(session.page_fields ?? []).map((f) => f.selector).join("|")} lang={lang} fields={session.page_fields} translations={translations} passportEndpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/fill-from-passport`} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
           ) : secure ? (
             <SecureInputCard key={`${session.current_gate}-${secure.fields.map((f) => f.selector).join("|")}`} lang={lang} gate={secure.gate} fields={secure.fields} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
           ) : null}
