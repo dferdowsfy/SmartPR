@@ -7,6 +7,7 @@ import {
   MoreVertical, Plus, Search, Store, Utensils,
 } from "lucide-react";
 import { useLang } from "../useLang";
+import { pageItems } from "./pagination";
 
 interface Business {
   id: string;
@@ -50,6 +51,49 @@ function RequirementProgress({ business, lang }: { business: Business; lang: "en
 }
 
 const PAGE_SIZE = 8;
+
+/** Compact pagination: ‹ 1 … 23 24 [25] 26 27 … 49 › (desktop); ‹ · Page 25 of 49 · › (mobile). */
+function Pagination({ page, totalPages, onPage, es }: { page: number; totalPages: number; onPage: (n: number) => void; es: boolean }) {
+  const go = (n: number) => onPage(Math.min(totalPages, Math.max(1, n)));
+  const focus = "focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-[#f4f1ea]";
+  const step = `inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[#161616]/15 bg-white px-3.5 text-sm font-medium text-[#161616] transition-colors hover:border-[#161616]/30 hover:bg-[#fbf9f4] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white ${focus}`;
+  const of = es ? `Página ${page} de ${totalPages}` : `Page ${page} of ${totalPages}`;
+  return (
+    <nav className="mt-10 flex flex-col items-center gap-3" aria-label={es ? "Paginación" : "Pagination"} data-testid="pagination">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button type="button" className={step} disabled={page <= 1} onClick={() => go(page - 1)} aria-label={es ? "Página anterior" : "Previous page"} data-testid="page-prev">
+          <span aria-hidden="true">‹</span><span className="hidden sm:inline">{es ? "Anterior" : "Previous"}</span>
+        </button>
+        <ol className="hidden items-center gap-1.5 sm:flex" data-testid="page-numbers">
+          {pageItems(page, totalPages).map((item, i) =>
+            item === "gap" ? (
+              <li key={`gap-${i}`} className="w-6 text-center text-sm text-[#5a5a5a]" aria-hidden="true">…</li>
+            ) : (
+              <li key={item}>
+                <button
+                  type="button"
+                  onClick={() => go(item)}
+                  aria-current={item === page ? "page" : undefined}
+                  aria-label={es ? `Página ${item}` : `Page ${item}`}
+                  className={`inline-flex h-11 min-w-11 items-center justify-center rounded-[10px] border px-3 text-sm transition-colors ${focus} ${item === page ? "border-brand bg-brand font-semibold text-white" : "border-[#161616]/12 bg-white text-[#161616] hover:border-[#161616]/30 hover:bg-[#fbf9f4]"}`}
+                >
+                  {item}
+                </button>
+              </li>
+            )
+          )}
+        </ol>
+        <span className="flex items-center gap-2 text-sm text-[#5a5a5a] sm:hidden" data-testid="page-indicator-mobile">
+          <span aria-hidden="true">·</span>{of}<span aria-hidden="true">·</span>
+        </span>
+        <button type="button" className={step} disabled={page >= totalPages} onClick={() => go(page + 1)} aria-label={es ? "Página siguiente" : "Next page"} data-testid="page-next">
+          <span className="hidden sm:inline">{es ? "Siguiente" : "Next"}</span><span aria-hidden="true">›</span>
+        </button>
+      </div>
+      <p className="hidden text-xs text-[#5a5a5a] sm:block" aria-live="polite" data-testid="page-indicator">{of}</p>
+    </nav>
+  );
+}
 
 // Contextual icon + soft category color, matched against business_type /
 // industry text. Falls back to a neutral generic icon for anything unmapped.
@@ -252,24 +296,7 @@ export default function BusinessesPage() {
                 {paged.map((business) => <BusinessCard key={business.id} business={business} lang={lang} onChanged={load} />)}
               </div>
 
-              {totalPages > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
-                  <button
-                    type="button" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#161616]/15 bg-white text-sm text-[#161616] disabled:opacity-40"
-                  >‹</button>
-                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
-                    <button
-                      key={number} type="button" onClick={() => setPage(number)}
-                      className={`flex h-9 w-9 items-center justify-center rounded-[8px] border text-sm ${number === page ? "border-brand bg-brand text-white" : "border-[#161616]/15 bg-white text-[#161616]"}`}
-                    >{number}</button>
-                  ))}
-                  <button
-                    type="button" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
-                    className="flex h-9 w-9 items-center justify-center rounded-[8px] border border-[#161616]/15 bg-white text-sm text-[#161616] disabled:opacity-40"
-                  >›</button>
-                </div>
-              )}
+              {totalPages > 1 && <Pagination page={page} totalPages={totalPages} onPage={setPage} es={es} />}
             </>
           )}
         </div>
