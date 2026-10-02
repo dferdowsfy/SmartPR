@@ -227,7 +227,7 @@ export function PassportPanel({ fields, loaded, lang, highlight }: { fields: Pas
   }
   const on = fields.filter((f) => f.has).length;
   return (
-    <div className="h-full overflow-y-auto p-4" data-testid="ws-passport-panel">
+    <div className="min-h-0 flex-1 overflow-y-auto p-4" data-testid="ws-passport-panel">
       <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#9a917f]">{L("Business Passport", "Pasaporte del negocio", lang)}</p>
       <p className="mb-3 text-[14px] text-[#cfc6b4]">
         {loaded
@@ -251,7 +251,7 @@ export function PassportPanel({ fields, loaded, lang, highlight }: { fields: Pas
 
 export function BrowserPanel({ liveUrl, lang, note }: { liveUrl: string | null; lang: Lang; note?: ReactNode }) {
   return (
-    <div className="flex h-full flex-col" data-testid="ws-browser-panel">
+    <div className="flex min-h-0 flex-1 flex-col" data-testid="ws-browser-panel">
       {note && <div className="shrink-0 border-b border-white/10 px-3 py-2 text-[13px] text-[#cfc6b4]">{note}</div>}
       {liveUrl ? (
         <iframe src={liveUrl} title={L("Clara's browser", "Navegador de Clara", lang)} className="min-h-0 w-full flex-1 bg-black" allow="clipboard-read; clipboard-write" data-testid="ws-live-view" />

@@ -207,7 +207,7 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
             </div>
           </section>
           {panelOpen && (
-            <aside className={`min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black/40 ${mobilePane === "panel" ? "" : "hidden lg:block"}`} data-testid="ws-side-panel" data-panel={panel}>
+            <aside className={`min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 ${mobilePane === "panel" ? "flex" : "hidden lg:flex"}`} data-testid="ws-side-panel" data-panel={panel}>
               {panel === "browser" ? (
                 <BrowserPanel liveUrl={liveUrl} lang={lang} note={L("Clara's browser on the agency portal. Your part (sign-in, codes, CAPTCHA, signature, payment, submit) happens here.", "El navegador de Clara en el portal de la agencia. Tu parte (entrar, códigos, CAPTCHA, firma, pago, envío) pasa aquí.", lang)} />
               ) : (
