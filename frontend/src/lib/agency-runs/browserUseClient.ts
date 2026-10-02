@@ -42,25 +42,14 @@ function selfHostedBase(): string {
   return url;
 }
 
-/** Default model per provider: cheapest Cloud pick, or your own xAI model. */
+/** Default model per provider: Browser Use Ultrafast for Cloud Clara runs, or your own xAI model. */
 function defaultModel(): string {
   if (agentProvider() === "self_hosted") {
     return process.env.XAI_MODEL?.trim() || "grok-4.3";
   }
-  // Cheapest reliable Cloud model per 2026-09 cost research: gpt-5.6-luna
-  // (~2.5x cheaper than bu-mini on output tokens, 78% bench accuracy).
+  // Clara's Browser Use model — bu-ultrafast accepts no modelParams.
   // Override per environment with BROWSER_USE_MODEL if needed.
-  return process.env.BROWSER_USE_MODEL?.trim() || "gpt-5.6-luna";
-}
-
-/**
- * Provider-native model params. v4 defaults gpt-5.6-luna to xhigh reasoning —
- * pin to the dashboard default ("low") to keep filing runs cheap. Only sent
- * for gpt-* models: other providers reject unknown param paths with 422.
- */
-function modelParamsFor(model: string): Record<string, unknown> | undefined {
-  if (/^gpt-/i.test(model)) return { reasoning: { effort: "low" } };
-  return undefined;
+  return process.env.BROWSER_USE_MODEL?.trim() || "bu-ultrafast";
 }
 
 /** Per-run spend cap (USD) — safety net; filing runs cost cents. */
@@ -285,13 +274,13 @@ export async function createAgentRun(input: {
   const created = await client.runs.create({
     task: input.task,
     model: model as V4Types["schemas"]["RunCreateRequest"]["model"],
-    modelParams: modelParamsFor(model),
     browserSettings: {
       // Puerto Rico government portals — US residential proxy is appropriate.
       proxyCountryCode:
         input.proxyCountryCode === null
           ? null
           : ((input.proxyCountryCode ?? "us") as V4Types["schemas"]["ProxyCountryCode"]),
+      record: false,
       ...screenSize(),
     },
     maxCostUsd: maxCostUsd(),
