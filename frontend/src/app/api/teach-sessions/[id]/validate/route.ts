@@ -9,7 +9,7 @@
 import { teachDomainDecision } from "../../../../../lib/agency-runs/teach/domains";
 import { currentViewer, errorResponse, modelPrompter, replayDeps, unauthorized } from "../../../../../lib/agency-runs/teach/routeContext";
 import { getTeachState, validateTeachSession } from "../../../../../lib/agency-runs/teach/teachSessions";
-import { teachAvailability } from "../../../../../lib/agency-runs/teach/teachWorkerClient";
+import { replayAvailability } from "../../../../../lib/agency-runs/teach/teachWorkerClient";
 import { portalEntryCheck, summarize } from "../../../../../lib/agency-runs/teach/validateRoutine";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   try {
     const out = await validateTeachSession(viewer, id, { reviewer: await modelPrompter(400) });
-    if (body.live_check === true && teachAvailability().ok && out.validation.status === "pass") {
+    if (body.live_check === true && replayAvailability().ok && out.validation.status === "pass") {
       const state = getTeachState(viewer, id);
       const decision = teachDomainDecision(state.startUrl, { isAdmin: true });
       if (decision.ok) {
