@@ -70,43 +70,70 @@ async function open(runs: { filing_type: string; status: string }[], locations: 
   check("Open Clara is a secondary header action → Clara route", (await page.locator('[data-testid="open-clara"]').getAttribute("href")) === "/businesses/amigos/agency-run");
   const order = await page.evaluate(() => ["header", '[data-testid="active-filing"]', '[data-testid="business-readiness"]', '[data-testid="business-tiles"]'].map((s) => document.querySelector(s)!.getBoundingClientRect().top));
   check("hierarchy: overview → active filing → (readiness beside) → tiles", order[0]! < order[1]! && order[1]! <= order[2]! && order[2]! < order[3]!, order.join(","));
-  check("active filing: name + agency", /Permiso Único/.test(await af.innerText()) && /OGPe/.test(await af.innerText()));
+  check("compact card: filing name", /Permiso Único/.test(await af.innerText()));
   check("stage: Action needed", (await af.getAttribute("data-stage")) === "action_needed");
-  check("filing readiness 1 of 3 (only this filing's requirements)", /1 of 3 filing requirements done/.test(await af.innerText()));
+  check("filing readiness 1 of 3 (only this filing's requirements)", /1 of 3 requirements done/.test(await af.innerText()));
   const next = await page.locator('[data-testid="active-filing-next"]').innerText();
-  check("next step is the specific blocker with a reason", /Permiso Único/.test(next) && next.split("\n").length >= 3, next.replace(/\n/g, " | "));
-  check("Continue names the blocker", /Continue: Permiso Único/.test(await page.locator('[data-testid="active-filing-continue"]').innerText()));
-  const notice = await page.locator('[data-testid="municipality-conflict"]').innerText();
-  check("conflict notice shows both values", /Camuy/.test(notice) && /Hatillo/.test(notice));
-  check("conflict notice names affected requirements", /Patente Municipal/.test(notice));
+  check("compact card: next action names the specific blocker", /Next:\s*Permiso Único/.test(next), next.replace(/\n/g, " | "));
+  check("compact card: no inline blocker list", (await page.locator('[data-testid="active-filing-blockers"]').count()) === 0);
+  check("Continue → the blocker's requirement row", (await page.locator('[data-testid="active-filing-continue"]').getAttribute("href")) === "#obligation-o1");
+  await page.locator('[data-testid="active-filing-view-requirements"]').click();
+  await page.locator("#all-requirements").waitFor({ timeout: 5000 });
+  check("View requirements opens the full list", await page.locator("#all-requirements").isVisible());
+
+  // ---- municipality: short alert + expandable explanation
+  const notice = page.locator('[data-testid="municipality-conflict"]');
+  check("alert shows both values in one line", /Camuy/.test(await notice.innerText()) && /Hatillo/.test(await notice.innerText()));
+  check("explanation collapsed by default", !(await page.locator('[data-testid="mismatch-details"]').evaluate((d) => (d as HTMLDetailsElement).open)));
+  await page.locator('[data-testid="mismatch-details"] summary').click();
+  check("explanation expands and names affected requirements", /Patente Municipal/.test(await page.locator('[data-testid="mismatch-details"]').innerText()));
   check("readiness flagged as possibly affected", /May change/.test(await page.locator('[data-testid="business-readiness"]').innerText()));
   check("never claims agency approval", !/approved/i.test(await af.innerText()));
   await page.screenshot({ path: path.join(OUT, "1_blockers_conflict.png"), fullPage: true });
 
-  // ---- tiles: one shared panel, unsaved edits survive switching
-  check("tiles start closed", (await page.locator('[data-testid="tile-detail-panel"]').isHidden()));
-  await page.locator('[data-testid="tile-passport"]').click();
-  check("tile highlighted + panel open", (await page.locator('[data-testid="tile-passport"]').getAttribute("data-selected")) === "1" && (await page.locator('[data-testid="tile-detail-panel"]').isVisible()));
+  // ---- accordions: single column, content directly under its own header
+  check("sections start closed, counts/status visible", (await page.locator('[data-testid="tile-evidence-metric"]').innerText()) === "0" && (await page.locator('[data-testid="tile-missing-metric"]').innerText()) === "3");
+  const xs = await page.locator('[data-testid="business-tiles"] > section').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+  check("single column", new Set(xs).size === 1 && xs.length === 7, xs.join(","));
+  await page.locator('[data-testid="tile-missing-toggle"]').click();
+  const geo = await page.evaluate(() => ({
+    head: document.querySelector('[data-testid="tile-missing-toggle"]')!.getBoundingClientRect().bottom,
+    body: document.querySelector('[data-testid="tile-missing-detail"]')!.getBoundingClientRect().top,
+    nextHead: document.querySelector('[data-testid="tile-calendar-toggle"]')!.getBoundingClientRect().top,
+  }));
+  check("content opens directly under its own header (not at the bottom)", geo.body >= geo.head - 1 && geo.body - geo.head < 24 && geo.nextHead > geo.body, JSON.stringify(geo));
+  check("aria-expanded reflects state", (await page.locator('[data-testid="tile-missing-toggle"]').getAttribute("aria-expanded")) === "true");
+  await page.locator('[data-testid="tile-passport-toggle"]').click();
+  check("one open at a time", (await page.locator('[data-testid="tile-missing-detail"]').isHidden()) && (await page.locator('[data-testid="tile-passport-detail"]').isVisible()));
   await page.getByRole("button", { name: "Edit passport" }).click();
   const input = page.locator('[data-testid="tile-passport-detail"] input[type="text"]').first();
   await input.waitFor({ timeout: 10000 });
   await input.fill("Unsaved edit 123");
-  await page.locator('[data-testid="tile-location"]').click();
-  check("switching: only one detail visible", (await page.locator('[data-testid="tile-passport-detail"]').isHidden()) && (await page.locator('[data-testid="tile-location-detail"]').isVisible()));
-  check("switching: previous tile no longer highlighted", (await page.locator('[data-testid="tile-passport"]').getAttribute("data-selected")) === "0");
-  await page.locator('[data-testid="tile-missing"]').click();
-  await page.locator('[data-testid="tile-passport"]').click();
-  check("unsaved Passport edit kept after switching tiles", (await input.inputValue()) === "Unsaved edit 123");
-  check("only one panel container", (await page.locator('[data-testid="tile-detail-panel"]').count()) === 1);
-  await page.screenshot({ path: path.join(OUT, "2_tile_panel.png"), fullPage: true });
-  await page.keyboard.press("Escape");
-  await page.locator('[data-testid="tile-passport"]').focus();
-  await page.keyboard.press("Enter");
-  check("keyboard: Enter on selected tile closes the panel", await page.locator('[data-testid="tile-detail-panel"]').isHidden());
+  await page.locator('[data-testid="tile-location-toggle"]').click();
+  await page.locator('[data-testid="tile-missing-toggle"]').click();
+  await page.locator('[data-testid="tile-passport-toggle"]').click();
+  check("unsaved Passport edit kept after switching sections", (await input.inputValue()) === "Unsaved edit 123");
+  await page.screenshot({ path: path.join(OUT, "2_accordion.png"), fullPage: true });
 
-  // review buttons open the matching tile, never overwrite
-  await page.getByRole("button", { name: "Review location" }).click();
-  check("Review location opens the location tile", (await page.locator('[data-testid="tile-location"]').getAttribute("data-selected")) === "1");
+  // ---- keyboard
+  await page.locator('[data-testid="tile-evidence-toggle"]').focus();
+  await page.keyboard.press("Enter");
+  check("keyboard: Enter opens a section", await page.locator('[data-testid="tile-evidence-detail"]').isVisible());
+  await page.keyboard.press("Space");
+  check("keyboard: Space closes it", await page.locator('[data-testid="tile-evidence-detail"]').isHidden());
+  await page.keyboard.press("Tab");
+  check("keyboard: Tab moves to the next section header", await page.evaluate(() => document.activeElement?.getAttribute("data-testid") === "tile-missing-toggle"));
+  const ring = await page.evaluate(() => getComputedStyle(document.activeElement!).boxShadow);
+  check("keyboard: visible focus ring", /rgb\((?!0, 0, 0\))|rgba\([^)]*, (?:0\.[1-9]|1)\)/.test(ring) || /inset/.test(ring), ring.slice(-60));
+
+  // ---- resolve mismatch opens + scrolls to the location section
+  await page.locator('[data-testid="resolve-mismatch"]').click();
+  await page.waitForTimeout(800);
+  const locTop = await page.locator('[data-testid="tile-location"]').evaluate((e) => e.getBoundingClientRect().top);
+  check("Resolve mismatch opens the location section in view", (await page.locator('[data-testid="tile-location-detail"]').isVisible()) && locTop >= 0 && locTop < 400, String(locTop));
+
+  // ---- routes unchanged
+  check("routes: Start filing", (await page.getByRole("link", { name: "Start New Filing / Renewal" }).first().getAttribute("href")) === "/businesses/amigos/matters/new");
   await page.close();
 }
 
@@ -143,9 +170,26 @@ async function open(runs: { filing_type: string; status: string }[], locations: 
   const claraBg = await page.locator('[data-testid="open-clara"]').evaluate((el) => getComputedStyle(el).backgroundColor);
   check("Clara stays secondary (white, not the brand fill)", claraBg === "rgb(255, 255, 255)", claraBg);
   await page.screenshot({ path: path.join(OUT, "5_mobile.png"), fullPage: true });
-  await page.locator('[data-testid="tile-evidence"]').click();
-  check("mobile: tile panel opens below tiles", await page.locator('[data-testid="tile-evidence-detail"]').isVisible());
+  await page.locator('[data-testid="tile-evidence-toggle"]').click();
+  check("mobile: section opens under its header", await page.locator('[data-testid="tile-evidence-detail"]').isVisible());
   await page.screenshot({ path: path.join(OUT, "6_mobile_panel.png"), fullPage: true });
+  await page.close();
+}
+
+// ---- reduced motion
+{
+  const page = await open([], [hatillo]);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const dur = await page.locator('[data-testid="tile-passport-toggle"] svg').last().evaluate((el) => getComputedStyle(el).transitionProperty);
+  check("reduced motion: chevron has no transition", dur === "none", dur);
+  await page.locator('[data-testid="municipality-conflict"]').waitFor();
+  const t0 = Date.now();
+  await page.locator('[data-testid="resolve-mismatch"]').click();
+  await page.waitForTimeout(100);
+  const y1 = await page.evaluate(() => window.scrollY);
+  await page.waitForTimeout(500);
+  const y2 = await page.evaluate(() => window.scrollY);
+  check("reduced motion: scroll jumps and settles at once (no smooth animation)", y1 > 0 && y1 === y2, `${y1} → ${y2} (${Date.now() - t0}ms)`);
   await page.close();
 }
 

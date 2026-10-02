@@ -577,7 +577,13 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
   // Tiles start collapsed; a deep link (#business-passport, #all-requirements …) opens its tile.
   const [activeTile, setActiveTile] = useState<string | null>(null);
-  const [panelEl, setPanelEl] = useState<HTMLDivElement | null>(null);
+  /** Scroll without animation when the user prefers reduced motion. */
+  const scrollToId = (elId: string) => window.setTimeout(() => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    document.getElementById(elId)?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, 0);
+  const openSection = (key: string, elId: string) => { setActiveTile(key); scrollToId(elId); };
+  const openRequirements = () => { setShowAllRequirements(true); scrollToId("all-requirements"); };
   useEffect(() => {
     const byHash: Record<string, string> = { "#business-passport": "passport", "#property-location": "location", "#evidence-locker": "evidence", "#missing-requirements": "missing", "#compliance-calendar": "calendar" };
     const hash = window.location.hash;
@@ -755,7 +761,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               lang={lang}
               filing={activeFiling}
               businessId={shortId}
-              onOpenRequirement={() => setShowAllRequirements(true)}
+              onOpenRequirement={() => openRequirements()}
               municipalityFlag={conflict ? conflict.passport : null}
             />
           </div>
@@ -765,8 +771,8 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 lang={lang}
                 conflict={conflict}
                 affected={municipalRequirements(data.obligations ?? []).map((o) => o.name)}
-                onReviewLocation={() => setActiveTile("location")}
-                onReviewPassport={() => setActiveTile("passport")}
+                onResolve={() => openSection("location", "property-location")}
+                onReviewPassport={() => openSection("passport", "business-passport")}
               />
             )}
             <section className="rounded-2xl border border-[#D9DCE1] bg-white p-4" data-testid="business-readiness">
@@ -800,14 +806,14 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* Compact tiles; the selected one opens in ONE shared detail panel below. */}
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="business-tiles">
+        {/* Single column of accordions; each opens directly under its own header. */}
+        <div className="mt-6 overflow-hidden rounded-2xl border border-[#D9DCE1] bg-white" data-testid="business-tiles">
           <BusinessTile
             id="business-passport" testId="tile-passport" tone="blue" icon={<Building2 className="h-5 w-5" />}
             title={lang === "es" ? "Pasaporte del negocio" : "Business Passport"}
             summary={lang === "es" ? `${passportStats.filled} de ${passportStats.total} datos guardados` : `${passportStats.filled} of ${passportStats.total} facts on file`}
             metric={`${passportStats.pct}%`} progress={passportStats.pct}
-            selected={activeTile === "passport"} onSelect={() => setActiveTile("passport")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "passport"} onSelect={() => setActiveTile("passport")} onClose={() => setActiveTile(null)}
           >
             <BusinessPassportPanel businessId={shortId} business={business} lang={lang} onSaved={() => load()} showLocation={false} />
           </BusinessTile>
@@ -820,7 +826,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               : locationCount === 0
                 ? (business.municipality || (lang === "es" ? "Aún no hay ubicación" : "No location yet"))
                 : `${business.municipality ? `${business.municipality} · ` : ""}${lang === "es" ? `${locationCount} ubicación${locationCount === 1 ? "" : "es"}` : `${locationCount} location${locationCount === 1 ? "" : "s"}`}`}
-            selected={activeTile === "location"} onSelect={() => setActiveTile("location")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "location"} onSelect={() => setActiveTile("location")} onClose={() => setActiveTile(null)}
           >
             <div className="rounded-2xl bg-white p-3">
               <PassportLocationSection businessId={shortId} lang={lang} onPassportUpdated={() => { void load(); void loadLocations(); }} />
@@ -837,7 +843,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 : `${evidence.length} document${evidence.length === 1 ? "" : "s"} · ${verified} verified`;
             })()}
             metric={evidence.length}
-            selected={activeTile === "evidence"} onSelect={() => setActiveTile("evidence")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "evidence"} onSelect={() => setActiveTile("evidence")} onClose={() => setActiveTile(null)}
           >
             <EvidenceLockerPanel
               businessId={shortId}
@@ -855,7 +861,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               ? (lang === "es" ? `Faltan ${derived.missing.length} · ${topMissing[0]?.name ?? ""}` : `${derived.missing.length} left · next: ${topMissing[0]?.name ?? ""}`)
               : (lang === "es" ? "No falta nada" : "Nothing missing")}
             metric={derived.missing.length}
-            selected={activeTile === "missing"} onSelect={() => setActiveTile("missing")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "missing"} onSelect={() => setActiveTile("missing")} onClose={() => setActiveTile(null)}
           >
             <div className="rounded-2xl bg-white p-4">
               {topMissing.length ? (
@@ -881,7 +887,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             title={L("Compliance Calendar", lang)}
             summary={topCalendar[0] ? `${dateLabel(topCalendar[0].due_date, lang)} · ${topCalendar[0].name}` : (lang === "es" ? "Sin fechas próximas" : "No upcoming dates")}
             metric={derived.calendar.length}
-            selected={activeTile === "calendar"} onSelect={() => setActiveTile("calendar")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "calendar"} onSelect={() => setActiveTile("calendar")} onClose={() => setActiveTile(null)}
           >
             <div className="rounded-2xl bg-white p-4">
               {topCalendar.length ? (
@@ -907,7 +913,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             summary={lang === "es"
               ? `${derived.activeMatters.length} radicación${derived.activeMatters.length === 1 ? "" : "es"} activa${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} documento${evidence.length === 1 ? "" : "s"}`
               : `${derived.activeMatters.length} active filing${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} document${evidence.length === 1 ? "" : "s"}`}
-            selected={activeTile === "filings"} onSelect={() => setActiveTile("filings")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "filings"} onSelect={() => setActiveTile("filings")} onClose={() => setActiveTile(null)}
           >
             <div className="rounded-2xl bg-white p-4">
             <div className="space-y-4">
@@ -977,7 +983,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 ? `${n} radicación${n === 1 ? "" : "es"} pasada${n === 1 ? "" : "s"} · ${unreadNotifications} sin leer`
                 : `${n} past filing${n === 1 ? "" : "s"} · ${unreadNotifications} unread`;
             })()}
-            selected={activeTile === "history"} onSelect={() => setActiveTile("history")} onClose={() => setActiveTile(null)} panelEl={panelEl} closeLabel={lang === "es" ? "Cerrar" : "Close"}
+            selected={activeTile === "history"} onSelect={() => setActiveTile("history")} onClose={() => setActiveTile(null)}
           >
             <div className="rounded-2xl bg-white p-4">
             <div className="space-y-4">
@@ -1007,12 +1013,6 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
             </div>
           </BusinessTile>
         </div>
-        <div
-          ref={setPanelEl}
-          hidden={activeTile === null}
-          className="mt-3 rounded-2xl border border-[#D9DCE1] bg-white p-4 sm:p-5"
-          data-testid="tile-detail-panel"
-        />
 
         {showAllRequirements && (
           <section id="all-requirements" className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
