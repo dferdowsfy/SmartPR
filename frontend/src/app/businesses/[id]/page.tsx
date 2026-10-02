@@ -15,6 +15,7 @@ import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
 import { canonicalFromBusinessRow, passportCoverage } from "../../forms/engine/businessPassport";
 import { BusinessTile } from "../BusinessTile";
+import { DashboardCompliance, type ComplianceTab } from "../DashboardCompliance";
 import { ActiveFilingPanel, MunicipalityNotice } from "../ActiveFilingPanel";
 import { activeFilingFor, municipalityConflict, municipalRequirements } from "../activeFiling";
 import type { PassportLocationWithGeographies } from "../../locations/geo";
@@ -93,22 +94,6 @@ function dateLabel(value: string | null | undefined, lang: Lang) {
 
 // Days-remaining chip for the compliance calendar — same semantic colors as
 // StatusBadge (soft red = urgent, gold/amber = approaching, green = fine).
-function TimeBadge({ dueDate, completed, lang }: { dueDate: string | null; completed: boolean; lang: Lang }) {
-  if (completed) return <span className="inline-flex whitespace-nowrap rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold tracking-wide text-emerald-700">{L("DONE", lang)}</span>;
-  if (!dueDate) return <span className="inline-flex whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[11px] font-bold tracking-wide text-slate-600">{L("NO DATE", lang)}</span>;
-  const days = Math.ceil((new Date(`${dueDate}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
-  const es = lang === "es";
-  let text: string; let cls: string;
-  if (days < 0) { text = L("Overdue", lang); cls = "border-red-300 bg-red-50 text-red-700"; }
-  else if (days === 0) { text = L("Due today", lang); cls = "border-red-300 bg-red-50 text-red-700"; }
-  else if (days <= 14) { text = es ? `${days} día${days === 1 ? "" : "s"}` : `${days} day${days === 1 ? "" : "s"}`; cls = "border-rose-200 bg-rose-50 text-rose-700"; }
-  else if (days <= 60) { text = es ? `${days} días` : `${days} days`; cls = "border-amber-200 bg-amber-50 text-amber-800"; }
-  else { text = L("Upcoming", lang); cls = "border-sky-200 bg-sky-50 text-sky-700"; }
-  return <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wide ${cls}`}>{text}</span>;
-}
-
-// Dark-teal progress ring, drawn with plain SVG so no charting dependency is
-// needed for a single stat.
 function ReadinessRing({ percent }: { percent: number | null }) {
   const size = 96, stroke = 10, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const pct = percent == null ? 0 : Math.max(0, Math.min(100, percent));
@@ -597,11 +582,15 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   }, 0);
   const openSection = (key: string, elId: string) => { setActiveTile(key); scrollToId(elId); };
   const openRequirements = () => { setShowAllRequirements(true); scrollToId("all-requirements"); };
+  /** Open one requirement (and its actions) in the dashboard's requirement list. */
+  const openObligation = (obligationId: string) => { setShowAllRequirements(true); scrollToId(`obligation-${obligationId}`); };
+  const [complianceTab, setComplianceTab] = useState<ComplianceTab>("calendar");
   useEffect(() => {
-    const byHash: Record<string, string> = { "#business-passport": "passport", "#property-location": "location", "#evidence-locker": "evidence", "#missing-requirements": "missing", "#compliance-calendar": "calendar" };
+    const byHash: Record<string, string> = { "#business-passport": "passport", "#property-location": "location", "#evidence-locker": "evidence", "#missing-requirements": "missing", "#compliance-calendar": "calendar", "#annual-filings": "calendar" };
     const hash = window.location.hash;
     const t = window.setTimeout(() => {
       if (byHash[hash]) setActiveTile(byHash[hash]!);
+      if (hash === "#annual-filings") setComplianceTab("filings");
       if (hash === "#all-requirements") setShowAllRequirements(true);
     }, 0);
     return () => window.clearTimeout(t);
@@ -908,27 +897,18 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
           <BusinessTile
             id="compliance-calendar" testId="tile-calendar" tone="violet" icon={<CalendarDays className="h-5 w-5" />}
-            title={L("Compliance Calendar", lang)} shortTitle={lang === "es" ? "Calendario" : "Calendar"}
+            title={lang === "es" ? "Calendario y radicaciones anuales" : "Compliance calendar & annual filings"} shortTitle={lang === "es" ? "Calendario" : "Calendar"} showSummaryInPanel={false}
             summary={topCalendar[0] ? `${dateLabel(topCalendar[0].due_date, lang)} · ${topCalendar[0].name}` : (lang === "es" ? "Sin fechas próximas" : "No upcoming dates")}
             metric={derived.calendar.length}
             selected={activeTile === "calendar"} onSelect={() => selectSection("calendar")} navEl={navEl} panelEl={panelEl}
           >
-            <div>
-              {topCalendar.length ? (
-                <div className="space-y-2">
-                  {topCalendar.map((item) => (
-                    <a key={item.id} href={`#obligation-${item.id}`} onClick={() => setShowAllRequirements(true)} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-slate-500">{dateLabel(item.due_date, lang)}</div>
-                        <div className="truncate font-semibold text-[#161616]">{item.name}</div>
-                      </div>
-                      <TimeBadge dueDate={item.due_date} completed={false} lang={lang} />
-                    </a>
-                  ))}
-                </div>
-              ) : <Empty text={L(DUE_DATE_UNKNOWN_MESSAGE, lang)} />}
-              <Link href={`/calendar?business=${business.id}`} className="mt-3 inline-block text-sm font-semibold text-brand hover:underline">{L("View full calendar", lang)}</Link>
-            </div>
+            <DashboardCompliance
+              lang={lang}
+              businessIds={[business.id, business.public_id].filter((x): x is string => Boolean(x))}
+              tab={complianceTab}
+              onTab={setComplianceTab}
+              onOpenObligation={openObligation}
+            />
           </BusinessTile>
 
           <BusinessTile
