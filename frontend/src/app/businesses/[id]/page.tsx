@@ -576,7 +576,20 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const [showAllRequirements, setShowAllRequirements] = useState(false);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
   // Tiles start collapsed; a deep link (#business-passport, #all-requirements …) opens its tile.
-  const [activeTile, setActiveTile] = useState<string | null>(null);
+  const [activeTile, setActiveTile] = useState<string>("passport");
+  const [navEl, setNavEl] = useState<HTMLUListElement | null>(null);
+  const [panelEl, setPanelEl] = useState<HTMLDivElement | null>(null);
+  /** Switch sections; bring the panel's top into view if the reader had scrolled past it. */
+  const selectSection = (key: string) => {
+    setActiveTile(key);
+    window.setTimeout(() => {
+      const panel = document.querySelector<HTMLElement>('[data-testid="section-panel"]');
+      if (panel && panel.getBoundingClientRect().top < 0) {
+        const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        panel.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      }
+    }, 0);
+  };
   /** Scroll without animation when the user prefers reduced motion. */
   const scrollToId = (elId: string) => window.setTimeout(() => {
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -806,36 +819,46 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* Single column of accordions; each opens directly under its own header. */}
-        <div className="mt-6 overflow-hidden rounded-2xl border border-[#D9DCE1] bg-white" data-testid="business-tiles">
+        {/* Persistent section menu + content panel. Desktop: sticky left
+            sidebar listing all seven sections; narrow screens: a sticky
+            compact grid above the content. Every option stays visible. */}
+        <div className="mt-6 grid gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start" data-testid="business-sections">
+          <nav
+            aria-label={lang === "es" ? "Secciones del negocio" : "Business sections"}
+            className="sticky top-0 z-30 -mx-5 border-b border-[#161616]/10 bg-[#f4f1ea] px-5 py-2 shadow-[0_4px_8px_-6px_rgba(15,23,42,0.25)] lg:top-4 lg:shadow-none lg:mx-0 lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-[#D9DCE1] lg:bg-white lg:p-2"
+            data-testid="section-nav"
+          >
+            <ul ref={setNavEl} className="grid grid-cols-4 gap-1 lg:grid-cols-1" />
+          </nav>
+          <div ref={setPanelEl} className="min-w-0 scroll-mt-40 rounded-2xl border border-[#D9DCE1] bg-white p-4 sm:p-6 lg:scroll-mt-4" data-testid="section-panel" />
+        </div>
+        <div hidden data-testid="section-sources">
           <BusinessTile
             id="business-passport" testId="tile-passport" tone="blue" icon={<Building2 className="h-5 w-5" />}
-            title={lang === "es" ? "Pasaporte del negocio" : "Business Passport"}
+            title={lang === "es" ? "Pasaporte del negocio" : "Business Passport"} shortTitle={lang === "es" ? "Pasaporte" : "Passport"}
             summary={lang === "es" ? `${passportStats.filled} de ${passportStats.total} datos guardados` : `${passportStats.filled} of ${passportStats.total} facts on file`}
-            metric={`${passportStats.pct}%`} progress={passportStats.pct}
-            selected={activeTile === "passport"} onSelect={() => setActiveTile("passport")} onClose={() => setActiveTile(null)}
+            metric={`${passportStats.pct}%`} showSummaryInPanel={false}
+            selected={activeTile === "passport"} onSelect={() => selectSection("passport")} navEl={navEl} panelEl={panelEl}
           >
-            <BusinessPassportPanel businessId={shortId} business={business} lang={lang} onSaved={() => load()} showLocation={false} />
+            <BusinessPassportPanel businessId={shortId} business={business} lang={lang} onSaved={() => load()} showLocation={false} embedded />
           </BusinessTile>
 
           <BusinessTile
             id="property-location" testId="tile-location" tone="green" icon={<MapPin className="h-5 w-5" />}
-            title={lang === "es" ? "Ubicación de la propiedad" : "Property location"}
+            title={lang === "es" ? "Ubicación de la propiedad" : "Property location"} shortTitle={lang === "es" ? "Ubicación" : "Location"} metric={locationCount ?? "…"}
             summary={locationCount == null
               ? (lang === "es" ? "Cargando…" : "Loading…")
               : locationCount === 0
                 ? (business.municipality || (lang === "es" ? "Aún no hay ubicación" : "No location yet"))
                 : `${business.municipality ? `${business.municipality} · ` : ""}${lang === "es" ? `${locationCount} ubicación${locationCount === 1 ? "" : "es"}` : `${locationCount} location${locationCount === 1 ? "" : "s"}`}`}
-            selected={activeTile === "location"} onSelect={() => setActiveTile("location")} onClose={() => setActiveTile(null)}
+            selected={activeTile === "location"} onSelect={() => selectSection("location")} navEl={navEl} panelEl={panelEl}
           >
-            <div className="rounded-2xl bg-white p-3">
-              <PassportLocationSection businessId={shortId} lang={lang} onPassportUpdated={() => { void load(); void loadLocations(); }} />
-            </div>
+            <PassportLocationSection businessId={shortId} lang={lang} embedded onPassportUpdated={() => { void load(); void loadLocations(); }} />
           </BusinessTile>
 
           <BusinessTile
             id="evidence-locker" testId="tile-evidence" tone="amber" icon={<FolderOpen className="h-5 w-5" />}
-            title={lang === "es" ? "Archivo de evidencia" : "Evidence locker"}
+            title={lang === "es" ? "Archivo de evidencia" : "Evidence locker"} shortTitle={lang === "es" ? "Evidencia" : "Evidence"}
             summary={(() => {
               const verified = evidence.filter((e) => e.review_status === "VERIFIED").length;
               return lang === "es"
@@ -843,7 +866,7 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 : `${evidence.length} document${evidence.length === 1 ? "" : "s"} · ${verified} verified`;
             })()}
             metric={evidence.length}
-            selected={activeTile === "evidence"} onSelect={() => setActiveTile("evidence")} onClose={() => setActiveTile(null)}
+            selected={activeTile === "evidence"} onSelect={() => selectSection("evidence")} navEl={navEl} panelEl={panelEl}
           >
             <EvidenceLockerPanel
               businessId={shortId}
@@ -851,19 +874,20 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               obligations={(data.obligations ?? []).map((o) => ({ id: o.id, name: o.name, requirement_id: o.requirement_id }))}
               lang={lang}
               onChanged={() => load()}
+              embedded
             />
           </BusinessTile>
 
           <BusinessTile
             id="missing-requirements" testId="tile-missing" tone="rose" icon={<ShieldAlert className="h-5 w-5" />}
-            title={L("Missing Requirements", lang)}
+            title={L("Missing Requirements", lang)} shortTitle={lang === "es" ? "Faltan" : "Missing"}
             summary={derived.missing.length
               ? (lang === "es" ? `Faltan ${derived.missing.length} · ${topMissing[0]?.name ?? ""}` : `${derived.missing.length} left · next: ${topMissing[0]?.name ?? ""}`)
               : (lang === "es" ? "No falta nada" : "Nothing missing")}
             metric={derived.missing.length}
-            selected={activeTile === "missing"} onSelect={() => setActiveTile("missing")} onClose={() => setActiveTile(null)}
+            selected={activeTile === "missing"} onSelect={() => selectSection("missing")} navEl={navEl} panelEl={panelEl}
           >
-            <div className="rounded-2xl bg-white p-4">
+            <div>
               {topMissing.length ? (
                 <div className="space-y-2">
                   {topMissing.map((item, index) => (
@@ -884,12 +908,12 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
           <BusinessTile
             id="compliance-calendar" testId="tile-calendar" tone="violet" icon={<CalendarDays className="h-5 w-5" />}
-            title={L("Compliance Calendar", lang)}
+            title={L("Compliance Calendar", lang)} shortTitle={lang === "es" ? "Calendario" : "Calendar"}
             summary={topCalendar[0] ? `${dateLabel(topCalendar[0].due_date, lang)} · ${topCalendar[0].name}` : (lang === "es" ? "Sin fechas próximas" : "No upcoming dates")}
             metric={derived.calendar.length}
-            selected={activeTile === "calendar"} onSelect={() => setActiveTile("calendar")} onClose={() => setActiveTile(null)}
+            selected={activeTile === "calendar"} onSelect={() => selectSection("calendar")} navEl={navEl} panelEl={panelEl}
           >
-            <div className="rounded-2xl bg-white p-4">
+            <div>
               {topCalendar.length ? (
                 <div className="space-y-2">
                   {topCalendar.map((item) => (
@@ -909,13 +933,13 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
           <BusinessTile
             id="filings-documents" testId="tile-filings" tone="slate" icon={<FileText className="h-5 w-5" />}
-            title={L("Filings & Documents", lang)}
+            title={L("Filings & Documents", lang)} shortTitle={lang === "es" ? "Trámites" : "Filings"} metric={derived.activeMatters.length}
             summary={lang === "es"
               ? `${derived.activeMatters.length} radicación${derived.activeMatters.length === 1 ? "" : "es"} activa${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} documento${evidence.length === 1 ? "" : "s"}`
               : `${derived.activeMatters.length} active filing${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} document${evidence.length === 1 ? "" : "s"}`}
-            selected={activeTile === "filings"} onSelect={() => setActiveTile("filings")} onClose={() => setActiveTile(null)}
+            selected={activeTile === "filings"} onSelect={() => selectSection("filings")} navEl={navEl} panelEl={panelEl}
           >
-            <div className="rounded-2xl bg-white p-4">
+            <div>
             <div className="space-y-4">
               <div>
                 <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Active filings", lang)}</div>
@@ -976,16 +1000,16 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
 
           <BusinessTile
             id="history-notifications" testId="tile-history" tone="slate" icon={<Bell className="h-5 w-5" />}
-            title={L("History & Notifications", lang)}
+            title={L("History & Notifications", lang)} shortTitle={lang === "es" ? "Historial" : "History"} metric={derived.history.length + submissions.length}
             summary={(() => {
               const n = derived.history.length + submissions.length;
               return lang === "es"
                 ? `${n} radicación${n === 1 ? "" : "es"} pasada${n === 1 ? "" : "s"} · ${unreadNotifications} sin leer`
                 : `${n} past filing${n === 1 ? "" : "s"} · ${unreadNotifications} unread`;
             })()}
-            selected={activeTile === "history"} onSelect={() => setActiveTile("history")} onClose={() => setActiveTile(null)}
+            selected={activeTile === "history"} onSelect={() => selectSection("history")} navEl={navEl} panelEl={panelEl}
           >
-            <div className="rounded-2xl bg-white p-4">
+            <div>
             <div className="space-y-4">
               <div>
                 <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Filing history", lang)}</div>

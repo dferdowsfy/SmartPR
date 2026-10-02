@@ -50,7 +50,8 @@ export function EvidenceLockerPanel({
   obligations,
   lang,
   onChanged,
-}: EvidenceLockerPanelProps) {
+  embedded = false,
+}: EvidenceLockerPanelProps & { embedded?: boolean }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
@@ -136,14 +137,16 @@ export function EvidenceLockerPanel({
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]">
+    <section className={embedded ? "" : "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]"}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-            <Archive className="h-4 w-4 text-indigo-700" />
-          </span>
+          {!embedded && (
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50">
+              <Archive className="h-4 w-4 text-indigo-700" />
+            </span>
+          )}
           <div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={embedded ? "hidden" : "flex flex-wrap items-center gap-2"}>
               <h2 className="font-bold text-[#161616]">
                 {L("Evidence locker", "Casillero de evidencia", lang)}
               </h2>

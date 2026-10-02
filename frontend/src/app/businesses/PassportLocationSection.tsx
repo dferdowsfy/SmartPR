@@ -149,7 +149,9 @@ export function PassportLocationSection({
   businessId,
   lang,
   onPassportUpdated,
+  embedded = false,
 }: {
+  embedded?: boolean;
   businessId: string;
   lang: Lang;
   /** Called after this section updates the Passport (e.g. municipality from the pin). */
@@ -274,9 +276,9 @@ export function PassportLocationSection({
     : [];
 
   return (
-    <div className="mt-4 rounded-xl border border-slate-200 px-4 py-3" data-testid="passport-location-section">
+    <div className={embedded ? "" : "mt-4 rounded-xl border border-slate-200 px-4 py-3"} data-testid="passport-location-section">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm font-bold text-[#161616]">{L("Property / Location", "Propiedad / Ubicación", lang)}</div>
+        {!embedded && <div className="text-sm font-bold text-[#161616]">{L("Property / Location", "Propiedad / Ubicación", lang)}</div>}
         {canEdit && locations.length > 0 && (
           <button
             type="button"

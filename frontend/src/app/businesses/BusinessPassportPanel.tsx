@@ -72,9 +72,11 @@ export interface BusinessPassportPanelProps {
   /** Render the property-location section inside the panel (default). The
    * business page shows it in its own tile instead. */
   showLocation?: boolean;
+  /** Inside the business page's section panel: no outer frame, no duplicate title/% badge. */
+  embedded?: boolean;
 }
 
-export function BusinessPassportPanel({ businessId, business, lang, onSaved, editSignal, showLocation = true }: BusinessPassportPanelProps) {
+export function BusinessPassportPanel({ businessId, business, lang, onSaved, editSignal, showLocation = true, embedded = false }: BusinessPassportPanelProps) {
   const initial = useMemo(() => canonicalFromBusinessRow(business), [business]);
   const [canonical, setCanonical] = useState<CanonicalApplicationData>(initial);
   const [draft, setDraft] = useState<CanonicalApplicationData>(initial);
@@ -189,7 +191,7 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
   }, []);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]">
+    <section className={embedded ? "" : "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-950/[0.02]"}>
       <PassportVoiceOrb canonical={editing ? draft : canonical} lang={lang} disabled={busy}
         onUseTextInstead={startEdit}
         onChange={async (next) => {
@@ -201,15 +203,19 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
       {/* Sticky editor bar: Save/Cancel stay reachable while scrolling the long form.
           top-16 docks it just under the sticky 64px app bar — top-0 would slide
           it underneath the nav (z-50) and hide the actions. */}
-      <div className="sticky top-16 z-20 -mx-5 -mt-5 mb-4 flex flex-wrap items-start justify-between gap-3 rounded-t-2xl bg-white/95 px-5 py-3 shadow-[0_1px_0_0_rgba(15,23,42,0.06)] backdrop-blur-sm">
+      <div className={`z-20 mb-4 flex flex-wrap items-start justify-between gap-3 bg-white/95 py-3 ${embedded ? "relative lg:sticky lg:top-0" : "sticky top-16 -mx-5 -mt-5 rounded-t-2xl px-5"} shadow-[0_1px_0_0_rgba(15,23,42,0.06)] backdrop-blur-sm`}>
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-bold text-[#161616]">
-              {L("Business Passport", "Pasaporte comercial", lang)}
-            </h2>
-            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
-              {L(`${pct}% complete`, `${pct}% completado`, lang)}
-            </span>
+            {!embedded && (
+              <>
+                <h2 className="text-base font-bold text-[#161616]">
+                  {L("Business Passport", "Pasaporte comercial", lang)}
+                </h2>
+                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700">
+                  {L(`${pct}% complete`, `${pct}% completado`, lang)}
+                </span>
+              </>
+            )}
           </div>
           <p className="mt-1 text-xs text-slate-500">
             {editing
@@ -309,11 +315,13 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
                     type="button"
                     onClick={() => toggleGroup(section.group, fallbackOpen)}
                     aria-expanded={open}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50"
+                    className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand"
+                    data-testid="passport-group-toggle"
                   >
                     <span className="flex items-center gap-2.5">
                       <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                        aria-hidden="true"
+                        className={`h-5 w-5 shrink-0 text-brand transition-transform duration-200 motion-reduce:transition-none ${
                           open ? "" : "-rotate-90"
                         }`}
                       />
@@ -333,6 +341,9 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
                             `${section.filledCount}/${section.fields.length}`,
                             lang
                           )}
+                    </span>
+                    <span className="ml-auto shrink-0 text-xs font-semibold text-brand sm:ml-0">
+                      {open ? L("Collapse", "Contraer", lang) : L("Expand", "Expandir", lang)}
                     </span>
                   </button>
                   {open && (
