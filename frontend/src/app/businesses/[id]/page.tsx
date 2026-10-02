@@ -13,7 +13,9 @@ import { StatusBadge } from "../../components/compliance/StatusBadge";
 import { DUE_DATE_UNKNOWN_MESSAGE, type DueDateSource, type ObligationStatus } from "../../compliance/types";
 import { GovernmentFormModal } from "../../forms/engine/GovernmentFormModal";
 import { getDefinition } from "../../forms/engine/registry";
-import { canonicalFromBusinessRow } from "../../forms/engine/businessPassport";
+import { canonicalFromBusinessRow, passportCoverage } from "../../forms/engine/businessPassport";
+import { BusinessTile } from "../BusinessTile";
+import { PassportLocationSection } from "../PassportLocationSection";
 import { BusinessPassportPanel } from "../BusinessPassportPanel";
 import { MatterSiteSelect } from "../MatterSiteSelect";
 import { AttachFromLockerPicker, EvidenceLockerPanel } from "../EvidenceLockerPanel";
@@ -602,6 +604,19 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
   const [loadError, setLoadError] = useState(false);
   const [showAllRequirements, setShowAllRequirements] = useState(false);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
+  // Tiles start collapsed; a deep link (#business-passport, #all-requirements …) opens its tile.
+  const [openTiles, setOpenTiles] = useState<Set<string>>(() => new Set());
+  const toggleTile = (key: string) => setOpenTiles((cur) => { const next = new Set(cur); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+  useEffect(() => {
+    const byHash: Record<string, string> = { "#business-passport": "passport", "#property-location": "location", "#evidence-locker": "evidence", "#missing-requirements": "missing", "#compliance-calendar": "calendar" };
+    const hash = window.location.hash;
+    const t = window.setTimeout(() => {
+      if (byHash[hash]) setOpenTiles(new Set([byHash[hash]!]));
+      if (hash === "#all-requirements") setShowAllRequirements(true);
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
+  const [locationCount, setLocationCount] = useState<number | null>(null);
   // Requirements the user just marked complete: kept pinned in the
   // "outstanding" list (rendered with their new completed look) instead of
   // silently dropping out of view the instant the list re-sorts.
@@ -614,6 +629,11 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     .then((result) => { setData(result); setLoadError(false); })
     .catch(() => setLoadError(true)), [id]);
   useEffect(() => { void load(); }, [load]);
+  const loadLocations = useCallback(() => fetch(`/api/businesses/${encodeURIComponent(id)}/locations`, { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((j) => setLocationCount(Array.isArray(j?.locations) ? j.locations.length : 0))
+    .catch(() => setLocationCount(0)), [id]);
+  useEffect(() => { void loadLocations(); }, [loadLocations]);
 
   // Normalize to the short public URL once the business loads, so the address
   // bar never carries the full UUID. The anchor (if any) is preserved.
@@ -659,6 +679,14 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
     const history = matters.filter((matter) => matter.status === "COMPLETED");
 
     return { totalApplicable, completed: completed.length, readiness, missing, calendar, activeMatters, history };
+  }, [data]);
+
+  // Passport completeness for the tile header — same coverage the panel shows.
+  const passportStats = useMemo(() => {
+    if (!data?.business) return { filled: 0, total: 0, pct: 0 };
+    const cov = passportCoverage(canonicalFromBusinessRow(data.business as unknown as Parameters<typeof canonicalFromBusinessRow>[0]));
+    const total = cov.filled.length + cov.empty.length;
+    return { filled: cov.filled.length, total, pct: total ? Math.round((cov.filled.length / total) * 100) : 0 };
   }, [data]);
 
   if (loadError) return <div className="page-viewport bg-[#f4f1ea]"><div className="p-12 text-center text-sm text-rose-700">{L("Couldn't load this business right now.", lang)} <button type="button" onClick={() => void load()} className="font-semibold underline">{L("Try again", lang)}</button></div></div>;
@@ -736,74 +764,110 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
           )}
         </header>
 
-        {/* Agency assistant — primary assisted-filing action, kept at the top
-            of the profile so it is never buried below obligations. */}
+        {/* Overall readiness — the top of the profile. Same numbers as every
+            tile below (one pass over obligations in `derived`). */}
+        <section className="mt-6 rounded-2xl border border-[#D9DCE1] bg-white p-5 sm:p-6" data-testid="business-readiness">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-5">
+              <ReadinessRing percent={derived.readiness} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{L("Overall readiness", lang)}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessInfo.cls}`}>{readinessInfo.text}</span>
+                </div>
+                <p className="mt-1 text-lg font-bold text-[#161616]">
+                  {derived.totalApplicable
+                    ? (lang === "es" ? `${derived.completed} de ${derived.totalApplicable} requisitos completados` : `${derived.completed} of ${derived.totalApplicable} requirements complete`)
+                    : L("No applicable requirements recorded yet.", lang)}
+                </p>
+                {derived.totalApplicable > 0 && (
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[#ECEAE4]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={derived.readiness ?? 0} aria-label={L("Overall readiness", lang)}>
+                    <div className="h-full rounded-full bg-brand" style={{ width: `${derived.readiness ?? 0}%` }} />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 lg:w-[360px]">
+              <div className="rounded-xl bg-[#E8F3EC] px-3 py-2.5 text-center"><div className="text-2xl font-bold text-[#1E6B43]">{derived.completed}</div><div className="text-xs text-[#1E6B43]">{L("Complete", lang)}</div></div>
+              <div className="rounded-xl bg-[#FBEAEA] px-3 py-2.5 text-center"><div className="text-2xl font-bold text-[#9F2D2D]">{Math.max(derived.totalApplicable - derived.completed, 0)}</div><div className="text-xs text-[#9F2D2D]">{L("Need attention", lang)}</div></div>
+              <div className="rounded-xl bg-[#FBF1DE] px-3 py-2.5 text-center"><div className="text-2xl font-bold text-[#8A5A00]">{derived.activeMatters.length}</div><div className="text-xs text-[#8A5A00]">{L("Active filing", lang)}</div></div>
+            </div>
+          </div>
+          {nextBestAction && (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl bg-[#F4F1EA] px-4 py-3 sm:flex-row sm:items-center">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand"><ArrowRight className="h-4 w-4 text-white" /></span>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-medium text-slate-500">{L("Next best action", lang)}</div>
+                <div className="truncate font-bold text-[#161616]">{nextBestAction.name}</div>
+              </div>
+              <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="inline-flex items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea]">{lang === "es" ? "Continuar" : "Continue"}</a>
+            </div>
+          )}
+        </section>
+
+        {/* Agency assistant — primary assisted-filing action. */}
         <div className="mt-6">
           <AgencyRunCard businessId={shortId} lang={lang} />
         </div>
 
-        <div id="business-passport" className="mt-6">
-          <p className="mb-3 text-sm text-slate-500">
-            {L("Stored business facts and evidence stay here — always visible, ready to reuse on every filing.", lang)}
-          </p>
-          <BusinessPassportPanel
-            businessId={shortId}
-            business={business}
-            lang={lang}
-            onSaved={() => load()}
-          />
-        </div>
+        {/* Two tiles per row; each collapses so no section takes over the page. */}
+        <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+          <BusinessTile
+            id="business-passport" testId="tile-passport" tone="blue" icon={<Building2 className="h-5 w-5" />}
+            title={lang === "es" ? "Pasaporte del negocio" : "Business Passport"}
+            summary={lang === "es" ? `${passportStats.filled} de ${passportStats.total} datos guardados` : `${passportStats.filled} of ${passportStats.total} facts on file`}
+            metric={`${passportStats.pct}%`} progress={passportStats.pct}
+            open={openTiles.has("passport")} onToggle={() => toggleTile("passport")}
+          >
+            <BusinessPassportPanel businessId={shortId} business={business} lang={lang} onSaved={() => load()} showLocation={false} />
+          </BusinessTile>
 
-        <div className="mt-6">
-          <EvidenceLockerPanel
-            businessId={shortId}
-            files={evidence}
-            obligations={(data.obligations ?? []).map((o) => ({
-              id: o.id,
-              name: o.name,
-              requirement_id: o.requirement_id,
-            }))}
-            lang={lang}
-            onChanged={() => load()}
-          />
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-950/[0.02]">
-            <ReadinessRing percent={derived.readiness} />
-            <div>
-              <div className="text-xs font-medium uppercase tracking-wider text-slate-500">{L("Overall readiness", lang)}</div>
-              <span className={`mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${readinessInfo.cls}`}>{readinessInfo.text}</span>
-              <p className="mt-2 text-sm text-slate-600">{derived.totalApplicable ? (lang === "es" ? `${derived.completed} de ${derived.totalApplicable} requisitos completados.` : `${derived.completed} of ${derived.totalApplicable} requirements complete.`) : L("No applicable requirements recorded yet.", lang)}</p>
-              <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-1 text-sm font-semibold text-brand hover:underline">{L("View all requirements", lang)}</button>
+          <BusinessTile
+            id="property-location" testId="tile-location" tone="green" icon={<MapPin className="h-5 w-5" />}
+            title={lang === "es" ? "Ubicación de la propiedad" : "Property location"}
+            summary={locationCount == null
+              ? (lang === "es" ? "Cargando…" : "Loading…")
+              : locationCount === 0
+                ? (business.municipality || (lang === "es" ? "Aún no hay ubicación" : "No location yet"))
+                : `${business.municipality ? `${business.municipality} · ` : ""}${lang === "es" ? `${locationCount} ubicación${locationCount === 1 ? "" : "es"}` : `${locationCount} location${locationCount === 1 ? "" : "s"}`}`}
+            open={openTiles.has("location")} onToggle={() => toggleTile("location")}
+          >
+            <div className="rounded-2xl bg-white p-3">
+              <PassportLocationSection businessId={shortId} lang={lang} onPassportUpdated={() => { void load(); void loadLocations(); }} />
             </div>
-          </section>
+          </BusinessTile>
 
-          <section className="flex items-stretch divide-x divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
-            <StatTile icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />} iconBg="bg-emerald-50" value={derived.completed} label={L("Complete", lang)} />
-            <StatTile icon={<AlertTriangle className="h-5 w-5 text-rose-600" />} iconBg="bg-rose-50" value={Math.max(derived.totalApplicable - derived.completed, 0)} label={L("Need attention", lang)} />
-            <StatTile icon={<FileText className="h-5 w-5 text-amber-600" />} iconBg="bg-amber-50" value={derived.activeMatters.length} label={L("Active filing", lang)} />
-          </section>
-        </div>
+          <BusinessTile
+            id="evidence-locker" testId="tile-evidence" tone="amber" icon={<FolderOpen className="h-5 w-5" />}
+            title={lang === "es" ? "Archivo de evidencia" : "Evidence locker"}
+            summary={(() => {
+              const verified = evidence.filter((e) => e.review_status === "VERIFIED").length;
+              return lang === "es"
+                ? `${evidence.length} documento${evidence.length === 1 ? "" : "s"} · ${verified} verificado${verified === 1 ? "" : "s"}`
+                : `${evidence.length} document${evidence.length === 1 ? "" : "s"} · ${verified} verified`;
+            })()}
+            metric={evidence.length}
+            open={openTiles.has("evidence")} onToggle={() => toggleTile("evidence")}
+          >
+            <EvidenceLockerPanel
+              businessId={shortId}
+              files={evidence}
+              obligations={(data.obligations ?? []).map((o) => ({ id: o.id, name: o.name, requirement_id: o.requirement_id }))}
+              lang={lang}
+              onChanged={() => load()}
+            />
+          </BusinessTile>
 
-        {nextBestAction && (
-          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm shadow-slate-950/[0.02] sm:flex-row sm:items-center">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand"><ArrowRight className="h-4 w-4 text-white" /></span>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-medium text-slate-500">{L("Next best action", lang)}</div>
-              <div className="font-bold text-[#161616]">{nextBestAction.name}</div>
-            </div>
-            <a href={`#obligation-${nextBestAction.id}`} onClick={() => setShowAllRequirements(true)} className="inline-flex items-center justify-center rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-[#f6f3ea]">Continue</a>
-          </div>
-        )}
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
-            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
-              <ShieldAlert className="h-4 w-4 text-rose-600" />{L("Missing Requirements", lang)}
-              <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.missing.length}</span>
-            </div>
-            <div className="p-5">
+          <BusinessTile
+            id="missing-requirements" testId="tile-missing" tone="rose" icon={<ShieldAlert className="h-5 w-5" />}
+            title={L("Missing Requirements", lang)}
+            summary={derived.missing.length
+              ? (lang === "es" ? `Faltan ${derived.missing.length} · ${topMissing[0]?.name ?? ""}` : `${derived.missing.length} left · next: ${topMissing[0]?.name ?? ""}`)
+              : (lang === "es" ? "No falta nada" : "Nothing missing")}
+            metric={derived.missing.length}
+            open={openTiles.has("missing")} onToggle={() => toggleTile("missing")}
+          >
+            <div className="rounded-2xl bg-white p-4">
               {topMissing.length ? (
                 <div className="space-y-2">
                   {topMissing.map((item, index) => (
@@ -820,14 +884,16 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               ) : <Empty text={L("No missing requirements are recorded.", lang)} />}
               <button type="button" onClick={() => setShowAllRequirements(true)} className="mt-3 text-sm font-semibold text-brand hover:underline">{L("View all requirements", lang)}</button>
             </div>
-          </section>
+          </BusinessTile>
 
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-950/[0.02]">
-            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4 font-bold text-[#161616]">
-              <CalendarDays className="h-4 w-4 text-emerald-600" />{L("Compliance Calendar", lang)}
-              <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">{derived.calendar.length}</span>
-            </div>
-            <div className="p-5">
+          <BusinessTile
+            id="compliance-calendar" testId="tile-calendar" tone="violet" icon={<CalendarDays className="h-5 w-5" />}
+            title={L("Compliance Calendar", lang)}
+            summary={topCalendar[0] ? `${dateLabel(topCalendar[0].due_date, lang)} · ${topCalendar[0].name}` : (lang === "es" ? "Sin fechas próximas" : "No upcoming dates")}
+            metric={derived.calendar.length}
+            open={openTiles.has("calendar")} onToggle={() => toggleTile("calendar")}
+          >
+            <div className="rounded-2xl bg-white p-4">
               {topCalendar.length ? (
                 <div className="space-y-2">
                   {topCalendar.map((item) => (
@@ -843,17 +909,17 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
               ) : <Empty text={L(DUE_DATE_UNKNOWN_MESSAGE, lang)} />}
               <Link href={`/calendar?business=${business.id}`} className="mt-3 inline-block text-sm font-semibold text-brand hover:underline">{L("View full calendar", lang)}</Link>
             </div>
-          </section>
-        </div>
+          </BusinessTile>
 
-        <div className="mt-6 grid gap-4">
-          <CollapsibleRow
-            icon={<FolderOpen className="h-4 w-4 text-blue-600" />} iconBg="bg-blue-50"
+          <BusinessTile
+            id="filings-documents" testId="tile-filings" tone="slate" icon={<FileText className="h-5 w-5" />}
             title={L("Filings & Documents", lang)}
             summary={lang === "es"
               ? `${derived.activeMatters.length} radicación${derived.activeMatters.length === 1 ? "" : "es"} activa${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} documento${evidence.length === 1 ? "" : "s"}`
               : `${derived.activeMatters.length} active filing${derived.activeMatters.length === 1 ? "" : "s"} · ${evidence.length} document${evidence.length === 1 ? "" : "s"}`}
+            open={openTiles.has("filings")} onToggle={() => toggleTile("filings")}
           >
+            <div className="rounded-2xl bg-white p-4">
             <div className="space-y-4">
               <div>
                 <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Active filings", lang)}</div>
@@ -909,10 +975,11 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 </div>
               )}
             </div>
-          </CollapsibleRow>
+            </div>
+          </BusinessTile>
 
-          <CollapsibleRow
-            icon={<Bell className="h-4 w-4 text-amber-600" />} iconBg="bg-amber-50"
+          <BusinessTile
+            id="history-notifications" testId="tile-history" tone="slate" icon={<Bell className="h-5 w-5" />}
             title={L("History & Notifications", lang)}
             summary={(() => {
               const n = derived.history.length + submissions.length;
@@ -920,7 +987,9 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 ? `${n} radicación${n === 1 ? "" : "es"} pasada${n === 1 ? "" : "s"} · ${unreadNotifications} sin leer`
                 : `${n} past filing${n === 1 ? "" : "s"} · ${unreadNotifications} unread`;
             })()}
+            open={openTiles.has("history")} onToggle={() => toggleTile("history")}
           >
+            <div className="rounded-2xl bg-white p-4">
             <div className="space-y-4">
               <div>
                 <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{L("Filing history", lang)}</div>
@@ -945,7 +1014,8 @@ export default function BusinessDetail({ params }: { params: Promise<{ id: strin
                 ) : <Empty text={L("No reminders have been scheduled.", lang)} />}
               </div>
             </div>
-          </CollapsibleRow>
+            </div>
+          </BusinessTile>
         </div>
 
         {showAllRequirements && (

@@ -69,9 +69,12 @@ export interface BusinessPassportPanelProps {
   onSaved?: (next: { passport_json: unknown; denormalized: Record<string, string | null> }) => void;
   /** Increment to open the passport editor (e.g. voice orb "Use text instead"). */
   editSignal?: number;
+  /** Render the property-location section inside the panel (default). The
+   * business page shows it in its own tile instead. */
+  showLocation?: boolean;
 }
 
-export function BusinessPassportPanel({ businessId, business, lang, onSaved, editSignal }: BusinessPassportPanelProps) {
+export function BusinessPassportPanel({ businessId, business, lang, onSaved, editSignal, showLocation = true }: BusinessPassportPanelProps) {
   const initial = useMemo(() => canonicalFromBusinessRow(business), [business]);
   const [canonical, setCanonical] = useState<CanonicalApplicationData>(initial);
   const [draft, setDraft] = useState<CanonicalApplicationData>(initial);
@@ -366,7 +369,7 @@ export function BusinessPassportPanel({ businessId, business, lang, onSaved, edi
         </div>
       )}
 
-      {!editing && (
+      {!editing && showLocation && (
         <PassportLocationSection
           businessId={businessId}
           lang={lang}

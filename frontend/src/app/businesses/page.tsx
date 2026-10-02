@@ -21,6 +21,32 @@ interface Business {
   onboarding_mode: "NEW" | "EXISTING";
   readiness_score: number | null;
   active_matters: number;
+  requirements_total?: number;
+  requirements_done?: number;
+}
+
+/** Requirement completion — the same numbers as the business page's Overall readiness. */
+function RequirementProgress({ business, lang }: { business: Business; lang: "en" | "es" }) {
+  const total = business.requirements_total ?? 0;
+  const done = Math.min(business.requirements_done ?? 0, total);
+  const es = lang === "es";
+  if (!total) return <div className="mt-2 text-xs text-[#5a5a5a]" data-testid="business-progress">{es ? "Aún no hay requisitos" : "No requirements yet"}</div>;
+  const pct = Math.round((done / total) * 100);
+  const left = total - done;
+  const bar = pct >= 90 ? "bg-emerald-600" : pct >= 50 ? "bg-brand" : "bg-amber-500";
+  return (
+    <div className="mt-2.5 w-full max-w-md" data-testid="business-progress" data-pct={pct}>
+      <div className="flex items-baseline justify-between gap-3 text-xs">
+        <span className="font-semibold text-[#161616]">
+          {left === 0 ? (es ? "Todos los requisitos completos" : "All requirements complete") : es ? `Faltan ${left} de ${total} requisitos` : `${left} of ${total} requirements left`}
+        </span>
+        <span className="font-bold text-[#161616]">{pct}%</span>
+      </div>
+      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[#ECEAE4]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={es ? "Requisitos completados" : "Requirements complete"}>
+        <div className={`h-full rounded-full ${bar}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
 }
 
 const PAGE_SIZE = 8;
@@ -124,10 +150,11 @@ function BusinessCard({ business, lang, onChanged }: { business: Business; lang:
           <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] ${iconBg}`}>
             <Icon className={`h-6 w-6 ${iconColor}`} strokeWidth={1.75} />
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="truncate text-base font-bold text-[#161616]">{business.legal_name}</div>
             <div className="mt-0.5 truncate text-sm text-[#5a5a5a]">{locationType}</div>
             <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${status.pillCls}`}>{status.pillText}</span>
+            <RequirementProgress business={business} lang={lang} />
           </div>
         </div>
 

@@ -21,7 +21,11 @@ export async function GET() {
                 b.physical_address, b.onboarding_mode, b.created_at,
                 (SELECT ROUND(AVG(m.readiness_score))::int FROM matters m
                   WHERE m.business_id=b.id AND m.status <> 'ARCHIVED') AS readiness_score,
-                (SELECT COUNT(*)::int FROM matters m WHERE m.business_id=b.id AND m.status NOT IN ('COMPLETED','ARCHIVED')) AS active_matters
+                (SELECT COUNT(*)::int FROM matters m WHERE m.business_id=b.id AND m.status NOT IN ('COMPLETED','ARCHIVED')) AS active_matters,
+                -- Same rule as the business page's Overall readiness: every
+                -- obligation counts; COMPLETED or CURRENT ones are done.
+                (SELECT COUNT(*)::int FROM obligations o WHERE o.business_id=b.id) AS requirements_total,
+                (SELECT COUNT(*)::int FROM obligations o WHERE o.business_id=b.id AND o.status IN ('COMPLETED','CURRENT')) AS requirements_done
            FROM businesses b
            LEFT JOIN workspace_members wm ON wm.workspace_id=b.workspace_id AND wm.user_id=$1
           WHERE b.archived=false AND (b.user_id=$1 OR wm.user_id IS NOT NULL)
