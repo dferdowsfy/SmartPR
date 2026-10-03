@@ -5,8 +5,8 @@
  * bubbles, the requirement context card, the masked one-time secure input
  * card, the Business Passport panel and the live browser panel.
  */
-import { useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, CircleDashed, Eye, EyeOff, KeyRound, Loader2, Lock, Monitor, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, CircleDashed, Eye, EyeOff, Hand, KeyRound, Loader2, Lock, Maximize2, Minimize2, Monitor, MousePointer2, ShieldCheck, ZoomIn, ZoomOut } from "lucide-react";
 import type { Lang } from "../../../forms/engine/types";
 import { secretPrompt, type SecretFieldView } from "../../../../lib/agency-runs/teach/workspaceChat";
 
@@ -249,24 +249,111 @@ export function PassportPanel({ fields, loaded, lang, highlight }: { fields: Pas
   );
 }
 
+/** Zoom steps for the live browser (1 = fit the panel). */
+const BROWSER_ZOOMS = [1, 1.5, 2, 3] as const;
+
+/**
+ * noVNC scales the remote 1280×760 desktop into its frame. Ask for that
+ * explicitly so a larger frame (zoom) renders larger, never clipped.
+ */
+export function scaledLiveUrl(url: string): string {
+  if (!/\/vnc(_lite)?\.html/.test(url) || /[?&]resize=/.test(url)) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}resize=scale`;
+}
+
 export function BrowserPanel({ liveUrl, lang, note, wide, onToggleWide }: { liveUrl: string | null; lang: Lang; note?: ReactNode; wide?: boolean; onToggleWide?: () => void }) {
+  // The remote browser captures touches, so the page's own pinch-zoom can't
+  // reach it: zoom, pan and full screen are explicit controls instead.
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState(false);
+  const [full, setFull] = useState(false);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = viewRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setBox({ w: Math.round(e.contentRect.width), h: Math.round(e.contentRect.height) }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [liveUrl]);
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFull(false); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [full]);
+  // Pan with the mouse (touch pans natively through the overlay).
+  const drag = useRef<{ x: number; y: number; l: number; t: number } | null>(null);
+  const step = (dir: 1 | -1) => {
+    const i = BROWSER_ZOOMS.indexOf(zoom as (typeof BROWSER_ZOOMS)[number]);
+    const next = BROWSER_ZOOMS[Math.min(BROWSER_ZOOMS.length - 1, Math.max(0, i + dir))];
+    setZoom(next);
+    if (next === 1) setPan(false);
+  };
+  const zoomed = zoom > 1;
+  const ctl = "grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/5 text-[#e8e1d3] hover:bg-white/10 disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#e8d9b5]";
   return (
-    <div className="flex min-h-0 flex-1 flex-col" data-testid="ws-browser-panel">
-      <div className="flex shrink-0 items-center gap-3 border-b border-white/10 px-3 py-2 text-[13px] text-[#cfc6b4]">
-        <span className="min-w-0 flex-1">{note}</span>
-        {onToggleWide && (
+    <div
+      className={full ? "fixed inset-0 z-[200] flex flex-col bg-[#111] pb-[env(safe-area-inset-bottom,0px)] pt-[env(safe-area-inset-top,0px)]" : "flex min-h-0 flex-1 flex-col"}
+      data-testid="ws-browser-panel"
+      data-full={full || undefined}
+      role={full ? "dialog" : undefined}
+      aria-modal={full || undefined}
+      aria-label={full ? L("Clara's browser, full screen", "Navegador de Clara, pantalla completa", lang) : undefined}
+    >
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 px-3 py-2 text-[13px] text-[#cfc6b4]">
+        {!full && <span className="min-w-0 flex-1 basis-56">{note}</span>}
+        {liveUrl && (
+          <div className={`flex items-center gap-1.5 ${full ? "flex-1" : ""}`} role="group" aria-label={L("Browser view", "Vista del navegador", lang)} data-testid="ws-browser-controls">
+            <button type="button" className={ctl} onClick={() => step(-1)} disabled={!zoomed} aria-label={L("Zoom out", "Alejar", lang)} data-testid="ws-zoom-out"><ZoomOut className="h-4 w-4" aria-hidden="true" /></button>
+            <span className="min-w-[3.25rem] text-center text-[13px] font-semibold tabular-nums text-[#e8e1d3]" aria-live="polite" data-testid="ws-zoom-level">{zoomed ? `${Math.round(zoom * 100)}%` : L("Fit", "Ajustar", lang)}</span>
+            <button type="button" className={ctl} onClick={() => step(1)} disabled={zoom === BROWSER_ZOOMS[BROWSER_ZOOMS.length - 1]} aria-label={L("Zoom in", "Acercar", lang)} data-testid="ws-zoom-in"><ZoomIn className="h-4 w-4" aria-hidden="true" /></button>
+            {zoomed && (
+              <button type="button" className={`${ctl} ${pan ? "!bg-[#e8d9b5] !text-[#161616]" : ""}`} onClick={() => setPan((p) => !p)} aria-pressed={pan} aria-label={pan ? L("Back to clicking in the page", "Volver a hacer clic en la página", lang) : L("Move around the page", "Moverse por la página", lang)} title={pan ? L("Click mode", "Modo clic", lang) : L("Move mode", "Modo mover", lang)} data-testid="ws-pan-toggle">
+                {pan ? <MousePointer2 className="h-4 w-4" aria-hidden="true" /> : <Hand className="h-4 w-4" aria-hidden="true" />}
+              </button>
+            )}
+            <button type="button" className={`${ctl} ${full ? "ml-auto" : ""}`} onClick={() => setFull((f) => !f)} aria-label={full ? L("Exit full screen", "Salir de pantalla completa", lang) : L("Full screen", "Pantalla completa", lang)} data-testid="ws-fullscreen">
+              {full ? <Minimize2 className="h-4 w-4" aria-hidden="true" /> : <Maximize2 className="h-4 w-4" aria-hidden="true" />}
+            </button>
+          </div>
+        )}
+        {onToggleWide && !full && (
           <button type="button" onClick={onToggleWide} className="hidden shrink-0 rounded-full bg-[#fbf8f2] px-3 py-1 text-[13px] font-bold text-[#161616] hover:bg-white lg:inline-flex" data-testid="ws-expand-browser">
             {wide ? L("Show chat", "Ver chat", lang) : L("Expand browser", "Agrandar navegador", lang)}
           </button>
         )}
       </div>
       {liveUrl ? (
-        <iframe src={liveUrl} title={L("Clara's browser", "Navegador de Clara", lang)} className="min-h-0 w-full flex-1 bg-black" allow="autoplay; clipboard-read; clipboard-write; fullscreen" data-testid="ws-live-view" />
+        <div ref={viewRef} className={`relative min-h-0 flex-1 bg-black ${zoomed ? "overflow-auto overscroll-contain" : "overflow-hidden"}`} data-testid="ws-browser-viewport">
+          <div className="relative" style={zoomed && box.w ? { width: box.w * zoom, height: box.h * zoom } : { width: "100%", height: "100%" }}>
+            <iframe src={scaledLiveUrl(liveUrl)} title={L("Clara's browser", "Navegador de Clara", lang)} className="absolute inset-0 h-full w-full bg-black" allow="autoplay; clipboard-read; clipboard-write; fullscreen" data-testid="ws-live-view" />
+            {pan && (
+              <div
+                className="absolute inset-0 cursor-grab touch-pan-x touch-pan-y active:cursor-grabbing"
+                data-testid="ws-pan-layer"
+                onPointerDown={(e) => { if (e.pointerType !== "mouse" || !viewRef.current) return; drag.current = { x: e.clientX, y: e.clientY, l: viewRef.current.scrollLeft, t: viewRef.current.scrollTop }; }}
+                onPointerMove={(e) => { const d = drag.current; if (!d || !viewRef.current) return; viewRef.current.scrollLeft = d.l - (e.clientX - d.x); viewRef.current.scrollTop = d.t - (e.clientY - d.y); }}
+                onPointerUp={() => { drag.current = null; }}
+                onPointerLeave={() => { drag.current = null; }}
+              />
+            )}
+          </div>
+        </div>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-[14px] text-[#b9b0a0]">
           <Monitor className="h-7 w-7" aria-hidden="true" />
           {L("The portal browser opens here when Clara starts.", "El navegador del portal se abre aquí cuando Clara empieza.", lang)}
         </div>
+      )}
+      {zoomed && liveUrl && (
+        <p className="shrink-0 border-t border-white/10 px-3 py-1.5 text-[12.5px] text-[#b9b0a0]">
+          {pan
+            ? L("Drag to move around the page. Tap the pointer to click and type again.", "Arrastra para moverte por la página. Toca el puntero para volver a hacer clic y escribir.", lang)
+            : L("Tap the hand to move around the zoomed page.", "Toca la mano para moverte por la página ampliada.", lang)}
+        </p>
       )}
     </div>
   );

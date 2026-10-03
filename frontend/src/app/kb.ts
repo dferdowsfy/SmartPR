@@ -23,6 +23,7 @@ import { classifyEngineRequirements, kindForDocument, stageForDocument, type App
 import { filterEffective } from "./temporal";
 import type { EntityType } from "./forms/engine/types";
 import { entityTypeFromProfileOrAnswers } from "./forms/engine/intake.ts";
+import { discoveryQuestionApplies } from "./discoveryScope";
 import businessTypeQuestionsJson from "../kb/business_type_questions.json" with { type: "json" };
 import industriesJson from "../kb/industries.json" with { type: "json" };
 import { QUESTION_KEY_MAP } from "./ai/intake/questionKeyMap";
@@ -417,6 +418,8 @@ function renderDiscoveryQuestions(businessTypeName: string, links: BundledBtqLin
   const seen = new Set<string>();
   for (const link of links) {
     if (link.business_type_id !== bt.id || profileStage.has(link.question_id)) continue;
+    // Cross-cutting questions are asked only where they plausibly apply.
+    if (!discoveryQuestionApplies(link.question_id, bt as { id: string; industry_id?: string })) continue;
     const q = qById.get(link.question_id) as (KnowledgeBase["questions"][number] & { stage?: string; ui_key?: string }) | undefined;
     if (!q || q.stage === "profile") continue;
     const id = QUESTION_KEY_MAP[q.id]?.writeKey ?? q.ui_key ?? compat?.uiKeyByQuestionId[q.id] ?? q.id;

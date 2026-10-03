@@ -280,6 +280,38 @@ await page.locator('[data-testid="ws-recording"]').waitFor({ timeout: 60000 }).c
 });
 check("recording: browser panel opens beside the chat", (await page.locator('[data-testid="ws-browser-panel"]').count()) === 1 && (await page.locator('[data-testid="ws-live-view"]').count()) === 1);
 
+// Browser view controls: zoom (the remote browser swallows pinch), pan, full screen.
+{
+  const view = page.locator('[data-testid="ws-browser-viewport"]');
+  const frame = page.locator('[data-testid="ws-live-view"]');
+  await page.evaluate(() => { (document.querySelector('[data-testid="ws-live-view"]') as HTMLIFrameElement & { __mark?: number }).__mark = 7; });
+  const w0 = (await frame.boundingBox())!.width;
+  await page.locator('[data-testid="ws-zoom-in"]').click();
+  await page.waitForTimeout(200);
+  const w1 = (await frame.boundingBox())!.width;
+  check("zoom in enlarges the browser (150%) inside a scrollable view", Math.abs(w1 / w0 - 1.5) < 0.05 && (await page.locator('[data-testid="ws-zoom-level"]').innerText()) === "150%" && (await view.evaluate((e) => e.scrollWidth > e.clientWidth)), `${Math.round(w0)} → ${Math.round(w1)}`);
+  await page.locator('[data-testid="ws-pan-toggle"]').click();
+  check("move mode: a pan layer covers the page", (await page.locator('[data-testid="ws-pan-layer"]').count()) === 1);
+  const vb = (await view.boundingBox())!;
+  await page.mouse.move(vb.x + vb.width / 2, vb.y + vb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(vb.x + vb.width / 2 - 120, vb.y + vb.height / 2 - 60, { steps: 5 });
+  await page.mouse.up();
+  check("dragging pans the zoomed page", (await view.evaluate((e) => e.scrollLeft)) > 50, String(await view.evaluate((e) => e.scrollLeft)));
+  await page.locator('[data-testid="ws-pan-toggle"]').click();
+  check("click mode returns (pan layer removed)", (await page.locator('[data-testid="ws-pan-layer"]').count()) === 0);
+  await page.locator('[data-testid="ws-fullscreen"]').click();
+  await page.waitForTimeout(200);
+  const pb = (await page.locator('[data-testid="ws-browser-panel"]').boundingBox())!;
+  const vp = await page.evaluate(() => ({ width: document.body.clientWidth, height: window.innerHeight }));
+  check("full screen: the browser covers the whole window", pb.x <= 1 && pb.y <= 1 && pb.width >= vp.width - 1 && pb.height >= vp.height - 1, JSON.stringify({ pb, vp }));
+  await page.screenshot({ path: path.join(OUT, "3_browser_fullscreen_zoomed.png") });
+  await page.keyboard.press("Escape");
+  await page.locator('[data-testid="ws-zoom-out"]').click();
+  const same = await page.evaluate(() => (document.querySelector('[data-testid="ws-live-view"]') as HTMLIFrameElement & { __mark?: number })?.__mark === 7);
+  check("Escape exits full screen; zoom/full screen never reload the browser", (await page.locator('[data-testid="ws-browser-panel"][data-full]').count()) === 0 && same && (await page.locator('[data-testid="ws-zoom-level"]').innerText()) === "Fit");
+}
+
 async function sendSecure(value: string, label: string) {
   const card = page.locator('[data-testid="ws-secure-card"]').last();
   await card.waitFor({ timeout: 60000 });
