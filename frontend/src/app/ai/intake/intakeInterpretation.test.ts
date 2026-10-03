@@ -553,3 +553,46 @@ test("\"acondicionar por dentro\" surfaces Q_RENOVATIONS as a candidate", () => 
   const qids = candidates.questions.map((q) => q.id);
   assert.ok(qids.includes("Q_RENOVATIONS"), `Q_RENOVATIONS must be a candidate, got ${qids.join(", ")}`);
 });
+
+// --- REG-INTAKE-BATTERY-MISDERIVE-001 (QA 2026-10-03 03:00) ------------------
+// An auto repair shop mentioning "batteries" (car batteries) must NOT surface
+// Q_SOLAR_BATTERY ("Will battery energy storage be installed with the solar
+// system?") — bare "battery"/"storage" hints caused the intake model to derive
+// Q_SOLAR_BATTERY=true and a bogus Bomberos fire-safety (batteries) card.
+// Genuine solar+storage phrasings must still surface it.
+
+test("\"batteries\" (car batteries, auto repair) does not surface Q_SOLAR_BATTERY", () => {
+  const candidates = buildKbCandidates(
+    KB,
+    "We're opening an auto repair shop in Carolina — oil changes, brakes, tires. We store used oil on-site and handle hazardous materials like solvents and batteries."
+  );
+  const qids = candidates.questions.map((q) => q.id);
+  assert.ok(!qids.includes("Q_SOLAR_BATTERY"), `Q_SOLAR_BATTERY must NOT be a candidate for car batteries, got ${qids.join(", ")}`);
+});
+
+test("\"almacenamiento\" (warehouse storage) does not surface Q_SOLAR_BATTERY", () => {
+  const candidates = buildKbCandidates(
+    KB,
+    "Necesitamos alquilar un local en Toa Baja con almacenamiento para el inventario"
+  );
+  const qids = candidates.questions.map((q) => q.id);
+  assert.ok(!qids.includes("Q_SOLAR_BATTERY"), `Q_SOLAR_BATTERY must NOT be a candidate for warehouse storage, got ${qids.join(", ")}`);
+});
+
+test("\"solar panels with battery storage\" still surfaces Q_SOLAR_BATTERY", () => {
+  const candidates = buildKbCandidates(
+    KB,
+    "We're installing solar panels with battery storage on our warehouse in Ponce"
+  );
+  const qids = candidates.questions.map((q) => q.id);
+  assert.ok(qids.includes("Q_SOLAR_BATTERY"), `Q_SOLAR_BATTERY must be a candidate for solar battery storage, got ${qids.join(", ")}`);
+});
+
+test("\"placas solares con batería solar\" still surfaces Q_SOLAR_BATTERY", () => {
+  const candidates = buildKbCandidates(
+    KB,
+    "Queremos instalar placas solares con batería solar en el techo del local en Caguas"
+  );
+  const qids = candidates.questions.map((q) => q.id);
+  assert.ok(qids.includes("Q_SOLAR_BATTERY"), `Q_SOLAR_BATTERY must be a candidate for batería solar, got ${qids.join(", ")}`);
+});
