@@ -96,7 +96,12 @@ const QUESTION_HINTS: Record<string, string[]> = {
   Q_SOLAR_SIZE: ["mw", "megawatt", "kilowatt", "kw", "capacity", "capacidad"],
   Q_SOLAR_STRUCTURE: ["existing", "existente", "structure", "estructura", "building", "edificio"],
   Q_SOLAR_OWNERSHIP: ["own", "lease", "rent", "dueño", "propietario", "arrendar", "alquilar", "propiedad"],
-  Q_SOLAR_BATTERY: ["battery", "bateria", "batería", "storage", "almacenamiento", "powerwall"],
+  // QA 2026-10-03 03:00 (REG-INTAKE-BATTERY-MISDERIVE-001): bare "battery"/"storage"
+  // hints misfired on car batteries and warehouse storage, offering the solar
+  // battery question — the model then derived Q_SOLAR_BATTERY=true and a bogus
+  // Bomberos fire-safety (batteries) card. Keep only solar/energy-storage phrasings.
+  Q_SOLAR_BATTERY: ["solar battery", "solar batteries", "battery energy storage",
+    "energy storage", "batería solar", "baterías solares", "almacenamiento de energía", "powerwall"],
   Q_HAZARDOUS_MATERIALS: ["hazardous", "chemical", "toxic", "flammable", "quimico"],
   Q_HAZARDOUS_FLUIDS: ["fluid", "oil", "fuel", "solvent", "gasoline"],
   Q_CHEMICALS_USED: ["chemical", "cleaning", "solvent", "dye", "quimico"],

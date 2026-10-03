@@ -308,6 +308,14 @@ describe("the same business, described without saying 'existing'", () => {
     assert.equal(isNewPremises(own, here), false, "an already-operating leased plant is not new premises");
   });
 
+  it("detects new premises from the description alone when no Business Passport is linked (2026-10-03 QA live S379: unlinked existing-business project mislabeled Permiso Único 'verify existing')", () => {
+    const text = "We own a retail electronics store in Guaynabo — we've been operating for 6 years. We're opening a second location in Guaynabo, leasing a commercial space, hiring 5 employees for the new location.";
+    const described = interpretScenario(text);
+    assert.equal(isNewPremises(described, null), true);
+    const own = interpretScenario("We have operated our Guaynabo electronics store for 6 years and are just renewing our existing permits.");
+    assert.equal(isNewPremises(own, null), false, "no new-premises language means no posture");
+  });
+
   it("the location permits stay required — a deferred side question must not demote them", () => {
     const stated: Record<string, unknown> = { ...scenarioStatedAnswers(ctx) };
     const prof = { name: PASSPORT.name, municipality: "Guaynabo", industry: "Manufacturing", business_type: "Furniture Manufacturing", location_type: "Industrial Facility", business_structure: "llc", number_of_employees: 28 };

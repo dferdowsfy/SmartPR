@@ -174,11 +174,19 @@ const NEW_PREMISES_RE =
  * location, or the description says so ("expanding into a leased
  * warehouse", "a new location"). Premises-bound permits are then new
  * filings, not renewals.
+ *
+ * 2026-10-03 QA (live S379): the description-alone signal also works when
+ * no Business Passport is linked (unlinked existing-business project) —
+ * previously the early `!snap` return silently dropped the new-premises
+ * posture and premises-bound permits (e.g. Permiso Único) were mislabeled
+ * "verify existing". The other-municipality comparison still needs the
+ * passport; without it the posture applies conservatively (patente stays
+ * verify_existing, location-scoped permits upgrade to required).
  */
 export function isNewPremises(ctx: ScenarioContext | null, snap: PassportSnapshot | null): boolean {
-  if (!ctx || !snap) return false;
+  if (!ctx) return false;
   const project = ctx.property.municipality?.value;
-  if (project && snap.municipality && project.toLowerCase() !== snap.municipality.toLowerCase()) return true;
+  if (project && snap?.municipality && project.toLowerCase() !== snap.municipality.toLowerCase()) return true;
   const said = [ctx.property.ownershipStatus, ctx.property.existingUse, ctx.property.existingBuilding, ctx.property.municipality]
     .map((f) => (f && f.source !== "inferred" ? f.evidenceText : ""))
     .join(" ");
