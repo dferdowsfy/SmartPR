@@ -337,7 +337,14 @@ export function normalizeGenerationTechnology(value: unknown): string | null {
 const SOLAR_RE = /\b(?:solar\s+(?:farms?|panels?|pv|plants?|parks?|projects?|arrays?|energy|power|systems?|installations?|generation|capacity|facilit(?:y|ies)|modules?)|photovoltaic|fotovoltaic[oa]s?|\d[\d.,]*\s*(?:mw|kw|megawatts?|kilowatts?)\s+(?:of\s+)?solar|(?:paneles|placas|energ[ií]a|plantas?|parques?|fincas?|sistemas?|proyectos?|granjas?|m[oó]dulos)\s+solar(?:es)?)\b/i;
 const SOLAR_FARM_RE = /\b(?:solar\s+(?:farms?|parks?|plants?)|(?:parques?|fincas?|granjas?|plantas?)\s+solar(?:es)?)\b/i;
 const WIND_RE = /\b(?:wind\s+(?:farms?|turbines?|power|energy|projects?)|e[oó]lic[oa]s?|aerogeneradores?)\b/i;
-const BATTERY_RE = /\b(?:batter(?:y|ies)|bess|energy\s+storage|bater[ií]as?|almacenamiento\s+(?:de\s+energ[ií]a|en\s+bater[ií]as))\b|\d[\d.,]*\s*mwh\b/i;
+// "battery"/"batteries" alone is NOT battery energy storage (car batteries,
+// AA batteries, a battery shelf) — the same disambiguation as bare "solar"
+// (a plot of land). Battery storage is recognized only in energy phrases.
+// QA 2026-10-03 03:00 (REG-INTAKE-BATTERY-MISDERIVE-001): an auto repair shop
+// mentioning "batteries" got a bogus Bomberos "Fire-safety review (batteries)"
+// card via this backfill (battery_storage=true + generation_technology=storage
+// from the single word "batteries").
+const BATTERY_RE = /\b(?:battery\s+(?:energy\s+)?storage|batteries\s+(?:for\s+)?(?:energy\s+)?storage|energy\s+storage|standalone\s+(?:battery\s+)?storage|bess|(?:solar|pv|photovoltaic|fotovoltaic[oa]s?)\s+(?:batter(?:y|ies)|bess)|bater[ií]a\s+solar(?:es)?|almacenamiento\s+de\s+energ[ií]a|almacenamiento\s+en\s+bater[ií]as?)\b|\d[\d.,]*\s*mwh\b/i;
 const OTHER_GEN_RE = /\b(?:generators?|diesel|natural\s+gas|turbines?|generadores?|cogenera\w*|chp)\b/i;
 
 /**

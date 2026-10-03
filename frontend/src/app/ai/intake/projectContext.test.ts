@@ -20,6 +20,7 @@ import {
   projectContextAnswerToFacts,
   projectContextBriefLines,
   projectContextChips,
+  backfillEnergyTechnology,
   type ProjectContext,
 } from "./projectContext.ts";
 import {
@@ -522,4 +523,45 @@ test("projectContextChips: empty/null context yields no chips, never throws", ()
   assert.deepEqual(projectContextChips(null), []);
   assert.deepEqual(projectContextChips({}), []);
   assert.deepEqual(projectContextChips(undefined), []);
+});
+
+// --- REG-INTAKE-BATTERY-MISDERIVE-001 (QA 2026-10-03 03:00) ------------------
+// backfillEnergyTechnology must not read bare "battery"/"batteries" (car
+// batteries) as battery energy storage — it set battery_storage=true and
+// generation_technology="storage" from the single word "batteries", which
+// fired a bogus Bomberos "Fire-safety review (batteries)" card via BESS_R1.
+
+test("backfill: car \"batteries\" (auto repair) sets neither battery_storage nor generation_technology", () => {
+  const ctx: ProjectContext = {};
+  backfillEnergyTechnology(
+    ctx,
+    "We're opening an auto repair shop in Carolina — oil changes, brakes, tires. We store used oil on-site and handle hazardous materials like solvents and batteries."
+  );
+  assert.equal(ctx.battery_storage, undefined, "battery_storage must stay unset");
+  assert.equal(ctx.generation_technology, undefined, "generation_technology must stay unset");
+});
+
+test("backfill: \"standalone battery storage plant\" still sets battery_storage + storage technology", () => {
+  const ctx: ProjectContext = {};
+  backfillEnergyTechnology(
+    ctx,
+    "We plan a 50 MW / 200 MWh standalone battery storage plant in Guayama that will provide storage services to LUMA."
+  );
+  assert.equal(ctx.battery_storage?.value, true);
+  assert.equal(ctx.generation_technology?.value, "storage");
+});
+
+test("backfill: \"batería solar\" still sets battery_storage", () => {
+  const ctx: ProjectContext = {};
+  backfillEnergyTechnology(
+    ctx,
+    "Queremos instalar placas solares con batería solar en el techo del local en Caguas"
+  );
+  assert.equal(ctx.battery_storage?.value, true);
+});
+
+test("backfill: \"BESS\" acronym still sets battery_storage", () => {
+  const ctx: ProjectContext = {};
+  backfillEnergyTechnology(ctx, "Utility-scale 20 MW BESS in Salinas");
+  assert.equal(ctx.battery_storage?.value, true);
 });
