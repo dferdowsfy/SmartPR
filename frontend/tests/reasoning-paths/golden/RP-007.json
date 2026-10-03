@@ -1,0 +1,9 @@
+{
+  "id": "RP-007",
+  "name": "Residential use scenario",
+  "inputFacts": { "residential_use": true, "municipality": "Dorado" },
+  "expectedScenarios": ["SCN_RESIDENTIAL_USE"],
+  "expectedVariants": [],
+  "expectedPermits": [],
+  "expectedNonApplicable": ["RULE_0004", "RULE_0007", "RULE_0003", "RULE_0643"]
+}

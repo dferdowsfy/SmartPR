@@ -1,0 +1,12 @@
+{
+  "id": "RP-020",
+  "name": "NEGATIVE: ownership_changed=false must not trigger change-of-owner process",
+  "inputFacts": {
+    "existing_business": true, "commercial_use": true, "existing_location": true,
+    "same_use": true, "ownership_changed": false, "municipality": "Guaynabo"
+  },
+  "expectedScenarios": ["SCN_EXISTING_BIZ_STEADY"],
+  "expectedVariants": ["VAR_PATENTE_EXISTING"],
+  "expectedPermits": ["RULE_0004"],
+  "expectedNonApplicable": ["RULE_0003", "RULE_0643", "RULE_0644", "RULE_0007", "RULE_0001"]
+}

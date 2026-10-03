@@ -1,0 +1,12 @@
+{
+  "id": "RP-009",
+  "name": "Residential utility connection",
+  "inputFacts": {
+    "residential_use": true, "utility_connection": true, "utility_type": "water",
+    "municipality": "Toa Baja"
+  },
+  "expectedScenarios": ["SCN_RESIDENTIAL_USE", "SCN_RESIDENTIAL_UTILITY"],
+  "expectedVariants": [],
+  "expectedPermits": [],
+  "expectedNonApplicable": ["RULE_0004", "RULE_0007", "RULE_0003", "RULE_0643"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "RP-006",
+  "name": "New commercial construction",
+  "inputFacts": {
+    "new_business": true, "commercial_use": true, "construction_required": true,
+    "entity_type": "corporation", "municipality": "Ponce"
+  },
+  "expectedScenarios": ["SCN_NEW_COMMERCIAL_CONSTRUCTION"],
+  "expectedVariants": ["VAR_FORMATION_CORP", "VAR_SURI_NEW_MERCHANT", "VAR_PATENTE_NEW", "VAR_CONSTRUCTION_NEW"],
+  "expectedPermits": ["RULE_0001", "RULE_0003", "RULE_0004", "RULE_0643"],
+  "expectedNonApplicable": ["RULE_0644"]
+}

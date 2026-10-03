@@ -1,0 +1,13 @@
+{
+  "id": "RP-016",
+  "name": "Business with multiple simultaneous changes",
+  "inputFacts": {
+    "existing_business": true, "ownership_changed": true, "use_changed": true,
+    "remodeling": true, "commercial_use": true, "existing_location": true,
+    "municipality": "Arecibo"
+  },
+  "expectedScenarios": ["SCN_MULTIPLE_CHANGES", "SCN_EXISTING_BIZ_CHANGE_OF_USE"],
+  "expectedVariants": ["VAR_OWNERSHIP_TRANSFER_OBLIGATIONS", "VAR_PERMISO_UNICO_CHANGE_OF_USE", "VAR_CONSTRUCTION_RENOVATION", "VAR_PATENTE_EXISTING"],
+  "expectedPermits": ["RULE_0004", "RULE_0003", "RULE_0007", "RULE_0644"],
+  "expectedNonApplicable": ["RULE_0643", "RULE_0001"]
+}

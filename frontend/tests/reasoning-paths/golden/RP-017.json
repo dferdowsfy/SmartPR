@@ -1,0 +1,13 @@
+{
+  "id": "RP-017",
+  "name": "Ownership change + remodel",
+  "inputFacts": {
+    "existing_business": true, "ownership_changed": true, "remodeling": true,
+    "same_use": true, "commercial_use": true, "existing_location": true,
+    "municipality": "Guaynabo"
+  },
+  "expectedScenarios": ["SCN_OWNERSHIP_CHANGE_REMODEL"],
+  "expectedVariants": ["VAR_OWNERSHIP_TRANSFER_OBLIGATIONS", "VAR_CONSTRUCTION_RENOVATION", "VAR_PATENTE_EXISTING"],
+  "expectedPermits": ["RULE_0004", "RULE_0003", "RULE_0644"],
+  "expectedNonApplicable": ["RULE_0007", "RULE_0643", "RULE_0001"]
+}

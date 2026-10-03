@@ -1,0 +1,14 @@
+{
+  "id": "RP-021",
+  "name": "COMPLEX: bought existing Guaynabo restaurant; same use; kitchen remodel; ownership changed",
+  "inputFacts": {
+    "existing_business": true, "ownership_changed": true, "same_use": true,
+    "remodeling": true, "business_activity": "restaurant", "food_service": true,
+    "commercial_use": true, "existing_location": true, "municipality": "Guaynabo",
+    "construction_required": false, "use_changed": false
+  },
+  "expectedScenarios": ["SCN_COMPLEX_GUAYNABO_RESTAURANT", "SCN_OWNERSHIP_CHANGE_REMODEL"],
+  "expectedVariants": ["VAR_OWNERSHIP_TRANSFER_OBLIGATIONS", "VAR_CONSTRUCTION_RENOVATION", "VAR_PATENTE_EXISTING", "VAR_PERMISO_UNICO_RESTAURANT", "VAR_HEALTH_FOOD", "VAR_FIRE_FOOD"],
+  "expectedPermits": ["RULE_0004", "RULE_0003", "RULE_0644", "RULE_0049", "RULE_0009", "RULE_0011"],
+  "expectedNonApplicable": ["RULE_0643", "RULE_0007", "RULE_0001"]
+}

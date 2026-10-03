@@ -1,0 +1,13 @@
+{
+  "id": "RP-014",
+  "name": "Solar / renewable energy project",
+  "inputFacts": {
+    "business_activity": "solar", "grid_interconnection": true, "energy_capacity_kw": 25,
+    "commercial_use": true, "new_business": true, "entity_type": "corporation",
+    "municipality": "Mayagüez"
+  },
+  "expectedScenarios": ["SCN_SOLAR_PROJECT"],
+  "expectedVariants": ["VAR_SOLAR_INTERCONNECTION", "VAR_SOLAR_INSTALLER", "VAR_FORMATION_CORP", "VAR_SURI_NEW_MERCHANT", "VAR_PATENTE_NEW"],
+  "expectedPermits": ["RULE_0610", "RULE_0605", "RULE_0001", "RULE_0003", "RULE_0004"],
+  "expectedNonApplicable": ["RULE_0643", "RULE_0644"]
+}

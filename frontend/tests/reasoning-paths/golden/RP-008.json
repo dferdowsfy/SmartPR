@@ -1,0 +1,12 @@
+{
+  "id": "RP-008",
+  "name": "Commercial utility connection",
+  "inputFacts": {
+    "existing_business": true, "commercial_use": true, "utility_connection": true,
+    "utility_type": "electric", "existing_location": true, "municipality": "Trujillo Alto"
+  },
+  "expectedScenarios": ["SCN_COMMERCIAL_UTILITY"],
+  "expectedVariants": ["VAR_PATENTE_EXISTING"],
+  "expectedPermits": ["RULE_0004"],
+  "expectedNonApplicable": ["RULE_0643", "RULE_0644", "RULE_0007", "RULE_0001"]
+}

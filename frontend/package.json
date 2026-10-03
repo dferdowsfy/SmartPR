@@ -36,6 +36,7 @@
     "test:locations": "tsx --test src/app/locations/geo.test.ts src/app/locations/intakeLocation.test.ts src/app/locations/locationContext.test.ts src/app/locations/schemaSync.test.ts src/app/locations/store.db.test.ts src/app/locations/requirements.test.ts src/app/locations/layers.test.ts src/lib/geocoding/geocoding.test.ts",
     "test:locations:e2e": "tsx tests/passport-location.e2e.mts",
     "test:requirements:e2e": "tsx tests/requirements-checklist.e2e.mts",
+    "test:reasoning-paths": "tsx tests/reasoning-paths/run.mts",
     "test:intake:scenario": "tsx --test src/app/ai/intake/scenario/*.test.ts src/app/ai/intake/infoNeeds.test.ts src/app/ai/intake/caribeDemo.test.ts src/app/ai/intake/linkBusiness.test.ts",
     "billing:verify": "tsx scripts/verify-stripe-prices.mts"
   },

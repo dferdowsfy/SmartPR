@@ -3,8 +3,9 @@
 // ============================================================================
 // Regulatory Knowledge Graph Admin — client shell.
 //
-// Top-level tabs: Graph · Requirements · Forms · Regulatory Sources ·
-// Proposed Changes · Impact Analysis · Publications · Audit Log.
+// Top-level tabs: Graph · Requirements · Reasoning Paths · Forms ·
+// Regulatory Sources · Proposed Changes · Impact Analysis · Publications ·
+// Audit Log.
 // A state indicator switches the working view: Live Rules / Draft Changes /
 // Proposed Bill Preview (the "Proposed Future State" layer).
 // ============================================================================
@@ -17,6 +18,7 @@ import { useGraphData } from "./graph/useGraphData";
 import { GraphView } from "./graph/GraphView";
 import { DetailPanel } from "./graph/DetailPanel";
 import { RequirementsTab } from "./tabs/RequirementsTab";
+import { ReasoningPathsTab } from "./tabs/ReasoningPathsTab";
 import { SourcesTab } from "./tabs/SourcesTab";
 import { ProposalsTab } from "./tabs/ProposalsTab";
 import { PublicationsTab } from "./tabs/PublicationsTab";
@@ -29,6 +31,7 @@ const TABS = [
   { id: "graph", label: "Graph" },
   { id: "reasoning", label: "Reasoning Paths" },
   { id: "requirements", label: "Requirements" },
+  { id: "reasoning-paths", label: "Reasoning Paths" },
   { id: "incentives", label: "Incentives & Programs" },
   { id: "forms", label: "Forms" },
   { id: "sources", label: "Regulatory Sources" },
@@ -190,6 +193,7 @@ export default function KnowledgeBaseShell() {
 
         {tab === "reasoning" && <ReasoningTab graph={graph} onSaved={saved} />}
         {tab === "requirements" && <RequirementsTab graph={graph} onSaved={saved} />}
+        {tab === "reasoning-paths" && <ReasoningPathsTab onSaved={saved} />}
         {tab === "incentives" && (
           <RequirementsTab
             graph={graph}

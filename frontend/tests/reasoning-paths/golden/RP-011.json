@@ -1,0 +1,13 @@
+{
+  "id": "RP-011",
+  "name": "Restaurant opening",
+  "inputFacts": {
+    "new_business": true, "business_activity": "restaurant", "food_service": true,
+    "commercial_use": true, "existing_location": true, "entity_type": "corporation",
+    "municipality": "San Juan"
+  },
+  "expectedScenarios": ["SCN_RESTAURANT_OPENING", "SCN_NEW_BIZ_EXISTING_LOCATION"],
+  "expectedVariants": ["VAR_FORMATION_CORP", "VAR_SURI_NEW_MERCHANT", "VAR_PATENTE_NEW", "VAR_PERMISO_UNICO_NEW_LOCATION", "VAR_PERMISO_UNICO_RESTAURANT", "VAR_HEALTH_FOOD", "VAR_FIRE_FOOD"],
+  "expectedPermits": ["RULE_0001", "RULE_0003", "RULE_0004", "RULE_0007", "RULE_0049", "RULE_0009", "RULE_0011"],
+  "expectedNonApplicable": ["RULE_0643", "RULE_0644"]
+}

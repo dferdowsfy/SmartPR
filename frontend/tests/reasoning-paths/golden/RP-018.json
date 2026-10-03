@@ -1,0 +1,12 @@
+{
+  "id": "RP-018",
+  "name": "Change of use + construction",
+  "inputFacts": {
+    "existing_business": true, "use_changed": true, "construction_required": true,
+    "commercial_use": true, "municipality": "San Juan"
+  },
+  "expectedScenarios": ["SCN_CHANGE_OF_USE_CONSTRUCTION", "SCN_EXISTING_BIZ_CHANGE_OF_USE"],
+  "expectedVariants": ["VAR_PERMISO_UNICO_CHANGE_OF_USE", "VAR_CONSTRUCTION_NEW", "VAR_PATENTE_EXISTING"],
+  "expectedPermits": ["RULE_0007", "RULE_0643", "RULE_0004"],
+  "expectedNonApplicable": ["RULE_0644", "RULE_0001", "RULE_0003"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "RP-010",
+  "name": "Property subdivision",
+  "inputFacts": {
+    "subdivision": true, "existing_business": true, "commercial_use": true,
+    "municipality": "Toa Alta"
+  },
+  "expectedScenarios": ["SCN_SUBDIVISION"],
+  "expectedVariants": ["VAR_PATENTE_EXISTING"],
+  "expectedPermits": ["RULE_0004"],
+  "expectedNonApplicable": ["RULE_0643", "RULE_0644", "RULE_0007", "RULE_0001"]
+}

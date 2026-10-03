@@ -1,0 +1,13 @@
+{
+  "id": "RP-002",
+  "name": "New business with remodeling",
+  "inputFacts": {
+    "new_business": true, "remodeling": true, "commercial_use": true,
+    "existing_location": true, "entity_type": "corporation", "construction_required": false,
+    "municipality": "Bayamón"
+  },
+  "expectedScenarios": ["SCN_NEW_BIZ_REMOVDELING"],
+  "expectedVariants": ["VAR_FORMATION_CORP", "VAR_SURI_NEW_MERCHANT", "VAR_PATENTE_NEW", "VAR_PERMISO_UNICO_NEW_LOCATION", "VAR_CONSTRUCTION_RENOVATION"],
+  "expectedPermits": ["RULE_0001", "RULE_0003", "RULE_0004", "RULE_0007", "RULE_0644"],
+  "expectedNonApplicable": ["RULE_0643"]
+}
