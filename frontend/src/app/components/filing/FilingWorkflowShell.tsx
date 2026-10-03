@@ -45,6 +45,11 @@ export interface SmartPRLiveData {
    * scenario, paths from knowledge-graph applicability.
    */
   scenario?: LiveScenario | null;
+  /**
+   * Scenario-based permit paths from the knowledge graph (what applies, and
+   * why). Display only — requirement generation is unchanged.
+   */
+  permitPaths?: { id: string; name: string; status: "applies" | "needs_facts"; why: string[] }[];
   project?: {
     illustrationSrc: string;
     title: string;
@@ -355,6 +360,25 @@ export function SmartPRLivePanel({ data, language }: { data: SmartPRLiveData; la
             <h2>{copy.potential}</h2>
             <ul className="spr-live-potential">
               {data.potentialRequirements.slice(0, 3).map((item) => <li key={item}><AlertTriangle size={14} /> {item}</li>)}
+            </ul>
+          </section>
+        )}
+
+        {!!data.permitPaths?.length && (
+          <section className="spr-live-section" data-testid="live-permit-paths">
+            <h2>{language === "es" ? "Rutas de permiso" : "Permit paths"}</h2>
+            <ul className="spr-live-potential">
+              {data.permitPaths.map((p) => (
+                <li key={p.id} data-status={p.status}>
+                  <details>
+                    <summary>{p.status === "applies" ? "✓" : "?"} {p.name}</summary>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      <strong>{language === "es" ? "¿Por qué aplica?" : "Why does this apply?"}</strong>
+                      {p.why.map((w, i) => <div key={i}>{i === 0 ? w : `• ${w}`}</div>)}
+                    </div>
+                  </details>
+                </li>
+              ))}
             </ul>
           </section>
         )}

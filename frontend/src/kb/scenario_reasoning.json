@@ -1,0 +1,808 @@
+{
+ "scenarios": [
+  {
+   "id": "SCN_START_NEW_BUSINESS",
+   "code": "START_NEW_BUSINESS",
+   "name": "Start a new business",
+   "description": "Open a new business or operation.",
+   "aliases": "start business\nstart a business\nopen a business\nnew business\ncomenzar un negocio\nnegocio nuevo",
+   "detect_when": [
+    {
+     "fact": "project_intent",
+     "operator": "equals",
+     "value": "new_business"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_OPERATE_EXISTING_BUSINESS",
+   "code": "OPERATE_EXISTING_BUSINESS",
+   "name": "Operate an existing business",
+   "description": "Keep an operating business compliant (renewals, changes).",
+   "aliases": "operate business\nexisting business\noperar un negocio",
+   "detect_when": [
+    {
+     "fact": "existing_business",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_CHANGE_OWNERSHIP",
+   "code": "CHANGE_OWNERSHIP",
+   "name": "Change ownership",
+   "description": "A business that changes owner.",
+   "aliases": "change ownership\nchange owner\nnew owner\nbuy a business\ncambio de dueño",
+   "detect_when": [
+    {
+     "fact": "ownership_changed",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_CHANGE_USE",
+   "code": "CHANGE_USE",
+   "name": "Add or change the use",
+   "description": "Add or modify the use of a business or property.",
+   "aliases": "change use\nchange of use\nmodify use\nadd use\ncambio de uso",
+   "detect_when": [
+    {
+     "fact": "new_use_requested",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_REMODEL",
+   "code": "REMODEL",
+   "name": "Remodel",
+   "description": "Renovate or alter an existing structure.",
+   "aliases": "remodel\nrenovate\nrenovation\nalteration\nremodelación",
+   "detect_when": [
+    {
+     "fact": "construction_required",
+     "operator": "truthy"
+    },
+    {
+     "fact": "project_types",
+     "operator": "includes",
+     "value": "renovation"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_NEW_CONSTRUCTION",
+   "code": "NEW_CONSTRUCTION",
+   "name": "New construction",
+   "description": "Build a new structure.",
+   "aliases": "new construction\nbuild\nconstrucción nueva",
+   "detect_when": [
+    {
+     "fact": "new_construction",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_RENEW_PERMIT",
+   "code": "RENEW_PERMIT",
+   "name": "Renew a permit",
+   "description": "Renew an existing permit.",
+   "aliases": "renew\nrenewal\nrenovación de permiso",
+   "detect_when": [
+    {
+     "fact": "renewal_due",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_CONNECT_UTILITIES",
+   "code": "CONNECT_UTILITIES",
+   "name": "Connect utilities",
+   "description": "Permit needed to connect water, power or other services.",
+   "aliases": "connect utilities\nconnect water\nconnect power\nconectar servicios",
+   "detect_when": [
+    {
+     "fact": "utilities_connection",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "SCN_SUBDIVIDE_PROPERTY",
+   "code": "SUBDIVIDE_PROPERTY",
+   "name": "Subdivide property",
+   "description": "Segregate or subdivide land.",
+   "aliases": "subdivide\nsegregate land\nsegregar un terreno\nlotificación",
+   "detect_when": [
+    {
+     "fact": "subdivision",
+     "operator": "truthy"
+    }
+   ],
+   "source_ids": [
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  }
+ ],
+ "decision_conditions": [
+  {
+   "id": "COND_EXISTING_PREMISES_YES",
+   "name": "Existing premises = Yes",
+   "fact": "existing_premises",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_CONSTRUCTION_NO",
+   "name": "Construction required = No",
+   "fact": "construction_required",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": false
+  },
+  {
+   "id": "COND_CONSTRUCTION_YES",
+   "name": "Construction required = Yes",
+   "fact": "construction_required",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_SAME_USE_YES",
+   "name": "Same use = Yes",
+   "fact": "same_use",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_NEW_USE_YES",
+   "name": "New use requested = Yes",
+   "fact": "new_use_requested",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_OWNERSHIP_CHANGED_YES",
+   "name": "Ownership changed = Yes",
+   "fact": "ownership_changed",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_RESIDENTIAL_NO",
+   "name": "Residential = No",
+   "fact": "residential",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": false
+  },
+  {
+   "id": "COND_RESIDENTIAL_YES",
+   "name": "Residential = Yes",
+   "fact": "residential",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_HOME_BASED_YES",
+   "name": "Home-based = Yes",
+   "fact": "home_based",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": true
+  },
+  {
+   "id": "COND_HOME_BASED_NO",
+   "name": "Home-based = No",
+   "fact": "home_based",
+   "operator": "equals",
+   "description": "",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "value": false
+  }
+ ],
+ "process_variants": [
+  {
+   "id": "PV_PERMISO_UNICO_NEW",
+   "code": "PERMISO_UNICO_NEW",
+   "name": "Permiso Único — New",
+   "process_family": "PERMISO_UNICO",
+   "agency_id": "ogpe",
+   "description": "New Permiso Único for a business in an existing space that needs no construction.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "permit_document_id": "DOC_PERMISO_UNICO"
+  },
+  {
+   "id": "PV_PERMISO_UNICO_RENEWAL",
+   "code": "PERMISO_UNICO_RENEWAL",
+   "name": "Permiso Único — Renewal",
+   "process_family": "PERMISO_UNICO",
+   "agency_id": "ogpe",
+   "description": "Renewal of an existing Permiso Único.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "permit_document_id": "DOC_PERMISO_UNICO"
+  },
+  {
+   "id": "PV_PERMISO_UNICO_CHANGE_OWNER",
+   "code": "PERMISO_UNICO_CHANGE_OWNER",
+   "name": "Permiso Único — Change of owner",
+   "process_family": "PERMISO_UNICO",
+   "agency_id": "ogpe",
+   "description": "Permiso Único update when the business changes owner.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "permit_document_id": "DOC_PERMISO_UNICO"
+  },
+  {
+   "id": "PV_PERMISO_UNICO_MODIFICATION",
+   "code": "PERMISO_UNICO_MODIFICATION",
+   "name": "Permiso Único — Add or modify use",
+   "process_family": "PERMISO_UNICO",
+   "agency_id": "ogpe",
+   "description": "Change-of-use / modification request on the Permiso Único.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "permit_document_id": "DOC_PERMISO_UNICO"
+  },
+  {
+   "id": "PV_PERMISO_UNICO_DOMICILIARY",
+   "code": "PERMISO_UNICO_DOMICILIARY",
+   "name": "Permiso Único — Home-based (domiciliary) use",
+   "process_family": "PERMISO_UNICO",
+   "agency_id": "ogpe",
+   "description": "Home-business use authorization.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "permit_document_id": "DOC_DOMICILIARY_USE_PERMIT"
+  },
+  {
+   "id": "PV_PCOC",
+   "code": "PCOC",
+   "name": "Construction permit (PCOC)",
+   "process_family": "PCOC",
+   "agency_id": "ogpe",
+   "description": "Permiso de Construcción, filed by a licensed architect or engineer.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "permit_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT"
+  },
+  {
+   "id": "PV_PERMISO_USO_RESIDENCIAL",
+   "code": "PERMISO_USO_RESIDENCIAL",
+   "name": "Residential use permit (PUS)",
+   "process_family": "PERMISO_USO_RESIDENCIAL",
+   "agency_id": "ogpe",
+   "description": "Residential use permit needed to connect services to a home. No permit node in SmartPR's graph yet.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  },
+  {
+   "id": "PV_SUBDIVISION",
+   "code": "SUBDIVISION",
+   "name": "Segregation / subdivision",
+   "process_family": "SUBDIVISION",
+   "agency_id": "ogpe",
+   "description": "Land segregation or subdivision. No permit node in SmartPR's graph yet.",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03"
+  }
+ ],
+ "scenario_mappings": [
+  {
+   "id": "MAP_START_NEW_PU",
+   "name": "Start new business in existing premises, no construction → Permiso Único — New",
+   "scenario_id": "SCN_START_NEW_BUSINESS",
+   "condition_ids": [
+    "COND_EXISTING_PREMISES_YES",
+    "COND_CONSTRUCTION_NO",
+    "COND_HOME_BASED_NO"
+   ],
+   "process_variant_id": "PV_PERMISO_UNICO_NEW",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Restaurant in an existing local, no work",
+     "facts": {
+      "project_intent": "new_business",
+      "existing_premises": true,
+      "construction_required": false,
+      "home_based": false
+     },
+     "expect": true
+    },
+    {
+     "name": "Needs construction",
+     "facts": {
+      "project_intent": "new_business",
+      "existing_premises": true,
+      "construction_required": true,
+      "home_based": false
+     },
+     "expect": false
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_START_NEW_PU_AFTER_WORKS",
+   "name": "Start new business with works → Permiso Único (new) after PCOC",
+   "scenario_id": "SCN_START_NEW_BUSINESS",
+   "condition_ids": [
+    "COND_EXISTING_PREMISES_YES",
+    "COND_CONSTRUCTION_YES",
+    "COND_HOME_BASED_NO"
+   ],
+   "process_variant_id": "PV_PERMISO_UNICO_NEW",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Restaurant remodelling an existing local",
+     "facts": {
+      "project_intent": "new_business",
+      "existing_premises": true,
+      "construction_required": true,
+      "home_based": false
+     },
+     "expect": true
+    },
+    {
+     "name": "No works → covered by MAP_START_NEW_PU instead",
+     "facts": {
+      "project_intent": "new_business",
+      "existing_premises": true,
+      "construction_required": false,
+      "home_based": false
+     },
+     "expect": false
+    }
+   ],
+   "notes": "The business still needs its use permit (Permiso Único) once the PCOC works are done; PCOC comes from the REMODEL scenario. Both paths apply together."
+  },
+  {
+   "id": "MAP_START_NEW_HOME",
+   "name": "Start new home-based business → Permiso Único — Home-based",
+   "scenario_id": "SCN_START_NEW_BUSINESS",
+   "condition_ids": [
+    "COND_HOME_BASED_YES"
+   ],
+   "process_variant_id": "PV_PERMISO_UNICO_DOMICILIARY",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Home bakery",
+     "facts": {
+      "project_intent": "new_business",
+      "home_based": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_REMODEL_PCOC",
+   "name": "Remodel with construction → PCOC",
+   "scenario_id": "SCN_REMODEL",
+   "condition_ids": [
+    "COND_CONSTRUCTION_YES"
+   ],
+   "process_variant_id": "PV_PCOC",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso de Construcción (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Restaurant remodel",
+     "facts": {
+      "construction_required": true,
+      "project_types": [
+       "renovation"
+      ]
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_NEW_CONSTRUCTION_PCOC",
+   "name": "New construction → PCOC",
+   "scenario_id": "SCN_NEW_CONSTRUCTION",
+   "condition_ids": [],
+   "process_variant_id": "PV_PCOC",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso de Construcción (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "New building",
+     "facts": {
+      "new_construction": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_CHANGE_OWNER_PU",
+   "name": "Change of owner → Permiso Único — Change of owner",
+   "scenario_id": "SCN_CHANGE_OWNERSHIP",
+   "condition_ids": [
+    "COND_OWNERSHIP_CHANGED_YES",
+    "COND_SAME_USE_YES"
+   ],
+   "process_variant_id": "PV_PERMISO_UNICO_CHANGE_OWNER",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Bought an operating café, same use",
+     "facts": {
+      "ownership_changed": true,
+      "same_use": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_CHANGE_USE_PU",
+   "name": "Add or modify use → Permiso Único — Modification",
+   "scenario_id": "SCN_CHANGE_USE",
+   "condition_ids": [
+    "COND_NEW_USE_YES"
+   ],
+   "process_variant_id": "PV_PERMISO_UNICO_MODIFICATION",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Warehouse to daycare",
+     "facts": {
+      "new_use_requested": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_RENEW_PU",
+   "name": "Renew permit → Permiso Único — Renewal",
+   "scenario_id": "SCN_RENEW_PERMIT",
+   "condition_ids": [],
+   "process_variant_id": "PV_PERMISO_UNICO_RENEWAL",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Renewal due",
+     "facts": {
+      "renewal_due": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_UTILITIES_NONRES",
+   "name": "Connect services, non-residential use → Permiso Único — New",
+   "scenario_id": "SCN_CONNECT_UTILITIES",
+   "condition_ids": [
+    "COND_RESIDENTIAL_NO"
+   ],
+   "process_variant_id": "PV_PERMISO_UNICO_NEW",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso Único (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Connect power to a store",
+     "facts": {
+      "utilities_connection": true,
+      "residential": false
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_UTILITIES_RES",
+   "name": "Connect services, residential use → Residential use permit (PUS)",
+   "scenario_id": "SCN_CONNECT_UTILITIES",
+   "condition_ids": [
+    "COND_RESIDENTIAL_YES"
+   ],
+   "process_variant_id": "PV_PERMISO_USO_RESIDENCIAL",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Permiso de Uso residencial (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Connect water to a home",
+     "facts": {
+      "utilities_connection": true,
+      "residential": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  },
+  {
+   "id": "MAP_SUBDIVIDE",
+   "name": "Segregate land → Segregation / subdivision",
+   "scenario_id": "SCN_SUBDIVIDE_PROPERTY",
+   "condition_ids": [],
+   "process_variant_id": "PV_SUBDIVISION",
+   "mapping_status": "active",
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_OGPE_OWNER_SCENARIOS"
+   ],
+   "citation_section": "Reglamento Conjunto 2023 — Lotificación (Regla to confirm)",
+   "effective_date": "2023-06-16",
+   "version": "1",
+   "last_verified_at": "2026-10-03",
+   "test_cases": [
+    {
+     "name": "Split a lot",
+     "facts": {
+      "subdivision": true
+     },
+     "expect": true
+    }
+   ],
+   "notes": "Branch discovered on OGPe's business-owner guide (not legal authority); the regulatory basis is the Reglamento Conjunto 2023. Confirm the exact Regla before marking verified."
+  }
+ ],
+ "sources": [
+  {
+   "id": "SRC_OGPE_OWNER_SCENARIOS",
+   "name": "OGPe — guía para dueño de negocio (escenarios)",
+   "source_type": "web",
+   "legal_status": "effective",
+   "jurisdiction": "Puerto Rico",
+   "citation": "OGPe public guide, “Dueño de Propiedad o Negocio / Ciudadano — ¿Qué desea hacer?”",
+   "url": "https://ogpe.webflow.io/#dueno-negocio",
+   "last_verified_at": "2026-10-03",
+   "source_version": "2026-10-03",
+   "authority_level": "discovery_only",
+   "note": "Used only to discover user scenarios and process branches. Not legal authority; every branch must cite the Reglamento Conjunto / Ley 161-2009."
+  }
+ ]
+}

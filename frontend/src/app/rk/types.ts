@@ -36,7 +36,13 @@ export type NodeType =
   | "regulatory_source"
   | "intake_fact"
   | "fact_derivation"
-  | "fact_contradiction";
+  | "fact_contradiction"
+  // Scenario-based permit reasoning:
+  // Project → Scenario → Decision Conditions → Process Variant → Permit → Requirements → Evidence
+  | "scenario"
+  | "decision_condition"
+  | "process_variant"
+  | "scenario_mapping";
 
 export type NodeStatus =
   | "draft"
@@ -72,7 +78,11 @@ export type EdgeType =
   | "supersedes"
   | "superseded_by"
   | "derives"
-  | "contradicts";
+  | "contradicts"
+  | "for_scenario"
+  | "when"
+  | "triggers"
+  | "resolves_to";
 
 /** Runtime vocabulary of edge labels (mirrors the EdgeType union above). */
 export const EDGE_TYPES: EdgeType[] = [
@@ -102,6 +112,10 @@ export const EDGE_TYPES: EdgeType[] = [
   "superseded_by",
   "derives",
   "contradicts",
+  "for_scenario",
+  "when",
+  "triggers",
+  "resolves_to",
 ];
 
 export type SourceType =
@@ -360,6 +374,11 @@ export interface CompiledKb {
     applicationWindows: Record<string, unknown>[];
     projectFacts: Record<string, unknown>[];
     regulatorySources: Record<string, unknown>[];
+    /** Scenario-based permit reasoning (optional: older snapshots don't carry it). */
+    scenarios?: Record<string, unknown>[];
+    decisionConditions?: Record<string, unknown>[];
+    processVariants?: Record<string, unknown>[];
+    scenarioMappings?: Record<string, unknown>[];
   };
   meta: { version: number; compiledAt: string; batchId: string | null };
 }

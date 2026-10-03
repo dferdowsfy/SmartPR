@@ -87,6 +87,9 @@ import {
   type ProjectIntent,
   shouldCreateBusinessRecord,
 } from './ai/intake/projectIntent';
+import { reason } from './reasoning/scenarioReasoning';
+import { bundledReasoningGraph } from './reasoning/loadGraph';
+import { factsFromIntake } from './reasoning/intakeFacts';
 import {
   normalizeLinkableBusinesses,
   matchBusinessByName,
@@ -2200,6 +2203,19 @@ export default function SmartPRIntake() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
     [mergedScenario, scenarioActive, scenarioPassport, scenarioSkipped, kbReady]
   );
+  // Scenario-based permit reasoning (knowledge graph): recomputed whenever
+  // intake answers change. Display only — requirement generation unchanged.
+  const permitReasoning = useMemo(
+    () => reason(bundledReasoningGraph(), factsFromIntake({ projectIntent, profile, answers: discoveryAnswers, scenario: mergedScenario })),
+    [projectIntent, profile, discoveryAnswers, mergedScenario]
+  );
+  const permitPaths = useMemo(() => {
+    const seen = new Set<string>();
+    return permitReasoning.paths
+      .filter((p) => (p.status === 'applies' || p.status === 'needs_facts') && p.variant && !seen.has(p.variant.id + p.status) && seen.add(p.variant.id + p.status))
+      .filter((p) => p.status === 'applies' || !permitReasoning.applicableVariants.some((v) => v.id === p.variant!.id))
+      .map((p) => ({ id: p.mappingId, name: p.permit ? `${p.variant!.name} — ${p.permit.name}` : p.variant!.name, status: p.status as 'applies' | 'needs_facts', why: p.why }));
+  }, [permitReasoning]);
   const scenarioSummary = useMemo(() => (mergedScenario && scenarioActive ? describeScenario(mergedScenario) : null), [mergedScenario, scenarioActive]);
   // Identity fields the linked Passport already answers are not asked again.
   // The Passport's municipality is the business address; the project's
@@ -6760,6 +6776,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .map((item) => language === 'es' ? L(item.document, language) : item.document),
     nextAction: nextIntakeAction,
     whyAsking: scenarioEval?.questions[0] ? L(scenarioEval.questions[0].whyWeAsk, language) : whyAsking,
+    permitPaths,
     // Driven by the scenario and knowledge-graph applicability — not by
     // keyword matches in the description.
     scenario: scenarioEval && mergedScenario ? {
@@ -6785,6 +6802,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     ],
     agencies: requirementsAgencies,
     signals: intelligenceSignals,
+    permitPaths: permitPaths.filter((p) => p.status === 'applies'),
     nextAction: requirements.length === 0
       ? (language === 'es' ? 'Genera los requisitos desde el perfil del negocio.' : 'Generate requirements from the business profile.')
       : missingCount > 0

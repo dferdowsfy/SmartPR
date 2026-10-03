@@ -222,6 +222,32 @@ function incentiveConfig(
   };
 }
 
+/** Provenance every scenario-reasoning node carries. */
+const PROVENANCE_FIELDS: FieldSpec[] = [
+  { key: "effective_date", label: "Effective date", kind: "text", help: "YYYY-MM-DD" },
+  { key: "version", label: "Version", kind: "text" },
+  { key: "last_verified_at", label: "Last verified", kind: "text", help: "YYYY-MM-DD" },
+];
+
+/** Facts decision conditions read (derived from intake answers; see reasoning/intakeFacts.ts). */
+export const REASONING_FACT_KEYS = [
+  "project_intent",
+  "existing_business",
+  "existing_premises",
+  "construction_required",
+  "new_construction",
+  "same_use",
+  "new_use_requested",
+  "ownership_changed",
+  "residential",
+  "home_based",
+  "renewal_due",
+  "utilities_connection",
+  "subdivision",
+  "business_type",
+  "municipality",
+];
+
 export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
   municipality: {
     type: "municipality",
@@ -642,6 +668,107 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
     ],
     edgesOf: (d) => list(d.fact_ids).map((id) => ({ edgeType: "contradicts" as EdgeType, toEntity: id })),
   },
+
+  scenario: {
+    type: "scenario",
+    label: "Scenario",
+    plural: "Scenarios",
+    color: "#0ea5e9",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true, help: "What the person is trying to do, e.g. \"Start a new business\"." },
+      { key: "code", label: "Code", kind: "text", required: true, help: "Stable code, e.g. START_NEW_BUSINESS." },
+      { key: "description", label: "Description", kind: "textarea" },
+      { key: "aliases", label: "Search aliases (one per line)", kind: "textarea", help: "Phrases admins and users say: start business, open a business …" },
+      { key: "detect_when", label: "Detected from intake when (JSON)", kind: "json", help: "Any-of list of {fact, operator, value}; operators: equals, not_equals, truthy, falsy, in, includes." },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source" },
+      ...PROVENANCE_FIELDS,
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+
+  decision_condition: {
+    type: "decision_condition",
+    label: "Decision Condition",
+    plural: "Decision Conditions",
+    color: "#f59e0b",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true, help: "e.g. \"Existing premises = Yes\"." },
+      { key: "fact", label: "Fact key", kind: "select", options: REASONING_FACT_KEYS, required: true },
+      { key: "operator", label: "Operator", kind: "select", options: ["equals", "not_equals", "truthy", "falsy", "in"], required: true },
+      { key: "value", label: "Value (JSON)", kind: "json", help: "true / false / \"text\" / [\"a\",\"b\"] for in." },
+      { key: "question_id", label: "Intake question that answers it", kind: "entity_ref", refType: "intake_question" },
+      { key: "description", label: "Description", kind: "textarea" },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source" },
+      ...PROVENANCE_FIELDS,
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "evaluated_against", d.question_id);
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+
+  process_variant: {
+    type: "process_variant",
+    label: "Process Variant",
+    plural: "Process Variants",
+    color: "#14b8a6",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true, help: "e.g. \"Permiso Único — New\"." },
+      { key: "code", label: "Code", kind: "text", required: true, help: "e.g. PERMISO_UNICO_NEW." },
+      { key: "process_family", label: "Process family", kind: "text", help: "e.g. PERMISO_UNICO, PCOC." },
+      { key: "permit_document_id", label: "Permit", kind: "entity_ref", refType: "document", help: "The existing permit node that owns the requirements. Never copy requirements here." },
+      { key: "agency_id", label: "Agency", kind: "entity_ref", refType: "agency" },
+      { key: "description", label: "Description", kind: "textarea" },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source" },
+      ...PROVENANCE_FIELDS,
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "resolves_to", d.permit_document_id);
+      pushRef(out, "administered_by", d.agency_id);
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+
+  scenario_mapping: {
+    type: "scenario_mapping",
+    label: "Scenario → Condition → Process Mapping",
+    plural: "Scenario Mappings",
+    color: "#8b5cf6",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true },
+      { key: "scenario_id", label: "Scenario", kind: "entity_ref", refType: "scenario", required: true },
+      { key: "condition_ids", label: "All of these conditions", kind: "entity_ref_list", refType: "decision_condition", help: "Every condition must hold (AND). Make a second mapping for an OR." },
+      { key: "process_variant_id", label: "Then this process variant applies", kind: "entity_ref", refType: "process_variant", required: true },
+      { key: "mapping_status", label: "Mapping status", kind: "select", options: ["active", "inactive"], required: true, help: "Inactive mappings are kept for history and never fire." },
+      { key: "source_ids", label: "Sources (provenance)", kind: "entity_ref_list", refType: "regulatory_source", required: true },
+      { key: "citation_section", label: "Citation section", kind: "text", help: "Article / section / page that supports this mapping." },
+      { key: "effective_date", label: "Effective date", kind: "text", required: true, help: "YYYY-MM-DD" },
+      { key: "version", label: "Version", kind: "text", required: true },
+      { key: "last_verified_at", label: "Last verified", kind: "text", required: true, help: "YYYY-MM-DD" },
+      { key: "test_cases", label: "Test cases (JSON)", kind: "json", help: "[{name, facts:{…}, expect:true|false}] — run in the Test Reasoning panel." },
+      { key: "notes", label: "Internal notes", kind: "textarea" },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "for_scenario", d.scenario_id);
+      pushRefs(out, "when", d.condition_ids);
+      pushRef(out, "triggers", d.process_variant_id);
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
 };
 
 export const NODE_TYPES = Object.keys(NODE_TYPE_CONFIGS) as NodeType[];
@@ -691,6 +818,16 @@ export const EDGE_RULES: { from: NodeType; edge: EdgeType; to: NodeType }[] = [
   { from: "fact_contradiction", edge: "contradicts", to: "intake_fact" },
   ...INCENTIVE_NODE_TYPES.map((to) => ({ from: "regulatory_source" as NodeType, edge: "supports" as EdgeType, to })),
   ...INCENTIVE_EDGE_RULES,
+  { from: "scenario", edge: "derived_from", to: "regulatory_source" },
+  { from: "decision_condition", edge: "evaluated_against", to: "intake_question" },
+  { from: "decision_condition", edge: "derived_from", to: "regulatory_source" },
+  { from: "process_variant", edge: "resolves_to", to: "document" },
+  { from: "process_variant", edge: "administered_by", to: "agency" },
+  { from: "process_variant", edge: "derived_from", to: "regulatory_source" },
+  { from: "scenario_mapping", edge: "for_scenario", to: "scenario" },
+  { from: "scenario_mapping", edge: "when", to: "decision_condition" },
+  { from: "scenario_mapping", edge: "triggers", to: "process_variant" },
+  { from: "scenario_mapping", edge: "derived_from", to: "regulatory_source" },
 ];
 
 export function labelForNode(nodeType: NodeType, data: Record<string, unknown>): string {
@@ -748,6 +885,18 @@ export function validateNodeData(nodeType: NodeType, data: Record<string, unknow
       problems.push("Active incentives need a last verified date and source version.");
     }
   }
+  if (nodeType === "decision_condition") {
+    const op = s(data.operator);
+    if (["equals", "not_equals", "in"].includes(op) && data.value === undefined) problems.push("This operator needs a value.");
+    if (op === "in" && !Array.isArray(data.value)) problems.push("\"in\" needs a list of values.");
+  }
+  if (nodeType === "scenario_mapping") {
+    for (const k of ["effective_date", "last_verified_at"]) {
+      const v = s(data[k]);
+      if (v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) problems.push(`${k === "effective_date" ? "Effective date" : "Last verified"} must be YYYY-MM-DD.`);
+    }
+    if (!list(data.source_ids).length) problems.push("Mappings need at least one source (provenance).");
+  }
   if (nodeType === "eligibility_criterion") {
     const factKey = s(data.fact_key);
     if (!PROJECT_FACT_KEYS.includes(factKey)) problems.push("Eligibility criteria must use a supported project fact key.");
@@ -790,6 +939,10 @@ export function newEntityId(nodeType: NodeType, name: string): string {
     intake_fact: "IF",
     fact_derivation: "FDER",
     fact_contradiction: "FCON",
+    scenario: "SCN",
+    decision_condition: "COND",
+    process_variant: "PV",
+    scenario_mapping: "MAP",
   };
   const slug = name
     .normalize("NFD")

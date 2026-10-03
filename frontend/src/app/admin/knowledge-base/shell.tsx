@@ -23,9 +23,11 @@ import { PublicationsTab } from "./tabs/PublicationsTab";
 import { AuditTab } from "./tabs/AuditTab";
 import { ImpactTab } from "./tabs/ImpactTab";
 import { FormsTab } from "./tabs/FormsTab";
+import { ReasoningTab } from "./tabs/ReasoningTab";
 
 const TABS = [
   { id: "graph", label: "Graph" },
+  { id: "reasoning", label: "Reasoning Paths" },
   { id: "requirements", label: "Requirements" },
   { id: "incentives", label: "Incentives & Programs" },
   { id: "forms", label: "Forms" },
@@ -186,6 +188,7 @@ export default function KnowledgeBaseShell() {
           </div>
         )}
 
+        {tab === "reasoning" && <ReasoningTab graph={graph} onSaved={saved} />}
         {tab === "requirements" && <RequirementsTab graph={graph} onSaved={saved} />}
         {tab === "incentives" && (
           <RequirementsTab

@@ -117,6 +117,10 @@ export function compileKb(
       applicationWindows: datas("application_window"),
       projectFacts: datas("project_fact"),
       regulatorySources: datas("regulatory_source"),
+      scenarios: datas("scenario"),
+      decisionConditions: datas("decision_condition"),
+      processVariants: datas("process_variant"),
+      scenarioMappings: datas("scenario_mapping"),
     },
     meta: { version: meta.version, compiledAt: new Date().toISOString(), batchId: meta.batchId },
   };

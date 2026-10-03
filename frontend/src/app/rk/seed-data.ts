@@ -24,6 +24,8 @@ import inspectionsJson from "../../kb/inspections.json";
 import intakeFactsJson from "../../kb/intake_facts.json";
 import factDerivationsJson from "../../kb/fact_derivations.json";
 import factContradictionsJson from "../../kb/fact_contradictions.json";
+import scenarioReasoningJson from "../../kb/scenario_reasoning.json";
+import regulatorySourcesJson from "../../kb/regulatory_sources.json";
 
 interface AgencyEntry {
   id: string; name: string; role: string; level: string; jurisdiction: string;
@@ -173,6 +175,29 @@ export function buildSeedNodes(): SeedNode[] {
   for (const f of intakeFactsJson as Record<string, unknown>[]) push("intake_fact", { ...f });
   for (const d of factDerivationsJson as Record<string, unknown>[]) push("fact_derivation", { ...d });
   for (const c of factContradictionsJson as Record<string, unknown>[]) push("fact_contradiction", { ...c });
+
+  // Scenario-based permit reasoning (Scenario → Conditions → Process Variant →
+  // existing Permit). The authoritative sources these mappings cite are seeded
+  // as regulatory_source nodes when no other seed already created them.
+  const sr = scenarioReasoningJson as unknown as {
+    scenarios: Record<string, unknown>[]; decision_conditions: Record<string, unknown>[];
+    process_variants: Record<string, unknown>[]; scenario_mappings: Record<string, unknown>[]; sources: Record<string, unknown>[];
+  };
+  const have = new Set(nodes.map((n) => n.entityId));
+  const cited = new Set([...sr.scenarios, ...sr.decision_conditions, ...sr.process_variants, ...sr.scenario_mappings].flatMap((n) => (Array.isArray(n.source_ids) ? (n.source_ids as string[]) : [])));
+  for (const src of regulatorySourcesJson as Record<string, unknown>[]) {
+    const id = String(src.id);
+    if (!cited.has(id) || have.has(id)) continue;
+    push("regulatory_source", { id, name: src.title, source_type: src.source_type === "statute" ? "law" : String(src.source_type ?? "regulation"), legal_status: "effective",
+      jurisdiction: "Puerto Rico", citation: src.citation, url: src.url, effective_date: src.effective_date,
+      last_verified_at: src.date_last_verified, source_version: String(src.version_date ?? src.effective_date ?? "") });
+    have.add(id);
+  }
+  for (const src of sr.sources) if (!have.has(String(src.id))) push("regulatory_source", { ...src });
+  for (const n of sr.scenarios) push("scenario", { ...n });
+  for (const n of sr.decision_conditions) push("decision_condition", { ...n });
+  for (const n of sr.process_variants) push("process_variant", { ...n });
+  for (const n of sr.scenario_mappings) push("scenario_mapping", { ...n });
 
   return nodes;
 }
