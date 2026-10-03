@@ -24,7 +24,7 @@
 import { applyTransform, type BilingualText, type Skill, type SkillField, type SkillStep, type SkillTarget } from "../skills/skill";
 import { isSubmitTarget } from "../skills/skillValidate";
 import { defaultGate } from "../skills/gateCopy";
-import { normalizeLabel, readPassportPath } from "../teach/passportCatalog";
+import { catalogEntry, normalizeLabel, readPassportPath } from "../teach/passportCatalog";
 import { scrubVisibleText, type SecretFieldRef } from "../teach/events";
 
 export interface PageSnapshot {
@@ -100,6 +100,13 @@ export interface ReplayContext {
   relocate?: (target: { role: string; label: string; selector?: string | null }, seen: string[]) => Promise<string | null>;
   now?: () => string;
   maxLoops?: number;
+  /**
+   * Protected Passport details (SSN / ITIN) for this business, read only at
+   * fill time from the protected store. Never in the skill, the state, a
+   * milestone or a model prompt. Absent → the identity step pauses for the
+   * person, as before.
+   */
+  protectedValue?: (path: string) => Promise<string | null>;
 }
 
 export function newReplayState(skill: Skill): ReplayState {
@@ -299,7 +306,23 @@ async function clickTarget(ctx: ReplayContext, step: SkillStep, target: SkillTar
 
 /** Do the work on one matched step. Returns the paused state, or "done". */
 async function runStep(ctx: ReplayContext, state: ReplayState, step: SkillStep, snap: PageSnapshot): Promise<ReplayState | "done"> {
-  if (step.gate) return gatePause(state, ctx, step, step.gate, false);
+  if (step.gate) {
+    // An identity step whose only sensitive input is a protected Passport
+    // detail on file: Clara types it from the protected store and goes on.
+    const sensitive = step.gate === "identity" && ctx.protectedValue
+      ? step.fields.filter((f) => f.passport_path && catalogEntry(f.passport_path)?.sensitive)
+      : [];
+    if (!sensitive.length) return gatePause(state, ctx, step, step.gate, false);
+    for (const field of sensitive) {
+      if (state.filled.some((f) => f.stepId === step.id && f.label === field.portal_field.label)) continue;
+      const secret = await ctx.protectedValue!(field.passport_path!);
+      if (!secret) return gatePause(state, ctx, step, step.gate, false);
+      const r = await fillField(ctx, step, field, applyTransform(secret, field.transform), snap, state);
+      if (r === "skip") continue;
+      if (r !== "ok") return r;
+      state.filled.push({ stepId: step.id, label: field.portal_field.label });
+    }
+  }
 
   // 1. Fill everything we can; collect what we must ask.
   const toAsk: Extract<ReplayPause, { kind: "ask" }>["fields"] = [];

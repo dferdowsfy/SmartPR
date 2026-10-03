@@ -261,6 +261,22 @@ function onFill(state: TeachState, ev: TeachFillEvent): void {
       : ev.secretKind === "code" ? "mfa"
       : ev.secretKind === "payment" ? "payment"
       : step.gate === "mfa" ? "mfa" : "login";
+    // SSN / ITIN: learn which protected Passport detail it is (never the
+    // value). The step stays an identity step; at fill time Clara types the
+    // protected value only when the business has it on file.
+    if (ev.secretKind === "ssn" && !step.fields.some((f) => (ev.selector && f.selector === ev.selector) || normalizeLabel(f.label) === normalizeLabel(ev.label))) {
+      step.fields.push({
+        key: nextId(state, "f"),
+        label: ev.label,
+        selector: ev.selector,
+        role: ev.role,
+        valueKind: "text",
+        required: true,
+        optionText: "",
+        optionSelector: null,
+        decision: { kind: "passport", path: "contact.taxId" },
+      });
+    }
     return setGate(state, step, gate, "detected");
   }
   // "Código postal" / "Código NAICS" are passport fields, not a code screen.

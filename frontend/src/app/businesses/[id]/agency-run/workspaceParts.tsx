@@ -379,8 +379,8 @@ export interface PageFieldView {
   label: string;
   selector: string | null;
   kind: "text" | "password" | "ssn" | "code" | "payment";
-  /** The Passport field this looks like, and whether the business has it (never the value). */
-  suggestion?: { path: string; name: Bi; on_file: boolean } | null;
+  /** The Passport field this looks like, and whether the business has it (never the full value). */
+  suggestion?: { path: string; name: Bi; on_file: boolean; status?: "ready" | "needed" | "new"; sensitive?: boolean; preview?: string | null } | null;
 }
 
 /** "Primer Nombre:*" → "Primer Nombre (First name)" when a translation exists. */
@@ -391,19 +391,49 @@ export function withTranslation(label: string, tr: Record<string, string> | unde
 }
 
 /**
- * Type into the portal from the chat: one input per field Clara sees on the
- * current screen (username, password, SSN, any text field). Each value goes
- * once, straight to that field in the live browser, then the box clears —
- * nothing is kept in the chat, the routine or anywhere else. Sensitive fields
- * are masked. Clicking in the browser panel works too.
+ * The current portal screen, field by field, against the Business Passport:
+ *
+ *  ✓ Passport ready     mapped and on file — Clara fills it from the Passport
+ *  Needs information    mapped but missing — add it here, saved to the Passport
+ *  New Passport detail  no mapping yet — save it as a new Passport detail
+ *
+ * Values typed here go to the business's Passport (SSN / ITIN to the
+ * protected store, masked after entry) and are reused by every later filing.
+ * The routine only ever learns which portal field maps to which Passport
+ * detail — never the value. Passwords, codes and payment details are
+ * one-time: they go straight to the portal field and are never saved.
  */
-export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, translations, onSent }: { lang: Lang; fields: PageFieldView[]; endpoint: string; passportEndpoint?: string; translations?: Record<string, string>; onSent?: () => void }) {
+export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveEndpoint, translations, onSent, onPassportSaved }: {
+  lang: Lang;
+  fields: PageFieldView[];
+  endpoint: string;
+  passportEndpoint?: string;
+  /** POST { path, value } → saves to the Business Passport (null: no saved business yet). */
+  saveEndpoint?: string | null;
+  translations?: Record<string, string>;
+  onSent?: () => void;
+  onPassportSaved?: () => void;
+}) {
   const [busy, setBusy] = useState<string | null>(null);
   const [notes, setNotes] = useState<Record<string, { ok: boolean; text: string }>>({});
+  const [saved, setSaved] = useState<Record<string, string>>({});
+  const [showOther, setShowOther] = useState(false);
   const refs = useRef<Record<string, HTMLInputElement | null>>({});
   const usable = fields.filter((f) => f.selector && f.kind !== "payment");
   if (!usable.length) return null;
-  const fromPassport = usable.filter((f) => f.suggestion?.on_file);
+  const label = (f: PageFieldView) => withTranslation(f.label, translations) || L("Field", "Campo", lang);
+  const statusOf = (f: PageFieldView): "ready" | "needed" | "new" | "once" => {
+    const sug = f.suggestion;
+    if (!sug) return "once";
+    if (saved[sug.path] !== undefined || sug.on_file) return "ready";
+    return sug.status === "new" ? "new" : "needed";
+  };
+  const ready = usable.filter((f) => statusOf(f) === "ready");
+  const needed = usable.filter((f) => statusOf(f) === "needed");
+  const other = usable.filter((f) => statusOf(f) === "new");
+  const once = usable.filter((f) => statusOf(f) === "once");
+  const note = (key: string, ok: boolean, text: string) => setNotes((n) => ({ ...n, [key]: { ok, text } }));
+
   const fillFromPassport = async (f: PageFieldView) => {
     if (!passportEndpoint) return;
     const key = f.selector!;
@@ -411,13 +441,14 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, trans
     const r = await api<{ ok?: boolean; reason?: string | null }>(passportEndpoint, { selector: f.selector }).catch(() => null);
     setBusy(null);
     const ok = Boolean(r?.ok && r.data.ok);
-    setNotes((n) => ({ ...n, [key]: { ok, text: ok ? L("Filled from the Business Passport.", "Llenado desde el Pasaporte del negocio.", lang) : L("Couldn't fill it — type it instead.", "No se pudo llenar — escríbelo.", lang) } }));
+    note(key, ok, ok ? L("Filled on the page from the Business Passport.", "Llenado en la página desde el Pasaporte del negocio.", lang) : L("Couldn't fill it on the page — click the field in the browser and try again.", "No se pudo llenar en la página — haz clic en el campo en el navegador e intenta otra vez.", lang));
     if (ok) onSent?.();
   };
   const fillAll = async () => {
-    for (const f of fromPassport) await fillFromPassport(f);
+    for (const f of ready) await fillFromPassport(f);
   };
-  const send = async (f: PageFieldView) => {
+  /** One-time: straight to the portal field, never saved. */
+  const sendOnce = async (f: PageFieldView) => {
     const key = f.selector!;
     const el = refs.current[key];
     const value = el?.value ?? "";
@@ -427,61 +458,171 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, trans
     const r = await api<{ ok?: boolean; reason?: string | null }>(endpoint, { value, selector: f.selector }).catch(() => null);
     setBusy(null);
     const ok = Boolean(r?.ok && r.data.ok);
-    setNotes((n) => ({ ...n, [key]: { ok, text: ok ? L("Sent to the portal — not saved.", "Enviado al portal — no se guardó.", lang) : L("Didn't reach that field. Click it in the browser and try again, or type it there.", "No llegó a ese campo. Haz clic en él en el navegador e intenta otra vez, o escríbelo allí.", lang) } }));
+    note(key, ok, ok ? L("Sent to the portal — not saved.", "Enviado al portal — no se guardó.", lang) : L("Didn't reach that field. Click it in the browser and try again, or type it there.", "No llegó a ese campo. Haz clic en él en el navegador e intenta otra vez, o escríbelo allí.", lang));
     if (ok) onSent?.();
   };
+  /** Save to the Business Passport (then Clara can fill it here and in every later filing). */
+  const saveToPassport = async (f: PageFieldView) => {
+    if (!saveEndpoint || !f.suggestion) return;
+    const key = f.selector!;
+    const el = refs.current[key];
+    const value = el?.value ?? "";
+    if (!value.trim()) return;
+    setBusy(key);
+    const r = await api<{ ok?: boolean; preview?: string; message?: string; error?: string }>(saveEndpoint, { path: f.suggestion.path, value }).catch(() => null);
+    setBusy(null);
+    if (r?.ok && r.data.ok) {
+      if (el) el.value = "";
+      setSaved((m) => ({ ...m, [f.suggestion!.path]: r.data.preview ?? "" }));
+      note(key, true, "");
+      onPassportSaved?.();
+    } else {
+      note(key, false, r?.data?.error === "protected_storage_unavailable"
+        ? L("Protected storage isn't set up, so this can't be saved yet. Send it once instead.", "El almacenamiento protegido no está configurado, así que no se puede guardar todavía. Envíalo una vez.", lang)
+        : L("Couldn't save it to the Passport. Try again.", "No se pudo guardar en el Pasaporte. Intenta otra vez.", lang));
+    }
+  };
+
+  const input = (f: PageFieldView, secret: boolean) => (
+    <input
+      ref={(el) => { refs.current[f.selector!] = el; }}
+      type={secret ? "password" : "text"}
+      autoComplete={secret ? "one-time-code" : "off"}
+      spellCheck={false}
+      data-lpignore="true"
+      data-1p-ignore="true"
+      maxLength={256}
+      aria-label={label(f)}
+      className="min-w-0 flex-1 basis-44 rounded-xl border border-white/15 bg-[#1f1f1f] px-3 py-2 text-[15px] text-[#f4efe2] focus:border-[#e8d9b5] focus:outline-none"
+      data-testid="ws-page-field-input"
+    />
+  );
+  const noteLine = (key: string) => notes[key]?.text ? <span className={`block text-[12px] ${notes[key].ok ? "text-[#9fd3b4]" : "text-amber-200"}`} role="status">{notes[key].text}</span> : null;
+
   return (
-    <div className="ml-9 space-y-2 rounded-2xl border border-[#2f6b4f] bg-[#10251b] p-3" data-testid="ws-page-fields">
-      <p className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em] text-[#9fd3b4]">
-        <Lock className="h-3.5 w-3.5" aria-hidden="true" /> {L("Type into this page from here", "Escribe en esta página desde aquí", lang)}
-      </p>
-      <p className="text-[12px] text-[#cfc6b4]">{L("Or click and type in the browser panel. Clara records which field you filled, never the value.", "O haz clic y escribe en el panel del navegador. Clara graba qué campo llenaste, nunca el valor.", lang)}</p>
-      {passportEndpoint && fromPassport.length > 0 && (
-        <button type="button" className={primaryBtn} disabled={busy !== null} onClick={() => void fillAll()} data-testid="ws-fill-all-passport">
-          {L(`Fill ${fromPassport.length} from the Business Passport`, `Llenar ${fromPassport.length} desde el Pasaporte del negocio`, lang)}
-        </button>
-      )}
-      {usable.map((f) => {
-        const key = f.selector!;
-        const secret = f.kind !== "text";
-        return (
-          <form key={key} className="space-y-1" autoComplete="off" onSubmit={(e) => { e.preventDefault(); void send(f); }} data-testid="ws-page-field" data-kind={f.kind}>
-            <span className="block text-[14px] text-[#f4efe2]">{withTranslation(f.label, translations) || L("Field", "Campo", lang)}{secret && <Lock className="ml-1 inline h-3 w-3 text-[#9fd3b4]" aria-label={L("sensitive", "sensible", lang)} />}</span>
-            {f.suggestion && (
-              <span className="flex flex-wrap items-center gap-2 text-[12px]" data-testid="ws-page-field-suggestion" data-on-file={f.suggestion.on_file ? "1" : "0"}>
-                <span className={f.suggestion.on_file ? "text-[#9fd3b4]" : "text-amber-200"}>
-                  {f.suggestion.on_file
-                    ? L(`Passport: ${f.suggestion.name.en}`, `Pasaporte: ${f.suggestion.name.es}`, lang)
-                    : L(`${f.suggestion.name.en} isn't in the Passport yet`, `${f.suggestion.name.es} todavía no está en el Pasaporte`, lang)}
+    <div className="ml-9 space-y-3 rounded-2xl border border-white/10 bg-[#141414] p-3" data-testid="ws-page-fields">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-[#cfc6b4]">{L("This page and your Passport", "Esta página y tu Pasaporte", lang)}</p>
+        <span className="text-[12px] text-[#9a917f]" data-testid="ws-page-fields-summary">
+          {L(`${ready.length} ready · ${needed.length} needed`, `${ready.length} listos · ${needed.length} faltan`, lang)}
+        </span>
+      </div>
+
+      {needed.length > 0 && (
+        <section className="space-y-2 rounded-xl border border-amber-300/30 bg-amber-200/[0.06] p-3" data-testid="ws-info-needed">
+          <p className="text-[14px] font-semibold text-amber-100">{L("Needed for this filing", "Necesario para este trámite", lang)}</p>
+          <p className="-mt-1 text-[12.5px] text-[#cfc6b4]">{L("Add it once. Clara can reuse it in future filings.", "Añádelo una vez. Clara puede reutilizarlo en futuros trámites.", lang)}</p>
+          {needed.map((f) => {
+            const key = f.selector!;
+            const sug = f.suggestion!;
+            const secret = Boolean(sug.sensitive) || f.kind !== "text";
+            return (
+              <form key={key} className="space-y-1" autoComplete="off" onSubmit={(e) => { e.preventDefault(); void (saveEndpoint ? saveToPassport(f) : sendOnce(f)); }} data-testid="ws-needed-field" data-path={sug.path}>
+                <span className="block text-[14px] text-[#f4efe2]">
+                  {pick(sug.name, lang)}
+                  {secret && <Lock className="ml-1 inline h-3 w-3 text-[#9fd3b4]" aria-label={L("protected", "protegido", lang)} />}
+                  <span className="ml-1 text-[12px] text-[#9a917f]">· {L("on the page:", "en la página:", lang)} {label(f)}</span>
                 </span>
-                {f.suggestion.on_file && passportEndpoint && (
-                  <button type="button" className="rounded-full bg-[#1e4d38] px-2.5 py-0.5 font-semibold text-white hover:bg-[#2f6b4f]" disabled={busy === key} onClick={() => void fillFromPassport(f)} data-testid="ws-fill-from-passport">
-                    {L("Fill from Passport", "Llenar del Pasaporte", lang)}
+                <span className="flex flex-wrap items-center gap-2">
+                  {input(f, secret)}
+                  {saveEndpoint ? (
+                    <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-save-to-passport">
+                      {busy === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} {L("Save to Passport", "Guardar en el Pasaporte", lang)}
+                    </button>
+                  ) : (
+                    <button type="submit" className={ghostBtn} disabled={busy === key} data-testid="ws-page-field-send">{L("Send once", "Enviar una vez", lang)}</button>
+                  )}
+                </span>
+                {secret && saveEndpoint && <span className="block text-[12px] text-[#9a917f]">{L("Saved to the protected part of the Passport and masked. Never in the routine, logs or recordings.", "Se guarda en la parte protegida del Pasaporte, oculto. Nunca en la rutina, registros ni grabaciones.", lang)}</span>}
+                {!saveEndpoint && <span className="block text-[12px] text-[#9a917f]">{L("Save the business first to keep details in its Passport. For now this goes to the page only.", "Guarda el negocio primero para conservar datos en su Pasaporte. Por ahora esto va solo a la página.", lang)}</span>}
+                {noteLine(key)}
+              </form>
+            );
+          })}
+        </section>
+      )}
+
+      {ready.length > 0 && (
+        <section className="space-y-1.5" data-testid="ws-passport-ready">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[13px] font-semibold text-[#9fd3b4]">✓ {L("Passport ready", "Listo en el Pasaporte", lang)}</p>
+            {passportEndpoint && ready.length > 1 && (
+              <button type="button" className={ghostBtn} disabled={busy !== null} onClick={() => void fillAll()} data-testid="ws-fill-all-passport">
+                {L(`Fill all ${ready.length} on the page`, `Llenar los ${ready.length} en la página`, lang)}
+              </button>
+            )}
+          </div>
+          {ready.map((f) => {
+            const key = f.selector!;
+            const sug = f.suggestion!;
+            const justSaved = saved[sug.path];
+            return (
+              <div key={key} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-2 py-1.5 text-[14px] hover:bg-white/[0.03]" data-testid="ws-ready-field" data-path={sug.path}>
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#9fd3b4]" aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className="text-[#ece6d8]">{pick(sug.name, lang)}</span>
+                  {(justSaved ?? sug.preview) && <span className="ml-2 text-[13px] text-[#cfc6b4]" data-testid="ws-ready-preview">{justSaved ?? sug.preview}</span>}
+                  {justSaved !== undefined && <span className="block text-[12px] text-[#9fd3b4]" data-testid="ws-saved-note">{L("Saved to Business Passport", "Guardado en el Pasaporte del negocio", lang)}</span>}
+                </span>
+                {passportEndpoint && (
+                  <button type="button" className="rounded-full bg-[#1e4d38] px-3 py-1 text-[13px] font-semibold text-white hover:bg-[#2f6b4f] disabled:opacity-50" disabled={busy === key} onClick={() => void fillFromPassport(f)} data-testid="ws-fill-from-passport">
+                    {busy === key ? <Loader2 className="inline h-3.5 w-3.5 animate-spin" /> : L("Fill on page", "Llenar en la página", lang)}
                   </button>
                 )}
-              </span>
-            )}
-            <span className="flex items-center gap-2">
-              <input
-                ref={(el) => { refs.current[key] = el; }}
-                type={secret ? "password" : "text"}
-                autoComplete={secret ? "one-time-code" : "off"}
-                spellCheck={false}
-                data-lpignore="true"
-                data-1p-ignore="true"
-                maxLength={256}
-                aria-label={f.label}
-                className="min-w-0 flex-1 rounded-xl border border-white/15 bg-[#1f1f1f] px-3 py-1.5 text-[15px] text-[#f4efe2]"
-                data-testid="ws-page-field-input"
-              />
-              <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-page-field-send">
-                {busy === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} {L("Send", "Enviar", lang)}
-              </button>
-            </span>
-            {notes[key] && <span className={`block text-[12px] ${notes[key].ok ? "text-[#9fd3b4]" : "text-amber-200"}`} role="status">{notes[key].text}</span>}
-          </form>
-        );
-      })}
+                {noteLine(key)}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {other.length > 0 && (
+        <section className="space-y-2" data-testid="ws-new-details">
+          <button type="button" className="text-[13px] font-semibold text-[#e8d9b5] underline-offset-4 hover:underline" aria-expanded={showOther} onClick={() => setShowOther((o) => !o)} data-testid="ws-new-details-toggle">
+            {L(`New Passport details on this page (${other.length})`, `Datos nuevos para el Pasaporte en esta página (${other.length})`, lang)}
+          </button>
+          {showOther && other.map((f) => {
+            const key = f.selector!;
+            const sug = f.suggestion!;
+            return (
+              <form key={key} className="space-y-1 rounded-xl border border-white/10 p-2.5" autoComplete="off" onSubmit={(e) => { e.preventDefault(); void saveToPassport(f); }} data-testid="ws-new-detail" data-path={sug.path}>
+                <span className="block text-[14px] text-[#f4efe2]">{label(f)}</span>
+                <span className="block text-[12px] text-[#9a917f]">{L(`Clara found this field. Save it to the Passport as “${sug.name.en}”, or send it once.`, `Clara encontró este campo. Guárdalo en el Pasaporte como “${sug.name.es}”, o envíalo una vez.`, lang)}</span>
+                <span className="flex flex-wrap items-center gap-2">
+                  {input(f, false)}
+                  {saveEndpoint && <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-add-new-detail">{L("Add to Passport", "Añadir al Pasaporte", lang)}</button>}
+                  <button type="button" className={ghostBtn} disabled={busy === key} onClick={() => void sendOnce(f)}>{L("Send once", "Enviar una vez", lang)}</button>
+                </span>
+                {noteLine(key)}
+              </form>
+            );
+          })}
+        </section>
+      )}
+
+      {once.length > 0 && (
+        <section className="space-y-2 rounded-xl border border-[#2f6b4f] bg-[#10251b] p-3" data-testid="ws-one-time-fields">
+          <p className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em] text-[#9fd3b4]">
+            <Lock className="h-3.5 w-3.5" aria-hidden="true" /> {L("One-time entries", "Datos de una sola vez", lang)}
+          </p>
+          <p className="text-[12px] text-[#cfc6b4]">{L("Passwords and codes go straight to the page. Never saved, never in the routine.", "Contraseñas y códigos van directo a la página. Nunca se guardan ni quedan en la rutina.", lang)}</p>
+          {once.map((f) => {
+            const key = f.selector!;
+            return (
+              <form key={key} className="space-y-1" autoComplete="off" onSubmit={(e) => { e.preventDefault(); void sendOnce(f); }} data-testid="ws-page-field" data-kind={f.kind}>
+                <span className="block text-[14px] text-[#f4efe2]">{label(f)}{f.kind !== "text" && <Lock className="ml-1 inline h-3 w-3 text-[#9fd3b4]" aria-label={L("sensitive", "sensible", lang)} />}</span>
+                <span className="flex items-center gap-2">
+                  {input(f, f.kind !== "text")}
+                  <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-page-field-send">
+                    {busy === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} {L("Send", "Enviar", lang)}
+                  </button>
+                </span>
+                {noteLine(key)}
+              </form>
+            );
+          })}
+        </section>
+      )}
     </div>
   );
 }

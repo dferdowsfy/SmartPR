@@ -100,10 +100,11 @@ export async function replayDeps(): Promise<import("../replay/replaySessions").R
   const { startWorkerDrive, stopWorkerDrive, WorkerDriver } = await import("../replay/workerDriver");
   const { agentRelocator } = await import("../replay/relocate");
   const relocate = agentRelocator(await modelPrompter(80));
+  const passportStore = (await import("../passportWrite")).dbPassportStore();
   if (teachBrowserProvider() !== "self_hosted") {
-    return { repo: await skillRepo(), startDrive: startCloudDrive, stopDrive: stopCloudDrive, driver: (id) => new CloudDriver(id), relocate, secureFill: secureFillCloudDrive };
+    return { repo: await skillRepo(), startDrive: startCloudDrive, stopDrive: stopCloudDrive, driver: (id) => new CloudDriver(id), relocate, secureFill: secureFillCloudDrive, passportStore };
   }
-  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate, secureFill: secureFillWorker };
+  return { repo: await skillRepo(), startDrive: startWorkerDrive, stopDrive: stopWorkerDrive, driver: (id) => new WorkerDriver(id), relocate, secureFill: secureFillWorker, passportStore };
 }
 
 /**

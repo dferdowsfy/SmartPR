@@ -19,6 +19,14 @@ export interface PassportCatalogEntry {
   kinds: TeachValueKind[];
   /** true for yes/no or enum facts a screen can be conditional on. */
   branchable?: boolean;
+  /**
+   * Protected detail (SSN / ITIN): stored encrypted outside passport_json,
+   * masked everywhere, read only at fill time. Never in a routine, log,
+   * recording, screenshot or model prompt.
+   */
+  sensitive?: boolean;
+  /** Only relevant when another Passport detail has one of these values (e.g. LLC member count). */
+  when?: { path: string; equals: string[] };
 }
 
 export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
@@ -53,9 +61,12 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
   { path: "contact.firstName", en: "First name", es: "Primer nombre",
     keywords: ["primer nombre", "first name", "nombre de pila", "given name"], kinds: ["text"] },
   { path: "contact.middleName", en: "Middle name", es: "Segundo nombre",
-    keywords: ["segundo nombre", "middle name", "inicial"], kinds: ["text"] },
+    keywords: ["segundo nombre", "middle name", "middle initial", "inicial"], kinds: ["text"] },
   { path: "contact.lastName", en: "Last name", es: "Primer apellido",
     keywords: ["primer apellido", "apellido paterno", "last name", "surname", "family name", "apellido"], kinds: ["text"] },
+  { path: "contact.taxId", en: "SSN or ITIN", es: "Seguro social o ITIN",
+    keywords: ["ssn", "itin", "seguro social", "social security", "social security number", "numero de seguro social", "taxpayer identification number", "ssn or itin", "ssn itin"],
+    kinds: ["text", "number"], sensitive: true },
   { path: "contact.secondLastName", en: "Second last name", es: "Segundo apellido",
     keywords: ["segundo apellido", "apellido materno", "second last name", "mother s maiden name"], kinds: ["text"] },
   { path: "contact.email", en: "Contact email", es: "Email de contacto",
@@ -63,7 +74,7 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
   { path: "contact.phone", en: "Contact phone", es: "Teléfono de contacto",
     keywords: ["telefono", "phone", "celular", "mobile", "tel"], kinds: ["phone"] },
   { path: "contact.role", en: "Contact's role", es: "Puesto del contacto",
-    keywords: ["puesto", "cargo", "title", "role", "titulo"], kinds: ["text", "option"] },
+    keywords: ["puesto", "cargo", "title", "role", "titulo", "responsible party role", "your role"], kinds: ["text", "option"] },
   { path: "addresses.principalPhysical.line1", en: "Physical address", es: "Dirección física",
     keywords: ["direccion fisica", "physical address", "direccion", "address", "calle", "street", "direccion del local", "direccion del establecimiento", "linea 1", "address line 1"], kinds: ["text"] },
   { path: "addresses.principalPhysical.line2", en: "Physical address line 2", es: "Dirección física línea 2",
@@ -84,6 +95,11 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
     keywords: ["propio o alquilado", "owned or leased", "tenencia", "arrendado", "alquilado", "propietario"], kinds: ["option"], branchable: true },
   { path: "operations.employeeCount", en: "Number of employees", es: "Cantidad de empleados",
     keywords: ["empleados", "employees", "numero de empleados", "cantidad de empleados", "headcount"], kinds: ["number"], branchable: true },
+  { path: "operations.fiscalYearEnd", en: "Accounting year closing month", es: "Mes de cierre del año contable",
+    keywords: ["closing month", "accounting year", "fiscal year", "cierre del ano contable", "mes de cierre", "ano fiscal", "closing month of accounting year"], kinds: ["option", "text"] },
+  { path: "business.llcMemberCount", en: "Number of LLC members", es: "Cantidad de miembros de la LLC",
+    keywords: ["number of members", "members of the llc", "llc members", "cantidad de miembros", "numero de miembros"], kinds: ["number", "option"],
+    when: { path: "business.entityType", equals: ["llc"] } },
   { path: "operations.estimatedAnnualGrossReceipts", en: "Estimated annual gross receipts", es: "Volumen de negocio anual estimado",
     keywords: ["volumen de negocio", "gross receipts", "ingresos brutos", "ventas anuales"], kinds: ["number"] },
   { path: "operations.municipalTaxpayerId", en: "Municipal taxpayer ID", es: "Número de contribuyente municipal",
@@ -145,6 +161,56 @@ export function proposeMapping(label: string, kind: TeachValueKind): MappingProp
   const path = byKind[kind];
   const entry = path ? BY_PATH.get(path) : undefined;
   return entry ? { path: entry.path, en: entry.en, es: entry.es, confidence: "low" } : null;
+}
+
+/** True when a catalog detail applies to this Passport (conditional details like LLC member count). */
+export function catalogEntryApplies(entry: PassportCatalogEntry, passport: unknown): boolean {
+  if (!entry.when) return true;
+  const v = readPassportPath(passport, entry.when.path);
+  return typeof v === "string" && entry.when.equals.includes(v.toLowerCase());
+}
+
+/**
+ * New Passport details Clara discovers (no catalog mapping yet) live under
+ * business.additional.<slug>, so they persist with the Passport and are
+ * reusable by later filings. The slug comes from the portal label only.
+ */
+export const ADDITIONAL_PREFIX = "business.additional.";
+export function additionalDetailPath(label: string): string | null {
+  const slug = normalizeLabel(label).replace(/ñ/g, "n").split(" ").filter(Boolean).slice(0, 6).join("_").slice(0, 48);
+  return slug ? `${ADDITIONAL_PREFIX}${slug}` : null;
+}
+export function isAdditionalPath(path: string): boolean {
+  return path.startsWith(ADDITIONAL_PREFIX) && /^[a-z0-9_]{1,48}$/.test(path.slice(ADDITIONAL_PREFIX.length));
+}
+
+/**
+ * A protected detail's value never sits in passport_json; only a marker in
+ * the same section does ("contact.taxIdOnFile" + "contact.taxIdLast4"), so it
+ * survives every Passport save and tells Clara the value exists.
+ */
+export function protectedMarkerPaths(path: string): { onFile: string; last4: string } {
+  return { onFile: `${path}OnFile`, last4: `${path}Last4` };
+}
+
+/** Whether the Passport has this detail (protected details: the on-file marker). */
+export function passportHas(passport: unknown, path: string): boolean {
+  if (catalogEntry(path)?.sensitive) return readPassportPath(passport, protectedMarkerPaths(path).onFile) === true;
+  const v = readPassportPath(passport, path);
+  return v !== undefined && v !== null && v !== "" && typeof v !== "object";
+}
+
+/** Set a dotted path on a plain object (creating sections as needed). Returns the same object. */
+export function setPassportPath<T extends Record<string, unknown>>(passport: T, path: string, value: unknown): T {
+  const parts = path.split(".");
+  let node: Record<string, unknown> = passport;
+  for (const part of parts.slice(0, -1)) {
+    const next = node[part];
+    if (next == null || typeof next !== "object" || Array.isArray(next)) node[part] = {};
+    node = node[part] as Record<string, unknown>;
+  }
+  node[parts.at(-1)!] = value;
+  return passport;
 }
 
 /** Read a dotted path from a passport object. */

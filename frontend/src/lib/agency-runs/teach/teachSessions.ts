@@ -33,7 +33,8 @@ import { buildSkillFromTeach, type BuildResult } from "./buildSkill";
 import { bindRecordedActions, normalizeRecorderItems, type RecordedAction } from "./recording";
 import { llmReviewRoutine, validateRoutine, withLlmNotes, type LlmReviewer, type RoutineValidation } from "./validateRoutine";
 import { passportFieldName } from "../skills/skillCard";
-import { catalogEntry, proposeMapping, readPassportPath } from "./passportCatalog";
+import { additionalDetailPath, catalogEntry, catalogEntryApplies, passportHas, proposeMapping, protectedMarkerPaths, readPassportPath, setPassportPath } from "./passportCatalog";
+import { normalizeValue, PassportWriteError, writablePath, type PassportStore } from "../passportWrite";
 import { teachDomainDecision } from "./domains";
 import { skillCard, type SkillCard } from "../skills/skillCard";
 import {
@@ -119,9 +120,27 @@ export interface TeachSessionView {
   /** Sensitive inputs visible on the portal's current screen — where a secure one-time value can go. */
   secret_fields: SecretFieldRef[];
   /** Every visible input on the portal's current screen — the person can type into it from the chat. */
-  page_fields: (PageFieldRef & { suggestion: { path: string; name: { en: string; es: string }; on_file: boolean } | null })[];
+  page_fields: (PageFieldRef & { suggestion: PageFieldSuggestion | null })[];
+  /** Whether Passport details can be saved from here (the session belongs to a saved business). */
+  can_save_passport: boolean;
   /** The human-only step the current screen is (login, MFA, CAPTCHA, payment …), if any. */
   current_gate: TeachGate | null;
+}
+
+/**
+ * How a screen field relates to the Business Passport:
+ *  - ready:  mapped, value on file — Clara can fill it
+ *  - needed: mapped, value missing — the person can add it here
+ *  - new:    no canonical mapping yet — the person can add it as a new Passport detail
+ * Never carries the value itself (only a masked preview for "ready").
+ */
+export interface PageFieldSuggestion {
+  path: string;
+  name: { en: string; es: string };
+  on_file: boolean;
+  status: "ready" | "needed" | "new";
+  sensitive: boolean;
+  preview: string | null;
 }
 
 const globalStore = globalThis as typeof globalThis & { __smartprTeachSessions?: Map<string, LiveTeach> };
@@ -191,35 +210,115 @@ export function viewOf(live: LiveTeach): TeachSessionView {
     stage: stageOf(live),
     secret_fields: live.status === "recording" ? live.secretFields ?? [] : [],
     page_fields: live.status === "recording" ? (live.pageFields ?? []).map((f) => withSuggestion(f, live.passport)) : [],
+    can_save_passport: Boolean(live.businessId),
     current_gate: live.status === "recording" ? cur?.gate ?? null : null,
   };
 }
 
-/** The Passport field a screen field looks like (Spanish or English label) — and whether this business has it. Never the value. */
-function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; value: string | null } | null {
-  if (f.kind !== "text") return null; // passwords, SSNs, codes: never from the Passport
-  const p = proposeMapping(f.label, "text");
-  if (!p || p.confidence !== "high") return null;
-  const v = passport ? readPassportPath(passport, p.path) : undefined;
+/**
+ * The Passport field a screen field looks like (Spanish or English label) —
+ * and whether this business has it. Never the value. Passwords, one-time
+ * codes and payment fields are never Passport details; SSN / ITIN fields map
+ * to the protected contact.taxId.
+ */
+function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; value: string | null; sensitive: boolean; status: PageFieldSuggestion["status"] } | null {
+  if (f.kind === "password" || f.kind === "code" || f.kind === "payment") return null;
+  const p = f.kind === "ssn" ? { path: "contact.taxId", confidence: "high" as const } : proposeMapping(f.label, "text");
+  if (p && p.confidence === "high") {
+    const entry = catalogEntry(p.path);
+    // Conditional details (LLC member count) only when the Passport says they apply — or doesn't know yet.
+    if (entry?.when && passport && readPassportPath(passport, entry.when.path) && !catalogEntryApplies(entry, passport)) return null;
+    const sensitive = Boolean(entry?.sensitive);
+    if (sensitive) {
+      const has = passportHas(passport, p.path);
+      const last4 = has ? readPassportPath(passport, protectedMarkerPaths(p.path).last4) : null;
+      return { path: p.path, value: has ? `•••-••-${typeof last4 === "string" ? last4 : "••••"}` : null, sensitive, status: has ? "ready" : "needed" };
+    }
+    const v = passport ? readPassportPath(passport, p.path) : undefined;
+    const value = v === undefined || v === null || v === "" || typeof v === "object" ? null : String(v);
+    return { path: p.path, value, sensitive, status: value !== null ? "ready" : "needed" };
+  }
+  if (f.kind !== "text") return null;
+  const extra = additionalDetailPath(f.label);
+  if (!extra) return null;
+  const v = passport ? readPassportPath(passport, extra) : undefined;
   const value = v === undefined || v === null || v === "" || typeof v === "object" ? null : String(v);
-  return { path: p.path, value };
+  return { path: extra, value, sensitive: false, status: value !== null ? "ready" : "new" };
 }
 
 function withSuggestion(f: PageFieldRef, passport: unknown) {
   const s = suggestionFor(f, passport);
-  return { ...f, suggestion: s ? { path: s.path, name: passportFieldName(s.path), on_file: s.value !== null } : null };
+  return {
+    ...f,
+    suggestion: s
+      // Values never travel in the session view: only the detail's name,
+      // plus the masked last 4 for a protected detail on file.
+      ? { path: s.path, name: passportFieldName(s.path), on_file: s.value !== null, status: s.status, sensitive: s.sensitive, preview: s.sensitive && s.value !== null ? s.value : null }
+      : null,
+  };
+}
+
+/**
+ * Save one missing Passport detail from Teach Clara. The Passport stays the
+ * single source of truth: the value goes to the business's Passport (SSN /
+ * ITIN to the protected store), the session's in-memory Passport and scrub
+ * list are refreshed so Clara can fill it now and the recording never keeps
+ * it, and nothing about the value goes into the routine (which only maps
+ * portal field → Passport path).
+ */
+export async function savePassportFieldTeach(
+  deps: { passportStore: PassportStore },
+  viewer: SkillViewer,
+  id: string,
+  input: { path: string; value: string }
+): Promise<{ ok: true; path: string; name: { en: string; es: string }; preview: string; session: TeachSessionView }> {
+  const live = owned(id, viewer);
+  if (!live.businessId) throw new TeachSessionError(409, "no_business", "Save the business first so its Passport can keep this detail.");
+  const path = input.path.trim();
+  if (!writablePath(path)) throw new TeachSessionError(400, "unknown_detail", "That Passport detail can't be saved here.");
+  const raw = String(input.value ?? "").slice(0, 256);
+  if (!raw.trim()) throw new TeachSessionError(400, "empty", "Type a value first.");
+  let preview: string;
+  try {
+    ({ preview } = await deps.passportStore.save({ businessId: live.businessId, userId: viewer.userId, path, value: raw }));
+  } catch (err) {
+    if (err instanceof PassportWriteError) throw new TeachSessionError(err.status, err.code, err.message);
+    throw err;
+  }
+  const normalized = normalizeValue(path, raw);
+  const passport = (live.passport && typeof live.passport === "object" ? live.passport : {}) as Record<string, unknown>;
+  if (catalogEntry(path)?.sensitive) {
+    const m = protectedMarkerPaths(path);
+    setPassportPath(passport, m.onFile, true);
+    setPassportPath(passport, m.last4, String(normalized).slice(-4));
+  } else {
+    setPassportPath(passport, path, normalized);
+  }
+  live.passport = passport;
+  // The recorder must never keep this value if it's typed on the page later.
+  const value = String(normalized).trim();
+  if (value.length >= 3 && !live.secrets.includes(value)) live.secrets = [...live.secrets, value].sort((a, b) => b.length - a.length);
+  sessions().set(id, live);
+  return { ok: true, path, name: passportFieldName(path), preview, session: viewOf(live) };
 }
 
 /** Fill one field on the current screen from the business's Passport (typed by the browser; nothing returned). */
-export async function fillFromPassportTeach(deps: { worker: TeachWorker }, viewer: SkillViewer, id: string, selector: string): Promise<{ ok: boolean; reason: string | null }> {
+export async function fillFromPassportTeach(deps: { worker: TeachWorker; passportStore?: PassportStore }, viewer: SkillViewer, id: string, selector: string): Promise<{ ok: boolean; reason: string | null }> {
   const live = owned(id, viewer);
   if (live.status !== "recording") throw new TeachSessionError(409, "not_recording", "The portal browser is closed.");
   const field = (live.pageFields ?? []).find((f) => f.selector === selector);
   const s = field ? suggestionFor(field, live.passport) : null;
   if (!s || s.value === null) return { ok: false, reason: "not_on_file" };
   if (!deps.worker.secureFill) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't type for you yet.");
+  // Protected details are read from the protected store only now, at fill time.
+  let value = s.value;
+  if (s.sensitive) {
+    const secret = deps.passportStore && live.businessId ? await deps.passportStore.readProtected({ businessId: live.businessId, userId: viewer.userId, path: s.path }) : null;
+    if (!secret) return { ok: false, reason: "not_on_file" };
+    value = secret;
+  }
   try {
-    const out = await deps.worker.secureFill(live.workerSessionId, { value: s.value.slice(0, 256), selector });
+    const out = await deps.worker.secureFill(live.workerSessionId, { value: value.slice(0, 256), selector });
     return { ok: out.ok === true, reason: out.ok ? null : out.reason ?? "no_field" };
   } catch (err) {
     throw workerFailure(err);

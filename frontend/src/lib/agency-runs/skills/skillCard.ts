@@ -7,7 +7,7 @@
  */
 import type { BilingualText, Skill } from "./skill";
 import { DEFAULT_GATES } from "./gateCopy";
-import { catalogEntry } from "../teach/passportCatalog";
+import { ADDITIONAL_PREFIX, catalogEntry, isAdditionalPath } from "../teach/passportCatalog";
 import { CANONICAL_LABELS } from "../canonicalFields";
 
 export interface SkillCardStep {
@@ -52,6 +52,12 @@ export function passportFieldName(path: string): BilingualText {
   if (entry) return { en: entry.en, es: entry.es };
   const canon = CANONICAL_LABELS[path as keyof typeof CANONICAL_LABELS];
   if (canon) return { en: canon.en, es: canon.es };
+  if (isAdditionalPath(path)) {
+    // A detail the teacher added from a portal label ("business.additional.numero_de_socios").
+    const words = path.slice(ADDITIONAL_PREFIX.length).replace(/_/g, " ");
+    const name = words.charAt(0).toUpperCase() + words.slice(1);
+    return { en: name, es: name };
+  }
   return { en: path, es: path };
 }
 

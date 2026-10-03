@@ -91,7 +91,7 @@ describe("taught playbooks", () => {
     const next = await recordRunLearning(repo, pb, learned);
     assert.ok(next);
     const labels = next!.bindings.map((b) => `${b.label}:${b.path ?? "ask"}:${b.source}`);
-    assert.ok(labels.includes("Cierre del año fiscal:ask:run"));
+    assert.ok(labels.includes("Cierre del año fiscal:operations.fiscalYearEnd:run"), labels.join(" | "));
     assert.ok(labels.includes("Nombre legal:business.legalName:teacher"), "teacher's binding wins");
     // A re-teach keeps what runs learned.
     const v2 = await saveTaughtPlaybook(repo, OWNER, base);

@@ -11,7 +11,7 @@
  */
 import type { Skill } from "./skill";
 import { validateSkill } from "./skillValidate";
-import { catalogEntry } from "../teach/passportCatalog";
+import { catalogEntry, isAdditionalPath } from "../teach/passportCatalog";
 import { CANONICAL_LABELS } from "../canonicalFields";
 import { virtualReplayCheck, type ReplayCheckResult } from "../replay/virtualPortal";
 
@@ -79,7 +79,7 @@ export function sanitizationCheck(skill: Skill): SanitizationResult {
   }
   for (const s of skill.steps) {
     for (const f of s.fields) {
-      if (f.passport_path && !catalogEntry(f.passport_path) && !(f.passport_path in CANONICAL_LABELS)) {
+      if (f.passport_path && !catalogEntry(f.passport_path) && !(f.passport_path in CANONICAL_LABELS) && !isAdditionalPath(f.passport_path)) {
         findings.push(`step ${s.id} field "${f.portal_field.label}": ${f.passport_path} is not a Business Passport field`);
       }
     }

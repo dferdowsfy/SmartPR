@@ -30,6 +30,8 @@ export interface ReplayDeps {
   relocate?: import("./relocate").Relocator;
   /** Type a one-time sensitive value into the replay browser; the worker keeps no copy. */
   secureFill?(sessionId: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason?: string }>;
+  /** Protected Passport details (SSN / ITIN), read only at fill time. */
+  passportStore?: import("../passportWrite").PassportStore;
 }
 
 export interface SkillRef {
@@ -149,6 +151,9 @@ async function step(deps: ReplayDeps, r: LiveReplay): Promise<void> {
     driver: deps.driver(r.driveSessionId!),
     answers: r.answers,
     relocate: deps.relocate,
+    protectedValue: deps.passportStore && r.businessId
+      ? (path: string) => deps.passportStore!.readProtected({ businessId: r.businessId!, userId: r.ownerUserId, path })
+      : undefined,
     onDrift: async (d) => {
       const report = `${d.reason} on "${d.expected}" (${d.detail}); saw "${d.seen.heading || d.seen.title}"`;
       if (r.skillRef.rowId) await markNeedsReteach(deps.repo, r.skillRef.rowId, report);

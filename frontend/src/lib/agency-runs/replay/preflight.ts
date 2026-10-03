@@ -6,7 +6,7 @@
  */
 import type { BilingualText, Skill } from "../skills/skill";
 import { GATE_NAMES, passportFieldName } from "../skills/skillCard";
-import { readPassportPath } from "../teach/passportCatalog";
+import { catalogEntry, passportHas, readPassportPath } from "../teach/passportCatalog";
 
 export interface PreflightPlan {
   fromPassport: { step: string; field: string; source: BilingualText }[];
@@ -28,7 +28,7 @@ export function planReplay(skill: Skill, passport: unknown, health: PreflightPla
     if (s.gate) plan.humanSteps.push({ step, gate: s.gate, name: GATE_NAMES[s.gate] ?? { en: s.gate, es: s.gate } });
     for (const f of s.fields) {
       if (!f.passport_path) plan.askEachTime.push({ step, field: f.portal_field.label });
-      else if (has(readPassportPath(passport, f.passport_path))) plan.fromPassport.push({ step, field: f.portal_field.label, source: passportFieldName(f.passport_path) });
+      else if (catalogEntry(f.passport_path)?.sensitive ? passportHas(passport, f.passport_path) : has(readPassportPath(passport, f.passport_path))) plan.fromPassport.push({ step, field: f.portal_field.label, source: passportFieldName(f.passport_path) });
       else if (f.required) plan.missingRequired.push({ step, field: f.portal_field.label, source: passportFieldName(f.passport_path) });
     }
     for (const b of s.branches ?? []) {

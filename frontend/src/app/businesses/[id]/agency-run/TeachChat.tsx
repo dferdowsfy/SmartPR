@@ -48,6 +48,7 @@ interface SessionView {
   stage: TeachStage;
   secret_fields: SecretFieldView[];
   page_fields: PageFieldView[];
+  can_save_passport?: boolean;
   current_gate: string | null;
   worker_status: string;
 }
@@ -78,6 +79,7 @@ export function TeachChat({
   onLiveUrl,
   onShowBrowser,
   onSaved,
+  onPassportChanged,
 }: {
   lang: Lang;
   ctx: ClaraWorkspaceContext;
@@ -90,6 +92,8 @@ export function TeachChat({
   onLiveUrl: (url: string | null) => void;
   onShowBrowser: () => void;
   onSaved: (r: LearnedRoutineSummary) => void;
+  /** A Passport detail was saved here — refresh the readiness count. */
+  onPassportChanged?: () => void;
 }) {
   const T = (en: string, es: string) => L(en, es, lang);
   // Before the person acts, the phase follows sign-in + recorder status; after, it's theirs.
@@ -569,7 +573,10 @@ export function TeachChat({
             </ClaraBubble>
           )}
           {(session.page_fields ?? []).length > 0 ? (
-            <PageFieldsCard key={(session.page_fields ?? []).map((f) => f.selector).join("|")} lang={lang} fields={session.page_fields} translations={translations} passportEndpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/fill-from-passport`} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
+            <PageFieldsCard key={(session.page_fields ?? []).map((f) => f.selector).join("|")} lang={lang} fields={session.page_fields} translations={translations} passportEndpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/fill-from-passport`} saveEndpoint={session.can_save_passport ? `/api/teach-sessions/${encodeURIComponent(session.id)}/passport-detail` : null} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} onPassportSaved={() => {
+              onPassportChanged?.();
+              void api<{ session?: SessionView }>(`/api/teach-sessions/${encodeURIComponent(session.id)}`).then((r) => { if (r.ok && r.data.session) setSession(r.data.session); }).catch(() => undefined);
+            }} />
           ) : secure ? (
             <SecureInputCard key={`${session.current_gate}-${secure.fields.map((f) => f.selector).join("|")}`} lang={lang} gate={secure.gate} fields={secure.fields} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} />
           ) : null}

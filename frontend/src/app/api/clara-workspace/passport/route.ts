@@ -8,7 +8,7 @@
  * model.
  */
 import { loadCanonicalPassportForBusiness as loadPassportForBusiness } from "../../../../lib/agency-runs/passportLoader";
-import { PASSPORT_CATALOG, readPassportPath } from "../../../../lib/agency-runs/teach/passportCatalog";
+import { PASSPORT_CATALOG, catalogEntryApplies, passportHas, protectedMarkerPaths, readPassportPath } from "../../../../lib/agency-runs/teach/passportCatalog";
 import { currentViewer, unauthorized } from "../../../../lib/agency-runs/teach/routeContext";
 
 export const runtime = "nodejs";
@@ -29,7 +29,14 @@ export async function GET(req: Request) {
   if (!viewer) return unauthorized();
   const businessId = new URL(req.url).searchParams.get("business_id");
   const passport = businessId && !businessId.startsWith("local-") ? await loadPassportForBusiness(businessId, viewer.userId) : null;
-  const fields = PASSPORT_CATALOG.map((c) => {
+  // Conditional details (LLC member count) only count when they apply.
+  const fields = PASSPORT_CATALOG.filter((c) => !c.when || !passport || !readPassportPath(passport, c.when.path) || catalogEntryApplies(c, passport)).map((c) => {
+    if (c.sensitive) {
+      // Protected (SSN / ITIN): only the on-file marker and last 4, never the value.
+      const has = passport ? passportHas(passport, c.path) : false;
+      const last4 = has ? readPassportPath(passport, protectedMarkerPaths(c.path).last4) : null;
+      return { path: c.path, en: c.en, es: c.es, has, preview: has ? `•••-••-${typeof last4 === "string" ? last4 : "••••"}` : null, sensitive: true };
+    }
     const v = passport ? readPassportPath(passport, c.path) : undefined;
     const p = preview(c.path, v);
     return { path: c.path, en: c.en, es: c.es, has: p !== null, preview: p };

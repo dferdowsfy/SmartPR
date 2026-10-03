@@ -297,8 +297,11 @@ describe("Teach Clara journey: teach once, replay for another business", () => {
     assert.equal(sug["Primer Nombre:*"]?.path, "contact.firstName");
     assert.equal(sug["Primer Nombre:*"]?.on_file, true);
     assert.equal(sug["Primer Apellido*:"]?.path, "contact.lastName");
-    assert.equal(sug["Ciudadanía:*"], null, "no Passport field: typed by the person");
-    assert.equal(sug["Número de Seguro Social*:"], null, "sensitive fields never come from the Passport");
+    assert.equal(sug["Ciudadanía:*"]?.status, "new", "no canonical mapping yet: offered as a new Passport detail");
+    assert.equal(sug["Ciudadanía:*"]?.path, "business.additional.ciudadania");
+    assert.equal(sug["Número de Seguro Social*:"]?.path, "contact.taxId", "SSN maps to the protected Passport detail");
+    assert.equal(sug["Número de Seguro Social*:"]?.status, "needed");
+    assert.equal(sug["Número de Seguro Social*:"]?.sensitive, true);
     assert.ok(!JSON.stringify(v).includes("Ana") && !JSON.stringify(v).includes("Pérez"), "values never in the view");
     assert.deepEqual(await fillFromPassportTeach({ worker }, teacher, v.id, "#pn"), { ok: true, reason: null });
     assert.deepEqual(worker.typed.at(-1), { sessionId: "w1", value: "Ana", selector: "#pn" });

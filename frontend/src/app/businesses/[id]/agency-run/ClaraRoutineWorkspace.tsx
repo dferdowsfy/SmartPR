@@ -55,6 +55,16 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
     return () => window.clearTimeout(t);
   }, [loadStatus]);
 
+  const [passportVersion, setPassportVersion] = useState(0);
+  useEffect(() => {
+    if (!passportVersion) return;
+    let cancelled = false;
+    api<{ loaded: boolean; fields: PassportFieldView[] }>(`/api/clara-workspace/passport?business_id=${encodeURIComponent(businessId ?? "")}`)
+      .then((r) => { if (!cancelled && r.ok) setPassport({ loaded: r.data.loaded, fields: r.data.fields }); })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [passportVersion, businessId]);
+
   useEffect(() => {
     let cancelled = false;
     api<{ loaded: boolean; fields: PassportFieldView[] }>(`/api/clara-workspace/passport?business_id=${encodeURIComponent(businessId ?? "")}`)
@@ -191,6 +201,7 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
                   onLiveUrl={setLiveUrl}
                   onShowBrowser={showBrowser}
                   onSaved={(r) => setRoutines((all) => [r, ...(all ?? []).filter((x) => x.ref !== r.ref)])}
+                  onPassportChanged={() => setPassportVersion((v) => v + 1)}
                 />
               ) : (
                 <FillChat

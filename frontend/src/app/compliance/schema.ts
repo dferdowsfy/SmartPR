@@ -343,4 +343,17 @@ CREATE TABLE IF NOT EXISTS admin_allowlist (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   created_by TEXT
 );
+
+-- Protected Business Passport details (SSN / ITIN): encrypted (AES-256-GCM,
+-- enterprise-security encryptSecret) and kept out of passport_json. Read
+-- only at fill time to type into the matching government field.
+CREATE TABLE IF NOT EXISTS passport_protected_values (
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  path TEXT NOT NULL,
+  ciphertext TEXT NOT NULL,
+  last4 TEXT,
+  updated_by UUID,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (business_id, path)
+);
 `;
