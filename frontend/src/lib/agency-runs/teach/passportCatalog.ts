@@ -81,6 +81,8 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
     keywords: ["linea 2", "address line 2", "apartamento", "suite", "apt", "urbanizacion"], kinds: ["text"] },
   { path: "addresses.municipality", en: "Municipality", es: "Municipio",
     keywords: ["municipio", "municipality", "pueblo", "ciudad", "city", "town"], kinds: ["option", "text"], branchable: true },
+  { path: "addresses.state", en: "State / territory", es: "Estado / territorio",
+    keywords: ["state territory", "state or territory", "physically located", "state where", "estado o territorio", "estado territorio"], kinds: ["option", "text"] },
   { path: "addresses.principalPhysical.postalCode", en: "Postal code", es: "Código postal",
     keywords: ["codigo postal", "zip", "zip code", "postal code", "zipcode"], kinds: ["postal", "number"] },
   { path: "addresses.principalMailing.line1", en: "Mailing address", es: "Dirección postal",
@@ -98,7 +100,7 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
   { path: "operations.fiscalYearEnd", en: "Accounting year closing month", es: "Mes de cierre del año contable",
     keywords: ["closing month", "accounting year", "fiscal year", "cierre del ano contable", "mes de cierre", "ano fiscal", "closing month of accounting year"], kinds: ["option", "text"] },
   { path: "business.llcMemberCount", en: "Number of LLC members", es: "Cantidad de miembros de la LLC",
-    keywords: ["number of members", "members of the llc", "llc members", "cantidad de miembros", "numero de miembros"], kinds: ["number", "option"],
+    keywords: ["number of members", "members of the llc", "llc members", "how many member s", "how many members", "member s are in the llc", "cantidad de miembros", "numero de miembros", "cuantos miembros"], kinds: ["number", "option", "text"],
     when: { path: "business.entityType", equals: ["llc", "limited_liability_company"] } },
   { path: "operations.estimatedAnnualGrossReceipts", en: "Estimated annual gross receipts", es: "Volumen de negocio anual estimado",
     keywords: ["volumen de negocio", "gross receipts", "ingresos brutos", "ventas anuales"], kinds: ["number"] },
@@ -249,6 +251,16 @@ export function optionForPassportValue(path: string, value: unknown, options: { 
   if (exact) return exact.label;
   const partial = options.filter((o) => n && (normalizeLabel(o.label).startsWith(n) || n.startsWith(normalizeLabel(o.label))));
   return partial.length === 1 ? partial[0].label : null;
+}
+
+/**
+ * A Passport value, including the few that follow from others (a business
+ * with a Puerto Rico municipality is in the territory of Puerto Rico).
+ */
+export function passportValue(passport: unknown, path: string): unknown {
+  const v = readPassportPath(passport, path);
+  if ((v === undefined || v === null || v === "") && path === "addresses.state" && readPassportPath(passport, "addresses.municipality")) return "Puerto Rico";
+  return v;
 }
 
 /** Read a dotted path from a passport object. */

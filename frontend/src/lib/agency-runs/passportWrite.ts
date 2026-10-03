@@ -50,6 +50,37 @@ export function maskedPreview(path: string, value: string | number): string {
   return text.length > 60 ? `${text.slice(0, 57)}…` : text;
 }
 
+/**
+ * Encryption key for protected Passport details, tagged by source so stored
+ * values keep decrypting if a dedicated key is added later:
+ *   p: PASSPORT_ENC_KEY (64 hex)                      — preferred
+ *   e: ENTERPRISE_WEBHOOK_ENC_KEY (64 hex)            — existing enterprise key
+ *   d: SHA-256("smartpr:passport-protected:v1:" + SUPABASE_SERVICE_ROLE_KEY)
+ *      — derived from a server-only secret already configured, so protected
+ *        details work without extra setup. Never sent to the browser.
+ */
+export async function passportKey(tag?: string): Promise<{ tag: string; key: Buffer } | null> {
+  const { createHash } = await import("node:crypto");
+  const hex = (v: string | undefined) => (v && /^[0-9a-fA-F]{64}$/.test(v.trim()) ? Buffer.from(v.trim(), "hex") : null);
+  const candidates: { tag: string; key: () => Buffer | null }[] = [
+    { tag: "p", key: () => hex(process.env.PASSPORT_ENC_KEY) },
+    { tag: "e", key: () => hex(process.env.ENTERPRISE_WEBHOOK_ENC_KEY) },
+    {
+      tag: "d",
+      key: () => {
+        const base = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+        return base.length >= 20 ? createHash("sha256").update(`smartpr:passport-protected:v1:${base}`).digest() : null;
+      },
+    },
+  ];
+  for (const c of candidates) {
+    if (tag && c.tag !== tag) continue;
+    const key = c.key();
+    if (key) return { tag: c.tag, key };
+  }
+  return null;
+}
+
 export function dbPassportStore(): PassportStore {
   return {
     async save({ businessId, userId, path, value }) {
@@ -79,12 +110,9 @@ export function dbPassportStore(): PassportStore {
         const passport = (row.passport_json && typeof row.passport_json === "object" ? row.passport_json : {}) as Record<string, unknown>;
         if (catalogEntry(path)?.sensitive) {
           const { encryptSecret } = await import("../enterprise-security");
-          let ciphertext: string;
-          try {
-            ciphertext = encryptSecret(String(normalized));
-          } catch {
-            throw new PassportWriteError(503, "protected_storage_unavailable", "Protected storage isn't set up, so this detail can't be saved yet.");
-          }
+          const k = await passportKey();
+          if (!k) throw new PassportWriteError(503, "protected_storage_unavailable", "Protected storage isn't set up, so this detail can't be saved yet.");
+          const ciphertext = `${k.tag}:${encryptSecret(String(normalized), k.key)}`;
           const last4 = String(normalized).slice(-4);
           await client.query(
             `INSERT INTO passport_protected_values (business_id, path, ciphertext, last4, updated_by, updated_at)
@@ -137,7 +165,10 @@ export function dbPassportStore(): PassportStore {
       if (!row) return null;
       try {
         const { decryptSecret } = await import("../enterprise-security");
-        return decryptSecret(row.ciphertext);
+        const m = /^([ped]):(enc_v1:.*)$/.exec(row.ciphertext);
+        const k = await passportKey(m ? m[1] : "e");
+        if (!k) return null;
+        return decryptSecret(m ? m[2] : row.ciphertext, k.key);
       } catch {
         return null;
       }
