@@ -16,11 +16,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const viewer = await currentViewer();
   if (!viewer) return unauthorized();
   const { id } = await ctx.params;
-  const body = (await req.json().catch(() => ({}))) as { path?: unknown; value?: unknown };
+  const body = (await req.json().catch(() => ({}))) as { path?: unknown; value?: unknown; option?: unknown };
   try {
     const out = await savePassportFieldTeach({ passportStore: dbPassportStore() }, viewer, id, {
       path: typeof body.path === "string" ? body.path : "",
       value: typeof body.value === "string" ? body.value : "",
+      option: typeof body.option === "string" ? body.option : undefined,
     });
     return Response.json(out, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {

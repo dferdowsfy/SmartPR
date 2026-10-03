@@ -378,9 +378,10 @@ export function UnavailableCard({ lang, message, hint, reason, onRetry, children
 export interface PageFieldView {
   label: string;
   selector: string | null;
-  kind: "text" | "password" | "ssn" | "code" | "payment";
+  kind: "text" | "password" | "ssn" | "code" | "payment" | "choice" | "next";
+  options?: { label: string; selector: string | null }[];
   /** The Passport field this looks like, and whether the business has it (never the full value). */
-  suggestion?: { path: string; name: Bi; on_file: boolean; status?: "ready" | "needed" | "new"; sensitive?: boolean; preview?: string | null } | null;
+  suggestion?: { path: string; name: Bi; on_file: boolean; status?: "ready" | "needed" | "new"; sensitive?: boolean; preview?: string | null; choice?: { options: string[]; selected: string | null } } | null;
 }
 
 /** "Primer Nombre:*" → "Primer Nombre (First name)" when a translation exists. */
@@ -403,8 +404,12 @@ export function withTranslation(label: string, tr: Record<string, string> | unde
  * detail — never the value. Passwords, codes and payment details are
  * one-time: they go straight to the portal field and are never saved.
  */
-export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveEndpoint, translations, onSent, onPassportSaved }: {
+export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveEndpoint, fillPageEndpoint, autoFill = false, translations, onSent, onPassportSaved }: {
   lang: Lang;
+  /** POST { continue } → fill the screen from the Passport and press Continue. */
+  fillPageEndpoint?: string | null;
+  /** Fill + continue on its own once nothing on the screen is missing. */
+  autoFill?: boolean;
   fields: PageFieldView[];
   endpoint: string;
   passportEndpoint?: string;
@@ -418,9 +423,13 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
   const [notes, setNotes] = useState<Record<string, { ok: boolean; text: string }>>({});
   const [saved, setSaved] = useState<Record<string, string>>({});
   const [showOther, setShowOther] = useState(false);
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const [pageNote, setPageNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const [auto, setAuto] = useState(autoFill);
+  const autoRan = useRef(false);
   const refs = useRef<Record<string, HTMLInputElement | null>>({});
-  const usable = fields.filter((f) => f.selector && f.kind !== "payment");
-  if (!usable.length) return null;
+  const usable = fields.filter((f) => f.selector && f.kind !== "payment" && f.kind !== "next");
+  const nextField = fields.find((f) => f.kind === "next" && f.selector) ?? null;
   const label = (f: PageFieldView) => withTranslation(f.label, translations) || L("Field", "Campo", lang);
   const statusOf = (f: PageFieldView): "ready" | "needed" | "new" | "once" => {
     const sug = f.suggestion;
@@ -433,6 +442,38 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
   const other = usable.filter((f) => statusOf(f) === "new");
   const once = usable.filter((f) => statusOf(f) === "once");
   const note = (key: string, ok: boolean, text: string) => setNotes((n) => ({ ...n, [key]: { ok, text } }));
+
+  /** Fill the whole screen from the Passport and press Continue (never a final submit). */
+  const fillPage = async () => {
+    if (!fillPageEndpoint) return;
+    setBusy("__page");
+    const r = await api<{ ok?: boolean; filled?: number; chosen?: number; continued?: boolean; needed?: number; reason?: string | null }>(fillPageEndpoint, { continue: true }).catch(() => null);
+    setBusy(null);
+    const d = r?.ok ? r.data : null;
+    const n = (d?.filled ?? 0) + (d?.chosen ?? 0);
+    if (d && d.ok) {
+      setPageNote({ ok: true, text: d.continued
+        ? L(`Filled ${n} from your Business Passport and pressed “${nextField?.label ?? "Continue"}”.`, `Llené ${n} desde tu Pasaporte del negocio y presioné “${nextField?.label ?? "Continuar"}”.`, lang)
+        : L(`Filled ${n} from your Business Passport.`, `Llené ${n} desde tu Pasaporte del negocio.`, lang) });
+      onSent?.();
+    } else {
+      setPageNote({ ok: false, text: L("Couldn't fill this screen from the Passport. Fill it in the browser and press Continue.", "No se pudo llenar esta pantalla desde el Pasaporte. Llénala en el navegador y presiona Continuar.", lang) });
+    }
+  };
+  const fillable = ready.length > 0 || Boolean(nextField && usable.length);
+  const readyToAuto = auto && Boolean(fillPageEndpoint) && needed.length === 0 && ready.length > 0;
+  const fillPageRef = useRef(fillPage);
+  fillPageRef.current = fillPage;
+  useEffect(() => {
+    // Everything this screen asks is in the Passport: fill it and continue, once per screen.
+    if (!readyToAuto || autoRan.current) return;
+    const t = window.setTimeout(() => {
+      autoRan.current = true;
+      void fillPageRef.current();
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [readyToAuto]);
+  if (!usable.length) return null;
 
   const fillFromPassport = async (f: PageFieldView) => {
     if (!passportEndpoint) return;
@@ -466,23 +507,39 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
     if (!saveEndpoint || !f.suggestion) return;
     const key = f.selector!;
     const el = refs.current[key];
-    const value = el?.value ?? "";
+    const isChoice = f.kind === "choice";
+    const value = isChoice ? picked[key] ?? "" : el?.value ?? "";
     if (!value.trim()) return;
     setBusy(key);
-    const r = await api<{ ok?: boolean; preview?: string; message?: string; error?: string }>(saveEndpoint, { path: f.suggestion.path, value }).catch(() => null);
+    const r = await api<{ ok?: boolean; preview?: string; message?: string; error?: string }>(saveEndpoint, isChoice ? { path: f.suggestion.path, option: value } : { path: f.suggestion.path, value }).catch(() => null);
     setBusy(null);
     if (r?.ok && r.data.ok) {
       if (el) el.value = "";
-      setSaved((m) => ({ ...m, [f.suggestion!.path]: r.data.preview ?? "" }));
+      setSaved((m) => ({ ...m, [f.suggestion!.path]: isChoice ? value : r.data.preview ?? "" }));
       note(key, true, "");
       onPassportSaved?.();
     } else {
       note(key, false, r?.data?.error === "protected_storage_unavailable"
         ? L("Protected storage isn't set up, so this can't be saved yet. Send it once instead.", "El almacenamiento protegido no está configurado, así que no se puede guardar todavía. Envíalo una vez.", lang)
+        : r?.data?.error === "unsupported_option"
+        ? L("The Business Passport doesn't track that option yet — choose it in the browser.", "El Pasaporte del negocio todavía no guarda esa opción — escógela en el navegador.", lang)
         : L("Couldn't save it to the Passport. Try again.", "No se pudo guardar en el Pasaporte. Intenta otra vez.", lang));
     }
   };
 
+  const choicePicker = (f: PageFieldView) => (
+    <span className="flex w-full flex-wrap gap-1.5" role="radiogroup" aria-label={label(f)} data-testid="ws-choice-options">
+      {(f.suggestion?.choice?.options ?? f.options?.map((o) => o.label) ?? []).map((opt) => {
+        const on = picked[f.selector!] === opt;
+        return (
+          <button key={opt} type="button" role="radio" aria-checked={on} onClick={() => setPicked((m) => ({ ...m, [f.selector!]: opt }))}
+            className={`min-h-9 rounded-full border px-3 text-left text-[13px] ${on ? "border-[#e8d9b5] bg-[#e8d9b5] font-semibold text-[#161616]" : "border-white/15 text-[#ece6d8] hover:bg-white/10"}`}>
+            {opt}
+          </button>
+        );
+      })}
+    </span>
+  );
   const input = (f: PageFieldView, secret: boolean) => (
     <input
       ref={(el) => { refs.current[f.selector!] = el; }}
@@ -508,6 +565,21 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
         </span>
       </div>
 
+      {fillPageEndpoint && fillable && (
+        <div className="flex flex-wrap items-center gap-2" data-testid="ws-fill-page-bar">
+          <button type="button" className={primaryBtn} disabled={busy !== null || needed.length > 0} onClick={() => void fillPage()} data-testid="ws-fill-page">
+            {busy === "__page" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+            {nextField ? L(`Fill from Passport & ${nextField.label}`, `Llenar desde el Pasaporte y ${nextField.label}`, lang) : L("Fill from Passport", "Llenar desde el Pasaporte", lang)}
+          </button>
+          <label className="flex items-center gap-1.5 text-[12.5px] text-[#cfc6b4]">
+            <input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} className="accent-[#e8d9b5]" data-testid="ws-auto-fill" />
+            {L("Do this automatically on each screen", "Hacerlo solo en cada pantalla", lang)}
+          </label>
+          {needed.length > 0 && <span className="w-full text-[12px] text-amber-200">{L("Add the missing details below first.", "Primero añade los datos que faltan abajo.", lang)}</span>}
+          {pageNote && <span className={`w-full text-[12.5px] ${pageNote.ok ? "text-[#9fd3b4]" : "text-amber-200"}`} role="status" data-testid="ws-fill-page-note">{pageNote.text}</span>}
+        </div>
+      )}
+
       {needed.length > 0 && (
         <section className="space-y-2 rounded-xl border border-amber-300/30 bg-amber-200/[0.06] p-3" data-testid="ws-info-needed">
           <p className="text-[14px] font-semibold text-amber-100">{L("Needed for this filing", "Necesario para este trámite", lang)}</p>
@@ -524,7 +596,7 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
                   <span className="ml-1 text-[12px] text-[#9a917f]">· {L("on the page:", "en la página:", lang)} {label(f)}</span>
                 </span>
                 <span className="flex flex-wrap items-center gap-2">
-                  {input(f, secret)}
+                  {f.kind === "choice" ? choicePicker(f) : input(f, secret)}
                   {saveEndpoint ? (
                     <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-save-to-passport">
                       {busy === key ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} {L("Save to Passport", "Guardar en el Pasaporte", lang)}
@@ -561,10 +633,10 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-[#9fd3b4]" aria-hidden="true" />
                 <span className="min-w-0 flex-1">
                   <span className="text-[#ece6d8]">{pick(sug.name, lang)}</span>
-                  {(justSaved ?? sug.preview) && <span className="ml-2 text-[13px] text-[#cfc6b4]" data-testid="ws-ready-preview">{justSaved ?? sug.preview}</span>}
+                  {(justSaved ?? sug.preview ?? sug.choice?.selected) && <span className="ml-2 text-[13px] text-[#cfc6b4]" data-testid="ws-ready-preview">{justSaved ?? sug.preview ?? sug.choice?.selected}</span>}
                   {justSaved !== undefined && <span className="block text-[12px] text-[#9fd3b4]" data-testid="ws-saved-note">{L("Saved to Business Passport", "Guardado en el Pasaporte del negocio", lang)}</span>}
                 </span>
-                {passportEndpoint && (
+                {passportEndpoint && f.kind !== "choice" && (
                   <button type="button" className="rounded-full bg-[#1e4d38] px-3 py-1 text-[13px] font-semibold text-white hover:bg-[#2f6b4f] disabled:opacity-50" disabled={busy === key} onClick={() => void fillFromPassport(f)} data-testid="ws-fill-from-passport">
                     {busy === key ? <Loader2 className="inline h-3.5 w-3.5 animate-spin" /> : L("Fill on page", "Llenar en la página", lang)}
                   </button>
@@ -589,7 +661,7 @@ export function PageFieldsCard({ lang, fields, endpoint, passportEndpoint, saveE
                 <span className="block text-[14px] text-[#f4efe2]">{label(f)}</span>
                 <span className="block text-[12px] text-[#9a917f]">{L(`Clara found this field. Save it to the Passport as “${sug.name.en}”, or send it once.`, `Clara encontró este campo. Guárdalo en el Pasaporte como “${sug.name.es}”, o envíalo una vez.`, lang)}</span>
                 <span className="flex flex-wrap items-center gap-2">
-                  {input(f, false)}
+                  {f.kind === "choice" ? choicePicker(f) : input(f, false)}
                   {saveEndpoint && <button type="submit" className={primaryBtn} disabled={busy === key} data-testid="ws-add-new-detail">{L("Add to Passport", "Añadir al Pasaporte", lang)}</button>}
                   <button type="button" className={ghostBtn} disabled={busy === key} onClick={() => void sendOnce(f)}>{L("Send once", "Enviar una vez", lang)}</button>
                 </span>

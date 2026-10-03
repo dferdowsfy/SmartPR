@@ -18,6 +18,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   fillFromPassportTeach,
+  fillPageFromPassportTeach,
   savePassportFieldTeach,
   secureFillTeach,
   startTeachSession,
@@ -43,7 +44,7 @@ const BIZ = "biz-p";
 const viewer = { userId: randomUUID(), isAdmin: false };
 
 // ---- the business's Passport (what the DB would hold) + the protected store
-const passport: Record<string, unknown> = { business: { legalName: "Enrique's LLC", entityType: "llc" }, contact: { lastName: "Rivera" }, addresses: { municipality: "Arecibo" } };
+const passport: Record<string, unknown> = { business: { legalName: "Enrique's LLC" }, contact: { lastName: "Rivera" }, addresses: { municipality: "Arecibo" } };
 const protectedValues = new Map<string, string>();
 const store: PassportStore = {
   async save({ path: p, value }) {
@@ -70,13 +71,17 @@ const inputFields = [
   { label: "SSN or ITIN", selector: "#ssn", kind: "ssn" },
   { label: "Ciudadanía", selector: "#ciud", kind: "text" },
   { label: "Password", selector: "#pw", kind: "password" },
+  { label: "Choose type of legal structure", selector: "#et0", kind: "choice", options: [{ label: "Sole Proprietor", selector: "#et0" }, { label: "Partnerships", selector: "#et1" }, { label: "Corporations", selector: "#et2" }, { label: "Limited Liability Company (LLC)", selector: "#et3" }, { label: "Estate", selector: "#et4" }] },
+  { label: "Continue", selector: "#continueBtn", kind: "next" },
 ];
+const chosen: string[] = [];
 const events = [{ kind: "page", url: `${PORTAL}responsible-party`, title: "EIN Assistant", heading: "Responsible party", inputFields }];
 const worker: TeachWorker = {
   async start() { return { sessionId: "w1", liveUrl: `${base}/__mock/live` }; },
   async events(_id, after) { return { items: events.slice(after).map((event, i) => ({ seq: after + i + 1, event, shot: false })), nextAfter: events.length, status: "running" }; },
   async stop() {},
   async secureFill(_id, input) { typed.push(input); return { ok: true }; },
+  async choose(_id, input) { chosen.push(input.selector); return { ok: true }; },
   async shot() { return null; },
 };
 
@@ -101,11 +106,12 @@ async function serve(route: Route): Promise<void> {
       const session = await startTeachSession({ worker }, { viewer, tier: "user", businessId: typeof body.business_id === "string" ? body.business_id : null, passport: JSON.parse(JSON.stringify(passport)), startUrl: String(body.start_url), portalName: String(body.portal_name ?? ""), form: String(body.form ?? "") });
       return json(route, 201, { session });
     }
-    const m = p.match(/^\/api\/teach-sessions\/([^/]+)(?:\/(passport-detail|fill-from-passport|secure-input))?$/);
+    const m = p.match(/^\/api\/teach-sessions\/([^/]+)(?:\/(passport-detail|fill-from-passport|fill-page|secure-input))?$/);
     if (m) {
       const [, id, op] = m;
       if (!op) return json(route, 200, { session: await syncTeachSession({ worker }, viewer, id) });
-      if (op === "passport-detail") return json(route, 200, await savePassportFieldTeach({ passportStore: store }, viewer, id, { path: String(body.path ?? ""), value: String(body.value ?? "") }));
+      if (op === "passport-detail") return json(route, 200, await savePassportFieldTeach({ passportStore: store }, viewer, id, { path: String(body.path ?? ""), value: String(body.value ?? ""), option: typeof body.option === "string" ? body.option : undefined }));
+      if (op === "fill-page") return json(route, 200, await fillPageFromPassportTeach({ worker, passportStore: store }, viewer, id, { continue: body.continue !== false }));
       if (op === "fill-from-passport") return json(route, 200, await fillFromPassportTeach({ worker, passportStore: store }, viewer, id, String(body.selector ?? "")));
       return json(route, 200, await secureFillTeach({ worker }, viewer, id, { value: String(body.value ?? ""), selector: typeof body.selector === "string" ? body.selector : null }));
     }
@@ -185,6 +191,19 @@ const count = (t: string) => Number(t.match(/^(\d+)/)?.[1] ?? NaN);
   await page.waitForTimeout(500);
   const after2 = await onFile(page);
   check("readiness count refreshes again (+2 total)", count(after2) === count(before) + 2, `${before} → ${after2}`);
+  // Legal structure (radio question on the page): pick from the page's options → saved to the Passport.
+  const et = needed.locator('[data-testid="ws-needed-field"][data-path="business.entityType"]');
+  check("choice question shown as 'Needed' with the page's options", (await et.count()) === 1 && (await et.locator('[data-testid="ws-choice-options"] [role="radio"]').count()) === 5);
+  check("never presses Continue while something is missing", !chosen.includes("#continueBtn"));
+  await et.getByRole("radio", { name: "Limited Liability Company (LLC)" }).click();
+  await et.locator('[data-testid="ws-save-to-passport"]').click();
+  await card.locator('[data-testid="ws-ready-field"][data-path="business.entityType"]').waitFor({ timeout: 10000 });
+  check("entity type saved to the Passport as SmartPR's canonical type", readPassportPath(passport, "business.entityType") === "limited_liability_company");
+  // Nothing missing now → Clara fills the screen from the Passport and presses Continue on her own.
+  await page.locator('[data-testid="ws-fill-page-note"]').waitFor({ timeout: 10000 });
+  const pageNote = await page.locator('[data-testid="ws-fill-page-note"]').innerText();
+  check("auto: LLC picked on the page from the Passport, then Continue pressed", chosen.includes("#et3") && chosen.at(-1) === "#continueBtn" && /pressed “Continue”/.test(pageNote), `${chosen.join(",")} · ${pageNote}`);
+  check("the auto-fill typed the Passport values on the page (first name, last name, SSN)", ["#first", "#last", "#ssn"].every((sel) => typed.some((t) => t.selector === sel)), typed.map((t) => t.selector).join(","));
   check("Information needed section empties once everything is added", (await card.locator('[data-testid="ws-info-needed"]').count()) === 0);
 
   // Clara fills from the Passport (protected value read only now, typed by the browser).

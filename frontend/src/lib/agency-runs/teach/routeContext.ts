@@ -7,7 +7,7 @@ import { getCurrentUser } from "../../supabase/server";
 import { isUserAdmin } from "../../admin";
 import { MemorySkillRepo, PgSkillRepo, SkillLibraryError, type SkillRepo, type SkillViewer } from "../skills/skillLibrary";
 import { TeachSessionError, type TeachWorker } from "./teachSessions";
-import { fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach, teachBrowserProvider } from "./teachWorkerClient";
+import { chooseWorker, fetchWorkerTeachEvents, fetchWorkerTeachShot, secureFillWorker, startWorkerTeach, stopWorkerTeach, teachBrowserProvider } from "./teachWorkerClient";
 import { CloudDriver, cloudTeachWorker, secureFillCloudDrive, startCloudDrive, stopCloudDrive } from "./cloudBrowser";
 import type { TeachTier } from "./teachSession";
 
@@ -58,7 +58,7 @@ export async function skillRepo(): Promise<SkillRepo> {
   return globalRepo.__smartprSkillMemoryRepo;
 }
 
-const selfHostedTeach: TeachWorker = { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, shot: fetchWorkerTeachShot };
+const selfHostedTeach: TeachWorker = { start: startWorkerTeach, events: fetchWorkerTeachEvents, stop: stopWorkerTeach, secureFill: secureFillWorker, choose: chooseWorker, shot: fetchWorkerTeachShot };
 /** The teach browser for this deployment: Browser Use Cloud or the self-hosted worker. */
 function teachWorker(): TeachWorker {
   return teachBrowserProvider() === "self_hosted" ? selfHostedTeach : cloudTeachWorker;
@@ -70,6 +70,7 @@ export const workerDeps: { worker: TeachWorker } = {
     events: (id, after) => teachWorker().events(id, after),
     stop: (id) => teachWorker().stop(id),
     secureFill: (id, i) => teachWorker().secureFill!(id, i),
+    choose: (id, i) => teachWorker().choose!(id, i),
     shot: (id, seq) => teachWorker().shot!(id, seq),
   },
 };

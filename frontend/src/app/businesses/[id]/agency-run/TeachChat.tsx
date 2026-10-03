@@ -573,7 +573,7 @@ export function TeachChat({
             </ClaraBubble>
           )}
           {(session.page_fields ?? []).length > 0 ? (
-            <PageFieldsCard key={(session.page_fields ?? []).map((f) => f.selector).join("|")} lang={lang} fields={session.page_fields} translations={translations} passportEndpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/fill-from-passport`} saveEndpoint={session.can_save_passport ? `/api/teach-sessions/${encodeURIComponent(session.id)}/passport-detail` : null} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} onPassportSaved={() => {
+            <PageFieldsCard key={`${session.steps.at(-1)?.id ?? ""}|${(session.page_fields ?? []).map((f) => f.selector).join("|")}`} lang={lang} fields={session.page_fields} translations={translations} passportEndpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/fill-from-passport`} saveEndpoint={session.can_save_passport ? `/api/teach-sessions/${encodeURIComponent(session.id)}/passport-detail` : null} fillPageEndpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/fill-page`} autoFill={!session.current_gate} endpoint={`/api/teach-sessions/${encodeURIComponent(session.id)}/secure-input`} onSent={() => setSecureSent((n) => n + 1)} onPassportSaved={() => {
               onPassportChanged?.();
               void api<{ session?: SessionView }>(`/api/teach-sessions/${encodeURIComponent(session.id)}`).then((r) => { if (r.ok && r.data.session) setSession(r.data.session); }).catch(() => undefined);
             }} />

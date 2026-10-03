@@ -36,7 +36,7 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
   { path: "business.tradeName", en: "Trade name (DBA)", es: "Nombre comercial (DBA)",
     keywords: ["nombre comercial", "trade name", "dba", "doing business as", "nombre de fantasia"], kinds: ["text"] },
   { path: "business.entityType", en: "Entity type", es: "Tipo de entidad",
-    keywords: ["tipo de entidad", "entity type", "tipo de organizacion", "tipo de negocio", "business type", "estructura"],
+    keywords: ["tipo de entidad", "entity type", "tipo de organizacion", "tipo de negocio", "business type", "estructura", "legal structure", "type of legal structure", "choose type of legal structure", "estructura legal", "type of organization", "type of entity", "tipo de estructura"],
     kinds: ["option", "text"], branchable: true },
   { path: "business.ein", en: "EIN (federal employer ID)", es: "Seguro social patronal (EIN)",
     keywords: ["ein", "seguro social patronal", "employer identification", "numero patronal", "federal tax id"], kinds: ["number", "text"] },
@@ -99,7 +99,7 @@ export const PASSPORT_CATALOG: PassportCatalogEntry[] = [
     keywords: ["closing month", "accounting year", "fiscal year", "cierre del ano contable", "mes de cierre", "ano fiscal", "closing month of accounting year"], kinds: ["option", "text"] },
   { path: "business.llcMemberCount", en: "Number of LLC members", es: "Cantidad de miembros de la LLC",
     keywords: ["number of members", "members of the llc", "llc members", "cantidad de miembros", "numero de miembros"], kinds: ["number", "option"],
-    when: { path: "business.entityType", equals: ["llc"] } },
+    when: { path: "business.entityType", equals: ["llc", "limited_liability_company"] } },
   { path: "operations.estimatedAnnualGrossReceipts", en: "Estimated annual gross receipts", es: "Volumen de negocio anual estimado",
     keywords: ["volumen de negocio", "gross receipts", "ingresos brutos", "ventas anuales"], kinds: ["number"] },
   { path: "operations.municipalTaxpayerId", en: "Municipal taxpayer ID", es: "Número de contribuyente municipal",
@@ -211,6 +211,44 @@ export function setPassportPath<T extends Record<string, unknown>>(passport: T, 
   }
   node[parts.at(-1)!] = value;
   return passport;
+}
+
+/**
+ * Canonical Passport entity type for an option a portal shows
+ * ("Limited Liability Company (LLC)" → limited_liability_company). null when
+ * the option isn't a business entity SmartPR tracks (Estate, Trusts …).
+ */
+export function entityTypeForOption(label: string): string | null {
+  const t = normalizeLabel(label);
+  if (/limited liability partnership|\bllp\b|sociedad de responsabilidad limitada/.test(t)) return "limited_liability_partnership";
+  if (/limited liability compan|\bllc\b|compania de responsabilidad limitada/.test(t)) return "limited_liability_company";
+  if (/sole proprietor|individuo|persona natural|empresa individual/.test(t)) return "sole_proprietorship";
+  if (/non ?profit|tax exempt|sin fines de lucro/.test(t)) return "nonprofit_nonstock_corporation";
+  if (/partnership|sociedad/.test(t)) return "partnership";
+  if (/corporation|corporacion/.test(t)) return "stock_corporation";
+  return null;
+}
+
+/** Entity types that portals usually group under one "Corporations" option. */
+const CORPORATION_FAMILY = new Set(["stock_corporation", "close_corporation", "professional_corporation", "corporation", "foreign_corporation"]);
+
+/**
+ * The option on the page that matches a Passport value (labels only).
+ * Entity types match by meaning; anything else by its text.
+ */
+export function optionForPassportValue(path: string, value: unknown, options: { label: string }[]): string | null {
+  if (value === undefined || value === null || value === "" || typeof value === "object") return null;
+  const v = String(value).toLowerCase();
+  if (path === "business.entityType") {
+    const want = v === "llc" ? "limited_liability_company" : CORPORATION_FAMILY.has(v) ? "stock_corporation" : v;
+    const hit = options.find((o) => entityTypeForOption(o.label) === want);
+    return hit ? hit.label : null;
+  }
+  const n = normalizeLabel(String(value));
+  const exact = options.find((o) => normalizeLabel(o.label) === n);
+  if (exact) return exact.label;
+  const partial = options.filter((o) => n && (normalizeLabel(o.label).startsWith(n) || n.startsWith(normalizeLabel(o.label))));
+  return partial.length === 1 ? partial[0].label : null;
 }
 
 /** Read a dotted path from a passport object. */

@@ -266,6 +266,7 @@ export const cloudTeachWorker = {
   },
   stop: (sessionId: string) => stopCloud(sessionId),
   secureFill: (sessionId: string, input: { value: string; selector: string | null }) => secureFillCloud(sessionId, input),
+  choose: (sessionId: string, input: { selector: string; option: string | null }) => chooseCloud(sessionId, input),
   async shot(sessionId: string, seq: number): Promise<ArrayBuffer | null> {
     const b = lives().get(sessionId)?.shots.get(seq);
     return b ? (b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer) : null;
@@ -301,6 +302,54 @@ async function secureFillCloud(sessionId: string, input: { value: string; select
     return { ok: true };
   } catch {
     return { ok: false, reason: "fill_failed" };
+  }
+}
+
+/**
+ * Pick an option or press the screen's Continue for the person (Teach Clara
+ * filling from the Passport). Guarded in the page: only radios, checkboxes,
+ * dropdown options and Continue/Next-style buttons — never a final submit,
+ * sign, pay or file button.
+ */
+export const CHOOSE_TARGET_JS = `(a) => {
+  let el = null;
+  try { el = document.querySelector(a.selector); } catch (e) { return { ok: false, reason: "bad_selector" }; }
+  if (!el) return { ok: false, reason: "no_field" };
+  const tag = el.tagName.toLowerCase();
+  const type = (el.getAttribute('type') || '').toLowerCase();
+  if (tag === 'select') {
+    const want = String(a.option || '').trim().toLowerCase();
+    const opt = Array.from(el.options).find((o) => o.text.trim().toLowerCase() === want);
+    if (!opt) return { ok: false, reason: "no_option" };
+    el.value = opt.value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return { ok: true, done: true };
+  }
+  if (tag === 'input' && (type === 'radio' || type === 'checkbox')) { el.setAttribute('data-clara-choose', '1'); return { ok: true }; }
+  const text = (el.innerText || el.value || el.getAttribute('aria-label') || '').trim();
+  if (/^(continue|continuar|next|siguiente|begin application|comenzar|start|empezar|accept|aceptar)\\b/i.test(text) && !/submit|enviar|sign|firmar|pay|pagar|file now|radicar/i.test(text)) {
+    el.setAttribute('data-clara-choose', '1');
+    return { ok: true };
+  }
+  return { ok: false, reason: "not_allowed" };
+}`;
+
+async function chooseCloud(sessionId: string, input: { selector: string; option: string | null }): Promise<{ ok: boolean; reason?: string }> {
+  const live = await getLive(sessionId, "teach");
+  if (live.status !== "running") throw new CloudBrowserError(404, "browser closed");
+  const page = await currentPage(live);
+  try {
+    const r = (await page.evaluate(`(${CHOOSE_TARGET_JS})(${JSON.stringify({ selector: input.selector, option: input.option })})`)) as { ok: boolean; reason?: string; done?: boolean };
+    if (!r.ok) return { ok: false, reason: r.reason ?? "no_field" };
+    if (r.done) return { ok: true };
+    const loc = page.locator('[data-clara-choose="1"]').first();
+    // Radios styled by the portal are often visually hidden: click the input, else its label.
+    await loc.click({ timeout: 8000, force: true }).catch(async () => loc.evaluate((e) => (e as HTMLElement).click()));
+    await loc.evaluate((e) => e.removeAttribute("data-clara-choose")).catch(() => undefined);
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "click_failed" };
   }
 }
 

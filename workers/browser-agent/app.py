@@ -17,6 +17,7 @@ client uses, so switching providers is an env change, not a rewrite:
   GET    /api/v4/teach/{id}/events         ?after=     (recorder events, structure only)
   GET    /api/v4/teach/{id}/shots/{seq}             (per-action screenshot; bearer, or viewer ?token=)
   POST   /api/v4/teach/{id}/secure-fill    {value, selector?}  (one-time sensitive value; never logged)
+  POST   /api/v4/teach/{id}/choose         {selector, option?}  (pick an option / press Continue; never submit)
   POST   /api/v4/teach/{id}/stop
   GET    /api/v4/capabilities              (bearer) teach/drive recorder readiness for SmartPR's probe
   POST   /api/v4/drive                     {startUrl, allowedDomains, driverScript}  (skill replay)
@@ -1052,6 +1053,70 @@ async def teach_secure_fill(session_id: str, body: SecureFill):
     return {"ok": True}
 
 
+class ChooseBody(BaseModel):
+    selector: str
+    option: Optional[str] = None
+
+
+# Same guard as SmartPR's cloud-browser path (teach/cloudBrowser.ts): only
+# radios, checkboxes, dropdown options and Continue/Next buttons — never a
+# final submit, sign, pay or file button.
+_CHOOSE_TARGET_JS = """(a) => {
+  let el = null;
+  try { el = document.querySelector(a.selector); } catch (e) { return { ok: false, reason: 'bad_selector' }; }
+  if (!el) return { ok: false, reason: 'no_field' };
+  const tag = el.tagName.toLowerCase();
+  const type = (el.getAttribute('type') || '').toLowerCase();
+  if (tag === 'select') {
+    const want = String(a.option || '').trim().toLowerCase();
+    const opt = Array.from(el.options).find((o) => o.text.trim().toLowerCase() === want);
+    if (!opt) return { ok: false, reason: 'no_option' };
+    el.value = opt.value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return { ok: true, done: true };
+  }
+  if (tag === 'input' && (type === 'radio' || type === 'checkbox')) { el.setAttribute('data-clara-choose', '1'); return { ok: true }; }
+  const text = (el.innerText || el.value || el.getAttribute('aria-label') || '').trim();
+  if (/^(continue|continuar|next|siguiente|begin application|comenzar|start|empezar|accept|aceptar)\\b/i.test(text) && !/submit|enviar|sign|firmar|pay|pagar|file now|radicar/i.test(text)) {
+    el.setAttribute('data-clara-choose', '1');
+    return { ok: true };
+  }
+  return { ok: false, reason: 'not_allowed' };
+}"""
+
+
+@app.post("/api/v4/teach/{session_id}/choose", dependencies=[Depends(require_api_token)])
+async def teach_choose(session_id: str, body: ChooseBody):
+    """Pick an option or press Continue for the person while teaching
+    (filling from the Business Passport). Never a final submit."""
+    sess = SESSIONS.get(session_id)
+    if not sess or sess.kind != "teach" or sess.status != "running":
+        raise HTTPException(status_code=404, detail="session not found")
+    selector = (body.selector or "").strip()[:300]
+    if not selector:
+        raise HTTPException(status_code=400, detail="selector missing")
+    page = _drive_page(sess)
+    try:
+        r = await page.evaluate(_CHOOSE_TARGET_JS, {"selector": selector, "option": (body.option or "")[:120]})
+        if not r.get("ok"):
+            return {"ok": False, "reason": r.get("reason") or "no_field"}
+        if r.get("done"):
+            return {"ok": True}
+        loc = page.locator('[data-clara-choose="1"]').first
+        try:
+            await loc.click(timeout=8000, force=True)
+        except Exception:  # noqa: BLE001
+            await loc.evaluate("(e) => e.click()")
+        await loc.evaluate("(e) => e.removeAttribute('data-clara-choose')")
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        log.warning("choose failed: %s", type(exc).__name__)
+        return {"ok": False, "reason": "click_failed"}
+    return {"ok": True}
+
+
 _BROWSER_PROBE: dict = {"at": 0.0, "ok": None, "error": None}
 
 
@@ -1099,6 +1164,7 @@ async def capabilities():
         "teach": True,
         "drive": True,
         "secureFill": True,
+        "choose": True,
         "protocol": TEACH_PROTOCOL,
         "browser": browser_ok,
         "browserError": browser_err,

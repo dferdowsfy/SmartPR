@@ -232,6 +232,11 @@ export async function secureFillWorker(sessionId: string, input: { value: string
   return call(`/${encodeURIComponent(sessionId)}/secure-fill`, { method: "POST", body: JSON.stringify({ value: input.value, selector: input.selector }) });
 }
 
+/** Pick an option / press Continue in the live portal (guarded worker-side: never a final submit). */
+export async function chooseWorker(sessionId: string, input: { selector: string; option: string | null }): Promise<{ ok: boolean; reason?: string }> {
+  return call(`/${encodeURIComponent(sessionId)}/choose`, { method: "POST", body: JSON.stringify({ selector: input.selector, option: input.option }) });
+}
+
 /** One per-step screenshot (JPEG), fetched server-side with the bearer token. */
 export async function fetchWorkerTeachShot(sessionId: string, seq: number): Promise<ArrayBuffer | null> {
   const res = await fetch(`${base()}/${encodeURIComponent(sessionId)}/shots/${seq}`, { headers: { Authorization: `Bearer ${workerToken()}` }, cache: "no-store" }).catch(() => null);

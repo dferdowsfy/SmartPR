@@ -110,8 +110,55 @@ export const DOM_HELPERS_JS = String.raw`
     }
   }
 
-  // Every visible text-like field on the screen (label/selector/kind — never a value),
-  // so the person can type into the portal from SmartPR's chat.
+  // Every visible field on the screen (label/selector/kind — never a value),
+  // so the person can complete it from SmartPR: text-like inputs, choice
+  // questions (radio groups and dropdowns, with their option labels) and the
+  // screen's Continue / Next button (never a final submit).
+  function shown(el) {
+    if (visible(el)) return true;
+    var lab = el.id ? document.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(el.id) : el.id) + '"]') : null;
+    return visible(lab) || visible(el.closest("label"));
+  }
+  function questionFor(radios) {
+    var first = radios[0];
+    var group = first.closest("fieldset, [role=radiogroup]");
+    if (group) {
+      var lg = group.querySelector("legend");
+      if (lg && textWithoutControls(lg)) return textWithoutControls(lg);
+      var al = group.getAttribute("aria-label");
+      if (al) return clean(al);
+      var lb = group.getAttribute("aria-labelledby");
+      if (lb) { var n = document.getElementById(lb.split(/\s+/)[0]); if (n && textWithoutControls(n)) return textWithoutControls(n); }
+    }
+    // Climb to the element holding the whole group, then read the text just before it.
+    var box = first.parentElement;
+    for (var d = 0; box && d < 6; d++) {
+      var all = true;
+      for (var i = 0; i < radios.length; i++) if (!box.contains(radios[i])) { all = false; break; }
+      if (all) break;
+      box = box.parentElement;
+    }
+    for (var up = 0, node = box; node && up < 3; up++, node = node.parentElement) {
+      var prev = node.previousElementSibling;
+      for (var k = 0; prev && k < 3; k++, prev = prev.previousElementSibling) {
+        var t = textWithoutControls(prev);
+        if (t && t.length <= 160) return t;
+      }
+    }
+    return first.getAttribute("name") ? clean(first.getAttribute("name")) : "";
+  }
+  function nextButton() {
+    var cands = document.querySelectorAll("button, input[type=submit], input[type=button], a[role=button], [role=button]");
+    for (var i = 0; i < cands.length; i++) {
+      var b = cands[i];
+      if (!visible(b) || b.disabled) continue;
+      var t = labelFor(b);
+      if (/^(continue|continuar|next|siguiente|begin application|comenzar|start|empezar|accept|aceptar)\b/i.test(t) && !/submit|enviar|sign|firmar|pay|pagar|file now|radicar/i.test(t)) {
+        return { label: t, selector: selectorFor(b), kind: "next" };
+      }
+    }
+    return null;
+  }
   function pageFields() {
     var out = [];
     var all = document.querySelectorAll("input, textarea");
@@ -121,6 +168,47 @@ export const DOM_HELPERS_JS = String.raw`
       if (/^(hidden|checkbox|radio|submit|button|file|reset|image|range|color)$/.test(type)) continue;
       if (el.disabled || el.readOnly || !visible(el)) continue;
       out.push({ label: labelFor(el), selector: selectorFor(el), kind: sensitiveKind(el) || "text" });
+    }
+    // Radio groups (by name) → one choice question with its options.
+    var groups = {}, order = [];
+    var radios = document.querySelectorAll("input[type=radio]");
+    for (var r = 0; r < radios.length; r++) {
+      var rb = radios[r];
+      if (rb.disabled || !shown(rb)) continue;
+      var key = rb.getAttribute("name") || ("__" + r);
+      if (!groups[key]) { groups[key] = []; order.push(key); }
+      groups[key].push(rb);
+    }
+    for (var g = 0; g < order.length && out.length < 15; g++) {
+      var list = groups[order[g]];
+      if (list.length < 2) continue;
+      out.push({
+        label: questionFor(list),
+        selector: selectorFor(list[0]),
+        kind: "choice",
+        options: list.slice(0, 14).map(function (o) { return { label: labelFor(o).slice(0, 80), selector: selectorFor(o) }; }),
+      });
+    }
+    // Dropdowns → choice questions (options by visible text).
+    var sels = document.querySelectorAll("select");
+    for (var s = 0; s < sels.length && out.length < 15; s++) {
+      var se = sels[s];
+      if (se.disabled || !visible(se)) continue;
+      var opts = [];
+      for (var o = 0; o < se.options.length && opts.length < 14; o++) {
+        var ot = clean(se.options[o].text);
+        if (ot && se.options[o].value !== "") opts.push({ label: ot.slice(0, 80), selector: null });
+      }
+      if (opts.length >= 2) out.push({ label: labelFor(se), selector: selectorFor(se), kind: "choice", options: opts });
+    }
+    var nb = nextButton();
+    if (nb) out.push(nb);
+    // Keep the page event small (the worker caps event size): trim options first.
+    while (JSON.stringify(out).length > 3300) {
+      var biggest = null;
+      for (var z = 0; z < out.length; z++) if (out[z].options && out[z].options.length > 4 && (!biggest || out[z].options.length > biggest.options.length)) biggest = out[z];
+      if (!biggest) { out.pop(); continue; }
+      biggest.options = biggest.options.slice(0, biggest.options.length - 2);
     }
     return out;
   }

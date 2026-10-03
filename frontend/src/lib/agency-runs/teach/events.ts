@@ -47,7 +47,13 @@ export interface SecretFieldRef {
 export interface PageFieldRef {
   label: string;
   selector: string | null;
-  kind: "text" | SecretKind;
+  /**
+   * "choice": a radio group or dropdown (options listed, labels/selectors only);
+   * "next": the screen's Continue / Next button (never a final submit).
+   */
+  kind: "text" | "choice" | "next" | SecretKind;
+  /** choice only: the options the page offers. */
+  options?: { label: string; selector: string | null }[];
 }
 
 export interface TeachPageEvent {
@@ -202,10 +208,20 @@ export function sanitizeTeachEvent(raw: unknown, secrets: string[] = []): TeachE
           .map((f) => ({ label: text(f.label), selector: scrubSelector(f.selector, secrets), kind: SECRET_KINDS.find((k) => k === f.kind) ?? "password" }))
           .filter((f) => f.label || f.selector),
         inputFields: (Array.isArray(r.inputFields) ? r.inputFields : [])
-          .slice(0, 12)
+          .slice(0, 16)
           .map((f) => (f && typeof f === "object" ? (f as Record<string, unknown>) : {}))
-          .map((f) => ({ label: text(f.label), selector: scrubSelector(f.selector, secrets), kind: (SECRET_KINDS.find((k) => k === f.kind) ?? "text") as PageFieldRef["kind"] }))
-          .filter((f) => f.selector),
+          .map((f): PageFieldRef => {
+            const kind = f.kind === "choice" || f.kind === "next" ? f.kind : ((SECRET_KINDS.find((k) => k === f.kind) ?? "text") as PageFieldRef["kind"]);
+            const base: PageFieldRef = { label: text(f.label), selector: scrubSelector(f.selector, secrets), kind };
+            if (kind !== "choice") return base;
+            const options = (Array.isArray(f.options) ? f.options : [])
+              .slice(0, 14)
+              .map((o) => (o && typeof o === "object" ? (o as Record<string, unknown>) : {}))
+              .map((o) => ({ label: text(o.label).slice(0, 80), selector: scrubSelector(o.selector, secrets) }))
+              .filter((o) => o.label);
+            return { ...base, options };
+          })
+          .filter((f) => f.selector && (f.kind !== "choice" || (f.options?.length ?? 0) >= 2)),
       };
     case "click": {
       const role = CLICK_ROLES.find((x) => x === r.role);

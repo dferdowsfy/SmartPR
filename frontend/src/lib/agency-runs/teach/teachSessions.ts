@@ -33,7 +33,7 @@ import { buildSkillFromTeach, type BuildResult } from "./buildSkill";
 import { bindRecordedActions, normalizeRecorderItems, type RecordedAction } from "./recording";
 import { llmReviewRoutine, validateRoutine, withLlmNotes, type LlmReviewer, type RoutineValidation } from "./validateRoutine";
 import { passportFieldName } from "../skills/skillCard";
-import { additionalDetailPath, catalogEntry, catalogEntryApplies, passportHas, proposeMapping, protectedMarkerPaths, readPassportPath, setPassportPath } from "./passportCatalog";
+import { additionalDetailPath, catalogEntry, catalogEntryApplies, entityTypeForOption, optionForPassportValue, passportHas, proposeMapping, protectedMarkerPaths, readPassportPath, setPassportPath } from "./passportCatalog";
 import { normalizeValue, PassportWriteError, writablePath, type PassportStore } from "../passportWrite";
 import { teachDomainDecision } from "./domains";
 import { skillCard, type SkillCard } from "../skills/skillCard";
@@ -53,6 +53,8 @@ export interface TeachWorker {
   stop(sessionId: string): Promise<void>;
   /** Type a one-time sensitive value into the live portal; the worker keeps no copy. */
   secureFill?(sessionId: string, input: { value: string; selector: string | null }): Promise<{ ok: boolean; reason?: string }>;
+  /** Pick an option / press Continue on the live page (never a final submit). */
+  choose?(sessionId: string, input: { selector: string; option: string | null }): Promise<{ ok: boolean; reason?: string }>;
   /** A step's screenshot bytes (server-side, authenticated). */
   shot?(sessionId: string, seq: number): Promise<ArrayBuffer | null>;
 }
@@ -141,6 +143,8 @@ export interface PageFieldSuggestion {
   status: "ready" | "needed" | "new";
   sensitive: boolean;
   preview: string | null;
+  /** Choice questions (radio group / dropdown): the page's options and the one the Passport picks. */
+  choice?: { options: string[]; selected: string | null };
 }
 
 const globalStore = globalThis as typeof globalThis & { __smartprTeachSessions?: Map<string, LiveTeach> };
@@ -221,8 +225,18 @@ export function viewOf(live: LiveTeach): TeachSessionView {
  * codes and payment fields are never Passport details; SSN / ITIN fields map
  * to the protected contact.taxId.
  */
-function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; value: string | null; sensitive: boolean; status: PageFieldSuggestion["status"] } | null {
-  if (f.kind === "password" || f.kind === "code" || f.kind === "payment") return null;
+function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; value: string | null; sensitive: boolean; status: PageFieldSuggestion["status"]; choice?: { options: string[]; selected: string | null } } | null {
+  if (f.kind === "password" || f.kind === "code" || f.kind === "payment" || f.kind === "next") return null;
+  if (f.kind === "choice") {
+    const options = (f.options ?? []).map((o) => o.label);
+    const p = proposeMapping(f.label, "option");
+    const path = p && p.confidence === "high" ? p.path : additionalDetailPath(f.label);
+    if (!path) return null;
+    const entry = catalogEntry(path);
+    if (entry?.when && passport && readPassportPath(passport, entry.when.path) && !catalogEntryApplies(entry, passport)) return null;
+    const selected = optionForPassportValue(path, passport ? readPassportPath(passport, path) : undefined, f.options ?? []);
+    return { path, value: selected, sensitive: false, status: selected ? "ready" : p && p.confidence === "high" ? "needed" : "new", choice: { options, selected } };
+  }
   const p = f.kind === "ssn" ? { path: "contact.taxId", confidence: "high" as const } : proposeMapping(f.label, "text");
   if (p && p.confidence === "high") {
     const entry = catalogEntry(p.path);
@@ -253,7 +267,7 @@ function withSuggestion(f: PageFieldRef, passport: unknown) {
     suggestion: s
       // Values never travel in the session view: only the detail's name,
       // plus the masked last 4 for a protected detail on file.
-      ? { path: s.path, name: passportFieldName(s.path), on_file: s.value !== null, status: s.status, sensitive: s.sensitive, preview: s.sensitive && s.value !== null ? s.value : null }
+      ? { path: s.path, name: passportFieldName(s.path), on_file: s.value !== null, status: s.status, sensitive: s.sensitive, preview: s.sensitive && s.value !== null ? s.value : null, ...(s.choice ? { choice: s.choice } : {}) }
       : null,
   };
 }
@@ -270,13 +284,25 @@ export async function savePassportFieldTeach(
   deps: { passportStore: PassportStore },
   viewer: SkillViewer,
   id: string,
-  input: { path: string; value: string }
+  input: { path: string; value?: string; option?: string }
 ): Promise<{ ok: true; path: string; name: { en: string; es: string }; preview: string; session: TeachSessionView }> {
   const live = owned(id, viewer);
   if (!live.businessId) throw new TeachSessionError(409, "no_business", "Save the business first so its Passport can keep this detail.");
   const path = input.path.trim();
   if (!writablePath(path)) throw new TeachSessionError(400, "unknown_detail", "That Passport detail can't be saved here.");
-  const raw = String(input.value ?? "").slice(0, 256);
+  // A choice question: the person picked one of the page's options. The
+  // Passport keeps its own value (entity types as SmartPR's canonical type).
+  let raw = String(input.value ?? "").slice(0, 256);
+  if (typeof input.option === "string" && input.option.trim()) {
+    const option = input.option.trim().slice(0, 120);
+    if (path === "business.entityType") {
+      const canonical = entityTypeForOption(option);
+      if (!canonical) throw new TeachSessionError(400, "unsupported_option", "The Business Passport doesn't track that structure yet — choose it on the page.");
+      raw = canonical;
+    } else {
+      raw = option;
+    }
+  }
   if (!raw.trim()) throw new TeachSessionError(400, "empty", "Type a value first.");
   let preview: string;
   try {
@@ -323,6 +349,63 @@ export async function fillFromPassportTeach(deps: { worker: TeachWorker; passpor
   } catch (err) {
     throw workerFailure(err);
   }
+}
+
+/**
+ * Fill everything on the current screen that the Passport has (text fields
+ * typed, choice questions picked), then press the screen's Continue when
+ * nothing is missing. Values go straight to the page; nothing is returned.
+ * Never presses a final submit (the button guard lives in the browser).
+ */
+export async function fillPageFromPassportTeach(
+  deps: { worker: TeachWorker; passportStore?: PassportStore },
+  viewer: SkillViewer,
+  id: string,
+  opts: { continue: boolean }
+): Promise<{ ok: boolean; filled: number; chosen: number; continued: boolean; needed: number; reason: string | null }> {
+  const live = owned(id, viewer);
+  if (live.status !== "recording") throw new TeachSessionError(409, "not_recording", "The portal browser is closed.");
+  if (!deps.worker.secureFill || !deps.worker.choose) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't fill for you yet.");
+  let filled = 0;
+  let chosen = 0;
+  let needed = 0;
+  let failed: string | null = null;
+  const fields = live.pageFields ?? [];
+  for (const f of fields) {
+    if (!f.selector || f.kind === "next") continue;
+    const s = suggestionFor(f, live.passport);
+    if (!s) continue;
+    if (s.value === null) {
+      if (s.status === "needed") needed += 1;
+      continue;
+    }
+    try {
+      if (f.kind === "choice") {
+        const opt = (f.options ?? []).find((o) => o.label === s.choice?.selected);
+        const out = await deps.worker.choose(live.workerSessionId, opt?.selector ? { selector: opt.selector, option: null } : { selector: f.selector, option: s.choice?.selected ?? null });
+        if (out.ok) chosen += 1;
+        else failed = out.reason ?? "choose_failed";
+      } else {
+        const r = await fillFromPassportTeach(deps, viewer, id, f.selector);
+        if (r.ok) filled += 1;
+        else if (r.reason !== "not_on_file") failed = r.reason;
+      }
+    } catch (err) {
+      throw workerFailure(err);
+    }
+  }
+  let continued = false;
+  const next = fields.find((f) => f.kind === "next" && f.selector);
+  if (opts.continue && next && needed === 0 && !failed) {
+    try {
+      const out = await deps.worker.choose(live.workerSessionId, { selector: next.selector!, option: null });
+      continued = out.ok === true;
+      if (!out.ok) failed = out.reason ?? "continue_failed";
+    } catch (err) {
+      throw workerFailure(err);
+    }
+  }
+  return { ok: !failed, filled, chosen, continued, needed, reason: failed };
 }
 
 /** The owner-gated proxy path for one step's screenshot (no worker token). */
