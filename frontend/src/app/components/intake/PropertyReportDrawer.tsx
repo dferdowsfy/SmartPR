@@ -78,6 +78,28 @@ function downloadJson(report: PropertyReport, review: ReviewExport) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+/** document.execCommand("copy") from a temporary textarea inside the dialog (focus-trap safe). */
+function legacyCopy(text: string, host: HTMLElement | null): boolean {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.setAttribute("readonly", "");
+  // 16px avoids iOS zoom; off-screen but still selectable.
+  ta.style.cssText = "position:fixed;top:0;left:-9999px;opacity:0;font-size:16px;";
+  (host ?? document.body).appendChild(ta);
+  const active = document.activeElement as HTMLElement | null;
+  try {
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    ta.remove();
+    active?.focus?.({ preventScroll: true });
+  }
+}
+
 export function PropertyReportDrawer({
   open, report, lang, onClose, onEditLocation, passport, returnFocusTo, reviewTarget = null,
 }: {
@@ -96,6 +118,7 @@ export function PropertyReportDrawer({
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const [copied, setCopied] = useState(false);
+  const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "pdf">(null);
   const [showTech, setShowTech] = useState(false);
   const savedVersion = passport.kind === "ready" ? passport.saved?.version ?? null : null;
@@ -133,11 +156,25 @@ export function PropertyReportDrawer({
   const area = p.boundary.area_m2;
 
   const copy = async () => {
+    const text = reportSummaryText(report, lang, reviewExport);
+    setCopyFallback(null);
+    // 1) Async Clipboard API (refused in some mobile browsers / in-app views).
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(reportSummaryText(report, lang, reviewExport));
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      }
+    } catch { /* fall through */ }
+    // 2) Legacy copy from a selected textarea (works on iOS Safari/Chrome).
+    if (!ok) ok = legacyCopy(text, panelRef.current);
+    if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
-    } catch { /* clipboard blocked */ }
+    } else {
+      // 3) Show the text selected so the user can copy it by hand.
+      setCopyFallback(text);
+    }
   };
 
   return (
@@ -180,6 +217,13 @@ export function PropertyReportDrawer({
             <FileJson aria-hidden="true" /> {L("Export data (JSON)", "Exportar datos (JSON)", lang)}
           </button>
           {passport.kind === "ready" && passport.error && <span className="spr-prd-error" role="alert">{passport.error}</span>}
+          {copyFallback && (
+            <div className="spr-prd-copybox" role="alert" data-testid="report-copy-fallback">
+              <p>{L("Your browser blocked automatic copying. The summary is selected below — use Copy from your browser's menu.", "Tu navegador bloqueó la copia automática. El resumen está seleccionado abajo — usa Copiar en el menú del navegador.", lang)}</p>
+              <textarea readOnly value={copyFallback} rows={6} ref={(el) => { if (el) { el.focus(); el.select(); el.setSelectionRange(0, el.value.length); } }} />
+              <button type="button" className="spr-link" onClick={() => setCopyFallback(null)}>{L("Done", "Listo", lang)}</button>
+            </div>
+          )}
         </div>
 
         <div className="spr-prd-body">

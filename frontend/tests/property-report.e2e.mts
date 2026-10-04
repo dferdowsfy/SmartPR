@@ -267,6 +267,21 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   const [w, vw] = await page.locator('[data-testid="property-report"]').evaluate((e) => [e.getBoundingClientRect().width, document.documentElement.getBoundingClientRect().width]);
   check("mobile: report fills the visible viewport", Math.abs(w - vw) <= 1, `${w} of ${vw}`);
   check("mobile: multi-district + conflicting flood data listed", /CT-3/.test(await text(page, '[data-finding="zoning"]')) && /Flood sources differ/.test(await text(page, '[data-testid="property-report"]')));
+  // Copy summary when the async Clipboard API is refused (iOS Safari / Chrome on iPhone).
+  await page.evaluate(`(() => {
+    window.__copied = "";
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: () => Promise.reject(new DOMException("denied", "NotAllowedError")) } });
+    document.addEventListener("copy", () => { window.__copied = document.activeElement && document.activeElement.value || ""; });
+  })()`);
+  await page.click('[data-testid="report-copy"]');
+  await page.waitForTimeout(300);
+  const legacy = String(await page.evaluate("window.__copied"));
+  check("mobile copy: falls back when the Clipboard API is refused", /Catastro: 041-087-017-17/.test(legacy) && /Copied/.test(await text(page, '[data-testid="report-copy"]')), legacy.slice(0, 60));
+  // Every copy route blocked → the summary is shown selected for manual copy.
+  await page.evaluate("document.execCommand = () => false");
+  await page.click('[data-testid="report-copy"]');
+  await page.locator('[data-testid="report-copy-fallback"]').waitFor({ timeout: 5000 }).catch(() => undefined);
+  check("mobile copy: blocked everywhere → selectable text, never silent", /041-087-017-17/.test(await page.locator('[data-testid="report-copy-fallback"] textarea').inputValue().catch(() => "")));
   await page.screenshot({ path: path.join(OUT, "8-mobile-report.png") });
   await page.context().close();
 }

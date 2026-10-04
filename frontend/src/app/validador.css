@@ -4116,3 +4116,7 @@ section.spr-plc .spr-plc-proposal { margin: 0; padding: 10px 12px; border: 1px s
 .spr-map-layers-toggle:focus-visible { outline: 2px solid #1f6b66; outline-offset: 1px; }
 .spr-prd-finding-plain { margin: 4px 0 0 22px; font-size: 14.5px; line-height: 1.5; color: #152f35; }
 .spr-prd-finding-value { font-size: 13px !important; font-weight: 600 !important; color: #5d6b72 !important; }
+.spr-prd-copybox { flex: 1 1 100%; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid #f0cf8a; border-radius: 10px; background: #fff8ea; }
+.spr-prd-copybox p { margin: 0; font-size: 13px; color: #5c4300; }
+.spr-prd-copybox textarea { width: 100%; padding: 8px; border: 1px solid #d9d3c6; border-radius: 8px; font: 13px/1.45 ui-monospace, monospace; color: #152f35; background: #fff; }
+.spr-prd-copybox .spr-link { align-self: flex-start; }
