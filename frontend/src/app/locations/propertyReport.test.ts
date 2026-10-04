@@ -74,15 +74,18 @@ test("full report: parcel scope, multiple districts flagged, sources and timesta
   assert.ok(r.property.boundary.area_m2! > 0);
   assert.equal(r.findings.find((f) => f.id === "flood_zone")!.value?.en, "Zone X");
   assert.equal(r.findings.find((f) => f.id === "historic_zone")!.state, "unavailable");
-  // No PUT answer for this synthetic parcel → "unable to verify", never "not performed" / "no".
-  assert.equal(r.findings.find((f) => f.id === "put")!.state, "unavailable");
-  // No proposed activity yet → permitted uses are not applicable until one is described.
-  assert.equal(r.findings.find((f) => f.id === "permitted_uses")!.state, "not_applicable");
+  // This parcel record predates the PUT check → "not checked", never "no" and never an official finding.
+  const put = r.findings.find((f) => f.id === "put")!;
+  assert.equal(put.state, "not_performed");
+  assert.equal(put.basis, "not_performed");
+  // No proposed activity yet → not evaluated (never "not applicable").
+  assert.equal(r.findings.find((f) => f.id === "permitted_uses")!.state, "not_evaluated");
   for (const f of r.findings.filter((f) => f.state === "sourced")) assert.ok(f.sources.length && f.looked_up_at, f.id);
   assert.ok(belongsToSite(r));
   assert.equal(r.location_revision, 3);
   assert.match(r.next_steps.activity.en, /Agro-tourism lodge/);
-  assert.ok(r.next_steps.steps.some((s) => s.id === "verify_use" && s.sources.length));
+  // No land-use evaluation was run → a preparation step, never a prescribed permit.
+  assert.ok(r.next_steps.steps.some((s) => s.id === "describe_activity" && s.kind === "preparation" && s.sources.length));
 });
 
 test("layers for another point are never shown (stale/loading only)", () => {

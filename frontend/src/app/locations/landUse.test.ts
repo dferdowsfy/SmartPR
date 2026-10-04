@@ -30,8 +30,8 @@ test("Santurce: existing correct findings stay intact", () => {
   assert.equal(Math.round(r.property.boundary.area_m2!), 7848);
   assert.match(f(r, "zoning").value!.en, /^CT .*· P/);
   assert.match(f(r, "land_class").value!.en, /SU/);
-  assert.match(f(r, "flood_zone").value!.en, /VE.*X/);
-  assert.equal(f(r, "floodway").value!.en, "Not mapped");
+  assert.match(f(r, "flood_zone").value!.en, /X.*VE/);
+  assert.equal(f(r, "floodway").value!.en, "None mapped");
   assert.equal(f(r, "flood_advisory").state, "none_mapped");
   assert.equal(f(r, "terrain").value!.en, "Low");
   assert.equal(f(r, "coastal_zone").state, "sourced");
@@ -40,10 +40,13 @@ test("Santurce: existing correct findings stay intact", () => {
 test("Santurce: multi-zone parcel shows areas, never 'whole parcel' for each", () => {
   const r = report();
   const z = f(r, "zoning"), fl = f(r, "flood_zone");
-  assert.match(z.value!.en, /CT 99\.\d% · P <1%/);
-  assert.match(z.detail!.en, /edge sliver/);
-  assert.match(fl.value!.en, /VE 19\.\d% · X 80\.\d%/);
-  assert.match(fl.detail!.en, /Zone VE: 1,5\d\d(\.\d)? m²/);
+  // Small intersections are kept and named as such, never dropped or called errors.
+  assert.match(z.value!.en, /^CT 99\.\d% · P 0\.3% \(small\)$/);
+  assert.match(z.detail!.en, /P \(Público\): \d+ m² — 0\.3% of the parcel\. Small intersection\./);
+  assert.ok(z.notes!.some((n) => /cannot tell whether this is a real strip/.test(n.en)));
+  assert.doesNotMatch(z.detail!.en + z.notes!.map((n) => n.en).join(" "), /mapping error|sliver/i);
+  assert.match(fl.value!.en, /^Zone X 80\.\d% · VE 19\.\d%$/);
+  assert.match(fl.detail!.en, /Zone VE: 1,5\d\d m² — 19\.\d% of the parcel/);
 });
 
 test("Santurce: previously 'not performed' checks are now verified or no-mapped", () => {
@@ -52,10 +55,15 @@ test("Santurce: previously 'not performed' checks are now verified or no-mapped"
     assert.ok(["verified", "no_mapped_constraint"].includes(findingStatus(f(r, id).state)), `${id}: ${f(r, id).state}`);
   }
   assert.match(f(r, "put").value!.en, /SU — Suelo Urbano \(PUT-2014/);
-  assert.match(f(r, "municipal_plan").value!.en, /approved 13-Mar-2003/);
+  // Legacy saved record ("revision_1" = due date) is re-read with the official meanings.
+  assert.match(f(r, "municipal_plan").value!.en, /^Approved 13-Mar-2003 · first revision was due 13-Mar-2011; no approval recorded$/);
+  assert.doesNotMatch(f(r, "municipal_plan").value!.en, /revised/i);
   assert.match(f(r, "soils").value!.en, /Urban land/);
   assert.match(f(r, "zoning_overlay").value!.en, /APE-ZC/);
-  assert.equal(f(r, "permitted_uses").state, "not_applicable");
+  // No activity → "Not evaluated", never "Not applicable".
+  assert.equal(f(r, "permitted_uses").state, "not_evaluated");
+  assert.equal(findingStatus(f(r, "permitted_uses").state), "not_evaluated");
+  assert.equal(r.flags!.find((x) => x.id === "compatibility")!.value.en, "Not evaluated — describe the proposed activity");
 });
 
 const ACTS = {
@@ -99,7 +107,7 @@ test("Santurce: six activities, different reasoning on the same parcel", () => {
   // New construction on a parcel that is 19% VE → floodplain review is LIKELY (partial), not confirmed.
   const flood = A.hotel.approvals.find((x) => x.ruleId === "SR_FLOOD_SFHA_CONSTRUCTION")!;
   assert.equal(flood.status, "likely");
-  assert.match(flood.trigger, /Zone VE \((19|20)% of the parcel\)/);
+  assert.match(flood.trigger, /Zone VE \(19\.\d% of the parcel\)/);
   assert.ok(flood.evidence.some((e) => /Elevation Certificate/.test(e)));
   assert.ok(flood.path.some((p) => p.kind === "source" && /44 CFR/.test(p.label)));
   // Opening in an existing building does not trigger construction-based reviews.
@@ -163,7 +171,7 @@ test("report carries flags, land-use section and standardized statuses", () => {
   const r = report(ACTS.hotel);
   const ids = r.flags!.map((x) => x.id);
   assert.deepEqual(ids, ["zoning", "land_class", "compatibility", "flood", "coastal", "environmental", "historic", "complexity"]);
-  assert.equal(r.flags!.find((x) => x.id === "flood")!.value.en, "Review required");
+  assert.equal(r.flags!.find((x) => x.id === "flood")!.value.en, "High-risk area on 19.5% of the parcel");
   assert.match(f(r, "permitted_uses").value!.en, /Hotel \/ lodging: Conditional/);
   assert.equal(r.land_use?.activity.use, "LU_HOTEL");
 });

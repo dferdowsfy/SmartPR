@@ -16,6 +16,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyReviewAction, attachReportVersion, emptyReview, parseReviewAction, type PropertyReview } from "../src/app/locations/propertyReview";
+import { resolveParcelFindings } from "../src/app/locations/parcelService";
+import { LAYER_SOURCES } from "../src/app/locations/layers";
 
 const OUT = process.argv[2] || path.join(os.tmpdir(), "property-report");
 mkdirSync(OUT, { recursive: true });
@@ -30,6 +32,33 @@ const check = (name: string, ok: boolean, detail = "") => {
 
 type Case = { latitude: number; longitude: number; place: { municipio: { name: string; fips?: string }; barrio?: { name: string; geoid?: string } }; layers: unknown; parcel: unknown };
 const C = FX.cases as Record<string, Case>;
+// Aguas Buenas 224-000-006-78: whole-parcel answers recorded live 2026-10-04
+// (fixtures/parcelRaw.json) replayed through the real parcel service; pin
+// layers mirror the report the user pasted for that parcel.
+{
+  const RAW = JSON.parse(readFileSync(path.join(here, "../src/app/locations/fixtures/parcelRaw.json"), "utf8")).sites.aguas_buenas;
+  const at = "2026-10-04T21:18:46.000Z";
+  const parcel = await resolveParcelFindings(RAW.latitude, RAW.longitude, {
+    fetchImpl: (async (u: string) => ({ ok: RAW.gets[u]?.ok ?? false, status: RAW.gets[u]?.status ?? 599, json: async () => RAW.gets[u]?.body ?? null })) as never,
+    postJson: async (_u, b) => RAW.posts.find((x: { query: string }) => x.query === (b as { query: string }).query)?.response ?? "not_recorded",
+    refresh: true, now: () => new Date(at),
+  });
+  const s = (k: keyof typeof LAYER_SOURCES, version: string | null = null, date: string | null = null) => ({ id: LAYER_SOURCES[k].id, name: LAYER_SOURCES[k].name, url: LAYER_SOURCES[k].url, layer: LAYER_SOURCES[k].layer, dataset_date: date ?? LAYER_SOURCES[k].dataset_date, version });
+  const b = { tags: [] as string[], attributes: {}, retrieval: "live", approximate: false, reason: null, retrieved_at: at };
+  C.aguas_buenas = {
+    latitude: RAW.latitude, longitude: RAW.longitude,
+    place: { municipio: { name: "Aguas Buenas", fips: "72007" }, barrio: { name: "Sumidero" } },
+    layers: { latitude: RAW.latitude, longitude: RAW.longitude, resolved_at: at, results: [
+      { ...b, layer: "flood_zone", status: "resolved", code: "X", name: "Zone X", attributes: { FIRM_PAN: "72000C1185H", EFF_DATE: "2005-04-19" }, source: s("fema_flood_zones") },
+      { ...b, layer: "flood_advisory", status: "unknown", code: null, name: null, reason: "timeout_9000ms", retrieval: "none", source: s("jp_advisory_flood") },
+      { ...b, layer: "zoning", status: "resolved", code: "R-G", name: "Rural General", tags: ["rural"], source: s("jp_calificacion", "JP-PT-45 · 15-SEP-2011", "2011-09-15") },
+      { ...b, layer: "land_class", status: "resolved", code: "SRC", name: "Suelo Rústico Común", tags: ["SRC", "RUSTICO"], source: s("jp_calificacion", "JP-PT-45 · 15-SEP-2011", "2011-09-15") },
+      { ...b, layer: "terrain", status: "resolved", code: "Moderate", name: "Moderate", tags: ["LANDSLIDE_MODERATE"], source: s("usgs_landslide") },
+      { ...b, layer: "coastal_zone", status: "none", code: null, name: null, source: s("jp_zona_costanera") },
+    ] },
+    parcel,
+  };
+}
 const GURABO = C.protected_rural!, CAGUAS = C.straightforward!, CAROLINA = C.multi_district_b!;
 const byPoint = (lat: number, lng: number) => Object.values(C).find((c) => Math.abs(c.latitude - lat) < 1e-6 && Math.abs(c.longitude - lng) < 1e-6);
 const siteOf = (c: Case, extra: Record<string, unknown> = {}) => ({
@@ -163,7 +192,10 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   check("drawer: dialog with aria-modal and focus on Close", (await page.locator('[role="dialog"][aria-modal="true"]').count()) === 1 && (await page.evaluate(() => document.activeElement?.getAttribute("data-testid"))) === "property-report-close");
   const r = await text(page, '[data-testid="property-report"]');
   check("drawer: property, land & zoning, site constraints, approvals", /Property/.test(r) && /Land & zoning/.test(r) && /Site constraints/.test(r) && /Required approvals/.test(r));
-  check("drawer: no finding is left as 'check not performed'", (await page.locator('[data-finding][data-state="not_performed"]').count()) === 0);
+  // Checks this (older) parcel record never ran read "Not checked" with that basis — never "Official map finding".
+  const notRun = page.locator('[data-finding][data-state="not_performed"]');
+  const notRunBases = await notRun.evaluateAll((els) => els.map((e) => `${e.getAttribute("data-basis")}|${e.querySelector('[data-testid="finding-basis"]')?.textContent}`));
+  check("drawer: checks not performed are labelled as such, never as official findings", notRunBases.every((x) => x === "not_performed|Check not performed"), notRunBases.join(","));
   check("drawer: protection constraints separated from documentation items", (await visible(page, '[data-testid="steps-protection"]')) && /do not remove/.test(await text(page, '[data-testid="steps-protection"]')));
   await page.locator(".spr-prd-sources > summary").click();
   check("drawer: AI explanations kept separate (none generated)", /None in this report/.test(await text(page, '[data-testid="ai-explanations"]')));
@@ -174,7 +206,7 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   // exports
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-json"]')]);
   const json = JSON.parse(readFileSync((await dl.path())!, "utf8"));
-  check("export JSON: same model, confirmed parcel, every finding at the confirmed point", json.schema === "smartpr.property-report/v1" && json.property.catastro.value === "173-000-001-39" && json.findings.every((f: { point: { latitude: number } | null }) => !f.point || Math.abs(f.point.latitude - GURABO.latitude) < 1e-7));
+  check("export JSON: same model, confirmed parcel, every finding at the confirmed point", json.schema === "smartpr.property-report/v2" && Array.isArray(json.summary?.mapped) && json.property.catastro.value === "173-000-001-39" && json.findings.every((f: { point: { latitude: number } | null }) => !f.point || Math.abs(f.point.latitude - GURABO.latitude) < 1e-7));
   const [pdf] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-pdf"]')]);
   check("export PDF downloads", /\.pdf$/.test(pdf.suggestedFilename()), pdf.suggestedFilename());
   await pdf.saveAs(path.join(OUT, "report.pdf"));
@@ -269,7 +301,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   await page.click('[data-testid="open-property-report"]');
   const [w, vw] = await page.locator('[data-testid="property-report"]').evaluate((e) => [e.getBoundingClientRect().width, document.documentElement.getBoundingClientRect().width]);
   check("mobile: report fills the visible viewport", Math.abs(w - vw) <= 1, `${w} of ${vw}`);
-  check("mobile: multi-district + conflicting flood data listed", /CT-3/.test(await text(page, '[data-finding="zoning"]')) && /Flood sources differ/.test(await text(page, '[data-testid="property-report"]')));
+  check("mobile: multi-district + conflicting flood data listed", /CT-3/.test(await text(page, '[data-finding="zoning"]')) && /At the pin, the JP advisory map shows/.test(await text(page, '[data-testid="property-report"]')));
   // Copy summary when the async Clipboard API is refused (iOS Safari / Chrome on iPhone).
   await page.evaluate(`(() => {
     window.__copied = "";
@@ -341,8 +373,8 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   check("santurce: description pre-fills the proposed activity (not asked twice)", /120-room hotel/.test(await page.locator('[data-testid="activity-input"]').inputValue()));
   const compat = page.locator('[data-testid="land-use-compatibility"]');
   check("santurce hotel: professional review (APE-ZC overlay), base zoning conditional", (await compat.getAttribute("data-outcome")) === "professional_review" && /Conditional/.test(await compat.innerText()));
-  check("santurce hotel: floodplain review likely, triggered by VE share", /Zone VE \((19|20)% of the parcel\)/.test(await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"]').innerText().catch(() => "")));
-  check("santurce: zoning shows area shares, not 'whole parcel'", /CT 99\.\d% · P <1%/.test(await page.locator('[data-finding="zoning"]').first().innerText()) && /VE 19\.\d% · X 80\.\d%/.test(await page.locator('[data-finding="flood_zone"]').first().innerText()));
+  check("santurce hotel: floodplain review likely, triggered by VE share", /Zone VE \(19\.\d% of the parcel\)/.test(await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"]').innerText().catch(() => "")));
+  check("santurce: zoning shows area shares; the small P intersection is kept and named", /CT 99\.\d% · P 0\.3% \(small\)/.test(await page.locator('[data-finding="zoning"]').first().innerText()) && /Zone X 80\.\d% · VE 19\.\d%/.test(await page.locator('[data-finding="flood_zone"]').first().innerText()));
   check("santurce: PUT / Plan Territorial / soils verified", /Verified|SU — Suelo Urbano/.test(await page.locator('[data-finding="put"]').innerText()) && /13-Mar-2003/.test(await page.locator('[data-finding="municipal_plan"]').innerText()) && /Urban land/.test(await page.locator('[data-finding="soils"]').innerText()));
   await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"] summary').click();
   check("santurce: 'Why?' reasoning path down to source and evidence", /44 CFR/.test(await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"] [data-testid="reasoning-path"]').innerText()));
@@ -371,6 +403,68 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   await pdf.saveAs(path.join(OUT, "santurce.pdf"));
   check("santurce: PDF downloads with land-use sections", /\.pdf$/.test(pdf.suggestedFilename()));
   await page.context().close();
+}
+// 12 — hardening: Aguas Buenas (real recorded parcel), no activity described
+{
+  const AB = C.aguas_buenas!;
+  const page = await open(1440, 900, { state: state("", siteOf(AB)) });
+  await page.locator('[data-testid="open-property-report"]').waitFor({ timeout: 20000 });
+  await page.locator('[data-testid="project-location-catastro"] >> text=224-000-006-78').waitFor({ timeout: 20000 });
+  await page.click('[data-testid="open-property-report"]');
+  const rep = page.locator('[data-testid="property-report"]');
+  await rep.waitFor();
+  const blocks = await page.locator('[data-testid="report-summary"] [data-summary]').evaluateAll((els) => els.map((e) => e.getAttribute("data-summary")));
+  check("AB: summary leads with mapped → may affect → unverified → next", blocks.join(",") === "mapped,may_affect,unverified,next", blocks.join(","));
+  const order = await page.evaluate(`(() => { const r = document.querySelector('[data-testid="property-report"]'); const a = r.querySelector('[data-testid="report-summary"]'), b = r.querySelector('[data-testid="regulatory-flags"]'), c = r.querySelector('[data-finding="zoning"]'); return !!(a && b && c && (a.compareDocumentPosition(b) & 4) && (a.compareDocumentPosition(c) & 4)); })()`);
+  check("AB: the summary comes before the flags and findings", order === true);
+  check("AB: 'may affect' says not evaluated without an activity", /^Not evaluated — describe the proposed activity/.test((await page.locator('[data-summary="may_affect"] li').first().innerText()).trim()));
+  const z = await text(page, '[data-testid="property-report"] [data-finding="zoning"]');
+  check("AB: whole-parcel zoning R-G 86.1% · R-I 13.9%, pin kept separately", /R-G 86\.1% · R-I 13\.9%/.test(z) && /At the pin:\s*R-G — Rural General/.test(z) && /C-I, VIAL: touches the parcel's edge only/.test(z));
+  const pu = page.locator('[data-testid="property-report"] [data-finding="permitted_uses"]');
+  check("AB: permitted uses 'Not evaluated', never 'Not applicable'", (await pu.getAttribute("data-state")) === "not_evaluated" && /Not evaluated — describe the proposed activity/.test(await pu.innerText()) && !/Not applicable/.test(await pu.innerText()));
+  const pt = await text(page, '[data-testid="property-report"] [data-finding="municipal_plan"]');
+  check("AB: Plan Territorial due date is not shown as 'revised'", /Approved 15-Sep-2011 · first revision was due 15-Sep-2019; no approval recorded/.test(pt) && !/revised/i.test(pt));
+  const soils = await text(page, '[data-testid="property-report"] [data-finding="soils"]');
+  check("AB: parcel-wide soils with shares; pin answer separate", /HtF 75\.3% · MxF 23\.9% · HtE 0\.8% \(small\)/.test(soils) && /At the pin:\s*Humatas clay, 40 to 60 percent slopes \(HtF\)/.test(soils) && /survey area PR686/.test(soils) && /Well drained · flooding: None/.test(soils));
+  const hz = page.locator('[data-testid="property-report"] [data-finding="historic_zone"]');
+  check("AB: refused source → 'Unable to verify' + reason, basis 'Source unavailable'", (await hz.getAttribute("data-basis")) === "source_unavailable" && /refused the request \(HTTP 403\)/.test(await hz.innerText()) && !/Official map finding/.test(await hz.innerText()));
+  check("AB: approximate area is a number with units", /^15,152 m² \(3\.86 cuerdas\)/.test((await text(page, '[data-testid="report-area"]')).trim()));
+  await page.click(".spr-prd-tech-toggle");
+  const nad = await text(page, '[data-testid="report-nad83"]');
+  check("AB: NAD83 X/Y expandable with exact CRS and units", /X [\d,.]+ m · Y [\d,.]+ m/.test(nad) && /Units: metres · Lambert Conformal Conic/.test(nad) && /NAD83 \/ Puerto Rico & Virgin Is\. \(EPSG:32161\)/.test(await text(page, '[data-testid="report-technical"]')));
+  const zeros = await page.evaluate(`(() => { const out = []; const w = document.createTreeWalker(document.querySelector('[data-testid="property-report"]'), NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { if (n.textContent.trim() === "0") out.push(n.parentElement.outerHTML.slice(0, 120)); } return out; })()`) as string[];
+  check("AB: no stray '0' anywhere in the report", zeros.length === 0, zeros.join(" | "));
+  check("AB: no complexity score without an activity", (await page.locator('[data-flag="complexity"]').count()) === 0 && !/How complexity is scored/.test(await rep.innerText()));
+  const prescribing = /elevation certificate|plan a geotechnical|budget for a geotechnical|expect coastal|review required/i.test(await rep.innerText());
+  check("AB: nothing prescribed without an activity and a verified rule", !prescribing);
+  await page.click('[data-testid="report-copy"]');
+  const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
+  const idx = ["WHAT IS MAPPED ON THIS PROPERTY", "WHAT MAY AFFECT THE PROPOSED PROJECT", "WHAT REMAINS UNVERIFIED", "WHAT TO PROVIDE OR INVESTIGATE NEXT"].map((h) => clip.indexOf(h));
+  check("AB: copied summary leads with the four sections, in order", idx.every((i, k) => i > 0 && (k === 0 || i > idx[k - 1]!)) && /Approximate area: 15,152 m²/.test(clip) && /EPSG:32161\): X/.test(clip), JSON.stringify(idx));
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-pdf"]')]);
+  const pdfText = readFileSync((await pdf.path())!, "latin1");
+  check("AB: PDF carries the lead summary, coverage and technical CRS", /What is mapped on this property/.test(pdfText) && /What remains unverified/.test(pdfText) && /R-G 86\.1% · R-I 13\.9%/.test(pdfText) && /EPSG:32161/.test(pdfText));
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-json"]')]);
+  const json = JSON.parse(readFileSync((await dl.path())!, "utf8"));
+  const zj = json.findings.find((f: { id: string }) => f.id === "zoning");
+  check("AB: JSON keeps precise shares, coverage method and versions", zj.coverage.parts[0].share > 0.8614 && zj.coverage.parts[0].share < 0.8616 && String(zj.coverage.parts[0].share).length > 6 && /EPSG:32161/.test(json.versions.coverage_method) && json.schema === "smartpr.property-report/v2");
+  await page.screenshot({ path: path.join(OUT, "12-aguas-buenas-report.png"), fullPage: false });
+  await page.locator('[data-testid="report-summary"]').screenshot({ path: path.join(OUT, "12b-summary.png") });
+  await page.locator('[data-testid="property-report"] [data-finding="zoning"]').screenshot({ path: path.join(OUT, "12c-zoning.png") });
+  await page.locator('[data-testid="property-report"] [data-finding="soils"]').screenshot({ path: path.join(OUT, "12d-soils.png") });
+  await page.click('[data-testid="property-report-close"]');
+  const pills = await text(page, '[data-testid="site-report-preview"]');
+  check("AB: compact intake preview kept (pills + open report)", /Rural/.test(pills) && (await page.locator('[data-testid="open-property-report"]').count()) === 1);
+  await page.context().close();
+  // phone width: no horizontal scroll in the drawer
+  const m = await open(390, 844, { state: state("", siteOf(AB)) });
+  await m.locator('[data-testid="open-property-report"]').waitFor({ timeout: 20000 });
+  await m.locator('[data-testid="project-location-catastro"] >> text=224-000-006-78').waitFor({ timeout: 20000 });
+  await m.click('[data-testid="open-property-report"]');
+  const over = await m.locator('[data-testid="property-report"]').evaluate((e) => e.scrollWidth - e.clientWidth);
+  check("AB mobile: coverage tables and summary fit (no horizontal scroll)", over <= 1, String(over));
+  await m.screenshot({ path: path.join(OUT, "12e-mobile.png"), fullPage: false });
+  await m.context().close();
 }
 // 11 — admin QA: parcel scenarios
 {

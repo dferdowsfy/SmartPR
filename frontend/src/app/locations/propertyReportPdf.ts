@@ -7,7 +7,7 @@
 // ============================================================================
 
 import type { jsPDF as JsPDF } from "jspdf";
-import { findingStateText, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
+import { BASIS_TEXT, basisOf, findingStateText, reportArea, reportLeadSummary, SUMMARY_HEADINGS, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
 import { COMPATIBILITY_TEXT } from "./landUse";
 import type { exportableReview } from "./propertyReview";
 
@@ -90,13 +90,14 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
 
   // ---- Key facts -------------------------------------------------------------
   const p = report.property;
+  const area = reportArea(report);
   const facts: Array<[string, string]> = [
     [L("Municipality", "Municipio"), p.municipality],
     [L("Barrio", "Barrio"), p.barrio ?? "—"],
     [L("Catastro", "Catastro"), p.catastro.value ?? findingStateText(p.catastro.state)[lang]],
-    [L("Approx. area", "Área aprox."), p.boundary.area_m2 ? `${p.boundary.area_m2.toLocaleString("en-US")} m² (${(p.boundary.area_m2 / 3930.395).toFixed(2)} ${L("cuerdas", "cuerdas")})` : findingStateText(p.boundary.state)[lang]],
-    [L("Coordinates", "Coordenadas"), `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`],
-    ["NAD83 PR State Plane", `X ${p.technical.nad83_state_plane.x.toLocaleString("en-US")} · Y ${p.technical.nad83_state_plane.y.toLocaleString("en-US")} m`],
+    [L("Approx. area", "Área aprox."), area.text[lang]],
+    [L("Coordinates (WGS84)", "Coordenadas (WGS84)"), `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`],
+    [L("Report", "Informe"), `${report.schema.replace("smartpr.property-report/", "")} · ${L("rev.", "rev.")} ${report.location_revision}`],
   ];
   color([250, 248, 243], "fill");
   color(LINE, "draw");
@@ -110,7 +111,15 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     font(10, "bold", INK); doc.text(safe(v), x, yy + 5);
   });
   y += boxH + 2;
-  if (p.boundary.area_m2) para(L("Area from the mapped CRIM boundary — not a survey.", "Área del límite mapeado del CRIM — no es una mensura."), 7.5, "italic", MUTED);
+  para(`${L("Area", "Área")}: ${area.note[lang]}`, 7.5, "italic", MUTED);
+
+  // ---- Lead summary ------------------------------------------------------------
+  const lead = reportLeadSummary(report);
+  for (const k of Object.keys(SUMMARY_HEADINGS) as Array<keyof typeof SUMMARY_HEADINGS>) {
+    heading(SUMMARY_HEADINGS[k][lang]);
+    if (!lead[k].length) para(L("Nothing listed.", "Nada listado."), 9, "italic", MUTED);
+    for (const x of lead[k]) para(`• ${x[lang]}`, 9, "normal", k === "unverified" ? TONE.attention.fg : INK, M + 2, CW - 2);
+  }
 
   // ---- At a glance -----------------------------------------------------------
   heading(L("At a glance", "Resumen"));
@@ -151,13 +160,27 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   const groups: Array<[string, string, string]> = [["land", "Land & zoning", "Terreno y calificación"], ["flood", "Flood & water", "Inundación y agua"], ["environment", "Environment & terrain", "Ambiente y terreno"]];
   const row = (f: ReportFinding) => {
     const tone = f.state === "sourced" || f.state === "none_mapped" ? f.tone : "unknown";
-    const main = f.plain?.[lang] ?? (f.value ? f.value[lang] : findingStateText(f.state)[lang]);
-    const sub = [f.value && f.plain ? f.value[lang] : null, f.state === "sourced" ? (f.scope === "parcel" ? L("checked across the parcel", "verificado en toda la parcela") : f.scope === "point" ? L("at the pin", "en el pin") : null) : null, f.constraint === "protection" ? L("PROTECTION", "PROTECCIÓN") : f.constraint === "documentation" ? L("review / documentation", "revisión / documentación") : null].filter(Boolean).join(" · ");
-    const src = f.sources.map((s) => `${s.name}${s.dataset_date ? ` (${s.dataset_date})` : ""}`).join("; ");
+    const answered = f.state === "sourced" || f.state === "none_mapped";
+    const main = answered ? f.plain?.[lang] ?? (f.value ? f.value[lang] : findingStateText(f.state)[lang]) : findingStateText(f.state)[lang];
+    const sub = [
+      f.value && answered && f.plain ? f.value[lang] : null,
+      BASIS_TEXT[basisOf(f)][lang],
+      f.state === "sourced" ? (f.scope === "parcel" ? L("across the parcel", "en toda la parcela") : f.scope === "point" ? L("at the pin", "en el pin") : L("municipality-wide", "en todo el municipio")) : null,
+      f.pin ? `${L("at the pin", "en el pin")}: ${f.pin.value[lang]}` : null,
+      f.constraint === "protection" ? L("PROTECTION", "PROTECCIÓN") : f.constraint === "documentation" ? L("mapped constraint", "restricción mapeada") : null,
+    ].filter(Boolean).join(" · ");
+    const extra = [
+      ...(f.state === "unavailable" && f.detail ? [f.detail[lang]] : []),
+      ...(f.coverage && f.coverage.parts.length > 1 || f.coverage?.parts.some((x) => x.small) ? [f.coverage.parts.map((x) => `${x.label[lang]}: ${x.area_text} (${x.share_text})${x.small ? ` — ${L("small intersection", "intersección pequeña")}` : ""}`).join("; ")] : []),
+      ...(f.notes ?? []).map((n) => n[lang]),
+      ...(f.ambiguities ?? []).map((a) => `${L("Ambiguity", "Ambigüedad")}: ${a[lang]}`),
+    ].join(" ");
+    const src = f.sources.map((s) => `${s.name}${s.dataset_date ? ` (${s.dataset_date})` : ""}`).join("; ") + (f.looked_up_at ? ` · ${L("looked up", "consultado")} ${f.looked_up_at.slice(0, 10)}` : "");
     const mainL = lines(main, CW - 62);
     const subL = sub ? lines(sub, CW - 62) : [];
+    const extraL = extra ? lines(extra, CW - 62) : [];
     const srcL = src ? lines(src, CW - 62) : [];
-    const h = Math.max(7, mainL.length * lh(9.5) + subL.length * lh(8) + srcL.length * lh(7) + 3);
+    const h = Math.max(7, mainL.length * lh(9.5) + subL.length * lh(8) + extraL.length * lh(7.5) + srcL.length * lh(7) + 3);
     ensure(h + 2);
     color(TONE[tone].dot, "fill"); doc.circle(M + 1.6, y - 1.2, 1.4, "F");
     font(9, "bold", MUTED);
@@ -165,6 +188,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     let yy = y;
     font(9.5, "normal", INK); for (const ln of mainL) { doc.text(ln, M + 60, yy); yy += lh(9.5); }
     font(8, "bold", TONE[tone].fg); for (const ln of subL) { doc.text(ln, M + 60, yy); yy += lh(8); }
+    font(7.5, "normal", MUTED); for (const ln of extraL) { doc.text(ln, M + 60, yy); yy += lh(7.5); }
     font(7, "normal", [140, 150, 155]); for (const ln of srcL) { doc.text(ln, M + 60, yy); yy += lh(7); }
     y = Math.max(yy, y + lines(f.title[lang], 50).length * lh(9)) + 2;
     color([240, 236, 228], "draw"); doc.setLineWidth(0.2); doc.line(M, y - 1, W - M, y - 1);
@@ -221,7 +245,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   heading(L("Next steps", "Próximos pasos"));
   para(report.next_steps.activity[lang], 9.5, "italic", MUTED);
   y += 1;
-  for (const [c, en, es] of [["documentation", "Reviews that may be met with documentation", "Revisiones que pueden atenderse con documentación"], ["information", "Preparation steps", "Pasos de preparación"]] as const) {
+  for (const [c, en, es] of [["documentation", "Mapped constraints (what the maps show — nothing prescribed)", "Restricciones mapeadas (lo que muestran los mapas — nada prescrito)"], ["information", "Preparation", "Preparación"]] as const) {
     const list = report.next_steps.steps.filter((s) => s.constraint === c);
     if (!list.length) continue;
     para(L(en, es), 10, "bold", TEAL);
@@ -249,13 +273,22 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   // ---- Gaps ------------------------------------------------------------------------
   const gaps = [...report.next_steps.missing, ...report.next_steps.unresolved];
   if (gaps.length) {
-    heading(L("Missing information & checks not completed", "Información faltante y verificaciones pendientes"));
+    heading(L("Missing information, checks not completed & discrepancies", "Información faltante, verificaciones pendientes y discrepancias"));
     for (const g of gaps) para(`• ${g[lang]}`, 9, "normal", MUTED, M + 3, CW - 3);
   }
 
   // ---- Sources -----------------------------------------------------------------------
   heading(L("Sources", "Fuentes"));
-  for (const s of report.sources) para(`${s.name}${s.dataset_date ? ` · ${L("data", "datos")} ${s.dataset_date}` : ""}${s.url ? `  ${s.url}` : ""}`, 7.5, "normal", MUTED);
+  for (const s of report.sources) para(`${s.name}${s.dataset_date ? ` · ${L("data", "datos")} ${s.dataset_date}` : ""}${s.version ? ` · ${s.version}` : ""}${s.url ? `  ${s.url}` : ""}`, 7.5, "normal", MUTED);
+
+  // ---- Technical -----------------------------------------------------------------------
+  heading(L("Technical coordinates & versions", "Coordenadas técnicas y versiones"));
+  const nad = p.technical.nad83_state_plane;
+  para(`${nad.crs ?? "NAD83 / Puerto Rico & Virgin Is. (EPSG:32161)"}: X ${nad.x.toLocaleString("en-US")} m, Y ${nad.y.toLocaleString("en-US")} m (${L("units", "unidades")}: ${nad.units ?? "metres"}${nad.projection ? `; ${nad.projection}` : ""}).`, 8.5, "normal", INK);
+  para(`${nad.note[lang]}${nad.datum_note ? ` ${nad.datum_note[lang]}` : ""}`, 7.5, "italic", MUTED);
+  para(`WGS84 (EPSG:4326): ${p.latitude.toFixed(7)}, ${p.longitude.toFixed(7)}`, 8.5, "normal", INK);
+  if (report.versions) para(`${L("Area method", "Método de áreas")}: ${report.versions.coverage_method} ${L("Rules", "Reglas")}: ${report.versions.rules}.`, 7.5, "normal", MUTED);
+  para(`${report.schema} · ${L("report", "informe")} ${report.fingerprint} · ${L("location revision", "revisión de ubicación")} ${report.location_revision} · ${L("generated", "generado")} ${report.generated_at}`, 7.5, "normal", MUTED);
 
   // ---- Footer on every page --------------------------------------------------------------
   const pages = doc.getNumberOfPages();

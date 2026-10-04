@@ -87,7 +87,7 @@ test("case 1 — straightforward parcel (Caguas): one district, no protection co
   assert.equal(r.findings.find((f) => f.id === "flood_zone")!.value!.en, "Zone X");
   assert.ok(!r.findings.some((f) => f.constraint === "protection"));
   assert.ok(!r.next_steps.steps.some((s) => s.constraint === "protection"));
-  assert.ok(r.next_steps.steps.some((s) => s.id === "verify_use"));
+  assert.ok(r.next_steps.steps.some((s) => s.id === "describe_activity"));
 });
 
 test("case 2 — protected/rural parcel (Gurabo): conservation + SREP are protection constraints, never bypassable", () => {
@@ -113,7 +113,8 @@ test("case 3 — multiple districts / conflicting data (Carolina): every distric
   assert.equal(z.scope, "parcel");
   assert.ok(z.value!.en.includes("CT-3") && z.value!.en.includes("VIAL"), z.value!.en);
   assert.equal(z.tone, "attention");
-  assert.ok(r.next_steps.missing.some((m) => /Flood sources differ/.test(m.en)), JSON.stringify(r.next_steps.missing));
+  // FEMA vs JP advisory compared at the same place (the pin).
+  assert.ok(r.discrepancies!.some((m) => /^At the pin, the JP advisory map shows/.test(m.en)), JSON.stringify(r.discrepancies));
   assert.equal(r.findings.find((f) => f.id === "coastal_zone")!.constraint, "documentation");
   // Sources that did not answer are reported as unavailable, never as "none".
   for (const id of ["historic_zone", "protected_area"]) {

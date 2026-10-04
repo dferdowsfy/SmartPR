@@ -13,7 +13,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { BookmarkPlus, Check, ChevronDown, Copy, Download, FileJson, Loader2, X } from "lucide-react";
 import type { Lang } from "../../forms/engine/types";
 import { PassportMap } from "../map/PassportMap";
-import { findingStateText, reportSummaryText, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
+import { BASIS_TEXT, basisOf, findingStateText, reportArea, reportLeadSummary, reportSummaryText, SUMMARY_HEADINGS, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
 import { FindingValue, scopeText } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
 import { downloadPropertyReportPdf } from "../../locations/propertyReportPdf";
@@ -39,20 +39,56 @@ const CONSTRAINT_TEXT = {
 };
 
 function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: ReviewApi }) {
+  const basis = basisOf(f);
+  const answered = f.state === "sourced" || f.state === "none_mapped";
   return (
-    <li className={`spr-prd-finding spr-srp-tone-${f.tone}`} data-finding={f.id} data-state={f.state}>
+    <li className={`spr-prd-finding spr-srp-tone-${f.tone}`} data-finding={f.id} data-state={f.state} data-basis={basis}>
       <div className="spr-prd-finding-head">
         <span className="spr-srp-dot" aria-hidden="true" />
         <span className="spr-prd-finding-title">{f.title[lang]}</span>
         <span className={`spr-prd-badge spr-prd-badge-${f.state}`}>{f.state === "sourced" ? scopeText(f, lang) : findingStateText(f.state)[lang]}</span>
       </div>
       <div className="spr-prd-tags">
-        <span className="spr-prv-basis spr-prv-basis-official">{L("Official finding", "Hallazgo oficial", lang)}</span>
+        <span className={`spr-prv-basis spr-prv-basis-${basis}`} data-testid="finding-basis">{BASIS_TEXT[basis][lang]}</span>
         {f.constraint !== "information" && <span className={`spr-prv-basis spr-prv-constraint-${f.constraint}`} data-testid="finding-constraint" data-constraint={f.constraint}>{CONSTRAINT_TEXT[f.constraint][lang]}</span>}
       </div>
-      {f.plain && (f.state === "sourced" || f.state === "none_mapped") && <p className="spr-prd-finding-plain">{f.plain[lang]}</p>}
+      {f.plain && answered && <p className="spr-prd-finding-plain">{f.plain[lang]}</p>}
       <div className="spr-prd-finding-value"><FindingValue f={f} lang={lang} /></div>
-      {f.detail && <p className="spr-prd-finding-detail">{f.detail[lang]}</p>}
+      {f.pin && <p className="spr-prd-finding-pin" data-testid="finding-pin"><strong>{L("At the pin", "En el pin", lang)}:</strong> {f.pin.value[lang]}</p>}
+      {f.coverage && f.coverage.parts.length > 0 && (
+        <table className="spr-prd-cov" data-testid="finding-coverage">
+          <caption className="sr-only">{L("Share of the parcel", "Porcentaje de la parcela", lang)}</caption>
+          <tbody>
+            {f.coverage.parts.map((p) => (
+              <tr key={p.key} data-small={p.small ? "true" : undefined}>
+                <th scope="row">{p.label[lang]}{p.small && <small> · {L("small intersection", "intersección pequeña", lang)}</small>}{p.contains_pin && <small> · {L("contains the pin", "contiene el pin", lang)}</small>}{p.info && <small className="spr-prd-cov-info">{p.info[lang]}</small>}</th>
+                <td>{p.area_text}</td>
+                <td>{p.share_text}</td>
+              </tr>
+            ))}
+            {f.coverage.contacts.length > 0 && (
+              <tr className="spr-prd-cov-gap"><th scope="row" colSpan={3}>{f.coverage.contacts.map((k) => k.split("|")[0]).join(", ")}: {L("touches the parcel's edge only (no area inside)", "solo toca el borde de la parcela (sin área dentro)", lang)}</th></tr>
+            )}
+            {f.coverage.unmapped_share > 0.005 && (
+              <tr className="spr-prd-cov-gap"><th scope="row">{L("Unmapped in this layer", "Sin mapear en esta capa", lang)}</th><td>{Math.round(f.coverage.unmapped_m2).toLocaleString("en-US")} m²</td><td>{(Math.round(f.coverage.unmapped_share * 1000) / 10).toFixed(1)}%</td></tr>
+            )}
+          </tbody>
+        </table>
+      )}
+      {f.detail && !(f.coverage && f.coverage.parts.length > 0) && <p className="spr-prd-finding-detail">{f.detail[lang]}</p>}
+      {(f.notes?.length ?? 0) > 0 && <ul className="spr-prd-notes" data-testid="finding-notes">{f.notes!.map((n, i) => <li key={i}>{n[lang]}</li>)}</ul>}
+      {(f.ambiguities?.length ?? 0) > 0 && (
+        <div className="spr-prd-ambiguity" role="note" data-testid="finding-ambiguities">
+          <strong>{L("Ambiguity in the official record", "Ambigüedad en el registro oficial", lang)}</strong>
+          <ul>{f.ambiguities!.map((a, i) => <li key={i}>{a[lang]}</li>)}</ul>
+        </div>
+      )}
+      {f.raw && Object.values(f.raw).some(Boolean) && (
+        <details className="spr-prd-raw">
+          <summary>{L("Source fields (as recorded)", "Campos de la fuente (según constan)", lang)}</summary>
+          <dl>{Object.entries(f.raw).filter(([, v]) => v).map(([k, v]) => <div key={k}><dt><code>{k}</code></dt><dd>{v}</dd></div>)}</dl>
+        </details>
+      )}
       {(f.sources.length > 0 || f.looked_up_at) && (
         <p className="spr-prd-finding-src">
           {f.sources.map((s, i) => (
@@ -63,6 +99,20 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
       )}
       <FindingReviewControls api={api} findingId={f.id} lang={lang} />
     </li>
+  );
+}
+
+function ReportSummary({ report, lang }: { report: PropertyReport; lang: Lang }) {
+  const s = reportLeadSummary(report);
+  return (
+    <section className="spr-prd-section spr-prd-summary" aria-label={L("Report summary", "Resumen del informe", lang)} data-testid="report-summary">
+      {(Object.keys(SUMMARY_HEADINGS) as Array<keyof typeof SUMMARY_HEADINGS>).map((k) => (
+        <div key={k} className={`spr-prd-summary-block spr-prd-summary-${k}`} data-summary={k}>
+          <h3>{SUMMARY_HEADINGS[k][lang]}</h3>
+          {s[k].length ? <ul>{s[k].map((x, i) => <li key={i}>{x[lang]}</li>)}</ul> : <p className="spr-prd-because">{L("Nothing listed.", "Nada listado.", lang)}</p>}
+        </div>
+      ))}
+    </section>
   );
 }
 
@@ -157,7 +207,8 @@ export function PropertyReportDrawer({
 
   if (!open || !report) return null;
   const p = report.property;
-  const area = p.boundary.area_m2;
+  const area = reportArea(report);
+  const nad = p.technical.nad83_state_plane;
 
   const copy = async () => {
     const text = reportSummaryText(report, lang, reviewExport);
@@ -253,7 +304,7 @@ export function PropertyReportDrawer({
                 {p.barrio && <div><dt>{L("Barrio", "Barrio", lang)}</dt><dd>{p.barrio}</dd></div>}
                 {p.address.formatted && <div><dt>{L("Address", "Dirección", lang)}</dt><dd>{p.address.primary}</dd></div>}
                 <div><dt>{L("Catastro", "Catastro", lang)}</dt><dd data-testid="report-catastro">{p.catastro.value ?? findingStateText(p.catastro.state)[lang]}</dd></div>
-                <div><dt>{L("Approximate area", "Área aproximada", lang)}</dt><dd>{area ? <>{area.toLocaleString(lang === "es" ? "es-PR" : "en-US")} m² <small>({(area / 3930.395).toFixed(2)} {L("cuerdas", "cuerdas", lang)}) · {L("mapped boundary, not a survey", "límite mapeado, no mensura", lang)}</small></> : findingStateText(p.boundary.state)[lang]}</dd></div>
+                <div><dt>{L("Approximate area", "Área aproximada", lang)}</dt><dd data-testid="report-area">{area.text[lang]} <small>· {area.note[lang]}</small></dd></div>
                 <div><dt>{L("Coordinates", "Coordenadas", lang)}</dt><dd>{p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}</dd></div>
                 <div><dt>{L("Location", "Ubicación", lang)}</dt><dd>{p.coordinate_source === "GEOCODED_ADDRESS" ? L("From the address search", "Según la búsqueda de dirección", lang) : L("Selected point in the parcel", "Punto seleccionado en la parcela", lang)} · <button type="button" className="spr-link" onClick={onEditLocation}>{L("Edit location", "Editar ubicación", lang)}</button></dd></div>
               </dl>
@@ -263,13 +314,16 @@ export function PropertyReportDrawer({
             </button>
             {showTech && (
               <dl className="spr-prd-facts spr-prd-tech" data-testid="report-technical">
-                <div><dt>NAD83 / PR State Plane (EPSG:32161)</dt><dd>X {p.technical.nad83_state_plane.x.toLocaleString("en-US")} m · Y {p.technical.nad83_state_plane.y.toLocaleString("en-US")} m <small>{p.technical.nad83_state_plane.note[lang]}</small></dd></div>
+                <div><dt>{nad.crs ?? "NAD83 / Puerto Rico & Virgin Is. (EPSG:32161)"}</dt><dd data-testid="report-nad83">X {nad.x.toLocaleString("en-US")} m · Y {nad.y.toLocaleString("en-US")} m <small>{L("Units", "Unidades", lang)}: {nad.units ?? "metres"}{nad.projection ? ` · ${nad.projection}` : ""}. {nad.note[lang]}{nad.datum_note ? ` ${nad.datum_note[lang]}` : ""}</small></dd></div>
+                <div><dt>{L("WGS84 pin", "Pin WGS84", lang)}</dt><dd>{p.latitude.toFixed(7)}, {p.longitude.toFixed(7)} <small>(EPSG:4326, {L("degrees", "grados", lang)})</small></dd></div>
                 <div><dt>{L("Municipality FIPS", "FIPS del municipio", lang)}</dt><dd>{p.technical.municipality_fips ?? "—"}</dd></div>
                 <div><dt>{L("Barrio GEOID", "GEOID del barrio", lang)}</dt><dd>{p.technical.barrio_geoid ?? "—"}</dd></div>
                 <div><dt>{L("Passport location id", "Id de ubicación en el Pasaporte", lang)}</dt><dd>{p.technical.location_id ?? L("not saved yet", "aún no guardada", lang)}</dd></div>
               </dl>
             )}
           </section>
+
+          <ReportSummary report={report} lang={lang} />
 
           <RegulatoryFlags report={report} lang={lang} />
 
@@ -308,6 +362,18 @@ export function PropertyReportDrawer({
                   </div>
                 </section>
               )}
+              {report.next_steps.steps.some((x) => x.kind === "mapped_constraint" && x.constraint !== "protection") && (
+                <section className="spr-prd-section">
+                  <div className="spr-prd-stepgroup spr-prd-stepgroup-documentation" data-testid="steps-documentation">
+                    <h4>{L("Other mapped constraints", "Otras restricciones mapeadas", lang)}</h4>
+                    <ol className="spr-prd-steps">
+                      {report.next_steps.steps.filter((x) => x.kind === "mapped_constraint" && x.constraint !== "protection").map((x) => (
+                        <li key={x.id} data-step={x.id} data-kind={x.kind}><span className="spr-prv-basis spr-prv-basis-rule">{L("Mapped constraint", "Restricción mapeada", lang)}</span><p>{x.text[lang]}</p><p className="spr-prd-because">{L("Because", "Porque", lang)}: {x.because[lang]} — {x.sources.map((src) => src.name).join("; ")}</p></li>
+                      ))}
+                    </ol>
+                  </div>
+                </section>
+              )}
               <ApprovalsSection lu={report.land_use} lang={lang} />
               <EvidenceSection lu={report.land_use} lang={lang} />
               <UnresolvedSection lu={report.land_use} lang={lang} extra={report.next_steps.missing.map((m) => m[lang])} />
@@ -317,9 +383,9 @@ export function PropertyReportDrawer({
             <h3 id={`${titleId}-n`}>{L("Next steps", "Próximos pasos", lang)}</h3>
             <p className="spr-prd-activity">{report.next_steps.activity[lang]}</p>
             {([
-              ["protection", L("Protection constraints", "Restricciones de protección", lang), L("Conservation and protection designations restrict what may be done on the land. Additional documents do not remove them.", "Las designaciones de conservación y protección restringen lo que puede hacerse en el terreno. Documentos adicionales no las eliminan.", lang)],
-              ["documentation", L("Reviews that may be met with additional documentation", "Revisiones que pueden atenderse con documentación adicional", lang), null],
-              ["information", L("Preparation steps", "Pasos de preparación", lang), null],
+              ["protection", L("Protection constraints (mapped)", "Restricciones de protección (mapeadas)", lang), L("Conservation and protection designations restrict what may be done on the land. Additional documents do not remove them.", "Las designaciones de conservación y protección restringen lo que puede hacerse en el terreno. Documentos adicionales no las eliminan.", lang)],
+              ["documentation", L("Other mapped constraints", "Otras restricciones mapeadas", lang), L("What the maps show. Project-specific requirements are only listed once an activity is described and a verified rule applies.", "Lo que muestran los mapas. Los requisitos específicos del proyecto solo se listan cuando se describe una actividad y aplica una regla verificada.", lang)],
+              ["information", L("Preparation", "Preparación", lang), null],
             ] as const).map(([c, title, note]) => {
               const list = report.next_steps.steps.filter((s) => s.constraint === c);
               if (!list.length) return null;
@@ -329,8 +395,8 @@ export function PropertyReportDrawer({
                   {note && <p className="spr-prd-because">{note}</p>}
                   <ol className="spr-prd-steps">
                     {list.map((s) => (
-                      <li key={s.id}>
-                        <span className="spr-prv-basis spr-prv-basis-rule">{L("Rule result", "Resultado de regla", lang)}</span>
+                      <li key={s.id} data-step={s.id} data-kind={s.kind ?? "rule"}>
+                        <span className="spr-prv-basis spr-prv-basis-rule">{s.kind === "mapped_constraint" ? L("Mapped constraint", "Restricción mapeada", lang) : s.kind === "preparation" ? L("Preparation", "Preparación", lang) : L("Rule result", "Resultado de regla", lang)}</span>
                         <p>{s.text[lang]}</p>
                         <p className="spr-prd-because">{L("Because", "Porque", lang)}: {s.because[lang]} — {s.sources.map((x, i) => <span key={i}>{i > 0 && "; "}{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.name}</a> : x.name}</span>)}</p>
                       </li>
@@ -341,7 +407,7 @@ export function PropertyReportDrawer({
             })}
             {(report.next_steps.missing.length > 0 || report.next_steps.unresolved.length > 0) && (
               <div className="spr-prd-missing">
-                <h4>{L("Missing information & unresolved checks", "Información faltante y verificaciones pendientes", lang)}</h4>
+                <h4>{L("Missing information, unresolved checks & discrepancies", "Información faltante, verificaciones pendientes y discrepancias", lang)}</h4>
                 <ul>{[...report.next_steps.missing, ...report.next_steps.unresolved].map((m, i) => <li key={i}>{m[lang]}</li>)}</ul>
               </div>
             )}
@@ -373,7 +439,10 @@ export function PropertyReportDrawer({
             </div>
             <h4>{L("Sources", "Fuentes", lang)}</h4>
             <ul>{report.sources.map((s, i) => <li key={i}>{s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> : s.name}{s.dataset_date ? ` · ${L("data", "datos", lang)} ${s.dataset_date}` : ""}{s.version ? ` · ${s.version}` : ""}</li>)}</ul>
-            <p>{L("Report", "Informe", lang)} {report.fingerprint} · {L("location revision", "revisión de ubicación", lang)} {report.location_revision} · {new Date(report.generated_at).toLocaleString(lang === "es" ? "es-PR" : "en-US")}</p>
+            {report.versions && (
+              <p className="spr-prd-because" data-testid="report-versions">{L("Area method", "Método de áreas", lang)}: {report.versions.coverage_method} · {L("Rules", "Reglas", lang)}: {report.versions.rules}</p>
+            )}
+            <p>{L("Report", "Informe", lang)} {report.fingerprint} · {report.schema} · {L("location revision", "revisión de ubicación", lang)} {report.location_revision} · {new Date(report.generated_at).toLocaleString(lang === "es" ? "es-PR" : "en-US")}</p>
           </details>
           <p className="spr-prd-disclaimer">{report.disclaimer[lang]} {L("SmartPR intelligence is not a survey, title report, engineering determination, legal opinion or agency permit decision.", "La inteligencia de SmartPR no es una mensura, estudio de título, determinación de ingeniería, opinión legal ni decisión de permiso de una agencia.", lang)}</p>
         </div>
