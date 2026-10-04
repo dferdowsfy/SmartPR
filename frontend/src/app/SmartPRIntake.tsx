@@ -99,6 +99,7 @@ import {
   projectPassportFromContext,
   validateProjectPassport,
   projectPassportTitle,
+  matterHeadlineSubject,
   type ProjectPassportJson,
 } from './forms/engine/projectPassport';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
@@ -6333,7 +6334,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const summaryHeadline = energyAssessment && (energyPrimary || energyProposed)
     ? projectSummaryLine(energyAssessment, energyGraph, language)
     : [
-        (projectPassport ? projectPassportTitle(projectPassport) : null) ?? (profile.business_type ? L(profile.business_type, language) : null) ?? profile.name,
+        matterHeadlineSubject({ isProjectOnly, passport: projectPassport, businessType: profile.business_type ? L(profile.business_type, language) : null, name: profile.name }),
         profile.municipality,
       ].filter(Boolean).join(', ');
   // Location step: does this request need a site? (pure detection, see

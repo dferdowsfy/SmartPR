@@ -1,0 +1,57 @@
+# TEMPLATE — install by copying to .github/workflows/geo-health.yml (needs a
+# push with the GitHub `workflow` scope; the automation token lacks it).
+#
+# Geo-layer health: every map provider SmartPR's "Where is it?" depends on
+# (FEMA NFHL, JP calificación / advisory maps, CRIM, NOAA CZM), queried at
+# known Puerto Rico points, asserting the expected answers. Catches silent
+# upstream changes (renamed fields, moved services, hanging queries) before
+# users see "couldn't check". Read-only; no secrets; public endpoints only.
+
+name: Geo-layer health
+
+on:
+  schedule:
+    - cron: "17 */6 * * *" # every 6 hours
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "frontend/src/app/locations/layers.ts"
+      - "frontend/src/app/locations/layerService.ts"
+      - "frontend/src/app/locations/geoHealth.ts"
+      - "frontend/scripts/geo-health.mts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: geo-health-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  geo-health:
+    name: Geo providers at known points
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Geo health check
+        # On pull requests the upstream government services are informative
+        # only (an outage there must not block unrelated merges); the
+        # scheduled run fails loudly so the outage is noticed.
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        run: npm run geo:health

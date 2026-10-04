@@ -4,15 +4,17 @@
 //
 //   LOCATIONS_TEST_DATABASE_URL=postgresql://postgres@localhost:5432/postgres \
 //     npx tsx --test src/app/locations/layerStore.db.test.ts
-import test, { after, before } from "node:test";
+import test, { after, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { Pool } from "pg";
 import { splitSqlStatements } from "../graph/sqlStatements.ts";
 import { LOCATIONS_SCHEMA_SQL } from "./schema.ts";
 import { createPgLayerStore } from "./layerStore.ts";
-import { LayerCache, resolveSiteLayers, type FetchLike } from "./layerService.ts";
+import { LayerCache, resetEndpointHealth, resolveSiteLayers, type FetchLike } from "./layerService.ts";
 import { parseFemaFlood } from "./layers.ts";
 
+// The circuit breaker is process-wide; isolate tests from each other.
+beforeEach(() => resetEndpointHealth());
 const ADMIN_URL = process.env.LOCATIONS_TEST_DATABASE_URL;
 const skip = ADMIN_URL ? false : "LOCATIONS_TEST_DATABASE_URL not set";
 const DB = `smartpr_layercache_${process.pid}_${Math.random().toString(36).slice(2, 8)}`;

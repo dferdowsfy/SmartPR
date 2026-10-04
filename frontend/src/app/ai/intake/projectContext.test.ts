@@ -565,3 +565,16 @@ test("backfill: \"BESS\" acronym still sets battery_storage", () => {
   backfillEnergyTechnology(ctx, "Utility-scale 20 MW BESS in Salinas");
   assert.equal(ctx.battery_storage?.value, true);
 });
+
+
+test("projectContextChips: a bridged renovation reads as work, never as the matter's identity", () => {
+  // Q_RENOVATIONS = yes sets project_type "renovation" + renovation=true.
+  const { context } = validateProjectContext({
+    project_type: { value: "renovation", confidence: 1, evidence: "Q_RENOVATIONS" },
+    renovation: { value: true, confidence: 1, evidence: "Q_RENOVATIONS" },
+  });
+  const labels = projectContextChips(context).map((c) => c.label);
+  assert.deepEqual(labels, ["Renovation"], `no duplicate "Project: renovation" chip: ${labels}`);
+  const other = projectContextChips(validateProjectContext({ project_type: { value: "tenant_improvement", confidence: 0.95, evidence: "x" } }).context).map((c) => c.label);
+  assert.deepEqual(other, ["Work: tenant improvement"]);
+});

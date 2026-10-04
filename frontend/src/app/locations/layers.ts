@@ -79,6 +79,12 @@ export interface LayerSource {
   publisher: string;
   /** ArcGIS REST layer URL (…/MapServer/<n>). */
   url: string;
+  /**
+   * Same-schema mirrors tried in order when the primary does not answer
+   * (down, timeout, 5xx). Only list endpoints verified to publish the SAME
+   * fields for the SAME dataset — a fallback is never a different dataset.
+   */
+  fallback_urls?: readonly string[];
   /** Human-readable layer name on the service. */
   layer: string;
   /** Dataset date when the service publishes one globally (else per feature). */
@@ -190,6 +196,10 @@ export const LAYER_SOURCES = {
     name: "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
     publisher: "Junta de Planificación de Puerto Rico",
     url: "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+    // MIPR "Calificación-Clasificación" publishes the same fields (cali,
+    // descrip, clasi, descrip1, num_catast, vigencia, resolucion, cali_sobre),
+    // verified 2026-10-04 against Caguas pueblo (DT-G / SU / 225-044-031-13).
+    fallback_urls: ["https://sigejp.pr.gov/server/rest/services/MIPR/Calificacion/MapServer/0"],
     layer: "cali_vige",
     dataset_date: null,
     reliability: "medium",
@@ -200,6 +210,9 @@ export const LAYER_SOURCES = {
     name: "CRIM — Parcelas (catastro digital), febrero 2025",
     publisher: "Centro de Recaudación de Ingresos Municipales (vía JP SIGE)",
     url: "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+    // CRIM "Parcelario" (crim_parcelas) carries NUM_CATASTRO / TIPO / OLDPID
+    // too, verified 2026-10-04 (Caguas pueblo → 225-044-031-13, TIPO P).
+    fallback_urls: ["https://sigejp.pr.gov/server/rest/services/crim/crim_parcelas/MapServer/0"],
     layer: "Parcelas_feb_2025",
     dataset_date: "2025-02",
     reliability: "high",
@@ -394,6 +407,17 @@ function ref(src: LayerSource, dataset_date: string | null, version: string | nu
 
 export function unknownLayer(layer: SiteLayerId, src: LayerSource, reason: string | null, retrieved_at: string): SiteLayerResult {
   return { layer, status: "unknown", code: null, name: null, tags: [], attributes: {}, source: ref(src, null, null), retrieval: "none", approximate: false, reason, retrieved_at };
+}
+
+/**
+ * Did the provider answer for this point? The one test every surface uses to
+ * tell "couldn't check" (the service was down / timed out → retry) from
+ * "checked: nothing usable mapped here" (answered → never "unavailable").
+ * `retrieval: "none"` is reserved for "no answer"; every parser that read a
+ * real response sets live / cached / stale_cache / derived.
+ */
+export function layerAnswered(r: SiteLayerResult | null | undefined): boolean {
+  return !!r && (r.status !== "unknown" || r.retrieval !== "none");
 }
 
 // ---------------------------------------------------------------------------
@@ -704,8 +728,15 @@ export function landClassFamily(clasi: string | null): { code: string; name: str
   if (c.startsWith("SRC")) return { code: "SRC", name: "Suelo Rústico Común" };
   if (c.startsWith("SUNP") || c.startsWith("SUP") || c.startsWith("SURB")) return { code: "SURB", name: "Suelo Urbanizable" };
   if (c.startsWith("SU")) return { code: "SU", name: "Suelo Urbano" };
+  // Not lots: JP classifies roads and water bodies too. These are real
+  // answers ("the pin is on the road / in the water"), not missing data.
+  if (c === "VIAL") return { code: "VIAL", name: "Sistema vial" };
+  if (c === "AGUA") return { code: "AGUA", name: "Cuerpo de agua" };
   return null;
 }
+
+/** Land-class / zoning codes that mean the pin is not on a developable lot. */
+export const NOT_A_LOT_CODES: Readonly<Record<string, "road" | "water">> = { VIAL: "road", AGUA: "water" };
 
 /**
  * Zoning family of a JP calificación (Reglamento Conjunto 2023, cap. 6
@@ -720,7 +751,9 @@ export function zoningFamily(cali: string | null, descrip: string | null): strin
   const c = (cali ?? "").toUpperCase();
   if (!d && !c) return null;
   if (/sistema vial|^vial$/.test(d) || c === "VIAL") return "road";
-  if (/conservacion|preservacion|ecologic|bosque|cuerpo de agua|playa/.test(d)) return "conservation";
+  // A water body is not a conservation district: it is not a lot at all.
+  if (/cuerpo de agua|^agua$/.test(d) || c === "AGUA") return "water";
+  if (/conservacion|preservacion|ecologic|bosque|playa/.test(d)) return "conservation";
   if (/agricol|agropecuar/.test(d)) return "agricultural";
   if (/industri/.test(d)) return "industrial";
   if (/comercial|comercio|negocios|centro urbano|mixto/.test(d)) return "commercial";
@@ -789,14 +822,17 @@ export function parseJpCalificacion(resp: ArcGisQueryResponse | string, retrieve
       }
     : { ...unknownLayer("zoning", src, "calificacion_attribute_missing", retrieved_at), retrieval: "live" };
   const lcFamily = landClassFamily(clasi);
-  const lcTags = lcFamily ? [lcFamily.code, ...(lcFamily.code === "SREP" || lcFamily.code === "SRC" ? ["RUSTICO"] : lcFamily.code === "SU" ? ["URBANO"] : [])] : [];
+  const notALot = lcFamily ? NOT_A_LOT_CODES[lcFamily.code] : undefined;
+  const lcTags = lcFamily
+    ? [lcFamily.code, ...(lcFamily.code === "SREP" || lcFamily.code === "SRC" ? ["RUSTICO"] : lcFamily.code === "SU" ? ["URBANO"] : notALot ? ["NOT_A_LOT"] : [])]
+    : [];
   const land_class: SiteLayerResult =
     clasi && lcFamily
       ? {
           layer: "land_class",
           status: "resolved",
           code: clasi,
-          name: descrip1,
+          name: descrip1 ?? lcFamily.name,
           tags: lcTags,
           attributes,
           source: ref(src, vigencia, version),
@@ -812,6 +848,9 @@ export function parseJpCalificacion(resp: ArcGisQueryResponse | string, retrieve
         };
   return { zoning, land_class, catastro: str(a.num_catast) };
 }
+
+/** A CRIM catastro number: 000-000-000-00 (lot suffix may be 2 chars, e.g. "UP"). */
+export const CATASTRO_RE = /^\d{3}-\d{3}-\d{3}-[0-9A-Z]{2,3}$/;
 
 /** CRIM parcel (número de catastro); falls back to the JP polygon's catastro. */
 export function parseCrimParcel(resp: ArcGisQueryResponse | string, retrieved_at: string, jpCatastro: string | null = null): SiteLayerResult {
@@ -839,8 +878,15 @@ export function parseCrimParcel(resp: ArcGisQueryResponse | string, retrieved_at
   if (!a) return { ...unknownLayer("parcel", src, "no_parcel_polygon_at_point", retrieved_at), status: "none", retrieval: "live" };
   const catastro = str(a.NUM_CATASTRO);
   if (!catastro) {
-    // CRIM polygons under streets/rights-of-way (TIPO "V") carry no number.
-    return { ...unknownLayer("parcel", src, `parcel_without_catastro_number (TIPO ${str(a.TIPO) ?? "?"})`, retrieved_at), status: "none", retrieval: "live", attributes: { TIPO: str(a.TIPO) } };
+    const tipo = str(a.TIPO);
+    // A CRIM lot polygon (TIPO P) without a number: the JP calificación
+    // polygon at the same point often carries the catastro — use it,
+    // labelled as derived. Roads (V) and water (A) are never lots.
+    if (tipo !== "V" && tipo !== "A" && jpCatastro && CATASTRO_RE.test(jpCatastro)) {
+      return { ...fromJp(`crim_polygon_without_number (TIPO ${tipo ?? "?"})`), attributes: { num_catast: jpCatastro, TIPO: tipo } };
+    }
+    // CRIM polygons under streets/rights-of-way (TIPO "V") and water (TIPO "A") carry no number.
+    return { ...unknownLayer("parcel", src, `parcel_without_catastro_number (TIPO ${tipo ?? "?"})`, retrieved_at), status: "none", retrieval: "live", attributes: { TIPO: tipo } };
   }
   return {
     layer: "parcel",
@@ -994,6 +1040,49 @@ export interface LayerDetermination {
   metadata: Record<string, unknown>;
 }
 
+// ---------------------------------------------------------------------------
+// Pin placement: is the pin on a lot? Lot-scoped layers (zoning, land class,
+// parcel) describe whatever polygon is under the pin — on a road or in a
+// lagoon that is the road / the water body, not the user's property.
+// ---------------------------------------------------------------------------
+
+export type PinPlacementState = "on_lot" | "on_road" | "on_water" | "no_parcel" | "unknown";
+
+export interface PinPlacement {
+  state: PinPlacementState;
+  /** Which dataset said so (CRIM parcel TIPO, else the JP calificación). */
+  basis: "crim" | "jp" | null;
+}
+
+/** Layers that describe the lot under the pin (meaningless when the pin is off the lot). */
+export const LOT_SCOPED_LAYERS: readonly SiteLayerId[] = ["zoning", "land_class", "parcel"];
+
+export function pinPlacement(layers: SiteLayers | null | undefined): PinPlacement {
+  const by = new Map((layers?.results ?? []).map((r) => [r.layer, r]));
+  const parcel = by.get("parcel");
+  const zoning = by.get("zoning");
+  const land = by.get("land_class");
+  if (parcel?.status === "resolved") return { state: "on_lot", basis: parcel.retrieval === "derived" ? "jp" : "crim" };
+  const tipo = typeof parcel?.attributes?.TIPO === "string" ? parcel.attributes.TIPO : null;
+  if (parcel?.status === "none" && tipo === "V") return { state: "on_road", basis: "crim" };
+  if (parcel?.status === "none" && tipo === "A") return { state: "on_water", basis: "crim" };
+  const jpCode = (land?.status === "resolved" ? land.code : null) ?? (zoning?.status === "resolved" ? zoning.code : null);
+  const notLot = jpCode ? NOT_A_LOT_CODES[jpCode.toUpperCase()] : undefined;
+  if (notLot === "road") return { state: "on_road", basis: "jp" };
+  if (notLot === "water") return { state: "on_water", basis: "jp" };
+  // CRIM has no polygon here but the JP calificación classifies a real lot:
+  // a CRIM gap, not an off-lot pin. Keep the lot facts (a false negative —
+  // e.g. dropping an SREP restriction — is worse than an extra review).
+  if (jpCode) return { state: "on_lot", basis: "jp" };
+  if (parcel?.status === "none") return { state: "no_parcel", basis: "crim" };
+  return { state: "unknown", basis: null };
+}
+
+/** The pin is on a road, in water, or between lots: lot facts must not drive rules. */
+export function pinIsOffLot(p: PinPlacement): boolean {
+  return p.state === "on_road" || p.state === "on_water" || p.state === "no_parcel";
+}
+
 /**
  * Resolved layers → geography determinations. The primary code comes first
  * (it becomes `location.<type>`), tags follow (each a `location.<type>.<tag>`
@@ -1002,8 +1091,21 @@ export interface LayerDetermination {
 export function layerDeterminations(layers: SiteLayers | null | undefined): LayerDetermination[] {
   if (!layers) return [];
   const out: LayerDetermination[] = [];
+  const placement = pinPlacement(layers);
+  const offLot = pinIsOffLot(placement);
+  if (placement.state !== "unknown") {
+    // location.placement = on_lot | on_road | on_water | no_parcel, and
+    // location.placement.off_lot when the lot layers were withheld.
+    const meta = { layer: "placement", basis: placement.basis, predicate: "esriSpatialRelIntersects" };
+    const base = { geography_type: "placement", determination_method: "SPATIAL_INTERSECTION" as const, source_id: placement.basis === "jp" ? LAYER_SOURCES.jp_calificacion.id : LAYER_SOURCES.crim_parcels.id, source_name: null, source_version: null, source_url: placement.basis === "jp" ? LAYER_SOURCES.jp_calificacion.url : LAYER_SOURCES.crim_parcels.url, metadata: meta };
+    out.push({ ...base, geography_code: placement.state, geography_name: null });
+    if (offLot) out.push({ ...base, geography_code: "off_lot", geography_name: null });
+  }
   for (const r of layers.results) {
     if (r.status !== "resolved" || !r.code) continue;
+    // Off the lot, zoning / land class / parcel describe the road or the
+    // water body — never the user's property — so they trigger nothing.
+    if (offLot && LOT_SCOPED_LAYERS.includes(r.layer)) continue;
     const type = LAYER_GEOGRAPHY_TYPE[r.layer];
     const common = {
       geography_type: type,
@@ -1283,6 +1385,9 @@ export function layerReasonText(reason: string | null | undefined, service: "FEM
   if (/^timeout_/.test(r)) return { text: { en: `${who}'s map service didn't answer in time.`, es: `El servicio de mapas de ${who} no respondió a tiempo.` }, retryable: true };
   if (/^layers_service_unreachable|^no_layers/.test(r)) return { text: { en: "SmartPR couldn't reach the map lookup.", es: "SmartPR no pudo conectar con la consulta de mapas." }, retryable: true };
   if (/^network_error|^http_5\d\d$|^http_429$|unreachable|arcgis_error_5/.test(r)) return { text: { en: `${who}'s map service is temporarily unavailable.`, es: `El servicio de mapas de ${who} no está disponible por el momento.` }, retryable: true };
+  if (/^not_a_land_classification/.test(r)) return { text: { en: "The map answered, but the pin isn't on a classified lot (road or water). Move the pin onto the property.", es: "El mapa respondió, pero el pin no está sobre un solar clasificado (vía o agua). Mueva el pin sobre la propiedad." }, retryable: false };
+  if (/^parcel_without_catastro_number|^crim_polygon_without_number/.test(r)) return { text: { en: "CRIM answered: there is no numbered parcel at this exact point (road, water or between lots). Move the pin onto the property.", es: "El CRIM respondió: no hay una parcela numerada en este punto exacto (vía, agua o entre solares). Mueva el pin sobre la propiedad." }, retryable: false };
+  if (/circuit_open/.test(r)) return { text: { en: `${who}'s map service has been failing; SmartPR will try it again shortly.`, es: `El servicio de mapas de ${who} ha estado fallando; SmartPR lo intentará de nuevo en breve.` }, retryable: true };
   if (r === "no_flood_hazard_polygon_at_point") return { text: { en: "FEMA has no mapped flood area at this exact point (open water or outside the mapped area).", es: "FEMA no tiene un área de inundación mapeada en este punto exacto (agua abierta o fuera del área mapeada)." }, retryable: false };
   if (r === "outside_puerto_rico") return { text: { en: "This point is outside Puerto Rico.", es: "Este punto está fuera de Puerto Rico." }, retryable: false };
   if (/^http_4\d\d$|attribute_missing|unexpected_response|empty_response/.test(r)) return { text: { en: `${who} returned an answer SmartPR couldn't read.`, es: `${who} devolvió una respuesta que SmartPR no pudo leer.` }, retryable: true };
@@ -1329,6 +1434,10 @@ const MEANING: Record<string, Bi> = {
   urban: {
     en: "Urban land: zoning (calificación) decides what is permitted.",
     es: "Suelo urbano: la calificación decide lo que está permitido.",
+  },
+  not_a_lot: {
+    en: "The pin is on a road or a water body, not on a lot. Move the pin onto the property to get its zoning, land class and parcel.",
+    es: "El pin está sobre una vía o un cuerpo de agua, no sobre un solar. Mueva el pin sobre la propiedad para obtener su calificación, clasificación y parcela.",
   },
   parcel: {
     en: "CRIM cadastral parcel under the pin. Use this number on permit applications.",
@@ -1467,7 +1576,7 @@ export function layerCards(layers: SiteLayers | null | undefined): LayerCard[] {
       status: "resolved",
       title: { en: "Land classification", es: "Clasificación del suelo" },
       value: { en: `${lc.code}${lc.name ? ` — ${lc.name}` : ""}`, es: `${lc.code}${lc.name ? ` — ${lc.name}` : ""}` },
-      meaning: fam === "SREP" ? MEANING.srep : fam === "SRC" ? MEANING.rustic : MEANING.urban,
+      meaning: fam === "SREP" ? MEANING.srep : fam === "SRC" ? MEANING.rustic : lc.tags.includes("NOT_A_LOT") ? MEANING.not_a_lot : MEANING.urban,
       source: dated(lc, "Junta de Planificación"),
       reason: null,
       retryable: false,

@@ -38,6 +38,12 @@ export default async function AdminHome() {
               </Link>
               <span className="text-[#5a5a5a]"> — SOC 2 readiness inventory (not certification)</span>
             </p>
+            <p className="-mt-6 mb-8 text-sm">
+              <Link href="/admin/geo-health" className="font-medium text-brand underline-offset-4 hover:underline">
+                Geo-layer health
+              </Link>
+              <span className="text-[#5a5a5a]"> — FEMA, JP, CRIM and NOAA map providers behind site checks</span>
+            </p>
             <AdminWorkspaceList />
           </>
         )}
