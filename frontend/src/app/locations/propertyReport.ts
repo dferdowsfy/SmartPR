@@ -16,7 +16,7 @@
 //   loading        requested for this exact location, not back yet
 // ============================================================================
 
-import { floodMapSummary, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
+import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
 import { toPrStatePlane, type ParcelFindings } from "./parcel.ts";
 import { siteAddressParts } from "./siteAddress.ts";
@@ -169,6 +169,9 @@ function layerState(r: SiteLayerResult | undefined, current: boolean, loading: b
   if (!r) return "not_performed";
   if (r.status === "resolved") return "sourced";
   if (r.status === "none") return "none_mapped";
+  // The source answered but nothing usable is mapped (road / water polygon,
+  // special-plan area): checked, not "unavailable".
+  if (layerAnswered(r)) return "none_mapped";
   return "unavailable";
 }
 

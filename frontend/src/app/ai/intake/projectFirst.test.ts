@@ -36,6 +36,7 @@ import {
   projectPassportFromContext,
   validateProjectPassport,
   projectPassportTitle,
+  matterHeadlineSubject,
   PROJECT_PASSPORT_VERSION,
 } from "../../forms/engine/projectPassport.ts";
 
@@ -318,6 +319,14 @@ test("projectPassport: build, round-trip, and branch rules", () => {
   assert.equal(validateProjectPassport(null), null);
 
   assert.equal(projectPassportTitle(only!), "renovation — Guaynabo");
+
+  // Headline subject: a project-only intake is its project; a business
+  // intake is the business, even with construction facts (live bug: a
+  // restaurant read as "Renovation" after Q_RENOVATIONS = yes).
+  assert.equal(matterHeadlineSubject({ isProjectOnly: true, passport: only, businessType: null, name: null }), "renovation — Guaynabo");
+  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: "Restaurant", name: "La Fonda" }), "Restaurant");
+  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: null, name: "La Fonda" }), "La Fonda");
+  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: null, name: null }), "renovation — Guaynabo");
 });
 
 // --- buildEngineInput wiring: intent + project context -> engine -------------

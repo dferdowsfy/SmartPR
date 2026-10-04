@@ -715,7 +715,10 @@ export interface ProjectContextChip {
 function projectFactChipLabel(key: ProjectContextKey, value: string | number | boolean): string | null {
   switch (key) {
     case "project_type":
-      return `Project: ${String(value)}`;
+      // The kind of WORK, not what the business is: a restaurant whose owner
+      // answered "construction or renovations: yes" must not read as
+      // "Project: renovation". (Redundant with the flag chip; see below.)
+      return `Work: ${String(value).replace(/_/g, " ")}`;
     case "property_type":
       return String(value);
     case "existing_building":
@@ -828,6 +831,8 @@ function projectFactChipLabel(key: ProjectContextKey, value: string | number | b
   }
 }
 
+const WORK_FLAG_KEYS = new Set(["renovation", "new_construction", "expansion"]);
+
 export function projectContextChips(
   context: ProjectContext | undefined | null
 ): ProjectContextChip[] {
@@ -837,6 +842,9 @@ export function projectContextChips(
     [ProjectContextKey, ProjectContextFact]
   >) {
     if (!projectFactKnown(context, key)) continue;
+    // project_type "renovation" / "new_construction" / "expansion" restates a
+    // boolean flag that already has its own chip ("Renovation"): skip it.
+    if (key === "project_type" && typeof fact.value === "string" && WORK_FLAG_KEYS.has(fact.value) && context[fact.value as ProjectContextKey]?.value === true) continue;
     const label = projectFactChipLabel(key, fact.value);
     if (!label) continue;
     chips.push({ label, needsConfirmation: fact.confidence < 0.85 });

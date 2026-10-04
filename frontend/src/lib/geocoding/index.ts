@@ -18,12 +18,22 @@
 //   MAP_GEOCODING_API_KEY       Optional key, sent as `key=` (LocationIQ-style).
 //   MAP_GEOCODING_USER_AGENT    Identifying User-Agent (required by OSMF policy).
 //   MAP_GEOCODING_EMAIL         Optional contact email passed as `email=`.
+//   MAP_GEOCODING_FALLBACK      "photon" (default) or "off". Photon (komoot's
+//                               public OSM geocoder) answers when Nominatim
+//                               errors, is rate limited, or finds nothing.
+//   MAP_GEOCODING_PHOTON_URL    Photon API root (default https://photon.komoot.io).
+//
+// Provider chain (fallbackGeocoder): CRIM catastro-number lookup (exact,
+// authoritative for "225-044-031-13"-style queries) → Nominatim → Photon.
+// Every candidate carries its own place_source; attributionFor() gives the
+// credit line the UI must show for OSM-derived results (ODbL).
 //
 // Adding another provider = implement GeocodingProvider and register it in
 // geocoderFromEnv(); callers and the stored data model do not change.
 // ============================================================================
 
 import { PUERTO_RICO_BOUNDS, validateCoordinates } from "../../app/locations/geo.ts";
+import { interiorPoint } from "../../app/locations/snap.ts";
 
 /** A normalized geocoder result. Coordinates are WGS84. */
 export interface GeocodeCandidate {
@@ -40,6 +50,13 @@ export interface GeocodeCandidate {
   place_source: string;
   /** Provider's own id for the place, persisted as locations.place_source_id. */
   place_source_id: string | null;
+}
+
+/** Credit line required by the data licence of a candidate's provider. */
+export function attributionFor(placeSource: string | null | undefined): string | null {
+  if (placeSource === "nominatim" || placeSource === "photon") return "© OpenStreetMap contributors (ODbL)";
+  if (placeSource === "crim_catastro") return "CRIM — Catastro digital (vía JP SIGE)";
+  return null;
 }
 
 export interface GeocodingProvider {
@@ -209,6 +226,182 @@ export function nominatimProvider(config: NominatimConfig): GeocodingProvider {
 }
 
 // ---------------------------------------------------------------------------
+// Photon adapter (komoot's public OSM geocoder) — fallback
+// ---------------------------------------------------------------------------
+
+interface PhotonFeature {
+  geometry?: { coordinates?: [number, number] };
+  properties?: {
+    osm_type?: string; osm_id?: number | string; name?: string; housenumber?: string; street?: string;
+    locality?: string; district?: string; city?: string; county?: string; state?: string; postcode?: string; countrycode?: string;
+  };
+}
+
+export function normalizePhotonFeature(f: PhotonFeature): GeocodeCandidate | null {
+  const c = f.geometry?.coordinates;
+  if (!Array.isArray(c)) return null;
+  const coords = validateCoordinates(c[1], c[0]);
+  if (!coords.ok) return null;
+  const p = f.properties ?? {};
+  const isPR = /^puerto rico$/i.test(p.state ?? "");
+  const street = [text(p.housenumber), text(p.street)].filter(Boolean).join(" ") || null;
+  const name = text(p.name);
+  const city = text(p.city) ?? text(p.locality);
+  const municipality = stripMunicipioSuffix(text(p.county) ?? (isPR ? city : null));
+  const parts = [name, street && street !== name ? street : null, text(p.district), city, isPR ? "Puerto Rico" : text(p.state), text(p.postcode)].filter(Boolean);
+  const countryCode = isPR ? "PR" : text(p.countrycode)?.toUpperCase() ?? null;
+  return {
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+    formatted_address: parts.length ? [...new Set(parts)].join(", ") : null,
+    address_line_1: street ?? name,
+    city,
+    municipality,
+    state_or_region: isPR ? "PR" : text(p.state),
+    postal_code: text(p.postcode),
+    country_code: countryCode && /^[A-Z]{2}$/.test(countryCode) ? countryCode : null,
+    place_source: "photon",
+    place_source_id: p.osm_type && p.osm_id != null ? `${({ N: "node", W: "way", R: "relation" } as Record<string, string>)[p.osm_type] ?? p.osm_type}/${p.osm_id}` : null,
+  };
+}
+
+export function photonProvider(config: { baseUrl: string; userAgent: string; timeoutMs?: number; fetchImpl?: FetchLike }): GeocodingProvider {
+  const base = config.baseUrl.replace(/\/+$/, "");
+  const doFetch: FetchLike = config.fetchImpl ?? ((input, init) => fetch(input, init));
+  async function call(path: string, params: Record<string, string>): Promise<PhotonFeature[]> {
+    const url = new URL(`${base}/${path}`);
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), config.timeoutMs ?? 6000);
+    try {
+      const res = await doFetch(url.toString(), { headers: { "User-Agent": config.userAgent, Accept: "application/json" }, signal: controller.signal, cache: "no-store" });
+      if (!res.ok) throw new GeocodingError(`provider_http_${res.status}`, res.status);
+      const body = (await res.json()) as { features?: PhotonFeature[] };
+      return Array.isArray(body?.features) ? body.features : [];
+    } catch (err) {
+      if (err instanceof GeocodingError) throw err;
+      throw new GeocodingError((err as Error).name === "AbortError" ? "provider_timeout" : "provider_unreachable");
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  const b = PUERTO_RICO_BOUNDS;
+  // Photon supports default/en/de/fr only: Spanish uses the default (local) names.
+  const langParam = (lang?: string): Record<string, string> => (lang === "en" ? { lang: "en" } : {});
+  return {
+    id: "photon",
+    async search(query, opts = {}) {
+      const features = await call("api/", { q: query, limit: String(Math.min(Math.max(opts.limit ?? 5, 1), 10)), bbox: `${b.west},${b.south},${b.east},${b.north}`, ...langParam(opts.lang) });
+      return features.map(normalizePhotonFeature).filter((c): c is GeocodeCandidate => c !== null && c.country_code === "PR");
+    },
+    async reverse(latitude, longitude, opts = {}) {
+      const features = await call("reverse", { lat: String(latitude), lon: String(longitude), ...langParam(opts.lang) });
+      const first = features.map(normalizePhotonFeature).find((c) => c !== null) ?? null;
+      return first;
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// CRIM catastro-number lookup ("225-044-031-13") — exact, authoritative
+// ---------------------------------------------------------------------------
+
+/** "225-044-031-13", "225 044 031 13", "22504403113" → "225-044-031-13". */
+export function normalizeCatastroQuery(q: string): string | null {
+  const t = q.trim().toUpperCase().replace(/^(CATASTRO|N[UÚ]M(ERO)?\.?\s*DE\s*CATASTRO)[:#\s]*/i, "");
+  const m = /^(\d{3})[-\s.]?(\d{3})[-\s.]?(\d{3})[-\s.]?([0-9A-Z]{2,3})$/.exec(t);
+  return m ? `${m[1]}-${m[2]}-${m[3]}-${m[4]}` : null;
+}
+
+export const CRIM_PARCEL_ENDPOINTS = [
+  "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+  "https://sigejp.pr.gov/server/rest/services/crim/crim_parcelas/MapServer/0",
+] as const;
+
+/** A point guaranteed inside the parcel (not the centroid, which can fall outside an L-shaped lot). */
+function ringCentre(rings: Array<Array<[number, number]>>): [number, number] | null {
+  return interiorPoint(rings);
+}
+
+export function crimCatastroProvider(config: { endpoints?: readonly string[]; timeoutMs?: number; fetchImpl?: FetchLike } = {}): GeocodingProvider {
+  const doFetch: FetchLike = config.fetchImpl ?? ((input, init) => fetch(input, init));
+  const endpoints = config.endpoints ?? CRIM_PARCEL_ENDPOINTS;
+  return {
+    id: "crim_catastro",
+    async search(query) {
+      const num = normalizeCatastroQuery(query);
+      if (!num) return [];
+      let lastErr: GeocodingError | null = null;
+      for (const ep of endpoints) {
+        const u = `${ep}/query?${new URLSearchParams({ where: `NUM_CATASTRO='${num}'`, outFields: "NUM_CATASTRO,TIPO", returnGeometry: "true", outSR: "4326", geometryPrecision: "7", f: "json" }).toString()}`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), config.timeoutMs ?? 6000);
+        try {
+          const res = await doFetch(u, { signal: controller.signal, cache: "no-store" });
+          if (!res.ok) { lastErr = new GeocodingError(`provider_http_${res.status}`, res.status); continue; }
+          const body = (await res.json()) as { error?: unknown; features?: Array<{ geometry?: { rings?: Array<Array<[number, number]>> } }> };
+          if (body.error || !Array.isArray(body.features)) { lastErr = new GeocodingError("provider_error"); continue; }
+          const f = body.features.find((x) => Array.isArray(x.geometry?.rings));
+          const c = f?.geometry?.rings ? ringCentre(f.geometry.rings) : null;
+          if (!c) return [];
+          const coords = validateCoordinates(c[1], c[0]);
+          if (!coords.ok) return [];
+          return [{
+            latitude: coords.latitude, longitude: coords.longitude,
+            formatted_address: `Catastro ${num}`, address_line_1: null, city: null, municipality: null,
+            state_or_region: "PR", postal_code: null, country_code: "PR",
+            place_source: "crim_catastro", place_source_id: num,
+          }];
+        } catch (err) {
+          lastErr = new GeocodingError((err as Error).name === "AbortError" ? "provider_timeout" : "provider_unreachable");
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      if (lastErr) throw lastErr;
+      return [];
+    },
+    async reverse() {
+      return null;
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Fallback chain
+// ---------------------------------------------------------------------------
+
+/**
+ * Ask providers in order; the first non-empty answer wins. A provider that
+ * errors (down, rate limited, timeout) or finds nothing passes to the next.
+ * Throws only when EVERY provider errored, so "nothing found" (an empty
+ * list) and "search is down" (an error) stay distinguishable.
+ */
+export function fallbackGeocoder(providers: GeocodingProvider[]): GeocodingProvider {
+  const run = async <T>(call: (p: GeocodingProvider) => Promise<T>, empty: (v: T) => boolean, none: T): Promise<T> => {
+    let firstErr: unknown = null;
+    let errors = 0;
+    for (const p of providers) {
+      try {
+        const v = await call(p);
+        if (!empty(v)) return v;
+      } catch (err) {
+        errors++;
+        firstErr ??= err;
+        console.warn(`[geocode] ${p.id} failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    if (errors === providers.length && firstErr) throw firstErr;
+    return none;
+  };
+  return {
+    id: providers.map((p) => p.id).join("+"),
+    search: (query, opts) => run((p) => p.search(query, opts), (v) => v.length === 0, [] as GeocodeCandidate[]),
+    reverse: (lat, lng, opts) => run((p) => p.reverse(lat, lng, opts), (v) => v === null, null as GeocodeCandidate | null),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Throttle + cache (process-wide)
 // ---------------------------------------------------------------------------
 
@@ -324,7 +517,7 @@ export function geocoderFromEnv(
     userAgent: env.MAP_GEOCODING_USER_AGENT?.trim() || "SmartPR/1.0 (+https://www.getsmartpr.com)",
     email: env.MAP_GEOCODING_EMAIL?.trim() || null,
   };
-  const key = JSON.stringify(config) + (opts.reserve ? "|shared" : "");
+  const key = JSON.stringify(config) + (opts.reserve ? "|shared" : "") + `|fb=${env.MAP_GEOCODING_FALLBACK ?? ""}|${env.MAP_GEOCODING_PHOTON_URL ?? ""}`;
   if (singleton?.key === key) return singleton.provider;
   // The public OSMF instance allows at most 1 request/second for the whole
   // application, so its slots are reserved through the shared reserver (all
@@ -335,6 +528,13 @@ export function geocoderFromEnv(
     minIntervalMs: isPublic ? 1100 : 100,
     reserve: isPublic ? opts.reserve : undefined,
   });
-  singleton = { key, provider: wrapped };
-  return wrapped;
+  const chain: GeocodingProvider[] = [crimCatastroProvider(), wrapped];
+  if ((env.MAP_GEOCODING_FALLBACK || "photon").trim().toLowerCase() === "photon") {
+    // komoot's public Photon asks for fair use: identify ourselves, space
+    // requests (1/s per process), cache, and fail fast instead of queueing.
+    chain.push(politeProvider(photonProvider({ baseUrl: env.MAP_GEOCODING_PHOTON_URL?.trim() || "https://photon.komoot.io", userAgent: config.userAgent }), { minIntervalMs: 1000, maxWaitMs: 4000 }));
+  }
+  const chained = fallbackGeocoder(chain);
+  singleton = { key, provider: chained };
+  return chained;
 }

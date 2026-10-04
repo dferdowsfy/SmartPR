@@ -2,7 +2,7 @@
 // explanations, chips, and the KB rules they drive — all on fixtures recorded
 // from the live services on 2026-09-30 (no network).
 // Run: npx tsx --test src/app/locations/layers.test.ts
-import test from "node:test";
+import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -33,9 +33,11 @@ import {
   type ArcGisQueryResponse,
   type SiteLayers,
 } from "./layers.ts";
-import { LayerCache, resolveSiteLayers, type FetchLike, type LayerStore } from "./layerService.ts";
+import { LayerCache, resetEndpointHealth, resolveSiteLayers, type FetchLike, type LayerStore } from "./layerService.ts";
 import { restoreIntakeSite, siteEngineFacts, siteFactDetails, type IntakeSite } from "./intakeLocation.ts";
 
+// The circuit breaker is process-wide; isolate tests from each other.
+beforeEach(() => resetEndpointHealth());
 const here = dirname(fileURLToPath(import.meta.url));
 const FX = JSON.parse(readFileSync(join(here, "fixtures", "arcgisLayers.json"), "utf8")) as {
   points: Record<string, [number, number]>;
@@ -331,7 +333,11 @@ test("JP calificación: zoning + land class + catastro; VIAL is not a land class
   const v = parseJpCalificacion(r("jp_calif:guaynabo_pueblo"), AT);
   assert.equal(v.zoning.code, "VIAL");
   assert.deepEqual(v.zoning.tags, ["road"]);
-  assert.equal(v.land_class.status, "unknown");
+  // VIAL is not a land class: the map ANSWERED (road), so the layer is
+  // resolved and tagged NOT_A_LOT, never "temporarily unavailable".
+  assert.equal(v.land_class.status, "resolved");
+  assert.equal(v.land_class.code, "VIAL");
+  assert.ok(v.land_class.tags.includes("NOT_A_LOT"));
   const c = parseJpCalificacion(r("jp_calif:condado"), AT);
   assert.equal(c.zoning.status, "unknown");
   assert.match(c.zoning.reason!, /no_calificacion_polygon/);

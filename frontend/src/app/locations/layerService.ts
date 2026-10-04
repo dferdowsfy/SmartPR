@@ -12,8 +12,11 @@
 // Parsing and the meaning of each answer live in layers.ts (pure).
 // ============================================================================
 
+import { nearestLots, type SnapCandidate } from "./snap.ts";
 import {
   LAYER_SOURCES,
+  type LayerSource,
+  type LayerSourceKey,
   CZM_BAND_M,
   arcgisError,
   parseCoastalZone,
@@ -77,7 +80,111 @@ export interface ResolveLayersOptions {
   skipOptional?: boolean;
 }
 
-type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "czm_noaa" | "coastline" | "historic" | "protected";
+export type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "czm_noaa" | "coastline" | "historic" | "protected";
+
+/**
+ * Provider registry: every ArcGIS point query SmartPR makes, declared once —
+ * which dataset (and therefore which primary + same-schema fallback
+ * endpoints), the per-query timeout and whether a timeout is retried. The
+ * health check (scripts/geo-health.mts) and the admin page read this same
+ * table, so a new layer is monitored the moment it is added here.
+ */
+export interface LayerQuerySpec {
+  source: LayerSourceKey;
+  /** Retry a timeout (core, normally-fast queries only). */
+  retryOnTimeout: boolean;
+  /** Best-effort: a miss never degrades a core layer. */
+  optional: boolean;
+}
+
+export const LAYER_QUERIES: Record<Exclude<QueryKey, "landslide" | "elevation">, LayerQuerySpec> = {
+  fema_zones: { source: "fema_flood_zones", retryOnTimeout: true, optional: false },
+  fema_panels: { source: "fema_firm_panels", retryOnTimeout: true, optional: false },
+  fema_community: { source: "fema_communities", retryOnTimeout: false, optional: true },
+  fema_lomas: { source: "fema_lomas", retryOnTimeout: false, optional: true },
+  fema_lomrs: { source: "fema_lomrs", retryOnTimeout: false, optional: true },
+  advisory_1pct: { source: "jp_advisory_flood", retryOnTimeout: true, optional: false },
+  advisory_02pct: { source: "jp_advisory_flood_02", retryOnTimeout: false, optional: false },
+  jp_calificacion: { source: "jp_calificacion", retryOnTimeout: false, optional: false },
+  crim: { source: "crim_parcels", retryOnTimeout: false, optional: false },
+  czm_official: { source: "jp_zona_costanera", retryOnTimeout: false, optional: true },
+  czm_noaa: { source: "noaa_czma", retryOnTimeout: false, optional: false },
+  coastline: { source: "jp_linea_costa", retryOnTimeout: false, optional: true },
+  historic: { source: "jp_zonas_historicas", retryOnTimeout: false, optional: true },
+  protected: { source: "jp_areas_naturales", retryOnTimeout: false, optional: true },
+};
+
+/** Every endpoint of a dataset, primary first. */
+export function sourceEndpoints(key: LayerSourceKey): string[] {
+  const src: LayerSource = LAYER_SOURCES[key];
+  return [src.url, ...(src.fallback_urls ?? [])];
+}
+
+// ---------------------------------------------------------------------------
+// Endpoint health + circuit breaker (process-wide). A government host that
+// keeps hanging (JP historic zones / protected areas hang > 30 s on point
+// queries) is skipped for a cool-down instead of costing every pin its full
+// timeout; the next request after the cool-down probes it again.
+// ---------------------------------------------------------------------------
+
+export interface EndpointHealth {
+  url: string;
+  ok: number;
+  failed: number;
+  consecutiveFailures: number;
+  lastOkAt: number | null;
+  lastFailureAt: number | null;
+  lastFailure: string | null;
+  lastLatencyMs: number | null;
+}
+
+const CIRCUIT_THRESHOLD = 3;
+const CIRCUIT_COOLDOWN_MS = 120_000;
+const endpointHealth = new Map<string, EndpointHealth>();
+
+function healthOf(url: string): EndpointHealth {
+  let h = endpointHealth.get(url);
+  if (!h) {
+    h = { url, ok: 0, failed: 0, consecutiveFailures: 0, lastOkAt: null, lastFailureAt: null, lastFailure: null, lastLatencyMs: null };
+    endpointHealth.set(url, h);
+  }
+  return h;
+}
+
+function recordEndpoint(url: string, failure: string | null, latencyMs: number, at: number): void {
+  const h = healthOf(url);
+  h.lastLatencyMs = latencyMs;
+  if (failure) {
+    h.failed++;
+    h.consecutiveFailures++;
+    h.lastFailureAt = at;
+    h.lastFailure = failure;
+  } else {
+    h.ok++;
+    h.consecutiveFailures = 0;
+    h.lastOkAt = at;
+  }
+}
+
+function circuitOpen(url: string, at: number): boolean {
+  const h = endpointHealth.get(url);
+  return !!h && h.consecutiveFailures >= CIRCUIT_THRESHOLD && h.lastFailureAt !== null && at - h.lastFailureAt < CIRCUIT_COOLDOWN_MS;
+}
+
+/** Snapshot of every endpoint this process has called (admin page). */
+export function endpointHealthSnapshot(): EndpointHealth[] {
+  return [...endpointHealth.values()].map((h) => ({ ...h }));
+}
+
+/** Tests only. */
+export function resetEndpointHealth(): void {
+  endpointHealth.clear();
+}
+
+/** The service could not be reached / did not answer usefully (vs. it answered). */
+export function isTransportFailure(r: ArcGisQueryResponse | string): r is string {
+  return typeof r === "string";
+}
 
 /** Default timeouts (ms), sized from the latencies observed 2026-09-30 (JP ≈ 2.5–3 s, FEMA < 1 s). */
 export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
@@ -157,7 +264,14 @@ async function queryOnce(fetchImpl: FetchLike, url: string, timeoutMs: number): 
  * so a stalled first attempt is better abandoned and re-asked).
  */
 const retryable = (r: ArcGisQueryResponse | string, onTimeout: boolean) =>
-  typeof r === "string" && (r.startsWith("network_error") || /^http_(5\d\d|429)$/.test(r) || (onTimeout && r.startsWith("timeout_")));
+  typeof r === "string" &&
+  (r.startsWith("network_error") ||
+    /^http_(5\d\d|429)$/.test(r) ||
+    // ArcGIS reports transient server faults as HTTP 200 + error body:
+    // FEMA NFHL answers "400 Failed to execute query." intermittently for
+    // points it answers a second later (seen 2026-10-04); 5xx bodies too.
+    /^arcgis_error_(5\d\d|400: Failed to execute query)/.test(r) ||
+    (onTimeout && r.startsWith("timeout_")));
 
 export async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: number, retries: number, retryDelayMs: number, retryOnTimeout = false): Promise<ArcGisQueryResponse | string> {
   let result = await queryOnce(fetchImpl, url, timeoutMs);
@@ -166,6 +280,37 @@ export async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: nu
     result = await queryOnce(fetchImpl, url, timeoutMs);
   }
   return result;
+}
+
+/**
+ * Point query against a dataset: the primary endpoint, then each same-schema
+ * fallback, until one ANSWERS (any JSON body, including "no features").
+ * Endpoints whose circuit is open are skipped. Returns the answer plus the
+ * endpoint that gave it, or the last failure reason.
+ */
+export async function queryDataset(
+  fetchImpl: FetchLike,
+  endpoints: readonly string[],
+  buildUrl: (layerUrl: string) => string,
+  opts: { timeoutMs: number; retries: number; retryDelayMs: number; retryOnTimeout: boolean; now?: () => number }
+): Promise<{ result: ArcGisQueryResponse | string; endpoint: string | null }> {
+  const now = opts.now ?? Date.now;
+  // Report the PRIMARY endpoint's failure: it is the authoritative source
+  // and the most useful reason for "couldn't check" (a fallback's 404 is noise).
+  let first: string | null = null;
+  for (const ep of endpoints) {
+    if (circuitOpen(ep, now())) {
+      first ??= `${healthOf(ep).lastFailure ?? "repeated_failures"} (circuit_open)`;
+      continue;
+    }
+    const t0 = now();
+    const r = await queryJson(fetchImpl, buildUrl(ep), opts.timeoutMs, opts.retries, opts.retryDelayMs, opts.retryOnTimeout);
+    recordEndpoint(ep, typeof r === "string" ? r : null, now() - t0, now());
+    if (typeof r !== "string") return { result: r, endpoint: ep };
+    first ??= r;
+  }
+  const last: string = first ?? "no_endpoint";
+  return { result: last, endpoint: null };
 }
 
 /**
@@ -189,8 +334,16 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const at = now().toISOString();
   const retries = opts.retries ?? 1;
   const retryDelayMs = opts.retryDelayMs ?? 250;
-  const q = (k: QueryKey, url: string, extra?: Record<string, string>) =>
-    queryJson(fetchImpl, buildArcgisPointQuery(url, point, extra), t(k), retries, retryDelayMs, k === "fema_zones" || k === "fema_panels" || k === "advisory_1pct");
+  const q = async (k: keyof typeof LAYER_QUERIES, extra?: Record<string, string>) => {
+    const spec = LAYER_QUERIES[k];
+    const { result } = await queryDataset(fetchImpl, sourceEndpoints(spec.source), (ep) => buildArcgisPointQuery(ep, point, extra), {
+      timeoutMs: t(k),
+      retries,
+      retryDelayMs,
+      retryOnTimeout: spec.retryOnTimeout,
+    });
+    return result;
+  };
 
   // Seed the in-memory cache from the shared store: a pin resolved before a
   // restart (or on another instance) is still served fresh / stale-on-failure.
@@ -220,24 +373,24 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
 
   const near = { distance: String(LOMC_SEARCH_RADIUS_M), units: "esriSRUnit_Meter" };
   const [czmNoaa, advOne, landslide, elevation, zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
-    want(["coastal_zone"]) ? q("czm_noaa", LAYER_SOURCES.noaa_czma.url) : null,
-    want(["flood_advisory"]) ? q("advisory_1pct", LAYER_SOURCES.jp_advisory_flood.url) : null,
+    want(["coastal_zone"]) ? q("czm_noaa") : null,
+    want(["flood_advisory"]) ? q("advisory_1pct") : null,
     want(["terrain"]) ? readLandslidePixel(fetchImpl, point, t("landslide"), retries, retryDelayMs, opts.decodePng ?? sharpDecoder, opts.isOnLand) : null,
     want(["terrain"]) ? readElevation(fetchImpl, point, t("elevation")) : null,
-    want(["flood_zone"]) ? q("fema_zones", LAYER_SOURCES.fema_flood_zones.url) : null,
-    want(["flood_zone"]) ? q("fema_panels", LAYER_SOURCES.fema_firm_panels.url) : null,
+    want(["flood_zone"]) ? q("fema_zones") : null,
+    want(["flood_zone"]) ? q("fema_panels") : null,
     // MSC extras are best-effort: a miss never degrades the flood zone itself.
-    want(["flood_zone"]) ? q("fema_community", LAYER_SOURCES.fema_communities.url) : null,
-    want(["flood_zone"]) ? q("fema_lomas", LAYER_SOURCES.fema_lomas.url, near) : null,
-    want(["flood_zone"]) ? q("fema_lomrs", LAYER_SOURCES.fema_lomrs.url, near) : null,
-    want(["zoning", "land_class", "parcel"]) ? q("jp_calificacion", LAYER_SOURCES.jp_calificacion.url) : null,
-    want(["parcel"]) ? q("crim", LAYER_SOURCES.crim_parcels.url) : null,
-    want(["coastal_zone"]) ? q("czm_official", LAYER_SOURCES.jp_zona_costanera.url) : null,
+    want(["flood_zone"]) ? q("fema_community") : null,
+    want(["flood_zone"]) ? q("fema_lomas", near) : null,
+    want(["flood_zone"]) ? q("fema_lomrs", near) : null,
+    want(["zoning", "land_class", "parcel"]) ? q("jp_calificacion") : null,
+    want(["parcel"]) ? q("crim") : null,
+    want(["coastal_zone"]) ? q("czm_official") : null,
     want(["coastal_zone"])
-      ? q("coastline", LAYER_SOURCES.jp_linea_costa.url, { distance: String(CZM_BAND_M), units: "esriSRUnit_Meter", returnCountOnly: "true" })
+      ? q("coastline", { distance: String(CZM_BAND_M), units: "esriSRUnit_Meter", returnCountOnly: "true" })
       : null,
-    opts.skipOptional || !want(["historic_zone"]) ? null : q("historic", LAYER_SOURCES.jp_zonas_historicas.url),
-    opts.skipOptional || !want(["protected_area"]) ? null : q("protected", LAYER_SOURCES.jp_areas_naturales.url),
+    opts.skipOptional || !want(["historic_zone"]) ? null : q("historic"),
+    opts.skipOptional || !want(["protected_area"]) ? null : q("protected"),
   ]);
 
   const computed: Partial<Record<SiteLayerId, SiteLayerResult>> = {};
@@ -247,7 +400,7 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   if (advOne !== null) {
     // The 0.2% layer only matters where the 1% layer has no polygon: ask it then, sparing the JP host.
     const outsideOnePct = typeof advOne !== "string" && !arcgisError(advOne) && (advOne.features ?? []).length === 0;
-    const advTwo = outsideOnePct ? await q("advisory_02pct", LAYER_SOURCES.jp_advisory_flood_02.url) : null;
+    const advTwo = outsideOnePct ? await q("advisory_02pct") : null;
     computed.flood_advisory = parseAdvisoryFlood(advOne, advTwo, at);
   }
   if (landslide !== null) computed.terrain = parseTerrain(landslide, elevation, at);
@@ -382,4 +535,43 @@ async function readElevation(fetchImpl: FetchLike, point: { latitude: number; lo
   if (c === null && [e, w, n, s].every((v) => v === null)) return null;
   const slope = e !== null && w !== null && n !== null && s !== null ? slopePercent({ east: e, west: w, north: n, south: s }, ELEVATION_SPACING_M) : null;
   return { centerM: c === null ? null : Math.round(c * 10) / 10, slopePct: slope };
+}
+
+// ---------------------------------------------------------------------------
+// Pin snapping: numbered CRIM lots near an off-lot pin
+// ---------------------------------------------------------------------------
+
+/** Search radius for "move the pin onto your lot" suggestions. */
+export const SNAP_RADIUS_M = 60;
+
+export interface SnapResult {
+  latitude: number;
+  longitude: number;
+  candidates: SnapCandidate[];
+  /** Why there are no candidates: a failure reason, or null when CRIM answered. */
+  reason: string | null;
+}
+
+export async function findNearbyLots(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; radiusM?: number; max?: number; timeoutMs?: number } = {}): Promise<SnapResult> {
+  const check = checkSitePoint({ latitude, longitude });
+  if (!check.ok) return { latitude, longitude, candidates: [], reason: check.reason };
+  const fetchImpl: FetchLike = opts.fetchImpl ?? ((url, init) => fetch(url, { ...init, cache: "no-store" }) as ReturnType<FetchLike>);
+  const radius = Math.min(Math.max(opts.radiusM ?? SNAP_RADIUS_M, 5), 150);
+  const { result } = await queryDataset(
+    fetchImpl,
+    sourceEndpoints("crim_parcels"),
+    (ep) =>
+      buildArcgisPointQuery(ep, { latitude, longitude }, {
+        outFields: "NUM_CATASTRO,TIPO",
+        distance: String(radius),
+        units: "esriSRUnit_Meter",
+        returnGeometry: "true",
+        outSR: "4326",
+        geometryPrecision: "7",
+      }),
+    { timeoutMs: opts.timeoutMs ?? 6000, retries: 1, retryDelayMs: 250, retryOnTimeout: true }
+  );
+  if (typeof result === "string") return { latitude, longitude, candidates: [], reason: result };
+  if (result.error) return { latitude, longitude, candidates: [], reason: `arcgis_error_${result.error.code ?? "unknown"}` };
+  return { latitude, longitude, candidates: nearestLots(result, latitude, longitude, { max: opts.max ?? 3, maxDistanceM: radius }), reason: null };
 }

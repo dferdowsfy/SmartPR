@@ -6,8 +6,8 @@
 // covering the whole lot. Never throws.
 // ============================================================================
 
-import { LAYER_SOURCES, checkSitePoint, type ArcGisQueryResponse } from "./layers.ts";
-import { queryJson, type FetchLike } from "./layerService.ts";
+import { checkSitePoint, type ArcGisQueryResponse } from "./layers.ts";
+import { queryDataset, sourceEndpoints, type FetchLike } from "./layerService.ts";
 import { parseFloodZones, parseParcelBoundary, parseZoningDistricts, type ParcelBoundary, type ParcelFindings } from "./parcel.ts";
 
 const TIMEOUT_MS = 9000;
@@ -73,17 +73,20 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
     const b = parseParcelBoundary(check.reason, longitude, latitude);
     return { latitude, longitude, retrieved_at: at, boundary: b, zoning: parseZoningDistricts(check.reason, "point"), flood: parseFloodZones(check.reason, "point") };
   }
-  const q = (u: string) => queryJson(fetchImpl, u, TIMEOUT_MS, 1, 250, true) as Promise<ArcGisQueryResponse | string>;
+  // Same provider path as the point layers: primary, then same-schema
+  // fallbacks, with retries and the shared circuit breaker.
+  const q = async (src: "crim_parcels" | "jp_calificacion" | "fema_flood_zones", params: Record<string, string>): Promise<ArcGisQueryResponse | string> =>
+    (await queryDataset(fetchImpl, sourceEndpoints(src), (ep) => url(ep, params), { timeoutMs: TIMEOUT_MS, retries: 1, retryDelayMs: 250, retryOnTimeout: true })).result;
 
-  const parcelResp = await q(url(LAYER_SOURCES.crim_parcels.url, { geometry: point, geometryType: "esriGeometryPoint", outFields: "NUM_CATASTRO,TIPO", returnGeometry: "true", outSR: "4326", geometryPrecision: "7" }));
+  const parcelResp = await q("crim_parcels", { geometry: point, geometryType: "esriGeometryPoint", outFields: "NUM_CATASTRO,TIPO", returnGeometry: "true", outSR: "4326", geometryPrecision: "7" });
   const boundary = parseParcelBoundary(parcelResp, longitude, latitude);
   const scope: "parcel" | "point" = boundary.value ? "parcel" : "point";
   const geomParams = boundary.value
     ? { geometry: esriPolygon(boundary.value.geometry), geometryType: "esriGeometryPolygon" }
     : { geometry: point, geometryType: "esriGeometryPoint" };
   const [zoningResp, floodResp] = await Promise.all([
-    q(url(LAYER_SOURCES.jp_calificacion.url, { ...geomParams, outFields: "cali,descrip,vigencia,resolucion,cali_sobre,des_sobre", returnGeometry: "false" })),
-    q(url(LAYER_SOURCES.fema_flood_zones.url, { ...geomParams, outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF", returnGeometry: "false" })),
+    q("jp_calificacion", { ...geomParams, outFields: "cali,descrip,vigencia,resolucion,cali_sobre,des_sobre", returnGeometry: "false" }),
+    q("fema_flood_zones", { ...geomParams, outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF", returnGeometry: "false" }),
   ]);
   const value: ParcelFindings = {
     latitude,

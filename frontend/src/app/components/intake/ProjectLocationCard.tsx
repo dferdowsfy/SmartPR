@@ -29,6 +29,7 @@ import { intakeSiteFromPlacement, SiteLayerChips } from "./LocationStepCard";
 import { SiteReportPreview } from "./SiteReportPreview";
 import type { PropertyReport } from "../../locations/propertyReport";
 import { placeLabel, placeQuery, type PromptPlace } from "../../locations/locationState";
+import type { SnapCandidate } from "../../locations/snap";
 
 /** A location proposed by the description (never confirmed until the user does). */
 export type LocationProposal = { kind: "propose" | "area_only" | "adopting"; place: PromptPlace };
@@ -46,6 +47,58 @@ async function resolvePoint(p: MapPoint): Promise<Resolve> {
   } catch {
     return "error";
   }
+}
+
+type SnapCheck = { candidates: SnapCandidate[]; reason: string | null } | null;
+
+/** Numbered CRIM lots near the pin (pin on a road / water / between lots). */
+async function snapPoint(p: MapPoint): Promise<SnapCheck> {
+  try {
+    const res = await fetch(`/api/locations/snap?lat=${encodeURIComponent(p.latitude)}&lng=${encodeURIComponent(p.longitude)}`, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { candidates?: SnapCandidate[]; reason?: string | null };
+    return { candidates: Array.isArray(d.candidates) ? d.candidates : [], reason: d.reason ?? null };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Off-lot warning for a draft pin: before any lot-scoped rule runs, offer to
+ * move the pin onto the nearest numbered parcel(s), or ask the user to move
+ * it. Silent when the pin is inside a lot or CRIM couldn't be checked.
+ */
+function OffLotNotice({ check, lang, onSnap }: { check: SnapCheck; lang: Lang; onSnap: (c: SnapCandidate) => void }) {
+  if (!check || check.reason) return null;
+  if (check.candidates[0]?.distance_m === 0) return null;
+  // Reuses the existing message + "Not the right place?" alternatives styles.
+  return (
+    <div data-testid="location-off-lot" role="status">
+      <p className="spr-plc-message">
+        {check.candidates.length > 0
+          ? L(
+              "The pin is on a road, water or between lots, not on a numbered CRIM parcel. Zoning and land-class checks need the pin on your lot.",
+              "El pin está sobre una vía, agua o entre solares, no sobre una parcela numerada del CRIM. La calificación y la clasificación necesitan el pin sobre su solar.",
+              lang
+            )
+          : L(
+              "No numbered CRIM parcel is mapped at or near this pin (it may be on a road or water). Move the pin onto your lot before confirming.",
+              "No hay una parcela numerada del CRIM en o cerca de este pin (puede estar sobre una vía o agua). Mueva el pin sobre su solar antes de confirmar.",
+              lang
+            )}
+      </p>
+      {check.candidates.length > 0 && (
+        <div className="spr-plc-alts">
+          <span>{L("Move the pin to:", "Mover el pin a:", lang)}</span>
+          {check.candidates.map((c) => (
+            <button key={c.catastro} type="button" className="spr-link" onClick={() => onSnap(c)} data-testid="location-snap-option">
+              {L(`Lot ${c.catastro} (${Math.round(c.distance_m)} m)`, `Solar ${c.catastro} (${Math.round(c.distance_m)} m)`, lang)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Selection details: status pill, clean address hierarchy, metadata. */
@@ -162,11 +215,24 @@ export function ProjectLocationCard({
   const [busy, setBusy] = useState<null | "search" | "resolve">(null);
   const [message, setMessage] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<GeocodeCandidate[]>([]);
+  /** Data credit for the last search's results (OSM ODbL, CRIM). */
+  const [attribution, setAttribution] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [pending, setPending] = useState<MapPoint | null>(null);
   /** Resolved but not yet saved ("Use this location"). */
   const [draft, setDraft] = useState<IntakeSite | null>(null);
   const seq = useRef(0);
+  /** Off-lot check for the draft pin (null = not checked / unavailable). */
+  // Keyed by the draft point, so a stale answer never shows for a moved pin.
+  const [snapState, setSnapState] = useState<{ key: string; check: SnapCheck } | null>(null);
+  const draftKey = draft ? `${draft.latitude},${draft.longitude}` : null;
+  const snap = snapState && snapState.key === draftKey ? snapState.check : null;
+  useEffect(() => {
+    if (!draft || !draftKey) return;
+    let cancelled = false;
+    void snapPoint({ latitude: draft.latitude, longitude: draft.longitude }).then((check) => { if (!cancelled) setSnapState({ key: draftKey, check }); });
+    return () => { cancelled = true; };
+  }, [draft, draftKey]);
 
   // A site confirmed elsewhere (another card, Passport) closes the editor.
   const lastSite = useRef(site);
@@ -230,14 +296,20 @@ export function ProjectLocationCard({
       const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store" });
       if (!res.ok) {
         setBusy(null);
+        // Distinct causes, so a misconfiguration is never disguised as an outage.
         setMessage(
           res.status === 429
             ? L("Too many searches — wait a moment and try again.", "Demasiadas búsquedas — espere un momento e intente de nuevo.", lang)
-            : L("Address search isn't available right now. Place the pin on the map instead.", "La búsqueda de direcciones no está disponible. Coloque el pin en el mapa.", lang)
+            : res.status === 401 || res.status === 403
+              ? L("Address search needs you to sign in. Place the pin on the map instead.", "La búsqueda de direcciones requiere iniciar sesión. Coloque el pin en el mapa.", lang)
+              : res.status === 503
+                ? L("Address search isn't set up on this site. Place the pin on the map instead.", "La búsqueda de direcciones no está configurada. Coloque el pin en el mapa.", lang)
+                : L("The address services didn't answer right now. Try again, enter the catastro number, or place the pin on the map.", "Los servicios de direcciones no respondieron. Intente de nuevo, escriba el número de catastro o coloque el pin en el mapa.", lang)
         );
         return;
       }
-      const data = (await res.json()) as { results: GeocodeCandidate[] };
+      const data = (await res.json()) as { results: GeocodeCandidate[]; attribution?: string[] };
+      setAttribution(Array.isArray(data.attribution) ? data.attribution.join(" · ") : null);
       if (!data.results.length) {
         setBusy(null);
         setMessage(L("No matching address in Puerto Rico. Try a nearby landmark, or place the pin on the map.", "No se encontró la dirección en Puerto Rico. Pruebe un punto de referencia cercano o coloque el pin en el mapa.", lang));
@@ -436,6 +508,7 @@ export function ProjectLocationCard({
           </div>
           <div aria-live="polite">
             {message && <p className="spr-plc-message" role="status">{message}</p>}
+            {attribution && <p className="spr-plc-small" data-testid="geocode-attribution">{L("Search data:", "Datos de búsqueda:", lang)} {attribution}</p>}
             {alternatives.length > 0 && (
               <div className="spr-plc-alts">
                 <span>{L("Not the right place?", "¿No es el lugar correcto?", lang)}</span>
@@ -488,6 +561,13 @@ export function ProjectLocationCard({
             ) : shown ? (
               <div className="spr-plc-confirmed" data-testid="project-location-confirmed">
                 <SiteDetails site={shown} lang={lang} status={draft ? "selected" : summary ? "confirmed" : "saved"} report={draft ? null : report} proposed={!!proposal} />
+                {draft && (
+                  <OffLotNotice
+                    check={snap}
+                    lang={lang}
+                    onSnap={(c) => void select({ latitude: c.latitude, longitude: c.longitude }, "MAP_PIN", draft.formatted_address ?? null)}
+                  />
+                )}
                 {draft && (
                   <button type="button" className="spr-plc-use" onClick={save} data-testid="project-location-use">
                     {L("Use this location", "Usar esta ubicación", lang)}

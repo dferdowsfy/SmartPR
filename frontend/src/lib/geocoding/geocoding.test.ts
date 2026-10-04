@@ -4,6 +4,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   GeocodingError,
+  attributionFor,
+  crimCatastroProvider,
+  fallbackGeocoder,
+  normalizeCatastroQuery,
+  normalizePhotonFeature,
+  photonProvider,
+  type GeocodeCandidate,
+  type GeocodingProvider,
   geocoderFromEnv,
   nominatimProvider,
   normalizeNominatimPlace,
@@ -96,8 +104,9 @@ test("provider failures surface as typed errors, not fake results", async () => 
 });
 
 test("geocoding defaults to Nominatim and can be switched off", () => {
-  assert.equal(geocoderFromEnv({})?.id, "nominatim");
-  assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "nominatim" })?.id, "nominatim");
+  assert.equal(geocoderFromEnv({})?.id, "crim_catastro+nominatim+photon");
+  assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "nominatim" })?.id, "crim_catastro+nominatim+photon");
+  assert.equal(geocoderFromEnv({ MAP_GEOCODING_FALLBACK: "off" })?.id, "crim_catastro+nominatim");
   assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "off" }), null);
   assert.equal(geocoderFromEnv({ MAP_GEOCODING_PROVIDER: "google" }), null);
   // One shared instance per configuration, so the throttle/cache are process-wide.
@@ -170,4 +179,79 @@ test("polite provider does not cache failures and keeps serving after one", asyn
   await assert.rejects(p.reverse(18.2, -66.5));
   fail = false;
   assert.equal(await p.reverse(18.2, -66.5), null);
+});
+
+
+// ---------------------------------------------------------------------------
+// Fallback chain, Photon, CRIM catastro lookup
+// ---------------------------------------------------------------------------
+
+const cand = (src: string): GeocodeCandidate => ({ latitude: 18.23, longitude: -66.03, formatted_address: src, address_line_1: null, city: null, municipality: null, state_or_region: "PR", postal_code: null, country_code: "PR", place_source: src, place_source_id: null });
+const stub = (id: string, search: () => Promise<GeocodeCandidate[]>): GeocodingProvider => ({ id, search, reverse: async () => null });
+
+test("fallback: the first non-empty provider wins; empty and failing ones pass through", async () => {
+  const calls: string[] = [];
+  const g = fallbackGeocoder([
+    stub("a", async () => { calls.push("a"); return []; }),
+    stub("b", async () => { calls.push("b"); throw new GeocodingError("rate_limited"); }),
+    stub("c", async () => { calls.push("c"); return [cand("c")]; }),
+    stub("d", async () => { calls.push("d"); return [cand("d")]; }),
+  ]);
+  const r = await g.search("Calle Padial Caguas");
+  assert.equal(r[0]!.place_source, "c");
+  assert.deepEqual(calls, ["a", "b", "c"]);
+});
+
+test("fallback: nothing found is [] (not an error); every provider down is an error", async () => {
+  assert.deepEqual(await fallbackGeocoder([stub("a", async () => []), stub("b", async () => { throw new GeocodingError("provider_http_503", 503); })]).search("x"), []);
+  await assert.rejects(
+    fallbackGeocoder([stub("a", async () => { throw new GeocodingError("provider_timeout"); }), stub("b", async () => { throw new GeocodingError("provider_http_503", 503); })]).search("x"),
+    /provider_timeout/
+  );
+});
+
+test("photon: PR street normalizes with municipio, PR country and OSM ref; non-PR results dropped", async () => {
+  const f = { type: "Feature", properties: { osm_type: "W", osm_id: 298307589, name: "Calle Padial", district: "Sector El Campito", city: "Caguas", county: "Caguas", state: "Puerto Rico", postcode: "00725", countrycode: "US" }, geometry: { coordinates: [-66.0371333, 18.2323106] as [number, number] } };
+  const c = normalizePhotonFeature(f)!;
+  assert.equal(c.municipality, "Caguas");
+  assert.equal(c.country_code, "PR");
+  assert.equal(c.place_source_id, "way/298307589");
+  assert.match(c.formatted_address!, /Calle Padial, Sector El Campito, Caguas, Puerto Rico, 00725/);
+  let seen = "";
+  const p = photonProvider({ baseUrl: "https://photon.test", userAgent: "UA", fetchImpl: async (u) => { seen = u; return new Response(JSON.stringify({ features: [f, { ...f, properties: { ...f.properties, state: "Florida" } }] }), { status: 200 }); } });
+  const r = await p.search("Calle Padial Caguas", { lang: "es" });
+  assert.equal(r.length, 1, "only Puerto Rico results");
+  assert.doesNotMatch(seen, /lang=/, "Photon has no Spanish: never send lang=es (it 400s)");
+  assert.match(seen, /bbox=/);
+});
+
+test("catastro: query normalization and CRIM lookup → a pin on the parcel", async () => {
+  assert.equal(normalizeCatastroQuery("225-044-031-13"), "225-044-031-13");
+  assert.equal(normalizeCatastroQuery("catastro 225 044 031 13"), "225-044-031-13");
+  assert.equal(normalizeCatastroQuery("22504403113"), "225-044-031-13");
+  assert.equal(normalizeCatastroQuery("Calle Padial 12"), null);
+  const urls: string[] = [];
+  const ring: Array<[number, number]> = [[-66.04, 18.23], [-66.039, 18.23], [-66.039, 18.231], [-66.04, 18.231], [-66.04, 18.23]];
+  const p = crimCatastroProvider({
+    endpoints: ["https://crim.down/0", "https://crim.up/0"],
+    fetchImpl: async (u) => {
+      urls.push(u);
+      if (u.startsWith("https://crim.down")) return new Response("bad gateway", { status: 502 });
+      return new Response(JSON.stringify({ features: [{ attributes: { NUM_CATASTRO: "225-044-031-13" }, geometry: { rings: [ring] } }] }), { status: 200 });
+    },
+  });
+  const r = await p.search("225-044-031-13");
+  assert.equal(urls.length, 2, "falls back to the second CRIM endpoint");
+  assert.match(decodeURIComponent(urls[1]!), /NUM_CATASTRO='225-044-031-13'/);
+  assert.equal(r[0]!.place_source, "crim_catastro");
+  assert.ok(Math.abs(r[0]!.latitude - 18.2305) < 5e-5 && Math.abs(r[0]!.longitude + 66.0395) < 5e-5, "pin inside the parcel, near its middle");
+  assert.deepEqual(await p.search("not a catastro"), [], "non-catastro text never hits CRIM");
+  assert.equal(urls.length, 2);
+});
+
+test("attribution: OSM-derived results carry the ODbL credit", () => {
+  assert.match(attributionFor("nominatim")!, /OpenStreetMap/);
+  assert.match(attributionFor("photon")!, /OpenStreetMap/);
+  assert.match(attributionFor("crim_catastro")!, /CRIM/);
+  assert.equal(attributionFor("manual"), null);
 });

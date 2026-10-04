@@ -16,7 +16,7 @@
 //            unknown     not determined — never shown as a positive result
 // ============================================================================
 
-import { layerCards, layerReasonText, type SiteLayerId, type SiteLayerResult, type SiteLayers } from "./layers.ts";
+import { layerAnswered, layerCards, layerReasonText, type SiteLayerId, type SiteLayerResult, type SiteLayers } from "./layers.ts";
 
 type Bi = { en: string; es: string };
 
@@ -149,8 +149,10 @@ export function providerStatus(r: SiteLayerResult | undefined): ProviderStatus {
   if (r.status === "resolved") return "confirmed";
   if (r.status === "none") return "not_found";
   const reason = r.reason ?? "";
-  // The service answered, but nothing is mapped at the point (e.g. a special-plan area).
+  // The service answered, but nothing usable is mapped at the point (a
+  // special-plan area, a road / water polygon). Answered is never "unavailable".
   if (/^no_/.test(reason)) return "not_found";
+  if (layerAnswered(r)) return /attribute_missing|unexpected_response|empty_response/.test(reason) ? "error" : "not_found";
   return layerReasonText(reason, SERVICE[r.layer]).retryable ? "unavailable" : "error";
 }
 
@@ -181,6 +183,8 @@ const LAND_FAMILY: Record<string, Bi> = {
   SRC: { en: "Rustic", es: "Rústico" },
   SU: { en: "Urban", es: "Urbano" },
   SURB: { en: "Urbanizable", es: "Urbanizable" },
+  VIAL: { en: "Road (not a lot)", es: "Vía (no es un solar)" },
+  AGUA: { en: "Water body (not a lot)", es: "Cuerpo de agua (no es un solar)" },
 };
 
 function landFamily(r: SiteLayerResult): string | null {

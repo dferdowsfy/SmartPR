@@ -2,7 +2,7 @@
 // advisory flood and USGS terrain signals, provider independence, unknown vs
 // none, the presentation model, and municipio placement of known PR points.
 // Run: npx tsx --test src/app/locations/siteIntelligence.test.ts
-import test from "node:test";
+import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import {
   LAYER_SOURCES,
@@ -15,10 +15,12 @@ import {
   slopePercent,
   webMercatorTilePixel,
 } from "./layers.ts";
-import { LayerCache, resolveSiteLayers, type FetchLike, type PngDecoder } from "./layerService.ts";
+import { LayerCache, resetEndpointHealth, resolveSiteLayers, type FetchLike, type PngDecoder } from "./layerService.ts";
 import { buildSiteIntelligence, providerStatus } from "./siteIntelligence.ts";
 import { locateInPuertoRico } from "./boundaries.ts";
 
+// The circuit breaker is process-wide; isolate tests from each other.
+beforeEach(() => resetEndpointHealth());
 const CATANO = { latitude: 18.431198, longitude: -66.146143 };
 const AT = "2026-10-01T12:00:00.000Z";
 

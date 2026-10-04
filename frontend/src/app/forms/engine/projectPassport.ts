@@ -122,6 +122,20 @@ export function validateProjectPassport(raw: unknown): ProjectPassportJson | nul
 }
 
 /** Human-readable one-liner for the passport header / matter title. */
+/**
+ * What the summary headline names. A project-only intake IS its project
+ * ("renovation — Guaynabo"); a business intake is the business ("Restaurant"),
+ * even when it also carries construction facts (Q_RENOVATIONS = yes sets
+ * project_type "renovation" so the OGPe permit rule can fire — that is a
+ * requirement driver, not the identity of the matter).
+ */
+export function matterHeadlineSubject(input: { isProjectOnly: boolean; passport: ProjectPassportJson | null | undefined; businessType: string | null | undefined; name: string | null | undefined }): string | null {
+  const projectTitle = input.passport ? projectPassportTitle(input.passport) : null;
+  const business = input.businessType?.trim() || null;
+  const name = input.name?.trim() || null;
+  return input.isProjectOnly ? projectTitle ?? business ?? name : business ?? name ?? projectTitle;
+}
+
 export function projectPassportTitle(passport: ProjectPassportJson): string | null {
   const work = passport.facts["project_type"];
   const muni = passport.facts["municipality_name"];
