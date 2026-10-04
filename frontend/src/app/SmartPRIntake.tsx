@@ -265,6 +265,10 @@ interface Requirement {
   unansweredTriggerQuestionId?: string;
   /** Answer key the inline answer is written to (deferred questions). */
   unansweredTriggerWriteKey?: string;
+  /** Authoritative legal basis carried by flag-advisory (potential) requirements.
+   * Engine-emitted requirements leave this unset — their SOURCE row resolves
+   * via sourceRowValue (rule citation first, then document). */
+  citation?: string;
 }
 
 const REQUIREMENT_GROUP_COPY: Record<RequirementGroupId, { title: string; sub: string }> = {
@@ -5705,7 +5709,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // user-meaningful source. (2026-09-28 QA, live S262/S263/S264: the Lease
     // Agreement card showed SOURCE "Rule RULE_0648" in all three scenarios —
     // 21 rule→document pairs across the KB hit this fallback.)
-    const sourceCitation = sourceRowValue(req.source_rule, req.document_id, KB);
+    // Flag-advisory (potential) requirements carry their own citation on the
+    // requirement object; it wins over sourceRowValue, which has no rule or
+    // document to resolve for source_rule "flag:<flag>". (2026-10-04 QA,
+    // REG-LIVE-COASTAL-SOURCE-001: coastal card rendered empty SOURCE.)
+    const sourceCitation = req.citation ?? sourceRowValue(req.source_rule, req.document_id, KB);
     const { support, config } = claraSupportFor(req.document_id);
     const conditional = req.applicability === 'conditional' || req.applicability === 'needs_more_information' || !!req.unansweredTriggerQuestionId;
     return [

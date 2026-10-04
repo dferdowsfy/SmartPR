@@ -23,6 +23,11 @@ export interface FlagAdvisory {
   agency: string; // issuing / reviewing agency
   why: string; // "Why this may be required"
   followUp: string; // confirming follow-up question
+  /** Authoritative legal basis shown on the card's SOURCE row (optional;
+   * cards without one render "—" rather than an invented citation). */
+  citation?: string;
+  /** Official URL for the cited basis (optional). */
+  citation_url?: string;
 }
 
 // A document-intelligence extraction hint. When the requirement code matches
