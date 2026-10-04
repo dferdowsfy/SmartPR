@@ -25,6 +25,7 @@ import intakeFactsJson from "../../kb/intake_facts.json";
 import factDerivationsJson from "../../kb/fact_derivations.json";
 import factContradictionsJson from "../../kb/fact_contradictions.json";
 import scenarioReasoningJson from "../../kb/scenario_reasoning.json";
+import landUseRulesJson from "../../kb/land_use_rules.json";
 import regulatorySourcesJson from "../../kb/regulatory_sources.json";
 
 interface AgencyEntry {
@@ -198,6 +199,28 @@ export function buildSeedNodes(): SeedNode[] {
   for (const n of sr.decision_conditions) push("decision_condition", { ...n });
   for (const n of sr.process_variants) push("process_variant", { ...n });
   for (const n of sr.scenario_mappings) push("scenario_mapping", { ...n });
+
+  // Land-use intelligence (verified RC 2023 text; site-hazard triggers).
+  const lu = landUseRulesJson as unknown as {
+    zoning_districts: Record<string, unknown>[]; land_uses: Record<string, unknown>[]; use_permissions: Record<string, unknown>[];
+    development_standards: Record<string, unknown>[]; site_rules: Record<string, unknown>[]; sources: Record<string, unknown>[];
+  };
+  for (const src of lu.sources) if (!have.has(String(src.id))) { push("regulatory_source", { ...src }); have.add(String(src.id)); }
+  // Sources the land-use rules cite from the bundled regulatory_sources.json.
+  const luCited = new Set([...lu.zoning_districts, ...lu.use_permissions, ...lu.development_standards, ...lu.site_rules].flatMap((n) => (Array.isArray(n.source_ids) ? (n.source_ids as string[]) : [])));
+  for (const src of regulatorySourcesJson as Record<string, unknown>[]) {
+    const id = String(src.id);
+    if (!luCited.has(id) || have.has(id)) continue;
+    push("regulatory_source", { id, name: src.title, source_type: src.source_type === "statute" ? "law" : String(src.source_type ?? "regulation"), legal_status: "effective",
+      jurisdiction: "Puerto Rico", citation: src.citation, url: src.url, effective_date: src.effective_date,
+      last_verified_at: src.date_last_verified, source_version: String(src.version_date ?? src.effective_date ?? "") });
+    have.add(id);
+  }
+  for (const n of lu.zoning_districts) push("zoning_district", { ...n });
+  for (const n of lu.land_uses) push("land_use", { ...n });
+  for (const n of lu.use_permissions) push("use_permission", { ...n });
+  for (const n of lu.development_standards) push("development_standard", { ...n });
+  for (const n of lu.site_rules) push("site_rule", { ...n });
 
   return nodes;
 }

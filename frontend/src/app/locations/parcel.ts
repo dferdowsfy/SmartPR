@@ -16,6 +16,7 @@
 //   unavailable      the service did not answer — unknown, never "none"
 // ============================================================================
 
+import polygonClipping from "polygon-clipping";
 import { arcgisError, LAYER_SOURCES, zoningFamily, type ArcGisQueryResponse } from "./layers.ts";
 
 export type FindingStatus = "sourced" | "none_mapped" | "unavailable";
@@ -42,8 +43,13 @@ export interface ZoningDistrict {
   family: string | null;
   /** Overlay district (cali_sobre) on top of the base district, when mapped. */
   overlay: { code: string; name: string | null } | null;
+  /** Every overlay district on the polygon (cali_sobre, cali_sobre2), e.g. APE-ZC karst zone. */
+  overlays?: Array<{ code: string; name: string | null; resolution: string | null; effective: string | null }>;
   effective: string | null;
   resolution: string | null;
+  /** Area of the parcel inside this district (m²) and share of the parcel — only when computed reliably. */
+  area_m2?: number | null;
+  share?: number | null;
 }
 
 export interface FloodZonePart {
@@ -51,7 +57,33 @@ export interface FloodZonePart {
   subtype: string | null;
   sfha: boolean;
   floodway: boolean;
+  area_m2?: number | null;
+  share?: number | null;
 }
+
+/**
+ * Additional parcel checks from authoritative layers (JP, MIPR, USDA).
+ *   verified    the source answered and something is mapped
+ *   no_mapped   the source answered: nothing mapped (never "no restriction")
+ *   unable      the source did not answer or could not be read
+ */
+export type ExtraId = "put" | "plan_territorial" | "historic_zone" | "historic_site" | "archaeology" | "protected_area" | "natural_reserve" | "wetlands" | "soils";
+export interface ExtraFinding {
+  id: ExtraId;
+  status: "verified" | "no_mapped" | "unable";
+  /** Short value ("SU — Suelo Urbano", "Urban land"). */
+  value: string | null;
+  /** Feature names / ids found. */
+  items: string[];
+  attributes: Record<string, string | number | null>;
+  source: { name: string; url: string; layer: string; dataset_date: string | null };
+  scope: "parcel" | "point" | "municipality";
+  reason: string | null;
+  retrieved_at: string;
+}
+
+/** Areas are trusted only when the pieces add up to the parcel (± this). */
+export const AREA_TOLERANCE = 0.12;
 
 export interface ParcelFindings {
   latitude: number;
@@ -60,6 +92,9 @@ export interface ParcelFindings {
   boundary: { status: FindingStatus; value: ParcelBoundary | null; reason: string | null; source: ParcelSourceRef };
   zoning: { status: FindingStatus; districts: ZoningDistrict[]; reason: string | null; source: ParcelSourceRef; scope: "parcel" | "point" };
   flood: { status: FindingStatus; zones: FloodZonePart[]; reason: string | null; source: ParcelSourceRef; scope: "parcel" | "point" };
+  /** True when per-district / per-zone areas were computed and add up to the parcel. */
+  areas_reliable?: { zoning: boolean; flood: boolean };
+  extras?: Partial<Record<ExtraId, ExtraFinding>>;
 }
 
 const src = (k: keyof typeof LAYER_SOURCES): ParcelSourceRef => {
@@ -188,13 +223,23 @@ export function parseZoningDistricts(resp: ArcGisQueryResponse | string, scope: 
     const code = str(a.cali);
     if (!code) continue;
     const overlayCode = str(a.cali_sobre);
-    const key = `${code}|${overlayCode ?? ""}`;
-    if (seen.has(key)) continue;
+    const overlays = [
+      overlayCode ? { code: overlayCode, name: str(a.des_sobre), resolution: str(a.r_sobre), effective: str(a.v_sobre) } : null,
+      str(a.cali_sobre2) ? { code: str(a.cali_sobre2)!, name: str(a.des_sobre2), resolution: str(a.r_sobre2), effective: str(a.v_sobre2) } : null,
+    ].filter((o): o is NonNullable<typeof o> => !!o);
+    const key = code;
+    const prev = seen.get(key);
+    if (prev) {
+      for (const o of overlays) if (!prev.overlays!.some((x) => x.code === o.code)) prev.overlays!.push(o);
+      if (!prev.overlay && overlays[0]) prev.overlay = { code: overlays[0].code, name: overlays[0].name };
+      continue;
+    }
     seen.set(key, {
       code,
       name: str(a.descrip),
       family: zoningFamily(code, str(a.descrip)),
-      overlay: overlayCode ? { code: overlayCode, name: str(a.des_sobre) } : null,
+      overlay: overlays[0] ? { code: overlays[0].code, name: overlays[0].name } : null,
+      overlays,
       effective: str(a.vigencia),
       resolution: str(a.resolucion),
     });
@@ -230,4 +275,128 @@ export function restoreParcelFindings(raw: unknown, latitude: number, longitude:
   if (Math.abs(p.latitude - latitude) > 1e-7 || Math.abs(p.longitude - longitude) > 1e-7) return null;
   if (!p.boundary || !p.zoning || !p.flood || typeof p.retrieved_at !== "string") return null;
   return p;
+}
+
+
+// ---------------------------------------------------------------------------
+// Area of the parcel inside each district / zone (polygon intersection)
+// ---------------------------------------------------------------------------
+
+
+type Ring = number[][];
+const toMulti = (g: ParcelBoundary["geometry"]): number[][][][] => (g.type === "Polygon" ? [g.coordinates] : g.coordinates);
+
+/** Geodesic area (m²) of a MultiPolygon in lon/lat. */
+export function multiPolygonArea(mp: number[][][][]): number {
+  let a = 0;
+  for (const poly of mp) poly.forEach((ring, i) => { const r = Math.abs(ringAreaM2(ring as Ring)); a += i === 0 ? r : -r; });
+  return Math.max(0, a);
+}
+
+/** ArcGIS rings (outer + holes, any order) → polygon-clipping MultiPolygon. */
+function ringsToMulti(rings: number[][][]): number[][][][] {
+  const g = ringsToGeoJson(rings);
+  return g ? toMulti(g.geometry) : [];
+}
+
+/**
+ * Area of the parcel inside the given feature rings, grouped by key.
+ * Returns null for a key whose geometry could not be intersected.
+ */
+export function areasByKey(parcel: ParcelBoundary["geometry"], features: Array<{ key: string; rings: number[][][] }>): Map<string, number | null> {
+  const out = new Map<string, number | null>();
+  const subject = toMulti(parcel) as unknown as Parameters<typeof polygonClipping.intersection>[0];
+  for (const f of features) {
+    try {
+      const clip = polygonClipping.intersection(subject, ringsToMulti(f.rings) as unknown as Parameters<typeof polygonClipping.intersection>[0]);
+      const a = multiPolygonArea(clip as unknown as number[][][][]);
+      out.set(f.key, (out.get(f.key) ?? 0) + a);
+    } catch {
+      out.set(f.key, null);
+    }
+  }
+  return out;
+}
+
+/**
+ * Attach area_m2 / share to each item when the computed pieces are reliable:
+ * every key computed and the pieces sum to the parcel area within tolerance.
+ * Otherwise areas are left null (the report then says "parcel intersects …").
+ */
+export function applyAreas<T extends { area_m2?: number | null; share?: number | null }>(items: T[], keyOf: (t: T) => string, areas: Map<string, number | null>, parcelArea: number): boolean {
+  if (!parcelArea || !items.length) return false;
+  const vals = items.map((t) => areas.get(keyOf(t)));
+  if (vals.some((v) => v === null || v === undefined)) return false;
+  const total = (vals as number[]).reduce((a, b) => a + b, 0);
+  const reliable = Math.abs(total - parcelArea) / parcelArea <= AREA_TOLERANCE;
+  if (!reliable) return false;
+  items.forEach((t, i) => { const a = vals[i] as number; t.area_m2 = Math.round(a * 10) / 10; t.share = Math.round((a / total) * 1000) / 1000; });
+  return true;
+}
+
+
+// ---------------------------------------------------------------------------
+// Extra findings (pure parsers)
+// ---------------------------------------------------------------------------
+
+const EXTRA_FIELDS: Record<Exclude<ExtraId, "soils" | "plan_territorial" | "put">, string[]> = {
+  historic_zone: ["NOMBRE", "Nombre", "nombre", "ZONA", "Zona", "DESCRIPCIO", "Descripcion"],
+  historic_site: ["NOMBRE", "Nombre", "nombre", "SITIO", "Sitio"],
+  archaeology: ["NOMBRE", "Nombre", "nombre", "TIPO", "Tipo", "DESCRIP"],
+  protected_area: ["NOMBRE", "Nombre", "nombre", "Name", "AREA", "DESIGNACIO", "Designacion"],
+  natural_reserve: ["NOMBRE", "Nombre", "nombre", "Name", "RESERVA"],
+  wetlands: ["Humedales", "WETLAND_TY", "ATTRIBUTE", "TIPO", "Tipo", "NOMBRE", "Nombre"],
+};
+
+type SrcRef = ExtraFinding["source"];
+const unable = (id: ExtraId, source: SrcRef, reason: string, at: string, scope: ExtraFinding["scope"]): ExtraFinding =>
+  ({ id, status: "unable", value: null, items: [], attributes: {}, source, scope, reason, retrieved_at: at });
+
+/** Presence layers (historic, archaeology, protected, reserves, wetlands). */
+export function parsePresenceExtra(id: keyof typeof EXTRA_FIELDS, resp: ArcGisQueryResponse | string, source: SrcRef, at: string, scope: "parcel" | "point"): ExtraFinding {
+  if (typeof resp === "string" || arcgisError(resp)) return unable(id, source, typeof resp === "string" ? resp : arcgisError(resp)!, at, scope);
+  const feats = features(resp);
+  if (!feats.length) return { id, status: "no_mapped", value: null, items: [], attributes: {}, source, scope, reason: null, retrieved_at: at };
+  const names = [...new Set(feats.map((f) => { const a = f.attributes ?? {}; for (const k of EXTRA_FIELDS[id]) { const v = str(a[k]); if (v) return v; } return null; }).filter((x): x is string => !!x))];
+  return { id, status: "verified", value: names[0] ?? null, items: names.slice(0, 10), attributes: { count: feats.length }, source, scope, reason: null, retrieved_at: at };
+}
+
+/** PUT classification (CLASIPUT / DESCRIPPUT, R_PUT, V_PUT). */
+export function parsePutExtra(resp: ArcGisQueryResponse | string, source: SrcRef, at: string, scope: "parcel" | "point"): ExtraFinding {
+  if (typeof resp === "string" || arcgisError(resp)) return unable("put", source, typeof resp === "string" ? resp : arcgisError(resp)!, at, scope);
+  const feats = features(resp);
+  if (!feats.length) return { id: "put", status: "no_mapped", value: null, items: [], attributes: {}, source, scope, reason: "no_put_polygon", retrieved_at: at };
+  const classes = [...new Set(feats.map((f) => { const a = f.attributes ?? {}; const c = str(a.CLASIPUT); const d = str(a.DESCRIPPUT); return c ? `${c}${d ? ` — ${d}` : ""}` : null; }).filter((x): x is string => !!x))];
+  const a = feats[0]!.attributes ?? {};
+  return { id: "put", status: classes.length ? "verified" : "unable", value: classes.join(" · ") || null, items: classes, attributes: { resolution: str(a.R_PUT), effective: str(a.V_PUT) }, source: { ...source, dataset_date: str(a.V_PUT) ?? source.dataset_date }, scope, reason: classes.length ? null : "put_attribute_missing", retrieved_at: at };
+}
+
+/** Municipal Plan Territorial status (approval / revision / hierarchy). */
+export function parsePlanTerritorialExtra(resp: ArcGisQueryResponse | string, source: SrcRef, at: string): ExtraFinding {
+  if (typeof resp === "string" || arcgisError(resp)) return unable("plan_territorial", source, typeof resp === "string" ? resp : arcgisError(resp)!, at, "municipality");
+  const a = features(resp)[0]?.attributes;
+  if (!a) return { id: "plan_territorial", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "municipality", reason: "no_municipal_record", retrieved_at: at };
+  const approved = str(a.pt_aprobado);
+  const rev1 = str(a.pt_revision_1);
+  const status = str(a.Estatus_ripot2) ?? str(a.Estatus_ripot);
+  const muni = str(a.MUNICIPIO) ?? str(a.municipio_1) ?? str(a.Nombre);
+  return {
+    id: "plan_territorial",
+    status: approved ? "verified" : "no_mapped",
+    value: approved ? `${muni ?? ""} Plan Territorial — approved ${approved}${rev1 ? `, revised ${rev1}` : ""}` : null,
+    items: [],
+    attributes: { municipio: muni, approved, revision_1: rev1, hierarchy: str(a.jerarquia), review_status: status, executive_order: str(a.orden_ejecutiva) },
+    source, scope: "municipality", reason: approved ? null : "no_approved_plan_recorded", retrieved_at: at,
+  };
+}
+
+/** USDA Soil Data Access answer: {"Table":[["musym","muname",...],[...]]}. */
+export function parseSoilsExtra(resp: unknown, source: SrcRef, at: string): ExtraFinding {
+  if (typeof resp === "string") return unable("soils", source, resp, at, "point");
+  const t = (resp as { Table?: unknown[][] } | null)?.Table;
+  if (!Array.isArray(t)) return { id: "soils", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "point", reason: "no_soil_map_unit", retrieved_at: at };
+  const rows = t.slice(1).map((r) => ({ sym: String(r[0] ?? ""), name: String(r[1] ?? ""), hydric: String(r[3] ?? ""), drainage: String(r[4] ?? "") }));
+  if (!rows.length) return { id: "soils", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "point", reason: "no_soil_map_unit", retrieved_at: at };
+  const r = rows[0]!;
+  return { id: "soils", status: "verified", value: `${r.name}${r.sym ? ` (${r.sym})` : ""}`, items: rows.map((x) => x.name), attributes: { hydric_rating: r.hydric || null, drainage_class: r.drainage || null }, source, scope: "point", reason: null, retrieved_at: at };
 }

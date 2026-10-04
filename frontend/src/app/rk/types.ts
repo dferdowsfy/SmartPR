@@ -42,7 +42,14 @@ export type NodeType =
   | "scenario"
   | "decision_condition"
   | "process_variant"
-  | "scenario_mapping";
+  | "scenario_mapping"
+  // Land-use intelligence: Parcel → ZoningDistrict → ProposedActivity →
+  // UsePermission / SiteRule → Approval (document) → Evidence, with sources.
+  | "zoning_district"
+  | "land_use"
+  | "use_permission"
+  | "development_standard"
+  | "site_rule";
 
 export type NodeStatus =
   | "draft"
@@ -82,7 +89,9 @@ export type EdgeType =
   | "for_scenario"
   | "when"
   | "triggers"
-  | "resolves_to";
+  | "resolves_to"
+  | "governs"
+  | "applies_in";
 
 /** Runtime vocabulary of edge labels (mirrors the EdgeType union above). */
 export const EDGE_TYPES: EdgeType[] = [
@@ -116,6 +125,8 @@ export const EDGE_TYPES: EdgeType[] = [
   "when",
   "triggers",
   "resolves_to",
+  "governs",
+  "applies_in",
 ];
 
 export type SourceType =
@@ -379,6 +390,12 @@ export interface CompiledKb {
     decisionConditions?: Record<string, unknown>[];
     processVariants?: Record<string, unknown>[];
     scenarioMappings?: Record<string, unknown>[];
+    /** Land-use intelligence (optional: older snapshots don't carry it). */
+    zoningDistricts?: Record<string, unknown>[];
+    landUses?: Record<string, unknown>[];
+    usePermissions?: Record<string, unknown>[];
+    developmentStandards?: Record<string, unknown>[];
+    siteRules?: Record<string, unknown>[];
   };
   meta: { version: number; compiledAt: string; batchId: string | null };
 }

@@ -74,8 +74,10 @@ test("full report: parcel scope, multiple districts flagged, sources and timesta
   assert.ok(r.property.boundary.area_m2! > 0);
   assert.equal(r.findings.find((f) => f.id === "flood_zone")!.value?.en, "Zone X");
   assert.equal(r.findings.find((f) => f.id === "historic_zone")!.state, "unavailable");
-  assert.equal(r.findings.find((f) => f.id === "put")!.state, "not_performed");
-  assert.equal(r.findings.find((f) => f.id === "permitted_uses")!.state, "not_performed");
+  // No PUT answer for this synthetic parcel → "unable to verify", never "not performed" / "no".
+  assert.equal(r.findings.find((f) => f.id === "put")!.state, "unavailable");
+  // No proposed activity yet → permitted uses are not applicable until one is described.
+  assert.equal(r.findings.find((f) => f.id === "permitted_uses")!.state, "not_applicable");
   for (const f of r.findings.filter((f) => f.state === "sourced")) assert.ok(f.sources.length && f.looked_up_at, f.id);
   assert.ok(belongsToSite(r));
   assert.equal(r.location_revision, 3);

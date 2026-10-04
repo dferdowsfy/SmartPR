@@ -2091,6 +2091,690 @@
      "scope": "parcel"
     }
    }
+  },
+  "santurce": {
+   "latitude": 18.459153,
+   "longitude": -66.076454,
+   "place": {
+    "municipio": {
+     "fips": "127",
+     "name": "San Juan"
+    },
+    "barrio": {
+     "geoid": "7212779693",
+     "name": "Santurce",
+     "barrioPueblo": false
+    },
+    "boundaryDistanceM": 382,
+    "nearBoundary": false
+   },
+   "layers": {
+    "latitude": 18.459153,
+    "longitude": -66.076454,
+    "resolved_at": "2026-10-04T20:04:11.447Z",
+    "results": [
+     {
+      "layer": "flood_zone",
+      "status": "resolved",
+      "code": "X",
+      "name": "Zone X (area of minimal flood hazard)",
+      "tags": [],
+      "attributes": {
+       "FLD_ZONE": "X",
+       "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+       "SFHA_TF": "F",
+       "STATIC_BFE": null,
+       "DEPTH": null,
+       "VELOCITY": null,
+       "LEN_UNIT": null,
+       "FLD_AR_ID": "72000C_4107",
+       "STUDY_TYP": "NP",
+       "DFIRM_ID": "72000C",
+       "ZONES_AT_POINT": 1,
+       "FIRM_PAN": "72000C0355J",
+       "EFF_DATE": "2009-11-18",
+       "PRE_DATE": null,
+       "PANEL_TYP": "Countywide, Panel Printed",
+       "FIRM_ID": "72000C_133",
+       "PANEL_SCALE": 12000,
+       "COMMUNITY_CID": null,
+       "COMMUNITY_NAME": null,
+       "LOMC_COUNT": 0,
+       "LOMC_CASES": null
+      },
+      "source": {
+       "id": "fema-nfhl-s_fld_haz_ar",
+       "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+       "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+       "layer": "Flood Hazard Zones (S_FLD_HAZ_AR)",
+       "dataset_date": "2009-11-18",
+       "version": "72000C0355J"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     },
+     {
+      "source": {
+       "id": "jp-fema-advisory-1pct",
+       "name": "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9",
+       "layer": "Zona Inundable (1% advisory)",
+       "dataset_date": "2019-07-08",
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "retrieved_at": "2026-10-04T20:04:11.447Z",
+      "layer": "flood_advisory",
+      "status": "none",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {
+       "ADV_ZONE": null,
+       "IN_02PCT_AREA": false
+      },
+      "reason": null
+     },
+     {
+      "layer": "coastal_zone",
+      "source": {
+       "id": "noaa-czma-boundary",
+       "name": "NOAA Office for Coastal Management — Coastal Zone Management Act boundary",
+       "url": "https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0",
+       "layer": "Coastal Zone Management Act boundary",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:11.447Z",
+      "status": "resolved",
+      "code": "CZM",
+      "name": "Coastal zone (CZMA boundary)",
+      "tags": [],
+      "attributes": {
+       "CZMA_DOMAIN": "coastal zone"
+      }
+     },
+     {
+      "layer": "zoning",
+      "status": "resolved",
+      "code": "CT",
+      "name": "Comercial Turístico",
+      "tags": [
+       "commercial"
+      ],
+      "attributes": {
+       "cali": "CT",
+       "descrip": "Comercial Turístico",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "040-028-001-24",
+       "municipio": "San Juan",
+       "barrio": "Santurce",
+       "vigencia": "1-07-2007",
+       "resolucion": "C-18-1",
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": "C-18-1 · 1-07-2007"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     },
+     {
+      "layer": "land_class",
+      "status": "resolved",
+      "code": "SU",
+      "name": "Suelo Urbano",
+      "tags": [
+       "SU",
+       "URBANO"
+      ],
+      "attributes": {
+       "cali": "CT",
+       "descrip": "Comercial Turístico",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "040-028-001-24",
+       "municipio": "San Juan",
+       "barrio": "Santurce",
+       "vigencia": "1-07-2007",
+       "resolucion": "C-18-1",
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": "C-18-1 · 1-07-2007"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     },
+     {
+      "layer": "parcel",
+      "status": "resolved",
+      "code": "040-028-001-24",
+      "name": "Catastro 040-028-001-24",
+      "tags": [],
+      "attributes": {
+       "NUM_CATASTRO": "040-028-001-24",
+       "OLDPID": "040-028-001-02",
+       "TIPO": "P"
+      },
+      "source": {
+       "id": "crim-parcelas-feb-2025",
+       "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+       "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+       "layer": "Parcelas_feb_2025",
+       "dataset_date": "2025-02",
+       "version": "feb_2025"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     },
+     {
+      "layer": "terrain",
+      "status": "resolved",
+      "code": "Low",
+      "name": "Low landslide susceptibility",
+      "tags": [],
+      "attributes": {
+       "LANDSLIDE_SUSCEPTIBILITY": "Low",
+       "ELEVATION_M": null,
+       "SLOPE_PCT": null
+      },
+      "source": {
+       "id": "usgs-pr-landslide-susceptibility",
+       "name": "USGS — Puerto Rico Landslide Susceptibility",
+       "url": "https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer",
+       "layer": "Landslide Susceptibility (cached map, zoom 14 ≈ 9 m pixels)",
+       "dataset_date": null,
+       "version": "z14"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     },
+     {
+      "layer": "historic_zone",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-zonas-historicas",
+       "name": "Junta de Planificación — Zonas Históricas (límites)",
+       "url": "https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1",
+       "layer": "Zonas Historicas Limites",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     },
+     {
+      "layer": "protected_area",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-areas-naturales-protegidas",
+       "name": "Junta de Planificación — Áreas Naturales Protegidas (terrestres)",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5",
+       "layer": "Áreas Naturales Protegidas",
+       "dataset_date": "2018-12",
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T20:04:11.447Z"
+     }
+    ]
+   },
+   "parcel": {
+    "latitude": 18.459153,
+    "longitude": -66.076454,
+    "retrieved_at": "2026-10-04T20:04:30.461Z",
+    "boundary": {
+     "status": "sourced",
+     "value": {
+      "catastro": "040-028-001-24",
+      "geometry": {
+       "type": "Polygon",
+       "coordinates": [
+        [
+         [
+          -66.0761111,
+          18.4592351
+         ],
+         [
+          -66.076128,
+          18.4592113
+         ],
+         [
+          -66.0761308,
+          18.4592128
+         ],
+         [
+          -66.0762101,
+          18.4590874
+         ],
+         [
+          -66.0762069,
+          18.4590856
+         ],
+         [
+          -66.0762255,
+          18.4590557
+         ],
+         [
+          -66.0762228,
+          18.4590542
+         ],
+         [
+          -66.076292,
+          18.4589465
+         ],
+         [
+          -66.0761547,
+          18.458869
+         ],
+         [
+          -66.0762068,
+          18.4587859
+         ],
+         [
+          -66.0760604,
+          18.4587039
+         ],
+         [
+          -66.075962,
+          18.4586478
+         ],
+         [
+          -66.0758134,
+          18.4585641
+         ],
+         [
+          -66.075761,
+          18.4586471
+         ],
+         [
+          -66.0756233,
+          18.4585697
+         ],
+         [
+          -66.0755424,
+          18.4586969
+         ],
+         [
+          -66.075545,
+          18.4586984
+         ],
+         [
+          -66.0754846,
+          18.4587943
+         ],
+         [
+          -66.0754812,
+          18.4587924
+         ],
+         [
+          -66.0754447,
+          18.4588509
+         ],
+         [
+          -66.0754031,
+          18.458826
+         ],
+         [
+          -66.0753988,
+          18.4588002
+         ],
+         [
+          -66.0753898,
+          18.4587535
+         ],
+         [
+          -66.0752391,
+          18.4586675
+         ],
+         [
+          -66.0752455,
+          18.4586564
+         ],
+         [
+          -66.0755368,
+          18.4581552
+         ],
+         [
+          -66.0755378,
+          18.4581535
+         ],
+         [
+          -66.0756143,
+          18.458213
+         ],
+         [
+          -66.0756927,
+          18.4582703
+         ],
+         [
+          -66.0769101,
+          18.4589633
+         ],
+         [
+          -66.0766351,
+          18.4594177
+         ],
+         [
+          -66.0762649,
+          18.4593149
+         ],
+         [
+          -66.0761729,
+          18.4592753
+         ],
+         [
+          -66.0761111,
+          18.4592351
+         ]
+        ]
+       ]
+      },
+      "area_m2": 7847.716826197355,
+      "bbox": [
+       -66.0769101,
+       18.4581535,
+       -66.0752391,
+       18.4594177
+      ]
+     },
+     "reason": null,
+     "source": {
+      "id": "crim-parcelas-feb-2025",
+      "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+      "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+      "dataset_date": "2025-02"
+     }
+    },
+    "zoning": {
+     "status": "sourced",
+     "districts": [
+      {
+       "code": "CT",
+       "name": "Comercial Turístico",
+       "family": "commercial",
+       "overlay": {
+        "code": "APE-ZC",
+        "name": "Área de Planificación Especial Zona Cársica"
+       },
+       "overlays": [
+        {
+         "code": "APE-ZC",
+         "name": "Área de Planificación Especial Zona Cársica",
+         "resolution": "JP-CARSO",
+         "effective": "04-JUL-2014"
+        }
+       ],
+       "effective": "1-07-2007",
+       "resolution": "C-18-1",
+       "area_m2": 7807.1,
+       "share": 0.997
+      },
+      {
+       "code": "P",
+       "name": "Público",
+       "family": "public",
+       "overlay": null,
+       "overlays": [],
+       "effective": "1-07-2007",
+       "resolution": "C-18-1",
+       "area_m2": 22.7,
+       "share": 0.003
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "jp-calificacion-vigente",
+      "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+      "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    },
+    "flood": {
+     "status": "sourced",
+     "zones": [
+      {
+       "zone": "VE",
+       "subtype": null,
+       "sfha": true,
+       "floodway": false,
+       "area_m2": 1527.6,
+       "share": 0.195
+      },
+      {
+       "zone": "X",
+       "subtype": "AREA OF MINIMAL FLOOD HAZARD",
+       "sfha": false,
+       "floodway": false,
+       "area_m2": 6321.4,
+       "share": 0.805
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "fema-nfhl-s_fld_haz_ar",
+      "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+      "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    },
+    "areas_reliable": {
+     "zoning": true,
+     "flood": true
+    },
+    "extras": {
+     "put": {
+      "id": "put",
+      "status": "verified",
+      "value": "SU — Suelo Urbano",
+      "items": [
+       "SU — Suelo Urbano"
+      ],
+      "attributes": {
+       "resolution": "PUT-2014",
+       "effective": "30-nov-2015"
+      },
+      "source": {
+       "name": "Junta de Planificación — Plan de Uso de Terrenos (PUT), clasificación de suelos",
+       "url": "https://sigejp.pr.gov/server/rest/services/MIPR/PUT_v10/MapServer/0",
+       "layer": "Clasificación de Suelos Plan de Uso de Terrenos",
+       "dataset_date": "30-nov-2015"
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "plan_territorial": {
+      "id": "plan_territorial",
+      "status": "verified",
+      "value": "San Juan Plan Territorial — approved 13-Mar-2003, revised 13-Mar-2011",
+      "items": [],
+      "attributes": {
+       "municipio": "San Juan",
+       "approved": "13-Mar-2003",
+       "revision_1": "13-Mar-2011",
+       "hierarchy": "5",
+       "review_status": "POT/RIPOT con más de 8 años de elaboración",
+       "executive_order": "OE-2003-16"
+      },
+      "source": {
+       "name": "Junta de Planificación — Planes Territoriales municipales (estado)",
+       "url": "https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1",
+       "layer": "Municipios Información de PT",
+       "dataset_date": null
+      },
+      "scope": "municipality",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "historic_zone": {
+      "id": "historic_zone",
+      "status": "no_mapped",
+      "value": null,
+      "items": [],
+      "attributes": {},
+      "source": {
+       "name": "Junta de Planificación (MIPR) — Zonas Históricas",
+       "url": "https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/14",
+       "layer": "Zona Histórica",
+       "dataset_date": null
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "historic_site": {
+      "id": "historic_site",
+      "status": "no_mapped",
+      "value": null,
+      "items": [],
+      "attributes": {},
+      "source": {
+       "name": "Junta de Planificación (MIPR) — Sitios Históricos JP",
+       "url": "https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/12",
+       "layer": "Sitios Históricos JP",
+       "dataset_date": null
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "archaeology": {
+      "id": "archaeology",
+      "status": "no_mapped",
+      "value": null,
+      "items": [],
+      "attributes": {},
+      "source": {
+       "name": "Junta de Planificación (MIPR) — Áreas de sensibilidad arqueológica",
+       "url": "https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/15",
+       "layer": "Arqueología Sensitivo",
+       "dataset_date": null
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "protected_area": {
+      "id": "protected_area",
+      "status": "no_mapped",
+      "value": null,
+      "items": [],
+      "attributes": {},
+      "source": {
+       "name": "Junta de Planificación — Áreas Protegidas",
+       "url": "https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/4",
+       "layer": "Área Protegidas",
+       "dataset_date": null
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "natural_reserve": {
+      "id": "natural_reserve",
+      "status": "no_mapped",
+      "value": null,
+      "items": [],
+      "attributes": {},
+      "source": {
+       "name": "Junta de Planificación — Reservas Naturales",
+       "url": "https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/3",
+       "layer": "Reservas Naturales JP",
+       "dataset_date": null
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "wetlands": {
+      "id": "wetlands",
+      "status": "verified",
+      "value": "Humedal Estuarine and Marine Deepwater",
+      "items": [
+       "Humedal Estuarine and Marine Deepwater",
+       "Humedal Estuarine and Marine Wetland"
+      ],
+      "attributes": {
+       "count": 2
+      },
+      "source": {
+       "name": "Junta de Planificación (MIPR) — Humedales",
+       "url": "https://sigejp.pr.gov/server/rest/services/MIPR/ValorEcologico_v10/MapServer/26",
+       "layer": "Humedales",
+       "dataset_date": null
+      },
+      "scope": "parcel",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     },
+     "soils": {
+      "id": "soils",
+      "status": "verified",
+      "value": "Urban land (Ul)",
+      "items": [
+       "Urban land"
+      ],
+      "attributes": {
+       "hydric_rating": "No",
+       "drainage_class": null
+      },
+      "source": {
+       "id": "usda-nrcs-ssurgo",
+       "name": "USDA NRCS — Soil Survey (SSURGO) via Soil Data Access",
+       "url": "https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest",
+       "layer": "mapunit",
+       "dataset_date": null
+      },
+      "scope": "point",
+      "reason": null,
+      "retrieved_at": "2026-10-04T20:04:30.461Z"
+     }
+    }
+   }
   }
- }
+ },
+ "recorded_at_santurce": "2026-10-04T20:04:43.392Z"
 }

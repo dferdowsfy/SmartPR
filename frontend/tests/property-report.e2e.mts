@@ -162,9 +162,10 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   await page.locator('[data-testid="property-report"]').waitFor({ timeout: 10000 });
   check("drawer: dialog with aria-modal and focus on Close", (await page.locator('[role="dialog"][aria-modal="true"]').count()) === 1 && (await page.evaluate(() => document.activeElement?.getAttribute("data-testid"))) === "property-report-close");
   const r = await text(page, '[data-testid="property-report"]');
-  check("drawer: property + considerations + next steps sections", /Property/.test(r) && /Project considerations/.test(r) && /Next steps/.test(r));
-  check("drawer: PUT, municipal plan and permitted uses honestly 'not performed'", (await page.locator('[data-finding="put"][data-state="not_performed"], [data-finding="municipal_plan"][data-state="not_performed"], [data-finding="permitted_uses"][data-state="not_performed"]').count()) === 3);
+  check("drawer: property, land & zoning, site constraints, approvals", /Property/.test(r) && /Land & zoning/.test(r) && /Site constraints/.test(r) && /Required approvals/.test(r));
+  check("drawer: no finding is left as 'check not performed'", (await page.locator('[data-finding][data-state="not_performed"]').count()) === 0);
   check("drawer: protection constraints separated from documentation items", (await visible(page, '[data-testid="steps-protection"]')) && /do not remove/.test(await text(page, '[data-testid="steps-protection"]')));
+  await page.locator(".spr-prd-sources > summary").click();
   check("drawer: AI explanations kept separate (none generated)", /None in this report/.test(await text(page, '[data-testid="ai-explanations"]')));
   check("drawer: signed-out → draft note, no Passport claim", /Sign in to save/.test(await text(page, '[data-testid="report-draft-note"]')) && !(await visible(page, '[data-testid="report-save-passport"]')));
   check("drawer: professional review needs a saved report", await visible(page, '[data-testid="review-unavailable"]'));
@@ -216,7 +217,9 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
 }
 {
   const page = await open(1280, 860, { state: state("Choosing between a local in Caguas or a local in Carolina.") });
-  check("multiple locations → asks which is the project site", (await page.locator('[data-testid="ambiguous-option"]').count()) === 2);
+  await page.locator('[data-testid="ambiguous-option"]').nth(1).waitFor({ timeout: 15000 }).catch(() => undefined);
+  const opts = await page.locator('[data-testid="ambiguous-option"]').allInnerTexts();
+  check("multiple locations → asks which is the project site", opts.length === 2, opts.join(" | "));
   await page.context().close();
 }
 for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas and Carolina.", "incidental mentions"], ["A family restaurant in Gurabo.", "same municipality"]] as const) {
@@ -324,6 +327,62 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   check("client export includes selected notes and review status", /Effective FIRM Zone X/.test(clip) && /Reviewed/.test(clip) && /not a government approval/.test(clip));
   await page.screenshot({ path: path.join(OUT, "9-review.png"), fullPage: false });
   await page.context().close();
+}
+
+// 10 — land-use intelligence on the Santurce regression parcel
+{
+  const SJ = C.santurce!;
+  const page = await open(1440, 900, { state: state("Build a 120-room hotel", siteOf(SJ)) });
+  await page.locator('[data-testid="open-property-report"]').waitFor({ timeout: 20000 });
+  await page.locator('[data-testid="project-location-catastro"] >> text=040-028-001-24').waitFor({ timeout: 20000 });
+  await page.click('[data-testid="open-property-report"]');
+  const flags = page.locator('[data-testid="regulatory-flags"] [data-flag]');
+  check("santurce: regulatory flags summary at the top", (await flags.count()) >= 7);
+  check("santurce: description pre-fills the proposed activity (not asked twice)", /120-room hotel/.test(await page.locator('[data-testid="activity-input"]').inputValue()));
+  const compat = page.locator('[data-testid="land-use-compatibility"]');
+  check("santurce hotel: professional review (APE-ZC overlay), base zoning conditional", (await compat.getAttribute("data-outcome")) === "professional_review" && /Conditional/.test(await compat.innerText()));
+  check("santurce hotel: floodplain review likely, triggered by VE share", /Zone VE \((19|20)% of the parcel\)/.test(await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"]').innerText().catch(() => "")));
+  check("santurce: zoning shows area shares, not 'whole parcel'", /CT 99\.\d% · P <1%/.test(await page.locator('[data-finding="zoning"]').first().innerText()) && /VE 19\.\d% · X 80\.\d%/.test(await page.locator('[data-finding="flood_zone"]').first().innerText()));
+  check("santurce: PUT / Plan Territorial / soils verified", /Verified|SU — Suelo Urbano/.test(await page.locator('[data-finding="put"]').innerText()) && /13-Mar-2003/.test(await page.locator('[data-finding="municipal_plan"]').innerText()) && /Urban land/.test(await page.locator('[data-finding="soils"]').innerText()));
+  await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"] summary').click();
+  check("santurce: 'Why?' reasoning path down to source and evidence", /44 CFR/.test(await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"] [data-testid="reasoning-path"]').innerText()));
+  await page.screenshot({ path: path.join(OUT, "10-santurce-hotel.png"), fullPage: false });
+  await page.fill('[data-testid="activity-input"]', "Open a restaurant in the existing building");
+  await page.click('[data-testid="activity-analyze"]');
+  await page.waitForTimeout(300);
+  check("santurce restaurant: base permitted, no construction floodplain review", /Permitted/.test(await compat.innerText()) && (await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"]').count()) === 0 && (await page.locator('[data-rule="SR_FOOD_HEALTH"]').count()) === 1);
+  await page.fill('[data-testid="activity-input"]', "Construct a warehouse");
+  await page.click('[data-testid="activity-analyze"]');
+  await page.waitForTimeout(300);
+  check("santurce warehouse: potentially prohibited + consulta de ubicación", (await compat.getAttribute("data-outcome")) === "potentially_prohibited" && (await page.locator('[data-rule="SR_USE_NOT_LISTED"]').count()) === 1);
+  await page.fill('[data-testid="activity-input"]', "A daycare");
+  await page.click('[data-testid="activity-analyze"]');
+  await page.waitForTimeout(300);
+  check("follow-up only when a fact matters (construction?)", await page.locator('[data-testid="activity-question-construction"]').isVisible());
+  await page.locator('[data-testid="activity-question-construction"] button', { hasText: "Existing building" }).click();
+  await page.waitForTimeout(300);
+  check("answering the follow-up removes the question", (await page.locator('[data-testid="activity-question-construction"]').count()) === 0);
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-pdf"]')]);
+  await pdf.saveAs(path.join(OUT, "santurce.pdf"));
+  check("santurce: PDF downloads with land-use sections", /\.pdf$/.test(pdf.suggestedFilename()));
+  await page.context().close();
+}
+// 11 — admin QA: parcel scenarios
+{
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto(`${base}/admin/knowledge-base`, { waitUntil: "domcontentloaded", timeout: 120000 });
+  await page.getByRole("button", { name: "Scenario Reasoning & Land Use" }).click({ timeout: 90000 });
+  await page.click('[data-testid="reasoning-view-parcels"]');
+  await page.locator('[data-testid="scenario-matrix"]').waitFor({ timeout: 20000 });
+  const outcomes = await page.locator('[data-testid="scenario-row"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-outcome")));
+  check("admin: six activities on Santurce give different determinations", outcomes.length === 6 && new Set(outcomes).size >= 2, outcomes.join(","));
+  await page.selectOption('[data-testid="scenario-parcel"]', "straightforward");
+  await page.waitForTimeout(300);
+  check("admin: a parcel without graph coverage shows QA gaps (R-I)", /R-I/.test(await page.locator('[data-testid="scenario-gaps"]').innerText().catch(() => "")));
+  await page.screenshot({ path: path.join(OUT, "11-admin-scenarios.png"), fullPage: false });
+  await ctx.close();
 }
 
 check("no page errors", errors.length === 0, errors.slice(0, 3).join(" | "));

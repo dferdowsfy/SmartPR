@@ -19,10 +19,11 @@ import { DetailPanel } from "../graph/DetailPanel";
 import { RequirementsTab } from "./RequirementsTab";
 import { reasoningGraphFromNodes } from "../../../reasoning/loadGraph";
 import { describeClause, reason, runMappingTests, type Clause, type Facts, type ReasoningPath } from "../../../reasoning/scenarioReasoning";
+import { ParcelScenarios } from "./ParcelScenarios";
 import { checkGraphQuality, type QualityIssue } from "../../../reasoning/graphQuality";
 
 const REASONING_TYPES: NodeType[] = ["scenario", "decision_condition", "process_variant", "scenario_mapping", "document", "evidence_type", "regulatory_source", "agency", "business_type", "municipality"];
-const MANAGE_TYPES: NodeType[] = ["scenario_mapping", "scenario", "decision_condition", "process_variant"];
+const MANAGE_TYPES: NodeType[] = ["scenario_mapping", "scenario", "decision_condition", "process_variant", "use_permission", "site_rule", "zoning_district", "land_use", "development_standard"];
 
 const PRESETS: { label: string; facts: Facts }[] = [
   { label: "New restaurant, existing local, no work (Guaynabo)", facts: { project_intent: "new_business", existing_premises: true, construction_required: false, ownership_changed: false, home_based: false, residential: false, municipality: "Guaynabo", business_type: "Restaurant" } },
@@ -38,7 +39,7 @@ const arr = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : []);
 const SEV_COLOR = { error: COLORS.red, warning: COLORS.amber, info: COLORS.faint } as const;
 const STATUS_COLOR = { applies: COLORS.green, needs_facts: COLORS.amber, not_applicable: COLORS.faint } as const;
 
-type View = "paths" | "test" | "quality" | "manage";
+type View = "paths" | "test" | "parcels" | "quality" | "manage";
 
 export function ReasoningTab({ graph, onSaved }: { graph: GraphData; onSaved: (msg: string) => void }) {
   const [view, setView] = useState<View>("paths");
@@ -54,7 +55,7 @@ export function ReasoningTab({ graph, onSaved }: { graph: GraphData; onSaved: (m
   }, [quality]);
 
   if (!graph.graph) return <div style={{ color: COLORS.faint, padding: 40 }}>Loading graph…</div>;
-  const views: [View, string][] = [["paths", "Reasoning paths"], ["test", "Test reasoning"], ["quality", `Graph quality (${quality.filter((q) => q.severity !== "info").length})`], ["manage", "Manage mappings"]];
+  const views: [View, string][] = [["paths", "Reasoning paths"], ["test", "Test reasoning"], ["parcels", "Parcel scenarios (land use)"], ["quality", `Graph quality (${quality.filter((q) => q.severity !== "info").length})`], ["manage", "Manage mappings"]];
 
   return (
     <div data-testid="reasoning-tab">
@@ -76,6 +77,7 @@ export function ReasoningTab({ graph, onSaved }: { graph: GraphData; onSaved: (m
           <div>
             {view === "paths" && <PathsView nodes={nodes} rg={rg} issuesBy={issuesBy} onInspect={setInspected} />}
             {view === "test" && <TestView rg={rg} nodes={nodes} onInspect={setInspected} />}
+            {view === "parcels" && <ParcelScenarios nodes={nodes} />}
             {view === "quality" && <QualityView issues={quality} onInspect={setInspected} byEntity={graph.byEntity} />}
           </div>
           {editing ? (

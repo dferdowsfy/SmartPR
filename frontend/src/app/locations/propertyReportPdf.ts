@@ -8,6 +8,7 @@
 
 import type { jsPDF as JsPDF } from "jspdf";
 import { findingStateText, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
+import { COMPATIBILITY_TEXT } from "./landUse";
 import type { exportableReview } from "./propertyReview";
 
 type Lang = "en" | "es";
@@ -151,7 +152,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   const row = (f: ReportFinding) => {
     const tone = f.state === "sourced" || f.state === "none_mapped" ? f.tone : "unknown";
     const main = f.plain?.[lang] ?? (f.value ? f.value[lang] : findingStateText(f.state)[lang]);
-    const sub = [f.value && f.plain ? f.value[lang] : null, f.state === "sourced" ? (f.scope === "parcel" ? L("whole parcel", "toda la parcela") : f.scope === "point" ? L("at the pin", "en el pin") : null) : null, f.constraint === "protection" ? L("PROTECTION", "PROTECCIÓN") : f.constraint === "documentation" ? L("review / documentation", "revisión / documentación") : null].filter(Boolean).join(" · ");
+    const sub = [f.value && f.plain ? f.value[lang] : null, f.state === "sourced" ? (f.scope === "parcel" ? L("checked across the parcel", "verificado en toda la parcela") : f.scope === "point" ? L("at the pin", "en el pin") : null) : null, f.constraint === "protection" ? L("PROTECTION", "PROTECCIÓN") : f.constraint === "documentation" ? L("review / documentation", "revisión / documentación") : null].filter(Boolean).join(" · ");
     const src = f.sources.map((s) => `${s.name}${s.dataset_date ? ` (${s.dataset_date})` : ""}`).join("; ");
     const mainL = lines(main, CW - 62);
     const subL = sub ? lines(sub, CW - 62) : [];
@@ -172,6 +173,48 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   for (const [g, en, es] of groups) {
     heading(L(en, es));
     for (const f of report.findings.filter((x) => x.group === g)) row(f);
+  }
+
+  // ---- Regulatory flags + land use -------------------------------------------------
+  if (report.flags?.length) {
+    heading(L("Regulatory flags", "Alertas regulatorias"));
+    let fx = M;
+    for (const f of report.flags) {
+      const text = `${f.label[lang]}: ${f.value[lang]}`;
+      font(8.5, "bold");
+      const w = doc.getTextWidth(safe(text)) + 8;
+      if (fx + w > W - M) { fx = M; y += 8.5; ensure(9); }
+      fx += pill(fx, y, text, f.tone) + 3;
+    }
+    y += 8;
+  }
+  const lu = report.land_use;
+  if (lu?.activity.use) {
+    heading(L("Proposed activity & land-use compatibility", "Actividad propuesta y compatibilidad de uso"));
+    para(`"${lu.activity.raw}" — ${lu.activity.useName}`, 10, "italic", MUTED);
+    const o = lu.compatibility.outcome;
+    const tone: ReportTone = o === "permitted" ? "ok" : o === "potentially_prohibited" ? "hazard" : o === "insufficient" ? "unknown" : "attention";
+    ensure(10);
+    pill(M, y + 1, `${L("Compatibility", "Compatibilidad")}: ${COMPATIBILITY_TEXT[o][lang]} · ${L("confidence", "confianza")} ${lu.compatibility.confidence}`, tone);
+    y += 8;
+    for (const x of lu.compatibility.reasons) para(`• ${x}`, 9.5, "normal", INK, M + 3, CW - 3);
+    for (const d of lu.districts.filter((d) => !d.sliver && d.conditions.length)) for (const x of d.conditions) para(`– ${x}`, 9, "normal", MUTED, M + 6, CW - 6);
+    heading(L("Required approvals", "Aprobaciones requeridas"));
+    for (const a of lu.approvals) {
+      const st = a.status === "confirmed" ? L("REQUIRED", "REQUERIDO") : a.status === "likely" ? L("LIKELY", "PROBABLE") : L("PROFESSIONAL REVIEW", "REVISIÓN PROFESIONAL");
+      ensure(16);
+      pill(M, y + 1, st, a.status === "confirmed" ? "hazard" : a.status === "likely" ? "attention" : "info");
+      font(10, "bold", INK); doc.text(safe(a.name), M + 46, y + 1); y += 6;
+      para(`${L("Trigger", "Motivo")}: ${a.trigger}`, 9, "normal", INK, M + 3, CW - 3);
+      if (a.agency) para(`${L("Agency", "Agencia")}: ${a.agency}`, 8.5, "normal", MUTED, M + 3, CW - 3);
+      if (a.sources.length || a.citation) para(`${L("Authority", "Autoridad")}: ${a.sources.map((x) => x.name).join("; ")}${a.citation ? ` — ${a.citation}` : ""}`, 8, "normal", MUTED, M + 3, CW - 3);
+      for (const e of a.evidence) para(`  ✓ ${e}`.replace("✓", "-"), 8.5, "normal", INK, M + 6, CW - 6);
+      y += 2;
+    }
+    if (lu.unresolved.length) {
+      heading(L("Unresolved items", "Asuntos sin resolver"));
+      for (const u of lu.unresolved) para(`• ${u.text}`, 9, "normal", MUTED, M + 3, CW - 3);
+    }
   }
 
   // ---- Next steps --------------------------------------------------------------

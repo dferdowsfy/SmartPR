@@ -769,6 +769,120 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
       return out;
     },
   },
+
+  // ---- Land-use intelligence ------------------------------------------------
+  zoning_district: {
+    type: "zoning_district",
+    label: "Zoning District (calificación)",
+    plural: "Zoning Districts",
+    color: "#0ea5e9",
+    labelOf: (d) => `${s(d.code)} — ${s(d.name)}`.replace(/^ — | — $/g, "") || s(d.id),
+    fields: [
+      { key: "code", label: "District code (RC 2023)", kind: "text", required: true },
+      { key: "name", label: "Name", kind: "text", required: true },
+      { key: "family", label: "Family", kind: "text" },
+      { key: "aliases", label: "Map codes that resolve to this district (JSON list)", kind: "json", help: "e.g. [\"CT\", \"CT-1\"] — municipal POT codes per the RC equivalence tables." },
+      { key: "governing_instrument", label: "Governing instrument", kind: "text" },
+      { key: "equivalence_note", label: "Equivalence note", kind: "textarea" },
+      { key: "equivalence_confidence", label: "Equivalence confidence", kind: "select", options: ["high", "medium", "low"] },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source", required: true },
+      { key: "citation_section", label: "Citation section", kind: "text" },
+      { key: "last_verified_at", label: "Last verified", kind: "text", help: "YYYY-MM-DD" },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+  land_use: {
+    type: "land_use",
+    label: "Land Use (proposed activity type)",
+    plural: "Land Uses",
+    color: "#14b8a6",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true },
+      { key: "category", label: "RC use category", kind: "text" },
+      { key: "aliases", label: "Words that describe this use (JSON list, EN/ES)", kind: "json" },
+      { key: "construction_default", label: "Default construction assumption", kind: "select", options: ["", "new", "none", "demolition"] },
+    ],
+    edgesOf: () => [],
+  },
+  use_permission: {
+    type: "use_permission",
+    label: "Use Permission (district × use)",
+    plural: "Use Permissions",
+    color: "#22c55e",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true },
+      { key: "zoning_district_id", label: "Zoning district", kind: "entity_ref", refType: "zoning_district", required: true },
+      { key: "land_use_id", label: "Land use", kind: "entity_ref", refType: "land_use", required: true },
+      { key: "outcome", label: "Outcome", kind: "select", options: ["permitted", "conditional", "exception", "not_listed", "prohibited"], required: true },
+      { key: "conditions", label: "Conditions (JSON list)", kind: "json" },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source", required: true },
+      { key: "citation_section", label: "Citation section / table", kind: "text", required: true },
+      { key: "effective_date", label: "Effective date", kind: "text", help: "YYYY-MM-DD" },
+      { key: "version", label: "Version", kind: "text" },
+      { key: "last_verified_at", label: "Last verified", kind: "text", required: true, help: "YYYY-MM-DD" },
+      { key: "verification", label: "Verification", kind: "select", options: ["verified_text", "unverified"], required: true, help: "Only verified_text permissions are used for determinations." },
+      { key: "notes", label: "Notes", kind: "textarea" },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "applies_in", d.zoning_district_id);
+      pushRef(out, "governs", d.land_use_id);
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+  development_standard: {
+    type: "development_standard",
+    label: "Development Standard",
+    plural: "Development Standards",
+    color: "#64748b",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Standard", kind: "text", required: true },
+      { key: "zoning_district_id", label: "Zoning district", kind: "entity_ref", refType: "zoning_district", required: true },
+      { key: "value", label: "Value", kind: "textarea", required: true },
+      { key: "applies_to", label: "Applies to", kind: "select", options: ["new_construction", "residential", "all"] },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source", required: true },
+      { key: "citation_section", label: "Citation section / table", kind: "text", required: true },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "applies_in", d.zoning_district_id);
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+  site_rule: {
+    type: "site_rule",
+    label: "Site Rule (parcel / activity trigger)",
+    plural: "Site Rules",
+    color: "#f97316",
+    labelOf: (d) => s(d.name) || s(d.id),
+    fields: [
+      { key: "name", label: "Name", kind: "text", required: true },
+      { key: "when", label: "When (JSON: {all|any:[{fact, op, value}]})", kind: "json", required: true, help: "Facts: flood.sfha_on_parcel, flood.floodway_on_parcel, coastal.inside, overlay.codes, wetlands.on_parcel, protected.on_parcel, reserve.on_parcel, archaeology.on_parcel, historic.on_parcel, use.outcome, activity.use, activity.construction" },
+      { key: "approval_document_id", label: "Triggers approval (permit document)", kind: "entity_ref", refType: "document" },
+      { key: "agency", label: "Agency", kind: "text" },
+      { key: "certainty_full", label: "Certainty when the whole parcel is affected", kind: "select", options: ["confirmed", "likely", "review"], required: true },
+      { key: "certainty_partial", label: "Certainty when only part of the parcel is affected", kind: "select", options: ["confirmed", "likely", "review"], required: true },
+      { key: "evidence", label: "Likely evidence (JSON list)", kind: "json" },
+      { key: "constraint", label: "Constraint class", kind: "select", options: ["protection", "documentation", "information"] },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source" },
+      { key: "citation_section", label: "Citation section", kind: "text" },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRef(out, "triggers", d.approval_document_id);
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
 };
 
 export const NODE_TYPES = Object.keys(NODE_TYPE_CONFIGS) as NodeType[];
@@ -828,6 +942,14 @@ export const EDGE_RULES: { from: NodeType; edge: EdgeType; to: NodeType }[] = [
   { from: "scenario_mapping", edge: "when", to: "decision_condition" },
   { from: "scenario_mapping", edge: "triggers", to: "process_variant" },
   { from: "scenario_mapping", edge: "derived_from", to: "regulatory_source" },
+  { from: "zoning_district", edge: "derived_from", to: "regulatory_source" },
+  { from: "use_permission", edge: "applies_in", to: "zoning_district" },
+  { from: "use_permission", edge: "governs", to: "land_use" },
+  { from: "use_permission", edge: "derived_from", to: "regulatory_source" },
+  { from: "development_standard", edge: "applies_in", to: "zoning_district" },
+  { from: "development_standard", edge: "derived_from", to: "regulatory_source" },
+  { from: "site_rule", edge: "triggers", to: "document" },
+  { from: "site_rule", edge: "derived_from", to: "regulatory_source" },
 ];
 
 export function labelForNode(nodeType: NodeType, data: Record<string, unknown>): string {
@@ -890,6 +1012,9 @@ export function validateNodeData(nodeType: NodeType, data: Record<string, unknow
     if (["equals", "not_equals", "in"].includes(op) && data.value === undefined) problems.push("This operator needs a value.");
     if (op === "in" && !Array.isArray(data.value)) problems.push("\"in\" needs a list of values.");
   }
+  if (nodeType === "use_permission" && s(data.verification) === "verified_text" && !list(data.source_ids).length) {
+    problems.push("A verified use permission needs a source.");
+  }
   if (nodeType === "scenario_mapping") {
     for (const k of ["effective_date", "last_verified_at"]) {
       const v = s(data[k]);
@@ -943,6 +1068,11 @@ export function newEntityId(nodeType: NodeType, name: string): string {
     decision_condition: "COND",
     process_variant: "PV",
     scenario_mapping: "MAP",
+    zoning_district: "ZD",
+    land_use: "LU",
+    use_permission: "UP",
+    development_standard: "DS",
+    site_rule: "SR",
   };
   const slug = name
     .normalize("NFD")

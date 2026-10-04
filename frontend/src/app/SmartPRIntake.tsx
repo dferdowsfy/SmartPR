@@ -124,6 +124,8 @@ import { PropertyReportDrawer, type PassportSaveState } from './components/intak
 import { adoptPromptPlace, dismissProposal, extractPromptLocations, initialLocationState, keepSelected, onConfirmedChange, reconcilePrompt, restoreLocationState, type ConfirmedSiteRef, type LocationOrigin, type ProjectLocationState, type PromptPlace } from './locations/locationState';
 import { restoreParcelFindings, type ParcelFindings } from './locations/parcel';
 import { buildPropertyReport } from './locations/propertyReport';
+import { analyzeProposedActivity } from './locations/landUseGraph';
+import type { ActivityInput } from './components/intake/LandUseSections';
 import { LocationStepCard, SiteLayerChips } from './components/intake/LocationStepCard';
 import { ModalPortal } from './components/ui/ViewportModal';
 import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails, siteLabel, siteLayersCurrent, type IntakeSite } from './locations/intakeLocation';
@@ -1671,6 +1673,9 @@ export default function SmartPRIntake() {
   const [siteOrigin, setSiteOrigin] = useState<LocationOrigin>('map_pin');
   const parcelRestoreRef = useRef<ParcelFindings | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  // Proposed activity for the Property & Site Report (null = use the intake
+  // description the user already gave — never asked twice).
+  const [propertyActivity, setPropertyActivity] = useState<ActivityInput | null>(null);
   const reportOpenerRef = useRef<HTMLElement | null>(null);
   const [locationEditRequest, setLocationEditRequest] = useState(0);
   const [reportSave, setReportSave] = useState<{ saving: boolean; saved: { version: number; created_at: string; fingerprint: string } | null; error: string | null }>({ saving: false, saved: null, error: null });
@@ -2036,6 +2041,9 @@ export default function SmartPRIntake() {
     }
     if (typeof st.intakeDescription === 'string') setIntakeDescription(st.intakeDescription);
     if (st.locationState) setLocState(restoreLocationState(st.locationState));
+    if (st.propertyActivity && typeof st.propertyActivity.text === 'string') {
+      setPropertyActivity({ text: String(st.propertyActivity.text).slice(0, 400), construction: typeof st.propertyActivity.construction === 'string' ? st.propertyActivity.construction : null, use: typeof st.propertyActivity.use === 'string' ? st.propertyActivity.use : null });
+    }
     if (restoredSite && st.parcelFindings) {
       const pf = restoreParcelFindings(st.parcelFindings, restoredSite.latitude, restoredSite.longitude);
       if (pf) parcelRestoreRef.current = pf;
@@ -3698,6 +3706,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               // Property & Site Report draft (the Passport copy is separate).
               locationState: locStateRef.current,
               parcelFindings: parcelState.data,
+              propertyActivity,
             },
           }),
         })];
@@ -3817,7 +3826,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     me, businessId, profile, discoveryAnswers, requirements, potentialDecisions, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives,
     sampleFormDrafts, preparedSampleApplications, govFormDrafts,
     preparedGovApplications, canonicalOverride, currentStep, readinessScore, scenario,
-    intakeSite, locState, parcelState.data,
+    intakeSite, locState, parcelState.data, propertyActivity,
   ]);
 
   // Typing and voice enter the same canonical state. Keep the existing intake
@@ -6397,11 +6406,19 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   ) : null;
 
   // The ONE Property & Site Report model (preview · drawer · Passport).
+  const activityInput: ActivityInput = propertyActivity ?? { text: (intakeDescription || '').slice(0, 400), construction: null, use: null };
+  const landUseParcel = parcelState.revision === locState.revision ? parcelState.data : null;
+  const landUse = useMemo(
+    () => (intakeSite && activityInput.text.trim() ? analyzeProposedActivity(activityInput.text, intakeSite, landUseParcel, { construction: activityInput.construction, use: activityInput.use }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the inputs that change the analysis
+    [intakeSite, landUseParcel, activityInput.text, activityInput.construction, activityInput.use]
+  );
   const propertyReport = intakeSite ? buildPropertyReport({
     site: intakeSite,
     parcel: parcelState.revision === locState.revision ? parcelState.data : null,
     parcelLoading: parcelState.loading || parcelState.revision !== locState.revision,
     revision: locState.revision,
+    landUse,
     context: {
       activity: scenario?.business.proposedActivity?.value ?? scenario?.operations.activity?.value ?? null,
       businessType: profile.business_type || null,
@@ -6444,6 +6461,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       passport={passportSaveState}
       returnFocusTo={reportOpenerRef.current}
       reviewTarget={siteBusinessId && intakeSite?.location_id ? { businessId: siteBusinessId, locationId: intakeSite.location_id } : null}
+      activity={activityInput}
+      onActivityChange={setPropertyActivity}
     />
   );
 

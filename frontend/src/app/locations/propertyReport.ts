@@ -18,12 +18,31 @@
 
 import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
-import { toPrStatePlane, type ParcelFindings } from "./parcel.ts";
+import { toPrStatePlane, type ExtraFinding, type ParcelFindings } from "./parcel.ts";
+import { COMPATIBILITY_TEXT, type LandUseAnalysis } from "./landUse.ts";
 import { siteAddressParts } from "./siteAddress.ts";
 import type { exportableReview } from "./propertyReview.ts";
 
 export type Bi = { en: string; es: string };
-export type ReportFindingState = "sourced" | "none_mapped" | "unavailable" | "stale" | "not_performed" | "loading";
+export type ReportFindingState = "sourced" | "none_mapped" | "unavailable" | "stale" | "not_performed" | "loading" | "review" | "not_applicable";
+
+/**
+ * Standardized status shown to people (one vocabulary everywhere):
+ *   VERIFIED · NO MAPPED CONSTRAINT · UNABLE TO VERIFY ·
+ *   REQUIRES PROFESSIONAL REVIEW · NOT APPLICABLE.  Missing data is never "No".
+ */
+export type FindingStatus = "verified" | "no_mapped_constraint" | "unable_to_verify" | "requires_professional_review" | "not_applicable" | "checking";
+export function findingStatus(state: ReportFindingState): FindingStatus {
+  return state === "sourced" ? "verified" : state === "none_mapped" ? "no_mapped_constraint" : state === "review" || state === "not_performed" ? "requires_professional_review" : state === "not_applicable" ? "not_applicable" : state === "loading" ? "checking" : "unable_to_verify";
+}
+export const STATUS_TEXT: Record<FindingStatus, Bi> = {
+  verified: { en: "Verified", es: "Verificado" },
+  no_mapped_constraint: { en: "No mapped constraint", es: "Sin restricción mapeada" },
+  unable_to_verify: { en: "Unable to verify", es: "No se pudo verificar" },
+  requires_professional_review: { en: "Requires professional review", es: "Requiere revisión profesional" },
+  not_applicable: { en: "Not applicable", es: "No aplica" },
+  checking: { en: "Checking…", es: "Verificando…" },
+};
 export type ReportTone = "ok" | "info" | "attention" | "hazard" | "unknown";
 export type ReportScope = "parcel" | "point" | "municipality";
 export type ReportGroup = "land" | "flood" | "environment";
@@ -133,6 +152,12 @@ export interface PropertyReport {
   sources: ReportSource[];
   /** AI explanations of verified findings (none are generated yet; kept separate when they are). */
   ai_explanations: Array<{ finding_id: string; text: Bi; model: string }>;
+  /** Proposed activity + land-use determination (when the user described one). */
+  land_use?: LandUseAnalysis | null;
+  /** Compact Regulatory Flags summary for the top of the report. */
+  flags?: Array<{ id: string; label: Bi; value: Bi; tone: ReportTone; status: FindingStatus }>;
+  /** Overall regulatory complexity, derived from listed factors (never arbitrary). */
+  complexity?: LandUseAnalysis["complexity"] | null;
   disclaimer: Bi;
 }
 
@@ -183,11 +208,13 @@ function hash(s: string): string {
 }
 
 const STATE_TEXT: Record<ReportFindingState, Bi> = {
-  sourced: bi("Source confirmed", "Fuente confirmada"),
-  none_mapped: bi("Nothing mapped here — not the same as no restriction", "Nada mapeado aquí — no equivale a ausencia de restricciones"),
-  unavailable: bi("Source unavailable — not checked", "Fuente no disponible — no verificado"),
-  stale: bi("Outdated — refreshing for this location", "Desactualizado — actualizando para esta ubicación"),
-  not_performed: bi("Check not performed", "Verificación no realizada"),
+  sourced: bi("Verified", "Verificado"),
+  review: bi("Requires professional review", "Requiere revisión profesional"),
+  not_applicable: bi("Not applicable", "No aplica"),
+  none_mapped: bi("No mapped constraint — not the same as no restriction", "Sin restricción mapeada — no equivale a ausencia de restricciones"),
+  unavailable: bi("Unable to verify — source did not answer", "No se pudo verificar — la fuente no respondió"),
+  stale: bi("Unable to verify — refreshing for this location", "No se pudo verificar — actualizando para esta ubicación"),
+  not_performed: bi("Requires professional review", "Requiere revisión profesional"),
   loading: bi("Checking…", "Verificando…"),
 };
 export const findingStateText = (s: ReportFindingState) => STATE_TEXT[s];
@@ -202,6 +229,8 @@ export function buildPropertyReport(input: {
   parcelLoading?: boolean;
   revision: number;
   context: PropertyReportContext;
+  /** Land-use analysis for the proposed activity (see landUse.ts). */
+  landUse?: LandUseAnalysis | null;
   now?: Date;
 }): PropertyReport {
   const { site, context } = input;
@@ -223,7 +252,9 @@ export function buildPropertyReport(input: {
   const zPoint = layer("zoning");
   if (zParcel && zParcel.status === "sourced") {
     const base = zParcel.districts;
-    const codes = base.map((d) => d.code).join(" · ");
+    const reliable = parcel?.areas_reliable?.zoning === true;
+    const pct = (x: number | null | undefined) => (x === null || x === undefined ? "" : x < 0.01 ? "<1%" : `${Math.round(x * 1000) / 10}%`);
+    const codes = base.map((d) => `${d.code}${reliable && d.share != null ? ` ${pct(d.share)}` : ""}`).join(" · ");
     const multi = base.length > 1;
     add({
       id: "zoning",
@@ -231,24 +262,28 @@ export function buildPropertyReport(input: {
       title: bi("Calificación (zoning)", "Calificación"),
       value: bi(codes),
       detail: multi
-        ? bi(`${base.length} districts are mapped inside this parcel (edge slivers under ~3 m excluded): ${base.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}`).join(", ")}. Verify which districts cover the area you will use.`,
-             `${base.length} distritos están mapeados dentro de esta parcela (se excluyen franjas de borde menores de ~3 m): ${base.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}`).join(", ")}. Verifique qué distritos cubren el área que usará.`)
+        ? reliable
+          ? bi(base.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}: ${d.area_m2?.toLocaleString("en-US")} m² — ${pct(d.share)} of the parcel${(d.share ?? 1) < 0.02 ? " (edge sliver)" : ""}`).join("; ") + ".",
+               base.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}: ${d.area_m2?.toLocaleString("en-US")} m² — ${pct(d.share)} de la parcela${(d.share ?? 1) < 0.02 ? " (franja de borde)" : ""}`).join("; ") + ".")
+          : bi(`The parcel intersects ${base.length} districts: ${base.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}`).join(", ")}. Areas could not be calculated reliably.`,
+               `La parcela intersecta ${base.length} distritos: ${base.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}`).join(", ")}. No se pudieron calcular las áreas con confiabilidad.`)
         : bi(`${base[0]!.code}${base[0]!.name ? ` — ${base[0]!.name}` : ""}`),
       state: "sourced",
-      tone: multi ? "attention" : "info",
+      tone: multi && base.filter((d) => (d.share ?? 1) >= 0.02).length > 1 ? "attention" : "info",
       scope: zParcel.scope,
       sources: [{ name: zParcel.source.name, url: zParcel.source.url, dataset_date: base[0]?.effective ?? zParcel.source.dataset_date, version: base[0]?.resolution ?? null }],
       looked_up_at: parcel!.retrieved_at,
       key: true,
     });
-    const overlays = base.filter((d) => d.overlay);
+    const allOverlays = base.flatMap((d) => d.overlays ?? (d.overlay ? [{ code: d.overlay.code, name: d.overlay.name, resolution: null, effective: null }] : []));
+    const overlays = allOverlays.filter((o, i) => allOverlays.findIndex((x) => x.code === o.code) === i);
     if (overlays.length) {
       add({
         id: "zoning_overlay",
         group: "land",
         title: bi("Overlay districts", "Distritos sobrepuestos"),
-        value: bi(overlays.map((d) => d.overlay!.code).join(" · ")),
-        detail: bi(overlays.map((d) => `${d.overlay!.code}${d.overlay!.name ? ` — ${d.overlay!.name}` : ""}`).join("; ")),
+        value: bi(overlays.map((o) => o.code).join(" · ")),
+        detail: bi(overlays.map((o) => `${o.code}${o.name ? ` — ${o.name}` : ""}${o.resolution ? ` (${o.resolution}${o.effective ? `, ${o.effective}` : ""})` : ""}`).join("; ")),
         state: "sourced", tone: "attention", scope: zParcel.scope,
         sources: [{ name: zParcel.source.name, url: zParcel.source.url, dataset_date: null, version: null }],
         looked_up_at: parcel!.retrieved_at, key: false,
@@ -289,31 +324,55 @@ export function buildPropertyReport(input: {
     looked_up_at: at(lc),
     key: false,
   });
-  // No verified PUT / municipal plan datasets are wired yet: say so.
-  add({
-    id: "put", group: "land",
-    title: bi("PUT classification (Plan de Uso de Terrenos)", "Clasificación del PUT (Plan de Uso de Terrenos)"),
-    value: null,
-    detail: bi("Not verified — SmartPR does not yet read the PUT dataset.", "No verificado — SmartPR aún no lee el conjunto de datos del PUT."),
-    state: "not_performed", tone: "unknown", scope: "parcel", sources: [], looked_up_at: null, key: false,
-  });
-  add({
-    id: "municipal_plan", group: "land",
-    title: bi("Municipal plan (Plan Territorial)", "Plan Territorial municipal"),
-    value: null,
-    detail: bi(`Not verified — check whether ${site.municipality.name} has an autonomous-municipality plan that governs this site.`, `No verificado — confirme si ${site.municipality.name} tiene un plan de municipio autónomo que rige este lugar.`),
-    state: "not_performed", tone: "unknown", scope: "municipality", sources: [], looked_up_at: null, key: false,
-  });
-  add({
-    id: "permitted_uses", group: "land",
-    title: bi("Permitted uses, conditions & exceptions", "Usos permitidos, condiciones y excepciones"),
-    value: null,
-    detail: bi(
-      "Not explained yet: SmartPR only explains permitted uses after confirming the regulation version in force for the districts above. Uses are evaluated against official rules, not inferred from a code.",
-      "Aún no se explican: SmartPR solo explica los usos permitidos después de confirmar la versión vigente del reglamento para los distritos anteriores. Los usos se evalúan según las reglas oficiales, no se infieren de un código."
-    ),
-    state: "not_performed", tone: "unknown", scope: "parcel", sources: [RC_2023], looked_up_at: null, key: false,
-  });
+  // PUT, municipal plan, permitted uses — from authoritative layers / the land-use engine.
+  const ex = parcel?.extras ?? {};
+  const extraFinding = (e: ExtraFinding | undefined, id: string, group: ReportGroup, title: Bi, fallback: Bi, valueOf?: (e: ExtraFinding) => Bi | null, tone: ReportTone = "info", key = false) => {
+    if (!e) {
+      add({ id, group, title, value: null, detail: input.parcelLoading ? null : fallback, state: input.parcelLoading ? "loading" : "unavailable", tone: "unknown", scope: "parcel", sources: [], looked_up_at: null, key });
+      return;
+    }
+    const st: ReportFindingState = e.status === "verified" ? "sourced" : e.status === "no_mapped" ? "none_mapped" : "unavailable";
+    add({
+      id, group, title,
+      value: st === "sourced" ? (valueOf ? valueOf(e) : bi(e.value ?? e.items.join(", "))) : st === "none_mapped" ? bi("No mapped constraint", "Sin restricción mapeada") : null,
+      detail: st === "sourced" && e.items.length > 1 ? bi(e.items.join("; ")) : st === "unavailable" ? bi(`The source did not answer (${e.reason ?? "error"}).`, `La fuente no respondió (${e.reason ?? "error"}).`) : null,
+      state: st,
+      tone: st === "sourced" ? tone : st === "none_mapped" ? "ok" : "unknown",
+      scope: e.scope === "municipality" ? "municipality" : e.scope,
+      sources: [{ name: e.source.name, url: e.source.url, dataset_date: e.source.dataset_date, version: e.source.layer }],
+      looked_up_at: e.retrieved_at,
+      key,
+    });
+  };
+  extraFinding(ex.put, "put", "land", bi("PUT classification (Plan de Uso de Terrenos)", "Clasificación del PUT (Plan de Uso de Terrenos)"),
+    bi("Unable to verify — the PUT layer was not checked for this parcel.", "No se pudo verificar — no se consultó la capa del PUT para esta parcela."),
+    (e) => bi(`${e.value}${e.attributes.resolution ? ` (${e.attributes.resolution}${e.attributes.effective ? `, effective ${e.attributes.effective}` : ""})` : ""}`, `${e.value}${e.attributes.resolution ? ` (${e.attributes.resolution}${e.attributes.effective ? `, vigente ${e.attributes.effective}` : ""})` : ""}`));
+  extraFinding(ex.plan_territorial, "municipal_plan", "land", bi("Municipal plan (Plan Territorial)", "Plan Territorial municipal"),
+    bi(`Unable to verify whether ${site.municipality.name} has an approved Plan Territorial.`, `No se pudo verificar si ${site.municipality.name} tiene un Plan Territorial aprobado.`),
+    (e) => bi(`${e.value}${e.attributes.review_status ? ` · ${e.attributes.review_status}` : ""}`), "info");
+  const lu = input.landUse ?? null;
+  if (lu && lu.activity.use) {
+    const c = lu.compatibility;
+    add({
+      id: "permitted_uses", group: "land",
+      title: bi("Permitted uses, conditions & exceptions", "Usos permitidos, condiciones y excepciones"),
+      value: bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].en}`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].es}`),
+      detail: bi([...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")),
+      state: lu.districts.some((d) => d.permissionId && !d.sliver) ? "sourced" : "review",
+      tone: c.baseOutcome === "permitted" ? "ok" : c.baseOutcome === "conditional" || c.baseOutcome === "discretionary" ? "attention" : c.baseOutcome === "potentially_prohibited" ? "hazard" : "unknown",
+      scope: "parcel",
+      sources: lu.districts.flatMap((d) => d.sources).map((x) => ({ name: x.name, url: x.url, dataset_date: null, version: x.citation || null })),
+      looked_up_at: parcel?.retrieved_at ?? null, key: false,
+    });
+  } else {
+    add({
+      id: "permitted_uses", group: "land",
+      title: bi("Permitted uses, conditions & exceptions", "Usos permitidos, condiciones y excepciones"),
+      value: null,
+      detail: bi("Describe what you want to do with this property to evaluate it against the district's use table.", "Describe lo que quieres hacer con esta propiedad para evaluarlo según la tabla de usos del distrito."),
+      state: "not_applicable", tone: "unknown", scope: "parcel", sources: [RC_2023], looked_up_at: null, key: false,
+    });
+  }
 
   // ---- Flood & water --------------------------------------------------------
   const fz = layer("flood_zone");
@@ -321,7 +380,14 @@ export function buildPropertyReport(input: {
   const fParcel = parcel?.flood;
   const parcelZones = fParcel?.status === "sourced" ? fParcel.zones : [];
   const sfha = parcelZones.some((z) => z.sfha) || !!fm?.sfha;
-  const floodValue = parcelZones.length ? parcelZones.map((z) => z.zone).join(" · ") : fm ? fm.zone : null;
+  const floodReliable = parcel?.areas_reliable?.flood === true;
+  const fpct = (x: number | null | undefined) => (x === null || x === undefined ? "" : x < 0.01 ? "<1%" : `${Math.round(x * 1000) / 10}%`);
+  const floodValue = parcelZones.length ? parcelZones.map((z) => `${z.zone}${floodReliable && z.share != null ? ` ${fpct(z.share)}` : ""}`).join(" · ") : fm ? fm.zone : null;
+  const floodShares = parcelZones.length > 1
+    ? floodReliable
+      ? bi(parcelZones.map((z) => `Zone ${z.zone}: ${z.area_m2?.toLocaleString("en-US")} m² (${fpct(z.share)} of the parcel)`).join("; ") + ". ", parcelZones.map((z) => `Zona ${z.zone}: ${z.area_m2?.toLocaleString("en-US")} m² (${fpct(z.share)} de la parcela)`).join("; ") + ". ")
+      : bi("The parcel intersects several flood zones; areas could not be calculated reliably. ", "La parcela intersecta varias zonas inundables; no se pudieron calcular las áreas con confiabilidad. ")
+    : bi("", "");
   add({
     id: "flood_zone",
     group: "flood",
@@ -329,7 +395,7 @@ export function buildPropertyReport(input: {
     value: floodValue ? bi(`Zone ${floodValue}`, `Zona ${floodValue}`) : null,
     detail: floodValue
       ? sfha
-        ? bi("Special Flood Hazard Area mapped on this site.", "Área Especial de Riesgo a Inundación mapeada en este lugar.")
+        ? bi(`${floodShares.en}A Special Flood Hazard Area is mapped on part of this parcel.`, `${floodShares.es}Hay un Área Especial de Riesgo a Inundación mapeada en parte de esta parcela.`)
         : bi(`${parcelZones.length > 1 ? "Several zones mapped on the parcel. " : ""}Minimal or moderate mapped flood hazard. This does not mean zero flood risk or project approval.`,
              `${parcelZones.length > 1 ? "Varias zonas mapeadas en la parcela. " : ""}Riesgo de inundación mapeado mínimo o moderado. No significa riesgo cero ni aprobación del proyecto.`)
       : null,
@@ -394,14 +460,21 @@ export function buildPropertyReport(input: {
     (r) => bi(r.code ?? "", ({ Low: "Baja", Moderate: "Moderada", High: "Alta", "Very High": "Muy alta", "Extremely High": "Extremadamente alta" } as Record<string, string>)[r.code ?? ""] ?? r.code ?? ""),
     bi("Not mapped", "No mapeada"), true);
   env("coastal_zone", bi("Coastal zone", "Zona costanera"), "attention", (r) => bi(r.approximate ? "Inside (approximate)" : "Inside the coastal zone", r.approximate ? "Dentro (aproximado)" : "Dentro de la zona costanera"), bi("Outside the mapped boundary", "Fuera del límite mapeado"), true);
-  env("historic_zone", bi("Historic zone", "Zona histórica"), "attention", (r) => bi(r.name ?? "Inside a historic zone", r.name ?? "Dentro de una zona histórica"), bi("None mapped at the pin", "Ninguna mapeada en el pin"));
-  env("protected_area", bi("Protected natural area", "Área natural protegida"), "hazard", (r) => bi(r.name ?? "Inside a protected area", r.name ?? "Dentro de un área protegida"), bi("None mapped at the pin", "Ninguna mapeada en el pin"));
-  add({
-    id: "soils", group: "environment",
-    title: bi("Soils", "Suelos"), value: null,
-    detail: bi("Not checked — no soils source is connected yet.", "No verificado — aún no hay una fuente de suelos conectada."),
-    state: "not_performed", tone: "unknown", scope: "parcel", sources: [], looked_up_at: null, key: false,
-  });
+  // Historic / protected: the whole-parcel MIPR / JP layers answer even when
+  // the older point layers hang; the point layer is the fallback.
+  const pointUsable = (id: SiteLayerId) => { const r = layer(id); return r && r.status !== "unknown"; };
+  if (ex.historic_zone || !pointUsable("historic_zone")) {
+    extraFinding(ex.historic_zone, "historic_zone", "environment", bi("Historic zone", "Zona histórica"), bi("Unable to verify — the historic-zone source did not answer.", "No se pudo verificar — la fuente de zonas históricas no respondió."), undefined, "attention");
+  } else env("historic_zone", bi("Historic zone", "Zona histórica"), "attention", (r) => bi(r.name ?? "Inside a historic zone", r.name ?? "Dentro de una zona histórica"), bi("No mapped constraint at the pin", "Sin restricción mapeada en el pin"));
+  extraFinding(ex.historic_site, "historic_site", "environment", bi("Historic sites (JP)", "Sitios históricos (JP)"), bi("Unable to verify — the historic-sites source did not answer.", "No se pudo verificar — la fuente de sitios históricos no respondió."), undefined, "attention");
+  extraFinding(ex.archaeology, "archaeology", "environment", bi("Archaeological sensitivity", "Sensibilidad arqueológica"), bi("Unable to verify — the archaeology source did not answer.", "No se pudo verificar — la fuente de arqueología no respondió."), undefined, "attention");
+  if (ex.protected_area || !pointUsable("protected_area")) {
+    extraFinding(ex.protected_area, "protected_area", "environment", bi("Protected natural area", "Área natural protegida"), bi("Unable to verify — the protected-areas source did not answer.", "No se pudo verificar — la fuente de áreas protegidas no respondió."), undefined, "hazard");
+  } else env("protected_area", bi("Protected natural area", "Área natural protegida"), "hazard", (r) => bi(r.name ?? "Inside a protected area", r.name ?? "Dentro de un área protegida"), bi("No mapped constraint at the pin", "Sin restricción mapeada en el pin"));
+  extraFinding(ex.natural_reserve, "natural_reserve", "environment", bi("Natural reserve (JP)", "Reserva natural (JP)"), bi("Unable to verify — the natural-reserves source did not answer.", "No se pudo verificar — la fuente de reservas naturales no respondió."), undefined, "hazard");
+  extraFinding(ex.wetlands, "wetlands", "environment", bi("Wetlands & waters (mapped)", "Humedales y cuerpos de agua (mapeados)"), bi("Unable to verify — the wetlands source did not answer.", "No se pudo verificar — la fuente de humedales no respondió."), undefined, "attention");
+  extraFinding(ex.soils, "soils", "environment", bi("Soils (USDA soil survey)", "Suelos (catastro de suelos USDA)"), bi("Unable to verify — the soils source did not answer.", "No se pudo verificar — la fuente de suelos no respondió."),
+    (e) => bi(`${e.value}${e.attributes.drainage_class ? ` · ${e.attributes.drainage_class}` : ""}${e.attributes.hydric_rating === "Yes" ? " · hydric" : ""}`), "info");
 
   // ---- Property -----------------------------------------------------------
   const addr = siteAddressParts(site);
@@ -439,7 +512,8 @@ export function buildPropertyReport(input: {
   };
   const zf = findings.find((f) => f.id === "zoning");
   if (zf && zf.state === "sourced") {
-    const ds = zParcel?.status === "sourced" ? zParcel.districts : zPoint ? [{ code: zPoint.code ?? "", name: zPoint.name, family: zPoint.tags[0] ?? null }] : [];
+    // Edge slivers (< 2% of the parcel) never define what the parcel "is".
+    const ds = zParcel?.status === "sourced" ? zParcel.districts.filter((d) => !(parcel?.areas_reliable?.zoning && (d.share ?? 1) < 0.02)) : zPoint ? [{ code: zPoint.code ?? "", name: zPoint.name, family: zPoint.tags[0] ?? null }] : [];
     const fams = [...new Set(ds.map((d) => d.family).filter((x): x is string => !!x && !!FAMILY_TEXT[x]))];
     const named = ds.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}`).join(", ");
     const famText = (l: "en" | "es") => fams.map((f) => FAMILY_TEXT[f]![l]).join(l === "es" ? " y " : " and ");
@@ -662,6 +736,9 @@ export function buildPropertyReport(input: {
     },
     findings,
     ai_explanations: [],
+    land_use: lu,
+    flags: regulatoryFlags(findings, lu),
+    complexity: lu?.complexity ?? null,
     next_steps: { activity, missing, unresolved, steps, location_requirements: context.locationRequirements },
     sources,
     disclaimer: bi("Reference information from official map sources, not a survey or a permit decision. No permission or approval is implied.", "Información de referencia de fuentes cartográficas oficiales; no es una mensura ni una decisión de permiso. No implica permiso ni aprobación."),
@@ -683,8 +760,19 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     `${L("Coordinates", "Coordenadas")}: ${r.property.latitude.toFixed(6)}, ${r.property.longitude.toFixed(6)}`,
     `${L("Catastro", "Catastro")}: ${r.property.catastro.value ?? t(STATE_TEXT[r.property.catastro.state])}`,
     ...(r.property.boundary.area_m2 ? [`${L("Approximate area", "Área aproximada")}: ${r.property.boundary.area_m2.toLocaleString("en-US")} m² (${L("mapped boundary, not a survey", "límite mapeado, no mensura")})`] : []),
+    ...(r.flags?.length ? ["", L("REGULATORY FLAGS", "ALERTAS REGULATORIAS"), ...r.flags.map((x) => `• ${t(x.label)}: ${t(x.value)}`)] : []),
+    ...(r.land_use?.activity.use ? [
+      "",
+      `${L("PROPOSED ACTIVITY", "ACTIVIDAD PROPUESTA")}: ${r.land_use.activity.raw}`,
+      `${L("Land-use compatibility", "Compatibilidad de uso")}: ${t(COMPATIBILITY_TEXT[r.land_use.compatibility.outcome])} (${L("confidence", "confianza")} ${r.land_use.compatibility.confidence})`,
+      ...r.land_use.compatibility.reasons.map((x) => `  - ${x}`),
+      L("Required approvals", "Aprobaciones requeridas") + ":",
+      ...r.land_use.approvals.map((a) => `  - ${a.name} [${a.status === "confirmed" ? L("required", "requerido") : a.status === "likely" ? L("likely", "probable") : L("professional review", "revisión profesional")}] — ${a.trigger}${a.citation ? ` (${a.citation})` : ""}`),
+      ...(r.land_use.evidence.length ? [L("Likely evidence", "Evidencia probable") + ":", ...r.land_use.evidence.map((e) => `  - ${e}`)] : []),
+      ...(r.land_use.unresolved.length ? [L("Unresolved", "Sin resolver") + ":", ...r.land_use.unresolved.map((u) => `  - ${u.text}`)] : []),
+    ] : []),
     "",
-    ...r.findings.map((f) => `• ${f.constraint === "protection" ? L("[PROTECTION] ", "[PROTECCIÓN] ") : f.constraint === "documentation" ? L("[REVIEW/DOCS] ", "[REVISIÓN/DOCS] ") : ""}${t(f.title)}: ${f.value ? t(f.value) : t(STATE_TEXT[f.state])}${f.scope === "parcel" ? L(" (whole parcel)", " (toda la parcela)") : f.scope === "point" ? L(" (at the pin)", " (en el pin)") : ""}`),
+    ...r.findings.map((f) => `• ${f.constraint === "protection" ? L("[PROTECTION] ", "[PROTECCIÓN] ") : f.constraint === "documentation" ? L("[REVIEW/DOCS] ", "[REVISIÓN/DOCS] ") : ""}${t(f.title)}: ${f.value ? t(f.value) : t(STATE_TEXT[f.state])}${f.scope === "parcel" ? L(" (checked across the parcel)", " (verificado en toda la parcela)") : f.scope === "point" ? L(" (at the pin)", " (en el pin)") : ""}`),
     "",
     L("Next steps", "Próximos pasos") + ":",
     ...r.next_steps.steps.map((s) => `- ${t(s.text)} [${s.sources.map((x) => x.name).join("; ")}]`),
@@ -709,4 +797,48 @@ export function restorePropertyReport(raw: unknown): PropertyReport | null {
   const r = raw as PropertyReport;
   if (r.schema !== "smartpr.property-report/v1" || !r.property || !Array.isArray(r.findings)) return null;
   return r;
+}
+
+
+// ---------------------------------------------------------------------------
+// Regulatory Flags — compact summary cards for the top of the report
+// ---------------------------------------------------------------------------
+
+export function regulatoryFlags(findings: ReportFinding[], lu: LandUseAnalysis | null): NonNullable<PropertyReport["flags"]> {
+  const f = (id: string) => findings.find((x) => x.id === id);
+  const flag = (id: string, label: Bi, src: ReportFinding | undefined, valueOf?: (x: ReportFinding) => Bi | null) => {
+    const st = src ? findingStatus(src.state) : "unable_to_verify";
+    const v = src && valueOf ? valueOf(src) : src?.value ?? null;
+    return { id, label, value: v ?? STATUS_TEXT[st], tone: src && (src.state === "sourced" || src.state === "none_mapped") ? src.tone : "unknown" as ReportTone, status: st };
+  };
+  const out: NonNullable<PropertyReport["flags"]> = [
+    flag("zoning", bi("Zoning", "Calificación"), f("zoning")),
+    flag("land_class", bi("Land classification", "Clasificación del suelo"), f("put")?.state === "sourced" ? f("put") : f("land_class")),
+  ];
+  if (lu?.activity.use) {
+    const o = lu.compatibility.outcome;
+    out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: COMPATIBILITY_TEXT[o], tone: o === "permitted" ? "ok" : o === "conditional" ? "attention" : o === "potentially_prohibited" ? "hazard" : o === "insufficient" ? "unknown" : "attention", status: o === "insufficient" ? "unable_to_verify" : o === "professional_review" ? "requires_professional_review" : "verified" });
+  } else {
+    out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: bi("Describe the proposed activity", "Describe la actividad propuesta"), tone: "unknown", status: "not_applicable" });
+  }
+  const fl = f("flood_zone");
+  const sfha = fl?.tone === "hazard";
+  out.push({ id: "flood", label: bi("Flood risk", "Riesgo de inundación"), value: !fl || fl.state !== "sourced" ? STATUS_TEXT[findingStatus(fl?.state ?? "unavailable")] : sfha ? bi("Review required", "Requiere revisión") : fl.pill ?? bi("Low", "Bajo"), tone: !fl || fl.state !== "sourced" ? "unknown" : sfha ? "hazard" : "ok", status: fl ? findingStatus(fl.state) : "unable_to_verify" });
+  const cz = f("coastal_zone");
+  out.push(flag("coastal", bi("Coastal zone", "Zona costanera"), cz, (x) => (x.state === "sourced" ? bi("Inside coastal zone", "Dentro de la zona costanera") : x.state === "none_mapped" ? bi("Outside", "Fuera") : null)));
+  const env = ["protected_area", "natural_reserve", "wetlands", "zoning_overlay", "floodway"].map(f).filter((x): x is ReportFinding => !!x);
+  const envHit = env.filter((x) => x.state === "sourced" && x.id !== "floodway" || (x.id === "floodway" && x.state === "sourced" && x.tone === "hazard"));
+  const envUnable = env.some((x) => x.state === "unavailable" || x.state === "stale");
+  out.push({ id: "environmental", label: bi("Environmental constraints", "Restricciones ambientales"),
+    value: envHit.length ? bi(`Review required (${envHit.map((x) => x.title.en.split(" (")[0]).join(", ")})`, `Requiere revisión (${envHit.map((x) => x.title.es.split(" (")[0]).join(", ")})`) : envUnable ? STATUS_TEXT.unable_to_verify : STATUS_TEXT.no_mapped_constraint,
+    tone: envHit.length ? "attention" : envUnable ? "unknown" : "ok", status: envHit.length ? "requires_professional_review" : envUnable ? "unable_to_verify" : "no_mapped_constraint" });
+  const hz = [f("historic_zone"), f("historic_site"), f("archaeology")].filter((x): x is ReportFinding => !!x);
+  const hHit = hz.filter((x) => x.state === "sourced");
+  const hUnable = hz.some((x) => x.state === "unavailable" || x.state === "stale");
+  out.push({ id: "historic", label: bi("Historic & archaeological", "Histórico y arqueológico"), value: hHit.length ? bi("Review required", "Requiere revisión") : hUnable ? STATUS_TEXT.unable_to_verify : STATUS_TEXT.no_mapped_constraint, tone: hHit.length ? "attention" : hUnable ? "unknown" : "ok", status: hHit.length ? "requires_professional_review" : hUnable ? "unable_to_verify" : "no_mapped_constraint" });
+  if (lu) {
+    const c = lu.complexity;
+    out.push({ id: "complexity", label: bi("Overall regulatory complexity", "Complejidad regulatoria general"), value: bi(c.level === "high" ? "High" : c.level === "moderate" ? "Moderate" : "Low", c.level === "high" ? "Alta" : c.level === "moderate" ? "Moderada" : "Baja"), tone: c.level === "high" ? "hazard" : c.level === "moderate" ? "attention" : "ok", status: "verified" });
+  }
+  return out;
 }

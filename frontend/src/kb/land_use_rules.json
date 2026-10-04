@@ -1,0 +1,948 @@
+{
+ "zoning_districts": [
+  {
+   "id": "ZD_CT",
+   "code": "C-T",
+   "name": "Comercial Turístico",
+   "family": "commercial",
+   "aliases": [
+    "CT",
+    "C-T",
+    "CT-1",
+    "CT-2",
+    "CT-3"
+   ],
+   "governing_instrument": "Reglamento Conjunto 2023, Regla 6.1.12",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Regla 6.1.12 (pp. 404–409); equivalencias San Juan: Sección 6.1.1.4, Tabla 6.14",
+   "equivalence_note": "RC 2023 Tabla 6.14 maps San Juan POT CT-1/CT-2/CT-3 to C-T. A parcel mapped as 'CT' is read as C-T; confirm the municipal map conversion.",
+   "equivalence_confidence": "medium",
+   "last_verified_at": "2026-10-04"
+  }
+ ],
+ "land_uses": [
+  {
+   "id": "LU_HOTEL",
+   "name": "Hotel / lodging",
+   "category": "hospederia",
+   "aliases": [
+    "hotel",
+    "inn",
+    "hostel",
+    "guest house",
+    "guesthouse",
+    "parador",
+    "condo-hotel",
+    "condo hotel",
+    "bed and breakfast",
+    "b&b",
+    "hospedería",
+    "hospederia",
+    "hostal",
+    "villa turística"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_MULTIFAMILY",
+   "name": "Multifamily residential (apartments)",
+   "category": "residencial",
+   "aliases": [
+    "apartment",
+    "apartments",
+    "multifamily",
+    "multi-family",
+    "condominium",
+    "condo",
+    "residential development",
+    "walk-up",
+    "apartamentos",
+    "casa de apartamentos",
+    "vivienda multifamiliar"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_SINGLE_FAMILY",
+   "name": "Single-family dwelling",
+   "category": "residencial",
+   "aliases": [
+    "single-family",
+    "single family",
+    "house",
+    "home",
+    "casa",
+    "vivienda unifamiliar"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_RESTAURANT",
+   "name": "Restaurant",
+   "category": "comercio",
+   "aliases": [
+    "restaurant",
+    "restaurante",
+    "cafe",
+    "café",
+    "cafeteria",
+    "bistro",
+    "food service",
+    "bar and grill",
+    "pizzeria",
+    "panadería",
+    "bakery"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_RETAIL",
+   "name": "Retail store",
+   "category": "comercio",
+   "aliases": [
+    "retail",
+    "store",
+    "shop",
+    "tienda",
+    "boutique",
+    "venta al detal",
+    "pharmacy",
+    "farmacia"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_OFFICE",
+   "name": "Professional offices",
+   "category": "servicios",
+   "aliases": [
+    "office",
+    "offices",
+    "oficina",
+    "oficinas",
+    "professional office",
+    "coworking",
+    "co-working"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_WAREHOUSE",
+   "name": "Warehouse / storage",
+   "category": "industrial",
+   "aliases": [
+    "warehouse",
+    "storage",
+    "almacén",
+    "almacen",
+    "distribution center",
+    "distribution centre",
+    "logistics"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_SOLAR_UTILITY",
+   "name": "Utility-scale solar (principal use)",
+   "category": "infraestructura",
+   "aliases": [
+    "utility-scale solar",
+    "utility scale solar",
+    "solar farm",
+    "solar plant",
+    "photovoltaic plant",
+    "solar project",
+    "solar installation",
+    "fotovoltaica",
+    "planta solar",
+    "solar"
+   ],
+   "construction_default": "new"
+  },
+  {
+   "id": "LU_DAYCARE",
+   "name": "Daycare / child-care center",
+   "category": "servicios",
+   "aliases": [
+    "daycare",
+    "day care",
+    "child care",
+    "childcare",
+    "centro de cuido",
+    "cuido",
+    "guardería",
+    "preschool"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_NIGHTCLUB",
+   "name": "Nightclub / night entertainment",
+   "category": "entretenimiento",
+   "aliases": [
+    "nightclub",
+    "night club",
+    "discoteca",
+    "disco",
+    "club nocturno",
+    "theater",
+    "teatro"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_SUBDIVISION",
+   "name": "Subdivision (segregación / lotificación)",
+   "category": "subdivision",
+   "aliases": [
+    "subdivide",
+    "subdivision",
+    "segregate",
+    "segregación",
+    "segregacion",
+    "lotificación",
+    "lotificacion",
+    "split the lot"
+   ],
+   "construction_default": "none"
+  },
+  {
+   "id": "LU_DEMOLITION",
+   "name": "Demolition",
+   "category": "demolition",
+   "aliases": [
+    "demolish",
+    "demolition",
+    "demoler",
+    "demolición",
+    "tear down"
+   ],
+   "construction_default": "demolition"
+  }
+ ],
+ "use_permissions": [
+  {
+   "id": "UP_CT_HOTEL",
+   "name": "Hotel in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_HOTEL",
+   "outcome": "conditional",
+   "conditions": [
+    "Lodging uses are allowed above the second level (Sección 6.1.12.2(c)); the first two levels are for commercial/service uses (6.1.12.2(b)).",
+    "Apartment and lodging projects follow Sección 6.1.1.6 (density).",
+    "Hotel common areas do not count toward gross floor area (Tabla 6.58)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.2(c); Tabla 6.57 (Hospederías: Hotel)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_MULTIFAMILY",
+   "name": "Multifamily in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_MULTIFAMILY",
+   "outcome": "conditional",
+   "conditions": [
+    "Residential uses are allowed above the second level (Sección 6.1.12.2(c)).",
+    "Density: one basic dwelling unit per 100 m² of lot (C-T Liviano) or per 70 m² (C-T Intermedio) — Tabla 6.58.",
+    "Residential uses need street access and parking independent of the commercial uses (Tabla 6.58)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.2(c); Tabla 6.57 (Residencial: Casa de apartamento); Tabla 6.58 (Densidad)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_SINGLE_FAMILY",
+   "name": "Single Family in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_SINGLE_FAMILY",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.57 (Residencial: Vivienda para una familia)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_RESTAURANT",
+   "name": "Restaurant in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_RESTAURANT",
+   "outcome": "permitted",
+   "conditions": [
+    "Commercial and service uses are allowed in the first two levels (Sección 6.1.12.2(b))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.2(b); Tabla 6.57 (Comercio: Restaurantes)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_RETAIL",
+   "name": "Retail in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_RETAIL",
+   "outcome": "permitted",
+   "conditions": [
+    "Commercial and service uses are allowed in the first two levels (Sección 6.1.12.2(b))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.2(b); Tabla 6.57 (Comercio: Venta al detal)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_OFFICE",
+   "name": "Office in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_OFFICE",
+   "outcome": "permitted",
+   "conditions": [
+    "Commercial and service uses are allowed in the first two levels (Sección 6.1.12.2(b))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.2(b); Tabla 6.57 (Servicios: Oficinas profesionales)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_DAYCARE",
+   "name": "Daycare in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_DAYCARE",
+   "outcome": "permitted",
+   "conditions": [
+    "Commercial and service uses are allowed in the first two levels (Sección 6.1.12.2(b))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.2(b); Tabla 6.57 (Servicios: Centros de cuido)",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_NIGHTCLUB",
+   "name": "Nightclub in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_NIGHTCLUB",
+   "outcome": "exception",
+   "conditions": [
+    "Allowed only by exception (uso vía excepción); a public hearing is required before authorization."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.12.3(a) (Usos vía excepción)",
+   "table": "6.1.12.3",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_WAREHOUSE",
+   "name": "Warehouse in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_WAREHOUSE",
+   "outcome": "not_listed",
+   "conditions": [
+    "Warehouse/storage is not listed among the uses permitted in C-T (Tabla 6.57) nor among the uses by exception (Sección 6.1.12.3)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.57; Sección 6.1.12.3",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": "Not listed ≠ automatically prohibited in every case: a consulta de ubicación or variance may be the only path, and approval is not assured."
+  },
+  {
+   "id": "UP_CT_SOLAR_UTILITY",
+   "name": "Solar Utility in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_SOLAR_UTILITY",
+   "outcome": "not_listed",
+   "conditions": [
+    "A utility-scale solar plant as the principal use is not listed in C-T (Tabla 6.57) nor by exception (Sección 6.1.12.3).",
+    "Rooftop or accessory solar serving a permitted use is a different question and is not evaluated here."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.57; Sección 6.1.12.3",
+   "table": "6.57",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  }
+ ],
+ "development_standards": [
+  {
+   "id": "DS_CT_LOT",
+   "zoning_district_id": "ZD_CT",
+   "name": "Minimum lot size",
+   "value": "450 m² (C-T Liviano) · 1,000 m² (C-T Intermedio)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_CT_WIDTH",
+   "zoning_district_id": "ZD_CT",
+   "name": "Minimum lot width",
+   "value": "15 m (Liviano) · 20 m (Intermedio)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_CT_OCC",
+   "zoning_district_id": "ZD_CT",
+   "name": "Maximum lot occupancy",
+   "value": "75% (Liviano) · 75% interior / 85% corner lots (Intermedio)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_CT_FAR",
+   "zoning_district_id": "ZD_CT",
+   "name": "Maximum gross floor area",
+   "value": "300% interior / 340% corner (Liviano) · 500% interior / 560% corner (Intermedio); hotel common areas excluded",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_CT_DENSITY",
+   "zoning_district_id": "ZD_CT",
+   "name": "Residential density",
+   "value": "1 dwelling unit per 100 m² of lot (Liviano) · per 70 m² (Intermedio); apartments/lodging per Sección 6.1.1.6",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "residential"
+  },
+  {
+   "id": "DS_CT_FRONT",
+   "zoning_district_id": "ZD_CT",
+   "name": "Front yard",
+   "value": "2–3 m paved like the sidewalk (Liviano) · 3–4 m; new construction replaces it with a 5–7 m high gallery (Intermedio)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_CT_REAR",
+   "zoning_district_id": "ZD_CT",
+   "name": "Rear yard",
+   "value": "≥ 3 m (Liviano) · ≥ 3 m and ≥ 1/5 of building height (Intermedio)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.58",
+   "applies_to": "new_construction"
+  }
+ ],
+ "site_rules": [
+  {
+   "id": "SR_FLOOD_SFHA_CONSTRUCTION",
+   "name": "Construction intersecting a FEMA Special Flood Hazard Area",
+   "when": {
+    "all": [
+     {
+      "fact": "flood.sfha_on_parcel",
+      "op": "truthy"
+     },
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement"
+      ]
+     }
+    ]
+   },
+   "approval_document_id": "DOC_JP_FLOOD_REG13",
+   "agency": "OGPe / Junta de Planificación",
+   "certainty_full": "confirmed",
+   "certainty_partial": "likely",
+   "evidence": [
+    "Elevation Certificate (FEMA Form FF-206-FY-22-152)",
+    "Flood-resistant design per Reglamento de Planificación Núm. 13",
+    "V-zone design certification by a registered engineer or architect (44 CFR 60.3(e)(4)) when the work is in a coastal high-hazard Zone V/VE"
+   ],
+   "source_ids": [
+    "SRC_JP_REG13",
+    "SRC_44CFR60_3"
+   ],
+   "citation_section": "RP-13 (Octava Revisión, 2021); 44 CFR §60.3(c), (e)",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_FLOODWAY",
+   "name": "Work in a regulatory floodway",
+   "when": {
+    "all": [
+     {
+      "fact": "flood.floodway_on_parcel",
+      "op": "truthy"
+     },
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement"
+      ]
+     }
+    ]
+   },
+   "approval_document_id": "DOC_JP_FLOOD_REG13",
+   "agency": "OGPe / Junta de Planificación",
+   "certainty_full": "confirmed",
+   "certainty_partial": "likely",
+   "evidence": [
+    "No-rise (encroachment) hydraulic analysis by a licensed engineer"
+   ],
+   "source_ids": [
+    "SRC_JP_REG13",
+    "SRC_44CFR60_3"
+   ],
+   "citation_section": "44 CFR §60.3(d)(3); RP-13",
+   "constraint": "protection"
+  },
+  {
+   "id": "SR_COASTAL_ZONE",
+   "name": "Development inside the coastal zone",
+   "when": {
+    "all": [
+     {
+      "fact": "coastal.inside",
+      "op": "truthy"
+     },
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement",
+       "demolition"
+      ]
+     }
+    ]
+   },
+   "approval_document_id": null,
+   "agency": "Junta de Planificación / DRNA",
+   "certainty_full": "review",
+   "certainty_partial": "review",
+   "evidence": [
+    "Coastal-zone consistency information for the reviewing agency",
+    "Federal consistency certification if a federal permit or funding is involved (15 CFR §930.57)"
+   ],
+   "source_ids": [
+    "SRC_PMZC",
+    "SRC_CZMA_15CFR930_57"
+   ],
+   "citation_section": "Programa de Manejo de la Zona Costanera; 15 CFR §930.57",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_KARST_APE",
+   "name": "Karst special planning area overlay (APE-ZC)",
+   "when": {
+    "all": [
+     {
+      "fact": "overlay.codes",
+      "op": "includes",
+      "value": "APE-ZC"
+     }
+    ]
+   },
+   "approval_document_id": null,
+   "agency": "Junta de Planificación / DRNA",
+   "certainty_full": "review",
+   "certainty_partial": "review",
+   "evidence": [
+    "Review against the Plan y Reglamento del Área de Planificación Especial de la Zona Cársica (Res. JP-CARSO)"
+   ],
+   "source_ids": [
+    "SRC_JP_CARSO_2014",
+    "SRC_LAW_292_1999"
+   ],
+   "citation_section": "Res. JP-CARSO (vigencia 4-jul-2014); Ley 292-1999; RC 2023 Sección 6.1.1.1(b),(e) (special plans prevail; the most protective rule applies)",
+   "constraint": "protection"
+  },
+  {
+   "id": "SR_WETLANDS_FILL",
+   "name": "Work that may place fill in mapped wetlands / waters",
+   "when": {
+    "all": [
+     {
+      "fact": "wetlands.on_parcel",
+      "op": "truthy"
+     },
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement",
+       "demolition"
+      ]
+     }
+    ]
+   },
+   "approval_document_id": null,
+   "agency": "U.S. Army Corps of Engineers / DRNA",
+   "certainty_full": "review",
+   "certainty_partial": "review",
+   "evidence": [
+    "Wetland delineation by a qualified professional",
+    "Section 404 permit or a no-permit determination (USACE)"
+   ],
+   "source_ids": [
+    "SRC_USACE_33CFR323_3"
+   ],
+   "citation_section": "33 CFR §323.3",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_PROTECTED_AREA",
+   "name": "Activity inside a mapped protected natural area or reserve",
+   "when": {
+    "any": [
+     {
+      "fact": "protected.on_parcel",
+      "op": "truthy"
+     },
+     {
+      "fact": "reserve.on_parcel",
+      "op": "truthy"
+     }
+    ]
+   },
+   "approval_document_id": "DOC_CONSULTA_UBICACION",
+   "agency": "DRNA / Junta de Planificación",
+   "certainty_full": "review",
+   "certainty_partial": "review",
+   "evidence": [
+    "Written position of the managing agency (DRNA) on the designation"
+   ],
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_416_2004"
+   ],
+   "citation_section": "RC 2023 Sección 6.1.1.1(e); Ley 416-2004",
+   "constraint": "protection"
+  },
+  {
+   "id": "SR_ARCHAEOLOGY",
+   "name": "Earthwork in an archaeologically sensitive area",
+   "when": {
+    "all": [
+     {
+      "fact": "archaeology.on_parcel",
+      "op": "truthy"
+     },
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "demolition"
+      ]
+     }
+    ]
+   },
+   "approval_document_id": null,
+   "agency": "Instituto de Cultura Puertorriqueña",
+   "certainty_full": "likely",
+   "certainty_partial": "likely",
+   "evidence": [
+    "ICP archaeology endorsement / Phase IA study"
+   ],
+   "source_ids": [
+    "SRC_LAW_112_1988"
+   ],
+   "citation_section": "Ley 112-1988 (Patrimonio Arqueológico Terrestre)",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_HISTORIC",
+   "name": "Work in a historic zone or on a historic site",
+   "when": {
+    "any": [
+     {
+      "fact": "historic.on_parcel",
+      "op": "truthy"
+     }
+    ]
+   },
+   "approval_document_id": null,
+   "agency": "Instituto de Cultura Puertorriqueña / Junta de Planificación",
+   "certainty_full": "review",
+   "certainty_partial": "review",
+   "evidence": [
+    "Historic-zone review / ICP endorsement before exterior or structural work"
+   ],
+   "source_ids": [],
+   "citation_section": "Historic-zone review requirements — section to confirm",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_USE_NOT_LISTED",
+   "name": "Proposed use not listed for the zoning district",
+   "when": {
+    "all": [
+     {
+      "fact": "use.outcome",
+      "op": "equals",
+      "value": "not_listed"
+     }
+    ]
+   },
+   "approval_document_id": "DOC_CONSULTA_UBICACION",
+   "agency": "OGPe / Junta de Planificación",
+   "certainty_full": "likely",
+   "certainty_partial": "likely",
+   "evidence": [
+    "Consulta de ubicación (or variance where the Reglamento Conjunto allows one) — approval not assured"
+   ],
+   "source_ids": [
+    "SRC_RC_2023",
+    "SRC_LAW_161_2009"
+   ],
+   "citation_section": "RC 2023, Capítulo de Consultas de Ubicación y Variaciones; Ley 161-2009 Art. 2.5",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_USE_EXCEPTION",
+   "name": "Use allowed only by exception",
+   "when": {
+    "all": [
+     {
+      "fact": "use.outcome",
+      "op": "equals",
+      "value": "exception"
+     }
+    ]
+   },
+   "approval_document_id": null,
+   "agency": "OGPe",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "evidence": [
+    "Exception request with public hearing (vista pública)"
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "RC 2023 Sección 6.1.12.3",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_SOLAR_INTERCONNECT",
+   "name": "Generation project interconnection",
+   "when": {
+    "all": [
+     {
+      "fact": "activity.use",
+      "op": "equals",
+      "value": "LU_SOLAR_UTILITY"
+     }
+    ]
+   },
+   "approval_document_id": "DOC_LUMA_INTERCONNECTION",
+   "agency": "LUMA Energy / Negociado de Energía",
+   "certainty_full": "likely",
+   "certainty_partial": "likely",
+   "evidence": [
+    "Interconnection application and technical studies"
+   ],
+   "source_ids": [
+    "SRC_PREPA_REG_8915"
+   ],
+   "citation_section": "Reglamento 8915 (interconexión)",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_LODGING_TOURISM",
+   "name": "Lodging operation registration",
+   "when": {
+    "all": [
+     {
+      "fact": "activity.use",
+      "op": "equals",
+      "value": "LU_HOTEL"
+     }
+    ]
+   },
+   "approval_document_id": "DOC_TOURISM_REGISTRATION",
+   "agency": "Compañía de Turismo",
+   "certainty_full": "likely",
+   "certainty_partial": "likely",
+   "evidence": [
+    "PRTC innkeeper/hotelier registration"
+   ],
+   "source_ids": [],
+   "citation_section": "Citation carried by the linked permit document",
+   "constraint": "documentation"
+  },
+  {
+   "id": "SR_FOOD_HEALTH",
+   "name": "Food service health permit",
+   "when": {
+    "all": [
+     {
+      "fact": "activity.use",
+      "op": "equals",
+      "value": "LU_RESTAURANT"
+     }
+    ]
+   },
+   "approval_document_id": "DOC_HEALTH_PERMIT",
+   "agency": "Departamento de Salud",
+   "certainty_full": "likely",
+   "certainty_partial": "likely",
+   "evidence": [
+    "Sanitary/health license for food service"
+   ],
+   "source_ids": [],
+   "citation_section": "Citation carried by the linked permit document",
+   "constraint": "documentation"
+  }
+ ],
+ "sources": [
+  {
+   "id": "SRC_44CFR60_3",
+   "name": "44 CFR §60.3 — Flood plain management criteria (NFIP)",
+   "citation": "44 CFR §60.3",
+   "url": "https://www.ecfr.gov/current/title-44/chapter-I/subchapter-B/part-60/subpart-A/section-60.3",
+   "source_type": "regulation",
+   "legal_status": "effective",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "SRC_JP_REG13",
+   "name": "Reglamento de Planificación Núm. 13 — Áreas Especiales de Peligro a Inundación (Octava Revisión, 2021)",
+   "citation": "Reglamento de Planificación Núm. 13",
+   "url": "https://portaldeinundacion.jp.pr.gov/",
+   "source_type": "regulation",
+   "legal_status": "effective",
+   "effective_date": "2021-01-09",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "SRC_JP_CARSO_2014",
+   "name": "Plan y Reglamento del Área de Planificación Especial de la Zona Cársica (Res. JP-CARSO)",
+   "citation": "Res. JP-CARSO, vigencia 4-jul-2014",
+   "url": "https://jp.pr.gov/",
+   "source_type": "regulation",
+   "legal_status": "effective",
+   "effective_date": "2014-07-04",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "SRC_LAW_292_1999",
+   "name": "Ley 292-1999 — Ley para la Protección y Conservación de la Fisiografía Cársica de Puerto Rico",
+   "citation": "Ley 292-1999",
+   "url": "https://bvirtualogp.pr.gov/",
+   "source_type": "statute",
+   "legal_status": "effective",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "SRC_LAW_112_1988",
+   "name": "Ley 112-1988 — Ley de Protección del Patrimonio Arqueológico Terrestre de Puerto Rico",
+   "citation": "Ley 112-1988",
+   "url": "https://bvirtualogp.pr.gov/",
+   "source_type": "statute",
+   "legal_status": "effective",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "SRC_PMZC",
+   "name": "Programa de Manejo de la Zona Costanera de Puerto Rico (JP / DRNA)",
+   "citation": "PMZC",
+   "url": "https://www.drna.pr.gov/",
+   "source_type": "guidance",
+   "legal_status": "effective",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-04"
+  }
+ ]
+}

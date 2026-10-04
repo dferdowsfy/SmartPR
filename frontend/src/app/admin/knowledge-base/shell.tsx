@@ -29,7 +29,7 @@ import { ReasoningTab } from "./tabs/ReasoningTab";
 
 const TABS = [
   { id: "graph", label: "Graph" },
-  { id: "reasoning", label: "Reasoning Paths" },
+  { id: "reasoning", label: "Scenario Reasoning & Land Use" },
   { id: "requirements", label: "Requirements" },
   { id: "reasoning-paths", label: "Reasoning Paths" },
   { id: "incentives", label: "Incentives & Programs" },

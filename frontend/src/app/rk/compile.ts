@@ -121,6 +121,11 @@ export function compileKb(
       decisionConditions: datas("decision_condition"),
       processVariants: datas("process_variant"),
       scenarioMappings: datas("scenario_mapping"),
+      zoningDistricts: datas("zoning_district"),
+      landUses: datas("land_use"),
+      usePermissions: datas("use_permission"),
+      developmentStandards: datas("development_standard"),
+      siteRules: datas("site_rule"),
     },
     meta: { version: meta.version, compiledAt: new Date().toISOString(), batchId: meta.batchId },
   };

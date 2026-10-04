@@ -18,6 +18,7 @@ import { FindingValue, scopeText } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
 import { downloadPropertyReportPdf } from "../../locations/propertyReportPdf";
 import { exportableReview, REVIEW_DISCLAIMER, REVIEW_STATUS_TEXT } from "../../locations/propertyReview";
+import { ApprovalsSection, CompatibilitySection, EvidenceSection, ProposedActivityPanel, ReasoningDetails, RegulatoryFlags, StandardsList, UnresolvedSection, type ActivityInput } from "./LandUseSections";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -101,8 +102,11 @@ function legacyCopy(text: string, host: HTMLElement | null): boolean {
 }
 
 export function PropertyReportDrawer({
-  open, report, lang, onClose, onEditLocation, passport, returnFocusTo, reviewTarget = null,
+  open, report, lang, onClose, onEditLocation, passport, returnFocusTo, reviewTarget = null, activity, onActivityChange,
 }: {
+  /** Proposed activity (natural language + answers to follow-up questions). */
+  activity?: ActivityInput;
+  onActivityChange?: (next: ActivityInput) => void;
   /** Professional review is available once the report is saved to a Passport location. */
   reviewTarget?: ReviewTarget | null;
   open: boolean;
@@ -267,9 +271,21 @@ export function PropertyReportDrawer({
             )}
           </section>
 
+          <RegulatoryFlags report={report} lang={lang} />
+
+          {onActivityChange && <ProposedActivityPanel value={activity ?? { text: "", construction: null, use: null }} analysis={report.land_use ?? null} lang={lang} onChange={onActivityChange} />}
+
+          {report.land_use?.activity.use && <CompatibilitySection lu={report.land_use} lang={lang} />}
+
           <section className="spr-prd-section" aria-labelledby={`${titleId}-c`}>
-            <h3 id={`${titleId}-c`}>{L("Project considerations", "Consideraciones del proyecto", lang)}</h3>
-            {GROUPS.map((g) => (
+            <h3 id={`${titleId}-c`}>{L("Land & zoning", "Terreno y calificación", lang)}</h3>
+            <ul>{report.findings.filter((f) => f.group === "land").map((f) => <FindingRow key={f.id} f={f} lang={lang} api={api} />)}</ul>
+            {report.land_use && <StandardsList lu={report.land_use} lang={lang} />}
+          </section>
+
+          <section className="spr-prd-section" aria-labelledby={`${titleId}-s`} data-testid="site-constraints">
+            <h3 id={`${titleId}-s`}>{L("Site constraints", "Restricciones del lugar", lang)}</h3>
+            {GROUPS.filter((g) => g.id !== "land").map((g) => (
               <div key={g.id} className="spr-prd-group" data-group={g.id}>
                 <h4>{lang === "es" ? g.es : g.en}</h4>
                 <ul>{report.findings.filter((f) => f.group === g.id).map((f) => <FindingRow key={f.id} f={f} lang={lang} api={api} />)}</ul>
@@ -277,6 +293,26 @@ export function PropertyReportDrawer({
             ))}
           </section>
 
+          {report.land_use?.activity.use ? (
+            <>
+              {report.next_steps.steps.some((x) => x.constraint === "protection") && (
+                <section className="spr-prd-section">
+                  <div className="spr-prd-stepgroup spr-prd-stepgroup-protection" data-testid="steps-protection">
+                    <h4>{L("Protection constraints", "Restricciones de protección", lang)}</h4>
+                    <p className="spr-prd-because">{L("Conservation and protection designations restrict what may be done on the land. Additional documents do not remove them.", "Las designaciones de conservación y protección restringen lo que puede hacerse en el terreno. Documentos adicionales no las eliminan.", lang)}</p>
+                    <ol className="spr-prd-steps">
+                      {report.next_steps.steps.filter((x) => x.constraint === "protection").map((x) => (
+                        <li key={x.id}><span className="spr-prv-basis spr-prv-basis-rule">{L("Rule result", "Resultado de regla", lang)}</span><p>{x.text[lang]}</p><p className="spr-prd-because">{L("Because", "Porque", lang)}: {x.because[lang]} — {x.sources.map((src) => src.name).join("; ")}</p></li>
+                      ))}
+                    </ol>
+                  </div>
+                </section>
+              )}
+              <ApprovalsSection lu={report.land_use} lang={lang} />
+              <EvidenceSection lu={report.land_use} lang={lang} />
+              <UnresolvedSection lu={report.land_use} lang={lang} extra={report.next_steps.missing.map((m) => m[lang])} />
+            </>
+          ) : (
           <section className="spr-prd-section" aria-labelledby={`${titleId}-n`}>
             <h3 id={`${titleId}-n`}>{L("Next steps", "Próximos pasos", lang)}</h3>
             <p className="spr-prd-activity">{report.next_steps.activity[lang]}</p>
@@ -303,18 +339,6 @@ export function PropertyReportDrawer({
                 </div>
               );
             })}
-            <div className="spr-prd-ai" data-testid="ai-explanations">
-              <span className="spr-prv-basis spr-prv-basis-ai">{L("AI explanations", "Explicaciones de IA", lang)}</span>
-              {report.ai_explanations.length === 0
-                ? <p className="spr-prd-because">{L("None in this report. Every statement above is an official finding or a fixed rule result.", "Ninguna en este informe. Cada afirmación anterior es un hallazgo oficial o un resultado de regla fija.", lang)}</p>
-                : <ul>{report.ai_explanations.map((a, i) => <li key={i}>{a.text[lang]} <small>({a.model})</small></li>)}</ul>}
-            </div>
-            {report.next_steps.location_requirements.length > 0 && (
-              <div className="spr-prd-reqs">
-                <h4>{L("Requirements that depend on this location", "Requisitos que dependen de esta ubicación", lang)}</h4>
-                <ul>{report.next_steps.location_requirements.map((r, i) => <li key={i}>{r.title}{r.reason ? <small> — {r.reason}</small> : null}</li>)}</ul>
-              </div>
-            )}
             {(report.next_steps.missing.length > 0 || report.next_steps.unresolved.length > 0) && (
               <div className="spr-prd-missing">
                 <h4>{L("Missing information & unresolved checks", "Información faltante y verificaciones pendientes", lang)}</h4>
@@ -322,6 +346,13 @@ export function PropertyReportDrawer({
               </div>
             )}
           </section>
+          )}
+          {report.next_steps.location_requirements.length > 0 && (
+            <section className="spr-prd-section spr-prd-reqs">
+              <h4>{L("Requirements that depend on this location", "Requisitos que dependen de esta ubicación", lang)}</h4>
+              <ul>{report.next_steps.location_requirements.map((r, i) => <li key={i}>{r.title}{r.reason ? <small> — {r.reason}</small> : null}</li>)}</ul>
+            </section>
+          )}
 
           {api.enabled ? (
             <PropertyReviewPanel api={api} lang={lang} />
@@ -332,11 +363,19 @@ export function PropertyReportDrawer({
           )}
 
           <details className="spr-prd-section spr-prd-sources">
-            <summary>{L("Sources & technical details", "Fuentes y detalles técnicos", lang)}</summary>
+            <summary>{L("Sources & reasoning", "Fuentes y razonamiento", lang)}</summary>
+            {report.land_use && <ReasoningDetails lu={report.land_use} lang={lang} />}
+            <div className="spr-prd-ai" data-testid="ai-explanations">
+              <span className="spr-prv-basis spr-prv-basis-ai">{L("AI explanations", "Explicaciones de IA", lang)}</span>
+              {report.ai_explanations.length === 0
+                ? <p className="spr-prd-because">{L("None in this report. Every statement is an official finding or a fixed rule result from SmartPR's knowledge graph.", "Ninguna en este informe. Cada afirmación es un hallazgo oficial o un resultado de regla fija del grafo de conocimiento de SmartPR.", lang)}</p>
+                : <ul>{report.ai_explanations.map((a, i) => <li key={i}>{a.text[lang]} <small>({a.model})</small></li>)}</ul>}
+            </div>
+            <h4>{L("Sources", "Fuentes", lang)}</h4>
             <ul>{report.sources.map((s, i) => <li key={i}>{s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> : s.name}{s.dataset_date ? ` · ${L("data", "datos", lang)} ${s.dataset_date}` : ""}{s.version ? ` · ${s.version}` : ""}</li>)}</ul>
             <p>{L("Report", "Informe", lang)} {report.fingerprint} · {L("location revision", "revisión de ubicación", lang)} {report.location_revision} · {new Date(report.generated_at).toLocaleString(lang === "es" ? "es-PR" : "en-US")}</p>
           </details>
-          <p className="spr-prd-disclaimer">{report.disclaimer[lang]}</p>
+          <p className="spr-prd-disclaimer">{report.disclaimer[lang]} {L("SmartPR intelligence is not a survey, title report, engineering determination, legal opinion or agency permit decision.", "La inteligencia de SmartPR no es una mensura, estudio de título, determinación de ingeniería, opinión legal ni decisión de permiso de una agencia.", lang)}</p>
         </div>
       </div>
     </div>

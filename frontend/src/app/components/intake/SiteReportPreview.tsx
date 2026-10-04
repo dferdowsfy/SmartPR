@@ -19,7 +19,7 @@ export function FindingValue({ f, lang }: { f: ReportFinding; lang: Lang }) {
 }
 
 export const scopeText = (f: ReportFinding, lang: Lang) =>
-  f.scope === "parcel" ? L("whole parcel", "toda la parcela", lang) : f.scope === "point" ? L("at the pin", "en el pin", lang) : L("municipality", "municipio", lang);
+  f.scope === "parcel" ? L("checked across the parcel", "verificado en toda la parcela", lang) : f.scope === "point" ? L("at the pin", "en el pin", lang) : L("municipality", "municipio", lang);
 
 export function SiteReportPreview({ report, lang, onOpen, onRetry }: { report: PropertyReport; lang: Lang; onOpen: () => void; onRetry?: () => void }) {
   // Pills only: the most useful findings in plain words, colour-coded. Every
