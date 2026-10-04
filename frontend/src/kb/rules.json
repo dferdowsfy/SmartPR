@@ -9281,5 +9281,71 @@
     "reason": "JP calificación at the pin gives the district (agricultural family, from the district description). Use/zoning compatibility is not modeled per district yet — the rule fires on any change of use there and needs expert validation."
    }
   ]
+ },
+ {
+  "id": "RULE_0713",
+  "rule_type": "business_type",
+  "business_type_id": "BT_BEAUTY_SALON",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
+  "citation": "Ley Núm. 9-1972 (Ley de Especialistas en Belleza; 10 LPRA §§ 2123-2125), Art. 15 — toda persona que ejerciere en Puerto Rico la profesión de especialista en belleza (cosmetólogos, técnicos de uñas, esteticistas) sin estar debidamente licenciada por la Junta Examinadora de Especialistas en Belleza incurre en delito menos grave; Arts. 13-14",
+  "citation_url": "https://www.lexjuris.com/LEXMATE/profesiones/lex063.htm",
+  "citation_confidence": "review",
+  "citation_source": "review",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "new rule added (REG-PROF-BEAUTY-001)",
+    "reason": "QA 2026-10-04 00:00 cycle (S405, Toa Baja): KB INCOMPLETE — BT_BARBERSHOP has a verified professional-license rule (RULE_0695, Ley 146-1968) but BT_BEAUTY_SALON / BT_NAIL_SALON / BT_ESTHETICS_STUDIO had none, so a new beauty salon surfaced no professional-license requirement. Primary-source check of Ley 9-1972 Art. 15 (lexjuris) confirms beauty specialists (cosmetólogos, técnicos de uñas, esteticistas) are individually licensed by the Junta Examinadora de Especialistas en Belleza (Dept. de Estado); practicing unlicensed is a misdemeanor. Same genuinely-licensed-profession pattern as RULE_0695 (barbershop) / RULE_0696 (tattoo). compliance_mode verify_existing per the e676174 sweep. Excluded BT_SPA and BT_MASSAGE_THERAPY_STUDIO (mixed professions / uncertain board jurisdiction) — REG-PROF-BEAUTY-001 REQUIRES_REGULATORY_REVIEW."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0714",
+  "rule_type": "business_type",
+  "business_type_id": "BT_NAIL_SALON",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
+  "citation": "Ley Núm. 9-1972 (Ley de Especialistas en Belleza; 10 LPRA §§ 2123-2125), Art. 15 — toda persona que ejerciere en Puerto Rico la profesión de especialista en belleza (cosmetólogos, técnicos de uñas, esteticistas) sin estar debidamente licenciada por la Junta Examinadora de Especialistas en Belleza incurre en delito menos grave; Arts. 13-14",
+  "citation_url": "https://www.lexjuris.com/LEXMATE/profesiones/lex063.htm",
+  "citation_confidence": "review",
+  "citation_source": "review",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "new rule added (REG-PROF-BEAUTY-001)",
+    "reason": "QA 2026-10-04 00:00 cycle (S405, Toa Baja): KB INCOMPLETE — BT_BARBERSHOP has a verified professional-license rule (RULE_0695, Ley 146-1968) but BT_BEAUTY_SALON / BT_NAIL_SALON / BT_ESTHETICS_STUDIO had none, so a new beauty salon surfaced no professional-license requirement. Primary-source check of Ley 9-1972 Art. 15 (lexjuris) confirms beauty specialists (cosmetólogos, técnicos de uñas, esteticistas) are individually licensed by the Junta Examinadora de Especialistas en Belleza (Dept. de Estado); practicing unlicensed is a misdemeanor. Same genuinely-licensed-profession pattern as RULE_0695 (barbershop) / RULE_0696 (tattoo). compliance_mode verify_existing per the e676174 sweep. Excluded BT_SPA and BT_MASSAGE_THERAPY_STUDIO (mixed professions / uncertain board jurisdiction) — REG-PROF-BEAUTY-001 REQUIRES_REGULATORY_REVIEW."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0715",
+  "rule_type": "business_type",
+  "business_type_id": "BT_ESTHETICS_STUDIO",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PROFESSIONAL_LICENSE",
+  "citation": "Ley Núm. 9-1972 (Ley de Especialistas en Belleza; 10 LPRA §§ 2123-2125), Art. 15 — toda persona que ejerciere en Puerto Rico la profesión de especialista en belleza (cosmetólogos, técnicos de uñas, esteticistas) sin estar debidamente licenciada por la Junta Examinadora de Especialistas en Belleza incurre en delito menos grave; Arts. 13-14",
+  "citation_url": "https://www.lexjuris.com/LEXMATE/profesiones/lex063.htm",
+  "citation_confidence": "review",
+  "citation_source": "review",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "new rule added (REG-PROF-BEAUTY-001)",
+    "reason": "QA 2026-10-04 00:00 cycle (S405, Toa Baja): KB INCOMPLETE — BT_BARBERSHOP has a verified professional-license rule (RULE_0695, Ley 146-1968) but BT_BEAUTY_SALON / BT_NAIL_SALON / BT_ESTHETICS_STUDIO had none, so a new beauty salon surfaced no professional-license requirement. Primary-source check of Ley 9-1972 Art. 15 (lexjuris) confirms beauty specialists (cosmetólogos, técnicos de uñas, esteticistas) are individually licensed by the Junta Examinadora de Especialistas en Belleza (Dept. de Estado); practicing unlicensed is a misdemeanor. Same genuinely-licensed-profession pattern as RULE_0695 (barbershop) / RULE_0696 (tattoo). compliance_mode verify_existing per the e676174 sweep. Excluded BT_SPA and BT_MASSAGE_THERAPY_STUDIO (mixed professions / uncertain board jurisdiction) — REG-PROF-BEAUTY-001 REQUIRES_REGULATORY_REVIEW."
+   }
+  ]
  }
 ]
