@@ -1,0 +1,98 @@
+{
+  "id": "KG27",
+  "title": "Telecom tower (250 ft), new construction on leased rural land — Utuado, SRC rustic land",
+  "matrix": {
+    "businessType": "telecom_tower",
+    "projectType": "new_construction",
+    "locationContext": "rural_src"
+  },
+  "description": "Our company will build a new 250-foot telecommunications tower on leased rural land in Utuado. It is new construction of a cell tower.",
+  "profile": {
+    "business_type": "Utility Contractor",
+    "municipality": "Utuado",
+    "location_type": "Industrial Space",
+    "number_of_employees": 0,
+    "industry": "Energy & Utilities",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "project_only",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased rural land"
+    }
+  },
+  "site": {
+    "municipality": "Utuado",
+    "geo": "rural_src"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
+      },
+      {
+        "key": "process:PR_FAA_OBSTRUCTION_NOTICE",
+        "confidence": "needs-expert-review",
+        "rationale": "A 250 ft structure exceeds 200 ft AGL, so FAA Form 7460-1 notice is required (14 CFR 77.9(a)); the process graph models this notice only for energy facilities."
+      },
+      {
+        "key": "gap:telecom_siting",
+        "confidence": "needs-expert-review",
+        "rationale": "Telecom towers need JRT (Negociado de Telecomunicaciones) site registration, OGPe tower consulta under Ley 89-2000 / RC-2023 and FCC ASR/NEPA review; no KB business type or documents cover telecom."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "anyOf": [
+          "DOC_CERT_ORGANIZATION",
+          "DOC_CERT_INCORPORATION"
+        ],
+        "confidence": "verified-in-code",
+        "rationale": "Existing business: normalizeEntityFormationRequirements never adds formation steps for existing_business / project_only, and entityNotFormed is false."
+      }
+    ],
+    "ordering": []
+  }
+}

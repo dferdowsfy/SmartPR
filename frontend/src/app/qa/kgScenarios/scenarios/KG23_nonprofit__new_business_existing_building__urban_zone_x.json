@@ -1,0 +1,112 @@
+{
+  "id": "KG23",
+  "title": "Nonprofit food bank in an existing donated building — San Juan, zone X",
+  "matrix": {
+    "businessType": "nonprofit",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "We are forming a nonprofit food bank in San Juan that will operate from a donated existing building. No construction; volunteers and two staff.",
+  "profile": {
+    "business_type": "Nonprofit Organization",
+    "municipality": "San Juan",
+    "location_type": "Commercial Space",
+    "number_of_employees": 2,
+    "industry": "Nonprofit",
+    "business_structure": "Nonprofit"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_FOOD_SOLD": false,
+    "Q_FEDERAL_CONTRACTS_GRANTS": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing building"
+    }
+  },
+  "site": {
+    "municipality": "San Juan",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
+        "confidence": "verified-in-code",
+        "rationale": "Nonprofit: IRS 501(c)(3) determination. (KB: RULE_0684, RULE_0685)"
+      },
+      {
+        "key": "DOC_HACIENDA_PR_TAX_EXEMPTION",
+        "confidence": "verified-in-code",
+        "rationale": "Nonprofit: Hacienda exemption under s.1101.01 Codigo de Rentas Internas. (KB: RULE_0686, RULE_0687)"
+      },
+      {
+        "key": "DOC_SAM_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "Q_FEDERAL_CONTRACTS_GRANTS -> SAM.gov registration (UEI). (KB: RULE_0641)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction in the description: RULE_0643-0646 need project_type new_construction/renovation, structural_work or construction_approvals_required."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "Nonprofit corporation, not an LLC."
+      }
+    ],
+    "ordering": []
+  }
+}

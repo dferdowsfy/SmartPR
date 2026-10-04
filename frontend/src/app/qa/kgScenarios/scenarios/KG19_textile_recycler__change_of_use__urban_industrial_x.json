@@ -1,0 +1,147 @@
+{
+  "id": "KG19",
+  "title": "Textile recycler: change of use of an industrial warehouse — Toa Baja, zone X",
+  "matrix": {
+    "businessType": "textile_recycler",
+    "projectType": "change_of_use",
+    "locationContext": "urban_industrial_x"
+  },
+  "description": "We are converting an empty warehouse in Toa Baja into a textile recycling facility that sorts and shreds used clothing. This is a change of use from storage to recycling.",
+  "profile": {
+    "business_type": "Textile Recycling & Materials Recovery",
+    "municipality": "Toa Baja",
+    "location_type": "Industrial Space",
+    "number_of_employees": 15,
+    "industry": "Manufacturing",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_PRODUCTS_MANUFACTURED": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "change_of_use": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use from storage to recycling"
+    },
+    "occupancy_change": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use"
+    },
+    "existing_use": {
+      "value": "storage",
+      "confidence": 0.9,
+      "evidence": "from storage"
+    },
+    "proposed_use": {
+      "value": "recycling",
+      "confidence": 0.9,
+      "evidence": "to recycling"
+    },
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "empty warehouse"
+    }
+  },
+  "site": {
+    "municipality": "Toa Baja",
+    "geo": "urban_industrial_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0699: confirmed change of use -> new Permiso Unico for the new use. (KB: RULE_0007, RULE_0699)"
+      },
+      {
+        "key": "DOC_SAM_REGISTRATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Darius / Rosa intake: textile recyclers register in SAM.gov for federal recycling grants and DACO marketplace programs; the KB has BT_TEXTILE_RECYCLING but no business_type rules attach it."
+      },
+      {
+        "key": "gap:recycling_facility_authorization",
+        "confidence": "needs-expert-review",
+        "rationale": "A materials-recovery / recycling facility needs DRNA solid-waste authorization (Reglamento 5717, Ley 70-1992 recycling law) and recycler registration; no KB document exists for it."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "The description states a change of use with no works; a change of use without construction is a Permiso Unico matter (Ley 161-2009), and 'converting' alone is not renovation language (RULE_0644 fires on an inferred project_type=renovation).",
+        "applicabilityIn": [
+          "required"
+        ]
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  }
+}

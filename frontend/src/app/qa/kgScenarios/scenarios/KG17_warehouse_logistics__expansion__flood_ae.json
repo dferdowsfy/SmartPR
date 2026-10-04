@@ -1,0 +1,112 @@
+{
+  "id": "KG17",
+  "title": "Existing logistics warehouse, building expansion with loading docks — Cataño, FEMA AE",
+  "matrix": {
+    "businessType": "warehouse_logistics",
+    "projectType": "expansion",
+    "locationContext": "flood_ae"
+  },
+  "description": "Our logistics company already operates a warehouse in Cataño. We plan an expansion of the warehouse: a 10,000 square foot addition and new loading docks.",
+  "profile": {
+    "business_type": "Warehouse Operator",
+    "municipality": "Cataño",
+    "location_type": "Industrial Space",
+    "number_of_employees": 25,
+    "industry": "Transportation & Logistics",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_OWNS_PROPERTY": true,
+    "Q_COMMERCIAL_VEHICLES": true
+  },
+  "projectIntent": "existing_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "expansion",
+      "confidence": 0.9,
+      "evidence": "expansion of the warehouse"
+    },
+    "expansion": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "expansion of the warehouse"
+    },
+    "square_footage": {
+      "value": 10000,
+      "confidence": 0.9,
+      "evidence": "10,000 square foot addition"
+    },
+    "loading_changes": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new loading docks"
+    }
+  },
+  "site": {
+    "municipality": "Cataño",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only)."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0706: construction/expansion at a pin in the FEMA SFHA (location.flood_zone.sfha) -> Planning Regulation 13 flood review. (KB: RULE_0706, RULE_0707)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "anyOf": [
+          "DOC_CERT_ORGANIZATION",
+          "DOC_CERT_INCORPORATION"
+        ],
+        "confidence": "verified-in-code",
+        "rationale": "Existing business: normalizeEntityFormationRequirements never adds formation steps for existing_business / project_only, and entityNotFormed is false."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_JP_FLOOD_REG13",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "Reg. 13 compliance is part of the construction permit, which precedes the use permit."
+      }
+    ]
+  }
+}

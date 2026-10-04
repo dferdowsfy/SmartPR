@@ -1,0 +1,141 @@
+{
+  "id": "KG32",
+  "title": "Community microgrid (1.5 MW, islanding, sells to 30 members) — Adjuntas, SRC rural",
+  "matrix": {
+    "businessType": "microgrid",
+    "projectType": "new_construction",
+    "locationContext": "rural_src"
+  },
+  "description": "Our cooperative is building a community solar microgrid in Adjuntas with batteries that can island during outages. It will serve 30 member homes and businesses, and we will sell the energy to members. About 1.5 MW.",
+  "profile": {
+    "business_type": "Renewable Energy Company",
+    "municipality": "Adjuntas",
+    "location_type": "Industrial Space",
+    "number_of_employees": 3,
+    "industry": "Energy & Utilities",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_RENEWABLE_INSTALL": true,
+    "Q_SOLAR_BATTERY": true,
+    "Q_SOLAR_MOUNTING": "Ground-mounted"
+  },
+  "projectIntent": "project_only",
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.9,
+      "evidence": "community solar microgrid"
+    },
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "with batteries"
+    },
+    "microgrid_configuration": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "microgrid"
+    },
+    "customers_served": {
+      "value": 30,
+      "confidence": 0.9,
+      "evidence": "30 member homes"
+    },
+    "properties_served": {
+      "value": 30,
+      "confidence": 0.9,
+      "evidence": "30 member homes"
+    },
+    "sells_energy_to_third_parties": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "sell the energy to members"
+    },
+    "generation_capacity_kw": {
+      "value": "1.5 MW",
+      "confidence": 0.9,
+      "evidence": "1.5 MW"
+    },
+    "parallel_operation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "can island during outages"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "is building"
+    },
+    "energy_applicant_role": {
+      "value": "developer",
+      "confidence": 0.9,
+      "evidence": "Our cooperative"
+    }
+  },
+  "site": {
+    "municipality": "Adjuntas",
+    "geo": "rural_src"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts C: cooperative/third-party microgrid with sales -> PREB Reg. 9028 registration."
+      },
+      {
+        "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts C: sale >=1 MW -> ESC certification (Reg. 8701 ESC_R1)."
+      },
+      {
+        "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts C: grid-parallel microgrid -> interconnection."
+      },
+      {
+        "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Battery storage -> Bomberos BESS fire review (NFPA 855 in the process graph)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_DG_INTERCONNECTION renders, the legacy LUMA card must be suppressed (no duplicate card).",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_NET_METERING renders, the legacy net-metering card must be suppressed.",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "process:PR_UTILITY_PPOA_APPROVAL",
+        "confidence": "verified-in-code",
+        "rationale": "Behind-the-meter, no sale to LUMA: utility PPOA path cannot apply."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "process:PR_ENERGY_ESC_CERTIFICATION",
+        "after": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts C: microgrid registration has ESC certification as a prerequisite."
+      }
+    ]
+  }
+}

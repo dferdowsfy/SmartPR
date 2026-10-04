@@ -1,0 +1,116 @@
+{
+  "id": "KG04",
+  "title": "Food truck (mobile, no premises), parked base in a FEMA AE area — Ponce",
+  "matrix": {
+    "businessType": "food_truck",
+    "projectType": "new_business_existing_building",
+    "locationContext": "flood_ae"
+  },
+  "description": "I am starting a food truck that sells tacos at events around Ponce. I cook in the truck. No building, no construction.",
+  "profile": {
+    "business_type": "Food Truck",
+    "municipality": "Ponce",
+    "location_type": "Mobile / Food Truck",
+    "number_of_employees": 2,
+    "industry": "Food & Beverage",
+    "business_structure": "Sole Proprietorship"
+  },
+  "answers": {
+    "Q_FOOD_PREPARED": true,
+    "Q_FOOD_SERVED": true,
+    "Q_ON_SITE_CONSUMPTION": true,
+    "Q_FOOD_TRUCK_MOBILE": true,
+    "Q_ALCOHOL_SOLD": false,
+    "Q_ALCOHOL_SERVED": false,
+    "Q_EMPLOYEES_HIRED": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {},
+  "site": {
+    "municipality": "Ponce",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_AMBULANT_BUSINESS_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0653: Q_FOOD_TRUCK_MOBILE -> municipal ambulant-vendor license (Ley 107-2020). (KB: RULE_0653)"
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0009 / RULE_0067: food prepared -> Licencia Sanitaria. (KB: RULE_0009, RULE_0067)"
+      },
+      {
+        "key": "DOC_VEHICLE_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "Food truck -> vehicle registration (DTOP); validated golden G10. (KB: RULE_0690)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "Validated golden G10 (food truck, Ponce) expects Permiso Unico REQUIRED. (KB: RULE_0070)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction in the description: RULE_0643-0646 need project_type new_construction/renovation, structural_work or construction_approvals_required."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin is in the SFHA but there is no construction/site work: RULE_0706 any_of requires a construction-type project fact."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "Sole proprietorship: RULE_0651 excludes sole_proprietorship."
+      }
+    ],
+    "ordering": []
+  },
+  "notes": "Expectation corrected after first run: validated golden G10 (food truck, Ponce) expects DOC_PERMISO_UNICO REQUIRED (RULE_0070 Food Truck), so it is now a mustInclude."
+}

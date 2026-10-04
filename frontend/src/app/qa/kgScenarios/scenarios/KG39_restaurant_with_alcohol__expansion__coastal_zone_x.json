@@ -1,0 +1,123 @@
+{
+  "id": "KG39",
+  "title": "Existing restaurant & bar adds a covered terrace (expansion) — Carolina, coastal zone (zone X)",
+  "matrix": {
+    "businessType": "restaurant_with_alcohol",
+    "projectType": "expansion",
+    "locationContext": "coastal_zone_x"
+  },
+  "description": "Our existing restaurant and bar in Isla Verde, Carolina, plans an expansion: adding a 600 square foot covered terrace for outdoor seating. We already serve alcohol.",
+  "profile": {
+    "business_type": "Restaurant",
+    "municipality": "Carolina",
+    "location_type": "Restaurant Location",
+    "number_of_employees": 15,
+    "industry": "Food & Beverage",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_FOOD_PREPARED": true,
+    "Q_FOOD_SERVED": true,
+    "Q_ON_SITE_CONSUMPTION": true,
+    "Q_ALCOHOL_SOLD": true,
+    "Q_ALCOHOL_SERVED": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_OUTDOOR_SEATING": true
+  },
+  "projectIntent": "existing_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "expansion",
+      "confidence": 0.9,
+      "evidence": "plans an expansion"
+    },
+    "expansion": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "plans an expansion"
+    },
+    "square_footage": {
+      "value": 600,
+      "confidence": 0.9,
+      "evidence": "600 square foot"
+    },
+    "exterior_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "covered terrace"
+    }
+  },
+  "site": {
+    "municipality": "Carolina",
+    "geo": "coastal_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only)."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0708: construction-type work at a pin in the coastal zone (location.czm) -> coastal-zone review (the rule itself flags EXPERT VALIDATION NEEDED). (KB: RULE_0708)"
+      },
+      {
+        "key": "DOC_OUTDOOR_SEATING_AUTH",
+        "confidence": "verified-in-code",
+        "rationale": "Q_OUTDOOR_SEATING -> municipal outdoor-seating authorization. (KB: RULE_0031)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "Carolina is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Carolina's current delegation level.",
+        "agencyMatches": "munic"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "anyOf": [
+          "DOC_CERT_ORGANIZATION",
+          "DOC_CERT_INCORPORATION"
+        ],
+        "confidence": "verified-in-code",
+        "rationale": "Existing business: normalizeEntityFormationRequirements never adds formation steps for existing_business / project_only, and entityNotFormed is false."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids = [DOC_OGPE_CONSTRUCTION_PERMIT] (use permit after construction)."
+      }
+    ]
+  }
+}

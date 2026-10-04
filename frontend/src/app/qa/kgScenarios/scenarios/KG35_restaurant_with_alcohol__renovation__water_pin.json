@@ -1,0 +1,188 @@
+{
+  "id": "KG35",
+  "title": "Restaurant with bar, interior renovation — San Juan, pin dropped in the water (harbor)",
+  "matrix": {
+    "businessType": "restaurant_with_alcohol",
+    "projectType": "renovation",
+    "locationContext": "water_pin"
+  },
+  "description": "We are opening a restaurant with a bar in Old San Juan in a leased space and will renovate the interior and kitchen. We will serve rum cocktails.",
+  "profile": {
+    "business_type": "Restaurant",
+    "municipality": "San Juan",
+    "location_type": "Restaurant Location",
+    "number_of_employees": 12,
+    "industry": "Food & Beverage",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_FOOD_PREPARED": true,
+    "Q_FOOD_SERVED": true,
+    "Q_ON_SITE_CONSUMPTION": true,
+    "Q_ALCOHOL_SOLD": true,
+    "Q_ALCOHOL_SERVED": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "renovation",
+      "confidence": 0.9,
+      "evidence": "renovate the interior"
+    },
+    "renovation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "renovate the interior"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased space"
+    }
+  },
+  "site": {
+    "municipality": "San Juan",
+    "geo": "water_pin"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0009 (Q_FOOD_PREPARED) + business-type rule: food service -> Licencia Sanitaria (Salud). (KB: RULE_0009, RULE_0046)"
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0011 (Q_FOOD_PREPARED) + business-type rule: Certificado de Prevencion de Incendios (Bomberos). (KB: RULE_0011, RULE_0047)"
+      },
+      {
+        "key": "DOC_CFPM",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0010: food prepared on site -> Certified Food Protection Manager. (KB: RULE_0010, RULE_0048)"
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0013/0014: alcohol sold/served -> Hacienda alcoholic-beverage license. (KB: RULE_0013, RULE_0014)"
+      },
+      {
+        "key": "DOC_CRIM_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0621: alcohol license prerequisite (CRIM debt certification). (KB: RULE_0621, RULE_0622)"
+      },
+      {
+        "key": "DOC_ASUME_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0624: alcohol license prerequisite (ASUME certification). (KB: RULE_0624, RULE_0625)"
+      },
+      {
+        "key": "DOC_BACKGROUND_CHECK",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0627: alcohol license prerequisite (good-conduct certificate). (KB: RULE_0627, RULE_0628)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "San Juan is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm San Juan's current delegation level.",
+        "agencyMatches": "munic"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Pin is in a water body (JP AGUA / CRIM TIPO A): off-lot, zoning/land-class facts are withheld and AGUA is not a conservation district (zoningFamily -> 'water')."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "needs-expert-review",
+        "rationale": "A pin in the harbor is not the business's lot: flood facts from an off-lot water pin should prompt the user to move the pin rather than produce a REQUIRED Reg. 13 card (layers.ts keeps flood/coastal facts for off-lot pins).",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "needs-expert-review",
+        "rationale": "Same: an off-lot water pin should not yield a REQUIRED coastal review for an interior renovation.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids = [DOC_OGPE_CONSTRUCTION_PERMIT] (use permit after construction)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      },
+      {
+        "before": "DOC_CRIM_CLEARANCE",
+        "after": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB: DOC_ALCOHOL_LICENSE depends on CRIM / ASUME / background clearances."
+      },
+      {
+        "before": "DOC_ASUME_CLEARANCE",
+        "after": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB: DOC_ALCOHOL_LICENSE depends on CRIM / ASUME / background clearances."
+      }
+    ]
+  }
+}

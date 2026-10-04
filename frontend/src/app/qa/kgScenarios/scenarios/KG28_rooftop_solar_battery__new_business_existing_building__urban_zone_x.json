@@ -1,0 +1,169 @@
+{
+  "id": "KG28",
+  "title": "Existing salon adds 20 kW rooftop solar + battery (grid-tied) — Guaynabo, zone X",
+  "matrix": {
+    "businessType": "rooftop_solar_battery",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "Our beauty salon in Guaynabo wants to install a 20 kW rooftop solar system with a battery on the building we own. It will stay connected to the LUMA grid.",
+  "profile": {
+    "business_type": "Beauty Salon",
+    "municipality": "Guaynabo",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 3,
+    "industry": "Personal Care",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_RENEWABLE_INSTALL": true,
+    "Q_SOLAR_BATTERY": true,
+    "Q_SOLAR_MOUNTING": "Roof-mounted",
+    "Q_PHYSICAL_LOCATION": true,
+    "Q_OWNS_PROPERTY": true
+  },
+  "projectIntent": "existing_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "building we own"
+    },
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.9,
+      "evidence": "rooftop solar system"
+    },
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "with a battery"
+    },
+    "generation_capacity_kw": {
+      "value": "20 kW",
+      "confidence": 0.9,
+      "evidence": "20 kW"
+    },
+    "mounting_type": {
+      "value": "roof",
+      "confidence": 0.9,
+      "evidence": "rooftop"
+    },
+    "parallel_operation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "stay connected to the LUMA grid"
+    },
+    "customer_class": {
+      "value": "commercial",
+      "confidence": 0.9,
+      "evidence": "beauty salon"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "wants to install"
+    },
+    "energy_applicant_role": {
+      "value": "end_use_customer",
+      "confidence": 0.9,
+      "evidence": "Our beauty salon"
+    },
+    "system_ownership": {
+      "value": "owner",
+      "confidence": 0.9,
+      "evidence": "building we own"
+    }
+  },
+  "site": {
+    "municipality": "Guaynabo",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts B / E07: grid-parallel rooftop DG -> LUMA interconnection (Reg. 8915)."
+      },
+      {
+        "key": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts B: commercial DG <=1 MW -> net metering (Ley 114-2007)."
+      },
+      {
+        "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Battery storage -> Bomberos BESS fire review (NFPA 855 in the process graph)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid wording: projectContext drops microgrid claims (MICROGRID_STATED_RE); energy.test.ts 'not assumed to be a microgrid'."
+      },
+      {
+        "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+        "confidence": "verified-in-code",
+        "rationale": "No energy sale / services: energy.test.ts 'no energy-company certification assumed'."
+      },
+      {
+        "key": "process:PR_UTILITY_PPOA_APPROVAL",
+        "confidence": "verified-in-code",
+        "rationale": "Behind-the-meter, no sale to LUMA: utility PPOA path cannot apply."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_DG_INTERCONNECTION renders, the legacy LUMA card must be suppressed (no duplicate card).",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_NET_METERING renders, the legacy net-metering card must be suppressed.",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "anyOf": [
+          "DOC_CERT_ORGANIZATION",
+          "DOC_CERT_INCORPORATION"
+        ],
+        "confidence": "verified-in-code",
+        "rationale": "Existing business: normalizeEntityFormationRequirements never adds formation steps for existing_business / project_only, and entityNotFormed is false."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "A 20 kW rooftop PV + battery on an existing building is an equipment install; a REQUIRED OGPe construction permit would be a false positive (may-apply is acceptable pending an expert view of OGPe solar exemptions).",
+        "applicabilityIn": [
+          "required"
+        ]
+      }
+    ],
+    "ordering": [
+      {
+        "before": "process:PR_ENERGY_DG_INTERCONNECTION",
+        "after": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts: net metering has a blocking prerequisite on DG interconnection."
+      }
+    ]
+  }
+}

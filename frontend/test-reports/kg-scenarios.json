@@ -1,0 +1,4833 @@
+{
+  "summary": {
+    "scenarios": 40,
+    "pass": 19,
+    "fail": 21,
+    "expectations": 617,
+    "verified": 571,
+    "lint": []
+  },
+  "results": [
+    {
+      "id": "KG01",
+      "title": "Café with beer & wine, new business in an existing leased storefront — Caguas town center (zone X)",
+      "matrix": {
+        "businessType": "cafe_with_alcohol",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 14,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 15,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 16,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 17,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG01 kg-scenario: cafe_with_alcohol / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG02",
+      "title": "Restaurant without alcohol, interior renovation of a leased building — Toa Baja, FEMA AE",
+      "matrix": {
+        "businessType": "restaurant_no_alcohol",
+        "projectType": "renovation",
+        "locationContext": "flood_ae"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG02 kg-scenario: restaurant_no_alcohol / renovation / flood_ae",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG03",
+      "title": "Restaurant & bar with alcohol, new construction on an owned beachfront lot — Rincón, coastal zone + VE",
+      "matrix": {
+        "businessType": "restaurant_with_alcohol",
+        "projectType": "new_construction",
+        "locationContext": "coastal_ve"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 14,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 15,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 16,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 17,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 18,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 19,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 20,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 21,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG03 kg-scenario: restaurant_with_alcohol / new_construction / coastal_ve",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG04",
+      "title": "Food truck (mobile, no premises), parked base in a FEMA AE area — Ponce",
+      "matrix": {
+        "businessType": "food_truck",
+        "projectType": "new_business_existing_building",
+        "locationContext": "flood_ae"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_AMBULANT_BUSINESS_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipality"
+        },
+        {
+          "key": "DOC_VEHICLE_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "DTOP"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 11,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Municipal Government"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG04 kg-scenario: food_truck / new_business_existing_building / flood_ae",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG05",
+      "title": "Beauty salon, new business in a move-in-ready leased space — San Juan (autonomous), zone X inland",
+      "matrix": {
+        "businessType": "salon_barber",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG05 kg-scenario: salon_barber / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG06",
+      "title": "Barbershop renovating a leased unit — Cataño, advisory (ABFE) AO only, effective FIRM zone X",
+      "matrix": {
+        "businessType": "salon_barber",
+        "projectType": "renovation",
+        "locationContext": "advisory_ao_only"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 11,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG06 kg-scenario: salon_barber / renovation / advisory_ao_only",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG07",
+      "title": "Existing clothing store, building expansion (addition) — Bayamón (autonomous), FEMA AE",
+      "matrix": {
+        "businessType": "retail_store",
+        "projectType": "expansion",
+        "locationContext": "flood_ae"
+      },
+      "status": "fail",
+      "orderingSkipped": [
+        "DOC_OGPE_CONSTRUCTION_PERMIT before DOC_PERMISO_UNICO (DOC_OGPE_CONSTRUCTION_PERMIT absent)"
+      ],
+      "items": [
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 1,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 2,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 3,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 4,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 5,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_ANNUAL_REPORT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 8,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 9,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "other_checks",
+          "applicability": "conditional",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [
+        "Will the business lease its commercial space?"
+      ],
+      "discardedModelFacts": [],
+      "testName": "KG07 kg-scenario: retail_store / expansion / flood_ae",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "missing DOC_OGPE_CONSTRUCTION_PERMIT",
+          "confidence": "needs-expert-review",
+          "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only).",
+          "cause": "likely-engine-bug",
+          "note": "Expansion fires Reg. 13 (RULE_0706 lists project_type=expansion) but no construction-permit rule covers expansion (RULE_0643/0644 only new_construction/renovation): internally inconsistent.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG08",
+      "title": "Community pharmacy (controlled substances), existing leased space — Guaynabo, zone X",
+      "matrix": {
+        "businessType": "pharmacy",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG08 kg-scenario: pharmacy / new_business_existing_building / urban_zone_x",
+      "findingsClassified": [
+        {
+          "kind": "gap",
+          "key": "gap:pharmacy_controlled_substance_registrations",
+          "message": "KB gap: no requirement models gap:pharmacy_controlled_substance_registrations",
+          "confidence": "needs-expert-review",
+          "rationale": "A PR pharmacy needs a Salud pharmacy-establishment license (Ley 247-2004), a PR controlled-substances registration (Ley 4-1971) and a DEA registration; the KB only has a generic DOC_PROFESSIONAL_LICENSE.",
+          "cause": "kb-gap",
+          "note": "No PR controlled-substances / DEA registration documents.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG09",
+      "title": "Daycare: change of use of a house in a residential district — Carolina (autonomous), zone X",
+      "matrix": {
+        "businessType": "daycare",
+        "projectType": "change_of_use",
+        "locationContext": "urban_residential_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_CHILDCARE_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento de la Familia / Educación"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_SCHIDE_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Department of the Family"
+        },
+        {
+          "key": "DOC_EMPLOYEE_HEALTH_CERTIFICATES",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of Health"
+        },
+        {
+          "key": "DOC_CPR_FIRST_AID_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Department of the Family"
+        },
+        {
+          "key": "DOC_CHILDCARE_TRAINING_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Department of the Family"
+        },
+        {
+          "key": "DOC_CONSULTA_UBICACION",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 14,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 15,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 16,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 17,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 18,
+          "agency": "Municipal Government"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG09 kg-scenario: daycare / change_of_use / urban_residential_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG10",
+      "title": "Medical office, interior-only renovation of a leased suite — Mayagüez, coastal zone (zone X)",
+      "matrix": {
+        "businessType": "medical_office",
+        "projectType": "renovation",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 8,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "Department of Health / DRNA"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG10 kg-scenario: medical_office / renovation / coastal_zone_x",
+      "findingsClassified": [
+        {
+          "kind": "unexpected",
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "message": "unexpected DOC_CZM_COASTAL_REVIEW (required_now, likely_required)",
+          "confidence": "needs-expert-review",
+          "rationale": "Interior-only renovation of a leased suite has no coastal effect: CZMA federal consistency (15 CFR 930.57) applies to federally permitted activities; RULE_0708 fires on any renovation (heuristic, flagged EXPERT VALIDATION NEEDED).",
+          "cause": "likely-engine-bug",
+          "note": "RULE_0708 fires on any renovation in the coastal zone, including interior-only work with exterior_work=false (rule itself is marked EXPERT VALIDATION NEEDED).",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG11",
+      "title": "Gym in an existing leased space, no construction — Ponce (autonomous), FEMA AE",
+      "matrix": {
+        "businessType": "gym",
+        "projectType": "new_business_existing_building",
+        "locationContext": "flood_ae"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 7,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 9,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG11 kg-scenario: gym / new_business_existing_building / flood_ae",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG12",
+      "title": "Nightclub with bar & live entertainment, existing bar premises — Ponce historic zone, zone X",
+      "matrix": {
+        "businessType": "bar_nightclub",
+        "projectType": "new_business_existing_building",
+        "locationContext": "historic_zone"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 13,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_ENTERTAINMENT_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 14,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 15,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_NOISE_VARIANCE",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 16,
+          "agency": "DRNA + Municipal Permits Office"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 17,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 18,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 19,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG12 kg-scenario: bar_nightclub / new_business_existing_building / historic_zone",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG13",
+      "title": "Hotel, new construction on an owned beachfront lot — Dorado, coastal zone + VE",
+      "matrix": {
+        "businessType": "hotel",
+        "projectType": "new_construction",
+        "locationContext": "coastal_ve"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_TOURISM_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Compañía de Turismo"
+        },
+        {
+          "key": "DOC_ROOM_TAX_RETURN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Compañía de Turismo"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 12,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 13,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 14,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 15,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 16,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG13 kg-scenario: hotel / new_construction / coastal_ve",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG14",
+      "title": "Guest house: renovation of a historic house incl. facade — Ponce historic zone (zone X)",
+      "matrix": {
+        "businessType": "guesthouse",
+        "projectType": "renovation",
+        "locationContext": "historic_zone"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_TOURISM_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Compañía de Turismo"
+        },
+        {
+          "key": "DOC_ROOM_TAX_RETURN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Compañía de Turismo"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 11,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 14,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG14 kg-scenario: guesthouse / renovation / historic_zone",
+      "findingsClassified": [
+        {
+          "kind": "gap",
+          "key": "gap:historic_zone_review",
+          "message": "KB gap: no requirement models gap:historic_zone_review",
+          "confidence": "needs-expert-review",
+          "rationale": "Exterior work in a JP historic zone needs ICP (Instituto de Cultura Puertorriquena) endorsement / historic-zone review (Reglamento de Planificacion 5; Ley 89-1955). The historic_zone layer is resolved at the pin but no KB rule or document consumes location.historic_zone.",
+          "cause": "kb-gap",
+          "note": "location.historic_zone is resolved but no rule/document consumes it (ICP review).",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG15",
+      "title": "Short-term rental (Airbnb) of an owned apartment — Culebra (island municipio), coastal zone",
+      "matrix": {
+        "businessType": "short_term_rental",
+        "projectType": "new_business_existing_building",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_TOURISM_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Compañía de Turismo"
+        },
+        {
+          "key": "DOC_ROOM_TAX_RETURN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Compañía de Turismo"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 4,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 5,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "DOC_ISLAND_FERRY_MANIFEST",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 6,
+          "agency": "Autoridad de Transporte Marítimo (ATM)"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 8,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG15 kg-scenario: short_term_rental / new_business_existing_building / coastal_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG16",
+      "title": "Auto repair shop (used oil, hazardous waste), existing leased industrial building — Bayamón, zone X",
+      "matrix": {
+        "businessType": "auto_repair",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_industrial_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_USED_OIL_GENERATOR_ID",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 7,
+          "agency": "DRNA"
+        },
+        {
+          "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "U.S. EPA / DRNA"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG16 kg-scenario: auto_repair / new_business_existing_building / urban_industrial_x",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_FIRE_CERT",
+          "message": "missing DOC_FIRE_CERT",
+          "confidence": "needs-expert-review",
+          "rationale": "Auto repair: Bomberos fire-prevention certificate. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]",
+          "cause": "likely-wrong-expectation",
+          "note": "No rule attaches the Bomberos certificate to Auto Repair Shop; expert to confirm it is required for this occupancy (it is for food/assembly).",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG17",
+      "title": "Existing logistics warehouse, building expansion with loading docks — Cataño, FEMA AE",
+      "matrix": {
+        "businessType": "warehouse_logistics",
+        "projectType": "expansion",
+        "locationContext": "flood_ae"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_VEHICLE_REGISTRATION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 1,
+          "agency": "DTOP"
+        },
+        {
+          "key": "DOC_TRANSPORT_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 2,
+          "agency": "Comisión de Servicio Público"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 3,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "DOC_PORT_FACILITY_PERMIT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 4,
+          "agency": "Autoridad de los Puertos de Puerto Rico"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 5,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 6,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 7,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 9,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 10,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_ANNUAL_REPORT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 11,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 12,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "other_checks",
+          "applicability": "conditional",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [
+        "Will the business lease its commercial space?"
+      ],
+      "discardedModelFacts": [],
+      "testName": "KG17 kg-scenario: warehouse_logistics / expansion / flood_ae",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "missing DOC_OGPE_CONSTRUCTION_PERMIT",
+          "confidence": "needs-expert-review",
+          "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only).",
+          "cause": "likely-engine-bug",
+          "note": "Same expansion gap: Reg. 13 fires, construction permit does not.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG18",
+      "title": "Food manufacturing plant, new construction on owned rural land — Arecibo, SREP agricultural",
+      "matrix": {
+        "businessType": "manufacturing",
+        "projectType": "new_construction",
+        "locationContext": "rural_srep_agricultural"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CONSULTA_UBICACION",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 10,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 11,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 14,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG18 kg-scenario: manufacturing / new_construction / rural_srep_agricultural",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_FDA_FOOD_FACILITY_REGISTRATION",
+          "message": "missing DOC_FDA_FOOD_FACILITY_REGISTRATION",
+          "confidence": "needs-expert-review",
+          "rationale": "A facility that manufactures food for US commerce registers with FDA (21 CFR 1.225, FD&C Act s.415).",
+          "cause": "kb-gap",
+          "note": "Document exists in the KB but no rule attaches it to Food Manufacturing.",
+          "triaged": true
+        },
+        {
+          "kind": "missing",
+          "key": "DOC_NPDES_INDUSTRIAL_STORMWATER",
+          "message": "missing DOC_NPDES_INDUSTRIAL_STORMWATER",
+          "confidence": "needs-expert-review",
+          "rationale": "New industrial facility: EPA NPDES Multi-Sector General Permit for industrial stormwater (PR is EPA-administered).",
+          "cause": "kb-gap",
+          "note": "Document exists but no rule attaches it to a new food plant (expert to confirm MSGP sector applicability).",
+          "triaged": true
+        },
+        {
+          "kind": "ordering",
+          "key": "DOC_CONSULTA_UBICACION<DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_CONSULTA_UBICACION (#11, required_now) should come before DOC_OGPE_CONSTRUCTION_PERMIT (#8, required_now); no KB prerequisite edge",
+          "confidence": "needs-expert-review",
+          "rationale": "RC-2023: an approved consulta de ubicacion precedes the construction permit for the use (the KB has no depends_on edge for it).",
+          "cause": "likely-engine-bug",
+          "note": "DOC_CONSULTA_UBICACION has no depends_on edge, so the consulta renders after the construction permit it gates (expert to confirm the sequence).",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG19",
+      "title": "Textile recycler: change of use of an industrial warehouse — Toa Baja, zone X",
+      "matrix": {
+        "businessType": "textile_recycler",
+        "projectType": "change_of_use",
+        "locationContext": "urban_industrial_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 8,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG19 kg-scenario: textile_recycler / change_of_use / urban_industrial_x",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_SAM_REGISTRATION",
+          "message": "missing DOC_SAM_REGISTRATION",
+          "confidence": "needs-expert-review",
+          "rationale": "Darius / Rosa intake: textile recyclers register in SAM.gov for federal recycling grants and DACO marketplace programs; the KB has BT_TEXTILE_RECYCLING but no business_type rules attach it.",
+          "cause": "kb-gap",
+          "note": "BT_TEXTILE_RECYCLING exists but no business_type rule attaches any document to it (SAM only fires via Q_FEDERAL_CONTRACTS_GRANTS); expert to confirm SAM is expected without federal funding.",
+          "triaged": true
+        },
+        {
+          "kind": "gap",
+          "key": "gap:recycling_facility_authorization",
+          "message": "KB gap: no requirement models gap:recycling_facility_authorization",
+          "confidence": "needs-expert-review",
+          "rationale": "A materials-recovery / recycling facility needs DRNA solid-waste authorization (Reglamento 5717, Ley 70-1992 recycling law) and recycler registration; no KB document exists for it.",
+          "cause": "kb-gap",
+          "note": "No DRNA solid-waste / recycler authorization document.",
+          "triaged": true
+        },
+        {
+          "kind": "unexpected",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "unexpected DOC_OGPE_CONSTRUCTION_PERMIT (required_now, required)",
+          "confidence": "needs-expert-review",
+          "rationale": "The description states a change of use with no works; a change of use without construction is a Permiso Unico matter (Ley 161-2009), and 'converting' alone is not renovation language (RULE_0644 fires on an inferred project_type=renovation).",
+          "cause": "likely-engine-bug",
+          "note": "interpretScenario reads 'converting an empty warehouse' as project_type=renovation (confidence 0.95) and RULE_0644 makes the construction permit REQUIRED for a change of use with no stated works.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG20",
+      "title": "General contractor run from a home office — Carolina, residential district (zone X)",
+      "matrix": {
+        "businessType": "construction_contractor",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_residential_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_CONTRACTOR_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Asuntos del Consumidor (DACO)"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_DOMICILIARY_USE_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "DOC_VEHICLE_REGISTRATION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "DTOP"
+        },
+        {
+          "key": "DOC_TRANSPORT_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 11,
+          "agency": "Comisión de Servicio Público"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG20 kg-scenario: construction_contractor / new_business_existing_building / urban_residential_x",
+      "findingsClassified": [
+        {
+          "kind": "unexpected",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "unexpected DOC_OGPE_CONSTRUCTION_PERMIT (required_now, required)",
+          "confidence": "needs-expert-review",
+          "rationale": "The contractor's own premises is a home office with no works; remodeling done at clients' properties is the service sold, not this business's project, so no construction permit belongs on its checklist (RULE_0644 fires on project_type=renovation read from 'remodeling').",
+          "cause": "likely-engine-bug",
+          "note": "interpretScenario reads 'I do residential remodeling at their properties' (the contractor's service) as this business's renovation project: REQUIRED construction permit for a home office.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG21",
+      "title": "Law firm (solo) from a home office — Guaynabo, FEMA AE pin",
+      "matrix": {
+        "businessType": "professional_services_home",
+        "projectType": "new_business_existing_building",
+        "locationContext": "flood_ae"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Tribunal Supremo de Puerto Rico"
+        },
+        {
+          "key": "DOC_DOMICILIARY_USE_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 4,
+          "agency": "IRS"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG21 kg-scenario: professional_services_home / new_business_existing_building / flood_ae",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG22",
+      "title": "E-commerce, online only, no storefront, no pin — Arecibo",
+      "matrix": {
+        "businessType": "ecommerce_no_storefront",
+        "projectType": "new_business_existing_building",
+        "locationContext": "no_site"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_DOMICILIARY_USE_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 3,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 4,
+          "agency": "OGPe"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG22 kg-scenario: ecommerce_no_storefront / new_business_existing_building / no_site",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG23",
+      "title": "Nonprofit food bank in an existing donated building — San Juan, zone X",
+      "matrix": {
+        "businessType": "nonprofit",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_CERT_INCORPORATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_SAM_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "System for Award Management (SAM.gov)"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "Internal Revenue Service"
+        },
+        {
+          "key": "DOC_HACIENDA_PR_TAX_EXEMPTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 11,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG23 kg-scenario: nonprofit / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG24",
+      "title": "Farm: new agricultural barn on own farmland — Lares (inland), SREP agricultural",
+      "matrix": {
+        "businessType": "agricultural_farm",
+        "projectType": "new_construction",
+        "locationContext": "rural_srep_agricultural"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CONSULTA_UBICACION",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 7,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PESTICIDE_LICENSE",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "Departamento de Agricultura"
+        },
+        {
+          "key": "DOC_AGRICULTURE_REGISTRATION",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 10,
+          "agency": "Departamento de Agricultura"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 11,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 13,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG24 kg-scenario: agricultural_farm / new_construction / rural_srep_agricultural",
+      "findingsClassified": [
+        {
+          "kind": "unexpected",
+          "key": "DOC_CONSULTA_UBICACION",
+          "message": "unexpected DOC_CONSULTA_UBICACION (required_now, likely_required)",
+          "confidence": "needs-expert-review",
+          "rationale": "An agricultural barn for a bona fide farm on SREP agricultural land is a ministerial use compatible with the district (RC-2023 agricultural districts); a consulta de ubicacion should not be required. RULE_0709 fires on any construction on SREP land.",
+          "cause": "likely-wrong-expectation",
+          "note": "RULE_0709 fires for a farm barn on SREP agricultural land; whether an agricultural accessory structure for a bona fide farmer needs a consulta is an expert call.",
+          "triaged": true
+        },
+        {
+          "kind": "ordering",
+          "key": "DOC_PERMISO_UNICO<DOC_PATENTE_MUNICIPAL",
+          "message": "DOC_PERMISO_UNICO (#13, prerequisites) should come before DOC_PATENTE_MUNICIPAL (#9, conditional)",
+          "confidence": "verified-in-code",
+          "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit).",
+          "cause": "likely-engine-bug",
+          "note": "Patente (needs-more-info, 'conditional' group) renders above the Permiso Unico it depends on ('prerequisites' group): group order beats the KB edge.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG25",
+      "title": "Marina / water sports operator from a leased kiosk — Fajardo, coastal zone + VE",
+      "matrix": {
+        "businessType": "marina_water_sports",
+        "projectType": "new_business_existing_building",
+        "locationContext": "coastal_ve"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 8,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG25 kg-scenario: marina_water_sports / new_business_existing_building / coastal_ve",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_TOURISM_REGISTRATION",
+          "message": "missing DOC_TOURISM_REGISTRATION",
+          "confidence": "needs-expert-review",
+          "rationale": "Tour operator in a tourism municipio: Compania de Turismo tour-operator endorsement. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]",
+          "cause": "likely-wrong-expectation",
+          "note": "No KB rule covers Tour Operator; whether a water-sports rental operator must register with Turismo (vs. voluntary endorsement) is an expert call.",
+          "triaged": true
+        },
+        {
+          "kind": "gap",
+          "key": "gap:drna_vessel_and_concession",
+          "message": "KB gap: no requirement models gap:drna_vessel_and_concession",
+          "confidence": "needs-expert-review",
+          "rationale": "Renting jet skis/kayaks needs DRNA vessel registration and the Navigation and Aquatic Safety Law (Ley 430-2000) rental-operator permit; operating from marine waters may need a DRNA concession. No KB documents cover these.",
+          "cause": "kb-gap",
+          "note": "No DRNA vessel / rental-operator / concession documents.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG26",
+      "title": "Event venue: change of use of a farmhouse in a conservation district — Toa Baja",
+      "matrix": {
+        "businessType": "event_venue",
+        "projectType": "change_of_use",
+        "locationContext": "conservation_coastal"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_ENTERTAINMENT_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 9,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_CONSULTA_UBICACION",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 10,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 11,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "DOC_NOISE_VARIANCE",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 12,
+          "agency": "DRNA + Municipal Permits Office"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 13,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 14,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 15,
+          "agency": "Municipal Government"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG26 kg-scenario: event_venue / change_of_use / conservation_coastal",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG27",
+      "title": "Telecom tower (250 ft), new construction on leased rural land — Utuado, SRC rustic land",
+      "matrix": {
+        "businessType": "telecom_tower",
+        "projectType": "new_construction",
+        "locationContext": "rural_src"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 1,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG27 kg-scenario: telecom_tower / new_construction / rural_src",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "process:PR_FAA_OBSTRUCTION_NOTICE",
+          "message": "missing process:PR_FAA_OBSTRUCTION_NOTICE",
+          "confidence": "needs-expert-review",
+          "rationale": "A 250 ft structure exceeds 200 ft AGL, so FAA Form 7460-1 notice is required (14 CFR 77.9(a)); the process graph models this notice only for energy facilities.",
+          "cause": "kb-gap",
+          "note": "FAA 7460-1 is modeled only inside the energy process graph; non-energy tall structures never get it.",
+          "triaged": true
+        },
+        {
+          "kind": "gap",
+          "key": "gap:telecom_siting",
+          "message": "KB gap: no requirement models gap:telecom_siting",
+          "confidence": "needs-expert-review",
+          "rationale": "Telecom towers need JRT (Negociado de Telecomunicaciones) site registration, OGPe tower consulta under Ley 89-2000 / RC-2023 and FCC ASR/NEPA review; no KB business type or documents cover telecom.",
+          "cause": "kb-gap",
+          "note": "No telecom business type, JRT registration or tower siting rule.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG28",
+      "title": "Existing salon adds 20 kW rooftop solar + battery (grid-tied) — Guaynabo, zone X",
+      "matrix": {
+        "businessType": "rooftop_solar_battery",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 0,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 1,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 2,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_ENERGY_CONSTRUCTION_APPROVAL",
+          "group": "energy",
+          "applicability": "may_apply",
+          "position": 3,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 4,
+          "agency": "Bomberos"
+        },
+        {
+          "key": "process:PR_ENERGY_NET_METERING",
+          "group": "energy",
+          "applicability": "optional",
+          "position": 5,
+          "agency": "LUMA"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 6,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 7,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 8,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 10,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 11,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 12,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_ANNUAL_REPORT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 13,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 14,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "other_checks",
+          "applicability": "conditional",
+          "position": 15,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [
+        "Will the business lease its commercial space?"
+      ],
+      "discardedModelFacts": [],
+      "testName": "KG28 kg-scenario: rooftop_solar_battery / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG29",
+      "title": "Existing warehouse adds 400 kW rooftop solar + battery — Caguas, FEMA AE pin (E01 variant)",
+      "matrix": {
+        "businessType": "rooftop_solar_battery",
+        "projectType": "new_business_existing_building",
+        "locationContext": "flood_ae"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "process:PR_FLOODPLAIN_REG13",
+          "group": "energy",
+          "applicability": "required",
+          "position": 0,
+          "agency": "JP / OGPe"
+        },
+        {
+          "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 1,
+          "agency": "Bomberos"
+        },
+        {
+          "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 2,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_ENERGY_CONSTRUCTION_APPROVAL",
+          "group": "energy",
+          "applicability": "may_apply",
+          "position": 3,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "process:PR_ENERGY_NET_METERING",
+          "group": "energy",
+          "applicability": "optional",
+          "position": 4,
+          "agency": "LUMA"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 5,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 6,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 7,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 9,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 10,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_ANNUAL_REPORT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 11,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 12,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "other_checks",
+          "applicability": "needs_more_information",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [
+        "Will the business lease its commercial space?"
+      ],
+      "discardedModelFacts": [],
+      "testName": "KG29 kg-scenario: rooftop_solar_battery / new_business_existing_building / flood_ae",
+      "findingsClassified": [
+        {
+          "kind": "unexpected",
+          "key": "DOC_JP_FLOOD_REG13",
+          "message": "unexpected DOC_JP_FLOOD_REG13 (via process:PR_FLOODPLAIN_REG13, required)",
+          "confidence": "needs-expert-review",
+          "rationale": "Rooftop equipment on an existing building is not 'development' that adds floodplain fill or substantial improvement (44 CFR 60.3 / Reg. 13); Reg. 13 review should not attach.",
+          "cause": "likely-wrong-expectation",
+          "note": "PR_FLOODPLAIN_REG13 is REQUIRED for rooftop PV on an existing warehouse in AE; whether rooftop equipment is 'development' under Reg. 13 is an expert call.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG30",
+      "title": "Utility-scale 20 MW solar + 40 MWh BESS selling to LUMA — Salinas, SREP agricultural",
+      "matrix": {
+        "businessType": "utility_scale_solar",
+        "projectType": "new_construction",
+        "locationContext": "rural_srep_agricultural"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "process:PR_ENV_COMPLIANCE_DETERMINATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_LAND_USE_CONSULTA_UBICACION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_UTILITY_PROCUREMENT_RFP",
+          "group": "energy",
+          "applicability": "question",
+          "position": 2,
+          "agency": "PREPA / LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_PPOA_APPROVAL",
+          "group": "energy",
+          "applicability": "required",
+          "position": 3,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 4,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_UTILITY_NOTICE_OF_INTENT",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 5,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_UTILITY_MTR_COMPLIANCE",
+          "group": "energy",
+          "applicability": "required",
+          "position": 6,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+          "group": "energy",
+          "applicability": "required",
+          "position": 7,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_INTERCONNECTION_AGREEMENT",
+          "group": "energy",
+          "applicability": "required",
+          "position": 8,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_CONSTRUCTION_PERMIT",
+          "group": "energy",
+          "applicability": "required",
+          "position": 9,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 10,
+          "agency": "Bomberos"
+        },
+        {
+          "key": "process:PR_UTILITY_COMMISSIONING_COD",
+          "group": "energy",
+          "applicability": "required",
+          "position": 11,
+          "agency": "LUMA / OGPe"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 12,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [
+        "energy: Is it in a PREB procurement round (RFP)?",
+        "energy: What voltage will it connect at?"
+      ],
+      "energyQuestionsUncapped": 2,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG30 kg-scenario: utility_scale_solar / new_construction / rural_srep_agricultural",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG31",
+      "title": "Standalone 50 MW BESS providing storage services to LUMA — Guayama, industrial zone X (E03 variant)",
+      "matrix": {
+        "businessType": "standalone_battery",
+        "projectType": "new_construction",
+        "locationContext": "urban_industrial_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "process:PR_ENV_COMPLIANCE_DETERMINATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_LAND_USE_CONSULTA_UBICACION",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_UTILITY_PROCUREMENT_RFP",
+          "group": "energy",
+          "applicability": "question",
+          "position": 2,
+          "agency": "PREPA / LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_PPOA_APPROVAL",
+          "group": "energy",
+          "applicability": "required",
+          "position": 3,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 4,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_UTILITY_NOTICE_OF_INTENT",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 5,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_UTILITY_MTR_COMPLIANCE",
+          "group": "energy",
+          "applicability": "required",
+          "position": 6,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+          "group": "energy",
+          "applicability": "required",
+          "position": 7,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_INTERCONNECTION_AGREEMENT",
+          "group": "energy",
+          "applicability": "required",
+          "position": 8,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_CONSTRUCTION_PERMIT",
+          "group": "energy",
+          "applicability": "required",
+          "position": 9,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 10,
+          "agency": "Bomberos"
+        },
+        {
+          "key": "process:PR_UTILITY_COMMISSIONING_COD",
+          "group": "energy",
+          "applicability": "required",
+          "position": 11,
+          "agency": "LUMA / OGPe"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [
+        "energy: Is it in a PREB procurement round (RFP)?",
+        "energy: Is it already operating?",
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 2,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG31 kg-scenario: standalone_battery / new_construction / urban_industrial_x",
+      "findingsClassified": [
+        {
+          "kind": "duplicate",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT renders as its own card AND as energy item process:PR_UTILITY_CONSTRUCTION_PERMIT",
+          "confidence": "verified-in-code",
+          "rationale": "One source of truth for energy items (processes/legacyCards.ts).",
+          "cause": "likely-engine-bug",
+          "note": "supersededLegacyCards does not suppress the legacy OGPe card when PR_UTILITY_CONSTRUCTION_PERMIT renders: same permit shown twice.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG32",
+      "title": "Community microgrid (1.5 MW, islanding, sells to 30 members) — Adjuntas, SRC rural",
+      "matrix": {
+        "businessType": "microgrid",
+        "projectType": "new_construction",
+        "locationContext": "rural_src"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 0,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "process:PR_ENV_COMPLIANCE_DETERMINATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_LAND_USE_CONSULTA_UBICACION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 3,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 4,
+          "agency": "Bomberos"
+        },
+        {
+          "key": "process:PR_ENERGY_CONSTRUCTION_APPROVAL",
+          "group": "energy",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 6,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_ENERGY_MICROGRID_COMPLIANCE",
+          "group": "energy",
+          "applicability": "required",
+          "position": 7,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 8,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_ENERGY_NET_METERING",
+          "group": "energy",
+          "applicability": "optional",
+          "position": 9,
+          "agency": "LUMA"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG32 kg-scenario: microgrid / new_construction / rural_src",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG33",
+      "title": "5 MW ground-mount solar farm on a floodway pin — Río Grande",
+      "matrix": {
+        "businessType": "utility_scale_solar",
+        "projectType": "new_construction",
+        "locationContext": "floodway"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "process:PR_ENV_COMPLIANCE_DETERMINATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_FLOODPLAIN_REG13",
+          "group": "energy",
+          "applicability": "required",
+          "position": 1,
+          "agency": "JP / OGPe"
+        },
+        {
+          "key": "process:PR_LAND_USE_CONSULTA_UBICACION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "process:PR_UTILITY_PROCUREMENT_RFP",
+          "group": "energy",
+          "applicability": "question",
+          "position": 3,
+          "agency": "PREPA / LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_PPOA_APPROVAL",
+          "group": "energy",
+          "applicability": "required",
+          "position": 4,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+          "group": "energy",
+          "applicability": "required",
+          "position": 5,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_UTILITY_NOTICE_OF_INTENT",
+          "group": "energy",
+          "applicability": "expert",
+          "position": 6,
+          "agency": "PREB"
+        },
+        {
+          "key": "process:PR_UTILITY_MTR_COMPLIANCE",
+          "group": "energy",
+          "applicability": "required",
+          "position": 7,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+          "group": "energy",
+          "applicability": "required",
+          "position": 8,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_INTERCONNECTION_AGREEMENT",
+          "group": "energy",
+          "applicability": "required",
+          "position": 9,
+          "agency": "LUMA"
+        },
+        {
+          "key": "process:PR_UTILITY_CONSTRUCTION_PERMIT",
+          "group": "energy",
+          "applicability": "required",
+          "position": 10,
+          "agency": "OGPe / Municipality"
+        },
+        {
+          "key": "process:PR_UTILITY_COMMISSIONING_COD",
+          "group": "energy",
+          "applicability": "required",
+          "position": 11,
+          "agency": "LUMA / OGPe"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [
+        "energy: Is it in a PREB procurement round (RFP)?",
+        "energy: What voltage will it connect at?"
+      ],
+      "energyQuestionsUncapped": 2,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG33 kg-scenario: utility_scale_solar / new_construction / floodway",
+      "findingsClassified": [
+        {
+          "kind": "duplicate",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT renders as its own card AND as energy item process:PR_UTILITY_CONSTRUCTION_PERMIT",
+          "confidence": "verified-in-code",
+          "rationale": "One source of truth for energy items (processes/legacyCards.ts).",
+          "cause": "likely-engine-bug",
+          "note": "Same duplicate OGPe card next to PR_UTILITY_CONSTRUCTION_PERMIT.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG34",
+      "title": "Bakery, new construction — Bayamón, pin dropped on the road (must not trigger zoning)",
+      "matrix": {
+        "businessType": "cafe_no_alcohol",
+        "projectType": "new_construction",
+        "locationContext": "road_pin_residential"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 10,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 13,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG34 kg-scenario: cafe_no_alcohol / new_construction / road_pin_residential",
+      "findingsClassified": [
+        {
+          "kind": "agency",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
+          "confidence": "needs-expert-review",
+          "rationale": "Bayamón is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Bayamón's current delegation level.",
+          "cause": "kb-gap",
+          "note": "No autonomous-municipality model: the card always says OGPe even in Bayamon (municipal Oficina de Permisos with delegated jerarquia). Expert to confirm delegation levels.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG35",
+      "title": "Restaurant with bar, interior renovation — San Juan, pin dropped in the water (harbor)",
+      "matrix": {
+        "businessType": "restaurant_with_alcohol",
+        "projectType": "renovation",
+        "locationContext": "water_pin"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 14,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 15,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 16,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 17,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 18,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 19,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 20,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin",
+      "findingsClassified": [
+        {
+          "kind": "agency",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
+          "confidence": "needs-expert-review",
+          "rationale": "San Juan is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm San Juan's current delegation level.",
+          "cause": "kb-gap",
+          "note": "Same: San Juan permits office not modeled.",
+          "triaged": true
+        },
+        {
+          "kind": "unexpected",
+          "key": "DOC_JP_FLOOD_REG13",
+          "message": "unexpected DOC_JP_FLOOD_REG13 (required_now, required)",
+          "confidence": "needs-expert-review",
+          "rationale": "A pin in the harbor is not the business's lot: flood facts from an off-lot water pin should prompt the user to move the pin rather than produce a REQUIRED Reg. 13 card (layers.ts keeps flood/coastal facts for off-lot pins).",
+          "cause": "likely-engine-bug",
+          "note": "Off-lot water pin: layers.ts withholds zoning but keeps flood/coastal facts, so RULE_0706 makes Reg. 13 REQUIRED for a pin in the harbor (policy call for the expert: ask to move the pin instead).",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG36",
+      "title": "Hardware store, existing leased building — Arecibo, all geo layers unavailable",
+      "matrix": {
+        "businessType": "retail_store",
+        "projectType": "new_business_existing_building",
+        "locationContext": "layers_unknown"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 8,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG36 kg-scenario: retail_store / new_business_existing_building / layers_unknown",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG37",
+      "title": "Medical office building, new construction — Río Grande (non-autonomous), floodway",
+      "matrix": {
+        "businessType": "medical_office",
+        "projectType": "new_construction",
+        "locationContext": "floodway"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "Department of Health / DRNA"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 11,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 14,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG37 kg-scenario: medical_office / new_construction / floodway",
+      "findingsClassified": [
+        {
+          "kind": "gap",
+          "key": "gap:floodway_no_rise_certification",
+          "message": "KB gap: no requirement models gap:floodway_no_rise_certification",
+          "confidence": "needs-expert-review",
+          "rationale": "New construction in a regulatory floodway is prohibited unless a no-rise (encroachment) certification is approved (44 CFR 60.3(d)(3); Reg. 13 s.7); the card should state this, not just 'flood review'.",
+          "cause": "kb-gap",
+          "note": "Floodway is treated like any SFHA; no no-rise/encroachment requirement.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG38",
+      "title": "Medical cannabis dispensary, existing leased space — Humacao, zone X",
+      "matrix": {
+        "businessType": "cannabis_medicinal",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG38 kg-scenario: cannabis_medicinal / new_business_existing_building / urban_zone_x",
+      "findingsClassified": [
+        {
+          "kind": "gap",
+          "key": "gap:medical_cannabis_license",
+          "message": "KB gap: no requirement models gap:medical_cannabis_license",
+          "confidence": "needs-expert-review",
+          "rationale": "Medical cannabis dispensaries need a Junta Reglamentadora del Cannabis Medicinal license (Ley 42-2017, Reglamento 9038); the KB has no cannabis business type (modeled here as Pharmacy) or document.",
+          "cause": "kb-gap",
+          "note": "No cannabis business type or Junta de Cannabis license.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG39",
+      "title": "Existing restaurant & bar adds a covered terrace (expansion) — Carolina, coastal zone (zone X)",
+      "matrix": {
+        "businessType": "restaurant_with_alcohol",
+        "projectType": "expansion",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [
+        "DOC_OGPE_CONSTRUCTION_PERMIT before DOC_PERMISO_UNICO (DOC_OGPE_CONSTRUCTION_PERMIT absent)"
+      ],
+      "items": [
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 0,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 1,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 2,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 3,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 4,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 6,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 7,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 8,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 9,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 10,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 11,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_OUTDOOR_SEATING_AUTH",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 12,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 13,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 14,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 15,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 16,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_ANNUAL_REPORT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 17,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 18,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 19,
+          "agency": "Department of the Treasury (Hacienda)"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG39 kg-scenario: restaurant_with_alcohol / expansion / coastal_zone_x",
+      "findingsClassified": [
+        {
+          "kind": "missing",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "missing DOC_OGPE_CONSTRUCTION_PERMIT",
+          "confidence": "needs-expert-review",
+          "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only).",
+          "cause": "likely-engine-bug",
+          "note": "Same expansion gap (covered terrace): CZM fires, construction permit does not.",
+          "triaged": true
+        }
+      ]
+    },
+    {
+      "id": "KG40",
+      "title": "Auto body & paint shop, new construction — Ponce (autonomous), coastal zone (zone X)",
+      "matrix": {
+        "businessType": "auto_repair",
+        "projectType": "new_construction",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "fail",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 7,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_HAZMAT_HANDLER",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 8,
+          "agency": "EPA / DRNA"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 9,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 12,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG40 kg-scenario: auto_repair / new_construction / coastal_zone_x",
+      "findingsClassified": [
+        {
+          "kind": "agency",
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
+          "confidence": "needs-expert-review",
+          "rationale": "Ponce is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Ponce's current delegation level.",
+          "cause": "kb-gap",
+          "note": "Same: Ponce permits office not modeled.",
+          "triaged": true
+        },
+        {
+          "kind": "missing",
+          "key": "DOC_AIR_EMISSION_PERMIT",
+          "message": "missing DOC_AIR_EMISSION_PERMIT",
+          "confidence": "needs-expert-review",
+          "rationale": "A spray paint booth is an air-emission source: DRNA air permit / registration (Reglamento para el Control de la Contaminacion Atmosferica) and 40 CFR 63 subpart HHHHHH.",
+          "cause": "kb-gap",
+          "note": "Paint booth: no rule attaches the air permit to Body Shop.",
+          "triaged": true
+        },
+        {
+          "kind": "missing",
+          "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
+          "message": "missing DOC_EPA_HAZARDOUS_WASTE_ID",
+          "confidence": "needs-expert-review",
+          "rationale": "Paint/solvent waste -> EPA hazardous-waste generator ID (RCRA 40 CFR 262).",
+          "cause": "kb-gap",
+          "note": "Auto Repair Shop gets the EPA ID (needs-more-info) but Body Shop does not: inconsistent BT coverage.",
+          "triaged": true
+        }
+      ]
+    }
+  ]
+}

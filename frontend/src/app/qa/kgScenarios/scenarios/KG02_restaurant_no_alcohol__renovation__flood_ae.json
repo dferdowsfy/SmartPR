@@ -1,0 +1,175 @@
+{
+  "id": "KG02",
+  "title": "Restaurant without alcohol, interior renovation of a leased building — Toa Baja, FEMA AE",
+  "matrix": {
+    "businessType": "restaurant_no_alcohol",
+    "projectType": "renovation",
+    "locationContext": "flood_ae"
+  },
+  "description": "We are opening a family restaurant in Toa Baja in a leased building and will renovate the interior: a new kitchen, new plumbing and electrical work. We will not sell alcohol.",
+  "profile": {
+    "business_type": "Restaurant",
+    "municipality": "Toa Baja",
+    "location_type": "Restaurant Location",
+    "number_of_employees": 6,
+    "industry": "Food & Beverage",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_FOOD_PREPARED": true,
+    "Q_FOOD_SERVED": true,
+    "Q_ON_SITE_CONSUMPTION": true,
+    "Q_ALCOHOL_SOLD": false,
+    "Q_ALCOHOL_SERVED": false,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "renovation",
+      "confidence": 0.9,
+      "evidence": "renovate the interior"
+    },
+    "renovation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "renovate the interior"
+    },
+    "plumbing_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new plumbing"
+    },
+    "electrical_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "electrical work"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased building"
+    }
+  },
+  "site": {
+    "municipality": "Toa Baja",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0009 (Q_FOOD_PREPARED) + business-type rule: food service -> Licencia Sanitaria (Salud). (KB: RULE_0009, RULE_0046)"
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0011 (Q_FOOD_PREPARED) + business-type rule: Certificado de Prevencion de Incendios (Bomberos). (KB: RULE_0011, RULE_0047)"
+      },
+      {
+        "key": "DOC_CFPM",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0010: food prepared on site -> Certified Food Protection Manager. (KB: RULE_0010, RULE_0048)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0706: construction/expansion at a pin in the FEMA SFHA (location.flood_zone.sfha) -> Planning Regulation 13 flood review. (KB: RULE_0706, RULE_0707)"
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy. (KB: RULE_0020)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_CRIM_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol/tobacco: CRIM clearance rules (RULE_0621-0623, 0703) cannot fire."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids = [DOC_OGPE_CONSTRUCTION_PERMIT] (use permit after construction)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      },
+      {
+        "before": "DOC_JP_FLOOD_REG13",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "Reg. 13 compliance is part of the construction permit, which precedes the use permit."
+      }
+    ]
+  }
+}

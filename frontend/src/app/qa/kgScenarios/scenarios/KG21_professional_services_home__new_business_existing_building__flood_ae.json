@@ -1,0 +1,101 @@
+{
+  "id": "KG21",
+  "title": "Law firm (solo) from a home office — Guaynabo, FEMA AE pin",
+  "matrix": {
+    "businessType": "professional_services_home",
+    "projectType": "new_business_existing_building",
+    "locationContext": "flood_ae"
+  },
+  "description": "I am opening a solo law practice from my home office in Guaynabo. No clients come to the house; I meet them at court or online.",
+  "profile": {
+    "business_type": "Law Firm",
+    "municipality": "Guaynabo",
+    "location_type": "Home-Based",
+    "number_of_employees": 0,
+    "industry": "Professional Services",
+    "business_structure": "Sole Proprietorship"
+  },
+  "answers": {
+    "Q_HOME_BASED": true,
+    "Q_PROFESSIONAL_LICENSES": true,
+    "Q_EMPLOYEES_HIRED": false
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {},
+  "site": {
+    "municipality": "Guaynabo",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Law firm: attorney admission (Tribunal Supremo de PR). (KB: RULE_0029, RULE_0114)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction in the description: RULE_0643-0646 need project_type new_construction/renovation, structural_work or construction_approvals_required."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin is in the SFHA but there is no construction/site work: RULE_0706 any_of requires a construction-type project fact."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "No employees."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "Sole proprietorship: no LLC formation."
+      }
+    ],
+    "ordering": []
+  }
+}

@@ -1,0 +1,169 @@
+{
+  "id": "KG12",
+  "title": "Nightclub with bar & live entertainment, existing bar premises — Ponce historic zone, zone X",
+  "matrix": {
+    "businessType": "bar_nightclub",
+    "projectType": "new_business_existing_building",
+    "locationContext": "historic_zone"
+  },
+  "description": "We are opening a nightclub with live DJs and a full bar in an existing leased building in the historic district of Ponce. No construction; the space was already a bar.",
+  "profile": {
+    "business_type": "Bar",
+    "municipality": "Ponce",
+    "location_type": "Commercial Space",
+    "number_of_employees": 12,
+    "industry": "Food & Beverage",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_ALCOHOL_SOLD": true,
+    "Q_ALCOHOL_SERVED": true,
+    "Q_ON_SITE_CONSUMPTION": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_LIVE_ENTERTAINMENT": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased building"
+    },
+    "existing_use": {
+      "value": "bar",
+      "confidence": 0.9,
+      "evidence": "already a bar"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased building"
+    }
+  },
+  "site": {
+    "municipality": "Ponce",
+    "geo": "historic_zone"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0013/0014: alcohol sold/served -> Hacienda alcoholic-beverage license. (KB: RULE_0013, RULE_0014)"
+      },
+      {
+        "key": "DOC_CRIM_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0621: alcohol license prerequisite (CRIM debt certification). (KB: RULE_0621, RULE_0622)"
+      },
+      {
+        "key": "DOC_ASUME_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0624: alcohol license prerequisite (ASUME certification). (KB: RULE_0624, RULE_0625)"
+      },
+      {
+        "key": "DOC_BACKGROUND_CHECK",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0627: alcohol license prerequisite (good-conduct certificate). (KB: RULE_0627, RULE_0628)"
+      },
+      {
+        "key": "DOC_ENTERTAINMENT_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0032: Q_LIVE_ENTERTAINMENT -> entertainment / public-show permit. (KB: RULE_0032)"
+      },
+      {
+        "key": "DOC_NOISE_VARIANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0688: live entertainment -> noise compliance (JCA/DRNA noise regulation). (KB: RULE_0688)"
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0063: bar -> Bomberos fire-prevention certificate (assembly occupancy). (KB: RULE_0063)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction in the description: RULE_0643-0646 need project_type new_construction/renovation, structural_work or construction_approvals_required."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      },
+      {
+        "before": "DOC_CRIM_CLEARANCE",
+        "after": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB: DOC_ALCOHOL_LICENSE depends on CRIM / ASUME / background clearances."
+      },
+      {
+        "before": "DOC_ASUME_CLEARANCE",
+        "after": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB: DOC_ALCOHOL_LICENSE depends on CRIM / ASUME / background clearances."
+      }
+    ]
+  }
+}

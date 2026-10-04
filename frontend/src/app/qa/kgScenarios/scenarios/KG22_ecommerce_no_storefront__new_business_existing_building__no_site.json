@@ -1,0 +1,92 @@
+{
+  "id": "KG22",
+  "title": "E-commerce, online only, no storefront, no pin — Arecibo",
+  "matrix": {
+    "businessType": "ecommerce_no_storefront",
+    "projectType": "new_business_existing_building",
+    "locationContext": "no_site"
+  },
+  "description": "I sell handmade jewelry online only through my website and Etsy. There is no storefront; I ship from home in Arecibo.",
+  "profile": {
+    "business_type": "E-commerce Business",
+    "municipality": "Arecibo",
+    "location_type": "Online Only",
+    "number_of_employees": 0,
+    "industry": "Retail",
+    "business_structure": "Sole Proprietorship"
+  },
+  "answers": {
+    "Q_ONLINE_ONLY": true,
+    "Q_HOME_BASED": true,
+    "Q_PHYSICAL_LOCATION": false,
+    "Q_EMPLOYEES_HIRED": false
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {},
+  "site": null,
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction in the description: RULE_0643-0646 need project_type new_construction/renovation, structural_work or construction_approvals_required."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "No site pin: no location.* facts exist."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "No site pin: no location.* facts exist."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No site pin: no location.* facts exist."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "Online only (RULE_0689 Q_ONLINE_ONLY) renders Permiso Unico as needs-more-info at most, never required.",
+        "applicabilityIn": [
+          "required"
+        ]
+      }
+    ],
+    "ordering": []
+  }
+}

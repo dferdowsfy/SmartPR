@@ -1,0 +1,120 @@
+{
+  "id": "KG33",
+  "title": "5 MW ground-mount solar farm on a floodway pin — Río Grande",
+  "matrix": {
+    "businessType": "utility_scale_solar",
+    "projectType": "new_construction",
+    "locationContext": "floodway"
+  },
+  "description": "We are developing a 5 MW ground-mounted solar farm in Río Grande to sell power to LUMA. It is new construction on land we lease along the river.",
+  "profile": {
+    "business_type": "Renewable Energy Company",
+    "municipality": "Río Grande",
+    "location_type": "Industrial Space",
+    "number_of_employees": 0,
+    "industry": "Energy & Utilities",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_RENEWABLE_INSTALL": true,
+    "Q_SOLAR_MOUNTING": "Ground-mounted",
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "project_only",
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.9,
+      "evidence": "solar farm"
+    },
+    "generation_capacity_kw": {
+      "value": "5 MW",
+      "confidence": 0.9,
+      "evidence": "5 MW"
+    },
+    "energy_facility_type": {
+      "value": "standalone_plant",
+      "confidence": 0.9,
+      "evidence": "solar farm"
+    },
+    "power_offtaker": {
+      "value": "luma_prepa",
+      "confidence": 0.9,
+      "evidence": "sell power to LUMA"
+    },
+    "mounting_type": {
+      "value": "ground",
+      "confidence": 0.9,
+      "evidence": "ground-mounted"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "We are developing"
+    },
+    "energy_applicant_role": {
+      "value": "developer",
+      "confidence": 0.9,
+      "evidence": "We are developing"
+    },
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new construction"
+    }
+  },
+  "site": {
+    "municipality": "Río Grande",
+    "geo": "floodway"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "process:PR_FLOODPLAIN_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Process graph: energy facility at a pin in the SFHA/floodway -> Reg. 13 floodplain process (absorbs DOC_JP_FLOOD_REG13)."
+      },
+      {
+        "key": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+        "confidence": "verified-in-code",
+        "rationale": "Sale to LUMA at utility scale -> interconnection studies."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "5 MW > 1 MW net-metering ceiling (Ley 114-2007)."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_NET_METERING renders, the legacy net-metering card must be suppressed.",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_DG_INTERCONNECTION renders, the legacy LUMA card must be suppressed (no duplicate card).",
+        "cardOnly": true
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid wording: projectContext drops microgrid claims (MICROGRID_STATED_RE); energy.test.ts 'not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Duplicate: the floodplain review is rendered by PR_FLOODPLAIN_REG13; the legacy Reg. 13 card must be absorbed.",
+        "cardOnly": true
+      }
+    ],
+    "ordering": []
+  }
+}
