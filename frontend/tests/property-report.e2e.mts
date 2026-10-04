@@ -355,6 +355,11 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   await page.click('[data-testid="activity-analyze"]');
   await page.waitForTimeout(300);
   check("santurce warehouse: potentially prohibited + consulta de ubicación", (await compat.getAttribute("data-outcome")) === "potentially_prohibited" && (await page.locator('[data-rule="SR_USE_NOT_LISTED"]').count()) === 1);
+  check("evaluate gives visible feedback", /Evaluated: Warehouse/i.test(await page.locator('[data-testid="activity-status"]').innerText()));
+  await page.fill('[data-testid="activity-input"]', "something for my cousin");
+  await page.click('[data-testid="activity-analyze"]');
+  await page.waitForTimeout(300);
+  check("unrecognized activity says so and offers choices", /couldn't match/.test(await page.locator('[data-testid="activity-status"]').innerText()) && await page.locator('[data-testid="activity-question-use"]').isVisible());
   await page.fill('[data-testid="activity-input"]', "A daycare");
   await page.click('[data-testid="activity-analyze"]');
   await page.waitForTimeout(300);
@@ -380,7 +385,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   check("admin: six activities on Santurce give different determinations", outcomes.length === 6 && new Set(outcomes).size >= 2, outcomes.join(","));
   await page.selectOption('[data-testid="scenario-parcel"]', "straightforward");
   await page.waitForTimeout(300);
-  check("admin: a parcel without graph coverage shows QA gaps (R-I)", /R-I/.test(await page.locator('[data-testid="scenario-gaps"]').innerText().catch(() => "")));
+  check("admin: R-I parcel now has district coverage (no missing-district gap)", !/No graph district/.test(await page.locator('[data-testid="scenario-gaps"]').innerText().catch(() => "")) && (await page.locator('[data-testid="scenario-row"]').count()) === 6);
   await page.screenshot({ path: path.join(OUT, "11-admin-scenarios.png"), fullPage: false });
   await ctx.close();
 }

@@ -100,6 +100,7 @@ export function parcelFactsFor(site: IntakeSite, parcel: ParcelFindings | null):
     archaeology: yn(ex.archaeology),
     historic: either(either(yn(ex.historic_zone), yn(ex.historic_site)), pointYes("historic_zone")),
     landslideHigh: by.get("terrain")?.tags.includes("LANDSLIDE_HIGH") ?? false,
+    soilSlopeMaxPct: (() => { const m = ex.soils?.status === "verified" ? /(\d+)\s*(?:-|–|to)\s*(\d+)\s*(?:%|percent)/i.exec(ex.soils.value ?? "") : null; return m ? Number(m[2]) : null; })(),
     landClass: ex.put?.status === "verified" ? ex.put.value : by.get("land_class")?.status === "resolved" ? by.get("land_class")!.code : null,
   };
 }

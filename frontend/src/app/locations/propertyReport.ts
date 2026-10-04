@@ -485,15 +485,15 @@ export function buildPropertyReport(input: {
   const sp = toPrStatePlane(site.latitude, site.longitude);
 
   // ---- Next steps -----------------------------------------------------------
-  const activityText = [context.activity, context.businessType].filter(Boolean).join(" — ");
+  const activityText = [lu?.activity.raw?.trim() || context.activity, context.businessType].filter(Boolean).join(" — ");
   const activity = activityText
     ? bi(`Findings below are read for the activity you described: ${activityText}.`, `Los hallazgos se leen para la actividad que describió: ${activityText}.`)
-    : bi("Add what you plan to do in the intake description above; SmartPR reads the findings against that activity.", "Añada lo que planifica hacer en la descripción de arriba; SmartPR lee los hallazgos según esa actividad.");
+    : bi("Describe what you plan to do in \"What do you want to do with this property?\" and press Evaluate; SmartPR reads the findings against that activity.", "Describa lo que planifica en «¿Qué quieres hacer con esta propiedad?» y pulse Evaluar; SmartPR lee los hallazgos según esa actividad.");
   const missing: Bi[] = [];
   if (site.coordinate_source === "GEOCODED_ADDRESS") missing.push(bi("The pin comes from the address search — move it onto the exact property if needed.", "El pin viene de la búsqueda de dirección — muévalo a la propiedad exacta si hace falta."));
   if (site.near_boundary) missing.push(bi("The pin is near a municipal boundary — confirm it is inside the right municipio.", "El pin está cerca de un límite municipal — confirme que está en el municipio correcto."));
   if (!boundary?.value) missing.push(bi("Parcel boundary not determined — findings are for the pin, not the whole lot.", "No se determinó el límite de la parcela — los hallazgos son del pin, no de todo el solar."));
-  if (!context.activity && !context.businessType) missing.push(bi("The planned activity has not been described yet.", "Aún no se ha descrito la actividad planificada."));
+  if (!activityText) missing.push(bi("The planned activity has not been described yet.", "Aún no se ha descrito la actividad planificada."));
   const unresolved: Bi[] = findings
     .filter((f) => f.state !== "sourced" && f.state !== "none_mapped")
     .map((f) => bi(`${f.title.en}: ${STATE_TEXT[f.state].en}`, `${f.title.es}: ${STATE_TEXT[f.state].es}`));

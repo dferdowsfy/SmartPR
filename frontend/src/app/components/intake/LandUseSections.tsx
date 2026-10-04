@@ -45,6 +45,7 @@ export function RegulatoryFlags({ report, lang }: { report: PropertyReport; lang
 export function ProposedActivityPanel({ value, analysis, lang, onChange }: { value: ActivityInput; analysis: LandUseAnalysis | null; lang: Lang; onChange: (next: ActivityInput) => void }) {
   const [draft, setDraft] = useState(value.text);
   const [lastValue, setLastValue] = useState(value.text);
+  const [submitted, setSubmitted] = useState(0);
   if (value.text !== lastValue) { setLastValue(value.text); setDraft(value.text); }
   const a = analysis?.activity;
   const facts = a ? [
@@ -60,12 +61,19 @@ export function ProposedActivityPanel({ value, analysis, lang, onChange }: { val
   return (
     <section className="spr-prd-section spr-lua" aria-labelledby="spr-lua-title" data-testid="proposed-activity">
       <h3 id="spr-lua-title">{L("What do you want to do with this property?", "¿Qué quieres hacer con esta propiedad?", lang)}</h3>
-      <form className="spr-lua-form" onSubmit={(e) => { e.preventDefault(); onChange({ text: draft.trim(), construction: null, use: null }); }}>
+      <form className="spr-lua-form" onSubmit={(e) => { e.preventDefault(); setSubmitted((n) => n + 1); onChange({ text: draft.trim(), construction: null, use: null }); }}>
         <label htmlFor="spr-lua-input" className="sr-only">{L("Proposed activity", "Actividad propuesta", lang)}</label>
         <textarea id="spr-lua-input" rows={2} maxLength={400} value={draft} onChange={(e) => setDraft(e.target.value)}
           placeholder={L("e.g. Build a 120-room hotel · Open a restaurant · Convert the building into apartments", "p. ej. Construir un hotel de 120 habitaciones · Abrir un restaurante · Convertir el edificio en apartamentos", lang)} data-testid="activity-input" />
         <button type="submit" className="spr-loc-btn primary" disabled={!draft.trim()} data-testid="activity-analyze"><Search aria-hidden="true" /> {L("Evaluate", "Evaluar", lang)}</button>
       </form>
+      {submitted > 0 && analysis && (
+        <p className="spr-lua-status" role="status" aria-live="polite" data-testid="activity-status" key={submitted}>
+          {a?.use
+            ? L(`Evaluated: ${a.useName} — ${COMPATIBILITY_TEXT[analysis.compatibility.outcome].en}. See the result below.`, `Evaluado: ${a.useName} — ${COMPATIBILITY_TEXT[analysis.compatibility.outcome].es}. Vea el resultado abajo.`, lang)
+            : L("We couldn't match that to a land use we have rules for. Pick the closest option below, or rephrase (e.g. \"agrotourism cabins\", \"restaurant\", \"single-family house\").", "No pudimos asociar eso a un uso con reglas. Elija la opción más cercana abajo o reformule (p. ej. «cabañas de agroturismo», «restaurante», «casa unifamiliar»).", lang)}
+        </p>
+      )}
       {facts.length > 0 && <p className="spr-lua-facts" data-testid="activity-facts">{L("Understood", "Entendido", lang)}: {facts.join(" · ")}</p>}
       {analysis?.questions.map((q) => (
         <div key={q.id} className="spr-lua-q" role="group" aria-label={q.text[lang]} data-testid={`activity-question-${q.id}`}>

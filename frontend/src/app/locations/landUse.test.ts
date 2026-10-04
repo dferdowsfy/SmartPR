@@ -126,11 +126,37 @@ test("unknown facts become questions, never guesses; missing rules become QA gap
   assert.ok(daycare.questions.some((q) => q.id === "construction"));
   // A district without graph coverage is flagged, not guessed.
   const p2 = JSON.parse(JSON.stringify(parcel)) as ParcelFindings;
-  p2.zoning.districts = [{ ...p2.zoning.districts[0]!, code: "R-I", name: "Residencial Intermedio", share: 1, overlays: [] }];
+  p2.zoning.districts = [{ ...p2.zoning.districts[0]!, code: "ZZ-9", name: "Distrito desconocido", share: 1, overlays: [] }];
   p2.areas_reliable = { zoning: true, flood: true };
   const r = analyzeProposedActivity("Build a hotel", site, p2);
   assert.equal(r.compatibility.baseOutcome, "insufficient");
-  assert.ok(r.coverageGaps.some((g) => g.kind === "zoning_district" && /R-I/.test(g.detail)));
+  assert.ok(r.coverageGaps.some((g) => g.kind === "zoning_district" && /ZZ-9/.test(g.detail)));
+});
+
+function ruralParcel(code: string, name: string): ParcelFindings {
+  const p = JSON.parse(JSON.stringify(parcel)) as ParcelFindings;
+  p.zoning.districts = [{ ...p.zoning.districts[0]!, code, name, share: 1, overlays: [] }];
+  p.areas_reliable = { zoning: true, flood: true };
+  return p;
+}
+
+test("Aguas Buenas-like R-G: listed uses resolve, unlisted uses go to consulta (never a gap)", () => {
+  const rg = ruralParcel("R-G", "Rural General");
+  const base = (t: string) => analyzeProposedActivity(t, site, rg).compatibility.baseOutcome;
+  assert.equal(base("Agrotourism cabins"), "permitted");
+  assert.equal(base("Single-family house"), "permitted");
+  assert.equal(base("Open a restaurant"), "conditional");
+  const office = analyzeProposedActivity("Professional office", site, rg);
+  if (office.activity.use) {
+    assert.equal(office.compatibility.baseOutcome, "discretionary");
+    assert.ok(!office.coverageGaps.some((g) => g.kind === "use_permission"));
+    assert.match(office.districts[0]!.citation ?? "", /6\.69/);
+  }
+});
+
+test("A-B and R-I districts are covered", () => {
+  assert.equal(analyzeProposedActivity("Agrotourism eco-lodge", site, ruralParcel("A-B", "Agrícola Productivo")).compatibility.baseOutcome, "permitted");
+  assert.equal(analyzeProposedActivity("Bed and breakfast", site, ruralParcel("R-I", "Residencial Intermedio")).compatibility.baseOutcome, "permitted");
 });
 
 test("report carries flags, land-use section and standardized statuses", () => {

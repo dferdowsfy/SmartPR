@@ -109,6 +109,8 @@ export interface ParcelFacts {
   historic: "yes" | "no" | "unable";
   landslideHigh: boolean;
   landClass: string | null;
+  /** Upper slope % of the mapped soil unit at the pin (USDA), when known. */
+  soilSlopeMaxPct?: number | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,6 +136,8 @@ export interface DistrictDetermination {
   code: string; share: number | null; districtId: string | null; districtName: string | null;
   outcome: Compatibility; permissionId: string | null; conditions: string[]; citation: string | null; sources: SourceRef[];
   equivalence: string | null; sliver: boolean; gap: string | null;
+  /** Raw rule result: the permission outcome, "consulta" (unlisted use, consulta de ubicación) or "not_listed". */
+  rawOutcome?: string | null;
 }
 
 export interface ApprovalFinding {
@@ -206,7 +210,7 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
   const actStep: PathStep = { kind: "activity", label: activity.useName ? `Proposed: ${activity.useName}` : `Proposed: "${activity.raw}"`, ref: activity.use ?? undefined };
 
   if (!activity.use) {
-    questions.push({ id: "use", text: bi("Which of these best describes the planned use?", "¿Cuál describe mejor el uso planificado?"), options: g.landUses.slice(0, 10).map((u) => ({ value: u.id, label: bi(s(u.name)) })) });
+    questions.push({ id: "use", text: bi("Which of these best describes the planned use?", "¿Cuál describe mejor el uso planificado?"), options: g.landUses.map((u) => ({ value: u.id, label: bi(s(u.name)) })) });
   }
 
   // ---- Zoning → use permission ---------------------------------------------
@@ -218,16 +222,21 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
       return { code: d.code, share: d.share, districtId: null, districtName: d.name, outcome: "insufficient", permissionId: null, conditions: [], citation: null, sources: [], equivalence: null, sliver, gap: `No verified district rules for ${d.code}` };
     }
     const perm = activity.use ? g.usePermissions.find((p) => s(p.zoning_district_id) === zd.id && s(p.land_use_id) === activity.use && s(p.verification) === "verified_text") : undefined;
-    if (activity.use && !perm && !sliver) gaps.push({ kind: "use_permission", detail: `No verified use permission for ${activity.useName} in ${s(zd.code)} (${s(zd.name)}).` });
-    const outcome: Compatibility = !perm ? "insufficient"
+    const consulta = !!activity.use && !perm && s(zd.unlisted_uses) === "consulta";
+    if (activity.use && !perm && !consulta && !sliver) gaps.push({ kind: "use_permission", detail: `No verified use permission for ${activity.useName} in ${s(zd.code)} (${s(zd.name)}).` });
+    const outcome: Compatibility = consulta ? "discretionary"
+      : !perm ? "insufficient"
       : s(perm.outcome) === "permitted" ? "permitted"
       : s(perm.outcome) === "conditional" ? "conditional"
       : s(perm.outcome) === "exception" ? "discretionary"
       : "potentially_prohibited";
+    const rawOutcome = perm ? s(perm.outcome) : !activity.use ? null : consulta ? "consulta" : s(zd.unlisted_uses) === "not_listed" ? "not_listed" : null;
     return {
       code: d.code, share: d.share, districtId: zd.id, districtName: s(zd.name), outcome, permissionId: perm?.id ?? null,
-      conditions: perm ? arr(perm.conditions) : [], citation: perm ? `RC 2023 ${s(perm.citation_section)}` : null,
-      sources: perm ? srcRefs(g, arr(perm.source_ids)) : [], equivalence: s(zd.equivalence_note) || null, sliver, gap: perm ? null : `No verified rule for this use in ${s(zd.code)}`,
+      conditions: perm ? arr(perm.conditions) : consulta ? ["This use is not listed for the district; it may be considered through a consulta de ubicación — approval is not assured."] : [],
+      citation: perm ? `RC 2023 ${s(perm.citation_section)}` : consulta ? `RC 2023 ${s(zd.unlisted_citation)}` : null,
+      sources: perm || consulta ? srcRefs(g, arr((perm ?? zd).source_ids)) : [], equivalence: s(zd.equivalence_note) || null, sliver,
+      gap: perm || consulta || !activity.use ? null : `No verified rule for this use in ${s(zd.code)}`, rawOutcome,
     };
   });
   if (parcel.zoningStatus !== "verified") unresolved.push({ kind: "unable_to_verify", text: "Zoning (calificación) could not be verified for this parcel." });
@@ -249,7 +258,7 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
     "reserve.on_parcel": parcel.reserve === "unable" ? null : parcel.reserve === "yes",
     "archaeology.on_parcel": parcel.archaeology === "unable" ? null : parcel.archaeology === "yes",
     "historic.on_parcel": parcel.historic === "unable" ? null : parcel.historic === "yes",
-    "use.outcome": principal.find((d) => d.permissionId)?.permissionId ? s(g.usePermissions.find((p) => p.id === principal.find((d) => d.permissionId)!.permissionId)?.outcome) : null,
+    "use.outcome": principal.find((d) => d.rawOutcome)?.rawOutcome ?? null,
     "activity.use": activity.use,
     "activity.construction": activity.construction,
   };
@@ -289,6 +298,9 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
     questions.push({ id: "construction", text: bi("Does the project involve new construction or an expansion, or will it use an existing building as is?", "¿El proyecto incluye construcción nueva o ampliación, o usará un edificio existente tal como está?"),
       options: [{ value: "new", label: bi("New construction", "Construcción nueva") }, { value: "addition", label: bi("Expansion / addition", "Ampliación") }, { value: "renovation", label: bi("Interior renovation only", "Solo remodelación interior") }, { value: "none", label: bi("Existing building, no work", "Edificio existente, sin obras") }] });
     unresolved.push({ kind: "missing_fact", text: "Whether the project includes construction — flood, coastal and wetland reviews depend on it." });
+  }
+  if ((parcel.soilSlopeMaxPct ?? 0) >= 30 && (activity.construction === "new" || activity.construction === "addition")) {
+    unresolved.push({ kind: "missing_fact", text: `The mapped soil is on steep slopes (up to ${parcel.soilSlopeMaxPct}%)${parcel.landslideHigh ? " in a high landslide-susceptibility area" : ""}: grading, foundations and access need a site-specific geotechnical / engineering review. This is a site-suitability note, not a zoning rule.` });
   }
   if (activity.construction === "renovation" && parcel.flood.zones.some((z) => z.sfha)) {
     unresolved.push({ kind: "missing_fact", text: "Whether the renovation is a substantial improvement (≥ 50% of the structure's market value) — that would trigger floodplain review in the mapped flood area (44 CFR 59.1)." });

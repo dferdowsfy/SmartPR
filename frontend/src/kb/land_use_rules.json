@@ -19,6 +19,65 @@
    "citation_section": "Regla 6.1.12 (pp. 404–409); equivalencias San Juan: Sección 6.1.1.4, Tabla 6.14",
    "equivalence_note": "RC 2023 Tabla 6.14 maps San Juan POT CT-1/CT-2/CT-3 to C-T. A parcel mapped as 'CT' is read as C-T; confirm the municipal map conversion.",
    "equivalence_confidence": "medium",
+   "last_verified_at": "2026-10-04",
+   "unlisted_uses": "not_listed",
+   "unlisted_citation": "Tabla 6.57; Sección 6.1.12.3"
+  },
+  {
+   "id": "ZD_RG",
+   "code": "R-G",
+   "name": "Rural General",
+   "family": "rural",
+   "aliases": [
+    "R-G",
+    "RG"
+   ],
+   "governing_instrument": "Reglamento Conjunto 2023, Regla 6.1.17",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Regla 6.1.17 (pp. 423–429)",
+   "unlisted_uses": "consulta",
+   "unlisted_citation": "Tabla 6.69: «Otros usos vía consulta de ubicación»",
+   "equivalence_confidence": "high",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "ZD_AB",
+   "code": "A-B",
+   "name": "Área de Bosque",
+   "family": "conservation",
+   "aliases": [
+    "A-B",
+    "AB"
+   ],
+   "governing_instrument": "Reglamento Conjunto 2023, Regla 6.1.22",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Regla 6.1.22 (pp. 444–446)",
+   "unlisted_uses": "consulta",
+   "unlisted_citation": "Tabla 6.78: «Otros usos mediante consulta de ubicación ante la Junta Adjudicativa»",
+   "equivalence_confidence": "high",
+   "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "ZD_RI",
+   "code": "R-I",
+   "name": "Residencial Intermedio",
+   "family": "residential",
+   "aliases": [
+    "R-I",
+    "RI"
+   ],
+   "governing_instrument": "Reglamento Conjunto 2023, Regla 6.1.3",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Regla 6.1.3 (pp. 362–366)",
+   "unlisted_uses": "not_listed",
+   "unlisted_citation": "Tabla 6.32; Sección 6.1.3.3",
+   "equivalence_confidence": "high",
    "last_verified_at": "2026-10-04"
   }
  ],
@@ -36,8 +95,6 @@
     "parador",
     "condo-hotel",
     "condo hotel",
-    "bed and breakfast",
-    "b&b",
     "hospedería",
     "hospederia",
     "hostal",
@@ -109,7 +166,11 @@
     "boutique",
     "venta al detal",
     "pharmacy",
-    "farmacia"
+    "farmacia",
+    "farm store",
+    "country store",
+    "colmado",
+    "general store"
    ],
    "construction_default": null
   },
@@ -220,6 +281,90 @@
     "tear down"
    ],
    "construction_default": "demolition"
+  },
+  {
+   "id": "LU_AGROTOURISM",
+   "name": "Agro- / eco-tourism lodging (agro-hospedería, eco-hospedería)",
+   "category": "hospederia",
+   "aliases": [
+    "agrotourism",
+    "agro-tourism",
+    "agro tourism",
+    "agroturismo",
+    "agroturístico",
+    "agroturistico",
+    "ecotourism",
+    "eco-tourism",
+    "ecoturismo",
+    "eco-lodge",
+    "ecolodge",
+    "eco lodge",
+    "agro-hospedería",
+    "agrohospederia",
+    "eco-hospedería",
+    "ecohospederia",
+    "cabins",
+    "cabañas",
+    "cabanas",
+    "glamping",
+    "farm stay",
+    "farmstay",
+    "agrotourism lodge",
+    "eco-tourism lodge"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_AGRICULTURE",
+   "name": "Agriculture / farming",
+   "category": "agricola",
+   "aliases": [
+    "farm",
+    "farming",
+    "agriculture",
+    "agricultural",
+    "finca",
+    "cultivo",
+    "siembra",
+    "crops",
+    "orchard",
+    "apiary",
+    "apicultura",
+    "beekeeping",
+    "agroecology",
+    "agroecología",
+    "greenhouse",
+    "invernadero",
+    "livestock",
+    "ganado"
+   ],
+   "construction_default": "none"
+  },
+  {
+   "id": "LU_BNB",
+   "name": "Bed & breakfast",
+   "category": "hospederia",
+   "aliases": [
+    "bed and breakfast",
+    "bed & breakfast",
+    "b&b",
+    "alojamiento y desayuno"
+   ],
+   "construction_default": null
+  },
+  {
+   "id": "LU_SHORT_TERM_RENTAL",
+   "name": "Short-term rental",
+   "category": "hospederia",
+   "aliases": [
+    "short-term rental",
+    "short term rental",
+    "airbnb",
+    "vacation rental",
+    "alquiler a corto plazo",
+    "alojamiento suplementario"
+   ],
+   "construction_default": null
   }
  ],
  "use_permissions": [
@@ -425,6 +570,405 @@
    "last_verified_at": "2026-10-04",
    "verification": "verified_text",
    "notes": ""
+  },
+  {
+   "id": "UP_RG_SINGLE_FAMILY",
+   "name": "Single Family in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_SINGLE_FAMILY",
+   "outcome": "permitted",
+   "conditions": [
+    "Density per consulta de ubicación (Tabla 6.70)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Vivienda para una (1) o dos (2) familias",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_AGROTOURISM",
+   "name": "Agrotourism in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_AGROTOURISM",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Agro-hospedería; Eco-hospedería; Actividades ecoturísticas y agroturísticas",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_AGRICULTURE",
+   "name": "Agriculture in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_AGRICULTURE",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Agrícolas; Agroecología",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_RETAIL",
+   "name": "Retail in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_RETAIL",
+   "outcome": "conditional",
+   "conditions": [
+    "Retail of basic-necessity goods up to 10,000 sq ft of gross floor area; larger only for animals and agricultural products (Tabla 6.69)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Venta al detal de productos de primera necesidad",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_WAREHOUSE",
+   "name": "Warehouse in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_WAREHOUSE",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Almacenes",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_SOLAR_UTILITY",
+   "name": "Solar Utility in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_SOLAR_UTILITY",
+   "outcome": "permitted",
+   "conditions": [
+    "Subject to the design parameters of Tabla 6.70 and the other provisions of Regla 6.1.17."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Proyectos de energía renovable",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_DAYCARE",
+   "name": "Daycare in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_DAYCARE",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Centro de cuido",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_SHORT_TERM_RENTAL",
+   "name": "Short Term Rental in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_SHORT_TERM_RENTAL",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Alojamiento Suplementario a Corto Plazo",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RG_RESTAURANT",
+   "name": "Restaurant in R-G",
+   "zoning_district_id": "ZD_RG",
+   "land_use_id": "LU_RESTAURANT",
+   "outcome": "conditional",
+   "conditions": [
+    "Only a small cafetín is listed; a full restaurant goes through consulta de ubicación («Otros usos vía consulta de ubicación»)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.69 (Sección 6.1.17.2): Cafetín",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_AB_AGROTOURISM",
+   "name": "Agrotourism in A-B",
+   "zoning_district_id": "ZD_AB",
+   "land_use_id": "LU_AGROTOURISM",
+   "outcome": "permitted",
+   "conditions": [
+    "A-B is a conservation district: uses must be compatible with forest protection (Sección 6.1.22.1)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.78 (Sección 6.1.22.2): Instalación para actividades agro-turística y eco-turística; Ecohospedería",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_AB_BNB",
+   "name": "Bnb in A-B",
+   "zoning_district_id": "ZD_AB",
+   "land_use_id": "LU_BNB",
+   "outcome": "permitted",
+   "conditions": [
+    "A-B is a conservation district (Sección 6.1.22.1)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.78: Alojamiento y desayuno (Bed & Breakfast)",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_AB_SINGLE_FAMILY",
+   "name": "Single Family in A-B",
+   "zoning_district_id": "ZD_AB",
+   "land_use_id": "LU_SINGLE_FAMILY",
+   "outcome": "conditional",
+   "conditions": [
+    "One- or two-family dwelling per farm (finca)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.78: Vivienda de una (1) o dos (2) familias por finca",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_AB_AGRICULTURE",
+   "name": "Agriculture in A-B",
+   "zoning_district_id": "ZD_AB",
+   "land_use_id": "LU_AGRICULTURE",
+   "outcome": "permitted",
+   "conditions": [
+    "Mainly agroforestry and silviculture; other crops and compatible livestock as recommended by the Departamento de Agricultura."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.78: Agrícolas, principalmente agro-forestería y silvicultura",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_AB_RETAIL",
+   "name": "Retail in A-B",
+   "zoning_district_id": "ZD_AB",
+   "land_use_id": "LU_RETAIL",
+   "outcome": "conditional",
+   "conditions": [
+    "Only products harvested on the farm, in a building of no more than 75 m²."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.78: Venta de productos cosechados en la finca",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RI_SINGLE_FAMILY",
+   "name": "Single Family in R-I",
+   "zoning_district_id": "ZD_RI",
+   "land_use_id": "LU_SINGLE_FAMILY",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.32 (Sección 6.1.3.2): Unifamiliares",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RI_MULTIFAMILY",
+   "name": "Multifamily in R-I",
+   "zoning_district_id": "ZD_RI",
+   "land_use_id": "LU_MULTIFAMILY",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.32: Casa de apartamentos",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RI_DAYCARE",
+   "name": "Daycare in R-I",
+   "zoning_district_id": "ZD_RI",
+   "land_use_id": "LU_DAYCARE",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.32: Centros de Cuidos",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RI_BNB",
+   "name": "Bnb in R-I",
+   "zoning_district_id": "ZD_RI",
+   "land_use_id": "LU_BNB",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.32: Alojamiento y Desayuno",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RI_SHORT_TERM_RENTAL",
+   "name": "Short Term Rental in R-I",
+   "zoning_district_id": "ZD_RI",
+   "land_use_id": "LU_SHORT_TERM_RENTAL",
+   "outcome": "permitted",
+   "conditions": [],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.32: Alojamiento Suplementario a Corto Plazo",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_RI_HOTEL",
+   "name": "Hotel in R-I",
+   "zoning_district_id": "ZD_RI",
+   "land_use_id": "LU_HOTEL",
+   "outcome": "exception",
+   "conditions": [
+    "Hospedería by exception: Compañía de Turismo certification, no more than 15 lodging units, minimum lot per Tabla 6.33.",
+    "A hotel is allowed by exception only inside a historic zone (Sección 6.1.3.3(c))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.3.3(b)–(c) (Usos vía excepción)",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_BNB",
+   "name": "Bnb in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_BNB",
+   "outcome": "permitted",
+   "conditions": [
+    "Lodging uses are allowed above the second level (Sección 6.1.12.2(c))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.57 (Hospederías: Alojamiento y Desayuno)",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
+  },
+  {
+   "id": "UP_CT_SHORT_TERM_RENTAL",
+   "name": "Short Term Rental in C-T",
+   "zoning_district_id": "ZD_CT",
+   "land_use_id": "LU_SHORT_TERM_RENTAL",
+   "outcome": "permitted",
+   "conditions": [
+    "Lodging uses are allowed above the second level (Sección 6.1.12.2(c))."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.57 (Hospederías: Alojamiento suplementario a corto plazo)",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023",
+   "last_verified_at": "2026-10-04",
+   "verification": "verified_text",
+   "notes": ""
   }
  ],
  "development_standards": [
@@ -504,6 +1048,61 @@
    ],
    "citation_section": "Tabla 6.58",
    "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_RG_LOT",
+   "zoning_district_id": "ZD_RG",
+   "name": "Minimum lot size",
+   "value": "25 cuerdas",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.70",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_RG_OCC",
+   "zoning_district_id": "ZD_RG",
+   "name": "Maximum lot occupancy",
+   "value": "Lots > 5 cuerdas: set by the activity · 1–5 cuerdas: 20% · < 1 cuerda: 50%",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.70",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_RG_FAR",
+   "zoning_district_id": "ZD_RG",
+   "name": "Maximum gross floor area",
+   "value": "Lots > 5 cuerdas: set by the activity · 1–5 cuerdas: 40% · < 1 cuerda: 100% of the lot",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.70",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_RG_SETBACK",
+   "zoning_district_id": "ZD_RG",
+   "name": "Setbacks",
+   "value": "≥ 6 m from any road right-of-way; side and rear ≥ 3 m or 1/5 of building height, whichever is greater",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.70",
+   "applies_to": "new_construction"
+  },
+  {
+   "id": "DS_RG_DENSITY",
+   "zoning_district_id": "ZD_RG",
+   "name": "Residential density",
+   "value": "One- or two-family dwellings as set in the consulta de ubicación",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.70",
+   "applies_to": "residential"
   }
  ],
  "site_rules": [
@@ -765,8 +1364,11 @@
     "all": [
      {
       "fact": "use.outcome",
-      "op": "equals",
-      "value": "not_listed"
+      "op": "in",
+      "value": [
+       "not_listed",
+       "consulta"
+      ]
      }
     ]
    },

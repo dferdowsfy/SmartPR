@@ -13,7 +13,19 @@ import {
   type ExtraFinding, type ExtraId, type ParcelBoundary, type ParcelFindings,
 } from "./parcel.ts";
 
-const TIMEOUT_MS = 9000;
+const TIMEOUT_MS = 12000;
+/** The JP / MIPR ArcGIS servers time out when hit with ~10 parallel queries. */
+const JP_CONCURRENCY = 3;
+
+function limiter(max: number) {
+  let active = 0;
+  const waiting: (() => void)[] = [];
+  return async <T,>(fn: () => Promise<T>): Promise<T> => {
+    if (active >= max) await new Promise<void>((r) => waiting.push(r));
+    active++;
+    try { return await fn(); } finally { active--; waiting.shift()?.(); }
+  };
+}
 const MAX_QUERY_VERTICES = 240;
 const FRESH_MS = 24 * 3600_000;
 const cache = new Map<string, { at: number; value: ParcelFindings }>();
@@ -90,13 +102,15 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
   // Geometry is requested (simplified to ~0.5 m) so the share of the parcel
   // in each district / flood zone can be computed by polygon intersection.
   const geomOut: Record<string, string> = boundary.value ? { returnGeometry: "true", outSR: "4326", geometryPrecision: "7", maxAllowableOffset: "0.000005" } : { returnGeometry: "false" };
-  const presence = (key: LayerSourceKey) => q(key, { ...geomParams, outFields: "*", returnGeometry: "false" });
+  const jp = limiter(JP_CONCURRENCY);
+  const qJp = (src: LayerSourceKey, params: Record<string, string>) => jp(() => q(src, params));
+  const presence = (key: LayerSourceKey) => qJp(key, { ...geomParams, outFields: "*", returnGeometry: "false" });
   const [zoningResp, floodResp, putResp, ptResp, histZ, histS, arch, prot, resv, wet, soilsResp] = await Promise.all([
-    q("jp_calificacion", { ...geomParams, outFields: "cali,descrip,vigencia,resolucion,cali_sobre,des_sobre,r_sobre,v_sobre,cali_sobre2,des_sobre2,r_sobre2,v_sobre2", ...geomOut }),
+    qJp("jp_calificacion", { ...geomParams, outFields: "cali,descrip,vigencia,resolucion,cali_sobre,des_sobre,r_sobre,v_sobre,cali_sobre2,des_sobre2,r_sobre2,v_sobre2", ...geomOut }),
     q("fema_flood_zones", { ...geomParams, outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF", ...geomOut }),
     presence("jp_put"),
     // The municipal Plan Territorial record is per municipio: the pin is enough.
-    q("jp_plan_territorial", { geometry: point, geometryType: "esriGeometryPoint", outFields: "*", returnGeometry: "false" }),
+    qJp("jp_plan_territorial", { geometry: point, geometryType: "esriGeometryPoint", outFields: "*", returnGeometry: "false" }),
     presence("mipr_zona_historica"),
     presence("mipr_sitios_historicos"),
     presence("mipr_arqueologia"),

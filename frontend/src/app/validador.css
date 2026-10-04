@@ -4138,6 +4138,7 @@ section.spr-plc .spr-plc-proposal { margin: 0; padding: 10px 12px; border: 1px s
 .spr-lua-form textarea { flex: 1; min-width: 0; padding: 10px 12px; border: 1.5px solid #c3cfcf; border-radius: 10px; font: inherit; font-size: 15px; resize: vertical; }
 .spr-lua-form textarea:focus { outline: none; border-color: #1f6b66; box-shadow: 0 0 0 3px rgba(31,107,102,.18); }
 .spr-lua-facts { margin: 8px 0 0; font-size: 13.5px; color: #36585a; }
+.spr-lua-status { margin: 8px 0 0; padding: 8px 10px; border-radius: 8px; background: #eef6f6; font-size: 13.5px; color: #1f4446; }
 .spr-lua-q { margin-top: 10px; padding: 10px 12px; border: 1px solid #f0cf8a; border-radius: 10px; background: #fff8ea; }
 .spr-lua-q p { display: flex; gap: 6px; align-items: center; margin: 0 0 8px; font-size: 14px; color: #5c4300; font-weight: 600; }
 .spr-lua-q p svg { width: 16px; height: 16px; }
