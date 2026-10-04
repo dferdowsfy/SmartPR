@@ -1,0 +1,2096 @@
+{
+ "recorded_at": "2026-10-04T01:48:38.738Z",
+ "note": "Live answers from CRIM, JP, FEMA, USGS, NOAA services recorded for tests. Re-record with scratch script; never hand-edit.",
+ "cases": {
+  "straightforward": {
+   "latitude": 18.2208,
+   "longitude": -66.0356,
+   "place": {
+    "municipio": {
+     "fips": "025",
+     "name": "Caguas"
+    },
+    "barrio": {
+     "geoid": "7202510377",
+     "name": "Caguas",
+     "barrioPueblo": true
+    },
+    "boundaryDistanceM": 53,
+    "nearBoundary": false
+   },
+   "layers": {
+    "latitude": 18.2208,
+    "longitude": -66.0356,
+    "resolved_at": "2026-10-04T01:49:15.473Z",
+    "results": [
+     {
+      "layer": "flood_zone",
+      "status": "resolved",
+      "code": "X",
+      "name": "Zone X (area of minimal flood hazard)",
+      "tags": [],
+      "attributes": {
+       "FLD_ZONE": "X",
+       "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+       "SFHA_TF": "F",
+       "STATIC_BFE": null,
+       "DEPTH": null,
+       "VELOCITY": null,
+       "LEN_UNIT": null,
+       "FLD_AR_ID": "72000C_4572",
+       "STUDY_TYP": "NP",
+       "DFIRM_ID": "72000C",
+       "ZONES_AT_POINT": 1,
+       "FIRM_PAN": "72000C1210J",
+       "EFF_DATE": "2009-11-18",
+       "PRE_DATE": null,
+       "PANEL_TYP": "Countywide, Panel Printed",
+       "FIRM_ID": "72000C_47",
+       "PANEL_SCALE": 12000,
+       "COMMUNITY_CID": "720000",
+       "COMMUNITY_NAME": "Municipio de Caguas",
+       "LOMC_COUNT": 0,
+       "LOMC_CASES": null
+      },
+      "source": {
+       "id": "fema-nfhl-s_fld_haz_ar",
+       "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+       "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+       "layer": "Flood Hazard Zones (S_FLD_HAZ_AR)",
+       "dataset_date": "2009-11-18",
+       "version": "72000C1210J"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:15.473Z"
+     },
+     {
+      "source": {
+       "id": "jp-fema-advisory-1pct",
+       "name": "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9",
+       "layer": "Zona Inundable (1% advisory)",
+       "dataset_date": "2019-07-08",
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "retrieved_at": "2026-10-04T01:49:15.473Z",
+      "layer": "flood_advisory",
+      "status": "none",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {
+       "ADV_ZONE": null,
+       "IN_02PCT_AREA": false
+      },
+      "reason": null
+     },
+     {
+      "layer": "coastal_zone",
+      "source": {
+       "id": "noaa-czma-boundary",
+       "name": "NOAA Office for Coastal Management — Coastal Zone Management Act boundary",
+       "url": "https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0",
+       "layer": "Coastal Zone Management Act boundary",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:15.473Z",
+      "status": "none",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {}
+     },
+     {
+      "layer": "zoning",
+      "status": "resolved",
+      "code": "R-I",
+      "name": "Residencial Intermedio",
+      "tags": [
+       "residential"
+      ],
+      "attributes": {
+       "cali": "R-I",
+       "descrip": "Residencial Intermedio",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "225-085-948-54",
+       "municipio": "Caguas",
+       "barrio": "Barrio Pueblo",
+       "vigencia": null,
+       "resolucion": null,
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:15.473Z"
+     },
+     {
+      "layer": "land_class",
+      "status": "resolved",
+      "code": "SU",
+      "name": "Suelo Urbano",
+      "tags": [
+       "SU",
+       "URBANO"
+      ],
+      "attributes": {
+       "cali": "R-I",
+       "descrip": "Residencial Intermedio",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "225-085-948-54",
+       "municipio": "Caguas",
+       "barrio": "Barrio Pueblo",
+       "vigencia": null,
+       "resolucion": null,
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:15.473Z"
+     },
+     {
+      "layer": "parcel",
+      "status": "resolved",
+      "code": "225-085-948-54",
+      "name": "Catastro 225-085-948-54",
+      "tags": [],
+      "attributes": {
+       "NUM_CATASTRO": "225-085-948-54",
+       "OLDPID": "225-084-948-10",
+       "TIPO": "P"
+      },
+      "source": {
+       "id": "crim-parcelas-feb-2025",
+       "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+       "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+       "layer": "Parcelas_feb_2025",
+       "dataset_date": "2025-02",
+       "version": "feb_2025"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:15.473Z"
+     },
+     {
+      "layer": "terrain",
+      "status": "resolved",
+      "code": "Low",
+      "name": "Low landslide susceptibility",
+      "tags": [],
+      "attributes": {
+       "LANDSLIDE_SUSCEPTIBILITY": "Low",
+       "ELEVATION_M": 81.1,
+       "SLOPE_PCT": 11
+      },
+      "source": {
+       "id": "usgs-pr-landslide-susceptibility",
+       "name": "USGS — Puerto Rico Landslide Susceptibility",
+       "url": "https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer",
+       "layer": "Landslide Susceptibility (cached map, zoom 14 ≈ 9 m pixels)",
+       "dataset_date": null,
+       "version": "z14"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:15.473Z"
+     },
+     {
+      "layer": "historic_zone",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-zonas-historicas",
+       "name": "Junta de Planificación — Zonas Históricas (límites)",
+       "url": "https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1",
+       "layer": "Zonas Historicas Limites",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:48:38.739Z"
+     },
+     {
+      "layer": "protected_area",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-areas-naturales-protegidas",
+       "name": "Junta de Planificación — Áreas Naturales Protegidas (terrestres)",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5",
+       "layer": "Áreas Naturales Protegidas",
+       "dataset_date": "2018-12",
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:48:38.739Z"
+     }
+    ]
+   },
+   "parcel": {
+    "latitude": 18.2208,
+    "longitude": -66.0356,
+    "retrieved_at": "2026-10-04T01:49:15.498Z",
+    "boundary": {
+     "status": "sourced",
+     "value": {
+      "catastro": "225-085-948-54",
+      "geometry": {
+       "type": "Polygon",
+       "coordinates": [
+        [
+         [
+          -66.0350336,
+          18.220798
+         ],
+         [
+          -66.0356882,
+          18.2207363
+         ],
+         [
+          -66.035853,
+          18.2207207
+         ],
+         [
+          -66.0358541,
+          18.2207546
+         ],
+         [
+          -66.0361136,
+          18.2207271
+         ],
+         [
+          -66.036121,
+          18.2207416
+         ],
+         [
+          -66.0361298,
+          18.2207552
+         ],
+         [
+          -66.0361202,
+          18.2209459
+         ],
+         [
+          -66.0358502,
+          18.2208987
+         ],
+         [
+          -66.0355789,
+          18.2208583
+         ],
+         [
+          -66.0353067,
+          18.2208247
+         ],
+         [
+          -66.0350336,
+          18.220798
+         ]
+        ]
+       ]
+      },
+      "area_m2": 1398.8743197830518,
+      "bbox": [
+       -66.0361298,
+       18.2207207,
+       -66.0350336,
+       18.2209459
+      ]
+     },
+     "reason": null,
+     "source": {
+      "id": "crim-parcelas-feb-2025",
+      "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+      "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+      "dataset_date": "2025-02"
+     }
+    },
+    "zoning": {
+     "status": "sourced",
+     "districts": [
+      {
+       "code": "R-I",
+       "name": "Residencial Intermedio",
+       "family": "residential",
+       "overlay": null,
+       "effective": null,
+       "resolution": null
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "jp-calificacion-vigente",
+      "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+      "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    },
+    "flood": {
+     "status": "sourced",
+     "zones": [
+      {
+       "zone": "X",
+       "subtype": "AREA OF MINIMAL FLOOD HAZARD",
+       "sfha": false,
+       "floodway": false
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "fema-nfhl-s_fld_haz_ar",
+      "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+      "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    }
+   }
+  },
+  "protected_rural": {
+   "latitude": 18.29585,
+   "longitude": -65.99355,
+   "place": {
+    "municipio": {
+     "fips": "063",
+     "name": "Gurabo"
+    },
+    "barrio": {
+     "geoid": "7206367524",
+     "name": "Quebrada Infierno",
+     "barrioPueblo": false
+    },
+    "boundaryDistanceM": 353,
+    "nearBoundary": false
+   },
+   "layers": {
+    "latitude": 18.29585,
+    "longitude": -65.99355,
+    "resolved_at": "2026-10-04T01:49:27.259Z",
+    "results": [
+     {
+      "layer": "flood_zone",
+      "status": "resolved",
+      "code": "X",
+      "name": "Zone X (area of minimal flood hazard)",
+      "tags": [],
+      "attributes": {
+       "FLD_ZONE": "X",
+       "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+       "SFHA_TF": "F",
+       "STATIC_BFE": null,
+       "DEPTH": null,
+       "VELOCITY": null,
+       "LEN_UNIT": null,
+       "FLD_AR_ID": "72000C_4572",
+       "STUDY_TYP": "NP",
+       "DFIRM_ID": "72000C",
+       "ZONES_AT_POINT": 1,
+       "FIRM_PAN": "72000C0765J",
+       "EFF_DATE": "2009-11-18",
+       "PRE_DATE": null,
+       "PANEL_TYP": "Countywide, Panel Printed",
+       "FIRM_ID": "72000C_13",
+       "PANEL_SCALE": 12000,
+       "COMMUNITY_CID": "720000",
+       "COMMUNITY_NAME": "Municipio de Gurabo",
+       "LOMC_COUNT": 0,
+       "LOMC_CASES": null
+      },
+      "source": {
+       "id": "fema-nfhl-s_fld_haz_ar",
+       "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+       "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+       "layer": "Flood Hazard Zones (S_FLD_HAZ_AR)",
+       "dataset_date": "2009-11-18",
+       "version": "72000C0765J"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     },
+     {
+      "source": {
+       "id": "jp-fema-advisory-1pct",
+       "name": "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9",
+       "layer": "Zona Inundable (1% advisory)",
+       "dataset_date": "2019-07-08",
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "retrieved_at": "2026-10-04T01:49:27.259Z",
+      "layer": "flood_advisory",
+      "status": "none",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {
+       "ADV_ZONE": null,
+       "IN_02PCT_AREA": false
+      },
+      "reason": null
+     },
+     {
+      "layer": "coastal_zone",
+      "source": {
+       "id": "noaa-czma-boundary",
+       "name": "NOAA Office for Coastal Management — Coastal Zone Management Act boundary",
+       "url": "https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0",
+       "layer": "Coastal Zone Management Act boundary",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:27.259Z",
+      "status": "none",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {}
+     },
+     {
+      "layer": "zoning",
+      "status": "resolved",
+      "code": "A-B",
+      "name": "Área de Bosques",
+      "tags": [
+       "conservation"
+      ],
+      "attributes": {
+       "cali": "A-B",
+       "descrip": "Área de Bosques",
+       "clasi": "SREP-E",
+       "descrip1": "Suelo Rústico Especialmente Protegido - Ecológico",
+       "num_catast": "173-000-001-39",
+       "municipio": "Gurabo",
+       "barrio": "Quebrada Infierno",
+       "vigencia": "01-JUN-2023",
+       "resolucion": "JP-PT-47-4",
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": "2023-06-01",
+       "version": "JP-PT-47-4 · 01-JUN-2023"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     },
+     {
+      "layer": "land_class",
+      "status": "resolved",
+      "code": "SREP-E",
+      "name": "Suelo Rústico Especialmente Protegido - Ecológico",
+      "tags": [
+       "SREP",
+       "RUSTICO"
+      ],
+      "attributes": {
+       "cali": "A-B",
+       "descrip": "Área de Bosques",
+       "clasi": "SREP-E",
+       "descrip1": "Suelo Rústico Especialmente Protegido - Ecológico",
+       "num_catast": "173-000-001-39",
+       "municipio": "Gurabo",
+       "barrio": "Quebrada Infierno",
+       "vigencia": "01-JUN-2023",
+       "resolucion": "JP-PT-47-4",
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": "2023-06-01",
+       "version": "JP-PT-47-4 · 01-JUN-2023"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     },
+     {
+      "layer": "parcel",
+      "status": "resolved",
+      "code": "173-000-001-39",
+      "name": "Catastro 173-000-001-39",
+      "tags": [],
+      "attributes": {
+       "NUM_CATASTRO": "173-000-001-39",
+       "OLDPID": "173-000-001-39",
+       "TIPO": "P"
+      },
+      "source": {
+       "id": "crim-parcelas-feb-2025",
+       "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+       "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+       "layer": "Parcelas_feb_2025",
+       "dataset_date": "2025-02",
+       "version": "feb_2025"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     },
+     {
+      "layer": "terrain",
+      "status": "resolved",
+      "code": "Moderate",
+      "name": "Moderate landslide susceptibility",
+      "tags": [
+       "LANDSLIDE_MODERATE"
+      ],
+      "attributes": {
+       "LANDSLIDE_SUSCEPTIBILITY": "Moderate",
+       "ELEVATION_M": 206.9,
+       "SLOPE_PCT": 34.3
+      },
+      "source": {
+       "id": "usgs-pr-landslide-susceptibility",
+       "name": "USGS — Puerto Rico Landslide Susceptibility",
+       "url": "https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer",
+       "layer": "Landslide Susceptibility (cached map, zoom 14 ≈ 9 m pixels)",
+       "dataset_date": null,
+       "version": "z14"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     },
+     {
+      "layer": "historic_zone",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-zonas-historicas",
+       "name": "Junta de Planificación — Zonas Históricas (límites)",
+       "url": "https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1",
+       "layer": "Zonas Historicas Limites",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     },
+     {
+      "layer": "protected_area",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-areas-naturales-protegidas",
+       "name": "Junta de Planificación — Áreas Naturales Protegidas (terrestres)",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5",
+       "layer": "Áreas Naturales Protegidas",
+       "dataset_date": "2018-12",
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:49:27.259Z"
+     }
+    ]
+   },
+   "parcel": {
+    "latitude": 18.29585,
+    "longitude": -65.99355,
+    "retrieved_at": "2026-10-04T01:49:27.274Z",
+    "boundary": {
+     "status": "sourced",
+     "value": {
+      "catastro": "173-000-001-39",
+      "geometry": {
+       "type": "Polygon",
+       "coordinates": [
+        [
+         [
+          -65.9927814,
+          18.2989758
+         ],
+         [
+          -65.9931237,
+          18.298409
+         ],
+         [
+          -65.9936163,
+          18.2975931
+         ],
+         [
+          -65.9935673,
+          18.2975734
+         ],
+         [
+          -65.9935214,
+          18.2975477
+         ],
+         [
+          -65.9934794,
+          18.2975167
+         ],
+         [
+          -65.9934419,
+          18.2974807
+         ],
+         [
+          -65.9934096,
+          18.2974404
+         ],
+         [
+          -65.993383,
+          18.2973964
+         ],
+         [
+          -65.9933627,
+          18.2973495
+         ],
+         [
+          -65.9933483,
+          18.2972807
+         ],
+         [
+          -65.9933275,
+          18.2972134
+         ],
+         [
+          -65.9933006,
+          18.2971482
+         ],
+         [
+          -65.9932678,
+          18.2970854
+         ],
+         [
+          -65.9932292,
+          18.2970257
+         ],
+         [
+          -65.9931853,
+          18.2969695
+         ],
+         [
+          -65.9931363,
+          18.2969173
+         ],
+         [
+          -65.9930826,
+          18.2968694
+         ],
+         [
+          -65.9930248,
+          18.2968262
+         ],
+         [
+          -65.9929631,
+          18.2967881
+         ],
+         [
+          -65.9929238,
+          18.2967564
+         ],
+         [
+          -65.9928892,
+          18.29672
+         ],
+         [
+          -65.9928601,
+          18.2966795
+         ],
+         [
+          -65.992837,
+          18.2966356
+         ],
+         [
+          -65.9928202,
+          18.2965891
+         ],
+         [
+          -65.9928144,
+          18.2965693
+         ],
+         [
+          -65.9928055,
+          18.2965505
+         ],
+         [
+          -65.9927936,
+          18.2965333
+         ],
+         [
+          -65.992779,
+          18.2965181
+         ],
+         [
+          -65.9927622,
+          18.2965053
+         ],
+         [
+          -65.9927435,
+          18.2964951
+         ],
+         [
+          -65.9927233,
+          18.2964878
+         ],
+         [
+          -65.9927022,
+          18.2964836
+         ],
+         [
+          -65.9926806,
+          18.2964826
+         ],
+         [
+          -65.9925601,
+          18.2965052
+         ],
+         [
+          -65.9924386,
+          18.2965229
+         ],
+         [
+          -65.9923164,
+          18.2965356
+         ],
+         [
+          -65.9921938,
+          18.2965434
+         ],
+         [
+          -65.992071,
+          18.2965463
+         ],
+         [
+          -65.9920206,
+          18.2965416
+         ],
+         [
+          -65.9919713,
+          18.2965308
+         ],
+         [
+          -65.9919239,
+          18.2965139
+         ],
+         [
+          -65.9918792,
+          18.2964913
+         ],
+         [
+          -65.9918379,
+          18.2964633
+         ],
+         [
+          -65.9918007,
+          18.2964305
+         ],
+         [
+          -65.9917683,
+          18.2963934
+         ],
+         [
+          -65.9917413,
+          18.2963525
+         ],
+         [
+          -65.9917378,
+          18.2963457
+         ],
+         [
+          -65.991735,
+          18.2963233
+         ],
+         [
+          -65.991736,
+          18.2963007
+         ],
+         [
+          -65.9917409,
+          18.2962787
+         ],
+         [
+          -65.9917495,
+          18.2962576
+         ],
+         [
+          -65.9917617,
+          18.2962383
+         ],
+         [
+          -65.991777,
+          18.2962211
+         ],
+         [
+          -65.9917909,
+          18.2962007
+         ],
+         [
+          -65.9918014,
+          18.2961785
+         ],
+         [
+          -65.9918082,
+          18.296155
+         ],
+         [
+          -65.9918112,
+          18.2961308
+         ],
+         [
+          -65.9918103,
+          18.2961065
+         ],
+         [
+          -65.9918056,
+          18.2960826
+         ],
+         [
+          -65.9917971,
+          18.2960597
+         ],
+         [
+          -65.991785,
+          18.2960382
+         ],
+         [
+          -65.9917532,
+          18.2960025
+         ],
+         [
+          -65.9917263,
+          18.2959633
+         ],
+         [
+          -65.9917048,
+          18.2959213
+         ],
+         [
+          -65.9916889,
+          18.2958769
+         ],
+         [
+          -65.9916831,
+          18.2958663
+         ],
+         [
+          -65.9916756,
+          18.2958567
+         ],
+         [
+          -65.9916665,
+          18.2958484
+         ],
+         [
+          -65.9916561,
+          18.2958417
+         ],
+         [
+          -65.9916447,
+          18.2958368
+         ],
+         [
+          -65.9916325,
+          18.2958338
+         ],
+         [
+          -65.9916201,
+          18.2958328
+         ],
+         [
+          -65.991617,
+          18.2958336
+         ],
+         [
+          -65.9916118,
+          18.295841
+         ],
+         [
+          -65.9916053,
+          18.2958475
+         ],
+         [
+          -65.9915977,
+          18.2958528
+         ],
+         [
+          -65.9915894,
+          18.2958567
+         ],
+         [
+          -65.9915804,
+          18.2958593
+         ],
+         [
+          -65.9915711,
+          18.2958603
+         ],
+         [
+          -65.9915617,
+          18.2958598
+         ],
+         [
+          -65.9915526,
+          18.2958578
+         ],
+         [
+          -65.991544,
+          18.2958543
+         ],
+         [
+          -65.9915361,
+          18.2958495
+         ],
+         [
+          -65.9915292,
+          18.2958434
+         ],
+         [
+          -65.9915235,
+          18.2958364
+         ],
+         [
+          -65.9915191,
+          18.2958284
+         ],
+         [
+          -65.9915162,
+          18.2958199
+         ],
+         [
+          -65.9915149,
+          18.2958111
+         ],
+         [
+          -65.9915153,
+          18.2958021
+         ],
+         [
+          -65.9915172,
+          18.2957933
+         ],
+         [
+          -65.9915206,
+          18.295785
+         ],
+         [
+          -65.9915174,
+          18.2957778
+         ],
+         [
+          -65.9914929,
+          18.2957208
+         ],
+         [
+          -65.9914754,
+          18.2956614
+         ],
+         [
+          -65.9914649,
+          18.2956006
+         ],
+         [
+          -65.9914616,
+          18.295539
+         ],
+         [
+          -65.9914657,
+          18.2954774
+         ],
+         [
+          -65.9914769,
+          18.2954167
+         ],
+         [
+          -65.9928495,
+          18.2942104
+         ],
+         [
+          -65.992928,
+          18.2941436
+         ],
+         [
+          -65.9930112,
+          18.2940823
+         ],
+         [
+          -65.9930987,
+          18.2940267
+         ],
+         [
+          -65.9931901,
+          18.2939771
+         ],
+         [
+          -65.9932849,
+          18.2939338
+         ],
+         [
+          -65.9933827,
+          18.293897
+         ],
+         [
+          -65.993483,
+          18.2938669
+         ],
+         [
+          -65.9935852,
+          18.2938435
+         ],
+         [
+          -65.9936889,
+          18.2938271
+         ],
+         [
+          -65.9937935,
+          18.2938177
+         ],
+         [
+          -65.9938986,
+          18.2938154
+         ],
+         [
+          -65.9940036,
+          18.2938201
+         ],
+         [
+          -65.9941071,
+          18.2938196
+         ],
+         [
+          -65.9942104,
+          18.2938258
+         ],
+         [
+          -65.994313,
+          18.2938385
+         ],
+         [
+          -65.9944146,
+          18.2938577
+         ],
+         [
+          -65.9945145,
+          18.2938834
+         ],
+         [
+          -65.9946125,
+          18.2939154
+         ],
+         [
+          -65.9947079,
+          18.2939536
+         ],
+         [
+          -65.9948005,
+          18.2939978
+         ],
+         [
+          -65.9948898,
+          18.2940478
+         ],
+         [
+          -65.9949754,
+          18.2941034
+         ],
+         [
+          -65.995057,
+          18.2941643
+         ],
+         [
+          -65.995134,
+          18.2942303
+         ],
+         [
+          -65.9952063,
+          18.2943011
+         ],
+         [
+          -65.9952735,
+          18.2943764
+         ],
+         [
+          -65.9953352,
+          18.2944557
+         ],
+         [
+          -65.9953912,
+          18.2945389
+         ],
+         [
+          -65.9953933,
+          18.2945422
+         ],
+         [
+          -65.9938513,
+          18.2986898
+         ],
+         [
+          -65.993807,
+          18.298814
+         ],
+         [
+          -65.9936779,
+          18.2991544
+         ],
+         [
+          -65.9935612,
+          18.2989893
+         ],
+         [
+          -65.9935008,
+          18.2988418
+         ],
+         [
+          -65.9934738,
+          18.2989568
+         ],
+         [
+          -65.9933435,
+          18.2990164
+         ],
+         [
+          -65.9931707,
+          18.2991166
+         ],
+         [
+          -65.9930581,
+          18.2991642
+         ],
+         [
+          -65.9930262,
+          18.2991671
+         ],
+         [
+          -65.99289,
+          18.2990664
+         ],
+         [
+          -65.9927814,
+          18.2989758
+         ]
+        ]
+       ]
+      },
+      "area_m2": 122783.39995429158,
+      "bbox": [
+       -65.9953933,
+       18.2938154,
+       -65.9914616,
+       18.2991671
+      ]
+     },
+     "reason": null,
+     "source": {
+      "id": "crim-parcelas-feb-2025",
+      "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+      "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+      "dataset_date": "2025-02"
+     }
+    },
+    "zoning": {
+     "status": "sourced",
+     "districts": [
+      {
+       "code": "R-G",
+       "name": "Rural General",
+       "family": "rural",
+       "overlay": null,
+       "effective": "01-JUN-2023",
+       "resolution": "JP-PT-47-4"
+      },
+      {
+       "code": "A-B",
+       "name": "Área de Bosques",
+       "family": "conservation",
+       "overlay": null,
+       "effective": "01-JUN-2023",
+       "resolution": "JP-PT-47-4"
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "jp-calificacion-vigente",
+      "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+      "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    },
+    "flood": {
+     "status": "sourced",
+     "zones": [
+      {
+       "zone": "X",
+       "subtype": "AREA OF MINIMAL FLOOD HAZARD",
+       "sfha": false,
+       "floodway": false
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "fema-nfhl-s_fld_haz_ar",
+      "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+      "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    }
+   }
+  },
+  "multi_district": {
+   "latitude": 18.45,
+   "longitude": -66.07,
+   "place": {
+    "municipio": {
+     "fips": "127",
+     "name": "San Juan"
+    },
+    "barrio": {
+     "geoid": "7212779693",
+     "name": "Santurce",
+     "barrioPueblo": false
+    },
+    "boundaryDistanceM": 1275,
+    "nearBoundary": false
+   },
+   "layers": {
+    "latitude": 18.45,
+    "longitude": -66.07,
+    "resolved_at": "2026-10-04T01:49:32.143Z",
+    "results": [
+     {
+      "layer": "flood_zone",
+      "status": "resolved",
+      "code": "X",
+      "name": "Zone X (area of minimal flood hazard)",
+      "tags": [],
+      "attributes": {
+       "FLD_ZONE": "X",
+       "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+       "SFHA_TF": "F",
+       "STATIC_BFE": null,
+       "DEPTH": null,
+       "VELOCITY": null,
+       "LEN_UNIT": null,
+       "FLD_AR_ID": "72000C_4107",
+       "STUDY_TYP": "NP",
+       "DFIRM_ID": "72000C",
+       "ZONES_AT_POINT": 1,
+       "FIRM_PAN": "72000C0355J",
+       "EFF_DATE": "2009-11-18",
+       "PRE_DATE": null,
+       "PANEL_TYP": "Countywide, Panel Printed",
+       "FIRM_ID": "72000C_133",
+       "PANEL_SCALE": 12000,
+       "COMMUNITY_CID": "720000",
+       "COMMUNITY_NAME": "Municipio de San Juan",
+       "LOMC_COUNT": 0,
+       "LOMC_CASES": null
+      },
+      "source": {
+       "id": "fema-nfhl-s_fld_haz_ar",
+       "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+       "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+       "layer": "Flood Hazard Zones (S_FLD_HAZ_AR)",
+       "dataset_date": "2009-11-18",
+       "version": "72000C0355J"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     },
+     {
+      "source": {
+       "id": "jp-fema-advisory-1pct",
+       "name": "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9",
+       "layer": "Zona Inundable (1% advisory)",
+       "dataset_date": "2019-07-08",
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "retrieved_at": "2026-10-04T01:49:32.143Z",
+      "layer": "flood_advisory",
+      "status": "none",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {
+       "ADV_ZONE": null,
+       "IN_02PCT_AREA": false
+      },
+      "reason": null
+     },
+     {
+      "layer": "coastal_zone",
+      "source": {
+       "id": "noaa-czma-boundary",
+       "name": "NOAA Office for Coastal Management — Coastal Zone Management Act boundary",
+       "url": "https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0",
+       "layer": "Coastal Zone Management Act boundary",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:32.143Z",
+      "status": "resolved",
+      "code": "CZM",
+      "name": "Coastal zone (CZMA boundary)",
+      "tags": [],
+      "attributes": {
+       "CZMA_DOMAIN": "coastal zone"
+      }
+     },
+     {
+      "layer": "zoning",
+      "status": "resolved",
+      "code": "ZU-R2",
+      "name": "Zona de Uso - Residencial Dos",
+      "tags": [
+       "residential"
+      ],
+      "attributes": {
+       "cali": "ZU-R2",
+       "descrip": "Zona de Uso - Residencial Dos",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "040-059-105-69",
+       "municipio": "San Juan",
+       "barrio": "Santurce",
+       "vigencia": "1-07-2007",
+       "resolucion": "C-18-1",
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": "C-18-1 · 1-07-2007"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     },
+     {
+      "layer": "land_class",
+      "status": "resolved",
+      "code": "SU",
+      "name": "Suelo Urbano",
+      "tags": [
+       "SU",
+       "URBANO"
+      ],
+      "attributes": {
+       "cali": "ZU-R2",
+       "descrip": "Zona de Uso - Residencial Dos",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "040-059-105-69",
+       "municipio": "San Juan",
+       "barrio": "Santurce",
+       "vigencia": "1-07-2007",
+       "resolucion": "C-18-1",
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": "C-18-1 · 1-07-2007"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     },
+     {
+      "layer": "parcel",
+      "status": "resolved",
+      "code": "040-059-105-69",
+      "name": "Catastro 040-059-105-69",
+      "tags": [],
+      "attributes": {
+       "NUM_CATASTRO": "040-059-105-69",
+       "OLDPID": "040-059-105-69",
+       "TIPO": "P"
+      },
+      "source": {
+       "id": "crim-parcelas-feb-2025",
+       "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+       "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+       "layer": "Parcelas_feb_2025",
+       "dataset_date": "2025-02",
+       "version": "feb_2025"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     },
+     {
+      "layer": "terrain",
+      "status": "resolved",
+      "code": "Low",
+      "name": "Low landslide susceptibility",
+      "tags": [],
+      "attributes": {
+       "LANDSLIDE_SUSCEPTIBILITY": "Low",
+       "ELEVATION_M": 13.2,
+       "SLOPE_PCT": 7.1
+      },
+      "source": {
+       "id": "usgs-pr-landslide-susceptibility",
+       "name": "USGS — Puerto Rico Landslide Susceptibility",
+       "url": "https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer",
+       "layer": "Landslide Susceptibility (cached map, zoom 14 ≈ 9 m pixels)",
+       "dataset_date": null,
+       "version": "z14"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     },
+     {
+      "layer": "historic_zone",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-zonas-historicas",
+       "name": "Junta de Planificación — Zonas Históricas (límites)",
+       "url": "https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1",
+       "layer": "Zonas Historicas Limites",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     },
+     {
+      "layer": "protected_area",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-areas-naturales-protegidas",
+       "name": "Junta de Planificación — Áreas Naturales Protegidas (terrestres)",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5",
+       "layer": "Áreas Naturales Protegidas",
+       "dataset_date": "2018-12",
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:49:32.143Z"
+     }
+    ]
+   },
+   "parcel": {
+    "latitude": 18.45,
+    "longitude": -66.07,
+    "retrieved_at": "2026-10-04T01:49:32.160Z",
+    "boundary": {
+     "status": "sourced",
+     "value": {
+      "catastro": "040-059-105-69",
+      "geometry": {
+       "type": "Polygon",
+       "coordinates": [
+        [
+         [
+          -66.069813,
+          18.449931
+         ],
+         [
+          -66.0699158,
+          18.4498196
+         ],
+         [
+          -66.0700691,
+          18.4499409
+         ],
+         [
+          -66.0699683,
+          18.4500601
+         ],
+         [
+          -66.069813,
+          18.449931
+         ]
+        ]
+       ]
+      },
+      "area_m2": 358.9550469258014,
+      "bbox": [
+       -66.0700691,
+       18.4498196,
+       -66.069813,
+       18.4500601
+      ]
+     },
+     "reason": null,
+     "source": {
+      "id": "crim-parcelas-feb-2025",
+      "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+      "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+      "dataset_date": "2025-02"
+     }
+    },
+    "zoning": {
+     "status": "sourced",
+     "districts": [
+      {
+       "code": "ZU-R2",
+       "name": "Zona de Uso - Residencial Dos",
+       "family": "residential",
+       "overlay": null,
+       "effective": "1-07-2007",
+       "resolution": "C-18-1"
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "jp-calificacion-vigente",
+      "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+      "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    },
+    "flood": {
+     "status": "sourced",
+     "zones": [
+      {
+       "zone": "X",
+       "subtype": "AREA OF MINIMAL FLOOD HAZARD",
+       "sfha": false,
+       "floodway": false
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "fema-nfhl-s_fld_haz_ar",
+      "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+      "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    }
+   }
+  },
+  "multi_district_b": {
+   "latitude": 18.4416,
+   "longitude": -66.0177,
+   "place": {
+    "municipio": {
+     "fips": "031",
+     "name": "Carolina"
+    },
+    "barrio": {
+     "geoid": "7203112699",
+     "name": "Cangrejo Arriba",
+     "barrioPueblo": false
+    },
+    "boundaryDistanceM": 1122,
+    "nearBoundary": false
+   },
+   "layers": {
+    "latitude": 18.4416,
+    "longitude": -66.0177,
+    "resolved_at": "2026-10-04T01:49:38.258Z",
+    "results": [
+     {
+      "layer": "flood_zone",
+      "status": "resolved",
+      "code": "X",
+      "name": "Zone X (area of minimal flood hazard)",
+      "tags": [],
+      "attributes": {
+       "FLD_ZONE": "X",
+       "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+       "SFHA_TF": "F",
+       "STATIC_BFE": null,
+       "DEPTH": null,
+       "VELOCITY": null,
+       "LEN_UNIT": null,
+       "FLD_AR_ID": "72000C_4858",
+       "STUDY_TYP": "NP",
+       "DFIRM_ID": "72000C",
+       "ZONES_AT_POINT": 1,
+       "FIRM_PAN": "72000C0360J",
+       "EFF_DATE": "2009-11-18",
+       "PRE_DATE": null,
+       "PANEL_TYP": "Countywide, Panel Printed",
+       "FIRM_ID": "72000C_277",
+       "PANEL_SCALE": 12000,
+       "COMMUNITY_CID": "720000",
+       "COMMUNITY_NAME": "Municipio de Carolina",
+       "LOMC_COUNT": 0,
+       "LOMC_CASES": null
+      },
+      "source": {
+       "id": "fema-nfhl-s_fld_haz_ar",
+       "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+       "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+       "layer": "Flood Hazard Zones (S_FLD_HAZ_AR)",
+       "dataset_date": "2009-11-18",
+       "version": "72000C0360J"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     },
+     {
+      "source": {
+       "id": "jp-fema-advisory-1pct",
+       "name": "FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9",
+       "layer": "Zona Inundable (1% advisory)",
+       "dataset_date": "2019-07-08",
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "retrieved_at": "2026-10-04T01:49:38.258Z",
+      "layer": "flood_advisory",
+      "status": "resolved",
+      "code": "AO",
+      "name": "Advisory zone AO",
+      "tags": [
+       "SFHA"
+      ],
+      "attributes": {
+       "ADV_ZONE": "AO",
+       "ADV_ZONE_SUBTY": null,
+       "ADV_BFE_M": null,
+       "ADV_DEPTH_M": 0.6,
+       "V_DATUM": "NP",
+       "IN_02PCT_AREA": null
+      },
+      "reason": null
+     },
+     {
+      "layer": "coastal_zone",
+      "source": {
+       "id": "noaa-czma-boundary",
+       "name": "NOAA Office for Coastal Management — Coastal Zone Management Act boundary",
+       "url": "https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0",
+       "layer": "Coastal Zone Management Act boundary",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:38.258Z",
+      "status": "resolved",
+      "code": "CZM",
+      "name": "Coastal zone (CZMA boundary)",
+      "tags": [],
+      "attributes": {
+       "CZMA_DOMAIN": "coastal zone"
+      }
+     },
+     {
+      "layer": "zoning",
+      "status": "resolved",
+      "code": "CT-3",
+      "name": "Comercial Turístico de Alta Intensidad",
+      "tags": [
+       "commercial"
+      ],
+      "attributes": {
+       "cali": "CT-3",
+       "descrip": "Comercial Turístico de Alta Intensidad",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "041-087-017-17",
+       "municipio": "Carolina",
+       "barrio": "Cangrejo Arriba",
+       "vigencia": null,
+       "resolucion": null,
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     },
+     {
+      "layer": "land_class",
+      "status": "resolved",
+      "code": "SU",
+      "name": "Suelo Urbano",
+      "tags": [
+       "SU",
+       "URBANO"
+      ],
+      "attributes": {
+       "cali": "CT-3",
+       "descrip": "Comercial Turístico de Alta Intensidad",
+       "clasi": "SU",
+       "descrip1": "Suelo Urbano",
+       "num_catast": "041-087-017-17",
+       "municipio": "Carolina",
+       "barrio": "Cangrejo Arriba",
+       "vigencia": null,
+       "resolucion": null,
+       "cali_sobre": null,
+       "des_sobre": null
+      },
+      "source": {
+       "id": "jp-calificacion-vigente",
+       "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+       "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+       "layer": "cali_vige",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     },
+     {
+      "layer": "parcel",
+      "status": "resolved",
+      "code": "041-087-017-17",
+      "name": "Catastro 041-087-017-17",
+      "tags": [],
+      "attributes": {
+       "NUM_CATASTRO": "041-087-017-17",
+       "OLDPID": "041-087-017-17",
+       "TIPO": "P"
+      },
+      "source": {
+       "id": "crim-parcelas-feb-2025",
+       "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+       "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+       "layer": "Parcelas_feb_2025",
+       "dataset_date": "2025-02",
+       "version": "feb_2025"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     },
+     {
+      "layer": "terrain",
+      "status": "resolved",
+      "code": "Low",
+      "name": "Low landslide susceptibility",
+      "tags": [],
+      "attributes": {
+       "LANDSLIDE_SUSCEPTIBILITY": "Low",
+       "ELEVATION_M": 2.4,
+       "SLOPE_PCT": 1.9
+      },
+      "source": {
+       "id": "usgs-pr-landslide-susceptibility",
+       "name": "USGS — Puerto Rico Landslide Susceptibility",
+       "url": "https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer",
+       "layer": "Landslide Susceptibility (cached map, zoom 14 ≈ 9 m pixels)",
+       "dataset_date": null,
+       "version": "z14"
+      },
+      "retrieval": "live",
+      "approximate": false,
+      "reason": null,
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     },
+     {
+      "layer": "historic_zone",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-zonas-historicas",
+       "name": "Junta de Planificación — Zonas Históricas (límites)",
+       "url": "https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1",
+       "layer": "Zonas Historicas Limites",
+       "dataset_date": null,
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     },
+     {
+      "layer": "protected_area",
+      "status": "unknown",
+      "code": null,
+      "name": null,
+      "tags": [],
+      "attributes": {},
+      "source": {
+       "id": "jp-areas-naturales-protegidas",
+       "name": "Junta de Planificación — Áreas Naturales Protegidas (terrestres)",
+       "url": "https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5",
+       "layer": "Áreas Naturales Protegidas",
+       "dataset_date": "2018-12",
+       "version": null
+      },
+      "retrieval": "none",
+      "approximate": false,
+      "reason": "timeout_3500ms",
+      "retrieved_at": "2026-10-04T01:49:38.258Z"
+     }
+    ]
+   },
+   "parcel": {
+    "latitude": 18.4416,
+    "longitude": -66.0177,
+    "retrieved_at": "2026-10-04T01:49:38.270Z",
+    "boundary": {
+     "status": "sourced",
+     "value": {
+      "catastro": "041-087-017-17",
+      "geometry": {
+       "type": "Polygon",
+       "coordinates": [
+        [
+         [
+          -66.0175534,
+          18.4417543
+         ],
+         [
+          -66.0177358,
+          18.4409995
+         ],
+         [
+          -66.0179274,
+          18.4410153
+         ],
+         [
+          -66.0179114,
+          18.4422303
+         ],
+         [
+          -66.017911,
+          18.4423159
+         ],
+         [
+          -66.0179007,
+          18.4423157
+         ],
+         [
+          -66.0175051,
+          18.4422838
+         ],
+         [
+          -66.0174936,
+          18.4422793
+         ],
+         [
+          -66.0174831,
+          18.442273
+         ],
+         [
+          -66.0174739,
+          18.4422652
+         ],
+         [
+          -66.0174662,
+          18.442256
+         ],
+         [
+          -66.0174602,
+          18.4422456
+         ],
+         [
+          -66.0174561,
+          18.4422345
+         ],
+         [
+          -66.0174541,
+          18.4422228
+         ],
+         [
+          -66.0174541,
+          18.442211
+         ],
+         [
+          -66.0174562,
+          18.4421994
+         ],
+         [
+          -66.0174604,
+          18.4421883
+         ],
+         [
+          -66.0175534,
+          18.4417543
+         ]
+        ]
+       ]
+      },
+      "area_m2": 5110.574257724064,
+      "bbox": [
+       -66.0179274,
+       18.4409995,
+       -66.0174541,
+       18.4423159
+      ]
+     },
+     "reason": null,
+     "source": {
+      "id": "crim-parcelas-feb-2025",
+      "name": "CRIM — Parcelas (catastro digital), febrero 2025",
+      "url": "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
+      "dataset_date": "2025-02"
+     }
+    },
+    "zoning": {
+     "status": "sourced",
+     "districts": [
+      {
+       "code": "VIAL",
+       "name": "Sistema vial",
+       "family": "road",
+       "overlay": null,
+       "effective": null,
+       "resolution": null
+      },
+      {
+       "code": "CT-3",
+       "name": "Comercial Turístico de Alta Intensidad",
+       "family": "commercial",
+       "overlay": null,
+       "effective": null,
+       "resolution": null
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "jp-calificacion-vigente",
+      "name": "Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)",
+      "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    },
+    "flood": {
+     "status": "sourced",
+     "zones": [
+      {
+       "zone": "X",
+       "subtype": "0.2 PCT ANNUAL CHANCE FLOOD HAZARD",
+       "sfha": false,
+       "floodway": false
+      },
+      {
+       "zone": "X",
+       "subtype": "AREA OF MINIMAL FLOOD HAZARD",
+       "sfha": false,
+       "floodway": false
+      }
+     ],
+     "reason": null,
+     "source": {
+      "id": "fema-nfhl-s_fld_haz_ar",
+      "name": "FEMA National Flood Hazard Layer — Flood Hazard Zones",
+      "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28",
+      "dataset_date": null
+     },
+     "scope": "parcel"
+    }
+   }
+  }
+ }
+}

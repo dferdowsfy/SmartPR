@@ -107,10 +107,12 @@ async function open(width: number, height = 900): Promise<Page> {
 
   await page.locator('[data-testid="project-location-use"]').click();
   await page.locator('[data-testid="project-location"][data-state="saved"]').waitFor({ timeout: 10000 });
-  check("Use this location → 'Location saved' + Edit location", /Location saved/.test(await conf.innerText()) && (await sec.getByRole("button", { name: "Edit location" }).count()) === 1);
+  check("Use this location → 'Location confirmed' + Edit location", /Location confirmed/.test(await conf.innerText()) && (await sec.getByRole("button", { name: "Edit location" }).count()) === 1);
   check("sidebar + still-needed updated (municipality no longer missing)", /Guaynabo/.test(await page.locator(".spr-project-summary").innerText()) && !(await page.locator(".spr-still-needed-chip").allInnerTexts()).includes("Municipality"));
-  await page.locator('[data-testid="location-layer-chips"][data-state="done"]').waitFor({ timeout: 30000 });
-  check("existing site checks ran (FEMA / zoning / parcel)", layerCalls.length >= 1 && (await sec.locator('[data-testid="site-intelligence"]').count()) === 1);
+  // The intake card now shows the compact Property & Site preview (same
+  // official layers, read through the shared report model).
+  await page.locator('[data-testid="site-report-preview"] [data-finding="flood_zone"]:not([data-state="loading"])').waitFor({ timeout: 30000 });
+  check("existing site checks ran (FEMA / zoning / parcel)", layerCalls.length >= 1 && (await sec.locator('[data-testid="site-report-preview"] [data-finding="zoning"]').count()) === 1);
   await page.screenshot({ path: path.join(OUT, "2_saved.png"), fullPage: false });
 
   // Edit → map tap moves the pin, reverse-geocodes, details follow

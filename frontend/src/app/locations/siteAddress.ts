@@ -7,7 +7,11 @@ export interface SiteAddressParts {
   primary: string;
   secondary: string;
   placeName: string | null;
+  /** Street line when the geocoder returned one ("Calle Los Ramos 60"). */
+  street: string | null;
 }
+
+const STREET_RE = /^(calle|c\/|avenida|ave\.?|av\.?|carretera|carr\.?|camino|paseo|urb\.?|urbanizaci[oó]n|pr-?\d|road|rd\.?|street|st\.?|km\b)/i;
 
 const COUNTRY = /^(united states( of america)?|usa|us|estados unidos)$/i;
 const TERRITORY = /^(puerto rico|pr)$/i;
@@ -28,11 +32,18 @@ export function siteAddressParts(site: {
     .filter((s) => s && !COUNTRY.test(s) && !TERRITORY.test(s) && norm(s) !== norm(muni) && !/^municipio de /i.test(s) && !(barrio && norm(s) === norm(barrio)))
     // Census-style "X barrio" / "X Pueblo" duplicates of the municipio.
     .filter((s) => !norm(s).startsWith(`${norm(muni)} `));
+  // A bare house number ("60") belongs to the street that follows it.
+  if (segs.length > 1 && /^\d+[A-Za-z]?$/.test(segs[0]!)) segs.splice(0, 2, `${segs[1]} ${segs[0]}`);
+  const meaningful = segs.filter((x) => /[A-Za-zÁÉÍÓÚÑáéíóúñ]{2,}/.test(x));
+  segs.length = 0;
+  segs.push(...meaningful);
   const first = segs[0] ?? null;
+  const isStreet = (x: string | null) => !!x && (STREET_RE.test(x) || /\d/.test(x));
   const primaryLead = barrio ?? first;
   return {
     primary: primaryLead ? `${primaryLead}, ${muni}` : muni,
     secondary: zip ? `Puerto Rico ${zip}` : "Puerto Rico",
-    placeName: barrio && first ? first : null,
+    placeName: barrio && first && !isStreet(first) ? first : null,
+    street: barrio && first && isStreet(first) ? first : null,
   };
 }

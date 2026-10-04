@@ -117,7 +117,12 @@ import {
   type SmartPRLiveData,
 } from './components/filing/FilingWorkflowShell';
 import { normalizeMunicipio } from './locations/geo';
-import { ProjectLocationCard } from './components/intake/ProjectLocationCard';
+import { ProjectLocationCard, type LocationProposal } from './components/intake/ProjectLocationCard';
+import { LocationConflictNotice } from './components/intake/LocationConflictNotice';
+import { PropertyReportDrawer, type PassportSaveState } from './components/intake/PropertyReportDrawer';
+import { adoptPromptPlace, dismissProposal, extractPromptLocations, initialLocationState, keepSelected, onConfirmedChange, reconcilePrompt, restoreLocationState, type ConfirmedSiteRef, type LocationOrigin, type ProjectLocationState, type PromptPlace } from './locations/locationState';
+import { restoreParcelFindings, type ParcelFindings } from './locations/parcel';
+import { buildPropertyReport } from './locations/propertyReport';
 import { LocationStepCard, SiteLayerChips } from './components/intake/LocationStepCard';
 import { ModalPortal } from './components/ui/ViewportModal';
 import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails, siteLabel, siteLayersCurrent, type IntakeSite } from './locations/intakeLocation';
@@ -1649,6 +1654,25 @@ export default function SmartPRIntake() {
   };
   // The user's own description (prompt): location-need detection reads it.
   const [intakeDescription, setIntakeDescription] = useState('');
+  // One project-location state (locations/locationState.ts): the confirmed
+  // site above is authoritative; proposals from the description stay
+  // proposals until the user confirms the exact site.
+  const [locState, setLocStateRaw] = useState<ProjectLocationState>(initialLocationState);
+  const locStateRef = useRef(locState);
+  const setLocState = (next: ProjectLocationState | ((cur: ProjectLocationState) => ProjectLocationState)) => {
+    const value = typeof next === 'function' ? next(locStateRef.current) : next;
+    locStateRef.current = value;
+    setLocStateRaw(value);
+  };
+  // Whole-parcel findings for the confirmed site, tagged with the location
+  // revision they were requested for.
+  const [parcelState, setParcelState] = useState<{ revision: number; data: ParcelFindings | null; loading: boolean }>({ revision: 0, data: null, loading: false });
+  const [siteOrigin, setSiteOrigin] = useState<LocationOrigin>('map_pin');
+  const parcelRestoreRef = useRef<ParcelFindings | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const reportOpenerRef = useRef<HTMLElement | null>(null);
+  const [locationEditRequest, setLocationEditRequest] = useState(0);
+  const [reportSave, setReportSave] = useState<{ saving: boolean; saved: { version: number; created_at: string; fingerprint: string } | null; error: string | null }>({ saving: false, saved: null, error: null });
   // Passport location this intake created for its site (updated on Change).
   const intakeSavedLocationIdRef = useRef<string | null>(null);
   // Business-details block: filled fields minimize to a compact summary and
@@ -2010,6 +2034,12 @@ export default function SmartPRIntake() {
       if (restoredSite.location_id) intakeSavedLocationIdRef.current = restoredSite.location_id;
     }
     if (typeof st.intakeDescription === 'string') setIntakeDescription(st.intakeDescription);
+    if (st.locationState) setLocState(restoreLocationState(st.locationState));
+    if (restoredSite && st.parcelFindings) {
+      const pf = restoreParcelFindings(st.parcelFindings, restoredSite.latitude, restoredSite.longitude);
+      if (pf) parcelRestoreRef.current = pf;
+    }
+    if (restoredSite) setSiteOrigin('restored');
     if (snap.business_id) {
       businessIdRef.current = snap.business_id;
       setBusinessId(snap.business_id);
@@ -3227,6 +3257,13 @@ export default function SmartPRIntake() {
     // Mirror booleans onto the profile the same way handleQuestionAnswer does,
     // since question filtering and follow-up context read the profile.
     Object.assign(profilePatch, mirrorAnswersToProfile(fullAnswers));
+    // A confirmed site is authoritative for location: a description never
+    // silently replaces its municipio (a different place is reconciled in
+    // the location section instead).
+    if (intakeSiteRef.current) {
+      delete profilePatch.municipality;
+      delete fullProfile.municipality;
+    }
 
     setProfile((prev) => {
       const next = { ...prev, ...profilePatch };
@@ -3656,6 +3693,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               // The confirmed site (location step) and the description it was read from.
               intakeSite,
               intakeDescription,
+              // Shared location state + the whole-parcel findings behind the
+              // Property & Site Report draft (the Passport copy is separate).
+              locationState: locStateRef.current,
+              parcelFindings: parcelState.data,
             },
           }),
         })];
@@ -3775,6 +3816,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     me, businessId, profile, discoveryAnswers, requirements, potentialDecisions, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives,
     sampleFormDrafts, preparedSampleApplications, govFormDrafts,
     preparedGovApplications, canonicalOverride, currentStep, readinessScore, scenario,
+    intakeSite, locState, parcelState.data,
   ]);
 
   // Typing and voice enter the same canonical state. Keep the existing intake
@@ -3809,6 +3851,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
    * the engine; requirements already on screen re-evaluate immediately.
    */
   const confirmIntakeSite = (site: IntakeSite) => {
+    setSiteOrigin(site.location_id ? 'saved_location' : site.coordinate_source === 'GEOCODED_ADDRESS' ? 'search' : 'map_pin');
     setIntakeSite(site);
     const option = municipalityOptions.find((m: string) => normalizeMunicipio(m) === normalizeMunicipio(site.municipality.name));
     const nextProfile = option ? { ...profile, municipality: option } : profile;
@@ -3887,6 +3930,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     };
   });
   const intakeLayersFetchRef = useRef<string | null>(null);
+  const intakeLayersAbortRef = useRef<AbortController | null>(null);
   // Pins whose flood lookup already got one automatic second try, and whether
   // the next fetch should bypass the server's remembered failures ("Try again").
   const intakeLayersRetriedRef = useRef<Set<string>>(new Set());
@@ -3920,7 +3964,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     };
     const refresh = intakeLayersRefreshRef.current;
     intakeLayersRefreshRef.current = false;
-    fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store' })
+    // A newer location cancels the request for the previous one.
+    intakeLayersAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    intakeLayersAbortRef.current = ctrl;
+    fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store', signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
       .then((data: { layers?: SiteLayers | null; reason?: string }) => {
         apply(data.layers && Array.isArray(data.layers.results)
@@ -3928,9 +3976,62 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           : unavailableSiteLayers(site.latitude, site.longitude, data.reason ?? 'no_layers'));
       })
       .catch((err: unknown) => {
+        if ((err as Error)?.name === 'AbortError') return;
         apply(unavailableSiteLayers(site.latitude, site.longitude, `layers_service_unreachable: ${(err as Error)?.message ?? 'error'}`));
       });
   }, [intakeSite]);
+
+  // Location revision: every confirmed-site change (confirm, edit, clear,
+  // restore) bumps it. Whole-parcel findings are requested for one revision
+  // and dropped when it moved on; the previous site's findings are cleared
+  // at once, so old parcel/flood results never sit under a new location.
+  const confirmedSiteKey = intakeSite ? `${intakeSite.latitude.toFixed(7)},${intakeSite.longitude.toFixed(7)}` : '';
+  const lastConfirmedKeyRef = useRef<string | null>(null);
+  const parcelAbortRef = useRef<AbortController | null>(null);
+  const parcelRefreshRef = useRef(false);
+  const [parcelRetry, setParcelRetry] = useState(0);
+  useEffect(() => {
+    if (lastConfirmedKeyRef.current === confirmedSiteKey && parcelRetry === 0) return;
+    const moved = lastConfirmedKeyRef.current !== confirmedSiteKey;
+    const firstRestore = lastConfirmedKeyRef.current === null;
+    lastConfirmedKeyRef.current = confirmedSiteKey;
+    const next = moved && !firstRestore ? onConfirmedChange(locStateRef.current) : locStateRef.current;
+    if (moved && !firstRestore) setLocState(next);
+    const revision = next.revision;
+    parcelAbortRef.current?.abort();
+    const site = intakeSiteRef.current;
+    if (!site) { setParcelState({ revision, data: null, loading: false }); return; }
+    const restored = parcelRestoreRef.current;
+    parcelRestoreRef.current = null;
+    if (restored && !parcelRefreshRef.current && Math.abs(restored.latitude - site.latitude) < 1e-7 && Math.abs(restored.longitude - site.longitude) < 1e-7) {
+      setParcelState({ revision, data: restored, loading: false });
+      return;
+    }
+    setParcelState({ revision, data: null, loading: true });
+    const ctrl = new AbortController();
+    parcelAbortRef.current = ctrl;
+    const refresh = parcelRefreshRef.current;
+    parcelRefreshRef.current = false;
+    fetch(`/api/locations/parcel?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store', signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
+      .then((d: { parcel?: ParcelFindings | null }) => {
+        if (locStateRef.current.revision !== revision) return; // a newer location won
+        const cur = intakeSiteRef.current;
+        const data = d.parcel && cur && Math.abs(d.parcel.latitude - cur.latitude) < 1e-7 && Math.abs(d.parcel.longitude - cur.longitude) < 1e-7 ? d.parcel : null;
+        setParcelState({ revision, data, loading: false });
+      })
+      .catch((err: unknown) => {
+        if ((err as Error)?.name === 'AbortError' || locStateRef.current.revision !== revision) return;
+        setParcelState({ revision, data: null, loading: false });
+      });
+    setParcelRetry(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the confirmed site
+  }, [confirmedSiteKey, parcelRetry]);
+  const retrySiteSources = () => {
+    retryIntakeLayers();
+    parcelRefreshRef.current = true;
+    setParcelRetry((n) => n + 1);
+  };
 
   // Answering the inline "more information needed" question on a requirement
   // card writes a REAL discovery answer — exactly what the wizard would have
@@ -6262,20 +6363,110 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     locationFactsPending: Boolean(scenarioEval?.controlling.some((c) => c.id === 'location')),
   });
   const siteBusinessId = me && businessId && !businessId.startsWith('local-') ? businessId : null;
+
+  // Description ↔ confirmed site reconciliation (pure, see locationState.ts).
+  const promptPlaces = extractPromptLocations(intakeDescription, municipalityOptions);
+  const confirmedRef: ConfirmedSiteRef | null = intakeSite ? {
+    municipality: intakeSite.municipality.name,
+    barrio: intakeSite.barrio?.name ?? null,
+    formatted_address: intakeSite.formatted_address,
+    latitude: intakeSite.latitude,
+    longitude: intakeSite.longitude,
+    origin: siteOrigin,
+  } : null;
+  const locationPrompt = reconcilePrompt(promptPlaces, confirmedRef, locState);
+  const locationProposal: LocationProposal | null = locState.adopting
+    ? { kind: 'adopting', place: locState.adopting }
+    : !intakeSite && (locationPrompt.kind === 'propose' || locationPrompt.kind === 'area_only')
+      ? { kind: locationPrompt.kind, place: locationPrompt.place }
+      : null;
+  const onKeepSite = (place: PromptPlace) => { if (confirmedRef) setLocState((cur) => keepSelected(cur, place, confirmedRef)); };
+  const onUsePromptPlace = (place: PromptPlace) => setLocState((cur) => adoptPromptPlace(cur, place));
+  const onProposalCancel = () => setLocState((cur) => dismissProposal(cur, intakeSite ? null : cur.adopting ?? (locationProposal?.place ?? null)));
+  const onDismissAmbiguous = () => setLocState((cur) => (locationPrompt.kind === 'ambiguous' ? locationPrompt.places.reduce((st, p) => dismissProposal(st, p), cur) : cur));
+  const locationNotice = (locationPrompt.kind === 'conflict' || locationPrompt.kind === 'ambiguous') && !locState.adopting ? (
+    <LocationConflictNotice
+      prompt={locationPrompt}
+      lang={language}
+      onKeep={onKeepSite}
+      onUse={onUsePromptPlace}
+      onChooseOnMap={() => setLocationEditRequest((n) => n + 1)}
+      onDismiss={intakeSite ? undefined : onDismissAmbiguous}
+    />
+  ) : null;
+
+  // The ONE Property & Site Report model (preview · drawer · Passport).
+  const propertyReport = intakeSite ? buildPropertyReport({
+    site: intakeSite,
+    parcel: parcelState.revision === locState.revision ? parcelState.data : null,
+    parcelLoading: parcelState.loading || parcelState.revision !== locState.revision,
+    revision: locState.revision,
+    context: {
+      activity: scenario?.business.proposedActivity?.value ?? scenario?.operations.activity?.value ?? null,
+      businessType: profile.business_type || null,
+      projectTypes: scenario?.project.type?.value ?? [],
+      locationRequirements: requirements
+        .filter((r) => /^Municipality (selected|Flag)|^Project fact: location\./.test(r.reason))
+        .slice(0, 20)
+        .map((r) => ({ title: r.name, reason: translateTriggerReason(r.reason, profile.municipality, language, siteFactDetails(intakeSite)) })),
+    },
+  }) : null;
+  const reportSaved = reportSave.saved && propertyReport && reportSave.saved.fingerprint === propertyReport.fingerprint ? reportSave.saved : null;
+  const saveReportToPassport = async () => {
+    if (!propertyReport || !intakeSite?.location_id || !siteBusinessId) return;
+    const report = propertyReport;
+    setReportSave({ saving: true, saved: null, error: null });
+    try {
+      const res = await fetch(`/api/businesses/${encodeURIComponent(siteBusinessId)}/locations/${encodeURIComponent(intakeSite.location_id)}/site-reports`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ report }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || `http_${res.status}`);
+      setReportSave({ saving: false, saved: { version: data.saved.version, created_at: data.saved.created_at, fingerprint: report.fingerprint }, error: null });
+    } catch (err) {
+      setReportSave({ saving: false, saved: null, error: language === 'es' ? `No se pudo guardar (${(err as Error).message}).` : `Could not save (${(err as Error).message}).` });
+    }
+  };
+  const passportSaveState: PassportSaveState = !me
+    ? { kind: 'signed_out' }
+    : !siteBusinessId || !intakeSite?.location_id
+      ? { kind: 'pending_location' }
+      : { kind: 'ready', saving: reportSave.saving, saved: reportSaved, error: reportSave.error, onSave: () => void saveReportToPassport() };
+  const openPropertyReport = (opener: HTMLElement | null) => { reportOpenerRef.current = opener; setReportOpen(true); };
+  const propertyReportDrawer = (
+    <PropertyReportDrawer
+      open={reportOpen && !!propertyReport}
+      report={propertyReport}
+      lang={language}
+      onClose={() => setReportOpen(false)}
+      onEditLocation={() => { setReportOpen(false); setLocationEditRequest((n) => n + 1); }}
+      passport={passportSaveState}
+      returnFocusTo={reportOpenerRef.current}
+      reviewTarget={siteBusinessId && intakeSite?.location_id ? { businessId: siteBusinessId, locationId: intakeSite.location_id } : null}
+    />
+  );
+
   const summaryLocation = intakeSite || locationNeed.needed ? (
     <>
+      {locationNotice}
       <ProjectLocationCard
         mode="summary"
         lang={language}
         site={intakeSite}
         businessId={siteBusinessId}
         onConfirm={confirmIntakeSite}
-        onRetryLayers={retryIntakeLayers}
+        onRetryLayers={retrySiteSources}
         initialQuery={locationNeed.prefill.query}
+        editRequest={locationEditRequest}
         searchInputId="spr-requirements-location"
         knownMunicipality={intakeSite ? null : profile.municipality || null}
       />
-      {intakeSite && <SiteLayerChips site={intakeSite} lang={language} onRetry={retryIntakeLayers} variant="rows" />}
+      {intakeSite && <SiteLayerChips site={intakeSite} lang={language} onRetry={retrySiteSources} variant="rows" />}
+      {propertyReport && (
+        <button type="button" className="spr-srp-open" onClick={(e) => openPropertyReport(e.currentTarget)} data-testid="open-property-report-summary" aria-haspopup="dialog">
+          {language === 'es' ? 'Ver informe completo de la propiedad' : 'View full property report'}
+        </button>
+      )}
     </>
   ) : null;
   const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, 0, language)}`;
@@ -6844,6 +7035,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   return (
     <div style={{ minHeight: '100vh' }}>
+      {propertyReportDrawer}
       {/* Upload result toast (LLM document analysis feedback) */}
       {uploadNotice && (
         <div className="submit-toast show" role="status" style={{ maxWidth: 480 }}>
@@ -7016,6 +7208,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       map → coordinates + address + municipio, via the same
                       confirmIntakeSite as before. The municipality select is
                       only the fallback when detection fails. */}
+                  {locationNotice}
                   <ProjectLocationCard
                     mode="edit"
                     lang={language}
@@ -7023,7 +7216,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     businessId={siteBusinessId}
                     onConfirm={confirmIntakeSite}
                     onClear={() => setIntakeSite(null)}
-                    onRetryLayers={retryIntakeLayers}
+                    onRetryLayers={retrySiteSources}
+                    report={propertyReport}
+                    onOpenReport={openPropertyReport}
+                    proposal={locationProposal}
+                    onProposalCancel={onProposalCancel}
+                    editRequest={locationEditRequest}
                     initialQuery={locationNeed.prefill.query}
                     searchInputId="spr-project-location"
                     invalid={isFlaggedMissing('municipality') && submitAttempted}

@@ -241,3 +241,33 @@ CREATE TABLE IF NOT EXISTS site_layer_cache (
 );
 CREATE INDEX IF NOT EXISTS idx_site_layer_cache_fetched ON site_layer_cache (fetched_at);
 ALTER TABLE site_layer_cache ENABLE ROW LEVEL SECURITY;
+
+-- Versioned Property & Site Reports saved to the Business Passport. Each save
+-- of a changed report (new fingerprint) adds a version; nothing is rewritten.
+-- Reached only through the owning business (server-side access check).
+CREATE TABLE IF NOT EXISTS location_site_reports (
+  id UUID PRIMARY KEY,
+  location_id UUID NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  fingerprint TEXT NOT NULL,
+  report JSONB NOT NULL,
+  created_by_user_id UUID NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (location_id, version)
+);
+CREATE INDEX IF NOT EXISTS idx_location_site_reports_location ON location_site_reports (location_id, version DESC);
+ALTER TABLE location_site_reports ENABLE ROW LEVEL SECURITY;
+
+-- Professional review of a location's Property & Site Report: status,
+-- notes, open questions and an append-only history (applied server-side one
+-- action at a time). "Reviewed" is a professional review, never a
+-- government approval.
+CREATE TABLE IF NOT EXISTS location_site_report_reviews (
+  location_id UUID PRIMARY KEY REFERENCES locations(id) ON DELETE CASCADE,
+  business_id UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  review JSONB NOT NULL,
+  updated_by_user_id UUID NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE location_site_report_reviews ENABLE ROW LEVEL SECURITY;

@@ -26,6 +26,12 @@ import type { ResolvedPlacement } from "../../businesses/LocationPickerDialog";
 import type { GeocodeCandidate } from "../../../lib/geocoding";
 import type { Lang } from "../../forms/engine/types";
 import { intakeSiteFromPlacement, SiteLayerChips } from "./LocationStepCard";
+import { SiteReportPreview } from "./SiteReportPreview";
+import type { PropertyReport } from "../../locations/propertyReport";
+import { placeLabel, placeQuery, type PromptPlace } from "../../locations/locationState";
+
+/** A location proposed by the description (never confirmed until the user does). */
+export type LocationProposal = { kind: "propose" | "area_only" | "adopting"; place: PromptPlace };
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -43,12 +49,16 @@ async function resolvePoint(p: MapPoint): Promise<Resolve> {
 }
 
 /** Selection details: status pill, clean address hierarchy, metadata. */
-function SiteDetails({ site, lang, status }: { site: IntakeSite; lang: Lang; status: "selected" | "saved" | "confirmed" }) {
+function SiteDetails({ site, lang, status, report, proposed }: { site: IntakeSite; lang: Lang; status: "selected" | "saved" | "confirmed"; report?: PropertyReport | null; proposed?: boolean }) {
   const a = siteAddressParts(site);
+  const cat = report?.property.catastro.value ?? null;
+  const area = report?.property.boundary.area_m2 ?? null;
   const approximate = site.coordinate_source === "GEOCODED_ADDRESS";
   const pill =
-    status === "saved"
-      ? L("Location saved", "Ubicación guardada", lang)
+    proposed && status === "selected"
+      ? L("Proposed location — not confirmed", "Ubicación propuesta — sin confirmar", lang)
+      : status === "saved"
+      ? L("Location confirmed", "Ubicación confirmada", lang)
       : status === "selected"
         ? L("Exact site selected", "Lugar exacto seleccionado", lang)
         : approximate
@@ -56,7 +66,7 @@ function SiteDetails({ site, lang, status }: { site: IntakeSite; lang: Lang; sta
           : L("Exact site confirmed", "Lugar exacto confirmado", lang);
   return (
     <div className="spr-plc-details" data-testid="location-rules-for">
-      <span className={`spr-plc-pill${status === "confirmed" && approximate ? " spr-plc-pill-approx" : ""}`} data-testid="location-rules-for-label">
+      <span className={`spr-plc-pill${(status === "confirmed" && approximate) || (proposed && status === "selected") ? " spr-plc-pill-approx" : ""}`} data-testid="location-rules-for-label" data-proposed={proposed && status === "selected" ? "true" : undefined}>
         <CheckCircle2 aria-hidden="true" /> {pill}
       </span>
       <p className="spr-plc-primary" data-testid="project-location-address">{a.primary}</p>
@@ -67,6 +77,24 @@ function SiteDetails({ site, lang, status }: { site: IntakeSite; lang: Lang; sta
           <dt><Landmark aria-hidden="true" /> {L("Municipality", "Municipio", lang)}</dt>
           <dd data-testid="project-location-municipality">{site.municipality.name}</dd>
         </div>
+        {site.barrio && site.barrio.name !== site.municipality.name && (
+          <div>
+            <dt><MapPin aria-hidden="true" /> {L("Barrio", "Barrio", lang)}</dt>
+            <dd data-testid="project-location-barrio">{site.barrio.name}</dd>
+          </div>
+        )}
+        {cat && (
+          <div>
+            <dt><Hash aria-hidden="true" /> {L("Catastro", "Catastro", lang)}</dt>
+            <dd data-testid="project-location-catastro">{cat}</dd>
+          </div>
+        )}
+        {area && (
+          <div>
+            <dt><Building2 aria-hidden="true" /> {L("Approx. parcel area", "Área aprox. de la parcela", lang)}</dt>
+            <dd>{area.toLocaleString(lang === "es" ? "es-PR" : "en-US")} m² <small className="spr-plc-small">{L("mapped, not surveyed", "mapeada, sin mensura", lang)}</small></dd>
+          </div>
+        )}
         <div>
           <dt>
             <Hash aria-hidden="true" /> {L("Coordinates", "Coordenadas", lang)}
@@ -76,6 +104,12 @@ function SiteDetails({ site, lang, status }: { site: IntakeSite; lang: Lang; sta
           </dt>
           <dd data-testid="project-location-coordinates">{formatCoordinate(site.latitude)}, {formatCoordinate(site.longitude)}</dd>
         </div>
+        {a.street && (
+          <div>
+            <dt><Building2 aria-hidden="true" /> {L("Street", "Calle", lang)}</dt>
+            <dd data-testid="project-location-street">{a.street}</dd>
+          </div>
+        )}
         {a.placeName && (
           <div>
             <dt><Building2 aria-hidden="true" /> {L("Place name", "Nombre del lugar", lang)}</dt>
@@ -90,7 +124,17 @@ function SiteDetails({ site, lang, status }: { site: IntakeSite; lang: Lang; sta
 
 export function ProjectLocationCard({
   mode, lang, site, businessId, onConfirm, onRetryLayers, initialQuery, municipalityFallback, searchInputId, missingNote, invalid, knownMunicipality, onClear,
+  report, onOpenReport, proposal, onProposalCancel, editRequest,
 }: {
+  /** Shared Property & Site Report for the confirmed site (preview + parcel boundary). */
+  report?: PropertyReport | null;
+  onOpenReport?: (opener: HTMLElement | null) => void;
+  /** A location proposed by the description: shown, never confirmed automatically. */
+  proposal?: LocationProposal | null;
+  /** The user cancelled the proposal (the confirmed site, if any, stays). */
+  onProposalCancel?: () => void;
+  /** Bumped by the intake to open the editor ("Choose on map", report "Edit location"). */
+  editRequest?: number;
   mode: "edit" | "summary";
   lang: Lang;
   site: IntakeSite | null;
@@ -168,6 +212,7 @@ export function ProjectLocationCard({
   const save = () => {
     if (!draft) return;
     onConfirm(draft);
+    setAreaFocus(null);
     setDraft(null);
     setEditing(false);
     setAlternatives([]);
@@ -256,7 +301,48 @@ export function ProjectLocationCard({
     setFailed(false);
     setMessage(null);
     setAlternatives([]);
+    onProposalCancel?.();
   };
+
+  // External "edit" requests (conflict notice → Choose on map, report → Edit location).
+  const lastEditRequest = useRef(editRequest ?? 0);
+  useEffect(() => {
+    if (!editRequest || editRequest === lastEditRequest.current) return;
+    lastEditRequest.current = editRequest;
+    startEdit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once per request
+  }, [editRequest]);
+
+  // A proposal from the description: open the editor on it. An address is
+  // searched and shown as a draft pin (still needs "Use this location"); an
+  // area is only centred on — an area is never a site.
+  const [areaFocus, setAreaFocus] = useState<MapPoint | null>(null);
+  const proposalKey = proposal ? `${proposal.kind}:${proposal.place.key}` : "";
+  const lastProposal = useRef("");
+  useEffect(() => {
+    if (!proposal || proposalKey === lastProposal.current) return;
+    lastProposal.current = proposalKey;
+    setEditing(true);
+    setStarted(true);
+    const q = placeQuery(proposal.place);
+    setQuery(q);
+    if (proposal.place.precision === "address") {
+      void runSearch(q);
+    } else {
+      setDraft(null);
+      setPending(null);
+      void (async () => {
+        try {
+          const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store" });
+          const data = res.ok ? ((await res.json()) as { results: GeocodeCandidate[] }) : { results: [] };
+          const first = data.results[0];
+          if (first) setAreaFocus({ latitude: first.latitude, longitude: first.longitude });
+        } catch { /* the user can still pan the map */ }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per proposal
+  }, [proposalKey]);
+  useEffect(() => { if (!proposal) { lastProposal.current = ""; setAreaFocus(null); } }, [proposal]);
 
   const isSaved = !editing && !!site;
   const workspace = isSaved || started || !!site || !!draft;
@@ -288,7 +374,7 @@ export function ProjectLocationCard({
           <button type="button" className="spr-plc-edit" onClick={startEdit} data-testid="location-change">
             <Pencil aria-hidden="true" /> {L("Edit location", "Editar ubicación", lang)}
           </button>
-        ) : site ? (
+        ) : site || proposal ? (
           <button type="button" className="spr-plc-edit" onClick={cancelEdit} data-testid="location-edit-cancel">
             {L("Cancel", "Cancelar", lang)}
           </button>
@@ -318,6 +404,14 @@ export function ProjectLocationCard({
             </button>
           </form>
           {missingNote}
+          {proposal && (
+            <p className="spr-plc-proposal" role="status" data-testid="location-proposal" data-kind={proposal.kind}>
+              {proposal.place.precision === "address"
+                ? L(`Proposed from your description: ${placeLabel(proposal.place)}. Check the pin and confirm the exact site.`, `Propuesto según tu descripción: ${placeLabel(proposal.place)}. Revisa el pin y confirma el lugar exacto.`, lang)
+                : L(`Your description mentions ${placeLabel(proposal.place)}. That's an area, not a site — select the exact property on the map.`, `Tu descripción menciona ${placeLabel(proposal.place)}. Es un área, no un lugar — selecciona la propiedad exacta en el mapa.`, lang)}
+              {site && <> {L(`Requirements keep using ${site.municipality.name} until you confirm.`, `Los requisitos siguen usando ${site.municipality.name} hasta que confirmes.`, lang)}</>}
+            </p>
+          )}
           <div className="spr-plc-under">
             {!workspace && (
               <button type="button" className="spr-plc-map-toggle" onClick={() => setStarted(true)} data-testid="project-location-map-toggle">
@@ -362,6 +456,10 @@ export function ProjectLocationCard({
             <PassportMap
               interactive={!isSaved}
               point={point}
+              focus={!point && areaFocus ? { ...areaFocus, zoom: proposal?.place.precision === "barrio" ? 14 : 12.5 } : null}
+              parcel={isSaved && report ? report.property.boundary.geometry : null}
+              layerControls={isSaved}
+              layerLabels={{ streets: L("Map", "Mapa", lang), satellite: L("Satellite", "Satélite", lang), flood: L("Flood zones", "Zonas inundables", lang), zoning: L("Zoning", "Calificación", lang), parcel: L("Parcel", "Parcela", lang), layers: L("Map layers", "Capas del mapa", lang) }}
               onPick={isSaved ? undefined : (p) => void onMapPick(p)}
               label={isSaved
                 ? L(`Map of the project site in ${site!.municipality.name}`, `Mapa del lugar del proyecto en ${site!.municipality.name}`, lang)
@@ -388,7 +486,7 @@ export function ProjectLocationCard({
               </div>
             ) : shown ? (
               <div className="spr-plc-confirmed" data-testid="project-location-confirmed">
-                <SiteDetails site={shown} lang={lang} status={draft ? "selected" : summary ? "confirmed" : "saved"} />
+                <SiteDetails site={shown} lang={lang} status={draft ? "selected" : summary ? "confirmed" : "saved"} report={draft ? null : report} proposed={!!proposal} />
                 {draft && (
                   <button type="button" className="spr-plc-use" onClick={save} data-testid="project-location-use">
                     {L("Use this location", "Usar esta ubicación", lang)}
@@ -414,7 +512,9 @@ export function ProjectLocationCard({
 
       {isSaved && !summary && site && (
         <div className="spr-plc-intel">
-          <SiteLayerChips site={site} lang={lang} onRetry={onRetryLayers} />
+          {report && onOpenReport
+            ? <SiteReportPreview report={report} lang={lang} onRetry={onRetryLayers} onOpen={() => onOpenReport(document.activeElement as HTMLElement | null)} />
+            : <SiteLayerChips site={site} lang={lang} onRetry={onRetryLayers} />}
         </div>
       )}
 

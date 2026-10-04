@@ -75,7 +75,7 @@ async function open(width: number, height: number): Promise<Page> {
     return route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
   });
   await page.goto(`${base}/?resume=e2e-site`, { waitUntil: "domcontentloaded", timeout: 120000 });
-  await page.locator('[data-testid="site-intelligence"]').first().waitFor({ timeout: 90000 });
+  await page.locator('[data-testid="site-report-preview"] [data-finding="flood_zone"][data-state="sourced"]').first().waitFor({ timeout: 90000 });
   await page.waitForTimeout(500);
   return page;
 }
@@ -92,7 +92,8 @@ for (const [w, h, tag] of [[1440, 900, "desktop"], [1280, 800, "laptop"], [390, 
   check(`${tag}: location section within the form column`, wb.left >= main.left - 1 && wb.right <= main.right + 1, `${Math.round(wb.left)}–${Math.round(wb.right)} in ${Math.round(main.left)}–${Math.round(main.right)}`);
   check(`${tag}: no horizontal overflow`, overflowX <= 0, String(overflowX));
   const clipped = await page.locator(where).evaluate((el) => Array.from(el.querySelectorAll("*")).some((c) => { const r = c.getBoundingClientRect(); const p = el.getBoundingClientRect(); return r.width > 1 && !c.classList.contains("sr-only") && (r.right > p.right + 1 || r.left < p.left - 1); }));
-  check(`${tag}: nothing inside the section spills out`, !clipped);
+  const spill = await page.locator(where).evaluate((el) => Array.from(el.querySelectorAll("*")).filter((c) => { const r = c.getBoundingClientRect(); const p = el.getBoundingClientRect(); return r.width > 1 && !c.classList.contains("sr-only") && (r.right > p.right + 1 || r.left < p.left - 1); }).slice(0, 3).map((c) => `${c.tagName}.${(c.getAttribute("class") ?? "").slice(0, 60)} ${c.getAttribute("href") ?? ""} ${c.parentElement?.className ?? ""} r=${Math.round(c.getBoundingClientRect().right)}`).join(" | "));
+  check(`${tag}: nothing inside the section spills out`, !clipped, spill);
   // scroll the section's bottom into view: it must not sit under the sticky footer
   await page.locator(where).evaluate((e) => e.scrollIntoView({ block: "end" }));
   await page.waitForTimeout(300);
@@ -111,25 +112,18 @@ for (const [w, h, tag] of [[1440, 900, "desktop"], [1280, 800, "laptop"], [390, 
   check(`${tag}: helper copy, no Ask Clara chat entry in the intake`, /Complete your intake by speaking\./.test(await page.locator(".spr-voice-help").innerText()) && (await page.getByText("Ask Clara").count()) === 0);
   await page.evaluate(() => window.scrollTo(0, 0));
 
-  // 3 — site results
-  const si = page.locator(`${where} [data-testid="site-intelligence"]`);
-  const groups = await si.locator(".spr-si-group").evaluateAll((els) => els.map((e) => ({ id: e.getAttribute("data-group"), title: e.querySelector(".spr-si-group-title")?.textContent?.trim(), pills: Array.from(e.querySelectorAll(".spr-si-pill")).map((p) => p.getAttribute("data-layer") + ":" + p.getAttribute("data-tone")) })));
-  const exp = expected.groups.map((g) => ({ id: g.id, pills: g.pills.map((p) => `${p.layer}:${p.tone}`) }));
-  check(`${tag}: same groups and findings as before (data unchanged)`, JSON.stringify(groups.map((g) => ({ id: g.id, pills: g.pills }))) === JSON.stringify(exp), groups.map((g) => `${g.title}[${g.pills.length}]`).join(" "));
-  check(`${tag}: every group has a visible label`, groups.every((g) => (g.title ?? "").length > 2));
-  check(`${tag}: considerations kept`, (await si.locator('[data-testid="site-consideration"]').count()) === expected.considerations.length);
-  const gaps = await si.locator(".spr-si-group").evaluateAll((els) => els.slice(1).map((e, i) => Math.round(e.getBoundingClientRect().top - els[i]!.getBoundingClientRect().bottom)));
-  check(`${tag}: consistent spacing between groups`, gaps.length > 0 && new Set(gaps).size === 1, gaps.join(","));
-  // per-group source details
-  const firstGroup = si.locator(".spr-si-group").first();
-  const toggle = firstGroup.locator('[data-testid="site-group-sources-toggle"]');
-  check(`${tag}: group source details collapsed by default`, (await toggle.getAttribute("aria-expanded")) === "false" && (await firstGroup.locator("a").count()) === 0);
-  await toggle.click();
-  const det = firstGroup.locator('[data-testid="site-group-sources"]');
-  check(`${tag}: expanding shows that group's sources`, (await det.locator("article").count()) > 0 && (await det.locator("a[href^='http']").count()) > 0);
-  await toggle.press("Enter");
-  check(`${tag}: keyboard collapses it again`, (await toggle.getAttribute("aria-expanded")) === "false");
-  check(`${tag}: all-sources control kept`, (await si.locator('[data-testid="site-sources-button"]').count()) === 1);
+  // 3 — site results: the intake card shows the compact Property & Site
+  // preview (full grouped site intelligence lives in the report drawer and
+  // on the requirements page). Same official data, one shared model.
+  const sp = page.locator(`${where} [data-testid="site-report-preview"]`);
+  const rows = await sp.locator("[data-finding]").evaluateAll((els) => els.map((e) => `${e.getAttribute("data-finding")}:${e.getAttribute("data-state")}`));
+  const floodPill = expected.groups.flatMap((g) => g.pills).find((p) => p.layer === "flood_zone");
+  check(`${tag}: compact findings for zoning, flood, terrain and coastal`, ["zoning", "flood_zone", "terrain", "coastal_zone"].every((id) => rows.some((r) => r.startsWith(`${id}:`))), rows.join(" "));
+  check(`${tag}: flood finding matches the site-intelligence data`, !!floodPill && /AE/.test(await sp.locator('[data-finding="flood_zone"]').innerText()), await sp.locator('[data-finding="flood_zone"]').innerText());
+  const gaps = await sp.locator("[data-finding]").evaluateAll((els) => els.slice(1).map((e, i) => Math.round(e.getBoundingClientRect().top - els[i]!.getBoundingClientRect().bottom)));
+  check(`${tag}: consistent spacing between findings`, gaps.length > 0 && new Set(gaps).size === 1, gaps.join(","));
+  check(`${tag}: sources collapsed by default`, (await sp.locator("details.spr-srp-sources").getAttribute("open")) === null);
+  check(`${tag}: full report reachable`, (await sp.locator('[data-testid="open-property-report"]').count()) === 1);
   await page.locator(where).scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(OUT, `${tag}.png`), fullPage: true });
   await page.close();
