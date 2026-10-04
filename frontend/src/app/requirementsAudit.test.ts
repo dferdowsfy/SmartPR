@@ -4492,3 +4492,51 @@ test("CASE AW: a bar that explicitly denies alcohol sales gets no alcohol licens
     "legacy path: historical behavior unchanged"
   );
 });
+
+test("CASE AX: beauty-specialist professions get the professional license — REQUIRED when new, verify_existing when existing (REG-PROF-BEAUTY-001)", () => {
+  // 2026-10-04 00:00 QA cycle (S405, Toa Baja): KB INCOMPLETE — BT_BARBERSHOP
+  // has RULE_0695 (Ley 146-1968) and BT_TATTOO_SHOP has RULE_0696
+  // (Ley 318-1999), but BT_BEAUTY_SALON / BT_NAIL_SALON / BT_ESTHETICS_STUDIO
+  // had no professional-license rule, so a new beauty salon surfaced no
+  // professional-license requirement. Primary-source check of Ley 9-1972
+  // Art. 15 (10 LPRA § 2125, lexjuris): beauty specialists (cosmetólogos,
+  // técnicos de uñas, esteticistas) are individually licensed by the Junta
+  // Examinadora de Especialistas en Belleza (Dept. de Estado); practicing
+  // unlicensed is a misdemeanor. Same genuinely-licensed-profession pattern
+  // as RULE_0695 / RULE_0696; compliance_mode verify_existing per the
+  // e676174 sweep. BT_SPA and BT_MASSAGE_THERAPY_STUDIO deliberately
+  // excluded (mixed professions / uncertain board jurisdiction) — still
+  // REQUIRES_REGULATORY_REVIEW.
+  const DOC_PROFLIC = docByName("professional license");
+  const input = (bt: string, status: "new" | "existing") =>
+    buildEngineInput(
+      {
+        business_type: bt,
+        municipality: "Toa Baja",
+        location_type: "Commercial Facility",
+        number_of_employees: 3,
+        business_structure: "llc",
+      },
+      {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_EXISTING_LEASE: true,
+      },
+      {},
+      { projectIntent: status === "new" ? "new_business" : "existing_business" }
+    );
+  for (const bt of ["Beauty Salon", "Nail Salon", "Esthetics Studio"]) {
+    const fresh = classify(input(bt, "new"), "new");
+    assert.equal(
+      byId(fresh.classified, DOC_PROFLIC)?.applicability,
+      "required",
+      `a new ${bt} gets the professional license as REQUIRED (RULE_0713/0714/0715)`
+    );
+    const operating = classify(input(bt, "existing"), "existing");
+    assert.equal(
+      byId(operating.classified, DOC_PROFLIC)?.applicability,
+      "verify_existing",
+      `an operating ${bt} verifies its existing professional license (not REQUIRED-as-new)`
+    );
+  }
+});
