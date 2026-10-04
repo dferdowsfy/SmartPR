@@ -13,7 +13,12 @@ export const PR_GUIDANCE_SOURCES = {
   codigoMunicipal: source("SRC_GUIDANCE_CODIGO_MUNICIPAL", "Oficina de Gerencia y Presupuesto (OGP)", "Código Municipal de Puerto Rico — Ley 107-2020, según enmendada", "https://docs.pr.gov/files/JP-Junta%20de%20Planificacion/Leyes/Codigo-Municipal-de-Puerto-Rico-Ley-107-2020.pdf", "Ley 107-2020, Arts. 7.200–7.207: la patente municipal grava el volumen de negocios de la actividad comercial en el municipio."),
   ogpCarta: source("SRC_GUIDANCE_OGP_CC_002_2022", "Oficina de Gerencia y Presupuesto (OGP)", "Carta Circular 002-2022 — disposiciones sobre cumplimiento contributivo municipal", "https://docs.pr.gov/files/OGP/Website_OGP/CartasCirculares/CC2022/CC-002-2022.pdf", "La Carta Circular 002-2022 de OGP establece las disposiciones sobre la certificación de cumplimiento contributivo municipal."),
   propertyEvidence: source("SRC_GUIDANCE_PROPERTY_EVIDENCE", "OGPe", "Single Business Portal — evidencia de la propiedad en las solicitudes de permiso", "https://www.permisos.pr.gov/", "La evidencia de control del predio (escritura o contrato de arrendamiento) forma parte del expediente de permisos."),
-  dtrh: source("SRC_GUIDANCE_DTRH", "Departamento del Trabajo y Recursos Humanos", "Registro de patronos — seguro por desempleo e incapacidad", "https://patronos.trabajo.pr.gov/patronos/Help/Help_ES/radicacindesolicituddenmeropatronalparadesempleoeincapacidad.htm", "El portal de patronos del DTRH procesa la solicitud del número patronal para el seguro por desempleo e incapacidad."),
+  // REG-GUIDE-DTRH-SOURCE-001 (2026-10-04 QA): a live filing audit
+  // (S412–S414, 09:00 cycle) showed the DTRH employer-registration card's
+  // SOURCE as a patronos help-page URL with no statutory basis, while the
+  // KB document itself already cites the statutes. The source citation now
+  // names the statutes (the help-page URL stays as the filing channel).
+  dtrh: source("SRC_GUIDANCE_DTRH", "Departamento del Trabajo y Recursos Humanos", "Registro patronal — Ley 74-1956 (Ley de Seguridad de Empleo, seguro por desempleo) y Ley 139-1968 (seguro por incapacidad no ocupacional)", "https://patronos.trabajo.pr.gov/patronos/Help/Help_ES/radicacindesolicituddenmeropatronalparadesempleoeincapacidad.htm", "El portal de patronos del DTRH procesa la solicitud del número patronal para el seguro por desempleo e incapacidad."),
   entityLlc: source("SRC_GUIDANCE_ENTITY_LLC", "Departamento de Estado", "LLCs — formation by Certificate of Organization", "https://www.estado.pr.gov/corporaciones", "An LLC is created through a Certificate of Organization filed with the Department of State."),
   // REG-GUIDE-ENTITY-001 (2026-09-17 QA): the Certificate of Incorporation
   // card rendered the LLC citation ("LLC formation by Certificate of
@@ -80,7 +85,14 @@ export const PR_GUIDANCE_SOURCES = {
   // REG-GUIDE-WITHHOLDING-001 (2026-09-17 QA): the
   // DOC_HACIENDA_EMPLOYER_WITHHOLDING card rendered the
   // unvalidated-description placeholder on a Bayamón contractor filing.
-  withholding: source("SRC_GUIDANCE_WITHHOLDING", "Departamento de Hacienda", "SURI — employer tax transactions", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI is Hacienda's portal for employer tax transactions, including employer withholding registration, withholding deposits, and payroll filings."),
+  // REG-GUIDE-WITHHOLDING-SOURCE-001 (2026-10-04 QA): a live filing audit
+  // (S412–S414, 09:00 cycle) showed the Hacienda employer-withholding
+  // card's SOURCE as plain prose ("Employers must register the withholding
+  // account in SURI") with no statutory basis. The duty to withhold on
+  // wages is imposed by Sección 1062.01(b) of the 2011 PR Internal Revenue
+  // Code (verified against Hacienda's Boletín Informativo 14-03). The
+  // citation now names the statute; the SURI URL stays as the filing channel.
+  withholding: source("SRC_GUIDANCE_WITHHOLDING", "Departamento de Hacienda", "Retención patronal — Código de Rentas Internas de Puerto Rico de 2011 (Ley 1-2011), Sección 1062.01(b): todo patrono debe deducir y retener la contribución sobre ingresos de los salarios; la cuenta de retención se registra y maneja en SURI", "https://hacienda.pr.gov/transacciones-que-puedes-realizar-traves-de-suri", "SURI is Hacienda's portal for employer tax transactions, including employer withholding registration, withholding deposits, and payroll filings."),
   // REG-GUIDE-OUTDOOR-001 (2026-09-20 QA): the San Juan primary source for
   // outdoor seating was verified verbatim 2026-09-20 (Código de Orden Público,
   // Art. 2.301 — cafés al aire libre on sidewalks/public spaces require the

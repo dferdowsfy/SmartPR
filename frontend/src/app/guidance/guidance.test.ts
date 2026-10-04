@@ -964,3 +964,32 @@ test("REG-GUIDE-ROOMTAX-001: room-tax guidance states the verified 7% rate in EN
   // Validator must still pass the edited concept cleanly.
   assert.deepEqual(validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ROOM_TAX_RETURN), [], `room-tax concept must validate clean, got: ${validateGuidanceConcept(PR_REQUIREMENT_GUIDANCE.DOC_ROOM_TAX_RETURN).join(", ")}`);
 });
+
+// REG-GUIDE-DTRH-SOURCE-001 (2026-10-04 QA): a live filing audit
+// (S412–S414, 09:00 cycle) showed the DTRH employer-registration card's
+// SOURCE as a patronos help-page URL with no statutory basis, while the KB
+// document itself already cites Ley 74-1956 and Ley 139-1968. The guidance
+// source must name the statutes; the help-page URL may stay as the filing
+// channel, never as the sole authority.
+test("REG-GUIDE-DTRH-SOURCE-001: DTRH employer-registration source cites Ley 74-1956 / Ley 139-1968 (live S412–S414 finding 2026-10-04)", () => {
+  const src = PR_GUIDANCE_SOURCES.dtrh;
+  assert.match(src.citation, /Ley 74-1956/);
+  assert.match(src.citation, /Ley 139-1968/);
+});
+
+// REG-GUIDE-WITHHOLDING-SOURCE-001 (2026-10-04 QA): a live filing audit
+// (S412–S414, 09:00 cycle) showed the Hacienda employer-withholding card's
+// SOURCE as plain prose ("Employers must register the withholding account
+// in SURI") with no statutory basis. The duty to withhold on wages is
+// imposed by Sección 1062.01(b) of the 2011 PR Internal Revenue Code
+// (verified against Hacienda's Boletín Informativo 14-03, which quotes the
+// section as the employer-withholding mandate). The guidance source and
+// the KB document citation must name the statute.
+test("REG-GUIDE-WITHHOLDING-SOURCE-001: withholding source cites Ley 1-2011 Sección 1062.01(b) (live S412–S414 finding 2026-10-04)", () => {
+  const src = PR_GUIDANCE_SOURCES.withholding;
+  assert.match(src.citation, /Ley 1-2011/);
+  assert.match(src.citation, /1062\.01/);
+  const doc = KB.documents.find(d => d.id === "DOC_HACIENDA_EMPLOYER_WITHHOLDING");
+  assert.match(doc?.citation ?? "", /Ley 1-2011/);
+  assert.match(doc?.citation ?? "", /1062\.01/);
+});

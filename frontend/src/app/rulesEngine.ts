@@ -24,6 +24,8 @@ export interface KBDocument {
   id: string; name: string; agency: string; category: string; requirement_guidance?: unknown;
   agency_url?: string | null;
   agency_note?: string | null;
+  /** Statutory/regulatory basis carried on the KB document itself (documents.json). */
+  citation?: string | null;
   /** Default filing/download destination — a rule-level download override
    * (REG-PROFESSION-AGENCY-002) wins over these when present. */
   download_url?: string | null;
