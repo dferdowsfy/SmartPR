@@ -663,3 +663,31 @@ test("REG-SOURCE-ROW-004: the final Source row value never exposes an internal r
   assert.match(docWins, /Ley 210-2015/);
   assert.doesNotMatch(docWins, /RULE_0649/);
 });
+
+test("REG-SOURCE-ROW-005: no rule carries a bare URL as its citation — URLs shadow document statute citations on the live Source row", () => {
+  // 2026-10-04 QA, live S417: the DTRH Employer Registration card's SOURCE
+  // row rendered a raw patronos help-page URL instead of the statute basis.
+  // Root cause: sourceRowValue/sourceRowCitation prefer the triggering RULE's
+  // citation over the document's, and RULE_0619's citation field WAS the URL —
+  // so the document's own statute citation ("Ley 74-1956 ... y Ley 139-1968
+  // ...") never rendered. The 09:00 cycle's f8ab9ac had fixed the guidance
+  // registry and the document citation, but neither is what the live SOURCE
+  // row reads — the rule's citation wins. A KB-wide scan found the same
+  // defect class on 13 rules: RULE_0619 (DTRH) plus the §29.2 alcohol-license
+  // prerequisite chain (RULE_0621–RULE_0635, Hacienda alcohol-license page
+  // URL). Fix: rule citations must carry citation TEXT; the URLs stay on the
+  // documents' citation_url and the guidance-source filing channels.
+  const rules = (kb.rules as Array<{ id?: string; citation?: unknown }>);
+  const urlCited = rules.filter((r) => typeof r.citation === "string" && /^https?:\/\//.test(r.citation));
+  assert.deepEqual(urlCited.map((r) => r.id), [], "no rule may carry a bare URL as its citation");
+  // DTRH: the rule citation is gone, so the document's statute citation wins.
+  const dtrh = sourceRowCitation("RULE_0619", "DOC_DTRH_EMPLOYER_REG", kb);
+  assert.match(dtrh ?? "", /Ley 74-1956/, "DTRH Source row names the statute");
+  assert.match(dtrh ?? "", /Ley 139-1968/, "DTRH Source row names the disability statute");
+  assert.doesNotMatch(dtrh ?? "", /^https?:\/\//, "DTRH Source row is not a bare URL");
+  // Alcohol-chain representative: RULE_0627 (criminal-record prerequisite)
+  // falls back to the document's statute citation.
+  const bg = sourceRowCitation("RULE_0627", "DOC_BACKGROUND_CHECK", kb);
+  assert.match(bg ?? "", /Ley 254-1974/, "alcohol-chain Source row names the statute");
+  assert.doesNotMatch(bg ?? "", /^https?:\/\//, "alcohol-chain Source row is not a bare URL");
+});

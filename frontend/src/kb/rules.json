@@ -6813,7 +6813,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_DTRH_EMPLOYER_REG",
-  "citation": "https://patronos.trabajo.pr.gov/patronos/Help/Help_ES/radicacindesolicituddenmeropatronalparadesempleoeincapacidad.htm",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -6854,7 +6854,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CRIM_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -6902,7 +6902,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_CRIM_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -6921,7 +6921,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_ASUME_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -6969,7 +6969,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_ASUME_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -6988,7 +6988,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_BACKGROUND_CHECK",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7036,7 +7036,7 @@
   "expected_answer": "true",
   "municipality_flag": null,
   "requires_document_id": "DOC_BACKGROUND_CHECK",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7055,7 +7055,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_CRIM_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7082,7 +7082,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_ASUME_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7109,7 +7109,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_BACKGROUND_CHECK",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7136,7 +7136,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_CRIM_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7163,7 +7163,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_ASUME_CLEARANCE",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
@@ -7190,7 +7190,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_BACKGROUND_CHECK",
-  "citation": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+  "citation": null,
   "citation_source": "rule",
   "compliance_mode": "verify_existing",
   "change_log": [
