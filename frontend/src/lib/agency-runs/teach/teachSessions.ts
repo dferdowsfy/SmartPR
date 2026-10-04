@@ -33,7 +33,7 @@ import { buildSkillFromTeach, type BuildResult } from "./buildSkill";
 import { bindRecordedActions, normalizeRecorderItems, type RecordedAction } from "./recording";
 import { llmReviewRoutine, validateRoutine, withLlmNotes, type LlmReviewer, type RoutineValidation } from "./validateRoutine";
 import { passportFieldName } from "../skills/skillCard";
-import { additionalDetailPath, catalogEntry, catalogEntryApplies, entityTypeForOption, optionForPassportValue, passportHas, proposeMapping, protectedMarkerPaths, readPassportPath, setPassportPath } from "./passportCatalog";
+import { additionalDetailPath, catalogEntry, catalogEntryApplies, entityTypeForOption, optionForPassportValue, passportHas, passportValue, proposeMapping, protectedMarkerPaths, readPassportPath, setPassportPath } from "./passportCatalog";
 import { normalizeValue, PassportWriteError, writablePath, type PassportStore } from "../passportWrite";
 import { teachDomainDecision } from "./domains";
 import { skillCard, type SkillCard } from "../skills/skillCard";
@@ -85,6 +85,8 @@ interface LiveTeach {
   secretFields: SecretFieldRef[];
   /** Every visible input on the current screen (labels/selectors only). */
   pageFields: PageFieldRef[];
+  /** Screen questions the person answered "just this time" (selectors), cleared on each new screen. */
+  picked?: Set<string>;
   /** The business's Passport (server memory only — never in the view) for "fill from Passport". */
   passport: unknown;
   /** Step seqs whose screenshot the worker kept, and legacy direct URLs (server-side only). */
@@ -234,7 +236,7 @@ function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; valu
     if (!path) return null;
     const entry = catalogEntry(path);
     if (entry?.when && passport && readPassportPath(passport, entry.when.path) && !catalogEntryApplies(entry, passport)) return null;
-    const selected = optionForPassportValue(path, passport ? readPassportPath(passport, path) : undefined, f.options ?? []);
+    const selected = optionForPassportValue(path, passport ? passportValue(passport, path) : undefined, f.options ?? []);
     return { path, value: selected, sensitive: false, status: selected ? "ready" : p && p.confidence === "high" ? "needed" : "new", choice: { options, selected } };
   }
   const p = f.kind === "ssn" ? { path: "contact.taxId", confidence: "high" as const } : proposeMapping(f.label, "text");
@@ -248,7 +250,7 @@ function suggestionFor(f: PageFieldRef, passport: unknown): { path: string; valu
       const last4 = has ? readPassportPath(passport, protectedMarkerPaths(p.path).last4) : null;
       return { path: p.path, value: has ? `•••-••-${typeof last4 === "string" ? last4 : "••••"}` : null, sensitive, status: has ? "ready" : "needed" };
     }
-    const v = passport ? readPassportPath(passport, p.path) : undefined;
+    const v = passport ? passportValue(passport, p.path) : undefined;
     const value = v === undefined || v === null || v === "" || typeof v === "object" ? null : String(v);
     return { path: p.path, value, sensitive, status: value !== null ? "ready" : "needed" };
   }
@@ -362,21 +364,25 @@ export async function fillPageFromPassportTeach(
   viewer: SkillViewer,
   id: string,
   opts: { continue: boolean }
-): Promise<{ ok: boolean; filled: number; chosen: number; continued: boolean; needed: number; reason: string | null }> {
+): Promise<{ ok: boolean; filled: number; chosen: number; continued: boolean; needed: number; unanswered: string[]; failed: string[]; reason: string | null }> {
   const live = owned(id, viewer);
   if (live.status !== "recording") throw new TeachSessionError(409, "not_recording", "The portal browser is closed.");
   if (!deps.worker.secureFill || !deps.worker.choose) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't fill for you yet.");
   let filled = 0;
   let chosen = 0;
   let needed = 0;
-  let failed: string | null = null;
+  const failed: string[] = [];
+  const unanswered: string[] = [];
   const fields = live.pageFields ?? [];
   for (const f of fields) {
     if (!f.selector || f.kind === "next") continue;
     const s = suggestionFor(f, live.passport);
     if (!s) continue;
     if (s.value === null) {
+      if (live.picked?.has(f.selector)) continue; // answered just this time
       if (s.status === "needed") needed += 1;
+      // A question this filing asks that the Passport doesn't keep: Clara never continues past it unanswered.
+      else if (f.kind === "choice") unanswered.push(f.label);
       continue;
     }
     try {
@@ -384,28 +390,53 @@ export async function fillPageFromPassportTeach(
         const opt = (f.options ?? []).find((o) => o.label === s.choice?.selected);
         const out = await deps.worker.choose(live.workerSessionId, opt?.selector ? { selector: opt.selector, option: null } : { selector: f.selector, option: s.choice?.selected ?? null });
         if (out.ok) chosen += 1;
-        else failed = out.reason ?? "choose_failed";
+        else failed.push(f.label);
       } else {
         const r = await fillFromPassportTeach(deps, viewer, id, f.selector);
         if (r.ok) filled += 1;
-        else if (r.reason !== "not_on_file") failed = r.reason;
+        else if (r.reason !== "not_on_file") failed.push(f.label);
       }
     } catch (err) {
       throw workerFailure(err);
     }
   }
   let continued = false;
+  let reason: string | null = failed.length ? "some_fields_failed" : null;
   const next = fields.find((f) => f.kind === "next" && f.selector);
-  if (opts.continue && next && needed === 0 && !failed) {
+  if (opts.continue && next && needed === 0 && unanswered.length === 0 && failed.length === 0) {
     try {
       const out = await deps.worker.choose(live.workerSessionId, { selector: next.selector!, option: null });
       continued = out.ok === true;
-      if (!out.ok) failed = out.reason ?? "continue_failed";
+      if (!out.ok) reason = out.reason ?? "continue_failed";
     } catch (err) {
       throw workerFailure(err);
     }
   }
-  return { ok: !failed, filled, chosen, continued, needed, reason: failed };
+  return { ok: failed.length === 0 && reason === null, filled, chosen, continued, needed, unanswered, failed, reason };
+}
+
+/**
+ * Answer one screen question just this time (not saved to the Passport):
+ * pick the option on the page. The routine still only learns the mapping.
+ */
+export async function chooseOnceTeach(deps: { worker: TeachWorker }, viewer: SkillViewer, id: string, input: { selector: string; option: string }): Promise<{ ok: boolean; reason: string | null }> {
+  const live = owned(id, viewer);
+  if (live.status !== "recording") throw new TeachSessionError(409, "not_recording", "The portal browser is closed.");
+  if (!deps.worker.choose) throw new TeachSessionError(503, "worker_outdated", "The recording browser can't pick for you yet.");
+  const field = (live.pageFields ?? []).find((f) => f.selector === input.selector && f.kind === "choice");
+  if (!field) return { ok: false, reason: "no_field" };
+  const opt = (field.options ?? []).find((o) => o.label === input.option);
+  if (!opt) return { ok: false, reason: "no_option" };
+  try {
+    const out = await deps.worker.choose(live.workerSessionId, opt.selector ? { selector: opt.selector, option: null } : { selector: field.selector!, option: opt.label });
+    if (out.ok) {
+      (live.picked ??= new Set()).add(field.selector!);
+      sessions().set(id, live);
+    }
+    return { ok: out.ok === true, reason: out.ok ? null : out.reason ?? "choose_failed" };
+  } catch (err) {
+    throw workerFailure(err);
+  }
 }
 
 /** The owner-gated proxy path for one step's screenshot (no worker token). */
@@ -526,6 +557,7 @@ export async function syncTeachSession(deps: { worker: TeachWorker }, viewer: Sk
       if (ev.kind === "page") {
         live.secretFields = ev.secretFields;
         live.pageFields = ev.inputFields;
+        live.picked = new Set();
       }
     }
     live.state = state;

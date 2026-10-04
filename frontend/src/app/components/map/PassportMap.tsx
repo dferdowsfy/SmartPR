@@ -32,8 +32,50 @@ export interface MapPoint {
   longitude: number;
 }
 
+/** Base maps. "streets" (default) is the easiest to read; satellite shows the land itself. */
+export type MapBase = "streets" | "satellite";
+/** Official-data overlays drawn from the agencies' own map services. */
+export type MapOverlay = "flood" | "zoning";
+
+const SATELLITE_STYLE = {
+  version: 8 as const,
+  sources: {
+    satellite: {
+      type: "raster" as const,
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    },
+  },
+  layers: [{ id: "satellite", type: "raster" as const, source: "satellite" }],
+};
+
+const OVERLAY_TILES: Record<MapOverlay, { url: string; attribution: string; opacity: number }> = {
+  flood: {
+    url: "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&layers=show:28&f=image",
+    attribution: "FEMA NFHL",
+    opacity: 0.55,
+  },
+  zoning: {
+    url: "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/export?bbox={bbox-epsg-3857}&bboxSR=3857&imageSR=3857&size=256,256&format=png32&transparent=true&f=image",
+    attribution: "Junta de Planificación",
+    opacity: 0.5,
+  },
+};
+
 export interface PassportMapProps {
   point: MapPoint | null;
+  /** Centre the map on an area without placing a pin (an area is not a site). */
+  focus?: (MapPoint & { zoom?: number }) | null;
+  /** Verified parcel boundary (GeoJSON Polygon / MultiPolygon, EPSG:4326). */
+  parcel?: unknown | null;
+  /** Base map (default "streets"). */
+  base?: MapBase;
+  overlays?: MapOverlay[];
+  /** Shows the base-map / overlay switcher. */
+  layerControls?: boolean;
+  layerLabels?: { streets: string; satellite: string; flood: string; zoning: string; parcel: string; layers: string };
   /** Interactive picker (click/tap to place, drag to adjust) vs static preview. */
   interactive?: boolean;
   onPick?: (point: MapPoint) => void;
@@ -50,6 +92,12 @@ const BRAND = "#245c5c";
 
 export function PassportMap({
   point,
+  focus = null,
+  parcel = null,
+  base: baseProp,
+  overlays: overlaysProp,
+  layerControls = false,
+  layerLabels,
   interactive = false,
   onPick,
   label,
@@ -65,7 +113,17 @@ export function PassportMap({
   const onPickRef = useRef(onPick);
   const statusRef = useRef(onStatusChange);
   const initialPoint = useRef(point);
+  const initialFocus = useRef(focus);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [baseState, setBase] = useState<MapBase>(baseProp ?? "streets");
+  const [overlayState, setOverlays] = useState<MapOverlay[]>(overlaysProp ?? []);
+  const [showParcel, setShowParcel] = useState(true);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const base = baseProp ?? baseState;
+  const overlays = overlaysProp ?? overlayState;
+  const extrasRef = useRef<{ parcel: unknown | null; overlays: MapOverlay[]; showParcel: boolean }>({ parcel, overlays, showParcel });
+  extrasRef.current = { parcel, overlays, showParcel };
+  const styleBase = useRef<MapBase>(base);
 
   useEffect(() => {
     onPickRef.current = onPick;
@@ -102,12 +160,14 @@ export function PassportMap({
       try {
         map = new lib.Map({
           container: containerRef.current,
-          style: MAP_STYLE_URL,
-          center: start ? [start.longitude, start.latitude] : [PUERTO_RICO_CENTER.longitude, PUERTO_RICO_CENTER.latitude],
-          zoom: start ? 16 : 7.6,
+          style: styleBase.current === "satellite" ? SATELLITE_STYLE : MAP_STYLE_URL,
+          center: start ? [start.longitude, start.latitude] : initialFocus.current ? [initialFocus.current.longitude, initialFocus.current.latitude] : [PUERTO_RICO_CENTER.longitude, PUERTO_RICO_CENTER.latitude],
+          zoom: start ? 16 : initialFocus.current ? initialFocus.current.zoom ?? 12.5 : 7.6,
           maxBounds: MAX_BOUNDS,
           interactive,
-          attributionControl: { compact: true },
+          // The tile licences require a visible credit; it is rendered below as
+          // plain text (no outbound links), not MapLibre's clickable control.
+          attributionControl: false,
           cooperativeGestures: false,
         });
       } catch {
@@ -123,6 +183,8 @@ export function PassportMap({
         if (loadTimer) clearTimeout(loadTimer);
         if (!cancelled) setStatus("ready");
       });
+      // Overlays and the parcel live on top of whichever base style is loaded.
+      map.on("style.load", () => drawExtras());
       map.on("error", (event) => {
         // Individual tile hiccups are recoverable; a style that never loads is not.
         if (!map.isStyleLoaded() && !(event as { tile?: unknown }).tile) fail();
@@ -151,6 +213,68 @@ export function PassportMap({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the map is created once per mount
   }, [interactive]);
+
+  function drawExtras() {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const { parcel: geo, overlays: ov, showParcel: sp } = extrasRef.current;
+    for (const id of Object.keys(OVERLAY_TILES) as MapOverlay[]) {
+      const on = ov.includes(id);
+      const has = !!map.getSource(`ov-${id}`);
+      if (on && !has) {
+        const t = OVERLAY_TILES[id];
+        map.addSource(`ov-${id}`, { type: "raster", tiles: [t.url], tileSize: 256, attribution: t.attribution });
+        map.addLayer({ id: `ov-${id}`, type: "raster", source: `ov-${id}`, paint: { "raster-opacity": t.opacity } });
+      } else if (!on && has) {
+        map.removeLayer(`ov-${id}`);
+        map.removeSource(`ov-${id}`);
+      }
+    }
+    const src = map.getSource("parcel") as { setData?: (d: unknown) => void } | undefined;
+    const data = geo && sp ? { type: "Feature", properties: {}, geometry: geo } : { type: "FeatureCollection", features: [] };
+    if (src?.setData) src.setData(data);
+    else {
+      map.addSource("parcel", { type: "geojson", data: data as never });
+      map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel", paint: { "fill-color": "#2f8f83", "fill-opacity": 0.22 } });
+      map.addLayer({ id: "parcel-line", type: "line", source: "parcel", paint: { "line-color": "#5eead4", "line-width": 2.5 } });
+    }
+    // Keep the parcel above raster overlays.
+    if (map.getLayer("parcel-fill")) { map.moveLayer("parcel-fill"); map.moveLayer("parcel-line"); }
+  }
+
+  // Base map switch: swap the style; overlays/parcel are re-added on style.load.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || styleBase.current === base) return;
+    styleBase.current = base;
+    map.setStyle(base === "satellite" ? (SATELLITE_STYLE as never) : MAP_STYLE_URL);
+  }, [base]);
+
+  // Parcel / overlay changes.
+  const parcelKey = parcel ? JSON.stringify(parcel).length + ":" + JSON.stringify(parcel).slice(0, 80) : "";
+  useEffect(() => {
+    if (status !== "ready") return;
+    drawExtras();
+    // Fit the whole parcel when one arrives.
+    const map = mapRef.current;
+    if (map && parcel && showParcel) {
+      const coords: number[][] = JSON.stringify(parcel).match(/-?\d+\.\d+,-?\d+\.\d+/g)?.map((p) => p.split(",").map(Number)) ?? [];
+      if (coords.length > 2) {
+        const xs = coords.map((c) => c[0]!), ys = coords.map((c) => c[1]!);
+        map.fitBounds([[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]], { padding: 36, maxZoom: 18, duration: 500 });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawExtras reads refs
+  }, [status, parcelKey, overlays.join(","), showParcel]);
+
+  // Area focus (no pin).
+  const fLat = focus?.latitude, fLng = focus?.longitude, fZoom = focus?.zoom;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || fLat === undefined || fLng === undefined || point) return;
+    map.easeTo({ center: [fLng, fLat], zoom: fZoom ?? 12.5, duration: 600 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- point only gates
+  }, [fLat, fLng, fZoom, status]);
 
   function placeMarker(next: MapPoint, move: boolean) {
     const map = mapRef.current;
@@ -207,6 +331,37 @@ export function PassportMap({
         aria-label={label}
         data-testid={interactive ? "location-map-picker" : "location-map-preview"}
       />
+      {status === "ready" && (
+        <span className="spr-map-credit" aria-hidden="true" data-testid="map-credit">
+          {base === "satellite" ? "Imagery © Esri" : "© OpenMapTiles © OpenStreetMap"}
+          {overlays.includes("flood") ? " · FEMA" : ""}{overlays.includes("zoning") ? " · JP" : ""}
+        </span>
+      )}
+      {layerControls && status === "ready" && (
+        <div className="spr-map-layers" role="group" aria-label={layerLabels?.layers ?? "Map layers"} data-testid="map-layer-controls">
+          <div className="spr-map-layers-base">
+            {(["streets", "satellite"] as const).map((b) => (
+              <button key={b} type="button" aria-pressed={base === b} onClick={() => setBase(b)} data-testid={`map-base-${b}`}>
+                {layerLabels?.[b] ?? (b === "streets" ? "Map" : "Satellite")}
+              </button>
+            ))}
+          </div>
+          <details className="spr-map-layers-more" open={layersOpen} onToggle={(e) => setLayersOpen((e.target as HTMLDetailsElement).open)}>
+          <summary>{layerLabels?.layers ?? "Map layers"}</summary>
+          <div className="spr-map-layers-overlays">
+            {parcel ? (
+              <label><input type="checkbox" checked={showParcel} onChange={(e) => setShowParcel(e.target.checked)} /> {layerLabels?.parcel ?? "Parcel"}</label>
+            ) : null}
+            {(["flood", "zoning"] as const).map((o) => (
+              <label key={o}>
+                <input type="checkbox" checked={overlays.includes(o)} onChange={(e) => setOverlays((cur) => (e.target.checked ? [...cur, o] : cur.filter((x) => x !== o)))} data-testid={`map-overlay-${o}`} />{" "}
+                {layerLabels?.[o] ?? (o === "flood" ? "Flood zones" : "Zoning")}
+              </label>
+            ))}
+          </div>
+          </details>
+        </div>
+      )}
       {status === "loading" && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-medium text-slate-500">
           {loadingText}

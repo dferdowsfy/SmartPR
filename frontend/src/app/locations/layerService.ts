@@ -159,7 +159,7 @@ async function queryOnce(fetchImpl: FetchLike, url: string, timeoutMs: number): 
 const retryable = (r: ArcGisQueryResponse | string, onTimeout: boolean) =>
   typeof r === "string" && (r.startsWith("network_error") || /^http_(5\d\d|429)$/.test(r) || (onTimeout && r.startsWith("timeout_")));
 
-async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: number, retries: number, retryDelayMs: number, retryOnTimeout = false): Promise<ArcGisQueryResponse | string> {
+export async function queryJson(fetchImpl: FetchLike, url: string, timeoutMs: number, retries: number, retryDelayMs: number, retryOnTimeout = false): Promise<ArcGisQueryResponse | string> {
   let result = await queryOnce(fetchImpl, url, timeoutMs);
   for (let i = 0; i < retries && retryable(result, retryOnTimeout); i++) {
     if (retryDelayMs > 0) await new Promise((r) => setTimeout(r, retryDelayMs));
