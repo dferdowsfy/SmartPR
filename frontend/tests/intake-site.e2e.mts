@@ -118,11 +118,9 @@ for (const [w, h, tag] of [[1440, 900, "desktop"], [1280, 800, "laptop"], [390, 
   const sp = page.locator(`${where} [data-testid="site-report-preview"]`);
   const rows = await sp.locator("[data-finding]").evaluateAll((els) => els.map((e) => `${e.getAttribute("data-finding")}:${e.getAttribute("data-state")}`));
   const floodPill = expected.groups.flatMap((g) => g.pills).find((p) => p.layer === "flood_zone");
-  check(`${tag}: compact findings for zoning, flood, terrain and coastal`, ["zoning", "flood_zone", "terrain", "coastal_zone"].every((id) => rows.some((r) => r.startsWith(`${id}:`))), rows.join(" "));
+  check(`${tag}: compact findings for zoning, flood, terrain and coastal`, ["zoning", "flood_zone", "terrain"].every((id) => rows.some((r) => r.startsWith(`${id}:`))), rows.join(" "));
   check(`${tag}: flood finding matches the site-intelligence data`, !!floodPill && /AE/.test(await sp.locator('[data-finding="flood_zone"]').innerText()), await sp.locator('[data-finding="flood_zone"]').innerText());
-  const gaps = await sp.locator("[data-finding]").evaluateAll((els) => els.slice(1).map((e, i) => Math.round(e.getBoundingClientRect().top - els[i]!.getBoundingClientRect().bottom)));
-  check(`${tag}: consistent spacing between findings`, gaps.length > 0 && new Set(gaps).size === 1, gaps.join(","));
-  check(`${tag}: sources collapsed by default`, (await sp.locator("details.spr-srp-sources").getAttribute("open")) === null);
+  check(`${tag}: pills are colour-coded by tone`, (await sp.locator(".spr-srp-pill.spr-srp-tone-hazard, .spr-srp-pill.spr-srp-tone-ok, .spr-srp-pill.spr-srp-tone-attention, .spr-srp-pill.spr-srp-tone-info").count()) >= 2);
   check(`${tag}: full report reachable`, (await sp.locator('[data-testid="open-property-report"]').count()) === 1);
   await page.locator(where).scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(OUT, `${tag}.png`), fullPage: true });

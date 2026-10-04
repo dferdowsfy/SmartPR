@@ -4093,3 +4093,26 @@ section.spr-plc .spr-plc-proposal { margin: 0; padding: 10px 12px; border: 1px s
 .spr-srp-sources { flex: 1 1 240px; min-width: 0; max-width: 100%; text-align: right; }
 .spr-srp-sources ul { text-align: left; overflow-wrap: anywhere; }
 .spr-srp-sources a { overflow-wrap: anywhere; }
+/* Compact preview v2: colour-coded pills */
+.spr-srp-pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.spr-srp-pill { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 4px 12px; border: 1px solid #d9dfdd; border-radius: 999px; background: #f4f6f5; color: #152f35; font-size: 14px; font-weight: 600; line-height: 1.2; }
+.spr-srp-pill small { font-weight: 500; color: inherit; opacity: .75; }
+.spr-srp-pill svg { width: 14px; height: 14px; }
+.spr-srp-pill.spr-srp-tone-ok { background: #e7f5ec; border-color: #c4e5cf; color: #1d6b3a; }
+.spr-srp-pill.spr-srp-tone-info { background: #e8effb; border-color: #cbdaf2; color: #24508f; }
+.spr-srp-pill.spr-srp-tone-attention { background: #fdf3dc; border-color: #f2d79a; color: #7a5200; }
+.spr-srp-pill.spr-srp-tone-hazard { background: #fde9e2; border-color: #f3c3b2; color: #9a2e0e; }
+.spr-srp-pill.spr-srp-tone-unknown { background: #f2efe7; border-color: #e3ded3; color: #5d6b72; font-weight: 500; }
+.spr-srp-retry { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: 13.5px; color: #6b5310; }
+.spr-srp-retry > svg { width: 15px; height: 15px; color: #c27c00; }
+.spr-srp-retry .spr-link { display: inline-flex; align-items: center; gap: 4px; }
+.spr-srp-retry .spr-link svg { width: 13px; height: 13px; }
+.spr-srp-hint { font-size: 13px; color: #6b767c; }
+.spr-srp-foot { justify-content: flex-start; }
+.spr-map-layers { padding: 4px; }
+.spr-map-layers.open { padding: 6px; }
+.spr-map-layers-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: #1f6b66; font-size: 12.5px; font-weight: 650; cursor: pointer; }
+.spr-map-layers-toggle:hover { background: #f3f8f7; }
+.spr-map-layers-toggle:focus-visible { outline: 2px solid #1f6b66; outline-offset: 1px; }
+.spr-prd-finding-plain { margin: 4px 0 0 22px; font-size: 14.5px; line-height: 1.5; color: #152f35; }
+.spr-prd-finding-value { font-size: 13px !important; font-weight: 600 !important; color: #5d6b72 !important; }

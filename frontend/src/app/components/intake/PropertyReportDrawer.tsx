@@ -16,6 +16,7 @@ import { PassportMap } from "../map/PassportMap";
 import { findingStateText, reportSummaryText, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
 import { FindingValue, scopeText } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
+import { downloadPropertyReportPdf } from "../../locations/propertyReportPdf";
 import { exportableReview, REVIEW_DISCLAIMER, REVIEW_STATUS_TEXT } from "../../locations/propertyReview";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
@@ -48,6 +49,7 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
         <span className="spr-prv-basis spr-prv-basis-official">{L("Official finding", "Hallazgo oficial", lang)}</span>
         {f.constraint !== "information" && <span className={`spr-prv-basis spr-prv-constraint-${f.constraint}`} data-testid="finding-constraint" data-constraint={f.constraint}>{CONSTRAINT_TEXT[f.constraint][lang]}</span>}
       </div>
+      {f.plain && (f.state === "sourced" || f.state === "none_mapped") && <p className="spr-prd-finding-plain">{f.plain[lang]}</p>}
       <div className="spr-prd-finding-value"><FindingValue f={f} lang={lang} /></div>
       {f.detail && <p className="spr-prd-finding-detail">{f.detail[lang]}</p>}
       {(f.sources.length > 0 || f.looked_up_at) && (
@@ -64,34 +66,6 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
 }
 
 type ReviewExport = ReturnType<typeof exportableReview>;
-
-async function downloadPdf(report: PropertyReport, lang: Lang, review: ReviewExport) {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "mm", format: "letter" });
-  const W = doc.internal.pageSize.getWidth();
-  const H = doc.internal.pageSize.getHeight();
-  let y = 18;
-  const line = (text: string, size = 10, bold = false, gap = 1.5) => {
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setFontSize(size);
-    for (const part of doc.splitTextToSize(text, W - 32) as string[]) {
-      if (y > H - 16) { doc.addPage(); y = 18; }
-      doc.text(part, 16, y);
-      y += size * 0.42 + gap;
-    }
-  };
-  line(L("Property & Site Report", "Informe de propiedad y lugar", lang), 18, true, 3);
-  line(report.property.title, 13, true);
-  line(`${report.property.address.primary} · ${report.property.address.secondary}`);
-  line(`${L("Generated", "Generado", lang)}: ${new Date(report.generated_at).toLocaleString(lang === "es" ? "es-PR" : "en-US")}`, 8);
-  y += 3;
-  if (review) line(`${L("Professional review", "Revisión profesional", lang)}: ${review.status_text[lang]} — ${review.disclaimer[lang]}`, 9, true);
-  line(reportSummaryText(report, lang, review).split("\n").slice(2).join("\n"), 9.5);
-  y += 3;
-  line(L("Sources", "Fuentes", lang), 11, true);
-  for (const s of report.sources) line(`${s.name}${s.dataset_date ? ` · ${s.dataset_date}` : ""}${s.url ? ` · ${s.url}` : ""}`, 8);
-  doc.save(`property-report-${(report.property.catastro.value ?? report.property.municipality).replace(/[^A-Za-z0-9-]+/g, "-")}.pdf`);
-}
 
 function downloadJson(report: PropertyReport, review: ReviewExport) {
   const blob = new Blob([JSON.stringify({ ...report, professional_review: review }, null, 2)], { type: "application/json" });
@@ -196,7 +170,7 @@ export function PropertyReportDrawer({
                 : L("Draft — it will be saved to the Passport once the business and location are saved.", "Borrador — se guardará en el Pasaporte cuando se guarden el negocio y la ubicación.", lang)}
             </span>
           )}
-          <button type="button" className="spr-loc-btn" onClick={async () => { setBusy("pdf"); try { await downloadPdf(report, lang, reviewExport); } finally { setBusy(null); } }} data-testid="report-pdf">
+          <button type="button" className="spr-loc-btn" onClick={async () => { setBusy("pdf"); try { await downloadPropertyReportPdf(report, lang, reviewExport); } finally { setBusy(null); } }} data-testid="report-pdf">
             {busy === "pdf" ? <Loader2 className="spr-loc-spin" aria-hidden="true" /> : <Download aria-hidden="true" />} {L("Download PDF", "Descargar PDF", lang)}
           </button>
           <button type="button" className="spr-loc-btn" onClick={copy} data-testid="report-copy">
@@ -217,6 +191,7 @@ export function PropertyReportDrawer({
                   point={{ latitude: p.latitude, longitude: p.longitude }}
                   parcel={p.boundary.geometry}
                   layerControls
+                  navigable
                   layerLabels={{ streets: L("Map", "Mapa", lang), satellite: L("Satellite", "Satélite", lang), flood: L("Flood zones (FEMA)", "Zonas inundables (FEMA)", lang), zoning: L("Zoning (JP)", "Calificación (JP)", lang), parcel: L("Parcel", "Parcela", lang), layers: L("Map layers", "Capas del mapa", lang) }}
                   label={L(`Map of the property in ${p.municipality}`, `Mapa de la propiedad en ${p.municipality}`, lang)}
                   loadingText={L("Loading map…", "Cargando mapa…", lang)}

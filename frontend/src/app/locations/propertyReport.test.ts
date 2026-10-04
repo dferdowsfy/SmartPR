@@ -68,7 +68,8 @@ test("full report: parcel scope, multiple districts flagged, sources and timesta
   const z = r.findings.find((f) => f.id === "zoning")!;
   assert.equal(z.scope, "parcel");
   assert.equal(z.value?.en, "R-G · A-B");
-  assert.equal(z.tone, "attention");
+  assert.equal(z.tone, "hazard"); // includes a conservation district (A-B) → protection
+  assert.equal(z.constraint, "protection");
   assert.equal(r.property.catastro.value, "173-000-001-39");
   assert.ok(r.property.boundary.area_m2! > 0);
   assert.equal(r.findings.find((f) => f.id === "flood_zone")!.value?.en, "Zone X");

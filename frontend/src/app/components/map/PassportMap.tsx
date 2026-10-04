@@ -73,6 +73,8 @@ export interface PassportMapProps {
   /** Base map (default "streets"). */
   base?: MapBase;
   overlays?: MapOverlay[];
+  /** Pan / zoom (mouse wheel, pinch, +/−) without placing a pin. */
+  navigable?: boolean;
   /** Shows the base-map / overlay switcher. */
   layerControls?: boolean;
   layerLabels?: { streets: string; satellite: string; flood: string; zoning: string; parcel: string; layers: string };
@@ -97,6 +99,7 @@ export function PassportMap({
   base: baseProp,
   overlays: overlaysProp,
   layerControls = false,
+  navigable = false,
   layerLabels,
   interactive = false,
   onPick,
@@ -118,7 +121,8 @@ export function PassportMap({
   const [baseState, setBase] = useState<MapBase>(baseProp ?? "streets");
   const [overlayState, setOverlays] = useState<MapOverlay[]>(overlaysProp ?? []);
   const [showParcel, setShowParcel] = useState(true);
-  const [layersOpen, setLayersOpen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
   const base = baseProp ?? baseState;
   const overlays = overlaysProp ?? overlayState;
   const extrasRef = useRef<{ parcel: unknown | null; overlays: MapOverlay[]; showParcel: boolean }>({ parcel, overlays, showParcel });
@@ -164,7 +168,7 @@ export function PassportMap({
           center: start ? [start.longitude, start.latitude] : initialFocus.current ? [initialFocus.current.longitude, initialFocus.current.latitude] : [PUERTO_RICO_CENTER.longitude, PUERTO_RICO_CENTER.latitude],
           zoom: start ? 16 : initialFocus.current ? initialFocus.current.zoom ?? 12.5 : 7.6,
           maxBounds: MAX_BOUNDS,
-          interactive,
+          interactive: interactive || navigable,
           // The tile licences require a visible credit; it is rendered below as
           // plain text (no outbound links), not MapLibre's clickable control.
           attributionControl: false,
@@ -190,6 +194,7 @@ export function PassportMap({
         if (!map.isStyleLoaded() && !(event as { tile?: unknown }).tile) fail();
       });
 
+      if (navigable && !interactive) map.addControl(new lib.NavigationControl({ showCompass: false }), "top-right");
       if (interactive) {
         map.addControl(new lib.NavigationControl({ showCompass: false }), "top-right");
         map.addControl(
@@ -212,7 +217,7 @@ export function PassportMap({
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the map is created once per mount
-  }, [interactive]);
+  }, [interactive, navigable]);
 
   function drawExtras() {
     const map = mapRef.current;
@@ -224,7 +229,9 @@ export function PassportMap({
       if (on && !has) {
         const t = OVERLAY_TILES[id];
         map.addSource(`ov-${id}`, { type: "raster", tiles: [t.url], tileSize: 256, attribution: t.attribution });
-        map.addLayer({ id: `ov-${id}`, type: "raster", source: `ov-${id}`, paint: { "raster-opacity": t.opacity } });
+        // Below the first label layer, so street and place names stay readable.
+        const firstLabel = map.getStyle().layers?.find((l) => l.type === "symbol")?.id;
+        map.addLayer({ id: `ov-${id}`, type: "raster", source: `ov-${id}`, paint: { "raster-opacity": t.opacity } }, firstLabel);
       } else if (!on && has) {
         map.removeLayer(`ov-${id}`);
         map.removeSource(`ov-${id}`);
@@ -235,11 +242,15 @@ export function PassportMap({
     if (src?.setData) src.setData(data);
     else {
       map.addSource("parcel", { type: "geojson", data: data as never });
-      map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel", paint: { "fill-color": "#2f8f83", "fill-opacity": 0.22 } });
+      map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel", paint: { "fill-color": "#2f8f83", "fill-opacity": 0.16 } });
       map.addLayer({ id: "parcel-line", type: "line", source: "parcel", paint: { "line-color": "#5eead4", "line-width": 2.5 } });
     }
-    // Keep the parcel above raster overlays.
-    if (map.getLayer("parcel-fill")) { map.moveLayer("parcel-fill"); map.moveLayer("parcel-line"); }
+    // Parcel above the overlays but below labels.
+    if (map.getLayer("parcel-fill")) {
+      const firstLabel = map.getStyle().layers?.find((l) => l.type === "symbol")?.id;
+      map.moveLayer("parcel-fill", firstLabel);
+      map.moveLayer("parcel-line", firstLabel);
+    }
   }
 
   // Base map switch: swap the style; overlays/parcel are re-added on style.load.
@@ -338,7 +349,12 @@ export function PassportMap({
         </span>
       )}
       {layerControls && status === "ready" && (
-        <div className="spr-map-layers" role="group" aria-label={layerLabels?.layers ?? "Map layers"} data-testid="map-layer-controls">
+        <div className={`spr-map-layers${panelOpen ? " open" : ""}`} role="group" aria-label={layerLabels?.layers ?? "Map layers"} data-testid="map-layer-controls">
+          <button type="button" className="spr-map-layers-toggle" aria-expanded={panelOpen} onClick={() => setPanelOpen((v) => !v)} data-testid="map-layers-toggle">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5" /><path d="m3 17 9 5 9-5" /></svg>
+            <span>{layerLabels?.layers ?? "Map layers"}</span>
+          </button>
+          {panelOpen && <>
           <div className="spr-map-layers-base">
             {(["streets", "satellite"] as const).map((b) => (
               <button key={b} type="button" aria-pressed={base === b} onClick={() => setBase(b)} data-testid={`map-base-${b}`}>
@@ -360,6 +376,7 @@ export function PassportMap({
             ))}
           </div>
           </details>
+          </>}
         </div>
       )}
       {status === "loading" && (

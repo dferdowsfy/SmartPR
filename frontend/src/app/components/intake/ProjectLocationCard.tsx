@@ -459,6 +459,7 @@ export function ProjectLocationCard({
               focus={!point && areaFocus ? { ...areaFocus, zoom: proposal?.place.precision === "barrio" ? 14 : 12.5 } : null}
               parcel={isSaved && report ? report.property.boundary.geometry : null}
               layerControls={isSaved}
+              navigable={isSaved}
               layerLabels={{ streets: L("Map", "Mapa", lang), satellite: L("Satellite", "Satélite", lang), flood: L("Flood zones", "Zonas inundables", lang), zoning: L("Zoning", "Calificación", lang), parcel: L("Parcel", "Parcela", lang), layers: L("Map layers", "Capas del mapa", lang) }}
               onPick={isSaved ? undefined : (p) => void onMapPick(p)}
               label={isSaved

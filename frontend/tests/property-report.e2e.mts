@@ -132,7 +132,7 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   await page.locator('[data-testid="project-location-catastro"]').first().waitFor({ timeout: 20000 }).catch(() => undefined);
   check("compact preview: catastro + key findings for the confirmed parcel", (await text(page, '[data-testid="project-location-catastro"]')).includes("173-000-001-39") && (await visible(page, `${preview} [data-finding="zoning"]`)));
   check("compact preview: no professional review controls", (await page.locator(`${preview} [data-testid="finding-review"], [data-testid="project-location"] [data-testid="review-panel"]`).count()) === 0);
-  check("compact preview: sources collapsed by default", (await page.locator(`${preview} details.spr-srp-sources`).getAttribute("open")) === null);
+  check("compact preview: colour-coded plain-language pills only (no source list, no long text)", (await page.locator(`${preview} .spr-srp-pill`).count()) >= 3 && (await page.locator(`${preview} .spr-srp-sources`).count()) === 0 && /Low flood risk/.test(await text(page, preview)));
   check("no unexplained numeric 'Place name'", (await page.locator('[data-testid="project-location-place"]').count()) === 0);
   await page.screenshot({ path: path.join(OUT, "1-conflict.png"), fullPage: false });
   await page.click('[data-testid="conflict-keep"]');
@@ -141,15 +141,19 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   // map layers: easiest-to-read base map by default; satellite + official overlays on demand
   const card = page.locator('[data-testid="project-location"]').first();
   await card.locator('[data-testid="map-layer-controls"]').waitFor({ timeout: 20000 }).catch(() => undefined);
+  check("map: layer panel starts collapsed", (await card.locator('[data-testid="map-base-streets"]').count()) === 0);
+  await card.locator('[data-testid="map-layers-toggle"]').click();
   check("map: plain street map is the default base", (await card.locator('[data-testid="map-base-streets"]').getAttribute("aria-pressed")) === "true");
+  check("map: saved map has zoom controls", (await card.locator(".maplibregl-ctrl-zoom-out").count()) === 1);
   await card.locator('[data-testid="map-base-satellite"]').click();
-  await card.locator(".spr-map-layers-more summary").click();
   await card.locator('[data-testid="map-overlay-flood"]').check();
   check("map: satellite + FEMA flood overlay can be switched on", (await card.locator('[data-testid="map-base-satellite"]').getAttribute("aria-pressed")) === "true" && (await card.locator('[data-testid="map-overlay-flood"]').isChecked()));
   const cb = await card.locator('[data-testid="map-overlay-flood"]').boundingBox();
   check("map: overlay checkbox keeps a normal size", !!cb && cb.width <= 20 && cb.height <= 20, JSON.stringify(cb));
   check("map: credit is plain text (no outbound link)", (await card.locator('[data-testid="map-credit"]').count()) === 1 && (await card.locator(".maplibregl-ctrl-attrib a").count()) === 0);
   await card.locator('[data-testid="map-base-streets"]').click();
+  await card.locator('[data-testid="map-layers-toggle"]').click();
+  check("map: layer panel can be minimised", (await card.locator('[data-testid="map-base-streets"]').count()) === 0);
   await card.screenshot({ path: path.join(OUT, "1b-card.png") });
   // 2 — open the report: focus, scroll, Esc
   await page.locator('[data-testid="open-property-report"]').scrollIntoViewIfNeeded();
@@ -172,6 +176,7 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   check("export JSON: same model, confirmed parcel, every finding at the confirmed point", json.schema === "smartpr.property-report/v1" && json.property.catastro.value === "173-000-001-39" && json.findings.every((f: { point: { latitude: number } | null }) => !f.point || Math.abs(f.point.latitude - GURABO.latitude) < 1e-7));
   const [pdf] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-pdf"]')]);
   check("export PDF downloads", /\.pdf$/.test(pdf.suggestedFilename()), pdf.suggestedFilename());
+  await pdf.saveAs(path.join(OUT, "report.pdf"));
   await page.click('[data-testid="report-copy"]');
   const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
   check("copy summary", clip.includes("173-000-001-39") && clip.includes("[PROTECTION]"));
@@ -240,7 +245,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
 {
   const page = await open(1440, 900, { state: state("Restaurant.", siteOf(CAGUAS)), failSources: true });
   await page.locator(`${preview} [data-finding="flood_zone"][data-state="unavailable"]`).waitFor({ timeout: 20000 }).catch(() => undefined);
-  check("source failure: findings unavailable + retry offered", (await page.locator(`${preview} [data-state="unavailable"]`).count()) >= 2 && (await visible(page, '[data-testid="site-report-unresolved"]')));
+  check("source failure: findings unavailable + retry offered", (await page.locator(`${preview} [data-state="unavailable"]`).count()) >= 2 && (await visible(page, ".spr-srp-retry")));
   await page.context().close();
 }
 

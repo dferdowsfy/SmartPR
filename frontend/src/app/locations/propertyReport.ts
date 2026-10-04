@@ -58,6 +58,10 @@ export interface ReportFinding {
   value: Bi | null;
   /** One plain-language line. */
   detail: Bi | null;
+  /** What it means in everyday words ("Low flood risk area"). Null when not determined. */
+  plain?: Bi | null;
+  /** Short chip text for the compact preview ("Low flood risk"). */
+  pill?: Bi | null;
   state: ReportFindingState;
   tone: ReportTone;
   scope: ReportScope;
@@ -418,6 +422,73 @@ export function buildPropertyReport(input: {
     .filter((f) => f.state !== "sourced" && f.state !== "none_mapped")
     .map((f) => bi(`${f.title.en}: ${STATE_TEXT[f.state].en}`, `${f.title.es}: ${STATE_TEXT[f.state].es}`));
 
+  // ---- Plain language (deterministic wording for official values) --------
+  const FAMILY_TEXT: Record<string, Bi> = {
+    conservation: bi("conservation land", "terreno de conservación"),
+    residential: bi("residential", "residencial"),
+    commercial: bi("commercial", "comercial"),
+    industrial: bi("industrial", "industrial"),
+    agricultural: bi("agricultural", "agrícola"),
+    rural: bi("rural", "rural"),
+    tourism: bi("tourism", "turístico"),
+    public: bi("public / institutional", "público / institucional"),
+    road: bi("road right-of-way", "servidumbre vial"),
+  };
+  const zf = findings.find((f) => f.id === "zoning");
+  if (zf && zf.state === "sourced") {
+    const ds = zParcel?.status === "sourced" ? zParcel.districts : zPoint ? [{ code: zPoint.code ?? "", name: zPoint.name, family: zPoint.tags[0] ?? null }] : [];
+    const fams = [...new Set(ds.map((d) => d.family).filter((x): x is string => !!x && !!FAMILY_TEXT[x]))];
+    const named = ds.map((d) => `${d.code}${d.name ? ` (${d.name})` : ""}`).join(", ");
+    const famText = (l: "en" | "es") => fams.map((f) => FAMILY_TEXT[f]![l]).join(l === "es" ? " y " : " and ");
+    const roadOnly = ds.length > 1 && ds.some((d) => d.family === "road");
+    zf.plain = bi(
+      `${fams.length ? `Zoned ${famText("en")}` : "Zoning district mapped"}: ${named}.${roadOnly ? " The road district usually covers only the edge of the lot along the street." : ""}${fams.includes("conservation") ? " Conservation districts restrict development." : ""}`,
+      `${fams.length ? `Calificación ${famText("es")}` : "Distrito de calificación mapeado"}: ${named}.${roadOnly ? " El distrito vial suele cubrir solo el borde del solar junto a la calle." : ""}${fams.includes("conservation") ? " Los distritos de conservación restringen el desarrollo." : ""}`
+    );
+    const main = fams.filter((f) => f !== "road");
+    zf.pill = main.length ? bi(main.map((f) => FAMILY_TEXT[f]!.en).join(" + ").replace(/^./, (c) => c.toUpperCase()), main.map((f) => FAMILY_TEXT[f]!.es).join(" + ").replace(/^./, (c) => c.toUpperCase())) : bi(`Zoning ${ds.map((d) => d.code).join(", ")}`, `Calificación ${ds.map((d) => d.code).join(", ")}`);
+  }
+  const ff = findings.find((f) => f.id === "flood_zone");
+  if (ff && ff.state === "sourced") {
+    const zones = parcelZones.length ? parcelZones.map((z) => ({ zone: z.zone, sub: z.subtype ?? "" })) : fm ? [{ zone: fm.zone, sub: "" }] : [];
+    const worst = (z: { zone: string; sub: string }) => /^V/.test(z.zone) ? 3 : /^A/.test(z.zone) ? 2 : /0\.2/.test(z.sub) ? 1 : /^D/.test(z.zone) ? 1 : 0;
+    const top = [...zones].sort((a, b) => worst(b) - worst(a))[0];
+    if (top) {
+      const lvl = worst(top);
+      const [en, es, pe, ps] =
+        /^V/.test(top.zone) ? [`High-risk coastal flood area with wave action (FEMA Zone ${top.zone}).`, `Área costera de alto riesgo de inundación con oleaje (Zona ${top.zone} de FEMA).`, "High coastal flood risk", "Alto riesgo de inundación costera"]
+        : /^A/.test(top.zone) ? [`High flood risk: inside FEMA's 1%-annual-chance flood area (Zone ${top.zone}).`, `Alto riesgo de inundación: dentro del área de 1% de probabilidad anual de FEMA (Zona ${top.zone}).`, "High flood risk", "Alto riesgo de inundación"]
+        : /^D/.test(top.zone) ? [`Flood risk not determined by FEMA (Zone D).`, `Riesgo de inundación no determinado por FEMA (Zona D).`, "Flood risk undetermined", "Riesgo de inundación indeterminado"]
+        : lvl === 1 ? [`Moderate flood risk: FEMA's 0.2%-annual-chance area (shaded Zone X).`, `Riesgo moderado de inundación: área de 0.2% de probabilidad anual de FEMA (Zona X sombreada).`, "Moderate flood risk", "Riesgo moderado de inundación"]
+        : [`Low flood risk: outside FEMA's mapped high-risk flood areas (Zone X). Low risk is not no risk.`, `Bajo riesgo de inundación: fuera de las áreas de alto riesgo mapeadas por FEMA (Zona X). Bajo riesgo no es riesgo cero.`, "Low flood risk", "Bajo riesgo de inundación"];
+      ff.plain = bi(en, es);
+      ff.pill = bi(pe, ps);
+    }
+  }
+  const tf = findings.find((f) => f.id === "terrain");
+  if (tf && tf.state === "sourced" && tf.value) {
+    tf.plain = bi(`${tf.value.en} landslide susceptibility at the pin (USGS).${tf.tone === "hazard" ? " Plan a geotechnical evaluation before earthwork." : tf.tone === "attention" ? " Slopes may need attention during design." : ""}`, `Susceptibilidad ${tf.value.es.toLowerCase()} a deslizamientos en el pin (USGS).${tf.tone === "hazard" ? " Planifique una evaluación geotécnica antes de mover tierra." : tf.tone === "attention" ? " Las pendientes pueden requerir atención en el diseño." : ""}`);
+    tf.pill = bi(`${tf.value.en} landslide risk`, `Riesgo ${tf.value.es.toLowerCase()} de deslizamiento`);
+  }
+  const cf = findings.find((f) => f.id === "coastal_zone");
+  if (cf && cf.state === "sourced") { cf.plain = bi("Inside the coastal zone — coastal-zone review may apply to work here.", "Dentro de la zona costanera — puede aplicar revisión de zona costanera."); cf.pill = bi("Coastal zone", "Zona costanera"); }
+  else if (cf && cf.state === "none_mapped") { cf.plain = bi("Not in the mapped coastal zone.", "Fuera de la zona costanera mapeada."); cf.pill = bi("Not coastal", "No costero"); }
+  const lf = findings.find((f) => f.id === "land_class");
+  if (lf && lf.state === "sourced" && lc) {
+    const fam = lc.tags[0];
+    lf.plain = fam === "SREP" ? bi("Specially protected rustic land — development is heavily restricted.", "Suelo rústico especialmente protegido — el desarrollo está muy restringido.")
+      : fam === "SRC" ? bi("Common rustic (rural) land.", "Suelo rústico común.")
+      : fam === "SU" ? bi("Urban land.", "Suelo urbano.")
+      : null;
+    lf.pill = fam === "SREP" ? bi("Protected rustic land", "Suelo rústico protegido") : null;
+  }
+  const af = findings.find((f) => f.id === "flood_advisory");
+  if (af && af.state === "sourced") { af.plain = bi("JP's advisory map shows a flood area here. It is separate from FEMA's effective map — ask the reviewing agency which applies.", "El mapa de asesoramiento de la JP muestra un área inundable aquí. Es distinto del mapa vigente de FEMA — pregunte a la agencia cuál aplica."); af.pill = bi("Advisory flood area", "Área inundable (asesoría)"); }
+  for (const id of ["historic_zone", "protected_area"]) {
+    const f = findings.find((x) => x.id === id);
+    if (f?.state === "sourced") f.pill = f.title;
+  }
+
   // ---- Constraint classes (deterministic, from official findings) --------
   const fid = (id: string) => findings.find((f) => f.id === id);
   const zParcelDistricts = parcel?.zoning.status === "sourced" ? parcel.zoning.districts : [];
@@ -427,6 +498,8 @@ export function buildPropertyReport(input: {
   const classify = (id: string, c: ConstraintClass) => { const f = fid(id); if (f && f.state === "sourced") f.constraint = c; };
   if (conservationDistricts.length || pointConservation) classify("zoning", "protection");
   if (protectedLand) classify("land_class", "protection");
+  // Protection designations read red everywhere (preview pills, drawer, PDF).
+  for (const f of findings) if (f.constraint === "protection") f.tone = "hazard";
   if (floodway) classify("floodway", "protection");
   classify("protected_area", "protection");
   if (sfha) classify("flood_zone", "documentation");
