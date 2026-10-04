@@ -33,7 +33,7 @@ import {
   type ArcGisQueryResponse,
   type SiteLayers,
 } from "./layers.ts";
-import { LayerCache, resetEndpointHealth, resolveSiteLayers, type FetchLike, type LayerStore } from "./layerService.ts";
+import { LAYER_PARSER_VERSION, LayerCache, resetEndpointHealth, resolveSiteLayers, type FetchLike, type LayerStore } from "./layerService.ts";
 import { restoreIntakeSite, siteEngineFacts, siteFactDetails, type IntakeSite } from "./intakeLocation.ts";
 
 // The circuit breaker is process-wide; isolate tests from each other.
@@ -257,7 +257,9 @@ test("shared store: answers survive a restart, and a FEMA outage serves the stor
   const t0 = new Date(AT);
   const first = await resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache: new LayerCache(), store, timeoutMs: FAST, now: () => t0 });
   assert.equal(layer(first, "flood_zone").code, "AE");
-  assert.ok([...store.rows.keys()].some((k) => k.startsWith("flood_zone:")), "answered layers are persisted");
+  assert.ok([...store.rows.keys()].some((k) => k.startsWith(`${LAYER_PARSER_VERSION}:flood_zone:`)), "answered layers are persisted");
+  // Rows written by an older parser are never served: the key is versioned.
+  assert.ok([...store.rows.keys()].every((k) => k.startsWith(`${LAYER_PARSER_VERSION}:`)), "cache keys carry the parser version");
   // New process (empty memory cache), FEMA completely down, 3 days later.
   const later = new Date(t0.getTime() + 3 * 24 * 3600_000);
   const down: FetchLike = async () => ({ ok: false, status: 503, json: async () => ({}) });

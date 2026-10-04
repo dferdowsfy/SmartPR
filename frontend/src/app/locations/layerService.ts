@@ -218,10 +218,20 @@ interface CacheEntry {
 }
 
 /** Point-keyed (≈1 m) cache of layer answers: fresh for 24 h, served stale on failure for 30 days. */
+/**
+ * Version of the parsed-result semantics. The caches (in memory and the
+ * Postgres site_layer_cache) hold PARSED SiteLayerResults, so a parser change
+ * (e.g. VIAL/AGUA → resolved NOT_A_LOT, water ≠ conservation, JP catastro
+ * stand-in) would otherwise keep serving the old interpretation for up to
+ * 24 h fresh / 30 days stale. Bump this whenever a parser's output for the
+ * same upstream answer changes; old rows are simply never read again.
+ */
+export const LAYER_PARSER_VERSION = "p2";
+
 export class LayerCache {
   private map = new Map<string, CacheEntry>();
   key(layer: SiteLayerId, lat: number, lng: number): string {
-    return `${layer}:${lat.toFixed(5)},${lng.toFixed(5)}`;
+    return `${LAYER_PARSER_VERSION}:${layer}:${lat.toFixed(5)},${lng.toFixed(5)}`;
   }
   get(k: string): CacheEntry | undefined {
     return this.map.get(k);
