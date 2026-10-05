@@ -69,9 +69,30 @@ export function insetRing(ring: number[][], m: number): number[][] {
 
 export const EDGE_TOLERANCE_M = 3;
 
-function esriPolygon(g: ParcelBoundary["geometry"], insetM = 0): string {
-  const rings = g.type === "Polygon" ? g.coordinates : g.coordinates.flat();
-  return JSON.stringify({ rings: rings.map((r) => (insetM ? insetRing(thin(r), insetM) : thin(r))), spatialReference: { wkid: 4326 } });
+/**
+ * Total vertex budget for one GET query geometry. Large rural lots are often
+ * multi-ring (e.g. Patillas 374-000-004-33: 8 rings, 649 vertices); thinning
+ * each ring to 240 still produced ~22 KB URLs that every server answered with
+ * HTTP 414, so all parcel layers read "couldn't check". The budget is shared
+ * across rings (each keeps ≥ 4 vertices) and coordinates are rounded to 1e-7°.
+ */
+export const MAX_QUERY_TOTAL_VERTICES = 200;
+const r7 = (n: number) => Math.round(n * 1e7) / 1e7;
+export function thinRings(rings: number[][][], budget = MAX_QUERY_TOTAL_VERTICES): number[][][] {
+  const total = rings.reduce((n, r) => n + r.length, 0);
+  return rings.map((r) => {
+    const cap = Math.max(4, Math.floor((budget * r.length) / Math.max(total, 1)));
+    if (r.length <= cap) return r;
+    const step = Math.ceil(r.length / (cap - 1));
+    const out = r.filter((_, i) => i % step === 0);
+    out.push(r[r.length - 1]!);
+    return out;
+  });
+}
+
+export function esriPolygon(g: ParcelBoundary["geometry"], insetM = 0): string {
+  const rings = thinRings(g.type === "Polygon" ? g.coordinates : g.coordinates.flat());
+  return JSON.stringify({ rings: rings.map((r) => (insetM ? insetRing(r, insetM) : r).map(([x, y]) => [r7(x!), r7(y!)])), spatialReference: { wkid: 4326 } });
 }
 
 function wktPolygon(g: ParcelBoundary["geometry"]): string {
