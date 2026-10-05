@@ -998,3 +998,17 @@ test("REG-GUIDE-WITHHOLDING-SOURCE-001: withholding source cites Ley 1-2011 Secc
   assert.match(doc?.citation ?? "", /Ley 1-2011/);
   assert.match(doc?.citation ?? "", /1062\.01/);
 });
+
+// REG-GUIDE-CERTORG-001 (2026-10-05 QA): a live filing audit (S433/S435,
+// 06:00 cycle) showed the LLC Certificate of Organization card's SOURCE
+// citing Ley 164-2009 (the Ley General de Corporaciones — the corporations
+// statute). Puerto Rico LLCs organize under Ley Núm. 144-1995 (Ley de
+// Compañías de Responsabilidad Limitada), which added Chapter XIX on LLCs;
+// Ley 164-2009 Art. 21.03(C) covers only the LLC *annual fee* (per the Dept.
+// of State's own LLC annual-fee form, which cites it). The formation card's
+// citation must name the LLC law, never the corporations law.
+test("REG-GUIDE-CERTORG-001: LLC Certificate of Organization citation names Ley 144-1995, not Ley 164-2009 (live S433/S435 finding 2026-10-05)", () => {
+  const doc = KB.documents.find(d => d.id === "DOC_CERT_ORGANIZATION");
+  assert.match(doc?.citation ?? "", /144-1995/);
+  assert.doesNotMatch(doc?.citation ?? "", /164-2009/);
+});
