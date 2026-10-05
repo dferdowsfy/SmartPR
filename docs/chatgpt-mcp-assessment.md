@@ -35,10 +35,11 @@ Unknown facts are never a silent "no": unanswered high-signal KB questions surfa
 The endpoint is anonymous and returns at most `FREE_PREVIEW_LIMIT` (8) requirements; the remainder is only counted (`gated.hidden_requirement_count`). Full list, cross-agency sequencing, report download and evidence tracking are not exposed by this server at all — they stay in the authenticated portal. No prices are shown anywhere; "Unlock" routes to the portal (`/pricing`, existing page).
 
 ### Handoff (review-before-save)
-1. Widget/model calls `create_portal_handoff` → `https://<site>/chatgpt/handoff?t=<token>`.
+1. Widget/model calls `create_portal_handoff` (intent `unlock` | `use_plan` | `continue`) → `https://www.getsmartpr.com/chatgpt/handoff?t=<token>`. The widget's Unlock / Use my plan / Continue buttons open exactly the `structuredContent.url` the server returned (no host in the widget). The portal origin comes from `lib/chatgpt/portalUrl.ts`: runtime `CHATGPT_PORTAL_URL` → the request's own `*.getsmartpr.com` host → `NEXT_PUBLIC_SITE_URL` if https/public/not a tunnel → `https://www.getsmartpr.com`. It never emits localhost (unless explicitly overridden for a local-only request) and never the dev tunnel (ngrok, loca.lt, trycloudflare). `NEXT_PUBLIC_SITE_URL` is inlined at **build** time, so exporting it only for `next start` has no effect — use `CHATGPT_PORTAL_URL` at runtime.
+   - **The portal that opens the link verifies the token**, so it must share `CHATGPT_HANDOFF_SECRET` with the server that signed it (local dev server behind ngrok → production www needs the same secret).
 2. Token = base64url(JSON payload) + HMAC-SHA256 (`CHATGPT_HANDOFF_SECRET`), 6 h TTL, contains only the normalized scenario + intent (no email, account, ChatGPT ids). Fails closed if the secret is missing/short.
 3. Landing page verifies server-side and shows the facts. Nothing is created. "Review in SmartPR intake" writes the existing guest draft (`lib/guestDraft.ts`) and opens `/?entry=new-business&source=chatgpt`, where the intake restores it for guests and signed-in users and the user confirms every step. No business, passport or filing is auto-created.
-4. Sign-in survival: "Sign in to use my plan" uses `/auth/login?next=/chatgpt/handoff?t=…`; the token is stateless so it remains valid after the round trip until expiry.
+4. Sign-in survival: "Sign in to use my plan" / "Sign in or create an account" use `/auth/login?next=/chatgpt/handoff?t=…` (signup and email verification carry the same `next`); the token is stateless so it remains valid after the round trip until expiry. Signed-in users see "Continue with my SmartPR plan" / "Continue to full assessment" instead of the sign-in button.
 
 ### Data flow: ChatGPT vs SmartPR
 - **ChatGPT → SmartPR:** only tool arguments (business activity, municipality, size, employees, renovation scope, clarifying answers). Users should not put personal data in scenarios; the schema has no name/email/address fields.
@@ -55,7 +56,8 @@ Per-IP rate limit (`CHATGPT_MCP_RATE_PER_MIN`, default 60/min, `lib/rateLimit.ts
 cd frontend
 cp .env.example .env.local   # then add:
 # CHATGPT_HANDOFF_SECRET=<random 32+ chars>   e.g. openssl rand -base64 48
-# NEXT_PUBLIC_SITE_URL=http://localhost:3000   (used to build handoff links)
+# CHATGPT_PORTAL_URL=https://www.getsmartpr.com  (optional; handoff link origin, runtime. Default www.getsmartpr.com.
+#                                                http://localhost:3000 only works for local-only requests)
 # CHATGPT_MCP_RATE_PER_MIN=60                  (optional)
 # CHATGPT_MCP_ENABLED=true                     (optional kill switch)
 npm run dev
@@ -71,7 +73,7 @@ curl -s localhost:3000/api/mcp/chatgpt -H 'content-type: application/json' \
 `npx @modelcontextprotocol/inspector` → Transport **Streamable HTTP** → URL `http://localhost:3000/api/mcp/chatgpt`. Verify initialize + instructions, the 3 tools and annotations, `resources/read ui://smartpr/requirements-v1.html`, and call each tool with valid and invalid input (unknown tool → -32602; bad answers → `dropped_answers`).
 
 ## Connect in ChatGPT (developer mode)
-1. Expose the local server over HTTPS (e.g. `ngrok http 3000` or a Secure MCP Tunnel) or use a preview deployment; set `NEXT_PUBLIC_SITE_URL` to the public origin so handoff links resolve.
+1. Expose the local server over HTTPS (e.g. `ngrok http 3000` or a Secure MCP Tunnel) or use a preview deployment; handoff links still point at `https://www.getsmartpr.com` (never the tunnel), so production must have the same `CHATGPT_HANDOFF_SECRET` as the local server. To test the handoff page against the local server instead, set `CHATGPT_PORTAL_URL=https://<tunnel-host>` explicitly.
 2. ChatGPT → Settings → Apps & Connectors → Advanced → enable **Developer mode**.
 3. Create a connector/app: MCP server URL `https://<host>/api/mcp/chatgpt`, authentication **None** (anonymous preview).
 4. In a new chat, enable the app and try: "I want to open a manufacturing business in a 12,000 sq ft warehouse in Guaynabo, with 28 employees and interior renovations. What do I need?"

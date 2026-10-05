@@ -5,6 +5,9 @@ import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT } from "./assessm
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
 import { handleChatgptMcp, TOOLS } from "./mcp";
 import { WIDGET_URI, WIDGET_MIME, widgetHtml } from "./widget";
+import { resolvePortalUrl, portalUrlForRequest, PORTAL_DEFAULT } from "./portalUrl";
+import { handoffActions, scenarioToGuestDraft, HANDOFF_INTAKE_PATH } from "./handoffActions";
+import { sanitizeNext, guestContinuePath, authCallbackPath } from "../safeNext";
 
 process.env.CHATGPT_HANDOFF_SECRET = "test-secret-test-secret-test-secret-0123";
 const SITE = { siteUrl: "https://smartpr.example" };
@@ -100,4 +103,88 @@ test("handoff fails closed without secret", () => {
   const out = (rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: normalizeScenario(GUAYNABO).scenario } }).body as Body).result;
   process.env.CHATGPT_HANDOFF_SECRET = saved;
   assert.equal(out.isError, true);
+});
+
+test("portal URL: production by default, never localhost or the dev tunnel", () => {
+  const NGROK = "passenger-hence-sprinkler.ngrok-free.dev";
+  // The reported bug: NEXT_PUBLIC_SITE_URL inlined as localhost (or set to the tunnel), MCP via ngrok.
+  assert.equal(resolvePortalUrl({ siteUrl: "http://localhost:3000", requestHost: NGROK }), PORTAL_DEFAULT);
+  assert.equal(resolvePortalUrl({ siteUrl: `https://${NGROK}`, requestHost: NGROK }), PORTAL_DEFAULT);
+  assert.equal(resolvePortalUrl({ siteUrl: "http://localhost:3000", requestHost: "localhost:3000" }), PORTAL_DEFAULT);
+  assert.equal(resolvePortalUrl({}), "https://www.getsmartpr.com");
+  // Public NEXT_PUBLIC_SITE_URL is honoured (origin only).
+  assert.equal(resolvePortalUrl({ siteUrl: "https://www.getsmartpr.com/" }), "https://www.getsmartpr.com");
+  assert.equal(resolvePortalUrl({ siteUrl: "https://staging.smartpr.example", requestHost: NGROK }), "https://staging.smartpr.example");
+  // Explicit runtime override wins; a localhost override only for local-only requests.
+  assert.equal(resolvePortalUrl({ portalOverride: "https://www.getsmartpr.com", siteUrl: `https://${NGROK}`, requestHost: NGROK }), PORTAL_DEFAULT);
+  assert.equal(resolvePortalUrl({ portalOverride: "http://localhost:3000", requestHost: "localhost:3000" }), "http://localhost:3000");
+  assert.equal(resolvePortalUrl({ portalOverride: "http://localhost:3000", requestHost: NGROK }), PORTAL_DEFAULT);
+  assert.equal(resolvePortalUrl({ portalOverride: "http://127.0.0.1:3000", requestHost: `${NGROK}, 10.0.0.2` }), PORTAL_DEFAULT);
+  assert.equal(resolvePortalUrl({ portalOverride: "not a url", requestHost: NGROK }), PORTAL_DEFAULT);
+  // Served from production: stay on the host that signed the token (https).
+  assert.equal(resolvePortalUrl({ siteUrl: "http://localhost:3000", requestHost: "www.getsmartpr.com" }), "https://www.getsmartpr.com");
+  assert.equal(resolvePortalUrl({ requestHost: "evil.example" }), PORTAL_DEFAULT, "arbitrary Host header is not reflected");
+});
+
+test("portal URL from a live request (forwarded headers + runtime env)", () => {
+  const saved = { o: process.env.CHATGPT_PORTAL_URL, s: process.env.NEXT_PUBLIC_SITE_URL };
+  try {
+    delete process.env.CHATGPT_PORTAL_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+    const viaNgrok = new Request("http://localhost:3000/api/mcp/chatgpt", { method: "POST", headers: { host: "localhost:3000", "x-forwarded-host": "abc.ngrok-free.dev", "x-forwarded-proto": "https" } });
+    assert.equal(portalUrlForRequest(viaNgrok), PORTAL_DEFAULT);
+    process.env.CHATGPT_PORTAL_URL = "http://localhost:3000";
+    assert.equal(portalUrlForRequest(viaNgrok), PORTAL_DEFAULT);
+    assert.equal(portalUrlForRequest(new Request("http://localhost:3000/api/mcp/chatgpt", { headers: { host: "localhost:3000" } })), "http://localhost:3000");
+  } finally {
+    if (saved.o === undefined) delete process.env.CHATGPT_PORTAL_URL; else process.env.CHATGPT_PORTAL_URL = saved.o;
+    if (saved.s === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = saved.s;
+  }
+});
+
+test("Unlock / Use my plan / Continue: server-built handoff URL carries intent + scenario", () => {
+  const prod = { siteUrl: resolvePortalUrl({ siteUrl: "http://localhost:3000", requestHost: "x.ngrok-free.dev" }) };
+  const scenario = normalizeScenario({ ...GUAYNABO, business_type: "Furniture Manufacturing" }).scenario;
+  for (const intent of ["unlock", "use_plan", "continue"] as const) {
+    const out = (handleChatgptMcp({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_portal_handoff", arguments: { scenario, intent } } }, prod).body as Body).result;
+    const url = new URL(out.structuredContent.url);
+    assert.equal(url.origin, "https://www.getsmartpr.com");
+    assert.equal(url.pathname, "/chatgpt/handoff");
+    assert.equal(out.structuredContent.intent, intent);
+    const p = verifyHandoffToken(url.searchParams.get("t"));
+    assert.equal(p.intent, intent);
+    assert.equal(p.scenario.municipality, "Guaynabo");
+    assert.equal(p.scenario.business_type, "Furniture Manufacturing");
+  }
+  // Widget opens exactly the URL the server returned — no hard-coded host.
+  const html = widgetHtml();
+  assert.ok(!/localhost|127\.0\.0\.1|ngrok|getsmartpr\.com/.test(html), "widget never hard-codes a portal host");
+  assert.match(html, /callTool\("create_portal_handoff",\{scenario:r\.scenario,intent:kind\}\)/);
+  assert.match(html, /var u=res&&res\.structuredContent&&res\.structuredContent\.url;if\(u\)\{openLink\(u\)/);
+  for (const k of ["unlock", "use_plan", "continue"]) assert.ok(html.includes(`act("${k}")`), `button wired: ${k}`);
+});
+
+test("handoff review: sign-in round trip + intake prefill", () => {
+  const { token } = createHandoffToken(normalizeScenario(GUAYNABO).scenario, "use_plan");
+  const self = `/chatgpt/handoff?t=${encodeURIComponent(token)}`;
+  // /auth/login?next=<self> must send the user back to the handoff page.
+  assert.equal(sanitizeNext(self, "/businesses"), self);
+  assert.equal(authCallbackPath(self), self);
+  assert.equal(guestContinuePath(self), self);
+  const loginNext = new URL(`https://www.getsmartpr.com/auth/login?next=${encodeURIComponent(self)}`).searchParams.get("next");
+  assert.equal(loginNext, self);
+  assert.equal(new URL(`https://x${loginNext}`).searchParams.get("t"), token, "token survives the round trip intact");
+
+  assert.deepEqual(handoffActions("use_plan", false), { primary: "Continue without signing in", signIn: "primary" });
+  assert.equal(handoffActions("use_plan", true).signIn, null);
+  assert.equal(handoffActions("unlock", false).signIn, "secondary");
+  assert.equal(HANDOFF_INTAKE_PATH, "/?entry=new-business&source=chatgpt");
+
+  const s = normalizeScenario({ answers: { business_status: "new", Q_IMPORT_EXPORT: "yes" } }, normalizeScenario({ ...GUAYNABO, business_type: "Furniture Manufacturing" }).scenario).scenario;
+  const d = scenarioToGuestDraft(s);
+  assert.equal(d.profile.business_type, "Furniture Manufacturing");
+  assert.equal(d.profile.municipality, "Guaynabo");
+  assert.equal(d.profile.business_stage, "new");
+  assert.equal(d.profile.number_of_employees, 28);
+  assert.equal(d.discoveryAnswers.Q_IMPORT_EXPORT, true);
 });

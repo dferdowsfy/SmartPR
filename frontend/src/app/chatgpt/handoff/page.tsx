@@ -9,6 +9,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { verifyHandoffToken, HandoffError } from "../../../lib/chatgpt/handoff";
+import { getCurrentUser } from "../../../lib/supabase/server";
 import HandoffReview from "./HandoffReview";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
         : "This link is invalid. Start a new assessment instead.";
   }
   const selfPath = t ? `/chatgpt/handoff?t=${encodeURIComponent(t)}` : "/chatgpt/handoff";
+  // Only used to pick which buttons to show; nothing is read from or written
+  // to the account here.
+  const signedIn = payload ? !!(await getCurrentUser().catch(() => null)) : false;
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", padding: "0 20px", fontFamily: "system-ui, sans-serif", color: "#0f172a" }}>
       <p style={{ color: "#0f766e", fontWeight: 600, margin: 0 }}>SmartPR · Continue from ChatGPT</p>
@@ -40,7 +44,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
           <Link href="/?entry=new-business" style={{ color: "#0f766e", fontWeight: 600 }}>Start a new assessment</Link>
         </div>
       ) : (
-        <HandoffReview scenario={payload.scenario} intent={payload.intent} expiresAt={new Date(payload.exp * 1000).toISOString()} selfPath={selfPath} />
+        <HandoffReview scenario={payload.scenario} intent={payload.intent} expiresAt={new Date(payload.exp * 1000).toISOString()} selfPath={selfPath} signedIn={signedIn} />
       )}
     </main>
   );
