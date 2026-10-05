@@ -11,12 +11,8 @@ import { MUNICIPIOS } from "./municipios.ts";
 
 const fixture = (id: string) => fileURLToPath(new URL(`./siteCases/fixtures/${id}.json`, import.meta.url));
 
-// Fixtures whose last capture missed a live request (zoning MapServer/0 parcel
-// query unrecorded after upstream 502s/timeouts). Reported as TODO, not
-// failures, until they are recaptured against healthy services.
-const DEGRADED: Record<string, string> = {
-  jayuya_mountain: "zoning parcel query not recorded; recapture",
-};
+// All 17 fixtures currently replay clean (no DEGRADED TODOs).
+const DEGRADED: Record<string, string> = {};
 
 test("site cases: 17 recorded cases", () => {
   assert.equal(SITE_CASES.length, 17);
