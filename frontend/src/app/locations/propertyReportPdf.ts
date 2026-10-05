@@ -26,10 +26,22 @@ const TONE: Record<ReportTone, { bg: Rgb; fg: Rgb; dot: Rgb }> = {
 };
 
 /** jsPDF's built-in fonts are WinAnsi: replace what they can't draw. */
-const safe = (t: string) =>
+export const pdfSafeText = (t: string) =>
   t.replace(/[→⇒]/g, "->").replace(/[≈]/g, "~").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[^\x00-\xFF—–•…]/g, "");
+const safe = pdfSafeText;
 
 export async function downloadPropertyReportPdf(report: PropertyReport, lang: Lang, review: ReturnType<typeof exportableReview>) {
+  const doc = await renderPropertyReportPdf(report, lang, review);
+  doc.save(propertyReportFileName(report, "pdf"));
+}
+
+/** Export file name — same for the PDF and the JSON download. */
+export function propertyReportFileName(report: PropertyReport, ext: "pdf" | "json"): string {
+  return `property-report-${(report.property.catastro.value ?? report.property.municipality).replace(/[^A-Za-z0-9-]+/g, "-")}.${ext}`;
+}
+
+/** Build the PDF (no download): the consistency tests read its text back. */
+export async function renderPropertyReportPdf(report: PropertyReport, lang: Lang, review: ReturnType<typeof exportableReview>): Promise<JsPDF> {
   const { jsPDF } = await import("jspdf");
   const doc: JsPDF = new jsPDF({ unit: "mm", format: "letter" });
   const L = (en: string, es: string) => (lang === "es" ? es : en);
@@ -181,10 +193,12 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
       ...(f.ambiguities ?? []).map((a) => `${L("Ambiguity", "Ambigüedad")}: ${a[lang]}`),
     ].join(" ");
     const src = f.sources.map((s) => `${s.name}${s.dataset_date ? ` (${s.dataset_date})` : ""}`).join("; ") + (f.retrieval ? ` · ${RETRIEVAL_TEXT[f.retrieval][lang]}` : "") + (f.looked_up_at ? ` · ${L("looked up", "consultado")} ${f.looked_up_at.slice(0, 10)}` : "") + (f.sources[0]?.url ? ` · ${f.sources[0].url}` : "");
-    const mainL = lines(main, CW - 62);
-    const subL = sub ? lines(sub, CW - 62) : [];
-    const extraL = extra ? lines(extra, CW - 62) : [];
-    const srcL = src ? lines(src, CW - 62) : [];
+    // Wrap each block with the font it is drawn in (wrapping with whatever font
+    // the previous row left set overflowed the right margin and clipped text).
+    font(9.5, "normal"); const mainL = lines(main, CW - 62);
+    font(8, "bold"); const subL = sub ? lines(sub, CW - 62) : [];
+    font(7.5, "normal"); const extraL = extra ? lines(extra, CW - 62) : [];
+    font(7, "normal"); const srcL = src ? lines(src, CW - 62) : [];
     const h = Math.max(7, mainL.length * lh(9.5) + subL.length * lh(8) + extraL.length * lh(7.5) + srcL.length * lh(7) + 3);
     ensure(h + 2);
     color(TONE[tone].dot, "fill"); doc.circle(M + 1.6, y - 1.2, 1.4, "F");
@@ -269,5 +283,5 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     doc.text(lines(report.disclaimer[lang], CW - 20)[0] ?? "", M, H - 7.5);
     doc.text(`${i} / ${pages}`, W - M, H - 7.5, { align: "right" });
   }
-  doc.save(`property-report-${(report.property.catastro.value ?? report.property.municipality).replace(/[^A-Za-z0-9-]+/g, "-")}.pdf`);
+  return doc;
 }

@@ -1,0 +1,14 @@
+import { readFileSync } from "node:fs";
+import { siteCase } from "../src/app/locations/siteCases/cases.ts";
+import { runCase } from "../src/app/locations/siteCases/consistency.ts";
+const id = process.argv[2]!;
+const run = await runCase(siteCase(id)!, JSON.parse(readFileSync(`src/app/locations/siteCases/fixtures/${id}.json`, "utf8")));
+const what = process.argv[3] ?? "preview";
+if (what === "preview") console.log(run.outputs.preview.en);
+if (what === "pin") console.log(run.outputs.pinPanel);
+if (what === "summary") console.log(run.outputs.summary.en);
+if (what === "pdf") console.log(run.outputs.pdf.en);
+if (what === "drawer") console.log(run.outputs.drawer);
+if (what === "findings") for (const f of run.report.findings) console.log(f.id, f.state, f.scope, "|", f.value?.en, "| pill:", f.pill?.en, "| pin:", f.pin?.value.en, "| src:", f.sources.map(s=>`${s.name.slice(0,30)}@${s.dataset_date}`).join(";"), "|", f.looked_up_at);
+if (what === "official") console.log(JSON.stringify({ ...run.official, crim: { ...run.official.crim, ring: run.official.crim.ring?.length } }, null, 1));
+if (what === "loc") console.log(JSON.stringify(run.report.property.location), run.report.property.catastro, run.report.discrepancies);
