@@ -4540,3 +4540,59 @@ test("CASE AX: beauty-specialist professions get the professional license — RE
     );
   }
 });
+
+test("CASE AY: retail pharmacies get the pharmacy operating license — REQUIRED when new, verify_existing when existing (REG-PROF-PHARMACY-001)", () => {
+  // 2026-10-04 21:00 QA cycle (S426, Carolina): KB INCOMPLETE — BT_PHARMACY
+  // had RULE_0094 (individual professional license) and RULE_0095 (health
+  // permit, heuristic) but no rule for the pharmacy ESTABLISHMENT's
+  // operating license, so a new retail pharmacy surfaced no pharmacy
+  // operating-license requirement. Primary-source check of Ley Núm. 247-2004
+  // (Ley de Farmacia de Puerto Rico), Art. 5.05(b) (official Dept. de Salud
+  // PDF, salud.pr.gov/CMS/DOWNLOAD/6279): operating a pharmacy requires a
+  // licencia de farmacia obtained by complying with the Secretario de
+  // Salud's regulations; the pharmacy must have at least one licensed
+  // pharmacist (farmacéutico regente) while open to the public. This is the
+  // establishment license, distinct from the individual pharmacist license
+  // (Junta de Farmacia, RULE_0094 family) — same genuinely-licensed
+  // pattern as RULE_0695 (barbershop) / RULE_0713-0715 (beauty specialists).
+  // compliance_mode verify_existing per the e676174 sweep. Non-pharmacy
+  // businesses (negative controls) must not get the card.
+  const DOC_PHARMACY = docByName("Pharmacy Operating License");
+  const input = (bt: string, status: "new" | "existing") =>
+    buildEngineInput(
+      {
+        business_type: bt,
+        municipality: "Carolina",
+        location_type: "Commercial Facility",
+        number_of_employees: 8,
+        business_structure: "llc",
+      },
+      {
+        Q_EMPLOYEES_HIRED: true,
+        Q_PHYSICAL_LOCATION: true,
+        Q_EXISTING_LEASE: true,
+      },
+      {},
+      { projectIntent: status === "new" ? "new_business" : "existing_business" }
+    );
+  const fresh = classify(input("Pharmacy", "new"), "new");
+  assert.equal(
+    byId(fresh.classified, DOC_PHARMACY)?.applicability,
+    "required",
+    "a new retail pharmacy gets the pharmacy operating license as REQUIRED (RULE_0716)"
+  );
+  const operating = classify(input("Pharmacy", "existing"), "existing");
+  assert.equal(
+    byId(operating.classified, DOC_PHARMACY)?.applicability,
+    "verify_existing",
+    "an operating pharmacy verifies its existing pharmacy license (not REQUIRED-as-new)"
+  );
+  for (const bt of ["Restaurant", "Hardware Store"]) {
+    const ctrl = classify(input(bt, "new"), "new");
+    assert.equal(
+      byId(ctrl.classified, DOC_PHARMACY)?.applicability,
+      undefined,
+      `${bt} does not get the pharmacy operating license (RULE_0716 negative control)`
+    );
+  }
+});

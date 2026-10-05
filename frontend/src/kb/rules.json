@@ -9347,5 +9347,27 @@
     "reason": "QA 2026-10-04 00:00 cycle (S405, Toa Baja): KB INCOMPLETE — BT_BARBERSHOP has a verified professional-license rule (RULE_0695, Ley 146-1968) but BT_BEAUTY_SALON / BT_NAIL_SALON / BT_ESTHETICS_STUDIO had none, so a new beauty salon surfaced no professional-license requirement. Primary-source check of Ley 9-1972 Art. 15 (lexjuris) confirms beauty specialists (cosmetólogos, técnicos de uñas, esteticistas) are individually licensed by the Junta Examinadora de Especialistas en Belleza (Dept. de Estado); practicing unlicensed is a misdemeanor. Same genuinely-licensed-profession pattern as RULE_0695 (barbershop) / RULE_0696 (tattoo). compliance_mode verify_existing per the e676174 sweep. Excluded BT_SPA and BT_MASSAGE_THERAPY_STUDIO (mixed professions / uncertain board jurisdiction) — REG-PROF-BEAUTY-001 REQUIRES_REGULATORY_REVIEW."
    }
   ]
+ },
+ {
+  "id": "RULE_0716",
+  "rule_type": "business_type",
+  "business_type_id": "BT_PHARMACY",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PHARMACY_PERMIT",
+  "citation": "Ley Núm. 247-2004 (Ley de Farmacia de Puerto Rico), Art. 5.05(b) — para la obtención de la licencia de farmacia se deberán cumplir las normas y procedimientos que por reglamento el Secretario de Salud determine que son necesarios para la protección de la salud, seguridad y bienestar público; la farmacia debe contar con los servicios de por lo menos un (1) farmacéutico mientras esté abierta al público y designar al farmacéutico regente",
+  "citation_url": "https://www.salud.pr.gov/CMS/DOWNLOAD/6279",
+  "citation_confidence": "review",
+  "citation_source": "review",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "new rule added (REG-PROF-PHARMACY-001)",
+    "reason": "QA 2026-10-04 21:00 cycle (S426, Carolina): KB INCOMPLETE — BT_PHARMACY had RULE_0094 (individual professional license) and RULE_0095 (health permit, heuristic) but no rule for the pharmacy ESTABLISHMENT's operating license, so a new retail pharmacy surfaced no pharmacy operating-license requirement. Primary-source check of Ley Núm. 247-2004 (Ley de Farmacia de Puerto Rico), Art. 5.05(b) (official Dept. de Salud PDF, salud.pr.gov/CMS/DOWNLOAD/6279): operating a pharmacy requires a licencia de farmacia obtained by complying with the Secretario de Salud's regulations; the pharmacy must have at least one licensed pharmacist (farmacéutico regente) while open to the public. Distinct from the individual pharmacist license (Junta de Farmacia, RULE_0094 family) — same genuinely-licensed pattern as RULE_0695 (barbershop) / RULE_0713-0715 (beauty specialists). compliance_mode verify_existing per the e676174 sweep (existing pharmacies verify their existing license; new pharmacies get REQUIRED)."
+   }
+  ]
  }
 ]
