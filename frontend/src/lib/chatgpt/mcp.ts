@@ -7,7 +7,7 @@
 
 import { assessScenario, normalizeScenario, CHATGPT_SERVER_VERSION, type NormalizedScenario, type ScenarioInput } from "./assessment";
 import { createHandoffToken, HandoffError, type HandoffIntent } from "./handoff";
-import { WIDGET_URI, WIDGET_MIME, widgetHtml } from "./widget";
+import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml } from "./widget";
 
 export const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 export const SERVER_NAME = "smartpr-chatgpt";
@@ -177,11 +177,22 @@ export function handleChatgptMcp(body: unknown, opts: { siteUrl: string }): McpR
     case "ping": return ok(msg.id, {});
     case "tools/list": return ok(msg.id, { tools: TOOLS });
     case "resources/list":
-      return ok(msg.id, { resources: [{ uri: WIDGET_URI, name: "smartpr-requirements", title: "SmartPR requirements preview", mimeType: WIDGET_MIME }] });
+      return ok(msg.id, {
+        resources: WIDGET_URI_ALIASES.map((uri) => ({
+          uri,
+          name: "smartpr-requirements",
+          title: "SmartPR requirements preview",
+          mimeType: WIDGET_MIME,
+          ...(uri === WIDGET_URI ? {} : { description: `Alias of ${WIDGET_URI} (ChatGPT cached template_pointer)` }),
+        })),
+      });
     case "resources/templates/list": return ok(msg.id, { resourceTemplates: [] });
     case "resources/read": {
-      if (params.uri !== WIDGET_URI) return err(msg.id, -32602, "Unknown resource");
-      return ok(msg.id, { contents: [{ uri: WIDGET_URI, mimeType: WIDGET_MIME, text: widgetHtml(), _meta: widgetResourceMeta(opts.siteUrl) }] });
+      const uri = typeof params.uri === "string" ? params.uri : "";
+      if (!(WIDGET_URI_ALIASES as readonly string[]).includes(uri)) return err(msg.id, -32602, "Unknown resource");
+      // Echo the requested URI so a cached template_pointer=v1/v2/v3 still binds;
+      // HTML + empty CSP meta are always the current widget.
+      return ok(msg.id, { contents: [{ uri, mimeType: WIDGET_MIME, text: widgetHtml(), _meta: widgetResourceMeta(opts.siteUrl) }] });
     }
     case "tools/call": {
       const name = typeof params.name === "string" ? params.name : "";

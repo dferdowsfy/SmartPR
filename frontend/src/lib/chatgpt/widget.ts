@@ -9,8 +9,16 @@
 
 import { PR_MUNICIPIO_SHAPES, PR_MAP_SOURCE } from "./prMapShapes";
 
-// v4: vector map (no external tiles) — new URI so ChatGPT drops the cached v3 template.
+// Canonical URI is v4 (vector map, empty CSP). ChatGPT may still request older
+// template_pointer URIs (v1–v3) from a cached connector; serve the same HTML
+// for every alias so a bump does not 404 until the user reconnects.
 export const WIDGET_URI = "ui://smartpr/requirements-v4.html";
+export const WIDGET_URI_ALIASES = [
+  "ui://smartpr/requirements-v1.html",
+  "ui://smartpr/requirements-v2.html",
+  "ui://smartpr/requirements-v3.html",
+  WIDGET_URI,
+] as const;
 /** Map zoom range. z7 fits the whole island in a phone-width iframe; outlines
  *  are ~1:500k generalized, so beyond z14 they add nothing. */
 export const MAP_MIN_ZOOM = 7;
