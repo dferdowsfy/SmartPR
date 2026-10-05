@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { LAYER_SOURCES, parseTerrain } from "./layers.ts";
 import {
   LAYER_TIMEOUTS_MS,
-  LayerCache,
   SMARTPR_USER_AGENT,
   queryDataset,
   queryJson,
