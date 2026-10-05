@@ -16,10 +16,6 @@
       "name": "KG16 kg-scenario: auto_repair / new_business_existing_building / urban_industrial_x"
     },
     {
-      "id": "KG18",
-      "name": "KG18 kg-scenario: manufacturing / new_construction / rural_srep_agricultural"
-    },
-    {
       "id": "KG24",
       "name": "KG24 kg-scenario: agricultural_farm / new_construction / rural_srep_agricultural"
     },

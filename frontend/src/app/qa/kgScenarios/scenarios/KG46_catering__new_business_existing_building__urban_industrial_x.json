@@ -1,0 +1,93 @@
+{
+  "id": "KG46",
+  "title": "Off-site catering kitchen in an existing industrial bay — Carolina, industrial zone X",
+  "matrix": {
+    "businessType": "catering",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_industrial_x"
+  },
+  "description": "We are starting a catering business from an existing leased industrial kitchen bay in Carolina. We prepare food for off-site events; customers do not dine on the premises. No alcohol, no construction.",
+  "profile": {
+    "business_type": "Catering Business",
+    "municipality": "Carolina",
+    "location_type": "Industrial Building",
+    "number_of_employees": 6,
+    "industry": "Food Services",
+    "business_structure": "Corporation"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_FOOD_PREPARED": true,
+    "Q_ALCOHOL_SOLD": false
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased industrial kitchen bay"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased"
+    }
+  },
+  "site": {
+    "municipality": "Carolina",
+    "geo": "urban_industrial_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 Registro de Comerciante."
+      },
+      {
+        "key": "DOC_CERT_INCORPORATION",
+        "confidence": "verified-in-code",
+        "rationale": "New corporation -> Certificate of Incorporation."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 Patente Municipal."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "Physical kitchen premises -> Permiso Unico."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "Food preparation triggers the sanitary permit."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "Catering / food preparation attaches Bomberos certification."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction."
+      }
+    ],
+    "ordering": []
+  }
+}

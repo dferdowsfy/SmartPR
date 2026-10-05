@@ -52,6 +52,7 @@ import { processChecklist, type ProcessChecklist } from "../../processes/present
 import { supersededLegacyCards } from "../../processes/legacyCards";
 import {
   groupRequirements,
+  orderByPrerequisites,
   splitOtherChecks,
   REQUIREMENT_GROUP_ORDER,
   type RequirementGroupId,
@@ -331,6 +332,7 @@ export function runKgScenario(scenario: KgScenario, geo: Record<string, GeoConte
 
   // 5. The visible engine cards, grouped and ordered as the checklist renders them.
   const visible = engineRows.filter((r) => r.applicability !== "not_applicable" && !superseded.has(r.document_id ?? ""));
+  const kbDocs = KB.documents as unknown as Array<{ id: string; depends_on_document_ids?: string[] | null }>;
   const grouping = groupRequirements(
     visible.map((r) => ({
       documentId: r.document_id,
@@ -340,7 +342,7 @@ export function runKgScenario(scenario: KgScenario, geo: Record<string, GeoConte
       done: false,
       awaitingAnswer: !!r.unansweredTriggerQuestionId,
     })),
-    KB.documents as unknown as Array<{ id: string; depends_on_document_ids?: string[] | null }>
+    kbDocs
   );
   const { main, otherChecks } = splitOtherChecks(
     visible.map((r, i) => ({ r, g: grouping[i], group: grouping[i].group, triggerQuestionId: r.unansweredTriggerQuestionId ?? null })),
@@ -385,10 +387,10 @@ export function runKgScenario(scenario: KgScenario, geo: Record<string, GeoConte
   if (energyPrimary) pushEnergy();
   for (const gid of REQUIREMENT_GROUP_ORDER) {
     if (gid === "registrations" || gid === "completed") continue;
-    pushEngine(main.filter((m) => m.group === gid), gid);
+    pushEngine(orderByPrerequisites(main.filter((m) => m.group === gid), (m) => m.r.document_id, kbDocs), gid);
   }
   if (!energyPrimary) pushEnergy();
-  pushEngine(main.filter((m) => m.group === "registrations"), "registrations");
+  pushEngine(orderByPrerequisites(main.filter((m) => m.group === "registrations"), (m) => m.r.document_id, kbDocs), "registrations");
   pushEngine(otherChecks.flatMap((q) => q.cards), "other_checks");
 
   // 6. Questions the user is asked on the checklist page.

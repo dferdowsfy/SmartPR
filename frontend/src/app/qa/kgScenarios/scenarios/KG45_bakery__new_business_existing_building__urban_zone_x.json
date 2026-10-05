@@ -1,0 +1,98 @@
+{
+  "id": "KG45",
+  "title": "Neighborhood bakery in an existing leased storefront — Bayamón, zone X",
+  "matrix": {
+    "businessType": "bakery",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "We are opening a neighborhood bakery in an existing leased storefront in Bayamón. We bake bread and pastries on site and sell them at the counter. No alcohol, no construction.",
+  "profile": {
+    "business_type": "Bakery",
+    "municipality": "Bayamón",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 4,
+    "industry": "Food Services",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_FOOD_PREPARED": true,
+    "Q_ALCOHOL_SOLD": false
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased storefront"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased storefront"
+    }
+  },
+  "site": {
+    "municipality": "Bayamón",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "Food prepared on site triggers the Departamento de Salud sanitary permit."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "BT_BAKERY / Q_FOOD_PREPARED rules attach the Bomberos fire safety certification."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol sold."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "Existing storefront with no construction."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Zone X is outside the special flood hazard area."
+      }
+    ],
+    "ordering": []
+  }
+}
