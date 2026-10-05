@@ -90,9 +90,9 @@
         "rationale": "RULE_0145 / RULE_0263: guest house in a tourism municipio -> Compania de Turismo registration. (KB: RULE_0145, RULE_0263)"
       },
       {
-        "key": "gap:historic_zone_review",
+        "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
         "confidence": "needs-expert-review",
-        "rationale": "Exterior work in a JP historic zone needs ICP (Instituto de Cultura Puertorriquena) endorsement / historic-zone review (Reglamento de Planificacion 5; Ley 89-1955). The historic_zone layer is resolved at the pin but no KB rule or document consumes location.historic_zone."
+        "rationale": "Pin inside the Zona Histórica de Ponce: Ley 374-1949 Art. 1 requires the ICP's written recommendation before any construction or use permit in a historic zone (RC-2023 Regla 10.2.11). (KB: RULE_0730)"
       }
     ],
     "mustNotInclude": [

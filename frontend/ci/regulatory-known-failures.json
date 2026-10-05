@@ -1,27 +1,15 @@
 {
   "recordedAt": "2026-10-04",
   "recordedAtCommit": "0da0866",
-  "minimumTests": 399,
+  "minimumTests": 403,
   "knownFailures": [
     {
       "id": "G13",
       "name": "G13 [validated] Barbershop, 3 employees, leased — Cataño"
     },
     {
-      "id": "KG07",
-      "name": "KG07 kg-scenario: retail_store / expansion / flood_ae"
-    },
-    {
-      "id": "KG08",
-      "name": "KG08 kg-scenario: pharmacy / new_business_existing_building / urban_zone_x"
-    },
-    {
       "id": "KG10",
       "name": "KG10 kg-scenario: medical_office / renovation / coastal_zone_x"
-    },
-    {
-      "id": "KG14",
-      "name": "KG14 kg-scenario: guesthouse / renovation / historic_zone"
     },
     {
       "id": "KG16",
@@ -32,10 +20,6 @@
       "name": "KG18 kg-scenario: manufacturing / new_construction / rural_srep_agricultural"
     },
     {
-      "id": "KG19",
-      "name": "KG19 kg-scenario: textile_recycler / change_of_use / urban_industrial_x"
-    },
-    {
       "id": "KG24",
       "name": "KG24 kg-scenario: agricultural_farm / new_construction / rural_srep_agricultural"
     },
@@ -44,36 +28,12 @@
       "name": "KG25 kg-scenario: marina_water_sports / new_business_existing_building / coastal_ve"
     },
     {
-      "id": "KG27",
-      "name": "KG27 kg-scenario: telecom_tower / new_construction / rural_src"
-    },
-    {
       "id": "KG29",
       "name": "KG29 kg-scenario: rooftop_solar_battery / new_business_existing_building / flood_ae"
     },
     {
-      "id": "KG34",
-      "name": "KG34 kg-scenario: cafe_no_alcohol / new_construction / road_pin_residential"
-    },
-    {
       "id": "KG35",
       "name": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin"
-    },
-    {
-      "id": "KG37",
-      "name": "KG37 kg-scenario: medical_office / new_construction / floodway"
-    },
-    {
-      "id": "KG38",
-      "name": "KG38 kg-scenario: cannabis_medicinal / new_business_existing_building / urban_zone_x"
-    },
-    {
-      "id": "KG39",
-      "name": "KG39 kg-scenario: restaurant_with_alcohol / expansion / coastal_zone_x"
-    },
-    {
-      "id": "KG40",
-      "name": "KG40 kg-scenario: auto_repair / new_construction / coastal_zone_x"
     }
   ],
   "kgScenariosRecordedAt": "2026-10-04",

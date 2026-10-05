@@ -850,5 +850,29 @@
     "industry_id": "IND_MANUFACTURING",
     "name": "Textile Recycling & Materials Recovery",
     "description": "Textile recycling and materials-recovery facility that collects, sorts, processes, or remanufactures post-consumer or post-industrial textiles in Puerto Rico (e.g. fiber reclaim, rag grading, recycled textile products). Reciclaje textil, recuperación de materiales, and recycled textile manufacturing."
+  },
+  {
+    "id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "industry_id": "IND_HEALTH",
+    "name": "Medical Cannabis Dispensary",
+    "description": "Medical cannabis dispensary licensed under Ley 42-2017 in Puerto Rico. Dispensario de cannabis medicinal."
+  },
+  {
+    "id": "BT_TELECOM_TOWER",
+    "industry_id": "IND_ENERGY",
+    "name": "Telecommunications Tower Operator",
+    "description": "Owner or developer of cell and telecommunications towers in Puerto Rico. Torres de telecomunicaciones, antenas y estructuras de comunicación."
+  },
+  {
+    "id": "BT_WATER_SPORTS_RENTAL",
+    "industry_id": "IND_TOURISM",
+    "name": "Water Sports & Watercraft Rental",
+    "description": "Rental of jet skis, boats, kayaks and paddleboards and guided water activities in Puerto Rico. Alquiler de botes, motoras acuáticas y deportes acuáticos."
+  },
+  {
+    "id": "BT_MARINA",
+    "industry_id": "IND_TOURISM",
+    "name": "Marina / Boat Dock Operator",
+    "description": "Marina, boat slips, docks and moorings operated in Puerto Rico waters. Marina, muelles y amarres."
   }
 ]

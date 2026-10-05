@@ -85,9 +85,9 @@
         "rationale": "Darius / Rosa intake: textile recyclers register in SAM.gov for federal recycling grants and DACO marketplace programs; the KB has BT_TEXTILE_RECYCLING but no business_type rules attach it."
       },
       {
-        "key": "gap:recycling_facility_authorization",
+        "key": "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT",
         "confidence": "needs-expert-review",
-        "rationale": "A materials-recovery / recycling facility needs DRNA solid-waste authorization (Reglamento 5717, Ley 70-1992 recycling law) and recycler registration; no KB document exists for it."
+        "rationale": "Recycling regulation Cap. VIII Reglas 2 and 4 (Ley 70-1992): no recycling facility may operate without the DRNA endorsement. (KB: RULE_0746)"
       }
     ],
     "mustNotInclude": [

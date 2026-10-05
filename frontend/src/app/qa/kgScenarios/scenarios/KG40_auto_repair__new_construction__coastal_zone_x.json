@@ -85,14 +85,22 @@
         "agencyMatches": "munic"
       },
       {
-        "key": "DOC_AIR_EMISSION_PERMIT",
         "confidence": "needs-expert-review",
-        "rationale": "A spray paint booth is an air-emission source: DRNA air permit / registration (Reglamento para el Control de la Contaminacion Atmosferica) and 40 CFR 63 subpart HHHHHH."
+        "rationale": "A spray paint booth is an air-emission source: DRNA air permit / registration (Reglamento para el Control de la Contaminacion Atmosferica) and 40 CFR 63 subpart HHHHHH. The body-shop rule uses the DRNA air permit / minor-source card (RULE_0750); the Title V card is for major sources.",
+        "anyOf": [
+          "DOC_AIR_PERMIT",
+          "DOC_AIR_EMISSION_PERMIT"
+        ]
       },
       {
         "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
         "confidence": "needs-expert-review",
         "rationale": "Paint/solvent waste -> EPA hazardous-waste generator ID (RCRA 40 CFR 262)."
+      },
+      {
+        "key": "DOC_EPA_AUTOBODY_NESHAP_NOTICE",
+        "confidence": "needs-expert-review",
+        "rationale": "40 CFR 63 Subpart HHHHHH covers every shop that spray-applies coatings to motor vehicles (63.11169): booth, HVLP guns, painter training, initial notification. (KB: RULE_0751)"
       }
     ],
     "mustNotInclude": [

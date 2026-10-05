@@ -8910,5 +8910,249 @@
   {
     "business_type_id": "BT_RESORT",
     "question_id": "Q_RENOVATIONS"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_PHYSICAL_LOCATION"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_LOCATION_TYPE"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_EMPLOYEES_HIRED"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_EMPLOYEE_COUNT"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_COMMERCIAL_SIGNAGE"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_HEALTHCARE_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_PATIENTS_VISIT"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_PROFESSIONAL_LICENSES"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_EXISTING_LEASE"
+  },
+  {
+    "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+    "question_id": "Q_RENOVATIONS"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_PHYSICAL_LOCATION"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_LOCATION_TYPE"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_EMPLOYEES_HIRED"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_EMPLOYEE_COUNT"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_COMMERCIAL_SIGNAGE"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_HAZARDOUS_MATERIALS"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_PROFESSIONAL_LICENSES"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_FEDERAL_CONTRACTS_GRANTS"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_EXISTING_LEASE"
+  },
+  {
+    "business_type_id": "BT_TELECOM_TOWER",
+    "question_id": "Q_RENOVATIONS"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_PHYSICAL_LOCATION"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_LOCATION_TYPE"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_EMPLOYEES_HIRED"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_EMPLOYEE_COUNT"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_COMMERCIAL_SIGNAGE"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_TOURISM_ACTIVITY"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_GUESTS_OVERNIGHT"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_FOOD_SERVED"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_ALCOHOL_SERVED"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_WATER_ACTIVITIES"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_SHORT_TERM_RENTAL"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_EXCURSIONS"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_CUSTOMERS_VISIT"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_FEDERAL_CONTRACTS_GRANTS"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_EXISTING_LEASE"
+  },
+  {
+    "business_type_id": "BT_WATER_SPORTS_RENTAL",
+    "question_id": "Q_RENOVATIONS"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_BUSINESS_STRUCTURE"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_PHYSICAL_LOCATION"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_LOCATION_TYPE"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_EMPLOYEES_HIRED"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_EMPLOYEE_COUNT"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_COMMERCIAL_SIGNAGE"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_FUEL_SOLD"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_TOURISM_ACTIVITY"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_GUESTS_OVERNIGHT"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_FOOD_SERVED"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_ALCOHOL_SERVED"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_WATER_ACTIVITIES"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_SHORT_TERM_RENTAL"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_EXCURSIONS"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_CUSTOMERS_VISIT"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_FEDERAL_CONTRACTS_GRANTS"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_OFFERS_CONSTRUCTION_SERVICES"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_EXISTING_LEASE"
+  },
+  {
+    "business_type_id": "BT_MARINA",
+    "question_id": "Q_RENOVATIONS"
   }
 ]

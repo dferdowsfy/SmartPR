@@ -17,13 +17,31 @@ export type Flag = "tourism" | "coastal" | "historic" | "metro" | "island";
 // 0.005 = 0.5%). Optional: when null the platform reports the rate is not yet
 // captured rather than guessing — the framework is in place for KB enrichment
 // without forcing made-up data.
-export interface KBMunicipality { id: string; name: string; flags: Flag[]; patente_rate?: number | null }
+/**
+ * REG-MUNICIPAL-DELEGATION-001: an autonomous municipality that administers a
+ * Convenio de Delegación de Competencias (Código Municipal, Ley 107-2020,
+ * Arts. 6.004–6.009) evaluates and issues the delegated permits through its
+ * own permits office instead of OGPe.
+ */
+export interface KBMunicipalPermitsOffice {
+  name: string;
+  delegation: string;
+  citation?: string | null;
+  citation_url?: string | null;
+  verification?: "verified" | "heuristic" | null;
+  reviewed_at?: string | null;
+}
+export interface KBMunicipality { id: string; name: string; flags: Flag[]; patente_rate?: number | null; permits_office?: KBMunicipalPermitsOffice | null }
 export interface KBBusinessType { id: string; industry_id: string; name: string; description: string }
 export interface KBQuestion { id: string; question: string; type: string; options?: string[] }
 export interface KBDocument {
   id: string; name: string; agency: string; category: string; requirement_guidance?: unknown;
   agency_url?: string | null;
   agency_note?: string | null;
+  /** REG-MUNICIPAL-DELEGATION-001: permits a delegated autonomous municipality evaluates and issues. */
+  municipal_delegation?: boolean | null;
+  /** Card name to use when a delegated municipality issues it (drops the "OGPe" prefix). */
+  delegated_name?: string | null;
   /** Statutory/regulatory basis carried on the KB document itself (documents.json). */
   citation?: string | null;
   /** Default filing/download destination — a rule-level download override
@@ -861,15 +879,16 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
 
   const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved, provenances }]) => {
     const d = docById.get(docId);
+    const delegated = !rule.agency && d?.municipal_delegation ? municipalPermitsRouting(municipality) : null;
     return {
       document_id: docId,
-      document_name: d ? d.name : docId,
+      document_name: d ? (delegated && d.delegated_name ? d.delegated_name : d.name) : docId,
       // REG-PROFESSION-AGENCY-001: a rule's own issuing authority (when the
       // KB carries one) wins over the shared document's default agency —
       // e.g. tattoo-artist licenses are Salud-issued, not Junta-issued.
-      agency: rule.agency ?? d?.agency ?? "",
+      agency: rule.agency ?? delegated?.agency ?? d?.agency ?? "",
       agency_url: rule.agency_url ?? d?.agency_url ?? null,
-      agency_note: rule.agency_note ?? d?.agency_note ?? null,
+      agency_note: rule.agency_note ?? delegated?.agency_note ?? d?.agency_note ?? null,
       // REG-PROFESSION-AGENCY-002: the filing/download destination follows
       // the rule's own issuing authority, not the shared document default.
       download_url: rule.download_url ?? d?.download_url ?? null,
@@ -902,5 +921,26 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       provenanceBlocked,
       documentsGenerated: requirements.map((r) => r.document_id),
     },
+  };
+}
+
+/**
+ * REG-MUNICIPAL-DELEGATION-001: who evaluates a delegable permit in this
+ * municipality. Null where OGPe keeps jurisdiction (no convenio on file), so
+ * the KB document's own agency (OGPe) stands.
+ */
+export function municipalPermitsRouting(municipality: KBMunicipality | null | undefined): { agency: string; agency_note: string } | null {
+  const office = municipality?.permits_office;
+  if (!municipality || !office?.name) return null;
+  const confirm = office.verification === "verified"
+    ? ""
+    : ` Confirm with the Municipio which permit levels its agreement currently covers before filing.`;
+  return {
+    agency: `${office.name} — Municipio Autónomo de ${municipality.name}`,
+    agency_note:
+      `${municipality.name} is an autonomous municipality with a permits-delegation agreement with the Junta de Planificación (${office.delegation}). ` +
+      `You still file through the OGPe Single Business Portal, but the municipal permits office evaluates and issues this permit. ` +
+      `Matters the agreement reserves to the Junta de Planificación or OGPe (for example, regional-impact projects), and the fire, health and environmental endorsements, stay with those agencies.` +
+      confirm,
   };
 }

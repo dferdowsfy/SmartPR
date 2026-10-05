@@ -1,0 +1,112 @@
+{
+  "id": "KG41",
+  "title": "Marina with boat slips, new operator of an existing marina — Fajardo (autonomous), coastal zone + VE",
+  "matrix": {
+    "businessType": "marina",
+    "projectType": "new_business_existing_building",
+    "locationContext": "coastal_ve"
+  },
+  "description": "We are taking over an existing marina in Fajardo with 40 boat slips, fuel dock and a small office. No construction for now.",
+  "profile": {
+    "business_type": "Marina / Boat Dock Operator",
+    "municipality": "Fajardo",
+    "location_type": "Commercial Facility",
+    "number_of_employees": 6,
+    "industry": "Accommodation & Tourism",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "taking over an existing marina"
+    }
+  },
+  "site": {
+    "municipality": "Fajardo",
+    "geo": "coastal_ve"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "Fajardo administers a Convenio de Delegación de Competencias (JP 2024 transition report): the use permit is evaluated by the municipal permits office. (KB: municipalities.json permits_office)",
+        "agencyMatches": "munic"
+      },
+      {
+        "key": "DOC_DRNA_MARITIME_CONCESSION",
+        "confidence": "needs-expert-review",
+        "rationale": "Docks and slips over submerged lands / the maritime-terrestrial zone need a DRNA concession or authorization (Reg. 4860 Arts. 4.1-4.3). (KB: RULE_0743)"
+      },
+      {
+        "key": "DOC_USACE_SECTION10",
+        "confidence": "needs-expert-review",
+        "rationale": "Docks and piers in navigable waters need a Corps Section 10 permit (33 U.S.C. 403; 33 CFR 322); an existing marina verifies coverage. (KB: RULE_0744)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643/0644 need project_type new_construction / renovation."
+      },
+      {
+        "key": "DOC_DRNA_BOAT_RENTAL_LICENSE",
+        "confidence": "needs-expert-review",
+        "rationale": "A marina that rents slips is not a rental-vessel owner; the rental license is keyed to the watercraft-rental business type."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "No construction: RULE_0708 needs construction-type work in the coastal zone."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-04 (KB gaps): covers the marina business type, the DRNA submerged-lands concession and the Corps Section 10 permit, plus delegated permitting in Fajardo."
+}

@@ -8,7 +8,7 @@
   },
   "description": "Our company will build a new 250-foot telecommunications tower on leased rural land in Utuado. It is new construction of a cell tower.",
   "profile": {
-    "business_type": "Utility Contractor",
+    "business_type": "Telecommunications Tower Operator",
     "municipality": "Utuado",
     "location_type": "Industrial Space",
     "number_of_employees": 0,
@@ -34,6 +34,11 @@
       "value": "leased",
       "confidence": 0.9,
       "evidence": "leased rural land"
+    },
+    "proposed_use": {
+      "value": "telecommunications tower",
+      "confidence": 0.9,
+      "evidence": "telecommunications tower"
     }
   },
   "site": {
@@ -48,14 +53,22 @@
         "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
       },
       {
-        "key": "process:PR_FAA_OBSTRUCTION_NOTICE",
         "confidence": "needs-expert-review",
-        "rationale": "A 250 ft structure exceeds 200 ft AGL, so FAA Form 7460-1 notice is required (14 CFR 77.9(a)); the process graph models this notice only for energy facilities."
+        "rationale": "A 250 ft structure exceeds 200 ft AGL, so FAA Form 7460-1 notice is required (14 CFR 77.9(a)); the process graph models this notice only for energy facilities. Telecom towers now carry the FAA notice as a KB document (RULE_0737); the energy process stays valid for energy facilities.",
+        "anyOf": [
+          "process:PR_FAA_OBSTRUCTION_NOTICE",
+          "DOC_FAA_7460_NOTICE"
+        ]
       },
       {
-        "key": "gap:telecom_siting",
+        "key": "DOC_TELECOM_TOWER_SITING",
         "confidence": "needs-expert-review",
-        "rationale": "Telecom towers need JRT (Negociado de Telecomunicaciones) site registration, OGPe tower consulta under Ley 89-2000 / RC-2023 and FCC ASR/NEPA review; no KB business type or documents cover telecom."
+        "rationale": "Ley 89-2000 Arts. 5, 7, 8: tower setbacks, co-location sworn statement and neighbor notice are part of the tower's permit file. (KB: RULE_0736)"
+      },
+      {
+        "key": "DOC_FCC_ASR",
+        "confidence": "needs-expert-review",
+        "rationale": "A tower that needs FAA notice must be registered with the FCC (47 CFR 17.4). (KB: RULE_0738)"
       }
     ],
     "mustNotInclude": [
@@ -94,5 +107,6 @@
       }
     ],
     "ordering": []
-  }
+  },
+  "notes": "2026-10-04: profile moved from the Utility Contractor proxy to the new Telecommunications Tower Operator business type; the Negociado de Telecomunicaciones tower registry is modeled as a heuristic card (needs expert review)."
 }
