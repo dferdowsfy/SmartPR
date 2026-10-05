@@ -12,6 +12,8 @@ import { resolveParcelFindings } from "../../../locations/parcelService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Platform kill switch; internal deadline is ~2 s below this. */
+export const maxDuration = 25;
 
 export async function GET(req: Request) {
   const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";

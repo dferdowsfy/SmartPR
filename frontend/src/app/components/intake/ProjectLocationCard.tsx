@@ -40,7 +40,7 @@ type Resolve = { placement: ResolvedPlacement | null; designations: string[] } |
 
 async function resolvePoint(p: MapPoint): Promise<Resolve> {
   try {
-    const res = await fetch(`/api/locations/resolve?lat=${encodeURIComponent(p.latitude)}&lng=${encodeURIComponent(p.longitude)}`, { cache: "no-store" });
+    const res = await fetch(`/api/locations/resolve?lat=${encodeURIComponent(p.latitude)}&lng=${encodeURIComponent(p.longitude)}`, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return "error";
     const data = (await res.json()) as { placement: ResolvedPlacement | null; designations?: string[] };
     return { placement: data.placement, designations: data.designations ?? [] };
@@ -295,7 +295,7 @@ export function ProjectLocationCard({
     setMessage(null);
     setAlternatives([]);
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store" });
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
       if (!res.ok) {
         setBusy(null);
         // Distinct causes, so a misconfiguration is never disguised as an outage.
@@ -407,7 +407,7 @@ export function ProjectLocationCard({
       setPending(null);
       void (async () => {
         try {
-          const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store" });
+          const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
           const data = res.ok ? ((await res.json()) as { results: GeocodeCandidate[] }) : { results: [] };
           const first = data.results[0];
           if (first) setAreaFocus({ latitude: first.latitude, longitude: first.longitude });

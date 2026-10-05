@@ -27,7 +27,9 @@
 // same place.
 // ============================================================================
 
-import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
+import { CATASTRO_RE } from "./layers.ts";
+import { addressMunicipio, sameMunicipio } from "./municipios.ts";
+import { floodMapSummary, floodZoneList, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
 import PLAN_CURRENCY from "../../kb/plan_currency.json";
 
 /** V_PUT on every feature of the PUT layer (PUT_v10). */
@@ -511,7 +513,9 @@ export function buildPropertyReport(input: {
     : !parcel ? "not_looked_up"
     : parcel.boundary.status === "unavailable" ? "unavailable" : "not_identified";
   const roadwayAtPin = !!zPin && (/^VIAL$/i.test(zPin.code ?? "") || zPin.tags.includes("road") || /sistema vial/i.test(zPin.name ?? ""));
-  const roadway = !parcelVerified && (roadwayAtPin || parcel?.boundary.reason === "only_right_of_way_polygon_at_point");
+  // A pin on a mapped water body (JP "AGUA" / Cuerpo de agua) is not a roadway, even when CRIM only has right-of-way polygons there.
+  const waterAtPin = !parcelVerified && !!zPin && (/^AGUA$/i.test(zPin.code ?? "") || zPin.tags.includes("water") || /cuerpo de agua/i.test(zPin.name ?? ""));
+  const roadway = !parcelVerified && !waterAtPin && (roadwayAtPin || parcel?.boundary.reason === "only_right_of_way_polygon_at_point");
   const pointConfirmed = !!input.pointConfirmed;
   const zCovRaw = zParcel?.status === "sourced" ? (zParcel.coverage ?? (parcel?.areas_reliable?.zoning ? legacyCoverage(zParcel.districts.map((d) => ({ key: d.code, area_m2: d.area_m2, share: d.share })), parcelArea) : null)) : null;
   const districtName = (code: string) => zParcel?.districts.find((d) => d.code === code)?.name ?? null;
@@ -721,7 +725,7 @@ export function buildPropertyReport(input: {
     }
   }
   // Use rules are never evaluated on a roadway point (VIAL is not a developable district).
-  const lu = roadway ? null : input.landUse ?? null;
+  const lu = roadway || waterAtPin ? null : input.landUse ?? null;
   const usesScope: ReportScope = parcelVerified && zParcel?.status === "sourced" ? "parcel" : "point";
   const rulesVersion = bi(
     `Rules: ${RC_2023.name}, version ${RC_2023.version} (dated ${RC_2023.dataset_date}), as recorded in SmartPR's knowledge graph. SmartPR has not confirmed whether later amendments apply.${ptE?.status === "verified" ? ` ${site.municipality.name} has an approved Plan Territorial; its own provisions may also apply.` : ""}`,
@@ -753,8 +757,11 @@ export function buildPropertyReport(input: {
     add({
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
-      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)") : bi("Pending proposed activity", "Pendiente de la actividad propuesta"),
-      detail: roadway
+      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)")
+        : waterAtPin ? bi("Not evaluated — selected point is a water body", "No evaluado — el punto seleccionado es un cuerpo de agua") : bi("Pending proposed activity", "Pendiente de la actividad propuesta"),
+      detail: waterAtPin
+        ? bi("Not evaluated: the selected point is mapped as a water body (AGUA / Cuerpo de agua), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como cuerpo de agua (AGUA / Cuerpo de agua), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
+        : roadway
         ? bi("Not evaluated: the selected point is mapped as a roadway (VIAL / Sistema vial), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como vía (VIAL / Sistema vial), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
         : bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
       state: "not_evaluated", tone: "unknown", scope: "not_evaluated", sources: [RC_2023], looked_up_at: null, key: false,
@@ -776,9 +783,11 @@ export function buildPropertyReport(input: {
   const sfhaParts = fCov ? fCov.parts.filter((p) => (p.members ?? [p.key]).some((k) => parcelZones.find((z) => `${z.zone}|${z.subtype ?? ""}` === k)?.sfha)) : [];
   const sfhaParcel = parcelZones.some((z) => z.sfha);
   const sfha = sfhaParcel || !!fm?.sfha;
-  const fUnmeasured = fCov ? parcelZones.filter((z) => !fRaw.some((p) => p.key === `${z.zone}|${z.subtype ?? ""}`)).map((z) => z.zone) : [];
+  const fUnmeasured = fCov ? parcelZones.filter((z) => !fRaw.some((p) => p.key === `${z.zone}|${z.subtype ?? ""}`)).map((z) => z.zone).filter((z, i, all) => all.indexOf(z) === i) : [];
   const fMore = fUnmeasured.length ? bi(` · ${fUnmeasured.map((z) => `${z} (area not measured)`).join(" · ")}`, ` · ${fUnmeasured.map((z) => `${z} (área no medida)`).join(" · ")}`) : bi("", "");
-  const floodValue: Bi | null = fCov ? bi(`Zone ${coverageValue(fCov, floodKeyText).en}${fMore.en}`, `Zona ${coverageValue(fCov, floodKeyText).es}${fMore.es}`) : parcelZones.length ? bi(`Zone ${parcelZones.map((z) => z.zone).join(" · ")}`, `Zona ${parcelZones.map((z) => z.zone).join(" · ")}`) : fm ? bi(`Zone ${fm.zone}`, `Zona ${fm.zone}`) : null;
+  // Governing (most hazardous) zone first, then each other distinct zone once.
+  const parcelZoneText = floodZoneList(parcelZones.map((z) => ({ zone: z.zone, sub: z.subtype }))).join(" · ");
+  const floodValue: Bi | null = fCov ? bi(`Zone ${coverageValue(fCov, floodKeyText).en}${fMore.en}`, `Zona ${coverageValue(fCov, floodKeyText).es}${fMore.es}`) : parcelZones.length ? bi(`Zone ${parcelZoneText}`, `Zona ${parcelZoneText}`) : fm ? bi(`Zone ${fm.zones.join(" · ")}`, `Zona ${fm.zones.join(" · ")}`) : null;
   const floodNotes: Bi[] = [...(fCov?.warnings ?? []), ...(fCov?.parts.some((p) => p.small) ? [SMALL_NOTE] : [])];
   if (fm && parcelZones.length && !fm.sfha && sfhaParcel) {
     const where = sfhaParts.length ? sfhaParts.map((p) => `${floodKeyText(p.key)} on ${p.share_text}`).join(", ") : parcelZones.filter((z) => z.sfha).map((z) => z.zone).join(", ");
@@ -935,6 +944,12 @@ export function buildPropertyReport(input: {
   const crim = layer("parcel");
   const boundary = parcel?.boundary;
   const catastroValue = boundary?.value?.catastro ?? (crim?.status === "resolved" && current ? crim.code : null);
+  // CRIM and the JP zoning map each label the lot; when they disagree, say so without deciding which is right.
+  const jpCatastro = typeof zPin?.attributes?.num_catast === "string" ? zPin.attributes.num_catast.trim() : null;
+  if (catastroValue && crim?.retrieval !== "derived" && jpCatastro && CATASTRO_RE.test(jpCatastro) && jpCatastro !== catastroValue) {
+    discrepancies.push(bi(`Parcel number: the CRIM parcel map gives ${catastroValue} at the pin, while the JP zoning-map polygon there is labelled ${jpCatastro}. The two records may come from different editions, or the zoning polygon may cover a different or larger lot; this report uses the CRIM number and does not determine which is correct. Confirm the catastro with CRIM before relying on it.`,
+      `Número de catastro: el mapa de parcelas del CRIM indica ${catastroValue} en el pin, mientras que el polígono del mapa de calificación de la JP allí tiene ${jpCatastro}. Los dos registros pueden provenir de ediciones distintas, o el polígono de calificación puede abarcar otro solar o uno mayor; este informe usa el número del CRIM y no determina cuál es correcto. Confirme el catastro con el CRIM antes de depender de él.`));
+  }
   const catSource: ReportSource | null = boundary?.value ? { name: boundary.source.name, url: boundary.source.url, dataset_date: boundary.source.dataset_date, version: null } : crim ? sourceOf(crim) : null;
   const sp = toPrStatePlane(site.latitude, site.longitude);
   const areaM2 = boundary?.value ? fmtArea(boundary.value.area_m2) : null;
@@ -1224,6 +1239,10 @@ export function buildPropertyReport(input: {
   if (parcelStatus === "not_identified") locationNotices.push(bi("No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.", "No se identificó una parcela catastral. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela."));
   if (parcelStatus === "unavailable") locationNotices.push(bi(`The CRIM parcel source did not respond (${reasonText(boundary?.reason).en}). Findings describe the selected point only; parcel-wide checks have not been performed.`, `La fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es}). Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela.`));
   if (roadway) locationNotices.push(bi("This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements.", "Este punto puede estar sobre una vía y no en su propiedad. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
+  // The geocoder's address can name a neighbouring municipio (a point near a boundary); the pin's Census municipio governs.
+  const addrMuni = addressMunicipio(site.formatted_address);
+  if (addrMuni && site.municipality.name && !sameMunicipio(addrMuni, site.municipality.name)) locationNotices.push(bi(`The address returned for this point names ${addrMuni}, but the pin lies inside ${site.municipality.name} (Census boundary). This report uses ${site.municipality.name}; confirm which municipio the property is registered in.`, `La dirección obtenida para este punto indica ${addrMuni}, pero el pin está dentro de ${site.municipality.name} (límite del Censo). Este informe usa ${site.municipality.name}; confirme en qué municipio está registrada la propiedad.`));
+  if (waterAtPin) locationNotices.push(bi("This point is on a mapped water body, not on a land parcel. Move or confirm the pin before evaluating site-specific requirements.", "Este punto está sobre un cuerpo de agua mapeado y no sobre una parcela de terreno. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
   if (pointConfirmed && !parcelVerified) locationNotices.push(bi("You confirmed this point as your property. That confirms the location you intend, not a parcel boundary: parcel-wide checks remain not performed.", "Usted confirmó este punto como su propiedad. Eso confirma la ubicación que indica, no un límite de parcela: las verificaciones de toda la parcela siguen sin realizarse."));
 
   const all = [...findings.flatMap((f) => f.sources), ...steps.flatMap((s) => s.sources), ...(catSource ? [catSource] : [])];

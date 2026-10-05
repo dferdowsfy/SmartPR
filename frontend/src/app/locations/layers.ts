@@ -232,11 +232,14 @@ export const LAYER_SOURCES = {
     id: "jp-mipr-zona-costanera",
     name: "Junta de Planificación (MIPR) — Zona Costanera (PMZC)",
     publisher: "Junta de Planificación de Puerto Rico / DRNA",
-    url: "https://sige.pr.gov/server/rest/services/MIPR/Reglamentario_va2/MapServer/31",
+    // 2026-10-05: sige.pr.gov MIPR/Reglamentario_va2/31 returns HTTP 502; the
+    // sigejp equivalent of that path is "service not found". The live copy is
+    // MIPR/Reglamentario (no _va2) layer 31 on sigejp.
+    url: "https://sigejp.pr.gov/server/rest/services/MIPR/Reglamentario/MapServer/31",
     layer: "Zona Costanera",
     dataset_date: null,
-    reliability: "low",
-    verified: "2026-09-30",
+    reliability: "medium",
+    verified: "2026-10-05",
   },
   jp_linea_costa: {
     id: "jp-linea-costa-1km",
@@ -294,6 +297,11 @@ export const LAYER_SOURCES = {
     name: "Junta de Planificación (MIPR) — Zonas Históricas",
     publisher: "Junta de Planificación de Puerto Rico (MIPR)",
     url: "https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/14",
+    // Backup: the older JP_Reglamentario copy of the same JP historic-zone
+    // boundaries. Its point queries hung > 25 s on 2026-10-05 (metadata fast),
+    // so it is tried only when this layer fails; parsePresence reads both
+    // schemas (ZONA here, NOMBRE/Zona there).
+    fallback_urls: ["https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1"],
     layer: "Zona Histórica",
     dataset_date: null,
     reliability: "medium",
@@ -324,6 +332,10 @@ export const LAYER_SOURCES = {
     name: "Junta de Planificación — Áreas Protegidas",
     publisher: "Junta de Planificación de Puerto Rico / DRNA",
     url: "https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/4",
+    // Backup: the older Advisory_Maps copy of the JP/DRNA protected natural
+    // areas (hung > 25 s on point queries 2026-10-05). Fields: name here,
+    // NOMBRE/AREA there; parsePresence reads both.
+    fallback_urls: ["https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5"],
     layer: "Área Protegidas",
     dataset_date: null,
     reliability: "medium",
@@ -655,6 +667,7 @@ export function parseFemaFlood(
       STUDY_TYP: str(a.STUDY_TYP),
       DFIRM_ID: str(a.DFIRM_ID),
       ZONES_AT_POINT: zoneCount,
+      ZONES_LIST: floodZoneList((zones.features ?? []).map((f) => ({ zone: str(f?.attributes?.FLD_ZONE) ?? "", sub: str(f?.attributes?.ZONE_SUBTY) }))).join(",") || null,
       FIRM_PAN: panelId,
       EFF_DATE: effective,
       PRE_DATE: panel ? realEpochDate(panel.PRE_DATE) : null,
@@ -785,11 +798,15 @@ export function slopePercent(e: { east: number; west: number; north: number; sou
  */
 export function parseTerrain(
   landslide: { rgba: readonly number[] } | string,
-  elevation: { centerM: number | null; slopePct: number | null } | null,
+  elevation: { centerM: number | null; slopePct: number | null; reason?: string | null } | null,
   retrieved_at: string
 ): SiteLayerResult {
   const src = LAYER_SOURCES.usgs_landslide;
-  const elev = { ELEVATION_M: elevation?.centerM ?? null, SLOPE_PCT: elevation?.slopePct ?? null };
+  const elev = {
+    ELEVATION_M: elevation?.centerM ?? null,
+    SLOPE_PCT: elevation?.slopePct ?? null,
+    ...(elevation?.reason ? { ELEVATION_REASON: elevation.reason } : {}),
+  };
   if (typeof landslide === "string") return { ...unknownLayer("terrain", src, landslide, retrieved_at), attributes: elev };
   const cls = landslideClassFromRgba(landslide.rgba);
   if (!cls) return { ...unknownLayer("terrain", src, `landslide_legend_mismatch_${landslide.rgba.join("_")}`, retrieved_at), attributes: elev, retrieval: "live" };
@@ -1072,6 +1089,38 @@ export function parseCoastalZone(
 }
 
 /** Generic presence layer (historic zones, protected natural areas). */
+/** Name fields per presence layer: current primaries first, legacy JP schemas after. */
+export const PRESENCE_NAME_FIELDS = {
+  historic: ["ZONA", "Resolucion", "NOMBRE", "Nombre", "nombre", "Zona"],
+  protected: ["name", "loc_desig", "mgmt", "NOMBRE", "Nombre", "nombre", "AREA", "Name"],
+  reserves: ["nombre_reserv", "resolucion"],
+} as const;
+
+/** The source that actually answered (a backup endpoint is labelled as its own dataset when known). */
+export function sourceForEndpoint(primary: LayerSource, endpoint: string | null): LayerSource {
+  if (!endpoint || endpoint === primary.url) return primary;
+  return (Object.values(LAYER_SOURCES) as LayerSource[]).find((s) => s.url === endpoint) ?? { ...primary, url: endpoint };
+}
+
+/**
+ * Protected area = JP/DRNA protected areas OR a JP natural reserve (incl. its
+ * buffer zone). Inside either → resolved; both answered "no" → none; otherwise
+ * (one answered "no", the other could not be checked) → unknown, never "none".
+ */
+export function parseProtectedArea(
+  prot: ArcGisQueryResponse | string,
+  protSrc: LayerSource,
+  reserves: ArcGisQueryResponse | string | null,
+  reserveSrc: LayerSource,
+  retrieved_at: string
+): SiteLayerResult {
+  const p = parsePresence("protected_area", protSrc, prot, retrieved_at, [...PRESENCE_NAME_FIELDS.protected]);
+  if (p.status === "resolved" || reserves === null) return p;
+  const r = parsePresence("protected_area", reserveSrc, reserves, retrieved_at, [...PRESENCE_NAME_FIELDS.reserves]);
+  if (r.status === "resolved") return r;
+  return p.status === "unknown" ? p : r;
+}
+
 export function parsePresence(
   layer: "historic_zone" | "protected_area",
   src: LayerSource,
@@ -1333,6 +1382,8 @@ export function layerFactDetails(layers: SiteLayers | null | undefined): Record<
  */
 export interface FloodMapSummary {
   zone: string;
+  /** Governing zone first, then each other distinct zone at the point once. */
+  zones: string[];
   sfha: boolean;
   floodway: boolean;
   baseFloodElevation: number | null;
@@ -1347,6 +1398,26 @@ export interface FloodMapSummary {
   mscUrl: string | null;
 }
 
+/** Display rank of a FEMA zone: V (coastal high hazard) > A (1%) > shaded X / D > X. */
+export function floodZoneRank(zone: string, sub?: string | null): number {
+  return /^V/i.test(zone) ? 3 : /^A/i.test(zone) ? 2 : /0\.2/.test(sub ?? "") || /^D$/i.test(zone) ? 1 : 0;
+}
+
+/**
+ * Zones for a chip/summary: the governing zone (given, else the most
+ * hazardous) first, then every other distinct zone once ("AE · X", never
+ * "AE · X · X").
+ */
+export function floodZoneList(parts: Array<{ zone: string; sub?: string | null }>, governing?: string | null): string[] {
+  const clean = parts.map((p) => ({ zone: (p.zone ?? "").trim().toUpperCase(), sub: p.sub ?? null })).filter((p) => p.zone);
+  const ranked = clean.map((p, i) => ({ ...p, i })).sort((a, b) => floodZoneRank(b.zone, b.sub) - floodZoneRank(a.zone, a.sub) || a.i - b.i);
+  const out: string[] = [];
+  const g = governing?.trim().toUpperCase();
+  if (g) out.push(g);
+  for (const p of ranked) if (!out.includes(p.zone)) out.push(p.zone);
+  return out;
+}
+
 export function floodMapSummary(layers: SiteLayers | null | undefined): FloodMapSummary | null {
   const r = layers?.results.find((x) => x.layer === "flood_zone");
   if (!r || r.status !== "resolved" || !r.code) return null;
@@ -1355,6 +1426,7 @@ export function floodMapSummary(layers: SiteLayers | null | undefined): FloodMap
   const n = (v: unknown) => (typeof v === "number" ? v : null);
   return {
     zone: r.code,
+    zones: floodZoneList(String(a.ZONES_LIST ?? "").split(",").map((zone) => ({ zone })), r.code),
     sfha: r.tags.includes("SFHA"),
     floodway: r.tags.includes("FLOODWAY"),
     baseFloodElevation: n(a.STATIC_BFE),
@@ -1404,7 +1476,8 @@ export function layerChips(layers: SiteLayers | null | undefined): LayerChip[] {
       const fm = floodMapSummary(layers);
       const extra = fm?.firmPanel ? ` · FIRM ${fm.firmPanel}${fm.effectiveDate ? ` (${fm.effectiveDate})` : ""}${fm.community ? ` · ${fm.community}` : ""}` : "";
       const t = title(flood);
-      chips.push({ layer: "flood_zone", status: "resolved", label: { en: `Flood zone ${flood.code}${fw ? " · floodway" : ""}`, es: `Zona inundable ${flood.code}${fw ? " · cauce mayor" : ""}` }, title: { en: t.en + extra, es: t.es + extra } });
+      const zl = (fm?.zones.length ? fm.zones : [flood.code]).join(" · ");
+      chips.push({ layer: "flood_zone", status: "resolved", label: { en: `Flood zone ${zl}${fw ? " · floodway" : ""}`, es: `Zona inundable ${zl}${fw ? " · cauce mayor" : ""}` }, title: { en: t.en + extra, es: t.es + extra } });
     } else unknown("flood_zone", "Flood zone", "Zona inundable");
   }
   const czm = by.get("coastal_zone");
@@ -1742,8 +1815,8 @@ export function unavailableSiteLayers(latitude: number, longitude: number, reaso
     zoning: LAYER_SOURCES.jp_calificacion,
     land_class: LAYER_SOURCES.jp_calificacion,
     parcel: LAYER_SOURCES.crim_parcels,
-    historic_zone: LAYER_SOURCES.jp_zonas_historicas,
-    protected_area: LAYER_SOURCES.jp_areas_naturales,
+    historic_zone: LAYER_SOURCES.mipr_zona_historica,
+    protected_area: LAYER_SOURCES.jp_areas_protegidas,
   };
   const core: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain"];
   return { latitude, longitude, resolved_at: at, results: core.map((l) => unknownLayer(l, src[l], reason, at)) };

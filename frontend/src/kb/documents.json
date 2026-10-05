@@ -122,12 +122,20 @@
     "download_kind": "filing_portal",
     "download_note": "No standalone form: OGPe's official applicant manual states filing is 100% electronic via the Single Business Portal at ogpe.pr.gov.",
     "depends_on_document_ids": [
-      "DOC_OGPE_CONSTRUCTION_PERMIT"
+      "DOC_OGPE_CONSTRUCTION_PERMIT",
+      "DOC_CONSULTA_UBICACION"
     ],
     "citation": "Art. 8.4A, Ley 161-2009 (23 L.P.R.A. § 9018c-1), añadido por Ley 19-2017",
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "page",
-    "municipal_delegation": true
+    "municipal_delegation": true,
+    "change_log": [
+      {
+        "date": "2026-10-05",
+        "change": "depends_on_document_ids += DOC_CONSULTA_UBICACION",
+        "reason": "KG scenario loop: a use authorized by consulta de ubicación is followed by the Permiso Único (change of use with no construction). Verified against the primary source: Reglamento Conjunto 2023 (Reg. 9473), Regla 2.2.5 (Términos de vigencia de las determinaciones finales), docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf, Regla 2.2.5(b): a final determination authorizing a use lapses if the corresponding permiso único is not obtained within two years of its notice."
+      }
+    ]
   },
   {
     "id": "DOC_OCCUPANCY",
@@ -725,7 +733,17 @@
     "citation_url": "https://www.permisos.pr.gov/",
     "citation_confidence": "statute",
     "municipal_delegation": true,
-    "delegated_name": "Construction Permit (Permiso de Construcción)"
+    "delegated_name": "Construction Permit (Permiso de Construcción)",
+    "depends_on_document_ids": [
+      "DOC_CONSULTA_UBICACION"
+    ],
+    "change_log": [
+      {
+        "date": "2026-10-05",
+        "change": "depends_on_document_ids += DOC_CONSULTA_UBICACION",
+        "reason": "KG scenario loop (KG18): when a consulta de ubicación applies, it is decided before the construction permit. Verified against the primary source: Reglamento Conjunto 2023 (Reg. 9473), Regla 2.2.5 (Términos de vigencia de las determinaciones finales), docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf, Regla 2.2.5(a)(1): a final determination on a consulta related to a construction project lapses if the corresponding construction permit is not obtained within two years of its notice. The edge only orders/gates when the consulta is actually on the checklist."
+      }
+    ]
   },
   {
     "id": "DOC_OWNER_AFFIDAVIT",
@@ -821,7 +839,7 @@
     "download_url": null,
     "download_kind": null,
     "download_note": null,
-    "citation": "Ley 164-2009 — LLCs organize by filing a Certificate of Organization with the Department of State",
+    "citation": "Ley Núm. 144-1995 (Ley de Compañías de Responsabilidad Limitada), según enmendada — LLCs organize by filing a Certificate of Organization with the Department of State",
     "citation_url": "https://www.estado.pr.gov/",
     "citation_confidence": "page"
   },

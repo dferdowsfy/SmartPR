@@ -230,3 +230,17 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   const d = reportDocument(report, lang, review);
   renderReportPdf(d, new jsPDF({ unit: "mm", format: "letter" })).save(d.fileName);
 }
+
+/** Alias kept for callers that read PDF text back (siteCases/consistency.ts). */
+export const pdfSafeText = pdfSafe;
+
+/** Export file name — same for the PDF and the JSON download. */
+export function propertyReportFileName(report: PropertyReport, ext: "pdf" | "json"): string {
+  return `property-report-${(report.property.catastro.value ?? report.property.municipality).replace(/[^A-Za-z0-9-]+/g, "-")}.${ext}`;
+}
+
+/** Build the PDF (no download) from the shared document. */
+export async function renderPropertyReportPdf(report: PropertyReport, lang: Lang, review: ReturnType<typeof exportableReview>): Promise<JsPDF> {
+  const { jsPDF } = await import("jspdf");
+  return renderReportPdf(reportDocument(report, lang, review), new jsPDF({ unit: "mm", format: "letter" }));
+}

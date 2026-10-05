@@ -2,20 +2,6 @@
   "_comment": "Hand triage of known findings (scenario id + finding kind + key). Causes: likely-engine-bug | kb-gap | likely-wrong-expectation | harness-issue. Unlisted findings get a default by kind/confidence in runKgScenarios.ts.",
   "entries": [
     {
-      "id": "KG18",
-      "kind": "ordering",
-      "key": "DOC_CONSULTA_UBICACION<DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "DOC_CONSULTA_UBICACION has no depends_on edge, so the consulta renders after the construction permit it gates (expert to confirm the sequence)."
-    },
-    {
-      "id": "KG24",
-      "kind": "ordering",
-      "key": "DOC_PERMISO_UNICO<DOC_PATENTE_MUNICIPAL",
-      "cause": "likely-engine-bug",
-      "note": "Patente (needs-more-info, 'conditional' group) renders above the Permiso Unico it depends on ('prerequisites' group): group order beats the KB edge."
-    },
-    {
       "id": "KG35",
       "kind": "unexpected",
       "key": "DOC_JP_FLOOD_REG13",

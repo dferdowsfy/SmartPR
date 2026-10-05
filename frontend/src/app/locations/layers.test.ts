@@ -65,8 +65,11 @@ const URL_LAYER: Array<[string, string]> = [
   [LAYER_SOURCES.crim_parcels.url, "crim"],
   [LAYER_SOURCES.jp_zona_costanera.url, "czm_official"],
   [LAYER_SOURCES.jp_linea_costa.url, "coastline"],
-  [LAYER_SOURCES.jp_zonas_historicas.url, "historic"],
-  [LAYER_SOURCES.jp_areas_naturales.url, "protected"],
+  [LAYER_SOURCES.mipr_zona_historica.url, "historic"],
+  [LAYER_SOURCES.jp_areas_protegidas.url, "protected"],
+  [LAYER_SOURCES.jp_reservas_naturales.url, "reserves"],
+  [LAYER_SOURCES.jp_zonas_historicas.url, "historic_legacy"],
+  [LAYER_SOURCES.jp_areas_naturales.url, "protected_legacy"],
 ];
 function fixtureFetch(calls: string[] = [], override: Record<string, "down" | "timeout"> = {}): FetchLike {
   return async (url, init) => {
@@ -88,7 +91,7 @@ function fixtureFetch(calls: string[] = [], override: Record<string, "down" | "t
     return { ok: true, status: 200, json: async () => resp };
   };
 }
-const FAST = { fema_zones: 200, fema_panels: 200, fema_community: 200, fema_lomas: 200, fema_lomrs: 200, jp_calificacion: 200, crim: 200, czm_official: 50, coastline: 200, historic: 50, protected: 50 };
+const FAST = { fema_zones: 200, fema_panels: 200, fema_community: 200, fema_lomas: 200, fema_lomrs: 200, jp_calificacion: 200, crim: 200, czm_official: 50, coastline: 200, historic: 50, protected: 50, reserves: 50 };
 const resolveAt = (pt: string, opts: Parameters<typeof resolveSiteLayers>[2] = {}) => {
   const [lat, lng] = FX.points[pt];
   return resolveSiteLayers(lat, lng, { fetchImpl: fixtureFetch(), cache: new LayerCache(), timeoutMs: FAST, now: () => new Date(AT), ...opts });
@@ -389,16 +392,45 @@ test("coastal zone: official layer wins; derived 1 km band says 'in', never 'out
 // Service
 // ---------------------------------------------------------------------------
 
-test("service: every layer for the AE point, optional layers time out → unknown", async () => {
+test("service: every layer for the AE point; historic / protected answer from the MIPR / Hosted layers", async () => {
   const l = await resolveAt("toa_baja_ae");
   assert.equal(layer(l, "flood_zone").code, "AE");
   assert.equal(layer(l, "zoning").code, "C-R");
   assert.equal(layer(l, "land_class").code, "SREP-E");
   assert.equal(layer(l, "parcel").code, "038-000-010-13");
   assert.equal(layer(l, "coastal_zone").status, "unknown");
+  assert.equal(layer(l, "historic_zone").status, "none");
+  assert.equal(layer(l, "protected_area").status, "none");
+});
+
+test("historic / protected: new field names, light queries, legacy layers only as backups, honest unknown", async () => {
+  // Old San Juan: MIPR Zona Histórica (ZONA field).
+  const osj = await resolveAt("old_san_juan", { skipOptional: false });
+  const hz = layer(osj, "historic_zone");
+  assert.equal(hz.status, "resolved");
+  assert.equal(hz.name, "Zona Histórica de San Juan");
+  assert.deepEqual(hz.tags, ["INSIDE"]);
+  assert.match(hz.source?.url ?? JSON.stringify(hz.source), /Cultural_arquelogico_v10_2\/MapServer\/14/);
+  // El Yunque: Hosted Áreas Protegidas (name field); Las Cabezas: Reservas Naturales (nombre_reserv).
+  assert.match(layer(await resolveAt("el_yunque"), "protected_area").name!, /El Yunque/);
+  assert.match(layer(await resolveAt("cabezas"), "protected_area").name!, /Reserva|Marina/);
+  // Queries are light: point geometry, no geometry back, only the needed fields; legacy layers untouched.
+  const calls: string[] = [];
+  await resolveAt("guaynabo_pueblo", { fetchImpl: fixtureFetch(calls) });
+  const hq = new URL(calls.find((u) => u.startsWith(LAYER_SOURCES.mipr_zona_historica.url))!);
+  assert.equal(hq.searchParams.get("geometryType"), "esriGeometryPoint");
+  assert.equal(hq.searchParams.get("returnGeometry"), "false");
+  assert.equal(hq.searchParams.get("outFields"), "ZONA,Resolucion");
+  assert.equal(new URL(calls.find((u) => u.startsWith(LAYER_SOURCES.jp_areas_protegidas.url))!).searchParams.get("outFields"), "name,loc_desig,mgmt");
+  assert.ok(!calls.some((u) => u.startsWith(LAYER_SOURCES.jp_zonas_historicas.url) || u.startsWith(LAYER_SOURCES.jp_areas_naturales.url)), "backups not called when the primary answers");
+  // Primary down → the (hanging) legacy backup is tried with outFields=* → still honest "unknown".
+  const down: string[] = [];
+  const l = await resolveAt("guaynabo_pueblo", { fetchImpl: fixtureFetch(down, { historic: "down", protected: "down" }), retries: 0 });
   assert.equal(layer(l, "historic_zone").status, "unknown");
-  assert.match(layer(l, "historic_zone").reason!, /^timeout_/);
-  assert.equal(layer(l, "protected_area").status, "unknown");
+  assert.equal(layer(l, "protected_area").status, "unknown", "reserves 'none' does not turn a failed protected-areas check into 'none'");
+  const legacy = down.find((u) => u.startsWith(LAYER_SOURCES.jp_zonas_historicas.url));
+  assert.ok(legacy, "legacy historic layer tried as backup");
+  assert.equal(new URL(legacy!).searchParams.get("outFields"), "*");
 });
 
 test("service: a down layer degrades to unknown; the rest still resolve", async () => {

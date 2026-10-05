@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { energyRowActions, isExternalCta, mergeRowActions, requirementRowActions, shortCtaLabel, EMPTY_ROW_ACTIONS } from "./rowActionModel.ts";
-import { developerGroup, isEnergyDeveloperCompany, openStepCount } from "../filing/requirementGroups.ts";
+import { developerGroup, isEnergyDeveloperCompany, openStepCount, orderByPrerequisites } from "../filing/requirementGroups.ts";
 import { RequirementCard } from "../filing/RequirementCard.tsx";
 
 const noop = () => {};
@@ -263,4 +263,23 @@ test("learned chip renders with the row title (RowName), not in the actions colu
   // No routine → plain title.
   const plain = renderToStaticMarkup(createElement(RowName, { name: "X", model: requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop } }, "en"), language: "en" }));
   assert.equal(plain, '<span class="ck-name">X</span>');
+});
+
+test("orderByPrerequisites: a present prerequisite renders before its dependents, transitively; otherwise engine order", () => {
+  const docs = [
+    { id: "PU", depends_on_document_ids: ["CP"] },
+    { id: "CP", depends_on_document_ids: ["CU"] },
+    { id: "CU" },
+    { id: "PAT", depends_on_document_ids: ["PU"] },
+    { id: "X" },
+  ];
+  const id = (s: string) => s;
+  assert.deepEqual(orderByPrerequisites(["PU", "X", "CP", "CU"], id, docs), ["X", "CU", "CP", "PU"]);
+  // CP absent: PAT -> PU only; CU still precedes PU through the absent CP.
+  assert.deepEqual(orderByPrerequisites(["PAT", "PU", "CU"], id, docs), ["CU", "PU", "PAT"]);
+  // No constraints: unchanged.
+  assert.deepEqual(orderByPrerequisites(["X", "CU"], id, docs), ["X", "CU"]);
+  // Cycles fall back to engine order instead of looping.
+  const cyc = [{ id: "A", depends_on_document_ids: ["B"] }, { id: "B", depends_on_document_ids: ["A"] }];
+  assert.deepEqual(orderByPrerequisites(["A", "B"], id, cyc), ["A", "B"]);
 });

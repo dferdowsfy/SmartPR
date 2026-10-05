@@ -1,5 +1,5 @@
 {
- "_recorded": "2026-09-30 ~21:15–21:40 ET from the live services (see layers.ts LAYER_SOURCES); attributes trimmed to the fields SmartPR reads. Errors are the exact failures observed. FEMA community / LOMA / LOMR responses for Guaynabo pueblo recorded 2026-10-01 (hazards.fema.gov NFHL layers 22 / 34 / 1).",
+ "_recorded": "2026-09-30 ~21:15–21:40 ET from the live services (see layers.ts LAYER_SOURCES); attributes trimmed to the fields SmartPR reads. Errors are the exact failures observed. FEMA community / LOMA / LOMR responses for Guaynabo pueblo recorded 2026-10-01 (hazards.fema.gov NFHL layers 22 / 34 / 1). historic / protected / reserves (MIPR Zona Histórica 14, Hosted Áreas Protegidas 4 / Reservas Naturales 3) recorded 2026-10-05 ~07:40 ET with the trimmed outFields SmartPR sends; *_legacy keys are the old JP layers that hang (timeouts).",
  "points": {
   "guaynabo_pueblo": [
    18.3577,
@@ -20,6 +20,18 @@
   "rio_grande_ae": [
    18.4005,
    -65.82
+  ],
+  "old_san_juan": [
+   18.4655,
+   -66.1175
+  ],
+  "el_yunque": [
+   18.295,
+   -65.79
+  ],
+  "cabezas": [
+   18.383,
+   -65.629
   ]
  },
  "responses": {
@@ -293,10 +305,10 @@
   "czm_official:guaynabo_pueblo": {
    "_http_status": 502
   },
-  "historic:guaynabo_pueblo": {
+  "historic_legacy:guaynabo_pueblo": {
    "_timeout": true
   },
-  "protected:guaynabo_pueblo": {
+  "protected_legacy:guaynabo_pueblo": {
    "_timeout": true
   },
   "coastline:condado": {
@@ -305,10 +317,10 @@
   "czm_official:condado": {
    "_http_status": 502
   },
-  "historic:condado": {
+  "historic_legacy:condado": {
    "_timeout": true
   },
-  "protected:condado": {
+  "protected_legacy:condado": {
    "_timeout": true
   },
   "coastline:guayama_rural": {
@@ -317,10 +329,10 @@
   "czm_official:guayama_rural": {
    "_http_status": 502
   },
-  "historic:guayama_rural": {
+  "historic_legacy:guayama_rural": {
    "_timeout": true
   },
-  "protected:guayama_rural": {
+  "protected_legacy:guayama_rural": {
    "_timeout": true
   },
   "coastline:toa_baja_ae": {
@@ -329,10 +341,10 @@
   "czm_official:toa_baja_ae": {
    "_http_status": 502
   },
-  "historic:toa_baja_ae": {
+  "historic_legacy:toa_baja_ae": {
    "_timeout": true
   },
-  "protected:toa_baja_ae": {
+  "protected_legacy:toa_baja_ae": {
    "_timeout": true
   },
   "coastline:rio_grande_ae": {
@@ -341,10 +353,10 @@
   "czm_official:rio_grande_ae": {
    "_http_status": 502
   },
-  "historic:rio_grande_ae": {
+  "historic_legacy:rio_grande_ae": {
    "_timeout": true
   },
-  "protected:rio_grande_ae": {
+  "protected_legacy:rio_grande_ae": {
    "_timeout": true
   },
   "fema_community:guaynabo_pueblo": {
@@ -368,6 +380,107 @@
   },
   "fema_lomrs:guaynabo_pueblo": {
    "features": []
+  },
+  "historic:guaynabo_pueblo": {
+   "features": []
+  },
+  "historic:condado": {
+   "features": []
+  },
+  "historic:guayama_rural": {
+   "features": []
+  },
+  "historic:toa_baja_ae": {
+   "features": []
+  },
+  "historic:rio_grande_ae": {
+   "features": []
+  },
+  "historic:old_san_juan": {
+   "features": [
+    {
+     "attributes": {
+      "ZONA": "Zona Histórica de San Juan",
+      "Resolucion": "Z-7"
+     }
+    }
+   ]
+  },
+  "historic:el_yunque": {
+   "features": []
+  },
+  "historic:cabezas": {
+   "features": []
+  },
+  "protected:guaynabo_pueblo": {
+   "features": []
+  },
+  "protected:condado": {
+   "features": []
+  },
+  "protected:guayama_rural": {
+   "features": []
+  },
+  "protected:toa_baja_ae": {
+   "features": []
+  },
+  "protected:rio_grande_ae": {
+   "features": []
+  },
+  "protected:old_san_juan": {
+   "features": []
+  },
+  "protected:el_yunque": {
+   "features": [
+    {
+     "attributes": {
+      "mgmt": "USDA Forest Service",
+      "loc_desig": "Bosque Nacional",
+      "name": "El Yunque National Forest"
+     }
+    }
+   ]
+  },
+  "protected:cabezas": {
+   "features": []
+  },
+  "reserves:guaynabo_pueblo": {
+   "features": []
+  },
+  "reserves:condado": {
+   "features": []
+  },
+  "reserves:guayama_rural": {
+   "features": []
+  },
+  "reserves:toa_baja_ae": {
+   "features": []
+  },
+  "reserves:rio_grande_ae": {
+   "features": [
+    {
+     "attributes": {
+      "nombre_reserv": "Zona de amortiguamiento Reserva Natural del Río Espíritu Santo",
+      "resolucion": "PU-002-98-22-01"
+     }
+    }
+   ]
+  },
+  "reserves:old_san_juan": {
+   "features": []
+  },
+  "reserves:el_yunque": {
+   "features": []
+  },
+  "reserves:cabezas": {
+   "features": [
+    {
+     "attributes": {
+      "nombre_reserv": "Límite Extensión Marina 9 millas náuticas de la Reserva Natural Cabezas de San Juan",
+      "resolucion": "PU-002-98-24-01"
+     }
+    }
+   ]
   }
  }
 }

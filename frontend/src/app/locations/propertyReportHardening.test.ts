@@ -44,10 +44,20 @@ function abLayers(lat: number, lng: number, flood = "X"): SiteLayers {
     ],
   } as SiteLayers;
 }
+/** Match recorded GETs by endpoint path — geometry encoding (thin/round) can drift. */
+function recordedGet(gets: Record<string, { ok: boolean; status: number; body?: unknown }>, u: string) {
+  if (gets[u]) return gets[u];
+  const path = u.split("?")[0]!;
+  const hit = Object.entries(gets).find(([k]) => k.startsWith(path + "?") || k === path);
+  return hit?.[1];
+}
 async function abParcel(): Promise<ParcelFindings> {
   const s = RAW.sites.aguas_buenas;
   return resolveParcelFindings(s.latitude, s.longitude, {
-    fetchImpl: (async (u: string) => ({ ok: s.gets[u]?.ok ?? false, status: s.gets[u]?.status ?? 599, json: async () => s.gets[u]?.body ?? null })) as never,
+    fetchImpl: (async (u: string) => {
+      const r = recordedGet(s.gets, u);
+      return { ok: r?.ok ?? false, status: r?.status ?? 599, json: async () => r?.body ?? null };
+    }) as never,
     postJson: async (_u, b) => s.posts.find((x: { query: string }) => x.query === (b as { query: string }).query)?.response ?? "not_recorded",
     refresh: true, now: () => new Date(at),
   });
