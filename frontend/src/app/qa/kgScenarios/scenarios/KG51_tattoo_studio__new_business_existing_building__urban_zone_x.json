@@ -1,0 +1,113 @@
+{
+  "id": "KG51",
+  "title": "Tattoo studio, new business in an existing leased storefront — Aguadilla, zone X inland",
+  "matrix": {
+    "businessType": "tattoo_studio",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "I am opening a tattoo studio with two tattoo artists in an existing leased storefront in Aguadilla. The space is move-in ready; no construction. We use needles and dispose of sharps.",
+  "profile": {
+    "business_type": "Tattoo Shop",
+    "municipality": "Aguadilla",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 2,
+    "industry": "Personal Care",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_PHYSICAL_LOCATION": true,
+    "Q_CUSTOMERS_RECEIVE_SERVICES": true,
+    "Q_NEEDLES_INVASIVE": true,
+    "Q_PROFESSIONAL_LICENSES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased storefront, move-in ready"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased"
+    }
+  },
+  "site": {
+    "municipality": "Aguadilla",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0160: Ley 318-1999 Art. 10, no tattoo studio may operate without a Departamento de Salud license."
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0696: Ley 318-1999 Arts. 3-6, each tattoo artist needs a Departamento de Salud license."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643/0644 need a construction / renovation project type."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706 needs location.flood_zone.sfha."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the coastal zone: RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial use in an existing commercial storefront, no change of use: no consulta trigger."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol stated."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-05 by the scenario loop: first tattoo-studio scenario and first Aguadilla scenario. Biomedical sharps disposal (RULE_0697, heuristic) is deliberately not asserted."
+}
