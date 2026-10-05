@@ -1,7 +1,7 @@
 {
   "totals": {
-    "errors": 181,
-    "warnings": 76
+    "errors": 182,
+    "warnings": 77
   },
   "files": {
     "scripts/apply-citations.mts": {
@@ -22,7 +22,8 @@
       "error:react-hooks/purity": 2,
       "error:react-hooks/refs": 7,
       "error:react-hooks/set-state-in-effect": 15,
-      "warning:(fatal)": 4,
+      "error:react-hooks/use-memo": 1,
+      "warning:(fatal)": 3,
       "warning:@typescript-eslint/no-unused-vars": 10,
       "warning:react-hooks/exhaustive-deps": 6
     },
@@ -203,6 +204,9 @@
       "error:react-hooks/set-state-in-effect": 2,
       "warning:@typescript-eslint/no-unused-vars": 1
     },
+    "src/app/locations/propertyReportPdf.ts": {
+      "warning:@typescript-eslint/no-unused-expressions": 1
+    },
     "src/app/qa/ruleCoverage.test.ts": {
       "warning:@typescript-eslint/no-unused-vars": 1
     },
@@ -280,6 +284,9 @@
       "error:prefer-const": 1
     },
     "tests/intake-site.e2e.mts": {
+      "warning:@typescript-eslint/no-unused-vars": 1
+    },
+    "tests/report-outputs.mts": {
       "warning:@typescript-eslint/no-unused-vars": 1
     },
     "tests/teach-clara-workspace.e2e.mts": {
