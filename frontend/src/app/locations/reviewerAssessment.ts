@@ -11,7 +11,7 @@
 // ============================================================================
 
 import type { Bi, PropertyReport, ReportFinding, ReportScope, ReportSource } from "./propertyReport.ts";
-import { COMPATIBILITY_TEXT } from "./landUse.ts";
+import { COMPATIBILITY_TEXT, REQUIREMENT_TEXT } from "./landUse.ts";
 
 export type AssessmentStatus = "review" | "clear" | "unable";
 export interface AssessmentItem {
@@ -111,10 +111,23 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
     act(30, { id: "flood_sfha", issue: bi("Special Flood Hazard Area", "Área Especial de Riesgo a Inundación"),
       action: bi("Keep proposed work outside the mapped flood hazard area where possible. If work falls inside it, confirm with the reviewing agency whether floodplain review applies.", "Mantenga la obra propuesta fuera del área de riesgo mapeada cuando sea posible. Si la obra cae dentro, confirme con la agencia evaluadora si aplica la revisión de zona inundable."),
       why: s ? s.text : fz.plain ?? null, sources: s?.sources ?? fz.sources });
-  } else if (fz?.state === "sourced") {
+  }
+  // 0.2% annual-chance (shaded Zone X): mapped exposure on the effective FIRM, outside the SFHA.
+  const shadedParts = fz?.state === "sourced" ? (fz.coverage?.parts ?? []).filter((p) => /^X\|.*0\.2/i.test(p.key)) : [];
+  if (shadedParts.length) {
+    const share = shadedParts.reduce((t, p) => t + p.share, 0);
+    review.push({ id: "flood_shaded_x", label: bi("Flood exposure", "Exposición a inundación"),
+      value: bi(`0.2% annual-chance flood hazard (shaded Zone X) on approximately ${pct(share)} of the parcel — effective FEMA map; outside the Special Flood Hazard Area`, `Peligro de inundación de 0.2% anual (Zona X sombreada) en aproximadamente ${pct(share)} de la parcela — mapa vigente de FEMA; fuera del Área Especial de Riesgo`),
+      phrase: bi(`approximately ${pct(share)} of the parcel is in the 0.2% annual-chance flood area (shaded Zone X)`, `aproximadamente ${pct(share)} de la parcela está en el área de inundación de 0.2% anual (Zona X sombreada)`),
+      finding_ids: ["flood_zone"], scope: fz!.scope });
+    act(50, { id: "flood_shaded_x", issue: bi("0.2% annual-chance flood area", "Área de inundación de 0.2% anual"),
+      action: bi("Locate the proposed building, pool and access relative to the shaded Zone X area on a site plan; parcel-wide percentages cannot show whether the footprint is in it.", "Ubique el edificio, la piscina y el acceso propuestos respecto al área de Zona X sombreada en un plano de sitio; los porcentajes de la parcela no muestran si la huella cae en ella."),
+      why: bi("Shaded Zone X is mapped flood exposure on the effective FIRM, even though it is outside the Special Flood Hazard Area and no floodway is mapped.", "La Zona X sombreada es exposición a inundación mapeada en el FIRM vigente, aunque esté fuera del Área Especial de Riesgo y no haya cauce mayor mapeado."), sources: fz!.sources });
+  }
+  if (fz?.state === "sourced" && fz.tone !== "hazard" && !shadedParts.length) {
     const first = (s: string) => s.split(/\. /)[0]!.replace(/\.$/, "");
     clear.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: fz.plain ? bi(first(fz.plain.en), first(fz.plain.es)) : fz.value ?? bi("No high-risk zone mapped", "Sin zona de alto riesgo mapeada"), finding_ids: ["flood_zone"] });
-  } else if (fz) {
+  } else if (fz && fz.state !== "sourced") {
     unable.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: unableValue(fz), finding_ids: ["flood_zone"] });
   }
   if (adv?.state === "sourced") {
@@ -144,6 +157,27 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   } else if (zf && !answered(zf)) {
     unable.push({ id: "zoning", label: bi("Zoning", "Calificación"), value: unableValue(zf), finding_ids: ["zoning"] });
   }
+  // Road (VIAL) and small zoning intersections: explained, neither fatal nor dismissed.
+  const minor = zf?.state === "sourced" ? zoningParts.filter((p) => p.small || /^vial$/i.test(p.key)) : [];
+  if (minor.length && zoningParts.length > 1) {
+    review.push({ id: "zoning_minor", label: bi("Zoning — minor or road intersections", "Calificación — intersecciones menores o viales"),
+      value: bi(`${minor.map((p) => `${p.key} ${p.share_text}${/^vial$/i.test(p.key) ? " (road district)" : " (small intersection)"}`).join(" · ")} — may be a right-of-way, a real strip or a map-edge difference`, `${minor.map((p) => `${p.key} ${p.share_text}${/^vial$/i.test(p.key) ? " (distrito vial)" : " (intersección pequeña)"}`).join(" · ")} — puede ser una servidumbre, una franja real o una diferencia de bordes`),
+      phrase: bi(`small parts of the parcel are mapped ${minor.map((p) => p.key).join(" and ")}`, `pequeñas partes de la parcela están mapeadas ${minor.map((p) => p.key).join(" y ")}`), finding_ids: ["zoning"], scope: zf!.scope });
+    act(58, { id: "zoning_minor", issue: bi("Minor and road zoning intersections", "Intersecciones menores y viales"),
+      action: bi("Check on a site plan over a boundary survey whether the building, pool, yards or access fall in these strips before relying on the main district.", "Verifique en un plano de sitio sobre una mensura si el edificio, la piscina, los patios o el acceso caen en estas franjas antes de depender del distrito principal."),
+      why: bi("Parcel-wide percentages cannot establish where the proposed footprint sits.", "Los porcentajes de la parcela no pueden establecer dónde queda la huella propuesta."), sources: zf!.sources });
+  }
+  const ov = F("zoning_overlay");
+  if (ov?.state === "sourced") {
+    const dov = r.land_use?.decision?.governing.overlays ?? [];
+    const unknown = dov.filter((o) => o.provisions !== "encoded");
+    review.push({ id: "zoning_overlay", label: bi("Overlay district", "Distrito sobrepuesto"),
+      value: bi(`${ov.value?.en ?? ""} — overlay provisions apply on top of the base district${unknown.length ? "; provisions not obtained" : ""}`, `${ov.value?.es ?? ""} — las disposiciones sobrepuestas aplican encima del distrito base${unknown.length ? "; disposiciones no obtenidas" : ""}`),
+      phrase: bi(`an overlay district (${ov.value?.en ?? ""}) is mapped whose provisions prevail over the base zoning`, `hay un distrito sobrepuesto (${ov.value?.es ?? ""}) cuyas disposiciones prevalecen sobre la calificación base`), finding_ids: ["zoning_overlay"], scope: ov.scope });
+    act(22, { id: "zoning_overlay", issue: bi("Overlay district provisions", "Disposiciones del distrito sobrepuesto"),
+      action: unknown.length && unknown[0]!.obtainFrom ? bi(`Obtain the overlay's adopted provisions from ${unknown[0]!.obtainFrom}.`, `Obtenga las disposiciones adoptadas de la zona sobrepuesta de ${unknown[0]!.obtainFrom}.`) : bi("Obtain the overlay plan's provisions and confirm how they change the base district for this parcel.", "Obtenga las disposiciones del plan sobrepuesto y confirme cómo cambian el distrito base para esta parcela."),
+      why: bi("RC 2023 Sección 6.1.1.3(m) (p. 314): overlay zones of special or territorial plans prevail over the equivalent zoning district.", "RC 2023 Sección 6.1.1.3(m) (p. 314): las zonas sobrepuestas de planes especiales o territoriales prevalecen sobre el distrito equivalente."), sources: ov.sources });
+  }
   const districts = zoningParts.length ? zoningParts.filter((p) => !p.small).map((p) => `${p.key} ${p.share_text}`).join(" · ") : zf?.value?.en ?? "";
   if (roadway) {
     review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
@@ -157,6 +191,19 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
     act(40, { id: "compatibility", issue: bi("Land-use compatibility", "Compatibilidad de uso"),
       action: bi(`Describe the proposed activity so SmartPR can evaluate compatibility with the ${joinList(zoningCodes, "and") || "mapped"} zoning district${zoningCodes.length > 1 ? "s" : ""}.`, `Describa la actividad propuesta para que SmartPR evalúe la compatibilidad con ${zoningCodes.length > 1 ? "los distritos" : "el distrito"} ${joinList(zoningCodes, "y") || "mapeado"}.`),
       why: bi("Permitted uses depend on the zoning district and on what you plan to do.", "Los usos permitidos dependen del distrito y de lo que planifica hacer."), sources: F("permitted_uses")?.sources ?? [] });
+  } else if (lu.decision) {
+    // One reasoning result: the decision (landUse.ts) — undetermined unless rules, overlays and facts support it.
+    const d = lu.decision;
+    const und = d.compatibility.status === "undetermined";
+    review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
+      value: bi(`${d.compatibility.label.en}${und && d.compatibility.ruleReading ? ` (rule reading, not a conclusion: ${d.compatibility.ruleReading.en})` : ""}`, `${d.compatibility.label.es}${und && d.compatibility.ruleReading ? ` (lectura de la regla, no es conclusión: ${d.compatibility.ruleReading.es})` : ""}`),
+      phrase: und ? bi(`compatibility for ${d.use.en} is undetermined until the evidence gaps are closed`, `la compatibilidad para ${d.use.es} está indeterminada hasta cerrar las brechas de evidencia`) : bi(`the rule reading for ${d.use.en} is: ${d.compatibility.label.en.toLowerCase()}`, `la lectura de la regla para ${d.use.es} es: ${d.compatibility.label.es.toLowerCase()}`),
+      severe: false, finding_ids: ["permitted_uses"] });
+    act(25, { id: "compatibility", issue: bi("Land-use compatibility", "Compatibilidad de uso"), action: d.pathway.nextAction, why: d.compatibility.reason, sources: F("permitted_uses")?.sources ?? [] });
+    for (const [i, a] of lu.approvals.entries()) {
+      const rq = a.requirement ?? (a.status === "confirmed" ? "required" : a.status === "likely" ? "potentially_required" : "unresolved");
+      act(32 + i / 100, { id: `approval_${a.id}`, issue: bi(a.name), action: bi(`${REQUIREMENT_TEXT[rq].en}: ${a.needs ? `depends on ${a.needs.en}` : a.trigger} Authority: ${a.agency || "—"}.`, `${REQUIREMENT_TEXT[rq].es}: ${a.needs ? `depende de ${a.needs.es}` : a.trigger} Autoridad: ${a.agency || "—"}.`), why: a.citation ? bi(a.citation) : null, sources: a.sources.map((x) => ({ name: x.name, url: x.url, dataset_date: null, version: x.citation || null })) });
+    }
   } else {
     // The governing regulation is not verified: the rule reading is preliminary
     // and the analysis stays pending — never "clear", never "permitted".

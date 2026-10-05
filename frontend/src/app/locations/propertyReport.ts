@@ -36,7 +36,7 @@ type PlanCurrencyEntry = { plan: { resolution: string; effective: string; docume
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
 import { parsePlanTerritorialExtra, ptDateText, PT_FIELDS, toPrStatePlane, type ExtraFinding, type ParcelFindings } from "./parcel.ts";
 import { COVERAGE_METHOD, formatArea, formatShare, SMALL_SHARE, UNMAPPED_WARN_SHARE, type Coverage } from "./coverage.ts";
-import { COMPATIBILITY_TEXT, type LandUseAnalysis } from "./landUse.ts";
+import { COMPATIBILITY_TEXT, DECISION_TEXT, REQUIREMENT_TEXT, type LandUseAnalysis } from "./landUse.ts";
 import { siteAddressParts } from "./siteAddress.ts";
 import { reviewerAssessment, type ReviewerAssessment } from "./reviewerAssessment.ts";
 import type { exportableReview } from "./propertyReview.ts";
@@ -304,7 +304,7 @@ const fmtArea = (m2: number) => Math.round(m2 * 10) / 10;
 
 const RC_2023: ReportSource = {
   name: "Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023)",
-  url: "https://jp.pr.gov/reglamentos/",
+  url: "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
   dataset_date: "2023-06-16",
   version: "2023",
 };
@@ -730,13 +730,16 @@ export function buildPropertyReport(input: {
   if (lu && lu.activity.use) {
     const c = lu.compatibility;
     const reading = bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].en}`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].es}`);
-    // The governing regulation for this site has not been verified: the rule
-    // reading is preliminary and the analysis stays pending (never "permitted").
+    // The decision (landUse.ts) is the one result: undetermined unless the governing
+    // rules, overlays and project facts support a rule-based conclusion.
+    const dec = lu.decision;
+    const pointNote = usesScope === "point" ? bi(" Based on the selected point only.", " Basado solo en el punto seleccionado.") : bi("");
     add({
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
-      value: bi("Pending — governing regulation not verified", "Pendiente — reglamento aplicable no verificado"),
-      detail: bi(`Preliminary reading under ${RC_2023.name} (not confirmed to govern this site${usesScope === "point" ? "; based on the selected point only" : ""}): ${reading.en}. ${[...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")}`.trim(),
+      value: dec ? (dec.compatibility.status === "undetermined" ? bi(`${DECISION_TEXT.undetermined.en} — see the evidence gaps`, `${DECISION_TEXT.undetermined.es} — vea las brechas de evidencia`) : dec.compatibility.label) : bi("Pending — governing regulation not verified", "Pendiente — reglamento aplicable no verificado"),
+      detail: dec ? bi(`${dec.compatibility.reason.en}${pointNote.en}`, `${dec.compatibility.reason.es}${pointNote.es}`)
+        : bi(`Preliminary reading under ${RC_2023.name} (not confirmed to govern this site${usesScope === "point" ? "; based on the selected point only" : ""}): ${reading.en}. ${[...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")}`.trim(),
                  `Lectura preliminar según el ${RC_2023.name} (no confirmado como aplicable a este lugar${usesScope === "point" ? "; basada solo en el punto seleccionado" : ""}): ${reading.es}. ${[...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")}`.trim()),
       state: "review",
       ruleBased: true,
@@ -1188,9 +1191,11 @@ export function buildPropertyReport(input: {
   if (noneMapped.length) mapped.push(bi(`None mapped in: ${noneMapped.map((f) => f.title.en).join(", ")}. That is not the same as no constraint on the ground.`, `Nada mapeado en: ${noneMapped.map((f) => f.title.es).join(", ")}. Eso no equivale a que no haya restricciones en el terreno.`));
   const mayAffect: Bi[] = [];
   if (lu?.activity.use) {
-    const c = lu.compatibility;
-    mayAffect.push(bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.outcome].en} (confidence ${c.confidence}).`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.outcome].es} (confianza ${c.confidence}).`));
-    for (const a of lu.approvals) mayAffect.push(bi(`${a.name} — ${a.status === "confirmed" ? "required by a verified rule" : a.status === "likely" ? "likely" : "needs professional review"}: ${a.trigger}${a.citation ? ` (${a.citation})` : ""}.`));
+    const dec = lu.decision;
+    if (dec) mayAffect.push(bi(`${dec.use.en} (${dec.scope.en}): ${dec.compatibility.label.en}. ${dec.compatibility.reason.en}`, `${dec.use.es} (${dec.scope.es}): ${dec.compatibility.label.es}. ${dec.compatibility.reason.es}`));
+    else mayAffect.push(bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[lu.compatibility.outcome].en} (confidence ${lu.compatibility.confidence}).`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[lu.compatibility.outcome].es} (confianza ${lu.compatibility.confidence}).`));
+    for (const a of lu.approvals) { const rq = a.requirement ?? (a.status === "confirmed" ? "required" : a.status === "likely" ? "potentially_required" : "unresolved"); mayAffect.push(bi(`${a.name} — ${REQUIREMENT_TEXT[rq].en}: ${a.needs ? `depends on ${a.needs.en}` : a.trigger}${a.citation ? ` (${a.citation})` : ""}.`, `${a.name} — ${REQUIREMENT_TEXT[rq].es}: ${a.needs ? `depende de ${a.needs.es}` : a.trigger}${a.citation ? ` (${a.citation})` : ""}.`)); }
+    if (dec) mayAffect.push(dec.pathway.completeness);
     for (const s of steps.filter((x) => x.constraint === "protection")) mayAffect.push(s.text);
   } else {
     mayAffect.push(bi("Not evaluated — describe the proposed activity. Mapped constraints are listed above; whether they affect your project depends on what you plan to do.", "No evaluado — describe la actividad propuesta. Las restricciones mapeadas se listan arriba; si afectan tu proyecto depende de lo que planificas hacer."));
@@ -1204,7 +1209,9 @@ export function buildPropertyReport(input: {
   }
   unverified.push(...discrepancies);
   if (lu?.activity.use) for (const u of lu.unresolved) unverified.push(bi(u.text));
+  if (lu?.activity.use && lu.decision) for (const gp of lu.decision.unresolved) unverified.push(bi(`${gp.label.en}: ${gp.missing.en} Blocks: ${gp.blocks.en}`, `${gp.label.es}: ${gp.missing.es} Bloquea: ${gp.blocks.es}`));
   const next: Bi[] = [];
+  if (lu?.activity.use && lu.decision) next.push(bi(`Next action: ${lu.decision.pathway.nextAction.en}`, `Próxima acción: ${lu.decision.pathway.nextAction.es}`));
   if (!activityText) next.push(bi("Describe the proposed activity (what you will build or operate, size, and whether there is construction).", "Describa la actividad propuesta (qué construirá u operará, tamaño y si hay construcción)."));
   next.push(...missing.filter((m) => !discrepancies.includes(m) && !/proposed activity has not been described/.test(m.en)));
   if (findings.some((f) => f.state === "unavailable" || f.state === "stale")) next.push(bi("Run the lookup again later for the sources that did not answer; until then those items are unknown, not clear.", "Vuelva a consultar más tarde las fuentes que no respondieron; hasta entonces esos puntos son desconocidos, no despejados."));
@@ -1299,7 +1306,9 @@ export function buildPropertyReport(input: {
       coverage_method: findings.some((f) => f.coverage && f.coverage.parts.length && f.scope === "parcel") ? COVERAGE_METHOD : "Parcel calculations not performed: no verified parcel geometry was used, so no polygons were clipped, dissolved or measured.",
       rules: `${RC_2023.name} ${RC_2023.version} (SmartPR knowledge graph; applicability to this site not verified)`,
     },
-    regulation: { name: RC_2023.name, version: RC_2023.version, publication_date: RC_2023.dataset_date, url: RC_2023.url, applicability: "not_verified",
+    regulation: lu?.decision?.governing.rules === "identified" ? { name: RC_2023.name, version: RC_2023.version, publication_date: RC_2023.dataset_date, url: RC_2023.url, applicability: "verified",
+      note: bi(`Identified for ${site.municipality.name}: ${lu.decision.governing.rulesText ?? RC_2023.name}${lu.decision.governing.plan ? ` (${lu.decision.governing.plan})` : ""}. Amendments after the 2023 text have not been checked.`, `Identificado para ${site.municipality.name}: ${lu.decision.governing.rulesText ?? RC_2023.name}${lu.decision.governing.plan ? ` (${lu.decision.governing.plan})` : ""}. No se han verificado enmiendas posteriores al texto de 2023.`) }
+      : { name: RC_2023.name, version: RC_2023.version, publication_date: RC_2023.dataset_date, url: RC_2023.url, applicability: "not_verified",
       note: bi("The publication date is not a confirmation that this regulation governs the site. SmartPR has not verified the governing regulation (e.g. a municipal Plan Territorial regulation or later amendments), so permitted-use analysis stays pending.", "La fecha de publicación no confirma que este reglamento rija el lugar. SmartPR no ha verificado el reglamento aplicable (p. ej., un reglamento de Plan Territorial municipal o enmiendas posteriores), así que el análisis de usos sigue pendiente.") },
     discrepancies,
     sources,
@@ -1358,6 +1367,28 @@ export const SCOPE_TEXT = {
   not_evaluated: bi("Not evaluated", "No evaluado"),
 } as const;
 
+/** Decision summary lines (copy text, and anything else that prints the report as text). */
+export function decisionText(r: PropertyReport, lang: "en" | "es"): string[] {
+  const d = r.land_use?.activity.use ? r.land_use.decision : null;
+  if (!d) return [];
+  const L = (en: string, es: string) => (lang === "es" ? es : en);
+  const rq = (a: NonNullable<PropertyReport["land_use"]>["approvals"][number]) => a.requirement ?? (a.status === "confirmed" ? "required" : a.status === "likely" ? "potentially_required" : "unresolved");
+  return [
+    "",
+    L("PROJECT DECISION SUMMARY", "RESUMEN DE DECISIÓN DEL PROYECTO"),
+    `${L("Proposed use and scope", "Uso propuesto y alcance")}: ${d.scope[lang]}`,
+    `${L("Compatibility", "Compatibilidad")}: ${d.compatibility.label[lang]} — ${d.compatibility.reason[lang]}`,
+    `${L("Material constraints & exposure (mapped)", "Restricciones y exposición importantes (mapeadas)")}:`,
+    ...(d.constraints.length ? d.constraints.map((c) => `• ${c.label[lang]}: ${c.detail[lang]}`) : [`• ${L("None mapped in the layers checked (not a clearance).", "Nada mapeado en las capas verificadas (no es una autorización).")}`]),
+    `${L("Unresolved — evidence gaps and research tasks", "Sin resolver — brechas de evidencia y tareas")}:`,
+    ...(d.unresolved.length ? d.unresolved.map((g) => `• ${g.label[lang]}: ${g.missing[lang]} ${L("Why", "Por qué")}: ${g.why[lang]} ${L("Task", "Tarea")}: ${g.obtain[lang]}${g.from ? ` (${g.from})` : ""} ${L("Blocks", "Bloquea")}: ${g.blocks[lang]}`) : [`• ${L("None.", "Ninguna.")}`]),
+    `${L("Potential approvals", "Aprobaciones posibles")}:`,
+    ...(r.land_use!.approvals.length ? r.land_use!.approvals.map((a) => `• ${a.name} — ${REQUIREMENT_TEXT[rq(a)][lang]}. ${L("Trigger", "Motivo")}: ${a.needs ? L(`unknown — depends on ${a.needs.en}.`, `desconocido — depende de ${a.needs.es}.`) : a.trigger} ${L("Authority", "Autoridad")}: ${a.agency || "—"}. ${L("Provision", "Disposición")}: ${a.citation || "—"}${a.citationGap ? ` [${a.citationGap[lang]}]` : ""}`) : [`• ${L("None triggered by SmartPR's rules.", "Ninguna activada por las reglas de SmartPR.")}`]),
+    `${L("Likely pathway", "Ruta probable")}: ${d.pathway.summary[lang]} ${d.pathway.completeness[lang]}`,
+    `${L("Immediate next action", "Próxima acción inmediata")}: ${d.pathway.nextAction[lang]}`,
+  ];
+}
+
 /** Plain-text summary for "Copy summary": site summary → key findings → next steps → still needed → detailed findings. */
 export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: ReturnType<typeof exportableReview> = null): string {
   const t = (b: Bi | null) => (b ? b[lang] : "—");
@@ -1376,11 +1407,12 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     `${L("Coordinates", "Coordenadas")}: ${r.property.latitude.toFixed(6)}, ${r.property.longitude.toFixed(6)} · ${L("Catastro", "Catastro")}: ${r.property.catastro.text ? t(r.property.catastro.text) : r.property.catastro.value ?? t(findingStateText(r.property.catastro.state))} · ${L("Approximate area", "Área aproximada")}: ${t(area.text)} (${t(area.note)})`,
     "",
     t(a.conclusion),
+    ...decisionText(r, lang),
     "",
     L("KEY REGULATORY FINDINGS", "HALLAZGOS REGULATORIOS CLAVE"),
-    ...group(L("Review required:", "Requiere revisión:"), a.review),
+    ...group(L("Material constraints or exposure:", "Restricciones o exposición importantes:"), a.review),
     ...group(L("No mapped intersection identified (checked; not a clearance):", "No se identificó intersección mapeada (verificado; no es una autorización):"), a.clear),
-    ...group(L("Unable to verify:", "No se pudo verificar:"), a.unable),
+    ...group(L("Unresolved or insufficient evidence:", "Sin resolver o evidencia insuficiente:"), a.unable),
     "",
     L("RECOMMENDED NEXT STEPS", "PRÓXIMOS PASOS RECOMENDADOS"),
     ...(a.actions.length ? a.actions.map((x, i) => `${i + 1}. ${t(x.issue)} — ${t(x.action)}`) : [L("None.", "Ninguno.")]),
@@ -1439,7 +1471,10 @@ export function regulatoryFlags(findings: ReportFinding[], lu: LandUseAnalysis |
     flag("zoning", bi("Zoning", "Calificación"), f("zoning")),
     flag("land_class", bi("Land classification", "Clasificación del suelo"), f("put")?.state === "sourced" && f("put")?.currency?.status !== "unresolved" ? f("put") : f("land_class") ?? f("put")),
   ];
-  if (lu?.activity.use) {
+  if (lu?.activity.use && lu.decision) {
+    const d = lu.decision.compatibility;
+    out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: d.label, tone: d.status === "supported_permitted" ? "ok" : d.status === "supported_prohibited" ? "hazard" : "attention", status: d.status === "undetermined" ? "requires_professional_review" : "verified" });
+  } else if (lu?.activity.use) {
     const o = lu.compatibility.outcome;
     // Governing regulation not verified → pending, with the preliminary reading named.
     out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: bi(`Pending — regulation not verified (preliminary: ${COMPATIBILITY_TEXT[o].en})`, `Pendiente — reglamento no verificado (preliminar: ${COMPATIBILITY_TEXT[o].es})`), tone: "attention", status: "requires_professional_review" });

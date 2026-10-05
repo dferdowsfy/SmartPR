@@ -18,7 +18,7 @@ import { FindingValue } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
 import { downloadPropertyReportPdf } from "../../locations/propertyReportPdf";
 import { exportableReview, REVIEW_DISCLAIMER, REVIEW_STATUS_TEXT } from "../../locations/propertyReview";
-import { ApprovalsSection, CompatibilitySection, EvidenceSection, ProposedActivityPanel, ReasoningDetails, StandardsList, UnresolvedSection, type ActivityInput } from "./LandUseSections";
+import { ApprovalsSection, CompatibilitySection, DecisionSummary, EvidenceSection, ProposedActivityPanel, ReasoningDetails, StandardsList, UnresolvedSection, type ActivityInput } from "./LandUseSections";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -121,9 +121,9 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
 }
 
 const STATUS_HEAD = {
-  review: { en: "Review required", es: "Requiere revisión", note: { en: "Material constraint or issue detected.", es: "Se detectó una restricción o asunto importante." } },
+  review: { en: "Material constraints or exposure", es: "Restricciones o exposición importantes", note: { en: "Mapped constraint, exposure or issue that needs review.", es: "Restricción, exposición o asunto mapeado que requiere revisión." } },
   clear: { en: "No mapped intersection identified", es: "No se identificó intersección mapeada", note: { en: "Checked; nothing mapped in the stated dataset at the stated scope. Not a clearance.", es: "Verificado; nada mapeado en el conjunto de datos y alcance indicados. No es una autorización." } },
-  unable: { en: "Unable to verify", es: "No se pudo verificar", note: { en: "Source unavailable, did not respond, or evidence is insufficient — unknown, not clear.", es: "Fuente no disponible, no respondió o evidencia insuficiente — desconocido, no despejado." } },
+  unable: { en: "Unresolved or insufficient evidence", es: "Sin resolver o evidencia insuficiente", note: { en: "Source unavailable, did not respond, or evidence is insufficient — unknown, not clear.", es: "Fuente no disponible, no respondió o evidencia insuficiente — desconocido, no despejado." } },
 } as const;
 
 function KeyFindings({ report, lang }: { report: PropertyReport; lang: Lang }) {
@@ -354,6 +354,8 @@ export function PropertyReportDrawer({
             )}
             <p className="spr-rv-conclusion" data-testid="reviewer-conclusion">{assessment.conclusion[lang]}</p>
           </section>
+
+          {report.land_use?.activity.use && report.land_use.decision && <DecisionSummary lu={report.land_use} lang={lang} />}
 
           <KeyFindings report={report} lang={lang} />
 

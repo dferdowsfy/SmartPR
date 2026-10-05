@@ -64,6 +64,56 @@
           "comparison": "The 2025 PT layer classifies the whole parcel SU, while the 2015 PUT layer shows 24% VIAL. This is consistent with — but does not prove — a 2025 change; it may also be a difference in how road rights-of-way are drawn."
         },
         "memorial_search": "OCR of the Plan Final (pages read so far) finds the 'Memorial Justificativo sobre Posible Modificación Menor al PUT-PR' referenced as a separate annex (p. 33); the modification map itself was not found in the Plan Final. Request the memorial/annex from the JP or the Municipio."
+      },
+      "permit_authority": {
+        "status": "unresolved",
+        "note": "Not researched for Arroyo. Confirm whether permits are filed with OGPe or a municipal permits office.",
+        "obtain_from": "OGPe / Municipio de Arroyo"
+      }
+    },
+    "Guaynabo": {
+      "plan": {
+        "name": "Plan de Ordenación Territorial de Guaynabo (revisión integral 2010)",
+        "resolution": "JP-PT-16-10",
+        "executive_order": "OE-2010-016",
+        "effective": "2010-05-02",
+        "documents": [
+          {
+            "title": "JP — Municipios Información de PT (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1",
+            "checked_on": "2026-10-05",
+            "note": "Guaynabo: pt_aprobado 15-Dic-1999 (OE-1999-63); first revision approved 2-May-2010 (OE-2010-016); status 'POT en proceso de revisión integral (RIPOT)'; jerarquia 5; convenio revised 26-Dec-2008, 'a perpetuidad'."
+          },
+          {
+            "title": "JP — Calificación vigente (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+            "checked_on": "2026-10-05",
+            "note": "Polygons tagged with catastro 114-042-022-01: R-5-T 'Residencial de Apartamentos Tradicional de Alta Densidad, Solar Mínimo 400 m/c' (SU), resolución JP-PT-16-10, vigencia 05/02/2010, overlay cali_sobre PA-PACUT; layer field cali_2021 = R-C."
+          },
+          {
+            "title": "Reglamento Conjunto 2023 — Tabla 6.6, Equivalencias Municipio Autónomo de Guaynabo",
+            "url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+            "checked_on": "2026-10-05",
+            "note": "pp. 321–322: R-5-T, R-3-T, R-4-T, C-3-T and PACUT → R-C; D-2-T → D-G. Sección 6.1.1.3(m), p. 314: overlay zones of special or territorial plans prevail over the equivalent district."
+          },
+          {
+            "title": "Avance — Plan Territorial Municipio Autónomo de Guaynabo (2024)",
+            "url": "https://guaynabocity.gov.pr/wp-content/uploads/2024/08/Avance_PT-MAG_2024_VEDA.pdf",
+            "checked_on": "2026-10-05",
+            "note": "Municipal RIPOT advance (not adopted). Tabla 42 (pp. 163–165) shows the same R-5-T → R-C equivalence under the RC 2020."
+          }
+        ]
+      },
+      "rules": {
+        "status": "unresolved",
+        "regulation": "Reglamento Conjunto 2023 district rules via the Tabla 6.6 equivalence, subject to Guaynabo POT / Plan de Área provisions",
+        "evidence": "RC 2023 Sección 6.1.1.4(a) (p. 314) applies the RC districts to autonomous municipalities with territorial plans through the transitional equivalences of Tabla 6.6; Sección 6.1.1.3(m) (p. 314) makes overlay zones of special plans or territorial plans prevail over the equivalent district.",
+        "unresolved": "Whether the Guaynabo POT (2010) reglamentación or the PA-PACUT plan modifies the R-C rules for this parcel; amendments to RC 2023 after June 2023 have not been checked."
+      },
+      "permit_authority": {
+        "status": "unresolved",
+        "note": "Guaynabo is an autonomous municipality with a transfer agreement recorded by the JP (jerarquía field 5; agreement revised 26-Dec-2008, perpetual). RC 2023 lets Municipios Autónomos con Jerarquía I–III issue determinations; SmartPR has not confirmed which office issues this construction permit.",
+        "obtain_from": "Municipio Autónomo de Guaynabo — Oficina de Permisos; OGPe"
       }
     }
   }

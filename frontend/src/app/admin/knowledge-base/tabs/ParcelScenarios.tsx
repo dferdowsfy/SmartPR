@@ -73,13 +73,14 @@ export function ParcelScenarios({ nodes }: { nodes: GraphNodeDTO[] }) {
       <div style={box}>
         <p style={h}>Activities on this parcel</p>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }} data-testid="scenario-matrix">
-          <thead><tr style={{ color: COLORS.faint, textAlign: "left" }}><th>Activity</th><th>Base zoning</th><th>Overall</th><th>Confidence</th><th>Approvals</th><th>Gaps</th></tr></thead>
+          <thead><tr style={{ color: COLORS.faint, textAlign: "left" }}><th>Activity</th><th>Base zoning</th><th>Overall</th><th>Decision</th><th>Confidence</th><th>Approvals</th><th>Gaps</th></tr></thead>
           <tbody>
             {matrix.map(({ t, r }) => (
               <tr key={t} onClick={() => setSelected(t)} style={{ cursor: "pointer", background: t === selected ? COLORS.panel2 : undefined, borderTop: `1px solid ${COLORS.border}` }} data-testid="scenario-row" data-outcome={r.compatibility.outcome}>
                 <td style={{ color: COLORS.text, padding: "6px 4px" }}>{t}</td>
                 <td style={{ color: TONE[r.compatibility.baseOutcome ?? "insufficient"] }}>{r.compatibility.baseOutcome ? COMPATIBILITY_TEXT[r.compatibility.baseOutcome].en : "—"}</td>
                 <td style={{ color: TONE[r.compatibility.outcome] }}>{COMPATIBILITY_TEXT[r.compatibility.outcome].en}</td>
+                <td style={{ color: COLORS.dim }} data-testid="scenario-decision" title={r.decision?.compatibility.reason.en}>{r.decision?.compatibility.label.en ?? "—"}</td>
                 <td style={{ color: COLORS.dim }}>{r.compatibility.confidence}</td>
                 <td style={{ color: COLORS.dim }}>{r.approvals.length}</td>
                 <td style={{ color: r.coverageGaps.length ? COLORS.amber : COLORS.faint }}>{r.coverageGaps.length}</td>

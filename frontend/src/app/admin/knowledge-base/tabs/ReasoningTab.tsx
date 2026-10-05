@@ -23,7 +23,7 @@ import { ParcelScenarios } from "./ParcelScenarios";
 import { checkGraphQuality, type QualityIssue } from "../../../reasoning/graphQuality";
 
 const REASONING_TYPES: NodeType[] = ["scenario", "decision_condition", "process_variant", "scenario_mapping", "document", "evidence_type", "regulatory_source", "agency", "business_type", "municipality"];
-const MANAGE_TYPES: NodeType[] = ["scenario_mapping", "scenario", "decision_condition", "process_variant", "use_permission", "site_rule", "zoning_district", "land_use", "development_standard"];
+const MANAGE_TYPES: NodeType[] = ["scenario_mapping", "scenario", "decision_condition", "process_variant", "use_permission", "site_rule", "zoning_district", "land_use", "development_standard", "district_equivalence", "overlay_district"];
 
 const PRESETS: { label: string; facts: Facts }[] = [
   { label: "New restaurant, existing local, no work (Guaynabo)", facts: { project_intent: "new_business", existing_premises: true, construction_required: false, ownership_changed: false, home_based: false, residential: false, municipality: "Guaynabo", business_type: "Restaurant" } },

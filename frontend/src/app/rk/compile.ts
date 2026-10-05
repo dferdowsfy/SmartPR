@@ -126,6 +126,8 @@ export function compileKb(
       usePermissions: datas("use_permission"),
       developmentStandards: datas("development_standard"),
       siteRules: datas("site_rule"),
+      districtEquivalences: datas("district_equivalence"),
+      overlayDistricts: datas("overlay_district"),
     },
     meta: { version: meta.version, compiledAt: new Date().toISOString(), batchId: meta.batchId },
   };

@@ -7,8 +7,8 @@
 // ============================================================================
 
 import type { jsPDF as JsPDF } from "jspdf";
-import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, RETRIEVAL_TEXT, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
-import { COMPATIBILITY_TEXT } from "./landUse";
+import { assessmentOf, BASIS_TEXT, decisionText, basisOf, findingStateText, reportArea, RETRIEVAL_TEXT, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
+import { COMPATIBILITY_TEXT, REQUIREMENT_TEXT } from "./landUse";
 import type { exportableReview } from "./propertyReview";
 
 type Lang = "en" | "es";
@@ -133,7 +133,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
 
   // ---- Key regulatory findings -------------------------------------------------------
   heading(L("Key regulatory findings", "Hallazgos regulatorios clave"));
-  const GROUP: Array<["review" | "clear" | "unable", string, string, ReportTone]> = [["review", "REVIEW REQUIRED", "REQUIERE REVISIÓN", "attention"], ["clear", "NO MAPPED INTERSECTION IDENTIFIED", "NO SE IDENTIFICÓ INTERSECCIÓN MAPEADA", "ok"], ["unable", "UNABLE TO VERIFY", "NO SE PUDO VERIFICAR", "unknown"]];
+  const GROUP: Array<["review" | "clear" | "unable", string, string, ReportTone]> = [["review", "MATERIAL CONSTRAINTS OR EXPOSURE", "RESTRICCIONES O EXPOSICIÓN IMPORTANTES", "attention"], ["clear", "NO MAPPED INTERSECTION IDENTIFIED", "NO SE IDENTIFICÓ INTERSECCIÓN MAPEADA", "ok"], ["unable", "UNRESOLVED OR INSUFFICIENT EVIDENCE", "SIN RESOLVER O EVIDENCIA INSUFICIENTE", "unknown"]];
   for (const [k, en, es, tone] of GROUP) {
     if (!A[k].length) continue;
     ensure(10);
@@ -145,6 +145,13 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
       if (m) para(m, 7.5, "normal", MUTED, M + 6, CW - 6);
     }
     y += 2;
+  }
+
+  // ---- Project decision summary (same lines as the copied summary) -----------------------
+  const decLines = decisionText(report, lang);
+  if (decLines.length) {
+    heading(L("Project decision summary", "Resumen de decisión del proyecto"));
+    for (const ln of decLines.slice(2)) para(ln, ln.startsWith("•") ? 9 : 9.5, ln.startsWith("•") ? "normal" : "bold", INK, ln.startsWith("•") ? M + 3 : M, ln.startsWith("•") ? CW - 3 : CW);
   }
 
   // ---- Recommended next steps ---------------------------------------------------------
@@ -212,21 +219,27 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     heading(L("Land-use evaluation details", "Detalles de la evaluación de uso"));
     para(`"${lu.activity.raw}" — ${lu.activity.useName}`, 10, "italic", MUTED);
     const o = lu.compatibility.outcome;
-    const tone: ReportTone = o === "permitted" ? "ok" : o === "potentially_prohibited" ? "hazard" : o === "insufficient" ? "unknown" : "attention";
+    const dc = lu.decision?.compatibility;
+    const tone: ReportTone = dc ? (dc.status === "supported_permitted" ? "ok" : dc.status === "supported_prohibited" ? "hazard" : dc.status === "undetermined" ? "unknown" : "attention") : o === "permitted" ? "ok" : o === "potentially_prohibited" ? "hazard" : o === "insufficient" ? "unknown" : "attention";
     ensure(10);
-    pill(M, y + 1, `${L("Compatibility", "Compatibilidad")}: ${COMPATIBILITY_TEXT[o][lang]} · ${L("confidence", "confianza")} ${lu.compatibility.confidence}`, tone);
+    pill(M, y + 1, `${L("Compatibility", "Compatibilidad")}: ${dc ? dc.label[lang] : `${COMPATIBILITY_TEXT[o][lang]} · ${L("confidence", "confianza")} ${lu.compatibility.confidence}`}`, tone);
     y += 8;
     for (const x of lu.compatibility.reasons) para(`• ${x}`, 9.5, "normal", INK, M + 3, CW - 3);
     for (const d of lu.districts.filter((d) => !d.sliver && d.conditions.length)) for (const x of d.conditions) para(`– ${x}`, 9, "normal", MUTED, M + 6, CW - 6);
-    heading(L("Required approvals", "Aprobaciones requeridas"));
+    heading(L("Potential approvals", "Aprobaciones posibles"));
+    if (lu.decision) para(lu.decision.pathway.completeness[lang], 8.5, "italic", MUTED);
     for (const a of lu.approvals) {
-      const st = a.status === "confirmed" ? L("REQUIRED", "REQUERIDO") : a.status === "likely" ? L("LIKELY", "PROBABLE") : L("PROFESSIONAL REVIEW", "REVISIÓN PROFESIONAL");
+      const rq = a.requirement ?? (a.status === "confirmed" ? "required" : a.status === "likely" ? "potentially_required" : "unresolved");
+      const st = REQUIREMENT_TEXT[rq][lang].toUpperCase();
       ensure(16);
-      pill(M, y + 1, st, a.status === "confirmed" ? "hazard" : a.status === "likely" ? "attention" : "info");
-      font(10, "bold", INK); doc.text(safe(a.name), M + 46, y + 1); y += 6;
-      para(`${L("Trigger", "Motivo")}: ${a.trigger}`, 9, "normal", INK, M + 3, CW - 3);
+      pill(M, y + 1, st, rq === "required" ? "hazard" : rq === "potentially_required" ? "attention" : "info");
+      font(10, "bold", INK); doc.text(safe(a.name), M + 52, y + 1); y += 6;
+      para(`${L("Trigger", "Motivo")}: ${a.needs ? L(`unknown — depends on ${a.needs.en}`, `desconocido — depende de ${a.needs.es}`) : a.trigger}`, 9, "normal", INK, M + 3, CW - 3);
       if (a.agency) para(`${L("Agency", "Agencia")}: ${a.agency}`, 8.5, "normal", MUTED, M + 3, CW - 3);
       if (a.sources.length || a.citation) para(`${L("Authority", "Autoridad")}: ${a.sources.map((x) => x.name).join("; ")}${a.citation ? ` — ${a.citation}` : ""}`, 8, "normal", MUTED, M + 3, CW - 3);
+      if (a.citationGap) para(`${L("Evidence gap", "Brecha de evidencia")}: ${a.citationGap[lang]}`, 8, "italic", MUTED, M + 3, CW - 3);
+      for (const x of a.prerequisites ?? []) para(`- ${L("Prerequisite", "Requisito previo")}: ${x}`, 8.5, "normal", INK, M + 6, CW - 6);
+      if (a.sequence) para(`${L("Sequence", "Secuencia")}: ${a.sequence}`, 8, "normal", MUTED, M + 3, CW - 3);
       for (const e of a.evidence) para(`  ✓ ${e}`.replace("✓", "-"), 8.5, "normal", INK, M + 6, CW - 6);
       y += 2;
     }

@@ -245,7 +245,7 @@ test("saved v1 reports still open: area, lead summary and basis are derived, nev
   assert.match(reportSummaryText(r, "en"), /Historic zone: Unable to verify — source did not respond — parcel \(as saved; not re-verified\); Source unavailable/);
   assert.match(reportSummaryText(r, "en"), /Saved with an earlier report format \(smartpr\.property-report\/v1\)/);
   // The reviewer assessment is derived for saved v1 reports: unable stays unable.
-  assert.ok(reportSummaryText(r, "en").includes("Unable to verify:\n• Historic zone: Source did not respond"));
+  assert.ok(reportSummaryText(r, "en").includes("Unresolved or insufficient evidence:\n• Historic zone: Source did not respond"));
 });
 
 // ---------------------------------------------------------------------------

@@ -107,7 +107,7 @@ test("case 2 — protected/rural parcel (Gurabo): conservation + SREP are protec
   // Protection designations lead the reviewer findings (red), never presented as bypassable.
   const a = r.assessment!;
   assert.ok(a.review.some((x) => x.id === "zoning_conservation") && a.review.some((x) => x.id === "land_class" && x.severe));
-  assert.match(txt, /Review required:\n• Land classification: Specially protected rustic land/);
+  assert.match(txt, /Material constraints or exposure:\n• Land classification: Specially protected rustic land/);
 });
 
 test("case 3 — multiple districts / conflicting data (Carolina): every district kept, conflicts and outages listed", () => {

@@ -204,10 +204,11 @@ export function buildSeedNodes(): SeedNode[] {
   const lu = landUseRulesJson as unknown as {
     zoning_districts: Record<string, unknown>[]; land_uses: Record<string, unknown>[]; use_permissions: Record<string, unknown>[];
     development_standards: Record<string, unknown>[]; site_rules: Record<string, unknown>[]; sources: Record<string, unknown>[];
+    district_equivalences?: Record<string, unknown>[]; overlay_districts?: Record<string, unknown>[];
   };
   for (const src of lu.sources) if (!have.has(String(src.id))) { push("regulatory_source", { ...src }); have.add(String(src.id)); }
   // Sources the land-use rules cite from the bundled regulatory_sources.json.
-  const luCited = new Set([...lu.zoning_districts, ...lu.use_permissions, ...lu.development_standards, ...lu.site_rules].flatMap((n) => (Array.isArray(n.source_ids) ? (n.source_ids as string[]) : [])));
+  const luCited = new Set([...lu.zoning_districts, ...lu.use_permissions, ...lu.development_standards, ...lu.site_rules, ...(lu.district_equivalences ?? []), ...(lu.overlay_districts ?? [])].flatMap((n) => (Array.isArray(n.source_ids) ? (n.source_ids as string[]) : [])));
   for (const src of regulatorySourcesJson as Record<string, unknown>[]) {
     const id = String(src.id);
     if (!luCited.has(id) || have.has(id)) continue;
@@ -221,6 +222,8 @@ export function buildSeedNodes(): SeedNode[] {
   for (const n of lu.use_permissions) push("use_permission", { ...n });
   for (const n of lu.development_standards) push("development_standard", { ...n });
   for (const n of lu.site_rules) push("site_rule", { ...n });
+  for (const n of lu.district_equivalences ?? []) push("district_equivalence", { ...n });
+  for (const n of lu.overlay_districts ?? []) push("overlay_district", { ...n });
 
   return nodes;
 }
