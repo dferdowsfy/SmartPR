@@ -535,6 +535,14 @@ export function classifyEngineRequirements(
       triggerFacts.push("placement:off_lot");
     }
 
+    // REG-INTERIOR-COASTAL-001: an exterior-effect review (coastal zone)
+    // reached only through an interior-only renovation. Keep the card, but
+    // ask instead of asserting it.
+    if (row.interior_only_unconfirmed && (applicability === "required" || applicability === "likely_required" || applicability === "verify_existing")) {
+      applicability = "needs_more_information";
+      triggerFacts.push("scope:interior_only");
+    }
+
     if (row.document_id === CORP_FORMATION && options.entityType === "limited_liability_company") {
       continue;
     }
@@ -663,6 +671,7 @@ export function classifyEngineRequirements(
     if (basisHeuristic[winIdx]) confidence = Math.min(confidence, 0.5);
     if (row.formation_unresolved) confidence = Math.min(confidence, 0.4);
     if (row.site_unconfirmed) confidence = Math.min(confidence, 0.4);
+    if (row.interior_only_unconfirmed) confidence = Math.min(confidence, 0.4);
     const classified: ClassifiedRequirement = {
       document_id: row.document_id,
       document_name: row.document_name,
