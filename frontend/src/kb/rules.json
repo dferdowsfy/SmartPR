@@ -9369,5 +9369,51 @@
     "reason": "QA 2026-10-04 21:00 cycle (S426, Carolina): KB INCOMPLETE — BT_PHARMACY had RULE_0094 (individual professional license) and RULE_0095 (health permit, heuristic) but no rule for the pharmacy ESTABLISHMENT's operating license, so a new retail pharmacy surfaced no pharmacy operating-license requirement. Primary-source check of Ley Núm. 247-2004 (Ley de Farmacia de Puerto Rico), Art. 5.05(b) (official Dept. de Salud PDF, salud.pr.gov/CMS/DOWNLOAD/6279): operating a pharmacy requires a licencia de farmacia obtained by complying with the Secretario de Salud's regulations; the pharmacy must have at least one licensed pharmacist (farmacéutico regente) while open to the public. Distinct from the individual pharmacist license (Junta de Farmacia, RULE_0094 family) — same genuinely-licensed pattern as RULE_0695 (barbershop) / RULE_0713-0715 (beauty specialists). compliance_mode verify_existing per the e676174 sweep (existing pharmacies verify their existing license; new pharmacies get REQUIRED)."
    }
   ]
+ },
+ {
+  "id": "RULE_0717",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "expansion",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+  "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
+  "citation_url": "https://www.permisos.pr.gov/",
+  "citation_confidence": "statute",
+  "citation_inherited_from": "DOC_OGPE_CONSTRUCTION_PERMIT",
+  "citation_source": "document",
+  "fact_key": "project_type",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "New rule: an expansion (addition / enlargement of a building) requires the construction permit, like new construction (RULE_0643) and renovation (RULE_0644).",
+    "reason": "KG scenario matrix (KG07, KG17, KG39): expansion projects fired the Reg. 13 / CZM reviews (RULE_0706/0708 list expansion as construction-type work) but no construction-permit rule covered expansion, so the checklist asked for a flood review of a permit it never listed. Ley 161-2009 requires a construction permit for any obra de construccion, including ampliaciones."
+   }
+  ],
+  "reviewed_at": "2026-10-04"
+ },
+ {
+  "id": "RULE_0718",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+  "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
+  "citation_url": "https://www.permisos.pr.gov/",
+  "citation_confidence": "statute",
+  "citation_inherited_from": "DOC_OGPE_CONSTRUCTION_PERMIT",
+  "citation_source": "document",
+  "fact_key": "expansion",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "New rule: an expansion (addition / enlargement of a building) requires the construction permit, like new construction (RULE_0643) and renovation (RULE_0644).",
+    "reason": "KG scenario matrix (KG07, KG17, KG39): expansion projects fired the Reg. 13 / CZM reviews (RULE_0706/0708 list expansion as construction-type work) but no construction-permit rule covered expansion, so the checklist asked for a flood review of a permit it never listed. Ley 161-2009 requires a construction permit for any obra de construccion, including ampliaciones."
+   }
+  ],
+  "reviewed_at": "2026-10-04"
  }
 ]

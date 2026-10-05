@@ -510,18 +510,22 @@ export function evaluateScenario(
         });
       }
     }
-    const outward = e?.value === true || ctx.project.footprintChange?.value === true || change === "confirmed";
-    if (outward && !ctx.project.siteCirculationChanges) {
-      controlling.push({ id: "site_circulation", label: "Parking, loading, access or site circulation", paths: ["project.siteCirculationChanges"], branch: "construction" });
-      if (tier2) {
-        ask({
-          id: "sq_site_circulation",
-          controls: "site_circulation",
-          kind: "boolean",
-          text: "Will parking, loading, access, or site circulation change?",
-          whyWeAsk: "Site changes and new occupancies can bring parking, access and traffic review into the approval.",
-        });
-      }
+  }
+  // Outward construction work, or a new occupancy (confirmed change of use)
+  // even with no construction stated, can bring parking/access review.
+  const outward =
+    change === "confirmed" ||
+    (constructionActive && (ctx.project.exteriorWork?.value === true || ctx.project.footprintChange?.value === true));
+  if (outward && !ctx.project.siteCirculationChanges) {
+    controlling.push({ id: "site_circulation", label: "Parking, loading, access or site circulation", paths: ["project.siteCirculationChanges"], branch: "construction" });
+    if (tier2) {
+      ask({
+        id: "sq_site_circulation",
+        controls: "site_circulation",
+        kind: "boolean",
+        text: "Will parking, loading, access, or site circulation change?",
+        whyWeAsk: "Site changes and new occupancies can bring parking, access and traffic review into the approval.",
+      });
     }
   }
   if (tier2 && envRelevant) {
